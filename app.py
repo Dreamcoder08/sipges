@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pathlib import Path
 from typing import Any, Dict, Optional
+from storage_sqlite import connect_sqlite
 import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars
 
 BASE = Path(__file__).resolve().parent
@@ -40,14 +41,10 @@ TENANT_DIR=Path(os.getenv('MASCLI_TENANT_DIR',str(BASE/'data'/'tenants')))
 
 def auth_conn():
     AUTH_DB.parent.mkdir(parents=True,exist_ok=True)
-    c=sqlite3.connect(AUTH_DB)
-    c.row_factory=sqlite3.Row
-    return c
+    return connect_sqlite(AUTH_DB,dictionary_rows=True)
 
 def conn():
-    c=sqlite3.connect(SCOPE_DB.get() or DB)
-    c.row_factory=sqlite3.Row
-    return c
+    return connect_sqlite(SCOPE_DB.get() or DB,dictionary_rows=True)
 
 def upload_root():
     scope=SCOPE_ID.get()
@@ -357,8 +354,8 @@ def create_scope(item:ScopeCreate,request:Request):
     if c.execute('SELECT 1 FROM tenant_projects WHERE company_id=? AND project_id=?',(item.company_id,item.project_id)).fetchone():c.close();raise HTTPException(409,'Proyecto existente')
     TENANT_DIR.mkdir(parents=True,exist_ok=True)
     # Crea únicamente las tablas operativas vacías (sin datos semilla de Sechura).
-    t=sqlite3.connect(path)
-    original=sqlite3.connect(DB)
+    t=connect_sqlite(path)
+    original=connect_sqlite(DB)
     for (definition,) in original.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL"):
         if not definition.lower().startswith('create virtual table'):t.execute(definition)
     t.execute('INSERT OR IGNORE INTO records(module,record_id,payload,created_at,updated_at) VALUES(?,?,?,?,?)',('Proyectos',item.project_id,json.dumps({'Proyecto_ID':item.project_id,'Nombre':item.label,'Estado':'Activo','Territorio':'','Descripcion':''},ensure_ascii=False),now(),now()))
