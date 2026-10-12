@@ -1,0 +1,16 @@
+# Only the TypeScript workspace is formatted; the Python reference app is left untouched.
+*
+!apps/
+!apps/**
+!packages/
+!packages/**
+!scripts/
+!scripts/**
+!package.json
+!tsconfig.base.json
+!.prettierrc.json
+!eslint.config.js
+!.dependency-cruiser.cjs
+!pnpm-workspace.yaml
+**/node_modules/
+**/dist/
