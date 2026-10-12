@@ -28,7 +28,7 @@ def tenant_path(module, scope):
 
 
 @pytest.fixture
-def isolated_app(tmp_path, monkeypatch):
+def isolated_import(tmp_path, monkeypatch):
     # All environment-derived resource paths are redirected BEFORE import.
     for name, path in {
         "MASCLI_DB_PATH": tmp_path / "default.db",
@@ -39,13 +39,26 @@ def isolated_app(tmp_path, monkeypatch):
         monkeypatch.setenv(name, str(path))
     monkeypatch.setenv("MASCLI_ADMIN_USERNAME", "synthetic-admin")
     monkeypatch.setenv("MASCLI_ADMIN_PASSWORD", PASSWORD)
-    monkeypatch.setenv("MASCLI_COOKIE_SECURE", "0")
 
-    spec = importlib.util.spec_from_file_location(
-        "isolated_test_app", Path(__file__).resolve().parents[1] / "app.py"
-    )
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    def load(cookie_secure="0"):
+        if cookie_secure is None:
+            monkeypatch.delenv("MASCLI_COOKIE_SECURE", raising=False)
+        else:
+            monkeypatch.setenv("MASCLI_COOKIE_SECURE", cookie_secure)
+        spec = importlib.util.spec_from_file_location(
+            "isolated_test_app", Path(__file__).resolve().parents[1] / "app.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    return load
+
+
+@pytest.fixture
+def isolated_app(tmp_path, monkeypatch, request, isolated_import):
+    config = getattr(request, "param", {})
+    module = isolated_import(config.get("cookie_secure", "0"))
     seed = tmp_path / "synthetic-seed.json"
     seed.write_text(json.dumps({"Eventos": [{
         "ID_Evento": "SYNTHETIC-DEFAULT",
@@ -58,7 +71,7 @@ def isolated_app(tmp_path, monkeypatch):
                  "CANONICAL_ENTITIES", "PROJECT_COORDINATES"):
         monkeypatch.setattr(module, name, tmp_path / (name.lower() + ".json"))
 
-    with TestClient(module.app) as client:
+    with TestClient(module.app, base_url=config.get("base_url", "http://testserver")) as client:
         module.TENANT_DIR.mkdir()
         for scope in (TENANT_A, TENANT_B):
             with sqlite3.connect(tenant_path(module, scope)) as db:

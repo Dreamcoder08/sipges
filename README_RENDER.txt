@@ -1,24 +1,26 @@
 MASCLI – PROYECTO SECHURA
-VERSIÓN LISTA PARA PUBLICAR EN RENDER
+PREPARACIÓN PARA RENDER — NO LISTO PARA PRODUCCIÓN
 
-1. Cree un repositorio nuevo en GitHub.
-2. Suba TODOS los archivos de esta carpeta a la raíz del repositorio.
-3. Ingrese a Render y elija New > Blueprint.
-4. Conecte el repositorio de GitHub.
-5. Render detectará render.yaml.
-6. Confirme el servicio y espere el despliegue.
-7. Render generará una URL pública, por ejemplo:
-   https://mascli-proyecto-sechura.onrender.com
+No publique datos reales ni suba todos los archivos indiscriminadamente.
+Mantenga el repositorio privado; excluya semillas operativas, registros personales y credenciales. No hay URL desplegada ni persistencia verificada por esta preparación.
 
-Configuración incluida:
-- Python 3.12.8
-- FastAPI + Uvicorn
-- Health check /health
-- Comando de inicio compatible con Render
-- Base SQLite temporal en /tmp/mascli.db
+COOKIES Y HTTPS:
+- En el servicio HTTPS deje MASCLI_COOKIE_SECURE sin definir o configure exactamente 1.
+- Las cookies de sesión y selección de proyecto son Secure por defecto.
+- Solo el valor exacto 0 desactiva Secure: reservado para pruebas HTTP locales en loopback, nunca para el servicio público.
+- Vacío, espacios y cualquier otro valor provocan error al importar, antes de inicializar recursos.
+- La política se fija al inicio; reinicie después de cambiarla. No configura TLS por sí misma.
+- No utilice los lanzadores locales .bat/.sh como comando de despliegue: asignan 0 cuando la variable está ausente para su listener 127.0.0.1.
+- Detalles y límites de variables vacías en shells: docs/secure-cookies.md.
 
-IMPORTANTE SOBRE LOS DATOS:
-En el plan gratuito de Render, el almacenamiento local es efímero. La Base Maestra se vuelve a cargar desde data/seed.json cuando se recrea el servicio. Para una versión productiva con persistencia real, se recomienda PostgreSQL o un disco persistente.
+CONFIGURACIÓN DE DESPLIEGUE A VALIDAR (NO EJECUTAR CON DATOS REALES):
+El repositorio incluye configuración Render/FastAPI/Uvicorn y health check /health. Tras resolver los bloqueos, conecte únicamente el repositorio privado autorizado al proveedor, revise render.yaml y configure HTTPS y secretos fuera del código. Una respuesta /health no prueba seguridad ni durabilidad.
+
+BLOQUEOS DE DATOS:
+Render Free no proporciona disco persistente; SQLite local, bases de autenticación/proyectos, configuración mutable y archivos subidos pueden perderse al reiniciar, recrear o redesplegar. Una ruta /tmp/mascli.db no es persistencia durable. Recargar data/seed.json tampoco preserva los cambios. La adaptación a PostgreSQL/almacenamiento privado sigue pendiente: DATABASE_URL por sí sola no migra esta aplicación. No se autoriza migración real en esta unidad.
+
+BLOQUEOS DE SEGURIDAD Y VALIDACIÓN:
+Siguen pendientes política/recuperación MFA, límites de intentos de login, endurecimiento CSRF/host/solicitudes, permisos privados de almacenamiento y pruebas de autorización, aislamiento y persistencia tras reinicio en HTTPS real. Cookies Secure no resuelven estos bloqueos. Cuentas de proveedor y despliegue siguen sin verificar.
 
 ESTADO ACADÉMICO:
-MASCLI Web Final RC 1.0 / Motor V0.5.1. La interfaz es final para demostración, pero la validación externa del modelo sigue pendiente.
+La validación externa del modelo sigue pendiente. Consulte odd/tasks/python-free-hosting-preparation.md para el plan de preparación; este documento no constituye aprobación de exposición pública.

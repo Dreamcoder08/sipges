@@ -7,6 +7,16 @@ from typing import Any, Dict, Optional
 from storage_sqlite import connect_sqlite
 import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars
 
+def cookie_secure_policy():
+    value = os.getenv("MASCLI_COOKIE_SECURE")
+    if value not in (None, "0", "1"):
+        raise ValueError("MASCLI_COOKIE_SECURE must be unset or exactly '0' or '1'")
+    return value != "0"
+
+
+# Validate once, before constructing the app or initializing any resources.
+COOKIE_SECURE = cookie_secure_policy()
+
 BASE = Path(__file__).resolve().parent
 DB = Path(os.getenv("MASCLI_DB_PATH", str(BASE / "data" / "mascli.db")))
 SEED = BASE / "data" / "seed.json"
@@ -265,7 +275,7 @@ def login_action(username:str=Form(...),password:str=Form(...),otp:str=Form(''))
     c.execute('INSERT INTO auth_sessions VALUES(?,?,?,?)',(hashlib.sha256(token.encode()).hexdigest(),row['username'],int(time.time())+SESSION_SECONDS,now()))
     c.commit();c.close()
     response=JSONResponse({'ok':True,'name':row['full_name'],'role':row['role']})
-    response.set_cookie(COOKIE_NAME,token,httponly=True,samesite='strict',secure=os.getenv('MASCLI_COOKIE_SECURE','0')=='1',max_age=SESSION_SECONDS,path='/')
+    response.set_cookie(COOKIE_NAME,token,httponly=True,samesite='strict',secure=COOKIE_SECURE,max_age=SESSION_SECONDS,path='/')
     return response
 
 @app.post('/logout')
@@ -321,7 +331,7 @@ def select_project_action(request:Request,scope:str=Form(...)):
     c=auth_conn();ok=c.execute("SELECT 1 FROM access_grants WHERE username=? AND company_id||'/'||project_id=?",(identity['username'],scope)).fetchone();c.close()
     if not ok:raise HTTPException(403,'Proyecto no autorizado')
     resp=RedirectResponse('/',status_code=303)
-    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=os.getenv('MASCLI_COOKIE_SECURE','0')=='1',max_age=SESSION_SECONDS)
+    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=COOKIE_SECURE,max_age=SESSION_SECONDS)
     return resp
 
 @app.get('/system/auth/current-scope')
