@@ -1,0 +1,45 @@
+MASCLI V0.4 – RESULTADO DE PRUEBA DEL MOTOR DE INDICADORES
+Proyecto Sechura | Base inicial: octubre 2026
+
+ESTADO METODOLÓGICO
+PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS.
+Los resultados siguientes prueban el funcionamiento computacional del motor.
+No constituyen resultados finales de tesis.
+
+IRSA PROVISIONAL DE PRUEBA
+IRSA = 56.89/100
+Nivel = Naranja
+
+PUNTAJES DIMENSIONALES
+G – Gobernanza y representación: 71.00
+A – Actores e influencia: 27.56
+D – Demandas y compromisos: 68.47
+N – Narrativas y señales digitales: 71.09
+E – Ambiental-territorial: 80.00
+I – Institucional y trazabilidad: 23.20
+
+DISPONIBILIDAD DE INDICADORES
+G: 100.0%
+A: 83.3%
+D: 100.0%
+N: 100.0%
+E: 100.0%
+I: 100.0%
+
+INTERPRETACIÓN TÉCNICA
+El motor V0.4 ya desagrega el riesgo en indicadores G1–I6. Cuando un indicador
+no cuenta con datos estructurados suficientes, MASCLI lo marca como N/D o como
+proxy y no finge una precisión inexistente.
+
+EJEMPLO
+A3 – Cambio de posición se marca actualmente como "Datos insuficientes" porque
+la Base Maestra conserva una posición vigente por actor, pero todavía no tiene
+una serie histórica estructurada de posición por fecha.
+
+SIGUIENTE VALIDACIÓN CIENTÍFICA
+- Juicio de expertos para pertinencia de indicadores.
+- V de Aiken.
+- AHP/Delphi para pesos.
+- Calibración retrospectiva.
+- Análisis de sensibilidad de umbrales.
+- Concordancia MASCLI–expertos.

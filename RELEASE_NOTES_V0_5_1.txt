@@ -1,0 +1,13 @@
+MASCLI V0.5.1 – CALIBRACIÓN TÉCNICA
+
+Cambios principales:
+- Clasificador por reglas ponderadas y contextuales.
+- Reducción de sobreclasificación en Gobernanza.
+- Refuerzo de Narrativas e Institucional.
+- 'Mina de Sal' y 'judicial' no fuerzan por sí solos Gobernanza.
+- Margen entre primera y segunda dimensión.
+- Bandera de revisión humana por baja confianza o ambigüedad.
+- Narrativas negativas no activan rojo por sí solas.
+
+Estado:
+Versión técnica de calibración. No es una versión validada científicamente.

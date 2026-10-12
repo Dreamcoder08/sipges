@@ -1,0 +1,224 @@
+{
+  "version": "0.5.1-calibracion",
+  "diagnostic_matches": 12,
+  "diagnostic_rate": 1.0,
+  "warning": "Comparación solo contra clasificación preliminar de Base Maestra; no es Accuracy científico ni gold standard.",
+  "results": [
+    {
+      "case": "CASO-01",
+      "expected_preliminary": "G",
+      "predicted": "G",
+      "match": true,
+      "confidence": 94,
+      "level": "Amarillo",
+      "margin": 15.5,
+      "review_required": false,
+      "scores": {
+        "G": 19.5,
+        "A": 0.0,
+        "D": 4.0,
+        "N": 0.0,
+        "E": 0.0,
+        "I": 3.0
+      }
+    },
+    {
+      "case": "CASO-02",
+      "expected_preliminary": "G",
+      "predicted": "G",
+      "match": true,
+      "confidence": 62,
+      "level": "Naranja",
+      "margin": 1.5,
+      "review_required": true,
+      "scores": {
+        "G": 3.0,
+        "A": 0.0,
+        "D": 0.0,
+        "N": 0.0,
+        "E": 0.0,
+        "I": 1.5
+      }
+    },
+    {
+      "case": "CASO-03",
+      "expected_preliminary": "A",
+      "predicted": "A",
+      "match": true,
+      "confidence": 94,
+      "level": "Amarillo",
+      "margin": 14.5,
+      "review_required": false,
+      "scores": {
+        "G": 3.0,
+        "A": 17.5,
+        "D": 0.0,
+        "N": 0.0,
+        "E": 0.0,
+        "I": 1.5
+      }
+    },
+    {
+      "case": "CASO-04",
+      "expected_preliminary": "A",
+      "predicted": "A",
+      "match": true,
+      "confidence": 94,
+      "level": "Amarillo",
+      "margin": 14.0,
+      "review_required": false,
+      "scores": {
+        "G": 4.5,
+        "A": 18.5,
+        "D": 0.0,
+        "N": 0.0,
+        "E": 0.0,
+        "I": 0.0
+      }
+    },
+    {
+      "case": "CASO-05",
+      "expected_preliminary": "D",
+      "predicted": "D",
+      "match": true,
+      "confidence": 78,
+      "level": "Amarillo",
+      "margin": 3.5,
+      "review_required": false,
+      "scores": {
+        "G": 0.0,
+        "A": 1.5,
+        "D": 12.0,
+        "N": 0.0,
+        "E": 8.5,
+        "I": 0.0
+      }
+    },
+    {
+      "case": "CASO-06",
+      "expected_preliminary": "D",
+      "predicted": "D",
+      "match": true,
+      "confidence": 92,
+      "level": "Amarillo",
+      "margin": 9.0,
+      "review_required": false,
+      "scores": {
+        "G": 0.0,
+        "A": 0.0,
+        "D": 29.5,
+        "N": 0.0,
+        "E": 20.5,
+        "I": 0.0
+      }
+    },
+    {
+      "case": "CASO-07",
+      "expected_preliminary": "N",
+      "predicted": "N",
+      "match": true,
+      "confidence": 94,
+      "level": "Amarillo",
+      "margin": 22.5,
+      "review_required": false,
+      "scores": {
+        "G": 1.5,
+        "A": 0.0,
+        "D": 0.0,
+        "N": 24.0,
+        "E": 0.0,
+        "I": 1.5
+      }
+    },
+    {
+      "case": "CASO-08",
+      "expected_preliminary": "N",
+      "predicted": "N",
+      "match": true,
+      "confidence": 90,
+      "level": "Amarillo",
+      "margin": 11.5,
+      "review_required": false,
+      "scores": {
+        "G": 1.5,
+        "A": 0.0,
+        "D": 0.0,
+        "N": 13.0,
+        "E": 0.0,
+        "I": 1.5
+      }
+    },
+    {
+      "case": "CASO-09",
+      "expected_preliminary": "E",
+      "predicted": "E",
+      "match": true,
+      "confidence": 94,
+      "level": "Amarillo",
+      "margin": 16.5,
+      "review_required": false,
+      "scores": {
+        "G": 0.0,
+        "A": 0.0,
+        "D": 0.0,
+        "N": 0.0,
+        "E": 18.0,
+        "I": 1.5
+      }
+    },
+    {
+      "case": "CASO-10",
+      "expected_preliminary": "E",
+      "predicted": "E",
+      "match": true,
+      "confidence": 91,
+      "level": "Amarillo",
+      "margin": 12.5,
+      "review_required": false,
+      "scores": {
+        "G": 1.5,
+        "A": 0.0,
+        "D": 0.0,
+        "N": 0.0,
+        "E": 14.0,
+        "I": 0.0
+      }
+    },
+    {
+      "case": "CASO-11",
+      "expected_preliminary": "I",
+      "predicted": "I",
+      "match": true,
+      "confidence": 90,
+      "level": "Amarillo",
+      "margin": 11.5,
+      "review_required": false,
+      "scores": {
+        "G": 0.0,
+        "A": 1.5,
+        "D": 0.0,
+        "N": 0.0,
+        "E": 0.0,
+        "I": 13.0
+      }
+    },
+    {
+      "case": "CASO-12",
+      "expected_preliminary": "I",
+      "predicted": "I",
+      "match": true,
+      "confidence": 94,
+      "level": "Amarillo",
+      "margin": 16.0,
+      "review_required": false,
+      "scores": {
+        "G": 0.0,
+        "A": 0.0,
+        "D": 12.0,
+        "N": 0.0,
+        "E": 0.0,
+        "I": 28.0
+      }
+    }
+  ]
+}

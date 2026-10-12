@@ -1,0 +1,28 @@
+MASCLI WEB COMPLETA — RESULTADO DE PRUEBA RC 1.5
+Fecha: 10/10/2026
+
+ALCANCE INCORPORADO
+- Delimitación geográfica del Proyecto Sechura con 5 concesiones Bayóvar.
+- Polígonos, centroides y vértices en WGS 84 (EPSG:4326).
+- Referencia del sistema proyectado WGS 84 / UTM zona 17S (EPSG:32717).
+- Tabla con código único, área nominal, área GIS y centroide.
+- Fuente y advertencia visibles: GeoCatMin / INGEMMET, geometría referencial.
+- Endpoint: GET /system/project-coordinates?project_id=PRJ-SECHURA.
+
+VALIDACIONES
+[OK] node --check static/app.js
+[OK] python -m py_compile app.py
+[OK] Endpoint Proyecto Sechura: HTTP 200 y 5 concesiones
+[OK] Proyecto sin geometría: HTTP 404
+[OK] Polígonos cerrados en JSON
+[OK] Total nominal: 94,770 ha
+[OK] Total GIS de la consulta: 94,755.4185 ha
+[OK] QA visual: mapa, selección de concesiones, tabla y vértices visibles
+[OK] Consola del navegador: sin errores ni advertencias
+[OK] Corrección responsive: el panel de detalle ya no hereda la posición fija del aside principal
+
+TRAZABILIDAD
+- Los nombres, códigos y áreas nominales proceden de la información entregada sobre IEPA Sechura.
+- El PDF de la Dirección Desconcentrada de Cultura Piura revisado no contiene coordenadas numéricas del proyecto.
+- La geometría fue consultada en el servicio público GeoCatMin / INGEMMET el 10/10/2026.
+- Uso referencial: no sustituye catastro certificado, memoria descriptiva ni levantamiento de campo.

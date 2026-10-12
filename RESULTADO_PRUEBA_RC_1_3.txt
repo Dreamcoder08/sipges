@@ -1,0 +1,25 @@
+MASCLI WEB FINAL RC 1.3 — RESULTADO DE PRUEBAS
+Fecha: 2026-10-10
+
+Pruebas automatizadas con base de datos y carpeta de uploads aisladas:
+- Health y carga inicial: OK
+- Directorio territorial (159 registros semilla): OK
+- Usuarios/roles demostrativos: listado, alta y edición: OK
+- Directorio: alta de ficha: OK
+- Narrativas: alta de registro: OK
+- Evento: alta y asociación de evidencia: OK
+- Upload PDF, listado por vínculo y descarga: OK
+- Fuente documental: alta y upload DOCX: OK
+- Rechazo de extensión no permitida (.exe): OK (HTTP 415)
+- Dashboard y presencia de módulos en HTML: OK
+
+QA visual:
+- Escritorio: Administración, Directorio, Narrativas y Fuentes revisados.
+- Móvil 390 x 844: navegación y formulario de eventos revisados.
+- Consola: sin errores ni advertencias.
+- Ancho de escritorio: sin desbordamiento horizontal de la página.
+
+Advertencias:
+- Administración es un CRUD de prototipo; no implementa autenticación/autorización.
+- Los archivos locales son efímeros en Render gratuito.
+- Datos, relaciones y señales requieren validación humana/metodológica.

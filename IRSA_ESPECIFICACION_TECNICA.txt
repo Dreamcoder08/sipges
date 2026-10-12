@@ -1,0 +1,20 @@
+MASCLI V0.3 — ESPECIFICACIÓN DEL MOTOR IRSA
+
+Estado metodológico: PROVISIONAL / NO VALIDADO.
+
+El motor utiliza una combinación ponderada de seis dimensiones. Para que el
+prototipo sea trazable, el puntaje dimensional no se obtiene de una caja negra:
+cada registro aporta puntos visibles según una regla declarada. El sistema
+devuelve los drivers con ID de registro, dimensión y aporte.
+
+La implementación está separada de la validación científica:
+- Arquitectura computacional: implementada.
+- Reglas iniciales: implementadas para prototipado.
+- Pesos finales: pendientes.
+- Umbrales finales: pendientes.
+- Calibración retrospectiva: pendiente.
+- Validación con expertos: pendiente.
+- Análisis de sensibilidad: pendiente.
+
+Esto permite desarrollar el software sin afirmar resultados que aún no han sido
+producidos por la investigación.

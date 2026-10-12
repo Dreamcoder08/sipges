@@ -1,0 +1,25 @@
+MASCLI WEB FINAL RC 1.4 — RESULTADO DE PRUEBAS
+Fecha: 2026-10-10
+
+Nuevas pruebas RC 1.4:
+- Proyecto Sechura creado automáticamente como PRJ-SECHURA: OK
+- Alta, lectura, edición, activación/desactivación de proyecto: OK
+- Etiquetado Proyecto_ID/Proyecto en eventos, actores, demandas, narrativas, fuentes y directorio: OK
+- Upload hereda Proyecto_ID/Proyecto del registro vinculado: OK
+- Registros legacy sin Proyecto_ID resueltos como PRJ-SECHURA: OK
+- Migración de base existente agrega project_id/project_name a attachments: OK
+- Selector de escritorio y selector móvil presentes: OK
+- Opción + Agregar proyecto y gestión en Administración: OK
+- Gráfico Alertas por nivel derivado de alertas activas del proyecto: OK
+- Gráfico Eventos por dimensión G/A/D/N/E/I derivado de eventos del proyecto: OK
+- JavaScript y Python compilan: OK
+- HTML sin IDs duplicados y CSS con bloques balanceados: OK
+
+Alcance declarado:
+- Listados operativos, mapa, red, directorio, narrativas, fuentes y gráficos nuevos se filtran por proyecto activo.
+- Dashboard agregado, IRSA y auditoría conservan métricas globales; la interfaz lo informa explícitamente.
+- No se afirma aislamiento multiusuario ni seguridad por proyecto.
+
+QA visual:
+- RC 1.3 ya fue revisada visualmente en escritorio y móvil sin errores de consola.
+- En esta ejecución el navegador CUA no estuvo disponible para una nueva captura RC 1.4; se completaron pruebas funcionales, estructurales y responsive por código.

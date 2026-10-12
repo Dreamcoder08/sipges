@@ -1,0 +1,7 @@
+MASCLI V0.5 PREVALIDACIÓN
+- Se estandariza el nombre canónico “Comunidad Campesina San Martín de Sechura (CCSMS)”.
+- Se mantiene intacto el texto de fuentes originales.
+- Se incorpora módulo de Validación experta.
+- Se muestran 32 indicadores pendientes de V de Aiken.
+- Se explicita estado de prevalidación para evitar sobreafirmar resultados.
+- La versión se convertirá en V0.5 VALIDADA una vez incorporadas evaluaciones reales.

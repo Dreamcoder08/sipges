@@ -1,0 +1,13 @@
+MASCLI RC 2.7 — Pruebas automatizadas con SQLite temporal (2026-10-11)
+- Inicio API: 200
+- Registro de señal de ejemplo: 200
+- Bloqueo de plan para alerta sin verificar: 409
+- Revisión humana de la alerta: 200
+- Creación de plan vinculado: 200
+- Actualización de avance: 200
+- Cierre con 100% de progreso: 200
+- Resumen de cumplimiento: 100% en caso de ejemplo
+- Aislamiento de consultas por project_id: OK
+- Historial de tres eventos: OK
+- Sintaxis Python y JS: OK
+Pendiente: pruebas exhaustivas de navegador, concurrencia, endurecimiento de seguridad y autorización de usuarios.

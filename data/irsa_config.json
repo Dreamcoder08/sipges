@@ -1,0 +1,44 @@
+{
+  "version": "0.3-provisional",
+  "status": "PENDIENTE_DE_VALIDACION_METODOLOGICA",
+  "weights": {
+    "G": 0.1666667,
+    "A": 0.1666667,
+    "D": 0.1666667,
+    "N": 0.1666667,
+    "E": 0.1666667,
+    "I": 0.1666665
+  },
+  "thresholds": {
+    "Verde": [
+      0,
+      24.99
+    ],
+    "Amarillo": [
+      25,
+      49.99
+    ],
+    "Naranja": [
+      50,
+      74.99
+    ],
+    "Rojo": [
+      75,
+      100
+    ]
+  },
+  "contributions": {
+    "active_alert": 18,
+    "high_event": 8,
+    "critical_event": 12,
+    "open_demand": 7,
+    "pending_action": 5,
+    "unverified_narrative": 6
+  },
+  "notes": [
+    "Los pesos son iguales únicamente como línea base de prototipado.",
+    "Los pesos definitivos deberán validarse mediante el método aprobado en la tesis (p. ej., AHP/Delphi).",
+    "Los umbrales del semáforo son provisionales y requieren calibración y análisis de sensibilidad.",
+    "El cálculo no sustituye la evaluación humana."
+  ]
+}

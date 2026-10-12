@@ -1,0 +1,1 @@
+RC 1.6: se agregó Análisis situacional integral al menú, endpoint /system/situational-analysis y exportación Word /system/situational-report.docx. El reporte es automático y descriptivo, sujeto a verificación y aprobación humana. Instalar dependencias con pip install -r requirements.txt.

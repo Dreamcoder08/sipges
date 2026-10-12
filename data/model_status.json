@@ -1,0 +1,19 @@
+{
+  "version": "MASCLI · Prototipo final de tesis | Motor V0.5.1",
+  "content_validation": "Pendiente de juicio de expertos",
+  "aiken_status": "Sin resultados todavía",
+  "indicator_count": 32,
+  "dimensions": [
+    "G",
+    "A",
+    "D",
+    "N",
+    "E",
+    "I"
+  ],
+  "canonical_entity": "Comunidad Campesina San Martín de Sechura (CCSMS)",
+  "release_rule": "La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se asignará después del juicio de expertos y la evaluación funcional contra Gold Standard.",
+  "classifier": "Reglas ponderadas y contextuales",
+  "functional_validation": "Protocolo preparado; Gold Standard pendiente",
+  "ui_release": "Web Final RC 1.0"
+}

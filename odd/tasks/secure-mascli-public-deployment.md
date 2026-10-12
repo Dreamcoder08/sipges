@@ -1,0 +1,29 @@
+# Secure MASCLI GitHub and Deployment — ODD Tasks
+
+## Goal
+Current authorized slice: upload the existing MASCLI project to a user-owned PRIVATE GitHub repository without changing its stack or deploying it. Hosting/migration work is paused pending a later decision. Never publish original business/territorial records or credentials to a public repository. This source import is not a production-ready release.
+
+## User-authorized scope
+- Project source: `C:\Users\crystell\Downloads\MASCLI_WEB_RC_3_0_MULTIEMPRESA_MFA.zip` (`MASCLI_RC_3_0/`).
+- Private GitHub repository; publicly addressable, access-controlled deployment.
+- User selected local Cloudflare Tunnel protected by Cloudflare Access for the quick deployment route. The PC and local server must stay on; this is not independent cloud hosting. Never open a publicly accessible Quick Tunnel with the original operational data.
+- Do not publish source, database seeds, or contact records to a public Git repository.
+- Do not claim deployment complete until provider authentication, durable data/auth storage, safe secrets, and production verification are observed.
+
+## Tasks
+1. [ ] Safely extract the archive to `C:\Users\crystell\Downloads\MASCLI_RC_3_0`, inspect project structure, secrets/data, authorization, MFA, tenancy, persistence, dependencies, and deployment assumptions without executing untrusted code. **Evidence:** ZIP integrity passed; 40 members/directories safely extracted with path/link checks; extra archive wrapper flattened after collision check, preserving `.git` and `odd/`; static security/deployment audit returned exact source evidence in subagent handoff. No app code was executed. **Commit:** pending.
+2. [ ] Implement regression-tested fixes for confirmed release blockers, select durable storage for operational/auth/tenant/settings/uploads, configure secure production secrets and cookie/MFA policy, correct known cross-tenant export, frontend stored-injection and request protections, and update release/deployment docs.
+3. [ ] Run focused security/data-release scans and deterministic functional tests; verify Render/build/start configuration and startup behavior using a safe local/staging environment.
+4. [ ] Authenticate and create a private GitHub repository, commit and push only the reviewed safe release candidate, and verify repository privacy and remote contents.
+5. [ ] Configure and deploy through the project-selected provider as an internet-reachable, login-protected service; verify HTTPS, health, authentication, tenant isolation, MFA, durable storage and restart behavior. Stop for any unavailable provider login, consent, or required user secret; never invent credentials.
+6. [ ] Close with exact repository URL, deployment URL/state, checks, limitations, and any credential rotations/actions required.
+
+## Decisions / evidence
+- User expressly chose a private repository and public deployment. This allows publishing to the user-owned private repository but does not authorize public exposure of bundled personal/business records.
+- The archive contains a 298,381-byte operational `data/seed.json`, including a 159-record territory directory and 131 prioritized actors; retain it only in a private repo and ensure protected/authenticated deployment.
+- Confirmed blockers from read-only static review: global admin can export the historical global DB from any authorized tenant (`app.py:1317-1319`); MFA is optional/resettable (`266-267`, `387-407`); Secure cookies default off (`272`, `327`); no observed login/TOTP rate limits, CSRF token, strict origin/scheme/trusted-host checks, or CSP; frontend constructs record-derived inline event handlers (`static/app.js:223`, `227`, `278`); free Render configuration stores only the primary business DB in ephemeral `/tmp/mascli.db` while auth/tenant/settings/uploads default under ephemeral local `data/` storage; restarts lose identities/grants/data. No runnable test harness found in archive.
+- Archive's extra wrapper was flattened into the tracked root after confirming there were no case-insensitive collisions; outer Git repository and `odd/` preserved.
+- Git initialized on `feature/secure-mascli-public-deployment`. Installed GitHub CLI 2.102.0 and cloudflared 2026.10.0 with WinGet; installer hashes verified. `gh auth status` confirms no GitHub authentication. No `.cloudflared` configuration directory exists and no Cloudflare/GitHub token environment variables are set. Need human browser authorization for both accounts and an available Cloudflare-managed hostname/zone before creating an Access-protected named tunnel. Engram mirror unavailable: local binary predates required provider version; feature task file and visible `todo` remain authoritative.
+- Original ZIP remains unchanged. Private source upload authorized explicitly by user. Read-only verifier checked 48 files / 711,799 bytes, with no actual credentials, env files, generated databases or uploads detected; Python AST parsing passed. Documentation password examples are synthetic, not provisioned secrets. Existing app security blockers remain unresolved; this is a source import only.
+- GitHub user verified as Dreamcoder08 (ID 132953839). Proposed repository Dreamcoder08/mascli does not exist (API 404). Repository-local commit identity will use verified GitHub username and ID-based noreply address, without changing global Git configuration. Commit/upload evidence will be recorded after execution.
+- Do not deploy until cross-tenant export, MFA/session/reset security, abuse/request defenses, secure cookies/headers, static injection, dependency/deploy config, and durable persistence have demonstrable fixes and regression tests. Never expose source publicly, expose private user data publicly, or invent credentials. Record commit identities for completed work units.

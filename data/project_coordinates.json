@@ -1,0 +1,310 @@
+{
+  "project_id": "PRJ-SECHURA",
+  "project_name": "Proyecto Sechura",
+  "initiative": "Iniciativa Estatal en Proyectos en Activos Sechura (IEPA Sechura)",
+  "description": "Transferencia de cinco concesiones mineras para estudios, factibilidad y eventual explotación de roca fosfórica, con opción de producir fertilizantes fosfatados.",
+  "crs": {
+    "geometry": "EPSG:4326",
+    "label": "WGS 84 · longitud/latitud",
+    "projected_reference": "EPSG:32717 · WGS 84 / UTM zona 17S",
+    "axis_order": "[longitud, latitud]"
+  },
+  "source": {
+    "organization": "INGEMMET",
+    "service": "GeoCatMin",
+    "dataset": "Derechos mineros / consulta gráfica",
+    "consulted_on": "2026-10-10",
+    "scope": "Geometría referencial de consulta pública; no reemplaza catastro certificado, memoria descriptiva ni levantamiento de campo."
+  },
+  "nominal_area_source": {
+    "label": "Descripción del Proyecto IEPA Sechura (presentación proporcionada)",
+    "scope": "Nombres, códigos y hectáreas nominales; la presentación no contiene coordenadas numéricas."
+  },
+  "bbox": [
+    -80.82346635,
+    -6.01223917,
+    -80.51434799,
+    -5.6123206
+  ],
+  "summary": {
+    "concession_count": 5,
+    "nominal_area_total_ha": 94770,
+    "gis_area_total_ha": 94755.4185
+  },
+  "concessions": [
+    {
+      "code": "12000441Y01",
+      "name": "BAYOVAR N° 5",
+      "nominal_area_ha": 9336,
+      "gis_area_ha": 9324.9817,
+      "substance": "No metálica",
+      "holder": "ACTIVOS MINEROS S.A.C.",
+      "department": "Piura",
+      "province": "Sechura",
+      "district": "Sechura",
+      "mining_zone": "17",
+      "centroid": {
+        "longitude": -80.76855045,
+        "latitude": -5.69974159,
+        "method": "Centroide geométrico referencial calculado desde el polígono"
+      },
+      "bbox": [
+        -80.82346635,
+        -5.75720539,
+        -80.73766281,
+        -5.61242581
+      ],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.73772814,
+              -5.61242581
+            ],
+            [
+              -80.75669037,
+              -5.61243432
+            ],
+            [
+              -80.75668399,
+              -5.62781354
+            ],
+            [
+              -80.78106487,
+              -5.62782375
+            ],
+            [
+              -80.7810315,
+              -5.71648019
+            ],
+            [
+              -80.82302718,
+              -5.71649562
+            ],
+            [
+              -80.82346635,
+              -5.75720539
+            ],
+            [
+              -80.73766281,
+              -5.75717042
+            ],
+            [
+              -80.73772814,
+              -5.61242581
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "code": "12000442Y01",
+      "name": "BAYOVAR N° 6",
+      "nominal_area_ha": 49140,
+      "gis_area_ha": 49141.1741,
+      "substance": "No metálica",
+      "holder": "ACTIVOS MINEROS S.A.C.",
+      "department": "Piura",
+      "province": "Sechura",
+      "district": "Sechura",
+      "mining_zone": "17",
+      "centroid": {
+        "longitude": -80.65232806,
+        "latitude": -5.72998506,
+        "method": "Centroide geométrico referencial calculado desde el polígono"
+      },
+      "bbox": [
+        -80.73772814,
+        -5.8476356,
+        -80.56689258,
+        -5.6123206
+      ],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.73772814,
+              -5.61242581
+            ],
+            [
+              -80.73762131,
+              -5.8476356
+            ],
+            [
+              -80.56689258,
+              -5.84752617
+            ],
+            [
+              -80.56706923,
+              -5.6123206
+            ],
+            [
+              -80.73772814,
+              -5.61242581
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "code": "12000443Y01",
+      "name": "BAYOVAR N° 7",
+      "nominal_area_ha": 6814,
+      "gis_area_ha": 6813.5829,
+      "substance": "No metálica",
+      "holder": "ACTIVOS MINEROS S.A.C.",
+      "department": "Piura",
+      "province": "Sechura",
+      "district": "Sechura",
+      "mining_zone": "17",
+      "centroid": {
+        "longitude": -80.74257503,
+        "latitude": -5.88007772,
+        "method": "Centroide geométrico referencial calculado desde el polígono"
+      },
+      "bbox": [
+        -80.78549818,
+        -5.91253871,
+        -80.69964681,
+        -5.84761576
+      ],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.78549818,
+              -5.84765694
+            ],
+            [
+              -80.78547362,
+              -5.91253871
+            ],
+            [
+              -80.69964681,
+              -5.91249699
+            ],
+            [
+              -80.69968126,
+              -5.84761576
+            ],
+            [
+              -80.78549818,
+              -5.84765694
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "code": "12000444Y01",
+      "name": "BAYOVAR N° 8",
+      "nominal_area_ha": 16905,
+      "gis_area_ha": 16905.4237,
+      "substance": "No metálica",
+      "holder": "ACTIVOS MINEROS S.A.C.",
+      "department": "Piura",
+      "province": "Sechura",
+      "district": "Sechura",
+      "mining_zone": "17",
+      "centroid": {
+        "longitude": -80.63325318,
+        "latitude": -5.89958937,
+        "method": "Centroide geométrico referencial calculado desde el polígono"
+      },
+      "bbox": [
+        -80.69968126,
+        -5.95165012,
+        -80.5668124,
+        -5.84752617
+      ],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.69968126,
+              -5.84761576
+            ],
+            [
+              -80.69962582,
+              -5.95165012
+            ],
+            [
+              -80.5668124,
+              -5.95155899
+            ],
+            [
+              -80.56689258,
+              -5.84752617
+            ],
+            [
+              -80.69968126,
+              -5.84761576
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "code": "12000448Y01",
+      "name": "BAYOVAR N° 12",
+      "nominal_area_ha": 12575,
+      "gis_area_ha": 12570.2561,
+      "substance": "No metálica",
+      "holder": "ACTIVOS MINEROS S.A.C.",
+      "department": "Piura",
+      "province": "Sechura",
+      "district": "Sechura",
+      "mining_zone": "17",
+      "centroid": {
+        "longitude": -80.61311994,
+        "latitude": -5.98384393,
+        "method": "Centroide geométrico referencial calculado desde el polígono"
+      },
+      "bbox": [
+        -80.69962582,
+        -6.01223917,
+        -80.51434799,
+        -5.95155899
+      ],
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -80.69962582,
+              -5.95165012
+            ],
+            [
+              -80.69958266,
+              -6.01223917
+            ],
+            [
+              -80.51434799,
+              -6.01210267
+            ],
+            [
+              -80.51439465,
+              -5.96960679
+            ],
+            [
+              -80.56679826,
+              -5.96965158
+            ],
+            [
+              -80.5668124,
+              -5.95155899
+            ],
+            [
+              -80.69962582,
+              -5.95165012
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}
