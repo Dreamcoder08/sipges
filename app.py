@@ -1316,7 +1316,10 @@ def audit(limit:int=100):
 
 @app.get("/system/export")
 def export_db():
-    return FileResponse(DB, filename="mascli.db", media_type="application/octet-stream")
+    scoped_db = SCOPE_DB.get()
+    if scoped_db is None:
+        raise HTTPException(status_code=403, detail="Seleccione un proyecto autorizado")
+    return FileResponse(scoped_db, filename="mascli.db", media_type="application/octet-stream")
 
 
 
