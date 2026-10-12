@@ -1,6 +1,9 @@
 import type { MiddlewareHandler } from 'hono';
 
-/** Response headers set by app.py enforce_auth on every response (behavior contract §2, step 10). */
+/**
+ * Headers from app.py enforce_auth (behavior contract §2, step 10). Python skips them on
+ * middleware-exempt routes such as /health; here they are applied to every response.
+ */
 export const securityHeaders = (): MiddlewareHandler => async (c, next) => {
   await next();
   c.header('X-Content-Type-Options', 'nosniff');

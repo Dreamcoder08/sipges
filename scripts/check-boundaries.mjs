@@ -1,5 +1,5 @@
 // Enforces the hexagonal dependency rules (docs/adr/0002) and refuses to pass vacuously:
-// 1. a fixture with a known violation must be reported, proving the rules are active;
+// 1. a fixture with one known violation per rule must report every rule, proving each is active;
 // 2. the real workspace must cruise at least one module and report no violations.
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -27,9 +27,12 @@ if (fixture.totalCruised === 0) {
   console.error('Boundary self-test cruised 0 fixture modules.');
   process.exit(1);
 }
-const fixtureRules = new Set(fixture.violations.map((v) => v.rule.name));
-if (!fixtureRules.has('domain-is-pure')) {
-  console.error('Boundary self-test failed: fixture violation "domain-is-pure" was not detected.');
+const detected = new Set(fixture.violations.map((v) => v.rule.name));
+const undetected = config.forbidden.map((rule) => rule.name).filter((name) => !detected.has(name));
+if (undetected.length > 0) {
+  console.error(
+    `Boundary self-test failed: fixture violations not detected: ${undetected.join(', ')}.`,
+  );
   process.exit(1);
 }
 

@@ -20,7 +20,6 @@ module.exports = {
       from: { path: '^apps/api/src/contexts/[^/]+/domain/' },
       to: {
         pathNot: ['^apps/api/src/contexts/[^/]+/domain/', '^packages/kernel/'],
-        dependencyTypesNot: ['type-only'],
       },
     },
     {
