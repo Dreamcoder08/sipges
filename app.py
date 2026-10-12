@@ -389,7 +389,12 @@ def totp_setup(request:Request):
     user=auth_identity(request)
     if not user:raise HTTPException(401)
     secret=base64.b32encode(secrets.token_bytes(20)).decode().rstrip('=')
-    c=auth_conn();c.execute('UPDATE auth_users SET totp_secret=?,totp_enabled=0 WHERE username=?',(secret,user['username']));c.commit();c.close()
+    c=auth_conn()
+    try:
+        updated=c.execute('UPDATE auth_users SET totp_secret=?,totp_enabled=0 WHERE username=? AND totp_enabled=0',(secret,user['username']))
+        if updated.rowcount==0:raise HTTPException(409,'MFA ya está activado; no se permite reiniciar la configuración')
+        c.commit()
+    finally:c.close()
     from urllib.parse import quote
     uri=f'otpauth://totp/MASCLI:{quote(user["username"])}?secret={secret}&issuer=MASCLI&algorithm=SHA1&digits=6&period=30'
     return {'secret':secret,'otpauth_uri':uri,'instruction':'Añada el código en una aplicación TOTP y confirme con /system/auth/totp/enable.'}
