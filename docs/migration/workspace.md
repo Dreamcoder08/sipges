@@ -61,6 +61,7 @@ docker stop mascli-pg-test
 | `MASCLI_S3_BUCKET` / `MASCLI_S3_ACCESS_KEY_ID` / `MASCLI_S3_SECRET_ACCESS_KEY` | bucket and credentials | required for `s3` |
 | `MASCLI_OLLAMA_URL` | http(s) base URL of the Ollama embeddings server (T10) | `http://127.0.0.1:11434` |
 | `MASCLI_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
+| `MASCLI_WEB_DIR` | built SPA to serve, e.g. `apps/web/dist` (docs/migration/web.md) | unset → API only |
 | `NODE_ENV` | `production` requires `MASCLI_DATABASE_URL` (embedded PGlite is refused) | unset |
 
 Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.

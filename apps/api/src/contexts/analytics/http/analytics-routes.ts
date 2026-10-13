@@ -16,6 +16,8 @@ const REPORT_PATHS: readonly (readonly [string, AnalyticsReport])[] = [
 export const analyticsRoutes = (deps: { analytics: AnalyticsService }) => {
   const { analytics } = deps;
   const app = new Hono<AppEnv>()
+    // Registered before the generic /api/:module routes, as in app.py.
+    .get('/api/dashboard', async (c) => c.json(await analytics.dashboard(c.get('scope'))))
     .get('/system/situational-analysis', async (c) =>
       c.json(await analytics.situational(c.get('scope'))),
     )

@@ -8,6 +8,7 @@ import { loadConfig } from './platform/config.ts';
 import { loadMigrations, migrate } from './platform/database/migrator.ts';
 import { pgliteClient } from './platform/database/pglite.ts';
 import { resolveClientIp } from './platform/http/client-ip.ts';
+import { fileWebAssets } from './platform/http/spa.ts';
 import { postgresClient } from './platform/database/postgres.ts';
 import type { SqlClient } from './platform/database/sql-client.ts';
 
@@ -41,7 +42,11 @@ const container = await buildContainer({
 });
 
 const server = serve(
-  { fetch: createApp(container).fetch, hostname: config.host, port: config.port },
+  {
+    fetch: createApp(container, config.webDir ? { web: fileWebAssets(config.webDir) } : {}).fetch,
+    hostname: config.host,
+    port: config.port,
+  },
   (info) => console.info(`MASCLI API listening on http://${info.address}:${info.port}`),
 );
 

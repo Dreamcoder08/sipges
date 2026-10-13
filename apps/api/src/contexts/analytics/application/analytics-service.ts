@@ -1,5 +1,6 @@
 import type { Scope } from '../../tenancy/application/index.ts';
 import { automatedConsensus } from '../domain/consensus.ts';
+import { DASHBOARD_MODULES, dashboardSummary } from '../domain/dashboard.ts';
 import { integratedAnalysis } from '../domain/integrated.ts';
 import { EXTENDED_MODULES, SITUATIONAL_MODULES, extendedRecords } from '../domain/records.ts';
 import {
@@ -63,6 +64,10 @@ export const createAnalyticsService = (deps: {
   };
 
   return {
+    /** Executive counters for the dashboard (app.py `/api/dashboard`). */
+    async dashboard(scope: Scope) {
+      return dashboardSummary(await reader.read(scope, DASHBOARD_MODULES));
+    },
     situational,
     async strategic(scope: Scope) {
       return strategicAssessment(await extended(scope), scope.projectId, generatedAt());

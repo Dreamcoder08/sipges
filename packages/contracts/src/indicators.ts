@@ -52,3 +52,41 @@ export const IrsaConfig = z
   })
   .loose();
 export type IrsaConfig = z.infer<typeof IrsaConfig>;
+
+export const Dimension = z.enum(['G', 'A', 'D', 'N', 'E', 'I']);
+export type Dimension = z.infer<typeof Dimension>;
+
+/** One factor explaining the index (app.py compute_irsa `drivers`). */
+export const IrsaDriver = z
+  .object({
+    dimension: Dimension,
+    dimension_label: z.string(),
+    id: z.string(),
+    label: z.string(),
+    points: z.number(),
+  })
+  .loose();
+export type IrsaDriver = z.infer<typeof IrsaDriver>;
+
+/** GET /system/irsa: the fields clients read; the full report carries more. */
+export const IrsaSummary = z
+  .object({
+    irsa: z.number(),
+    level: z.string(),
+    scores: z.record(Dimension, z.number()),
+    drivers: z.array(IrsaDriver),
+    config_version: z.string(),
+  })
+  .loose();
+export type IrsaSummary = z.infer<typeof IrsaSummary>;
+
+/** GET /system/model-status. */
+export const ModelStatus = z
+  .object({
+    version: z.string(),
+    content_validation: z.string(),
+    functional_validation: z.string().optional(),
+    release_rule: z.string(),
+  })
+  .loose();
+export type ModelStatus = z.infer<typeof ModelStatus>;

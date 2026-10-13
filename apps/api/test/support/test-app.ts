@@ -5,6 +5,7 @@ import { buildContainer } from '../../src/compose.ts';
 import type { ObjectStorage } from '../../src/contexts/evidence/application/index.ts';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import { createApp } from '../../src/app.ts';
+import type { WebAssets } from '../../src/platform/http/spa.ts';
 import { loadConfig } from '../../src/platform/config.ts';
 import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
 import { pgliteClient } from '../../src/platform/database/pglite.ts';
@@ -74,7 +75,7 @@ export const memoryStorage = () => {
 
 export const createTestApp = async (
   env: Record<string, string> = {},
-  options: { objectStorage?: ObjectStorage; embeddings?: EmbeddingProvider } = {},
+  options: { objectStorage?: ObjectStorage; embeddings?: EmbeddingProvider; web?: WebAssets } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
   const sql = pgliteClient(db);
@@ -89,7 +90,7 @@ export const createTestApp = async (
     objectStorage: options.objectStorage ?? memory.storage,
     embeddings: options.embeddings ?? offlineEmbeddings,
   });
-  const app = createApp(container);
+  const app = createApp(container, options.web ? { web: options.web } : {});
 
   const request = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);

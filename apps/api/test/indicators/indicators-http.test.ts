@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { IrsaSummary, ModelStatus } from '../../../../packages/contracts/src/indicators.ts';
 import { describe, expect, it } from 'vitest';
 import {
   type IrsaSnapshot,
@@ -195,6 +196,16 @@ describe('IRSA snapshots', () => {
   it('rejects a non-integer limit with 422', async () => {
     const { request } = await setup();
     expect((await request('/system/irsa/history?limit=abc')).status).toBe(422);
+  });
+});
+
+describe('client contracts', () => {
+  it('GET /system/irsa and /system/model-status match the contracts the web app parses', async () => {
+    const { t, request } = await setup();
+    await seedModuleRecords(t);
+    expect(IrsaSummary.safeParse(await (await request('/system/irsa')).json()).success).toBe(true);
+    const status = await (await request('/system/model-status')).json();
+    expect(ModelStatus.safeParse(status).success).toBe(true);
   });
 });
 

@@ -37,6 +37,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - run: pnpm --filter @mascli/web build
 
   python-legacy:
     name: Python legacy app (pytest)

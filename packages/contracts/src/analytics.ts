@@ -126,3 +126,15 @@ export const IntegratedAnalysisResponse = z.strictObject({
   limitations: TextList,
 });
 export type IntegratedAnalysisResponse = z.infer<typeof IntegratedAnalysisResponse>;
+
+/** GET /api/dashboard (app.py:984): executive counters of the active scope. */
+export const DashboardResponse = z.strictObject({
+  eventos: z.number().int(),
+  actores: z.number().int(),
+  demandas_abiertas: z.number().int(),
+  alertas_activas: z.number().int(),
+  directorio: z.number().int(),
+  priorizados: z.number().int(),
+  niveles: z.record(z.string(), z.number().int()),
+});
+export type DashboardResponse = z.infer<typeof DashboardResponse>;

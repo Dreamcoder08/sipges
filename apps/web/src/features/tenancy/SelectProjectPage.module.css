@@ -1,0 +1,39 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.card {
+  width: min(100%, 32rem);
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.card h1 {
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.list button {
+  width: 100%;
+  display: grid;
+  justify-items: start;
+  text-align: left;
+}
+
+.list small {
+  color: var(--color-muted);
+}

@@ -129,3 +129,11 @@ describe('Ollama embeddings settings (RC 2.5)', () => {
     expect(() => loadConfig({ MASCLI_OLLAMA_URL: value })).toThrow(message);
   });
 });
+
+describe('MASCLI_WEB_DIR', () => {
+  it('is optional and passed through', () => {
+    expect(loadConfig({}).webDir).toBeUndefined();
+    expect(loadConfig({ MASCLI_WEB_DIR: '' }).webDir).toBeUndefined();
+    expect(loadConfig({ MASCLI_WEB_DIR: 'apps/web/dist' }).webDir).toBe('apps/web/dist');
+  });
+});

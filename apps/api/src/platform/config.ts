@@ -20,6 +20,8 @@ export type AppConfig = {
   readonly storage: StorageConfig;
   /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
   readonly ollama: { readonly baseUrl: string; readonly model: string };
+  /** Built web app to serve (MASCLI_WEB_DIR, e.g. apps/web/dist); unset serves the API only. */
+  readonly webDir: string | undefined;
 };
 
 export type StorageConfig =
@@ -142,4 +144,5 @@ export const loadConfig = (env: Env): AppConfig => ({
   maxUploadBytes: parseMaxUpload(env.MASCLI_MAX_UPLOAD_BYTES),
   storage: parseStorage(env),
   ollama: parseOllama(env),
+  webDir: env.MASCLI_WEB_DIR || undefined,
 });

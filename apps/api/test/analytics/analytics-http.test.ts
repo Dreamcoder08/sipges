@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 import {
   ConsensusEngineResponse,
+  DashboardResponse,
   IntegratedAnalysisResponse,
   SituationalAnalysisResponse,
   StrategicAssessmentResponse,
@@ -20,7 +21,15 @@ import type { AppEnv } from '../../src/platform/http/env.ts';
 const DATA: Record<string, Record<string, StoredRecord[]>> = {
   'MASCLI/PRJ-SECHURA': {
     Eventos: [{ id: 'e1', payload: { Territorio: 'Sechura' } }],
-    Alertas: [{ id: 'a1', payload: { Estado: 'Abierta', Nivel_Preliminar: 'Rojo' } }],
+    Alertas: [
+      { id: 'a1', payload: { Estado: 'Abierta', Nivel_Preliminar: 'Rojo' } },
+      { id: 'a2', payload: { Estado: 'Descartada', Nivel: 'Verde' } },
+      { id: 'a3', payload: { Estado: 'CERRADA' } },
+    ],
+    Demandas: [
+      { id: 'd1', payload: { Estado: 'Cerrada' } },
+      { id: 'd2', payload: { Estado: 'Abierta' } },
+    ],
     Hechos_Compartidos: [{ id: 'h1', payload: { Asunto: 'agua potable' } }],
     Dialogos: [{ id: 'd1', payload: { Tema: 'Agua potable', Proyecto_ID: 'PRJ-SECHURA' } }],
   },
@@ -55,6 +64,20 @@ const setup = (scope: Scope) => {
 const SECHURA = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
 
 describe('analytics HTTP routes', () => {
+  it('GET /api/dashboard counts the scope records like app.py', async () => {
+    const { app } = setup(SECHURA);
+    const body = DashboardResponse.parse(await (await app.request('/api/dashboard')).json());
+    expect(body).toEqual({
+      eventos: 1,
+      actores: 0,
+      demandas_abiertas: 1,
+      alertas_activas: 1,
+      directorio: 0,
+      priorizados: 0,
+      niveles: { Rojo: 1, Verde: 1, 'Sin nivel': 1 },
+    });
+  });
+
   it('GET /system/situational-analysis uses the scope project and matches the contract', async () => {
     const { app } = setup(SECHURA);
     const res = await app.request('/system/situational-analysis?project_id=PRJ-SECHURA');
