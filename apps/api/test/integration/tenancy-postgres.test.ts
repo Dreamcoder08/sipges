@@ -24,15 +24,13 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
     pool = postgresClient(parsed.toString());
     other = postgresClient(parsed.toString());
     await migrate(pool.client, await loadMigrations());
+    // Real 0004 schema (forced RLS); rows inserted as the owner, read back as mascli_tenant.
     await pool.client.exec(`
-      CREATE TABLE module_records (tenant_id text NOT NULL, id text NOT NULL, payload jsonb NOT NULL);
-      ALTER TABLE module_records ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE module_records FORCE ROW LEVEL SECURITY;
-      CREATE POLICY tenant_data ON module_records
-        USING (tenant_id = current_setting('app.tenant_id', true))
-        WITH CHECK (tenant_id = current_setting('app.tenant_id', true));
-      GRANT SELECT, INSERT, UPDATE, DELETE ON module_records TO mascli_tenant;
-      INSERT INTO module_records VALUES ('MASCLI/PRJ-SECHURA','south','{"name":"south"}'),('ACME/NORTE','north','{"name":"north"}');
+      INSERT INTO tenants (company_id, project_id, label) VALUES
+        ('MASCLI','PRJ-SECHURA','South'), ('ACME','NORTE','North') ON CONFLICT DO NOTHING;
+      INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at) VALUES
+        ('MASCLI/PRJ-SECHURA','Eventos','south','{"name":"south"}', now(), now()),
+        ('ACME/NORTE','Eventos','north','{"name":"north"}', now(), now());
     `);
   });
   afterAll(async () => {
@@ -63,7 +61,9 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
   it('rejects cross-tenant and identity reads and resets pooled settings after rollback', async () => {
     await expect(
       withTenant(pool.client, 'ACME/NORTE', (tx) =>
-        tx.query("INSERT INTO module_records VALUES ('MASCLI/PRJ-SECHURA','intruder','{}')"),
+        tx.query(
+          "INSERT INTO module_records VALUES ('MASCLI/PRJ-SECHURA','Eventos','intruder','{}',now(),now())",
+        ),
       ),
     ).rejects.toThrow(/row-level security/);
     await expect(
@@ -99,23 +99,23 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
           projectId: north ? 'NORTE' : 'PRJ-SECHURA',
         });
         expect(data?.module_records).toEqual([
-          {
+          expect.objectContaining({
             tenant_id: north ? 'ACME/NORTE' : 'MASCLI/PRJ-SECHURA',
             id: north ? 'north' : 'south',
             payload: { name: north ? 'north' : 'south' },
-          },
+          }),
         ]);
         expect(data?.audit).toEqual([]);
         expect(data?.attachments).toEqual([]);
       }),
     );
-    await pool.client.exec('CREATE TABLE audit (tenant_id text, id text);');
+    await pool.client.exec('ALTER TABLE audit NO FORCE ROW LEVEL SECURITY');
     await expect(readers[0]?.read({ companyId: 'ACME', projectId: 'NORTE' })).rejects.toThrow(
       /forced tenant row-level security/,
     );
     const [role] = await pool.client.query<{ role: string }>('SELECT current_user AS role');
     expect(role?.role).not.toBe('mascli_tenant');
-    await pool.client.exec('DROP TABLE audit');
+    await pool.client.exec('ALTER TABLE audit FORCE ROW LEVEL SECURITY');
   });
 
   it('serializes simultaneous administrator deactivation and preserves one active administrator', async () => {

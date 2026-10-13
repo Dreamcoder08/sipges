@@ -58,3 +58,19 @@ export const parseJson = async <S extends z.ZodType>(
     ? { ok: true, value: result.data }
     : invalid(c, toIssues(result.error, body));
 };
+
+/** Integer query parameter with a default (FastAPI `limit: int = N`); 422 when unparsable. */
+export const parseIntQuery = (c: Context, name: string, fallback: number): Parsed<number> => {
+  const raw = c.req.query(name);
+  if (raw === undefined) return { ok: true, value: fallback };
+  if (!/^\s*[+-]?\d+\s*$/.test(raw)) {
+    return invalid(c, [
+      {
+        type: 'int_parsing',
+        loc: ['query', name],
+        msg: 'Input should be a valid integer, unable to parse string as an integer',
+      },
+    ]);
+  }
+  return { ok: true, value: Number.parseInt(raw, 10) };
+};

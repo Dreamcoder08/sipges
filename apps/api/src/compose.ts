@@ -1,3 +1,6 @@
+import { randomBytes } from 'node:crypto';
+import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
+import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
   type Clock,
   type IdentityService,
@@ -8,6 +11,8 @@ import { createSecretCipher } from './contexts/identity/infrastructure/secret-ci
 import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
 import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
 import { totp } from './contexts/identity/infrastructure/totp.ts';
+import { createRecordsService, type RecordsService } from './contexts/records/application/index.ts';
+import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
 import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
 import { createSqlTenancyStore } from './contexts/tenancy/infrastructure/sql-tenancy-store.ts';
@@ -19,6 +24,8 @@ export type Container = {
   readonly config: AppConfig;
   readonly identity: IdentityService;
   readonly tenancy: TenancyService;
+  readonly records: RecordsService;
+  readonly audit: AuditService;
   readonly clientIp: ClientIp;
 };
 
@@ -51,5 +58,15 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   await tenancy.bootstrap();
-  return { config: deps.config, identity, tenancy, clientIp: deps.clientIp };
+  const records = createRecordsService({
+    store: createSqlRecordStore(deps.sql),
+    clock: deps.clock,
+    randomHex: (length) =>
+      randomBytes(Math.ceil(length / 2))
+        .toString('hex')
+        .slice(0, length)
+        .toUpperCase(),
+  });
+  const audit = createAuditService(createSqlAuditReader(deps.sql));
+  return { config: deps.config, identity, tenancy, records, audit, clientIp: deps.clientIp };
 };
