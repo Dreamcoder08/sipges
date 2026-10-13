@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+afterEach(() => vi.restoreAllMocks());
 import { createHostedApp } from '../src/lazy-app.ts';
 
 it('shares initialization between concurrent requests and keeps the backend session instance', async () => {
@@ -20,6 +21,7 @@ it('shares initialization between concurrent requests and keeps the backend sess
 
 it('returns a generic error without secrets and retries after a failed initialization', async () => {
   let starts = 0;
+  const logs = vi.spyOn(console, 'error').mockImplementation(() => undefined);
   const hosted = createHostedApp(async () => {
     if (++starts === 1) throw new Error('postgres://sensitive-secret@example.test/demo');
     return new Hono().get('/health', (c) => c.json({ ok: true }));
@@ -28,6 +30,7 @@ it('returns a generic error without secrets and retries after a failed initializ
   expect(failure.status).toBe(503);
   expect(failure.headers.get('cache-control')).toBe('no-store');
   expect(await failure.text()).not.toContain('sensitive-secret');
+  expect(JSON.stringify(logs.mock.calls)).not.toContain('sensitive-secret');
   expect((await hosted.request('/health')).status).toBe(200);
   expect(starts).toBe(2);
 });

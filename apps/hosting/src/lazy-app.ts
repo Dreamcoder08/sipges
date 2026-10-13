@@ -13,7 +13,16 @@ export const createHostedApp = (initialize: () => Promise<Backend>) => {
       });
       const backend = await pending;
       return await backend.fetch(c.req.raw);
-    } catch {
+    } catch (error) {
+      const code =
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        typeof error.code === 'string' &&
+        /^(?:[0-9A-Z]{5}|ERR_[A-Z_]+|E[A-Z]{2,30})$/.test(error.code)
+          ? error.code
+          : 'unclassified';
+      console.error('MASCLI demo initialization failed', { code });
       // Database connection errors can contain sensitive URLs: never print them.
       c.header('Cache-Control', 'no-store');
       return c.json({ detail: 'La demo no está disponible temporalmente' }, 503);
