@@ -18,6 +18,8 @@ export type AppConfig = {
   readonly maxUploadBytes: number;
   /** Where evidence file bytes live (docs/migration/evidence.md). */
   readonly storage: StorageConfig;
+  /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
+  readonly ollama: { readonly baseUrl: string; readonly model: string };
 };
 
 export type StorageConfig =
@@ -109,6 +111,20 @@ const parseStorage = (env: Env): StorageConfig => {
   };
 };
 
+const parseOllama = (env: Env) => {
+  const baseUrl = env.MASCLI_OLLAMA_URL ?? 'http://127.0.0.1:11434';
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw new Error('MASCLI_OLLAMA_URL must be an absolute URL');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:')
+    throw new Error('MASCLI_OLLAMA_URL must use http or https');
+  const model = env.MASCLI_OLLAMA_EMBED_MODEL || 'nomic-embed-text';
+  return { baseUrl, model };
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -125,4 +141,5 @@ export const loadConfig = (env: Env): AppConfig => ({
   trustProxy: parseSwitch('MASCLI_TRUST_PROXY', env.MASCLI_TRUST_PROXY, false),
   maxUploadBytes: parseMaxUpload(env.MASCLI_MAX_UPLOAD_BYTES),
   storage: parseStorage(env),
+  ollama: parseOllama(env),
 });

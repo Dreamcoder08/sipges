@@ -5,6 +5,9 @@ import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middl
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
 import { auditRoutes } from './contexts/audit/http/audit-routes.ts';
 import { documentLabRoutes } from './contexts/documents/http/document-lab-routes.ts';
+import { intelligenceRoutes } from './contexts/intelligence/http/intelligence-routes.ts';
+import { managementRoutes } from './contexts/management/http/management-routes.ts';
+import { preventionRoutes } from './contexts/prevention/http/prevention-routes.ts';
 import { evidenceRoutes } from './contexts/evidence/http/evidence-routes.ts';
 import { indicatorsRoutes } from './contexts/indicators/http/indicators-routes.ts';
 import { recordsRoutes } from './contexts/records/http/records-routes.ts';
@@ -28,6 +31,9 @@ export const createApp = (container: Container) => {
     evidence,
     documents,
     clientIp,
+    intelligence,
+    prevention,
+    management,
   } = container;
   const app = new Hono<AppEnv>();
 
@@ -44,6 +50,9 @@ export const createApp = (container: Container) => {
   app.route('/', analyticsRoutes({ analytics }));
   app.route('/', evidenceRoutes(evidence));
   app.route('/', documentLabRoutes(documents));
+  app.route('/', intelligenceRoutes(intelligence));
+  app.route('/', preventionRoutes(prevention));
+  app.route('/', managementRoutes(management));
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
 
   app.notFound((c) => c.json({ detail: 'Not Found' } satisfies ErrorResponse, 404));

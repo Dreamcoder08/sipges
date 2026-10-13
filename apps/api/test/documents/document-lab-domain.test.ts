@@ -79,7 +79,7 @@ describe('document sources', () => {
 
   it('decodes invalid UTF-8 with replacement characters', () => {
     expect(textChunks(Uint8Array.from([0x61, 0xff, 0x62]))).toEqual([
-      { location: 'Línea 1', text: 'a�b' },
+      { location: 'Línea 1', text: 'a\ufffdb' },
     ]);
   });
 });

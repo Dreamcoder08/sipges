@@ -3,6 +3,7 @@ import { afterAll } from 'vitest';
 import { trackTestDatabase } from './test-database.ts';
 import { buildContainer } from '../../src/compose.ts';
 import type { ObjectStorage } from '../../src/contexts/evidence/application/index.ts';
+import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import { createApp } from '../../src/app.ts';
 import { loadConfig } from '../../src/platform/config.ts';
 import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
@@ -54,6 +55,12 @@ afterAll(async () => {
   if (db && !db.closed) await db.close();
 });
 
+/** Tests never reach a real model; this provider behaves like an Ollama that is not running. */
+export const offlineEmbeddings: EmbeddingProvider = {
+  model: 'offline-test-model',
+  embed: () => Promise.reject(new Error('Embedding service offline')),
+};
+
 /** In-memory object storage; `objects` lets tests inspect what was stored or removed. */
 export const memoryStorage = () => {
   const objects = new Map<string, Uint8Array>();
@@ -67,7 +74,7 @@ export const memoryStorage = () => {
 
 export const createTestApp = async (
   env: Record<string, string> = {},
-  options: { objectStorage?: ObjectStorage } = {},
+  options: { objectStorage?: ObjectStorage; embeddings?: EmbeddingProvider } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
   const sql = pgliteClient(db);
@@ -80,6 +87,7 @@ export const createTestApp = async (
     clock,
     clientIp: (c) => c.req.header('x-test-ip') ?? '203.0.113.1',
     objectStorage: options.objectStorage ?? memory.storage,
+    embeddings: options.embeddings ?? offlineEmbeddings,
   });
   const app = createApp(container);
 
