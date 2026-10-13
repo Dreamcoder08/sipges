@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "1044876089eb8f3f8beef3c5e5338c0183edd44c"
+      "revision": "70d2c40ed6ec7c24c2895889890716168aed4587"
     }
   },
   "components": [
@@ -220,7 +220,7 @@
       "id": "storage",
       "type": "database",
       "label": "Objetos de evidencia",
-      "sublabel": "Local o compatible S3",
+      "sublabel": "Local / S3 / Blob privado",
       "pos": [
         985,
         40
@@ -231,10 +231,10 @@
       ],
       "sources": [
         {
-          "path": "apps/api/src/contexts/evidence/infrastructure/index.ts",
-          "line": 9,
-          "end_line": 18,
-          "label": "Elección por configuración"
+          "path": "apps/hosting/src/blob-storage.ts",
+          "line": 1,
+          "end_line": 31,
+          "label": "Evidencias persistentes privadas en la demo"
         },
         {
           "path": "apps/api/src/contexts/evidence/infrastructure/local-object-storage.ts",
@@ -402,7 +402,7 @@
       "dot": "violet",
       "title": "Adaptadores y procesamiento",
       "items": [
-        "Producción usa PostgreSQL vía postgres.js; PGlite queda para desarrollo/pruebas. Evidencias usan ObjectStorage local o S3 según configuración.",
+        "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por MASCLI.",
         "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
         "Ollama se consulta cuando se solicita análisis semántico; el modo rules no invoca embeddings. La similitud sigue pendiente de corroboración humana."
       ]
@@ -411,8 +411,8 @@
       "dot": "amber",
       "title": "ODD · T1–T14 completos",
       "items": [
-        "Fuente: consolidación TypeScript, revisión 1044876. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
-        "T1–T14 completos: API y SPA, benchmarks, migrador ensayado con datos sintéticos y paridad E2E. La publicación de la demo gratuita y la validación científica externa IRSA son pasos separados.",
+        "Fuente: consolidación TypeScript y adaptador de demo, revisión 70d2c40. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
+        "T1–T14 completos: API/SPA, benchmarks, migrador sintético y E2E. Demo académica publicada en Vercel gratuito con PostgreSQL Neon conectado; login y sesión verificados, inscripción MFA del propietario pendiente. La validación científica IRSA sigue separada.",
         "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime."
       ]
     }

@@ -1,8 +1,8 @@
 # Verificación del mapa Archify
 
-Fecha: 2026-10-13. Fuente MASCLI TypeScript: `1044876089eb8f3f8beef3c5e5338c0183edd44c` (rama de consolidación sobre `main`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`.
+Fecha: 2026-10-13. Fuente MASCLI TypeScript: `70d2c40ed6ec7c24c2895889890716168aed4587` (rama de consolidación sobre `main`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`.
 
-HTML comprobado: `diagrams/arquitectura.html`, SHA-256 `7b0f394d56ee6cab0aeb7dcf863a929f74f46be773b56723abb3b3a7bd509e70`.
+HTML comprobado: `diagrams/arquitectura.html`, SHA-256 `8974bd8941d30bf79eda117fad99fe19c8d8585bbd883aac563e5add567102f1`.
 
 | Comprobación | Resultado |
 | --- | --- |
@@ -21,3 +21,5 @@ La captura de escritorio está en [la vista previa](diagrams/arquitectura.png). 
 Los recibos detallados de Archify se generan localmente y no se versionan porque contienen rutas de la máquina de ejecución. Consulta [la guía de regeneración](ARQUITECTURA.md) para volver a ejecutar las comprobaciones. La CI de integración usa PostgreSQL real; el resultado final se registra en el informe de consolidación. Se arrancó una instancia temporal Hono/PGlite con cuentas y datos sintéticos para la verificación web; no se modificaron datos reales de usuarios.
 
 T11 completo se comprobó además contra una instancia local temporal de Hono/PGlite con datos sintéticos; consulta [el informe de verificación](migration/t11-verification.md).
+
+Demo pública: despliegue Vercel `dpl_82Q51rFoAhxYALtRchiTDD8pbyC9` READY, conectado al PostgreSQL Neon vinculado por el propietario. Chromium comprobó SPA/login y CSP, `/health` 200 tras migraciones, contraseña válida contra la cuenta persistida, cookie Secure/HttpOnly/SameSite=Strict, sesión tras recargar, vista móvil y logout. Administración devuelve 403 antes de inscribir MFA. Sin errores de página. Quedan pendientes la inscripción del autenticador del propietario y el smoke público de CRUD, Blob y PDF/DOCX; no se presentan como comprobados. CI del código `70d2c40`: PostgreSQL real y 29 pruebas E2E aprobados, ejecución `38477948969`.

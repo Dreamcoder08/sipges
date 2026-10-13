@@ -10,7 +10,7 @@ Las evidencias usan el puerto ObjectStorage con Vercel Blob **privado**, conserv
 
 ## Configuración externa
 
-El proyecto Vercel y el almacén privado están creados. La conexión de una base nueva **Neon Free**, exclusiva para datos sintéticos, requiere una acción del propietario en la pestaña Storage: las herramientas de esta sesión no crean esa integración.
+El propietario conectó Neon mediante la integración Storage de Vercel. `DATABASE_URL` y `DATABASE_URL_UNPOOLED` están configuradas para producción; la configuración temporal anterior se renombró a `MASCLI_TEMPORARY_DATABASE_URL`, que el adaptador no utiliza. La demo usa la base vinculada por el propietario, no el proyecto anónimo temporal. No se accedió a datos históricos ni se migraron datos reales.
 
 Variables necesarias, con valores exclusivamente en el almacén de secretos:
 
@@ -32,9 +32,13 @@ El adaptador acepta la conexión de la integración como `DATABASE_URL` o `POSTG
 
 `pnpm verify` aprobado: API 439 aprobadas y 7 pruebas PostgreSQL opcionales omitidas, web 99, kernel 3, limpieza E2E 3, hosting 6 y herramientas 4. Tipos, límites y lint/formato también aprobados; build de SPA con aviso de demo aprobado. La revisión independiente comprobó las pruebas del adaptador, incluida la regresión de hosts, sus tipos y las opciones reales del SDK instalado. La CI de consolidación previa ejecutó PostgreSQL real y las 29 pruebas E2E sin omisiones.
 
-## Antes de anunciar la URL
+## Verificación pública (2026-10-13)
 
-Comprobar el build de Vercel: Argon2 nativo, archivos SQL, rutas `import.meta.url`, worker PDF y referencias incluidas. Después comprobar salud, login/MFA, persistencia de sesión/proyecto, CRUD sintético, evidencia con descarga idéntica, PDF/DOCX, comparación de dos archivos pequeños y CSP. La revisión y las pruebas locales del adaptador no equivalen a esa comprobación pública.
+URL: https://mascli-demo-academica-agurtofarfanalbert-8641s-projects.vercel.app/login
+
+Despliegue `dpl_82Q51rFoAhxYALtRchiTDD8pbyC9`, código `70d2c40`, estado READY. Comprobados en Chromium: SPA y aviso sintético, CSP estricta, `/health` 200, contraseña bootstrap válida y cuenta persistida, cookie Secure/HttpOnly/SameSite=Strict, sesión tras recargar, vista móvil sin desbordamiento y logout con revocación. La autenticación ejecuta Argon2 real y el arranque aplica SQL real sobre Neon. Administración devuelve 403 hasta inscribir MFA; no se activó un autenticador en nombre del propietario.
+
+Pendientes después de su inscripción: smoke público de CRUD, autorización por proyecto, evidencia Blob con descarga idéntica, worker PDF, DOCX y comparación. Las 29 pruebas E2E de CI con PostgreSQL real aprobaron; no equivalen a ese smoke en Vercel/Blob. Las credenciales iniciales están fuera de Git y no se incluyen aquí.
 
 Vercel Hobby corresponde al uso académico/personal no comercial confirmado por el usuario. Se usa el subdominio del proveedor; no se compra dominio ni se activa un plan de pago. Blob Hobby tiene cuotas gratuitas: si se agotan, el servicio se suspende hasta su renovación, sin contratar Pro.
 

@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la consolidación sobre `main`, commit `1044876089eb8f3f8beef3c5e5338c0183edd44c`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la consolidación sobre `main`, commit `70d2c40ed6ec7c24c2895889890716168aed4587`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Recorrido y reglas de dependencia
 
@@ -19,10 +19,12 @@ El backend organiza cada contexto en `http`, `application`, `domain` e `infrastr
 | Aplicación y dominio | Puertos, políticas puras, `Result` y kernel compartido | [ADR 0002](adr/0002-hexagonal-architecture-and-bounded-contexts.md) |
 | Composición | Inyección manual en `main.ts` / `compose.ts` | [ADR 0002](adr/0002-hexagonal-architecture-and-bounded-contexts.md) |
 | SQL | Puerto SqlClient, postgres.js y migraciones `.sql` | Enmienda del [ADR 0003](adr/0003-persistence-and-tenant-isolation.md): Drizzle no se utiliza |
-| Objetos | ObjectStorage local o S3-compatible con SigV4 | [Migración T8](migration/evidence.md) |
+| Objetos | ObjectStorage local, S3-compatible con SigV4 o Blob privado | [Migración T8](migration/evidence.md) |
 | Procesamiento | DocumentReader: unpdf/pdf.js y fflate; ReportRenderer: docx | [Migración T9](migration/documents.md) |
 | Embeddings | EmbeddingProvider con adaptador Ollama | [Migración T10](migration/operations.md) |
 | Herramientas | pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser | Enmienda del [ADR 0001](adr/0001-monorepo-and-toolchain.md): sin Turborepo/Biome |
+
+El adaptador de demo en `apps/hosting` reutiliza Hono y añade Blob privado al puerto ObjectStorage. La demo académica está publicada en Vercel con la integración PostgreSQL Neon del propietario. Se comprobaron salud, login, sesión y el bloqueo previo a MFA en la URL pública. El propietario debe inscribir su autenticador antes del smoke público de CRUD, evidencias y documentos; esos flujos ya se verificaron en CI contra PostgreSQL sintético.
 
 El mapa agrupa los contextos identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention management y reference. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
 
