@@ -16,6 +16,7 @@ import {
 } from '../../../platform/http/cookies.ts';
 import type { AppEnv, ClientIp } from '../../../platform/http/env.ts';
 import { parseForm, parseJson } from '../../../platform/http/validation.ts';
+import { isoSeconds } from '../../../platform/http/time.ts';
 import { type IdentityService, type LoginError, SESSION_SECONDS } from '../application/index.ts';
 
 const LOGIN_ERRORS: Record<LoginError['kind'], string> = {
@@ -28,7 +29,6 @@ const TOTP_INSTRUCTION =
   'Añada el código en una aplicación TOTP y confirme con /system/auth/totp/enable.';
 
 /** ISO-8601 UTC with second precision, e.g. 2026-10-12T12:00:00Z (ADR 0008 #14). */
-const isoSeconds = (date: Date) => `${date.toISOString().slice(0, 19)}Z`;
 
 export const authRoutes = (deps: {
   identity: IdentityService;

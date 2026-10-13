@@ -4,19 +4,32 @@ import { createTestApp } from '../support/test-app.ts';
 const setup = async () => {
   const t = await createTestApp();
   const admin = await t.login('admin', 'admin-password-123');
-  // Synthetic future business table, exercising the real exporter and RLS boundary.
-  await t.sql.exec(`
-    CREATE TABLE module_records (tenant_id text NOT NULL, id text NOT NULL, payload jsonb NOT NULL, PRIMARY KEY(tenant_id,id));
-    ALTER TABLE module_records ENABLE ROW LEVEL SECURITY;
-    ALTER TABLE module_records FORCE ROW LEVEL SECURITY;
-    CREATE POLICY tenant_export ON module_records
-      USING (tenant_id = current_setting('app.tenant_id', true))
-      WITH CHECK (tenant_id = current_setting('app.tenant_id', true));
-    GRANT SELECT ON module_records TO mascli_tenant;
-    INSERT INTO module_records VALUES
-      ('MASCLI/PRJ-SECHURA','a','{"name":"Sechura-only"}'),
-      ('ACME/NORTE','b','{"name":"North-only"}');
-  `);
+  // Seed one record per tenant through the public API, then keep the admin on Sechura only.
+  const north = { company_id: 'ACME', project_id: 'NORTE' };
+  expect(
+    (await t.createScope(admin.cookie, { ...north, label: 'North', username: 'admin' })).status,
+  ).toBe(200);
+  for (const [scope, id, name] of [
+    ['MASCLI/PRJ-SECHURA', 'a', 'Sechura-only'],
+    ['ACME/NORTE', 'b', 'North-only'],
+  ] as const) {
+    const res = await t.request('/api/eventos', {
+      method: 'POST',
+      headers: {
+        cookie: admin.cookie,
+        'content-type': 'application/json',
+        'x-mascli-scope': scope,
+      },
+      body: JSON.stringify({ payload: { ID_Evento: id, name } }),
+    });
+    expect(res.status).toBe(200);
+  }
+  const revoked = await t.request('/system/auth/grants', {
+    method: 'DELETE',
+    headers: { cookie: admin.cookie, 'content-type': 'application/json' },
+    body: JSON.stringify({ username: 'admin', ...north }),
+  });
+  expect(revoked.status).toBe(200);
   return { t, admin };
 };
 const exportRequest = (
@@ -38,8 +51,27 @@ const expected = (
   scope: { company_id: company, project_id: project },
   exported_at: '2026-10-12T12:00:00Z',
   data: {
-    module_records: [{ tenant_id: `${company}/${project}`, id, payload: { name } }],
-    audit: [],
+    module_records: [
+      {
+        tenant_id: `${company}/${project}`,
+        module: 'Eventos',
+        id,
+        payload: { ID_Evento: id, name },
+        created_at: '2026-10-12T12:00:00.000Z',
+        updated_at: '2026-10-12T12:00:00.000Z',
+      },
+    ],
+    audit: [
+      {
+        id: expect.any(Number),
+        tenant_id: `${company}/${project}`,
+        ts: '2026-10-12T12:00:00.000Z',
+        module: 'Eventos',
+        record_id: id,
+        action: 'CREATE',
+        detail: 'Registro creado desde prototipo V0.2',
+      },
+    ],
     attachments: [],
   },
 });
@@ -70,16 +102,7 @@ describe('GET /system/export versioned tenant JSON', () => {
 
   it('honours selected granted tenant and restores identity access after export', async () => {
     const { t, admin } = await setup();
-    expect(
-      (
-        await t.createScope(admin.cookie, {
-          company_id: 'ACME',
-          project_id: 'NORTE',
-          label: 'North',
-          username: 'admin',
-        })
-      ).status,
-    ).toBe(200);
+    await t.grant(admin.cookie, 'admin', 'ACME/NORTE');
     const north = await exportRequest(t, admin.cookie, 'ACME/NORTE');
     expect(north.status).toBe(200);
     expect(await north.json()).toEqual(expected('ACME', 'NORTE', 'b', 'North-only'));
@@ -129,7 +152,7 @@ describe('GET /system/export versioned tenant JSON', () => {
     expect(await (await exportRequest(t, admin.cookie)).json()).toEqual(expected());
   });
 
-  it('exports empty arrays for business contexts not installed yet', async () => {
+  it('exports empty arrays for a tenant without business data', async () => {
     const t = await createTestApp();
     const admin = await t.login('admin', 'admin-password-123');
     const res = await exportRequest(t, admin.cookie);
@@ -142,9 +165,7 @@ describe('GET /system/export versioned tenant JSON', () => {
 
   it('fails closed on missing table privileges without returning partial data', async () => {
     const { t, admin } = await setup();
-    await t.sql.exec(
-      "CREATE TABLE audit (tenant_id text, id text); INSERT INTO audit VALUES ('ACME/NORTE','hidden');",
-    );
+    await t.sql.exec('REVOKE SELECT ON audit FROM mascli_tenant');
     const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
       const res = await exportRequest(t, admin.cookie);
