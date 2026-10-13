@@ -41,6 +41,9 @@ export type BootstrapAdmin = {
   readonly fullName: string;
 };
 
+/** Upper bound enforced by the users table (migration 0001). */
+const MAX_STORED_USERNAME = 120;
+
 // Verifying against a real hash for unknown users keeps response timing uniform.
 const DUMMY_HASH_INPUT = 'timing-equalizer-password';
 
@@ -96,7 +99,14 @@ export const createIdentityService = ({
     }): Promise<Result<LoginSuccess, LoginError>> {
       const now = clock.now();
       const username = normalizeUsername(input.username);
-      const userKey = userSubject(username);
+      // PostgreSQL text cannot hold NUL and stored names are at most 120 characters: such a
+      // name cannot exist, so it is treated as an unknown user under a sanitized throttle key.
+      const lookupable = !username.includes('\u0000') && username.length <= MAX_STORED_USERNAME;
+      const userKey = userSubject(
+        lookupable
+          ? username
+          : username.replaceAll('\u0000', '\uFFFD').slice(0, MAX_STORED_USERNAME),
+      );
       // Reserve before verifying: the attempt counts as a failure unless it succeeds.
       const { decision, reservation } = await store.reserveLoginAttempt({
         userSubject: userKey,
@@ -109,7 +119,7 @@ export const createIdentityService = ({
         return err({ kind: 'throttled', retryAfterSeconds: decision.retryAfterSeconds });
       }
 
-      const user = await store.findUser(username);
+      const user = lookupable ? await store.findUser(username) : null;
       if (!user) {
         await equalizeTiming(input.password);
         return err({ kind: 'invalid_credentials' });

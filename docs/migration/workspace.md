@@ -16,6 +16,14 @@ corepack pnpm --filter @mascli/api dev   # API on http://127.0.0.1:8000
 corepack pnpm --filter @mascli/web dev   # SPA on http://127.0.0.1:5173 (proxies API routes)
 ```
 
+### Real PostgreSQL integration tests (optional)
+Unit and HTTP tests use in-process PGlite (single connection). Concurrency, advisory locks and postgres.js typing are checked against a real server when `MASCLI_TEST_DATABASE_URL` is set; each run creates and drops a throwaway database.
+```bash
+docker run -d --rm --name mascli-pg-test -e POSTGRES_PASSWORD=<pw> -p 127.0.0.1:55432:5432 postgres:18-alpine
+MASCLI_TEST_DATABASE_URL=postgres://postgres:<pw>@127.0.0.1:55432/postgres corepack pnpm --filter @mascli/api test
+docker stop mascli-pg-test
+```
+
 ## Layout
 | Path | Purpose |
 |---|---|

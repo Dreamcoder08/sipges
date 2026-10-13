@@ -136,3 +136,40 @@ describe('HSTS (ADR 0004)', () => {
     expect((await t.request('/health')).headers.get('strict-transport-security')).toBeNull();
   });
 });
+
+describe('usernames that can never exist (re-verification advisories)', () => {
+  it.each([
+    ['a NUL byte', 'a\u0000b'],
+    ['more than 120 characters', 'x'.repeat(121)],
+  ])(
+    'answers the uniform 401, not 500, for %s and still counts the attempt',
+    async (_case, username) => {
+      const t = await createTestApp();
+      const res = await wrongLogin(t, username);
+      expect(res.status).toBe(401);
+      expect(await res.json()).toEqual({ detail: 'Credenciales inválidas' });
+      const [row] = await t.sql.query<{ n: string | number }>(
+        "SELECT count(*) AS n FROM login_failures WHERE subject = 'ip:203.0.113.1'",
+      );
+      expect(Number(row?.n)).toBe(1);
+    },
+  );
+});
+
+describe('wrong second factor under concurrency', () => {
+  it('counts each wrong OTP against the throttle when the password is right', async () => {
+    const t = await createTestApp();
+    await t.sql.query("UPDATE users SET totp_enabled = true WHERE username = 'admin'");
+    const responses = await Promise.all(
+      Array.from({ length: 20 }, () =>
+        t.request('/login', {
+          method: 'POST',
+          body: t.form({ username: 'admin', password: 'admin-password-123', otp: '000000' }),
+        }),
+      ),
+    );
+    const statuses = responses.map((r) => r.status);
+    expect(statuses.filter((s) => s === 401)).toHaveLength(5);
+    expect(statuses.filter((s) => s === 429)).toHaveLength(15);
+  });
+});

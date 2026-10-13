@@ -30,9 +30,13 @@ export const migrate = async (
     throw new Error('Migrations must be sorted by version');
   }
 
-  await client.exec(
-    'CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())',
-  );
+  // CREATE TABLE IF NOT EXISTS is not race-free across connections; serialize it as well.
+  await client.transaction(async (tx) => {
+    await tx.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK_KEY]);
+    await tx.exec(
+      'CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())',
+    );
+  });
   const done = new Set(
     (await client.query<{ version: string }>('SELECT version FROM schema_migrations')).map(
       (r) => r.version,
