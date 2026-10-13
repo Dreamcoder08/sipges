@@ -46,7 +46,7 @@ Interfaces: attachmentsQuery(module,id,scope); uploadAttachment(module,id,scope,
 Files: docs/migration/web.md; ODD task/log; README and architecture source/cards; plan checkboxes.
 - [x] Run pnpm check and web build. Exercise CRUD, attachment upload/download and project isolation against a local API using synthetic data.
 - [x] Review desktop/mobile screenshots and accessibility controls; update the architecture's source commit and T11b status only after verification.
-- [ ] Obtain independent review; fix material findings with regressions. Commit and open a draft PR against docs/archify-architecture; no merge or deployment.
+- [x] Obtain independent review; fix material findings with regressions. Commit and open a draft PR against docs/archify-architecture; no merge or deployment.
 
 ## Execution evidence
 
@@ -58,3 +58,5 @@ Files: docs/migration/web.md; ODD task/log; README and architecture source/cards
 - Independent review: three material findings fixed. Deferred parity notes: automatic event classification and fuzzy directory column lookup, documented in web.md; neither is claimed as parity-complete.
 
 Final workspace: pnpm check exit 0, API 382 passed / 6 skipped, web 46 passed, kernel 3 passed; build exit 0. All material review findings fixed with regressions.
+
+Delivery: draft PR https://github.com/Dreamcoder08/mascli/pull/18, based on docs/archify-architecture (#17). Worktree retained for review; no merge or deployment.
