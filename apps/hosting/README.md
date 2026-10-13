@@ -2,7 +2,7 @@
 
 Este adaptador despliega la SPA React y la API Hono existente. No duplica las reglas de negocio, no usa Python y no migra datos reales. El proyecto es `mascli-demo-academica`, en el equipo `agurtofarfanalbert-8641s-projects`.
 
-Configuración del proyecto: framework Hono, Node 22, raíz `apps/hosting`, archivos externos a la raíz habilitados, instalación `corepack pnpm install --frozen-lockfile`, build `node build.mjs`. El build compila la SPA y copia únicamente sus archivos a `public`; agrega el aviso de datos sintéticos y del límite de envío. `public` es generado y no se versiona. En el checkout efímero de Vercel, el build emite kernel/contratos a JavaScript y ajusta sus exports de runtime a dist: Vercel transforma .ts en .js pero no corrige los exports originales de los paquetes workspace. Ese ajuste no se hace en el build local normal ni se versiona; para reproducir el modo VERCEL=1, usar un worktree desechable. Las rutas públicas de la SPA se sirven antes de inicializar PostgreSQL y se resuelven respecto al módulo, no al directorio de ejecución.
+Configuración del proyecto: framework Hono, Node 22, raíz `apps/hosting`, archivos externos a la raíz habilitados, instalación `corepack pnpm install --frozen-lockfile`, build `node build.mjs`. El build compila la SPA y copia únicamente sus archivos a `public`; agrega el aviso de datos sintéticos y del límite de envío. `public` es generado y no se versiona. En el checkout efímero de Vercel, el build emite kernel/contratos a JavaScript con declaraciones de tipos y ajusta sus exports de runtime a dist: Vercel transforma .ts en .js pero no corrige los exports originales de los paquetes workspace. Ese ajuste no se hace en el build local normal ni se versiona; para reproducir el modo VERCEL=1, usar un worktree desechable. Las rutas públicas de la SPA se sirven antes de inicializar PostgreSQL y se resuelven respecto al módulo, no al directorio de ejecución.
 
 El backend se inicializa en la primera petición; peticiones simultáneas comparten ese arranque. Un fallo devuelve 503 sin revelar credenciales y permite reintentar. PostgreSQL es obligatorio; no hay fallback a PGlite en el alojamiento. La conexión aplica las migraciones antes de construir la API y se libera si el arranque falla.
 
@@ -30,7 +30,7 @@ El adaptador acepta la conexión de la integración como `DATABASE_URL` o `POSTG
 
 ## Verificación local
 
-`pnpm verify` aprobado: API 439 aprobadas y 7 pruebas PostgreSQL opcionales omitidas, web 99, kernel 3, limpieza E2E 3, hosting 5 y herramientas 4. Tipos, límites y lint/formato también aprobados; build de SPA con aviso de demo aprobado. La revisión independiente comprobó las cinco pruebas del adaptador, sus tipos y las opciones reales del SDK instalado. La CI de consolidación previa ejecutó PostgreSQL real y las 29 pruebas E2E sin omisiones.
+`pnpm verify` aprobado: API 439 aprobadas y 7 pruebas PostgreSQL opcionales omitidas, web 99, kernel 3, limpieza E2E 3, hosting 6 y herramientas 4. Tipos, límites y lint/formato también aprobados; build de SPA con aviso de demo aprobado. La revisión independiente comprobó las pruebas del adaptador, incluida la regresión de hosts, sus tipos y las opciones reales del SDK instalado. La CI de consolidación previa ejecutó PostgreSQL real y las 29 pruebas E2E sin omisiones.
 
 ## Antes de anunciar la URL
 

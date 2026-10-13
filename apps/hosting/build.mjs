@@ -48,12 +48,14 @@ if (process.env.VERCEL === '1') {
         'src',
         '--rewriteRelativeImportExtensions',
         'true',
+        '--declaration',
+        'true',
       ],
       { cwd: root, stdio: 'inherit' },
     );
     const manifestPath = new URL(`packages/${name}/package.json`, root);
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-    manifest.exports = { '.': './dist/index.js' };
+    manifest.exports = { '.': { types: './dist/index.d.ts', default: './dist/index.js' } };
     await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
   }
 }
