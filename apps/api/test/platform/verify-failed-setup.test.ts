@@ -14,7 +14,7 @@ const captureRejectedClone = async (env: Record<string, string>, error: string) 
   try {
     await expect(createTestApp(env)).rejects.toThrow(error);
     expect(clones).toHaveLength(1);
-    expect(clones[0]!.closed).toBe(false);
+    expect(clones[0]?.closed).toBe(false);
     previous = clones[0];
   } finally {
     spy.mockRestore();
