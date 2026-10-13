@@ -2,8 +2,9 @@
 
 This is the checklist for putting the TypeScript MASCLI (`apps/api` serving the built
 `apps/web`) in front of users. It records what is verified, what an operator still has to do and
-what needs a decision. **Nothing here has been deployed.** No production environment, domain,
-tunnel, bucket or real data exists yet.
+what needs a decision. La primera publicación autorizada es una demo académica/personal con datos sintéticos.
+El proyecto Vercel y Blob privado están creados; PostgreSQL y la comprobación de la URL siguen
+pendientes. No hay migración de datos reales ni dominio adquirido.
 
 Related documents: [workspace and configuration](../migration/workspace.md),
 [legacy data migration runbook](../migration/data-migration.md),
@@ -205,14 +206,14 @@ on.
 
 | Item | Status |
 | --- | --- |
-| Cloudflare account, zone and hostname | **User decision pending.** No tunnel or Access app exists. |
-| Hosting target for the TypeScript app (the local PC via tunnel, or a VM or managed host) | Decision pending. `render.yaml` and `Procfile` still target the legacy Python app. |
-| DOCX author credits (ADR 0008 #13) | **User decision pending.** Reports currently have no hard-coded author names. |
-| Merge of ADR 0009 hardening (host allowlist, mandatory MFA, strict Origin/Referer, MFA reset) | On a separate branch, not in this chain |
-| Real-data migration | Not run. Only synthetic fixtures have been migrated. It needs the legacy files, the UTC/timezone decision and a maintenance window. |
-| Production PostgreSQL, bucket, secrets and backups | Not provisioned |
+| Cloudflare account, zone and hostname | No requerido para la demo: se usa el subdominio gratuito de Vercel. |
+| Alojamiento de la demo | Vercel Hobby, proyecto `mascli-demo-academica`, adaptador `apps/hosting`. |
+| Créditos DOCX | Identificación neutral MASCLI, sin nombres personales inventados. |
+| Controles ADR 0009 | Integrados en la consolidación TypeScript. |
+| Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
+| Recursos de demo | Vercel y Blob privado creados; secretos bootstrap configurados. PostgreSQL gratuito pendiente de conexión. |
 | Restore drill and an E2E run against the deployed URL | Not done |
-| Production deployment | **Not done.** This document does not authorize one. Every step needs explicit user approval (ODD constraint). |
+| Publicación de demo | Autorizada por el usuario para uso académico/personal y datos sintéticos. Pendiente conexión de PostgreSQL y verificación de la URL; no autoriza migración real ni servicios de pago. |
 
 ## Not verifiable in the development environment
 

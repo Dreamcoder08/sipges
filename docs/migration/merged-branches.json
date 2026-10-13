@@ -1,0 +1,110 @@
+{
+  "main": "a9c80574886c322d9f1ad3b2536a7768bcb056ad",
+  "closed_prs": [
+    23,
+    22,
+    21,
+    20,
+    19,
+    18,
+    17,
+    16,
+    15,
+    14
+  ],
+  "deleted": [
+    {
+      "branch": "chore/agent-skills-and-scripts",
+      "sha": "fdedac34eff596d9db61cb90c6a02583f0625c36"
+    },
+    {
+      "branch": "chore/typescript-main-consolidation",
+      "sha": "970cdce9ff05004f196c3679c15c30897adaf68b"
+    },
+    {
+      "branch": "claude/project-thread-52hzow",
+      "sha": "e029d45ba43f8df2be77660ba08c7b4e279f89a8"
+    },
+    {
+      "branch": "claude/project-thread-7sqaz8",
+      "sha": "4ecf774b6c1ae30e7c9587c2d11a27a35ece6278"
+    },
+    {
+      "branch": "docs/archify-architecture",
+      "sha": "354b3249ca1d147ef5b904e5d9d79b7d452d0405"
+    },
+    {
+      "branch": "feat/typescript-migration",
+      "sha": "c7fec1b52403b8927a9100498571200fdf8b4522"
+    },
+    {
+      "branch": "feat/typescript-migration-01-docs",
+      "sha": "d3cce7debd6a6c05e5b81295701dfb3667c1e928"
+    },
+    {
+      "branch": "feat/typescript-migration-02-workspace",
+      "sha": "6d0fee08d05343d492369ec1f4b46855fe5c1120"
+    },
+    {
+      "branch": "feat/typescript-migration-03-identity",
+      "sha": "606f93036096e99b7ab4dcdcc550557486b838a9"
+    },
+    {
+      "branch": "feat/typescript-migration-04-test-infra",
+      "sha": "fbe4b63e0cf0073fd1e1bbc08cb5088936da3c6b"
+    },
+    {
+      "branch": "feat/typescript-migration-05-tenancy",
+      "sha": "138604def39e03626834390b40aac95e7ed95c9e"
+    },
+    {
+      "branch": "feat/typescript-migration-06-records",
+      "sha": "e3fd699f79d5c4240d90b2ce7e67a32890331d83"
+    },
+    {
+      "branch": "feat/typescript-migration-07-indicators-analytics",
+      "sha": "574583e3015b2abb6fb23816978872dbb5df3212"
+    },
+    {
+      "branch": "feat/typescript-migration-08-evidence",
+      "sha": "cf54b1748adff132fe062d2fffa9a1bb2811cb8b"
+    },
+    {
+      "branch": "feat/typescript-migration-09-documents",
+      "sha": "1ddef0f289d03f12e1351219daee13a0d5a82eac"
+    },
+    {
+      "branch": "feat/typescript-migration-10-operations",
+      "sha": "abb3aa1d006fed796a9fab8315a3e00b7c557aeb"
+    },
+    {
+      "branch": "feat/typescript-migration-11-complete",
+      "sha": "5fdbdfe962efd71f73139b88566104fec2c23ee8"
+    },
+    {
+      "branch": "feat/typescript-migration-11a-web-shell",
+      "sha": "0cbe31d2df9223291d0660bffdeb73a3df92deca"
+    },
+    {
+      "branch": "feat/typescript-migration-11b-records-ui",
+      "sha": "299c47dd27d797f5cf170b03ed2b38bee6fe081d"
+    },
+    {
+      "branch": "feat/typescript-migration-12-benchmarks",
+      "sha": "61885a520412b8c10327e720dff87dbf825c46be"
+    },
+    {
+      "branch": "feat/typescript-migration-13-data-migration",
+      "sha": "bf223abb9b3cd823c509a1a516d53956f7bd61c9"
+    },
+    {
+      "branch": "feat/typescript-migration-14-e2e-readiness",
+      "sha": "0af0e44e86c839ba633d90d1081edd0e53fb0be8"
+    },
+    {
+      "branch": "feature/python-free-hosting-preparation",
+      "sha": "c7fec1b52403b8927a9100498571200fdf8b4522"
+    }
+  ],
+  "retained_default": "feature/secure-mascli-public-deployment"
+}

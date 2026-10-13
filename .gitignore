@@ -17,3 +17,6 @@ coverage/
 playwright-report/
 test-results/
 .data/
+
+# Generated academic-demo frontend
+apps/hosting/public/
