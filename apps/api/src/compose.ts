@@ -1,4 +1,9 @@
 import { randomBytes } from 'node:crypto';
+import {
+  type AnalyticsService,
+  createAnalyticsService,
+} from './contexts/analytics/application/index.ts';
+import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
@@ -11,6 +16,15 @@ import { createSecretCipher } from './contexts/identity/infrastructure/secret-ci
 import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
 import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
 import { totp } from './contexts/identity/infrastructure/totp.ts';
+import {
+  createIndicatorsService,
+  type IndicatorsService,
+} from './contexts/indicators/application/index.ts';
+import {
+  createSqlIrsaConfigStore,
+  createSqlIrsaSnapshotStore,
+  createSqlModuleRecordReader,
+} from './contexts/indicators/infrastructure/index.ts';
 import { createRecordsService, type RecordsService } from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
@@ -26,6 +40,8 @@ export type Container = {
   readonly tenancy: TenancyService;
   readonly records: RecordsService;
   readonly audit: AuditService;
+  readonly indicators: IndicatorsService;
+  readonly analytics: AnalyticsService;
   readonly clientIp: ClientIp;
 };
 
@@ -68,5 +84,24 @@ export const buildContainer = async (deps: {
         .toUpperCase(),
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
-  return { config: deps.config, identity, tenancy, records, audit, clientIp: deps.clientIp };
+  const indicators = createIndicatorsService({
+    records: createSqlModuleRecordReader(deps.sql),
+    configs: createSqlIrsaConfigStore(deps.sql),
+    snapshots: createSqlIrsaSnapshotStore(deps.sql),
+    clock: deps.clock,
+  });
+  const analytics = createAnalyticsService({
+    reader: createSqlAnalyticsRecordReader(deps.sql),
+    clock: deps.clock,
+  });
+  return {
+    config: deps.config,
+    identity,
+    tenancy,
+    records,
+    audit,
+    indicators,
+    analytics,
+    clientIp: deps.clientIp,
+  };
 };

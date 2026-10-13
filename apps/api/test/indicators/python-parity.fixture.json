@@ -1,0 +1,276 @@
+{
+  "source": "Synthetic records; expected values produced by app.py compute_indicators (v0.4).",
+  "records": {
+    "Eventos": [
+      {
+        "_id": "e1",
+        "Dimension_Principal": "G - Gobernanza",
+        "Relevancia_Preliminar": "Alta",
+        "Descripcion_Hecho": "Disputa por padrón electoral y agua en la bahía",
+        "Actor_Principal": "CCSMS",
+        "Nivel_Verificacion": "C - Percepción",
+        "Territorio": "Sechura",
+        "Tipo_Evento": "Judicial"
+      },
+      {
+        "_id": "e2",
+        "Dimension_Secundaria": "Institucional",
+        "Descripcion_Hecho": "Se debe precisar el alcance",
+        "Actor_Principal": "CCSMS",
+        "Evidencia/Resultado": "acta",
+        "Nivel_Verificacion": "A - Verificado",
+        "Territorio": "Vice"
+      },
+      {
+        "_id": "e3",
+        "Dimension_Principal": "E",
+        "Descripcion_Hecho": "pescadores y ganadería en ruta",
+        "Actor_Principal": "Gremio",
+        "Fuente_ID": "F1"
+      }
+    ],
+    "Actores": [
+      {
+        "_id": "a1",
+        "Tipo_Actor": "Comunal",
+        "Legitimidad/Representacion": "Fragmentada",
+        "Influencia": "Alta",
+        "Posicion_Proyecto": "Opositor",
+        "Capacidad_Movilizacion": "Media-Alta"
+      },
+      {
+        "_id": "a2",
+        "Tipo_Actor": "Empresa",
+        "Influencia": "Media",
+        "Observaciones": "por confirmar"
+      },
+      {
+        "_id": "a3",
+        "Rol/Relacion": "Representante",
+        "Legitimidad/Representacion": "Reconocida",
+        "Influencia": "Alta",
+        "Posicion_Proyecto": "No determinado"
+      }
+    ],
+    "Demandas": [
+      {
+        "_id": "d1",
+        "Estado": "Nueva",
+        "Recurrencia": "Alta",
+        "Tema": "Agua potable",
+        "Territorio": "Sechura",
+        "Entidad_Competente": "Por definir"
+      },
+      {
+        "_id": "d2",
+        "Estado": "Atendida",
+        "Tema": "Empleo",
+        "Actor/Grupo": "Transportistas",
+        "Dimension": "D"
+      },
+      {
+        "_id": "d3",
+        "Estado": "Evaluada",
+        "Tema": "Servidumbre de tránsito",
+        "Recurrencia": "Media",
+        "Territorio": "Parachique"
+      }
+    ],
+    "Compromisos": [
+      {
+        "_id": "c1",
+        "Estado": "Vencido"
+      },
+      {
+        "_id": "c2",
+        "Estado": "Pendiente"
+      },
+      {
+        "_id": "c3",
+        "Estado": "Cumplido"
+      }
+    ],
+    "Narrativas": [
+      {
+        "_id": "n1",
+        "Tono": "Negativo",
+        "Intensidad": "Alta",
+        "Tema": "Conflicto agua",
+        "Estado": "Activa",
+        "Nivel_Verificacion": "E - No verificada"
+      },
+      {
+        "_id": "n2",
+        "Tono": "Neutro",
+        "Tema": "Empleo",
+        "Estado": "Cerrada",
+        "Nivel_Verificacion": "D - Opinión"
+      },
+      {
+        "_id": "n3",
+        "Tema": "conflicto agua",
+        "Descripcion": "polarización"
+      }
+    ],
+    "Alertas": [
+      {
+        "_id": "al1",
+        "ID_Alerta": "AL-1",
+        "Dimension": "I",
+        "Estado": "Activa",
+        "Responsable": ""
+      },
+      {
+        "_id": "al2",
+        "Dimension": "G",
+        "Estado": "Activa",
+        "Responsable": "Ana"
+      },
+      {
+        "_id": "al3",
+        "ID_Alerta": "AL-3",
+        "Dimension": "Institucional",
+        "Estado": "Cerrada"
+      }
+    ],
+    "Acciones": [
+      {
+        "_id": "ac1",
+        "ID_Alerta": "AL-1",
+        "Estado": "En curso"
+      },
+      {
+        "_id": "ac2",
+        "ID_Alerta": "AL-3",
+        "Estado": "Pendiente",
+        "Evidencia_Cierre": "foto"
+      },
+      {
+        "_id": "ac3",
+        "Estado": "Vencida"
+      }
+    ],
+    "Directorio_Territorial": [
+      {
+        "_id": "t1",
+        "Sección territorial": "Sechura"
+      },
+      {
+        "_id": "t2",
+        "Lugar / ámbito": "Vice"
+      },
+      {
+        "_id": "t3",
+        "Sección territorial": "Bernal"
+      },
+      {
+        "_id": "t4",
+        "Sección territorial": "Parachique"
+      },
+      {
+        "_id": "t5",
+        "Sección territorial": "Cristo nos valga"
+      },
+      {
+        "_id": "t6",
+        "Sección territorial": "Rinconada"
+      },
+      {
+        "_id": "t7",
+        "Sección territorial": "Letira"
+      }
+    ]
+  },
+  "expected": {
+    "dimension_scores": {
+      "A": 51.47,
+      "D": 28.8,
+      "E": 49.6,
+      "G": 28.6,
+      "I": 57.52,
+      "N": 51.47
+    },
+    "availability": {
+      "A": 83.3,
+      "D": 100,
+      "E": 100,
+      "G": 100,
+      "I": 100,
+      "N": 100
+    },
+    "indicators": [
+      [
+        "G1",
+        50,
+        2,
+        "1 de 2 actores de gobernanza presentan condiciones de representación que requieren validación."
+      ],
+      ["G2", 26, 2, "1 eventos G relevantes y 1 alertas G activas."],
+      [
+        "G3",
+        45,
+        3,
+        "Se identificaron 1 eventos y 2 narrativas con señales de conflictividad interna."
+      ],
+      ["G4", 12, 1, "1 eventos contienen factores jurídicos/registrales relevantes."],
+      ["G5", 10, 1, "1 eventos reflejan cambios o procesos de liderazgo/interlocución."],
+      ["A1", 66.67, 3, "2 de 3 actores analíticos cumplen la condición de riesgo."],
+      ["A2", 33.33, 3, "1 de 3 actores tienen capacidad de movilización relevante."],
+      [
+        "A3",
+        null,
+        0,
+        "La base almacena una posición vigente por actor, pero no un historial suficiente para medir cambios."
+      ],
+      [
+        "A4",
+        66.67,
+        3,
+        "El actor más mencionado concentra 2 de 3 eventos. Requiere reemplazo futuro por análisis de red formal."
+      ],
+      ["A5", 66.67, 3, "2 de 3 actores requieren cautela de legitimidad/representación."],
+      ["A6", 24, 2, "2 registros contienen señales relacionales de polarización o tensión."],
+      ["D1", 14, 2, "2 demandas permanecen abiertas o no cerradas."],
+      ["D2", 33.33, 3, "1 de 3 demandas están marcadas con recurrencia alta."],
+      ["D3", 33.33, 3, "1 de 3 compromisos están vencidos según el registro actual."],
+      ["D4", 30, 3, "2 demandas están en estados iniciales y 1 compromisos están pendientes."],
+      ["D5", 33.33, 3, "1 de 3 demandas presentan brecha expectativa–competencia/etapa."],
+      ["N1", 33.33, 3, "1 de 3 narrativas cumplen el criterio de contenido crítico."],
+      ["N2", 66.67, 3, "2 de 3 narrativas permanecen abiertas/en seguimiento."],
+      ["N3", 66.67, 3, "2 de 3 narrativas muestran señales de confrontación/controversia."],
+      ["N4", 66.67, 3, "2 de 3 narrativas requieren cautela de verificación."],
+      [
+        "N5",
+        24,
+        2,
+        "El monitoreo registra 2 temas distintos. Se requiere una serie temporal mayor para identificar emergencia real."
+      ],
+      ["E1", 24, 4, "2 demandas ambientales abiertas y 2 eventos relacionados."],
+      ["E2", 50, 2, "1 de 2 demandas ambientales son recurrentes."],
+      ["E3", 54, 3, "Se identifican 3 sectores: pesca, ganadería, transporte."],
+      ["E4", 20, 2, "2 registros contienen asuntos de territorio/acceso/servidumbre."],
+      [
+        "E5",
+        100,
+        1,
+        "1 eventos ambientales se basan en percepción/opinión y 0 están verificados/corroborados."
+      ],
+      ["I1", 34, 3, "1 alertas I activas y 2 acciones I pendientes/en curso."],
+      [
+        "I2",
+        100,
+        1,
+        "1 de 1 eventos institucionales presentan señales de coherencia/mensaje por gestionar."
+      ],
+      ["I3", 24, 4, "1 alertas I activas y 3 acciones generales abiertas."],
+      ["I4", 50, 2, "1 de 2 alertas activas no tienen responsable efectivo."],
+      ["I5", 80, 15, "3 de 15 registros clave cuentan con fuente/evidencia estructurada (20.0%)."],
+      [
+        "I6",
+        57.14,
+        3,
+        "Se cubren 3 territorios en registros operativos frente a 7 ámbitos de referencia; cobertura estimada 42.86%."
+      ]
+    ]
+  }
+}
