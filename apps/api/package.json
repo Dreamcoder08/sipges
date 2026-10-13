@@ -1,0 +1,23 @@
+{
+  "name": "@mascli/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.4",
+    "@mascli/contracts": "workspace:*",
+    "@mascli/kernel": "workspace:*",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  }
+}
