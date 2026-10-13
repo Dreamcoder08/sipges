@@ -8,6 +8,6 @@ La ejecución local Chromium sobre PGlite produjo 25 aprobadas y tres fallos. La
 
 La revisión independiente encontró una fuga del harness ante fallo de arranque: no devolvía teardown y podía dejar la base temporal, conexión y directorio abiertos. Tres regresiones fallaron antes de implementar `usingCleanup`; después pasaron. Los recursos se registran al adquirirlos y se liberan en orden inverso; un fallo de limpieza no impide liberar los demás; se preservan errores originales y la limpieza drenada es idempotente. El revisor volvió a comprobar y aprobó la corrección.
 
-`corepack pnpm check` local aprobado: lint/formato, dependencias, tipos, API 419 aprobadas / 6 opcionales PostgreSQL omitidas, web 98, kernel 3 y tres pruebas del harness. Esta actualización se vuelve a comprobar en la CI del PR.
+`corepack pnpm check` local aprobado: lint/formato, dependencias, tipos, API 418 aprobadas / 7 opcionales PostgreSQL omitidas, web 98, kernel 3 y tres pruebas del harness. Esta actualización se vuelve a comprobar en la CI del PR.
 
 No se desplegó ni se migraron datos reales en T14. La demo académica gratuita con datos sintéticos, integración en main y retirada del runtime legado son pasos posteriores autorizados por el usuario.
