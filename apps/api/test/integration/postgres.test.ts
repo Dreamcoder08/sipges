@@ -64,7 +64,7 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
     const attempt = () =>
       app.request('/login', {
         method: 'POST',
-        headers: { host: 'localhost' },
+        headers: { host: 'localhost', origin: 'http://localhost' },
         body: new URLSearchParams({ username: 'admin', password: 'wrong-wrong-wrong' }),
       });
 
@@ -74,7 +74,7 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
 
     const ok = await app.request('/login', {
       method: 'POST',
-      headers: { host: 'localhost', 'x-forwarded-for': 'ignored' },
+      headers: { host: 'localhost', origin: 'http://localhost', 'x-forwarded-for': 'ignored' },
       body: new URLSearchParams({ username: 'admin', password: 'admin-password-123' }),
     });
     expect(ok.status).toBe(429);
