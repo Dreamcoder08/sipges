@@ -14,7 +14,22 @@ export type AppConfig = {
   readonly pgliteDir: string;
   /** Read X-Forwarded-For from a trusted reverse proxy (MASCLI_TRUST_PROXY=1). */
   readonly trustProxy: boolean;
+  /** Largest accepted evidence file (MASCLI_MAX_UPLOAD_BYTES, docs/adr/0008 #9). */
+  readonly maxUploadBytes: number;
+  /** Where evidence file bytes live (docs/migration/evidence.md). */
+  readonly storage: StorageConfig;
 };
+
+export type StorageConfig =
+  | { readonly kind: 'local'; readonly dir: string }
+  | {
+      readonly kind: 's3';
+      readonly endpoint: string;
+      readonly region: string;
+      readonly bucket: string;
+      readonly accessKeyId: string;
+      readonly secretAccessKey: string;
+    };
 
 type Env = Readonly<Record<string, string | undefined>>;
 
@@ -50,6 +65,50 @@ const parseDataKey = (value: string | undefined): Buffer => {
   return key;
 };
 
+const MAX_UPLOAD_CEILING = 100 * 1024 * 1024;
+
+const parseMaxUpload = (value: string | undefined): number => {
+  if (value === undefined) return 10 * 1024 * 1024;
+  const bytes = /^\d+$/.test(value) ? Number(value) : Number.NaN;
+  if (!Number.isSafeInteger(bytes) || bytes < 1 || bytes > MAX_UPLOAD_CEILING) {
+    throw new Error(
+      `MASCLI_MAX_UPLOAD_BYTES must be an integer between 1 and ${MAX_UPLOAD_CEILING}`,
+    );
+  }
+  return bytes;
+};
+
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+const parseStorage = (env: Env): StorageConfig => {
+  const kind = env.MASCLI_STORAGE ?? 'local';
+  if (kind === 'local') return { kind, dir: env.MASCLI_UPLOAD_DIR ?? '.data/uploads' };
+  if (kind !== 's3') throw new Error("MASCLI_STORAGE must be 'local' or 's3'");
+  const required = (name: string) => {
+    const value = env[name];
+    if (!value) throw new Error(`${name} is required when MASCLI_STORAGE=s3`);
+    return value;
+  };
+  const endpoint = required('MASCLI_S3_ENDPOINT');
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    throw new Error('MASCLI_S3_ENDPOINT must be an absolute URL');
+  }
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && LOCAL_HOSTS.has(url.hostname))) {
+    throw new Error('MASCLI_S3_ENDPOINT must use https (http only for a local test server)');
+  }
+  return {
+    kind,
+    endpoint,
+    region: env.MASCLI_S3_REGION ?? 'auto',
+    bucket: required('MASCLI_S3_BUCKET'),
+    accessKeyId: required('MASCLI_S3_ACCESS_KEY_ID'),
+    secretAccessKey: required('MASCLI_S3_SECRET_ACCESS_KEY'),
+  };
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -64,4 +123,6 @@ export const loadConfig = (env: Env): AppConfig => ({
   databaseUrl: parseDatabaseUrl(env),
   pgliteDir: env.MASCLI_PGLITE_DIR ?? '.data/pglite',
   trustProxy: parseSwitch('MASCLI_TRUST_PROXY', env.MASCLI_TRUST_PROXY, false),
+  maxUploadBytes: parseMaxUpload(env.MASCLI_MAX_UPLOAD_BYTES),
+  storage: parseStorage(env),
 });

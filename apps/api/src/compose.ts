@@ -7,6 +7,15 @@ import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastruct
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
+  type EvidenceService,
+  type ObjectStorage,
+  createEvidenceService,
+} from './contexts/evidence/application/index.ts';
+import {
+  createObjectStorage,
+  createSqlAttachmentStore,
+} from './contexts/evidence/infrastructure/index.ts';
+import {
   type Clock,
   type IdentityService,
   createIdentityService,
@@ -42,8 +51,14 @@ export type Container = {
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
+  readonly evidence: EvidenceService;
   readonly clientIp: ClientIp;
 };
+
+const randomHex = (length: number) =>
+  randomBytes(Math.ceil(length / 2))
+    .toString('hex')
+    .slice(0, length);
 
 /** Wires adapters into use cases (manual constructor injection, docs/adr/0002). */
 export const buildContainer = async (deps: {
@@ -51,6 +66,8 @@ export const buildContainer = async (deps: {
   sql: SqlClient;
   clock: Clock;
   clientIp: ClientIp;
+  /** Overrides the configured adapter (tests inject failing or in-memory storage). */
+  objectStorage?: ObjectStorage;
 }): Promise<Container> => {
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
@@ -77,11 +94,7 @@ export const buildContainer = async (deps: {
   const records = createRecordsService({
     store: createSqlRecordStore(deps.sql),
     clock: deps.clock,
-    randomHex: (length) =>
-      randomBytes(Math.ceil(length / 2))
-        .toString('hex')
-        .slice(0, length)
-        .toUpperCase(),
+    randomHex: (length) => randomHex(length).toUpperCase(),
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
   const indicators = createIndicatorsService({
@@ -94,6 +107,13 @@ export const buildContainer = async (deps: {
     reader: createSqlAnalyticsRecordReader(deps.sql),
     clock: deps.clock,
   });
+  const evidence = createEvidenceService({
+    storage: deps.objectStorage ?? createObjectStorage(deps.config.storage),
+    store: createSqlAttachmentStore(deps.sql),
+    clock: deps.clock,
+    randomHex,
+    maxUploadBytes: deps.config.maxUploadBytes,
+  });
   return {
     config: deps.config,
     identity,
@@ -102,6 +122,7 @@ export const buildContainer = async (deps: {
     audit,
     indicators,
     analytics,
+    evidence,
     clientIp: deps.clientIp,
   };
 };

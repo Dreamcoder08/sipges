@@ -53,6 +53,12 @@ docker stop mascli-pg-test
 | `MASCLI_DATABASE_URL` | PostgreSQL URL; TLS required unless the host is local | unset → embedded PGlite (development only) |
 | `MASCLI_PGLITE_DIR` | embedded database directory | `.data/pglite` |
 | `MASCLI_TRUST_PROXY` | exactly `0` or `1`; `1` only behind a reverse proxy that sets `X-Forwarded-For` | `0` (socket address) |
+| `MASCLI_MAX_UPLOAD_BYTES` | 1–104857600 | `10485760` (10 MiB) |
+| `MASCLI_STORAGE` | `local` or `s3` | `local` |
+| `MASCLI_UPLOAD_DIR` | directory for `local` storage | `.data/uploads` |
+| `MASCLI_S3_ENDPOINT` | HTTPS URL of an S3-compatible service (plain HTTP only for a local host) | required for `s3` |
+| `MASCLI_S3_REGION` | signing region | `auto` |
+| `MASCLI_S3_BUCKET` / `MASCLI_S3_ACCESS_KEY_ID` / `MASCLI_S3_SECRET_ACCESS_KEY` | bucket and credentials | required for `s3` |
 | `NODE_ENV` | `production` requires `MASCLI_DATABASE_URL` (embedded PGlite is refused) | unset |
 
 Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.

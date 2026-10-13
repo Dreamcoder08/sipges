@@ -67,7 +67,7 @@ const auditRows = (t: Awaited<ReturnType<typeof createTestApp>>) =>
 describe('GET /system/irsa and /system/indicators', () => {
   it('computes an empty IRSA, not a 500, while module_records does not exist yet', async () => {
     const { t, request } = await setup();
-    await t.sql.exec('DROP TABLE module_records');
+    await t.sql.exec('DROP TABLE module_records CASCADE');
     const res = await request('/system/irsa');
     expect(res.status).toBe(200);
     const body = (await res.json()) as IrsaResult;
