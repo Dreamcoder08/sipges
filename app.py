@@ -4,7 +4,18 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pathlib import Path
 from typing import Any, Dict, Optional
+from storage_sqlite import connect_sqlite
 import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars
+
+def cookie_secure_policy():
+    value = os.getenv("MASCLI_COOKIE_SECURE")
+    if value not in (None, "0", "1"):
+        raise ValueError("MASCLI_COOKIE_SECURE must be unset or exactly '0' or '1'")
+    return value != "0"
+
+
+# Validate once, before constructing the app or initializing any resources.
+COOKIE_SECURE = cookie_secure_policy()
 
 BASE = Path(__file__).resolve().parent
 DB = Path(os.getenv("MASCLI_DB_PATH", str(BASE / "data" / "mascli.db")))
@@ -40,14 +51,10 @@ TENANT_DIR=Path(os.getenv('MASCLI_TENANT_DIR',str(BASE/'data'/'tenants')))
 
 def auth_conn():
     AUTH_DB.parent.mkdir(parents=True,exist_ok=True)
-    c=sqlite3.connect(AUTH_DB)
-    c.row_factory=sqlite3.Row
-    return c
+    return connect_sqlite(AUTH_DB,dictionary_rows=True)
 
 def conn():
-    c=sqlite3.connect(SCOPE_DB.get() or DB)
-    c.row_factory=sqlite3.Row
-    return c
+    return connect_sqlite(SCOPE_DB.get() or DB,dictionary_rows=True)
 
 def upload_root():
     scope=SCOPE_ID.get()
@@ -268,7 +275,7 @@ def login_action(username:str=Form(...),password:str=Form(...),otp:str=Form(''))
     c.execute('INSERT INTO auth_sessions VALUES(?,?,?,?)',(hashlib.sha256(token.encode()).hexdigest(),row['username'],int(time.time())+SESSION_SECONDS,now()))
     c.commit();c.close()
     response=JSONResponse({'ok':True,'name':row['full_name'],'role':row['role']})
-    response.set_cookie(COOKIE_NAME,token,httponly=True,samesite='strict',secure=os.getenv('MASCLI_COOKIE_SECURE','0')=='1',max_age=SESSION_SECONDS,path='/')
+    response.set_cookie(COOKIE_NAME,token,httponly=True,samesite='strict',secure=COOKIE_SECURE,max_age=SESSION_SECONDS,path='/')
     return response
 
 @app.post('/logout')
@@ -324,7 +331,7 @@ def select_project_action(request:Request,scope:str=Form(...)):
     c=auth_conn();ok=c.execute("SELECT 1 FROM access_grants WHERE username=? AND company_id||'/'||project_id=?",(identity['username'],scope)).fetchone();c.close()
     if not ok:raise HTTPException(403,'Proyecto no autorizado')
     resp=RedirectResponse('/',status_code=303)
-    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=os.getenv('MASCLI_COOKIE_SECURE','0')=='1',max_age=SESSION_SECONDS)
+    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=COOKIE_SECURE,max_age=SESSION_SECONDS)
     return resp
 
 @app.get('/system/auth/current-scope')
@@ -357,8 +364,8 @@ def create_scope(item:ScopeCreate,request:Request):
     if c.execute('SELECT 1 FROM tenant_projects WHERE company_id=? AND project_id=?',(item.company_id,item.project_id)).fetchone():c.close();raise HTTPException(409,'Proyecto existente')
     TENANT_DIR.mkdir(parents=True,exist_ok=True)
     # Crea únicamente las tablas operativas vacías (sin datos semilla de Sechura).
-    t=sqlite3.connect(path)
-    original=sqlite3.connect(DB)
+    t=connect_sqlite(path)
+    original=connect_sqlite(DB)
     for (definition,) in original.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND sql IS NOT NULL"):
         if not definition.lower().startswith('create virtual table'):t.execute(definition)
     t.execute('INSERT OR IGNORE INTO records(module,record_id,payload,created_at,updated_at) VALUES(?,?,?,?,?)',('Proyectos',item.project_id,json.dumps({'Proyecto_ID':item.project_id,'Nombre':item.label,'Estado':'Activo','Territorio':'','Descripcion':''},ensure_ascii=False),now(),now()))
@@ -389,7 +396,12 @@ def totp_setup(request:Request):
     user=auth_identity(request)
     if not user:raise HTTPException(401)
     secret=base64.b32encode(secrets.token_bytes(20)).decode().rstrip('=')
-    c=auth_conn();c.execute('UPDATE auth_users SET totp_secret=?,totp_enabled=0 WHERE username=?',(secret,user['username']));c.commit();c.close()
+    c=auth_conn()
+    try:
+        updated=c.execute('UPDATE auth_users SET totp_secret=?,totp_enabled=0 WHERE username=? AND totp_enabled=0',(secret,user['username']))
+        if updated.rowcount==0:raise HTTPException(409,'MFA ya está activado; no se permite reiniciar la configuración')
+        c.commit()
+    finally:c.close()
     from urllib.parse import quote
     uri=f'otpauth://totp/MASCLI:{quote(user["username"])}?secret={secret}&issuer=MASCLI&algorithm=SHA1&digits=6&period=30'
     return {'secret':secret,'otpauth_uri':uri,'instruction':'Añada el código en una aplicación TOTP y confirme con /system/auth/totp/enable.'}
@@ -1316,7 +1328,10 @@ def audit(limit:int=100):
 
 @app.get("/system/export")
 def export_db():
-    return FileResponse(DB, filename="mascli.db", media_type="application/octet-stream")
+    scoped_db = SCOPE_DB.get()
+    if scoped_db is None:
+        raise HTTPException(status_code=403, detail="Seleccione un proyecto autorizado")
+    return FileResponse(scoped_db, filename="mascli.db", media_type="application/octet-stream")
 
 
 
