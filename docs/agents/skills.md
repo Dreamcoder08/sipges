@@ -4,6 +4,8 @@ Fuente oficial consultada: [Build skills / Codex](https://developers.openai.com/
 
 El umbral de **más de dos usos** es una regla del usuario, no un requisito de OpenAI. Se cuentan tareas/entregas independientes, no iteraciones de una prueba, reintentos ni muestras internas de un benchmark.
 
+El usuario solicitó explícitamente instalar `neon` y `neon-postgres` con `npx neon@latest skills -s neon -s neon-postgres -y`. Se importaron las skills oficiales de [neondatabase/agent-skills](https://github.com/neondatabase/agent-skills), usando Neon CLI 8.4.3 el 2026-10-13. `skills-lock.json` registra procedencia y hashes del instalador. Son instrucciones del proveedor solicitadas directamente, no nuevos flujos MASCLI creados por recurrencia. Instalar estas skills no autentica la CLI; la integración Neon/Vercel y la autenticación de CLI son conexiones distintas.
+
 | Skill | Evidencia de al menos tres usos independientes |
 | --- | --- |
 | `mascli-verify` | Gates y CI de T11b (#18), T11c/d (#19), T12 (#20) y T13 (#21) |

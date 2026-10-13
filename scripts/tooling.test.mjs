@@ -13,10 +13,11 @@ const fixture = (run) => {
     rmSync(dir, { recursive: true, force: true });
   }
 };
-test('Codex discovers only four skills with recurrence evidence and valid frontmatter', () => {
+test('Codex discovers four recurring MASCLI skills and the explicitly requested Neon skills', () => {
   const dir = path.join(root, '.agents/skills');
   const expected = ['mascli-archify', 'mascli-odd-task', 'mascli-task-pr', 'mascli-verify'];
-  assert.deepEqual(readdirSync(dir).sort(), expected);
+  const vendor = ['neon', 'neon-postgres'];
+  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor].sort());
   for (const name of expected) {
     const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
     assert.match(text, new RegExp(`^---\\nname: ${name}\\n`));
@@ -26,6 +27,17 @@ test('Codex discovers only four skills with recurrence evidence and valid frontm
   }
   const evidence = readFileSync(path.join(root, 'docs/agents/skills.md'), 'utf8');
   for (const name of expected) assert.ok(evidence.includes(name));
+  const lock = JSON.parse(readFileSync(path.join(root, 'skills-lock.json'), 'utf8'));
+  for (const name of vendor) {
+    const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
+    assert.match(text, new RegExp(`^---\\nname: ${name}\\n`));
+    assert.ok(
+      text.includes(`https://github.com/neondatabase/agent-skills/tree/main/skills/${name}`),
+    );
+    assert.equal(lock.skills[name].source, 'neondatabase/agent-skills');
+    assert.equal(lock.skills[name].skillPath, `skills/${name}/SKILL.md`);
+    assert.match(lock.skills[name].computedHash, /^[a-f0-9]{64}$/);
+  }
 });
 test('verification never starts a service or guesses a database connection and propagates failures', () =>
   fixture((dir) => {
