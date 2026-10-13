@@ -19,7 +19,7 @@ const { values } = parseArgs({
   },
 });
 const { task, label, file } = values;
-if (!task || !/^T\d+[a-z]?$/.test(task) || !label || !values.text) {
+if (!task || !/^T\d+[a-z]?$/.test(task) || !label?.trim() || /[\r\n]/.test(label) || !values.text) {
   console.error('usage: --task T<n> --label <label> --text <entry|@file> [--file] [--dry-run]');
   process.exit(2);
 }
@@ -28,6 +28,8 @@ const text = (
 )
   .replace(/\s+/g, ' ')
   .trim();
+
+if (!text) throw new Error('ODD evidence must not be blank');
 
 const lines = readFileSync(file, 'utf8').split('\n');
 const entries = lines
