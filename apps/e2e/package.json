@@ -1,0 +1,17 @@
+{
+  "name": "@mascli/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test support/cleanup.test.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "@types/node": "^24.0.0",
+    "postgres": "^3.4.9",
+    "typescript": "^7.0.2"
+  }
+}

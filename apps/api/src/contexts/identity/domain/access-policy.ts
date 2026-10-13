@@ -17,6 +17,9 @@ const READ_ONLY_POSTS = new Set([
   '/system/intelligence/semantic-analyze',
 ]);
 
+/** Personal account security every role must be able to complete (ADR 0009). */
+const SELF_SERVICE_POSTS = new Set(['/system/auth/totp/setup', '/system/auth/totp/enable']);
+
 const COORDINATOR_WRITABLE = ['/system/prevention/', '/system/intelligence/territorial-alerts'];
 
 /** Role gates of app.py:241-251 (behavior contract §2, step 8), evaluated in the same order. */
@@ -39,7 +42,7 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
   if (path.startsWith('/api/proyectos') && !isRead && !isAdmin) {
     return deny('Solo el administrador puede gestionar proyectos');
   }
-  if (!isRead && !READ_ONLY_POSTS.has(path)) {
+  if (!isRead && !READ_ONLY_POSTS.has(path) && !SELF_SERVICE_POSTS.has(path)) {
     if (role === 'consulta') return deny('Rol de consulta: solo lectura');
     if (role === 'coordinador' && !COORDINATOR_WRITABLE.some((prefix) => path.startsWith(prefix))) {
       return deny('Operación restringida para coordinador');

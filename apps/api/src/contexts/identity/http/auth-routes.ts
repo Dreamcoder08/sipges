@@ -117,6 +117,21 @@ export const authRoutes = (deps: {
       return c.json({ ok: true });
     })
 
+    .post('/system/auth/accounts/:username/reset-mfa', async (c) => {
+      const result = await identity.resetMfa(c.get('identity'), c.req.param('username'));
+      if (!result.ok) {
+        const errors = {
+          forbidden: [403, 'Administración de cuentas restringida'],
+          self: [403, 'No puede restablecer su propio MFA; pida a otro administrador'],
+          invalid: [422, 'Usuario inválido'],
+          missing: [404, 'Usuario inexistente'],
+        } as const;
+        const [status, detail] = errors[result.error];
+        return c.json({ detail }, status);
+      }
+      return c.json({ ok: true, username: c.req.param('username').trim().toLowerCase() });
+    })
+
     .post('/system/auth/totp/setup', async (c) => {
       const result = await identity.setupTotp(c.get('identity').username);
       if (!result.ok) {

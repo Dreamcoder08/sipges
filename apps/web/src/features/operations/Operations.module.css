@@ -1,0 +1,75 @@
+.stack {
+  display: grid;
+  gap: 1.2rem;
+  min-width: 0;
+}
+.form {
+  display: grid;
+  gap: 1rem;
+}
+.form label {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 600;
+}
+.form input,
+.form select,
+.form textarea {
+  width: 100%;
+  max-width: 100%;
+  padding: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  font: inherit;
+  background: var(--color-surface);
+  color: inherit;
+}
+.form textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.8rem;
+}
+.metric {
+  padding: 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+.metric dt {
+  font-size: 0.85rem;
+}
+.metric dd {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+}
+.table {
+  overflow: auto;
+}
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  padding: 0.65rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+.fragment {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.hash {
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}

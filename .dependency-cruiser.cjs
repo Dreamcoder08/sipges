@@ -62,7 +62,7 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '(node_modules|dist|\\.turbo)' },
+    exclude: { path: '(node_modules|dist|\\.turbo|test-results|playwright-report)' },
     tsPreCompilationDeps: true,
     enhancedResolveOptions: {
       exportsFields: ['exports'],

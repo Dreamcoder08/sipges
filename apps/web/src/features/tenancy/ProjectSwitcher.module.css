@@ -1,0 +1,18 @@
+.switcher {
+  display: grid;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+}
+
+.switcher label {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.switcher select {
+  min-width: 12rem;
+}
+
+.error {
+  color: var(--color-danger);
+}

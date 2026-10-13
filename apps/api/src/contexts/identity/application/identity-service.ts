@@ -3,6 +3,7 @@ import { checkRoleAccess } from '../domain/access-policy.ts';
 import { THROTTLE, ipSubject, throttleDecision, userSubject } from '../domain/login-throttle.ts';
 import {
   type Identity,
+  type SessionIdentity,
   PASSWORD_MIN,
   normalizeUsername,
   validateNewAccount,
@@ -157,7 +158,7 @@ export const createIdentityService = ({
       return ok({ token, identity: { username, fullName: user.fullName, role: user.role } });
     },
 
-    async authenticate(token: string | undefined): Promise<Identity | null> {
+    async authenticate(token: string | undefined): Promise<SessionIdentity | null> {
       if (!token || !/^[0-9a-f]{64}$/.test(token)) return null;
       return store.findSessionIdentity(tokens.hash(token), clock.now());
     },
@@ -194,6 +195,24 @@ export const createIdentityService = ({
         return err('invalid');
       const result = await store.deactivateUser(username);
       return result === 'deactivated' ? ok(true) : err(result);
+    },
+
+    /**
+     * Lets an administrator clear another account's second factor (lost authenticator). The
+     * user's sessions end and the next login enrolls again. An administrator cannot reset
+     * their own MFA: a stolen admin session must not be able to remove the factor (ADR 0009).
+     */
+    async resetMfa(
+      actor: Identity,
+      rawUsername: string,
+    ): Promise<Result<true, 'forbidden' | 'self' | 'invalid' | 'missing'>> {
+      if (actor.role !== 'admin') return err('forbidden');
+      const username = normalizeUsername(rawUsername);
+      if (!username || username.includes('\u0000') || username.length > MAX_STORED_USERNAME)
+        return err('invalid');
+      if (username === actor.username) return err('self');
+      const result = await store.resetTotp(username);
+      return result === 'reset' ? ok(true) : err(result);
     },
 
     async userExists(username: string): Promise<boolean> {

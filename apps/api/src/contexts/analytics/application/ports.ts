@@ -1,3 +1,4 @@
+import type { ReportDocument } from '@mascli/kernel';
 import type { Scope } from '../../tenancy/application/index.ts';
 import type { RecordsByModule } from '../domain/records.ts';
 
@@ -10,3 +11,9 @@ export type AnalyticsRecordReader = {
 };
 
 export type Clock = { now(): Date };
+
+/** Turns a format-neutral report outline into a downloadable file (DOCX in production). */
+export type ReportRenderer = {
+  readonly contentType: string;
+  render(document: ReportDocument): Promise<Uint8Array>;
+};

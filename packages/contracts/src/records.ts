@@ -31,3 +31,10 @@ export const AuditEntry = z.object({
   detail: z.string().nullable(),
 });
 export type AuditEntry = z.infer<typeof AuditEntry>;
+
+/** Territorial payload plus HTTP identity metadata; arbitrary payload fields are preserved. */
+export const ModuleRecord = z.looseObject({
+  _id: z.string(),
+  _updated_at: z.string().optional(),
+});
+export type ModuleRecord = z.infer<typeof ModuleRecord>;

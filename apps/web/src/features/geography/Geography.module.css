@@ -1,0 +1,48 @@
+.page {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.map {
+  width: 100%;
+  height: min(60vh, 34rem);
+  background: #f2f6f8;
+  border: 1px solid #cad5de;
+  border-radius: 0.5rem;
+}
+.map path {
+  cursor: pointer;
+}
+.map path:focus {
+  fill: #e6b54a;
+  outline: none;
+  stroke: #c34040;
+}
+.facts {
+  display: grid;
+  grid-template-columns: minmax(5rem, 1fr) minmax(0, 2fr);
+  gap: 0.5rem;
+}
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.scroll {
+  overflow-x: auto;
+}
+.scroll table {
+  border-collapse: collapse;
+  width: 100%;
+}
+.scroll th,
+.scroll td {
+  padding: 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid #cad5de;
+}

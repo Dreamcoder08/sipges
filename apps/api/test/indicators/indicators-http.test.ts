@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { IrsaSummary, ModelStatus } from '../../../../packages/contracts/src/indicators.ts';
 import { describe, expect, it } from 'vitest';
 import {
   type IrsaSnapshot,
@@ -67,7 +68,7 @@ const auditRows = (t: Awaited<ReturnType<typeof createTestApp>>) =>
 describe('GET /system/irsa and /system/indicators', () => {
   it('computes an empty IRSA, not a 500, while module_records does not exist yet', async () => {
     const { t, request } = await setup();
-    await t.sql.exec('DROP TABLE module_records');
+    await t.sql.exec('DROP TABLE module_records CASCADE');
     const res = await request('/system/irsa');
     expect(res.status).toBe(200);
     const body = (await res.json()) as IrsaResult;
@@ -195,6 +196,16 @@ describe('IRSA snapshots', () => {
   it('rejects a non-integer limit with 422', async () => {
     const { request } = await setup();
     expect((await request('/system/irsa/history?limit=abc')).status).toBe(422);
+  });
+});
+
+describe('client contracts', () => {
+  it('GET /system/irsa and /system/model-status match the contracts the web app parses', async () => {
+    const { t, request } = await setup();
+    await seedModuleRecords(t);
+    expect(IrsaSummary.safeParse(await (await request('/system/irsa')).json()).success).toBe(true);
+    const status = await (await request('/system/model-status')).json();
+    expect(ModelStatus.safeParse(status).success).toBe(true);
   });
 });
 

@@ -1,0 +1,338 @@
+{
+  "date": "2026-10-13T19:32:34.766Z",
+  "node": "v22.22.0",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "cores": 4,
+  "memoryGiB": 16,
+  "database": "PostgreSQL",
+  "gate": {
+    "p95": 500,
+    "loopBlock": 50
+  },
+  "results": [
+    {
+      "scenario": "Indicators + IRSA",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 0.9,
+      "p95": 1.18,
+      "max": 1.23,
+      "loopBlock": 2.49
+    },
+    {
+      "scenario": "Situational analysis",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 0.15,
+      "p95": 0.22,
+      "max": 0.25,
+      "loopBlock": 0.25
+    },
+    {
+      "scenario": "Candidate links",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 0.42,
+      "p95": 0.63,
+      "max": 0.67,
+      "loopBlock": 0.67
+    },
+    {
+      "scenario": "Integrated analysis",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 0.52,
+      "p95": 0.85,
+      "max": 0.98,
+      "loopBlock": 0.98
+    },
+    {
+      "scenario": "Consensus engine",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 0.1,
+      "p95": 0.15,
+      "max": 0.28,
+      "loopBlock": 0.28
+    },
+    {
+      "scenario": "Strategic assessment",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 0.01,
+      "p95": 0.05,
+      "max": 0.06,
+      "loopBlock": 0.06
+    },
+    {
+      "scenario": "Classifier (25 events)",
+      "scale": "1× (484 records)",
+      "runs": 30,
+      "p50": 2.17,
+      "p95": 2.88,
+      "max": 3.04,
+      "loopBlock": 3.04
+    },
+    {
+      "scenario": "Indicators + IRSA",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 5.5,
+      "p95": 6.3,
+      "max": 6.41,
+      "loopBlock": 7.76
+    },
+    {
+      "scenario": "Situational analysis",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 0.42,
+      "p95": 0.64,
+      "max": 0.72,
+      "loopBlock": 0.72
+    },
+    {
+      "scenario": "Candidate links",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 0.92,
+      "p95": 1.28,
+      "max": 1.44,
+      "loopBlock": 1.44
+    },
+    {
+      "scenario": "Integrated analysis",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 2.81,
+      "p95": 4.03,
+      "max": 4.42,
+      "loopBlock": 4.42
+    },
+    {
+      "scenario": "Consensus engine",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 1.77,
+      "p95": 1.83,
+      "max": 1.85,
+      "loopBlock": 1.85
+    },
+    {
+      "scenario": "Strategic assessment",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 0.09,
+      "p95": 0.17,
+      "max": 0.21,
+      "loopBlock": 0.21
+    },
+    {
+      "scenario": "Classifier (250 events)",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 20.61,
+      "p95": 26.12,
+      "max": 27.7,
+      "loopBlock": 27.7
+    },
+    {
+      "scenario": "Strategic DOCX render",
+      "scale": "10× (4840 records)",
+      "runs": 30,
+      "p50": 20.32,
+      "p95": 28.63,
+      "max": 34.05,
+      "loopBlock": 22.17
+    },
+    {
+      "scenario": "Indicators + IRSA",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 52.33,
+      "p95": 63.26,
+      "max": 66.32,
+      "loopBlock": 66.31
+    },
+    {
+      "scenario": "Situational analysis",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 3.49,
+      "p95": 4.29,
+      "max": 7.2,
+      "loopBlock": 7.2
+    },
+    {
+      "scenario": "Candidate links",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 1.28,
+      "p95": 1.51,
+      "max": 1.53,
+      "loopBlock": 6.57
+    },
+    {
+      "scenario": "Integrated analysis",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 166.72,
+      "p95": 243.76,
+      "max": 257.48,
+      "loopBlock": 258.39
+    },
+    {
+      "scenario": "Consensus engine",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 160.45,
+      "p95": 200.91,
+      "max": 203.7,
+      "loopBlock": 203.7
+    },
+    {
+      "scenario": "Strategic assessment",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 0.45,
+      "p95": 0.68,
+      "max": 0.7,
+      "loopBlock": 0.7
+    },
+    {
+      "scenario": "Classifier (2500 events)",
+      "scale": "100× (48400 records)",
+      "runs": 30,
+      "p50": 206.86,
+      "p95": 222.13,
+      "max": 240.21,
+      "loopBlock": 240.3
+    },
+    {
+      "scenario": "PDF text extraction",
+      "scale": "100 pages",
+      "runs": 10,
+      "p50": 311.56,
+      "p95": 354.43,
+      "max": 354.43,
+      "loopBlock": 3.77
+    },
+    {
+      "scenario": "Document insights, many themes",
+      "scale": "100 pages",
+      "runs": 30,
+      "p50": 36.36,
+      "p95": 43.19,
+      "max": 48.14,
+      "loopBlock": 48.13
+    },
+    {
+      "scenario": "Document insights, no themes",
+      "scale": "100 pages",
+      "runs": 30,
+      "p50": 31.92,
+      "p95": 42.38,
+      "max": 43.34,
+      "loopBlock": 43.33
+    },
+    {
+      "scenario": "Compare findings (72×72)",
+      "scale": "2 documents",
+      "runs": 30,
+      "p50": 2.73,
+      "p95": 4.67,
+      "max": 4.78,
+      "loopBlock": 5.67
+    },
+    {
+      "scenario": "Text analysis (RC 2.4)",
+      "scale": "10× narratives",
+      "runs": 30,
+      "p50": 1.18,
+      "p95": 1.47,
+      "max": 1.96,
+      "loopBlock": 2.91
+    },
+    {
+      "scenario": "Semantic analysis, cold (model 40 ms/call)",
+      "scale": "8 embeddings",
+      "runs": 10,
+      "p50": 42.31,
+      "p95": 43.42,
+      "max": 43.42,
+      "loopBlock": 2.08
+    },
+    {
+      "scenario": "Semantic analysis, warm (model 40 ms/call)",
+      "scale": "1 embedding",
+      "runs": 30,
+      "p50": 41.57,
+      "p95": 42.89,
+      "max": 43.57,
+      "loopBlock": 2.42
+    },
+    {
+      "scenario": "HTTP GET /api/dashboard",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 25.65,
+      "p95": 32.06,
+      "max": 44.08,
+      "loopBlock": 19.35
+    },
+    {
+      "scenario": "HTTP GET /system/irsa",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 22.98,
+      "p95": 26.74,
+      "max": 28.48,
+      "loopBlock": 9.87
+    },
+    {
+      "scenario": "HTTP GET /system/situational-analysis",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 8.82,
+      "p95": 12.64,
+      "max": 13.97,
+      "loopBlock": 4.4
+    },
+    {
+      "scenario": "HTTP GET /system/integrated-analysis",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 14.69,
+      "p95": 18.91,
+      "max": 19.81,
+      "loopBlock": 9.72
+    },
+    {
+      "scenario": "HTTP GET /system/consensus-engine",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 11.2,
+      "p95": 14.63,
+      "max": 15.42,
+      "loopBlock": 6.57
+    },
+    {
+      "scenario": "HTTP GET /system/strategic-assessment",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 8.36,
+      "p95": 11.6,
+      "max": 13.02,
+      "loopBlock": 3.67
+    },
+    {
+      "scenario": "HTTP GET /api/eventos?limit=-1",
+      "scale": "10× (4840 records), PostgreSQL",
+      "runs": 30,
+      "p50": 4.84,
+      "p95": 7.97,
+      "max": 8.82,
+      "loopBlock": 2.73
+    }
+  ]
+}

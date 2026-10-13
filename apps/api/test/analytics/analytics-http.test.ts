@@ -1,7 +1,9 @@
+import { strFromU8, unzipSync } from 'fflate';
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 import {
   ConsensusEngineResponse,
+  DashboardResponse,
   IntegratedAnalysisResponse,
   SituationalAnalysisResponse,
   StrategicAssessmentResponse,
@@ -11,6 +13,7 @@ import {
   createAnalyticsService,
 } from '../../src/contexts/analytics/application/index.ts';
 import { analyticsRoutes } from '../../src/contexts/analytics/http/analytics-routes.ts';
+import { docxRenderer } from '../../src/contexts/documents/infrastructure/index.ts';
 import type { StoredRecord } from '../../src/contexts/analytics/domain/records.ts';
 import type { Scope } from '../../src/contexts/tenancy/application/index.ts';
 import type { AppEnv } from '../../src/platform/http/env.ts';
@@ -18,7 +21,15 @@ import type { AppEnv } from '../../src/platform/http/env.ts';
 const DATA: Record<string, Record<string, StoredRecord[]>> = {
   'MASCLI/PRJ-SECHURA': {
     Eventos: [{ id: 'e1', payload: { Territorio: 'Sechura' } }],
-    Alertas: [{ id: 'a1', payload: { Estado: 'Abierta', Nivel_Preliminar: 'Rojo' } }],
+    Alertas: [
+      { id: 'a1', payload: { Estado: 'Abierta', Nivel_Preliminar: 'Rojo' } },
+      { id: 'a2', payload: { Estado: 'Descartada', Nivel: 'Verde' } },
+      { id: 'a3', payload: { Estado: 'CERRADA' } },
+    ],
+    Demandas: [
+      { id: 'd1', payload: { Estado: 'Cerrada' } },
+      { id: 'd2', payload: { Estado: 'Abierta' } },
+    ],
     Hechos_Compartidos: [{ id: 'h1', payload: { Asunto: 'agua potable' } }],
     Dialogos: [{ id: 'd1', payload: { Tema: 'Agua potable', Proyecto_ID: 'PRJ-SECHURA' } }],
   },
@@ -39,6 +50,7 @@ const setup = (scope: Scope) => {
   const analytics = createAnalyticsService({
     reader,
     clock: { now: () => new Date('2026-10-12T12:00:00.123Z') },
+    renderer: docxRenderer,
   });
   const app = new Hono<AppEnv>()
     .use(async (c, next) => {
@@ -52,6 +64,20 @@ const setup = (scope: Scope) => {
 const SECHURA = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
 
 describe('analytics HTTP routes', () => {
+  it('GET /api/dashboard counts the scope records like app.py', async () => {
+    const { app } = setup(SECHURA);
+    const body = DashboardResponse.parse(await (await app.request('/api/dashboard')).json());
+    expect(body).toEqual({
+      eventos: 1,
+      actores: 0,
+      demandas_abiertas: 1,
+      alertas_activas: 1,
+      directorio: 0,
+      priorizados: 0,
+      niveles: { Rojo: 1, Verde: 1, 'Sin nivel': 1 },
+    });
+  });
+
   it('GET /system/situational-analysis uses the scope project and matches the contract', async () => {
     const { app } = setup(SECHURA);
     const res = await app.request('/system/situational-analysis?project_id=PRJ-SECHURA');
@@ -99,5 +125,71 @@ describe('analytics HTTP routes', () => {
     );
     expect(body.project_id).toBe('NORTE');
     expect(body.counts.hechos).toBe(1);
+  });
+});
+
+/** Plain text of every paragraph in a DOCX body, in order. */
+const docxText = async (res: Response) => {
+  const xml = strFromU8(
+    unzipSync(new Uint8Array(await res.arrayBuffer()))['word/document.xml'] ?? new Uint8Array(),
+  );
+  return [...xml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)].map((p) =>
+    [...p[0].matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>/g)].map((t) => t[1]).join(''),
+  );
+};
+
+describe('analytics DOCX reports', () => {
+  const sechura: Scope = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+
+  it.each([
+    [
+      '/system/situational-report.docx',
+      'MASCLI_Analisis_Situacional.docx',
+      'INFORME DE ANÁLISIS SITUACIONAL',
+    ],
+    [
+      '/system/strategic-report.docx',
+      'MASCLI_Informe_Estrategico.docx',
+      'MASCLI | Informe estratégico territorial',
+    ],
+    [
+      '/system/integrated-analysis.docx',
+      'MASCLI_RC19_Analisis_Integrado.docx',
+      'MASCLI | Análisis integrado RC 1.9',
+    ],
+    [
+      '/system/consensus-engine.docx',
+      'MASCLI_Motor_Valor_Consenso.docx',
+      'MASCLI | Motor de valor y consenso',
+    ],
+  ])('%s downloads %s', async (path, fileName, heading) => {
+    const res = await setup(sechura).app.request(path);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe(
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    );
+    expect(res.headers.get('content-disposition')).toBe(`attachment; filename="${fileName}"`);
+    const text = await docxText(res);
+    expect(text[0]).toBe(heading);
+    // docs/adr/0008 #13: no hard-coded personal names, unlike app.py's credit lines.
+    expect(text.join('\n')).not.toMatch(/Castillo|Granda/);
+  });
+
+  it('fills the situational and strategic reports from the scope records', async () => {
+    const situational = await docxText(
+      await setup(sechura).app.request('/system/situational-report.docx'),
+    );
+    expect(situational[1]).toBe('Proyecto Sechura | Corte: 2026-10-12T12:00:00Z');
+    expect(situational).toContain('Sechura: 1 registros');
+    expect(situational.some((line) => line.startsWith('[a1] Rojo:'))).toBe(true);
+
+    const strategic = await docxText(
+      await setup(sechura).app.request('/system/strategic-report.docx'),
+    );
+    expect(strategic).toContain('[d1] Tema: Agua potable');
+    expect(strategic).toContain('[h1] Asunto: agua potable');
+    expect(strategic).toContain(
+      'Sin registros. No es posible emitir conclusiones sobre este componente.',
+    );
   });
 });

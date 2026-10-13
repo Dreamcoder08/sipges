@@ -361,7 +361,7 @@ describe('TOTP enrollment and login', () => {
     expect(await json(replay.res)).toEqual({ detail: 'Código de autenticación inválido' });
   });
 
-  it('denies MFA setup to the read-only role', async () => {
+  it('lets the read-only role enroll MFA (self-service, ADR 0009)', async () => {
     const t = await createTestApp();
     const admin = await t.login(ADMIN.username, ADMIN.password);
     await t.createAccount(admin.cookie, { ...ANALYST, username: 'lector', role: 'consulta' });
@@ -371,8 +371,7 @@ describe('TOTP enrollment and login', () => {
       method: 'POST',
       headers: { cookie: reader.cookie },
     });
-    expect(res.status).toBe(403);
-    expect(await json(res)).toEqual({ detail: 'Rol de consulta: solo lectura' });
+    expect(res.status).toBe(200);
   });
 });
 

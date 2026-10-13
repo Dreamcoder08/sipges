@@ -104,6 +104,19 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     return rows.length === 1;
   },
 
+  async resetTotp(username) {
+    return sql.transaction(async (tx) => {
+      const rows = await tx.query(
+        `UPDATE users SET totp_enabled = false, totp_secret_sealed = NULL, totp_last_step = NULL
+          WHERE username = $1 RETURNING username`,
+        [username],
+      );
+      if (rows.length === 0) return 'missing';
+      await tx.query('DELETE FROM sessions WHERE username = $1', [username]);
+      return 'reset';
+    });
+  },
+
   async enableTotp(username, step, keepTokenHash) {
     await sql.transaction(async (tx) => {
       await tx.query(
@@ -142,13 +155,25 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
   },
 
   async findSessionIdentity(tokenHash, at) {
-    const [row] = await sql.query<{ username: string; full_name: string; role: Role }>(
-      `SELECT u.username, u.full_name, u.role
+    const [row] = await sql.query<{
+      username: string;
+      full_name: string;
+      role: Role;
+      totp_enabled: boolean;
+    }>(
+      `SELECT u.username, u.full_name, u.role, u.totp_enabled
          FROM sessions s JOIN users u ON u.username = s.username
         WHERE s.token_hash = $1 AND s.expires_at > $2 AND u.active`,
       [tokenHash, at],
     );
-    return row ? { username: row.username, fullName: row.full_name, role: row.role } : null;
+    return row
+      ? {
+          username: row.username,
+          fullName: row.full_name,
+          role: row.role,
+          mfaEnabled: row.totp_enabled,
+        }
+      : null;
   },
 
   async deleteSession(tokenHash) {
