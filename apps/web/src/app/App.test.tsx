@@ -145,7 +145,7 @@ describe('dashboard and navigation', () => {
     expect(within(alerts).getByText('Rojo').closest('div')).toHaveTextContent('0');
   });
 
-  it('marks the current page, moves focus to its heading and shows pending screens', async () => {
+  it('marks the current page, moves focus to its heading and opens rebuilt screens', async () => {
     signIn();
     at('/');
     render(<App />);
@@ -155,6 +155,7 @@ describe('dashboard and navigation', () => {
       'aria-current',
       'page',
     );
+    server.use(http.get('/system/audit', () => HttpResponse.json([])));
     await user.click(within(nav).getByRole('link', { name: 'Auditoría' }));
     const heading = await screen.findByRole('heading', { level: 1, name: 'Auditoría' });
     await waitFor(() => expect(heading).toHaveFocus());
@@ -162,7 +163,7 @@ describe('dashboard and navigation', () => {
       'aria-current',
       'page',
     );
-    expect(screen.getByText('En migración')).toBeVisible();
+    expect(screen.queryByText('En migración')).toBeNull();
     expect(document.title).toBe('Auditoría | MASCLI');
   });
 

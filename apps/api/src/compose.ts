@@ -1,5 +1,10 @@
 import { randomBytes } from 'node:crypto';
 import {
+  createReferenceService,
+  type ReferenceService,
+} from './contexts/reference/application/index.ts';
+import { fileReferenceReader } from './contexts/reference/infrastructure/file-reference-reader.ts';
+import {
   type AnalyticsService,
   createAnalyticsService,
 } from './contexts/analytics/application/index.ts';
@@ -71,6 +76,7 @@ import type { SqlClient } from './platform/database/sql-client.ts';
 import type { ClientIp } from './platform/http/env.ts';
 
 export type Container = {
+  readonly reference: ReferenceService;
   readonly config: AppConfig;
   readonly identity: IdentityService;
   readonly tenancy: TenancyService;
@@ -206,6 +212,7 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   return {
+    reference: createReferenceService(fileReferenceReader),
     config: deps.config,
     identity,
     tenancy,

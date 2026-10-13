@@ -1,5 +1,6 @@
 import type { ErrorResponse } from '@mascli/contracts';
 import { Hono } from 'hono';
+import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
@@ -45,6 +46,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.use('*', roleGate(identity));
 
   app.route('/', healthRoutes());
+  app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
   app.route('/', analyticsRoutes({ analytics }));
   app.route('/', recordsRoutes(records));

@@ -1,5 +1,18 @@
 export type RecordModule =
-  'eventos' | 'actores' | 'directorio' | 'demandas' | 'compromisos' | 'narrativas' | 'fuentes';
+  | 'eventos'
+  | 'actores'
+  | 'directorio'
+  | 'demandas'
+  | 'compromisos'
+  | 'narrativas'
+  | 'fuentes'
+  | 'alertas'
+  | 'acciones'
+  | 'intereses'
+  | 'dialogos'
+  | 'oportunidades'
+  | 'hechos'
+  | 'aarc';
 export type RecordField = {
   key: string;
   label: string;
@@ -36,6 +49,128 @@ const source: RecordField = { key: 'Fuente_ID', label: 'Referencia de fuente' };
 const territory: RecordField = { key: 'Territorio', label: 'Territorio' };
 
 export const MODULES: Record<RecordModule, ModuleDefinition> = {
+  intereses: {
+    label: 'Actores e intereses',
+    titleField: 'Actor',
+    columns: ['Actor', 'Posicion', 'Interes', 'Estado'],
+    fields: [
+      { key: 'Actor', label: 'Actor u organización', required: true },
+      { key: 'Posicion', label: 'Posición expresada' },
+      { key: 'Interes', label: 'Interés manifestado' },
+      { key: 'Preocupacion', label: 'Preocupación o demanda' },
+      { key: 'Mandato', label: 'Mandato o legitimidad documental' },
+      { key: 'Alternativa', label: 'Alternativa ante la falta de acuerdo (BATNA)' },
+      { key: 'Fuente_ID', label: 'Fuente o evidencia' },
+      { key: 'Estado', label: 'Estado de verificación' },
+    ],
+  },
+  dialogos: {
+    label: 'Diálogo y construcción de consensos',
+    titleField: 'Proceso',
+    columns: ['Proceso', 'Participantes', 'Tema', 'Estado'],
+    fields: [
+      { key: 'Proceso', label: 'Nombre del proceso', required: true },
+      { key: 'Participantes', label: 'Participantes' },
+      { key: 'Tema', label: 'Temas y reglas de diálogo' },
+      { key: 'Opciones', label: 'Opciones consideradas', type: 'textarea' },
+      { key: 'Acuerdo', label: 'Acuerdo o desacuerdo', type: 'textarea' },
+      { key: 'Responsable', label: 'Responsable' },
+      { key: 'Proximo_Paso', label: 'Próximo paso y plazo' },
+      { key: 'Fuente_ID', label: 'Acta o evidencia' },
+      { key: 'Estado', label: 'Estado del proceso' },
+    ],
+  },
+  oportunidades: {
+    label: 'Valor compartido',
+    titleField: 'Oportunidad',
+    columns: ['Oportunidad', 'Tipo', 'Beneficiarios', 'Estado'],
+    fields: [
+      { key: 'Oportunidad', label: 'Oportunidad identificada', required: true },
+      { key: 'Tipo', label: 'Tipo (empleo, proveedores, capacitación, servicios, etc.)' },
+      { key: 'Beneficiarios', label: 'Posibles beneficiarios' },
+      { key: 'Viabilidad', label: 'Condiciones de viabilidad' },
+      { key: 'Restricciones', label: 'Restricciones técnicas/legales' },
+      { key: 'Responsable', label: 'Responsable potencial' },
+      { key: 'Plazo', label: 'Plazo referencial' },
+      { key: 'Fuente_ID', label: 'Fuente o sustento' },
+      { key: 'Estado', label: 'Estado (propuesta, en evaluación, aprobada, etc.)' },
+    ],
+  },
+  hechos: {
+    label: 'Hechos compartidos y verificación',
+    titleField: 'Asunto',
+    columns: ['Asunto', 'Versiones', 'Preguntas', 'Estado'],
+    fields: [
+      { key: 'Asunto', label: 'Pregunta o asunto por verificar', required: true },
+      { key: 'Versiones', label: 'Versiones o información discrepante', type: 'textarea' },
+      { key: 'Preguntas', label: 'Preguntas acordadas', type: 'textarea' },
+      { key: 'Metodo', label: 'Método de contrastación', type: 'textarea' },
+      { key: 'Participantes', label: 'Actores participantes' },
+      { key: 'Fuente_ID', label: 'Fuentes o evidencia' },
+      { key: 'Accion_Verificacion', label: 'Siguiente acción de verificación' },
+      { key: 'Estado', label: 'Estado (pendiente, en contraste, validado, etc.)' },
+    ],
+  },
+  aarc: {
+    label: 'AARC · Calidad del relacionamiento',
+    titleField: 'Actor_Proceso',
+    columns: ['Actor_Proceso', 'Reconocimiento', 'Agencia', 'Estado'],
+    fields: [
+      { key: 'Actor_Proceso', label: 'Actor o proceso evaluado', required: true },
+      { key: 'Reconocimiento', label: 'Reconocimiento de experiencias y preocupaciones' },
+      { key: 'Agencia', label: 'Capacidad efectiva de participar e influir' },
+      { key: 'Reciprocidad', label: 'Reciprocidad y opciones de valor mutuo' },
+      { key: 'Claridad', label: 'Claridad de reglas, información y compromisos' },
+      { key: 'Evidencia', label: 'Evidencia observable', type: 'textarea' },
+      { key: 'Accion_Mejora', label: 'Acción de mejora' },
+      { key: 'Fecha', label: 'Fecha de evaluación', type: 'date' },
+      { key: 'Estado', label: 'Estado de revisión' },
+    ],
+  },
+  alertas: {
+    label: 'Alertas territoriales',
+    titleField: 'Causa',
+    columns: ['Fecha', 'Dimension', 'Causa', 'Nivel_Preliminar', 'Estado'],
+    fields: [
+      { key: 'Fecha', label: 'Fecha', type: 'date' },
+      { key: 'Causa', label: 'Causa documentada', type: 'textarea', required: true },
+      { key: 'Dimension', label: 'Dimensión', options: ['G', 'A', 'D', 'N', 'E', 'I'] },
+      {
+        key: 'Nivel_Preliminar',
+        label: 'Nivel preliminar',
+        options: ['Verde', 'Amarillo', 'Naranja', 'Rojo'],
+        initial: 'Amarillo',
+      },
+      {
+        key: 'Estado',
+        label: 'Estado',
+        options: ['Abierta', 'En seguimiento', 'Cerrada', 'Descartada'],
+        initial: 'Abierta',
+      },
+      { key: 'Accion_Sugerida', label: 'Acción sugerida', type: 'textarea' },
+      { key: 'Fuente_ID', label: 'Referencia de fuente' },
+      { key: 'Observaciones', label: 'Observaciones', type: 'textarea' },
+    ],
+  },
+  acciones: {
+    label: 'Acciones territoriales',
+    titleField: 'Accion',
+    columns: ['Accion', 'Responsable', 'Plazo', 'Estado'],
+    fields: [
+      { key: 'Accion', label: 'Acción documentada', type: 'textarea', required: true },
+      { key: 'Alerta_Asociada', label: 'Alerta asociada' },
+      { key: 'Responsable', label: 'Responsable' },
+      { key: 'Plazo', label: 'Plazo' },
+      {
+        key: 'Estado',
+        label: 'Estado',
+        options: ['Pendiente', 'En proceso', 'Cumplida', 'Cancelada'],
+        initial: 'Pendiente',
+      },
+      { key: 'Fuente_ID', label: 'Referencia de fuente' },
+      { key: 'Observaciones', label: 'Observaciones', type: 'textarea' },
+    ],
+  },
   eventos: {
     label: 'Eventos',
     titleField: 'Descripcion_Hecho',

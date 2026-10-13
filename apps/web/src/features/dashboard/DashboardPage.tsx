@@ -24,16 +24,18 @@ const KPIS = [
  */
 export const DashboardPage = ({
   projectId,
+  scope,
   renderLink,
 }: {
   projectId: string;
+  scope: string;
   renderLink: (to: string, children: ReactNode) => ReactNode;
 }) => {
-  const summary = useQuery(dashboardQuery);
-  const irsa = useQuery(irsaQuery);
-  const status = useQuery(modelStatusQuery);
-  const alerts = useQuery(moduleRecordsQuery('alertas'));
-  const events = useQuery(moduleRecordsQuery('eventos'));
+  const summary = useQuery(dashboardQuery(scope));
+  const irsa = useQuery(irsaQuery(scope));
+  const status = useQuery(modelStatusQuery(scope));
+  const alerts = useQuery(moduleRecordsQuery('alertas', scope));
+  const events = useQuery(moduleRecordsQuery('eventos', scope));
 
   return (
     <div className={styles.page}>

@@ -82,7 +82,9 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
     Promise.all([
       client.invalidateQueries({ queryKey: ['records'] }),
       client.invalidateQueries({ queryKey: ['dashboard'] }),
-      client.invalidateQueries({ queryKey: ['indicators'] }),
+      client.invalidateQueries({ queryKey: ['indicators', scope] }),
+      client.invalidateQueries({ queryKey: ['analysis', scope] }),
+      client.invalidateQueries({ queryKey: ['operations', scope] }),
     ]);
   const save = useMutation({
     mutationFn: (values: Record<string, string>) =>
@@ -263,6 +265,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
         <Card title="Nuevo registro">
           <RecordEditor
             module={module}
+            scope={scope}
             pending={save.isPending}
             error={message(save.error)}
             onSave={(values) => save.mutate(values)}
@@ -285,6 +288,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                 <RecordEditor
                   key={record._id}
                   module={module}
+                  scope={scope}
                   record={record}
                   pending={save.isPending}
                   error={message(save.error)}

@@ -1,0 +1,48 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+.form {
+  margin-top: var(--space-4);
+}
+.form fieldset {
+  display: grid;
+  gap: var(--space-3);
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.form legend {
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+}
+.form label {
+  display: grid;
+  gap: var(--space-2);
+}
+.form select {
+  font: inherit;
+  padding: var(--space-2);
+  max-width: 100%;
+}
+.scroll {
+  overflow: auto;
+}
+.scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.scroll th,
+.scroll td {
+  text-align: left;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.uri {
+  overflow-wrap: anywhere;
+}

@@ -6,3 +6,8 @@ export * from './records.ts';
 export * from './indicators.ts';
 export * from './analytics.ts';
 export * from './evidence.ts';
+export * from './indicator-reports.ts';
+export * from './administration.ts';
+export * from './operations.ts';
+export * from './reference.ts';
+export * from './document-lab.ts';

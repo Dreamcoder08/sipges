@@ -1,0 +1,102 @@
+.page {
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-block: 0.75rem;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.75rem;
+  margin-block: 0.75rem;
+}
+.metrics div {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+.metrics dt {
+  font-size: 0.85rem;
+}
+.metrics dd {
+  margin: 0.3rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.table {
+  overflow: auto;
+  max-width: 100%;
+}
+.table table {
+  border-collapse: collapse;
+  min-width: 420px;
+  width: 100%;
+}
+.table th,
+.table td {
+  padding: 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.item {
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  padding: 1rem;
+  margin-block: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.item h4 {
+  margin-top: 0;
+}
+.form {
+  display: grid;
+  gap: 0.75rem;
+}
+.form label {
+  display: grid;
+  gap: 0.4rem;
+}
+.form textarea,
+.form select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.45rem;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface);
+}
+.form textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+.form fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.muted {
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}

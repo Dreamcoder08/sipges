@@ -7,26 +7,29 @@ import { requestJson } from '../../shared/api/client.ts';
 const ModuleRecord = z.looseObject({ _id: z.string() });
 export type ModuleRecord = z.infer<typeof ModuleRecord>;
 
-export const dashboardQuery = queryOptions({
-  queryKey: ['dashboard', 'summary'],
-  queryFn: ({ signal }) => requestJson('/api/dashboard', DashboardResponse, { signal }),
-});
+export const dashboardQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['dashboard', scope, 'summary'],
+    queryFn: ({ signal }) => requestJson('/api/dashboard', DashboardResponse, { scope, signal }),
+  });
 
-export const irsaQuery = queryOptions({
-  queryKey: ['indicators', 'irsa'],
-  queryFn: ({ signal }) => requestJson('/system/irsa', IrsaSummary, { signal }),
-});
+export const irsaQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['indicators', scope, 'irsa-summary'],
+    queryFn: ({ signal }) => requestJson('/system/irsa', IrsaSummary, { scope, signal }),
+  });
 
-export const modelStatusQuery = queryOptions({
-  queryKey: ['indicators', 'model-status'],
-  queryFn: ({ signal }) => requestJson('/system/model-status', ModelStatus, { signal }),
-  staleTime: Infinity,
-});
+export const modelStatusQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['indicators', scope, 'model-status'],
+    queryFn: ({ signal }) => requestJson('/system/model-status', ModelStatus, { scope, signal }),
+    staleTime: Infinity,
+  });
 
 /** Every record of a module the API returns (at most 500, its upper bound). */
-export const moduleRecordsQuery = (slug: 'alertas' | 'eventos') =>
+export const moduleRecordsQuery = (slug: 'alertas' | 'eventos', scope: string) =>
   queryOptions({
-    queryKey: ['records', slug, 'all'],
+    queryKey: ['records', scope, slug, 'all'],
     queryFn: ({ signal }) =>
-      requestJson(`/api/${slug}?limit=-1`, z.array(ModuleRecord), { signal }),
+      requestJson(`/api/${slug}?limit=-1`, z.array(ModuleRecord), { scope, signal }),
   });

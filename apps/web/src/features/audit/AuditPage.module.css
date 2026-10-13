@@ -1,0 +1,37 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: start;
+}
+.filters label {
+  display: grid;
+  gap: var(--space-2);
+}
+.filters select {
+  font: inherit;
+  padding: var(--space-2);
+}
+.scroll {
+  overflow: auto;
+}
+.scroll table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.scroll caption {
+  text-align: left;
+  font-weight: 600;
+  padding-block: var(--space-2);
+}
+.scroll th,
+.scroll td {
+  text-align: left;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}

@@ -10,7 +10,10 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
-import { RecordsPage } from '../features/records/index.ts';
+import { lazy, Suspense, useState } from 'react';
+import type { FeatureContext } from '../shared/api/feature-context.ts';
+import type { RecordModule } from '../features/records/modules.ts';
+import { Button } from '../shared/ui/Button.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import { LoginPage, UserMenu, meQuery } from '../features/auth/index.ts';
 import {
@@ -22,8 +25,46 @@ import {
 import { isApiError } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { AppShell } from './layout/AppShell.tsx';
-import { PendingScreen } from './layout/PendingScreen.tsx';
+
 import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
+
+const RecordsPage = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
+);
+const IrsaPage = lazy(() =>
+  import('../features/indicators/index.ts').then((module) => ({ default: module.IrsaPage })),
+);
+const ValidationPage = lazy(() =>
+  import('../features/indicators/index.ts').then((module) => ({ default: module.ValidationPage })),
+);
+const MethodologyPage = lazy(() =>
+  import('../features/indicators/index.ts').then((module) => ({ default: module.MethodologyPage })),
+);
+const SituationalPage = lazy(() =>
+  import('../features/analysis/index.ts').then((module) => ({ default: module.SituationalPage })),
+);
+const StrategyPage = lazy(() =>
+  import('../features/analysis/index.ts').then((module) => ({ default: module.StrategyPage })),
+);
+const IntelligencePage = lazy(() =>
+  import('../features/operations/index.ts').then((module) => ({
+    default: module.IntelligencePage,
+  })),
+);
+const ManagementPage = lazy(() =>
+  import('../features/operations/index.ts').then((module) => ({ default: module.ManagementPage })),
+);
+const AdministrationPage = lazy(() =>
+  import('../features/administration/index.ts').then((module) => ({
+    default: module.AdministrationPage,
+  })),
+);
+const AuditPage = lazy(() =>
+  import('../features/audit/index.ts').then((module) => ({ default: module.AuditPage })),
+);
+const GeographyPage = lazy(() =>
+  import('../features/geography/index.ts').then((module) => ({ default: module.GeographyPage })),
+);
 
 type RouterContext = { queryClient: QueryClient };
 
@@ -125,7 +166,9 @@ const appRoute = createRoute({
           />
         }
       >
-        <Outlet />
+        <Suspense fallback={<p role="status">Cargando sección…</p>}>
+          <Outlet />
+        </Suspense>
       </AppShell>
     );
   },
@@ -140,6 +183,8 @@ const dashboardRoute = createRoute({
     const { scope } = appRoute.useRouteContext();
     return (
       <DashboardPage
+        key={scope.scope}
+        scope={scope.scope}
         projectId={scope.project_id}
         renderLink={(to, children) => <Link to={isScreen(to) ? to : '/'}>{children}</Link>}
       />
@@ -147,6 +192,21 @@ const dashboardRoute = createRoute({
   },
 });
 
+const useFeatureContext = (): FeatureContext => {
+  const { scope, me } = appRoute.useRouteContext();
+  const grantedScopes = useQuery(scopesQuery);
+  const label = grantedScopes.data?.find(
+    (item) => `${item.company_id}/${item.project_id}` === scope.scope,
+  )?.label;
+  return {
+    scope: scope.scope,
+    projectId: scope.project_id,
+    projectLabel: label ?? '',
+    role: me.role,
+    username: me.username,
+    fullName: me.full_name,
+  };
+};
 const recordModules = [
   'eventos',
   'actores',
@@ -160,39 +220,76 @@ const recordRoutes = recordModules.map((module) =>
     getParentRoute: () => appRoute,
     path: `/${module}`,
     component: function RecordsRoute() {
-      const { scope, me } = appRoute.useRouteContext();
-      const grantedScopes = useQuery(scopesQuery);
-      const label = grantedScopes.data?.find(
-        (item) => `${item.company_id}/${item.project_id}` === scope.scope,
-      )?.label;
-      return (
-        <RecordsPage
-          key={`${scope.scope}/${module}`}
-          module={module}
-          scope={scope.scope}
-          projectId={scope.project_id}
-          projectLabel={label ?? ''}
-          role={me.role}
-        />
-      );
+      const context = useFeatureContext();
+      return <RecordsPage key={`${context.scope}/${module}`} module={module} {...context} />;
     },
   }),
 );
-
-const pendingRoutes = SCREENS.filter(
-  (screen) => screen.path !== '/' && !recordModules.some((module) => screen.path === `/${module}`),
-).map((screen) =>
+const AlertsPage = (context: FeatureContext) => {
+  const [module, setModule] = useState<RecordModule>('alertas');
+  return (
+    <>
+      <div aria-label="Alertas y acciones">
+        <Button
+          variant={module === 'alertas' ? 'primary' : 'secondary'}
+          aria-pressed={module === 'alertas'}
+          onClick={() => setModule('alertas')}
+        >
+          Alertas territoriales
+        </Button>
+        <Button
+          variant={module === 'acciones' ? 'primary' : 'secondary'}
+          aria-pressed={module === 'acciones'}
+          onClick={() => setModule('acciones')}
+        >
+          Acciones territoriales
+        </Button>
+      </div>
+      <p>
+        Registros territoriales documentados. Las señales digitales y sus planes preventivos se
+        revisan en Inteligencia de redes.
+      </p>
+      <RecordsPage key={`${context.scope}/${module}`} module={module} {...context} />
+    </>
+  );
+};
+const StrategicPage = (context: FeatureContext) => (
+  <StrategyPage
+    {...context}
+    renderRecords={(module) => (
+      <RecordsPage key={`${context.scope}/${module}`} module={module} {...context} />
+    )}
+  />
+);
+const featurePages = {
+  '/gerencia': ManagementPage,
+  '/inteligencia-redes': IntelligencePage,
+  '/alertas': AlertsPage,
+  '/mapa': GeographyPage,
+  '/situacion': SituationalPage,
+  '/estrategia': StrategicPage,
+  '/irsa': IrsaPage,
+  '/validacion': ValidationPage,
+  '/administracion': AdministrationPage,
+  '/metodologia': MethodologyPage,
+  '/auditoria': AuditPage,
+} as const;
+const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePages>).map((path) =>
   createRoute({
     getParentRoute: () => appRoute,
-    path: screen.path,
-    component: () => <PendingScreen title={screen.title} />,
+    path,
+    component: function FeatureRoute() {
+      const context = useFeatureContext();
+      const Page = featurePages[path];
+      return <Page key={`${context.scope}/${path}`} {...context} />;
+    },
   }),
 );
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
   selectProjectRoute,
-  appRoute.addChildren([dashboardRoute, ...recordRoutes, ...pendingRoutes]),
+  appRoute.addChildren([dashboardRoute, ...recordRoutes, ...featureRoutes]),
 ]);
 
 export const createAppRouter = (queryClient: QueryClient) =>
