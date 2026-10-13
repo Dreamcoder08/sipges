@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from pathlib import Path
 from typing import Any, Dict, Optional
-import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars
+import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars, threading
 
 BASE = Path(__file__).resolve().parent
 DB = Path(os.getenv("MASCLI_DB_PATH", str(BASE / "data" / "mascli.db")))
@@ -152,6 +152,64 @@ AUTH_ROLES={"admin","analista","coordinador","consulta"}
 COOKIE_NAME="mascli_session"
 SESSION_SECONDS=8*3600
 
+# Política de seguridad configurable por entorno. Valores seguros por defecto:
+# cookies Secure + HSTS y MFA obligatorio; solo se relajan explícitamente con "0".
+def cookie_secure():
+    return os.getenv('MASCLI_COOKIE_SECURE','1')!='0'
+
+def mfa_required():
+    return os.getenv('MASCLI_REQUIRE_MFA','1')!='0'
+
+def allowed_hosts():
+    return [h.strip().lower() for h in os.getenv('MASCLI_ALLOWED_HOSTS','').split(',') if h.strip()]
+
+CSP=("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+     "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; "
+     "base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+MFA_EXEMPT_PATHS=('/mfa-setup','/system/auth/totp/setup','/system/auth/totp/enable')
+
+# Limitador de intentos fallidos en memoria (por usuario y por IP). Suficiente para una
+# instancia única; un despliegue con varias réplicas necesitará un almacén compartido.
+LOGIN_WINDOW_SECONDS=15*60
+LOGIN_LIMITS={'user':5,'ip':20,'totp':5}
+_failures={}
+_failures_lock=threading.Lock()
+
+def _recent_failures(key):
+    cutoff=time.time()-LOGIN_WINDOW_SECONDS
+    items=[t for t in _failures.get(key,[]) if t>cutoff]
+    if items:_failures[key]=items
+    else:_failures.pop(key,None)
+    return items
+
+def throttled(*keys):
+    """Devuelve segundos de espera si alguna clave superó su límite, o 0."""
+    with _failures_lock:
+        wait=0
+        for key in keys:
+            items=_recent_failures(key)
+            if len(items)>=LOGIN_LIMITS[key.split(':',1)[0]]:
+                wait=max(wait,int(items[0]+LOGIN_WINDOW_SECONDS-time.time())+1)
+        return wait
+
+def record_failure(*keys):
+    with _failures_lock:
+        for key in keys:_failures.setdefault(key,[]).append(time.time())
+
+def clear_failures(*keys):
+    with _failures_lock:
+        for key in keys:_failures.pop(key,None)
+
+def too_many_attempts(wait):
+    return HTTPException(429,'Demasiados intentos fallidos. Intente más tarde.',headers={'Retry-After':str(wait)})
+
+def same_origin(request):
+    from urllib.parse import urlsplit
+    source=request.headers.get('origin') or request.headers.get('referer')
+    if not source or source=='null':return False
+    parts=urlsplit(source)
+    return parts.netloc.lower()==(request.headers.get('host') or '').lower()
+
 def hash_password(password):
     salt=secrets.token_bytes(16)
     derived=hashlib.pbkdf2_hmac("sha256",password.encode(),salt,310000)
@@ -180,9 +238,12 @@ def auth_identity(request):
     token=request.cookies.get(COOKIE_NAME,"")
     if len(token)!=64: return None
     c=auth_conn()
-    row=c.execute("SELECT u.username,u.full_name,u.role,u.active FROM auth_sessions s JOIN auth_users u ON u.username=s.username WHERE s.token_hash=? AND s.expires_at>?",(hashlib.sha256(token.encode()).hexdigest(),int(time.time()))).fetchone()
+    row=c.execute("SELECT u.username,u.full_name,u.role,u.active,u.totp_enabled FROM auth_sessions s JOIN auth_users u ON u.username=s.username WHERE s.token_hash=? AND s.expires_at>?",(hashlib.sha256(token.encode()).hexdigest(),int(time.time()))).fetchone()
     c.close()
-    return dict(row) if row and row['active'] else None
+    if not row or not row['active']:return None
+    identity=dict(row)
+    identity['totp_enabled']=bool(identity['totp_enabled'])
+    return identity
 
 @app.middleware("http")
 async def enforce_auth(request:Request, call_next):
@@ -193,13 +254,11 @@ async def enforce_auth(request:Request, call_next):
     if not identity:
         if path=='/' and request.method=='GET': return RedirectResponse('/login',status_code=303)
         return JSONResponse({'detail':'Inicie sesión para acceder a MASCLI'},status_code=401)
-    if request.method not in ('GET','HEAD','OPTIONS'):
-        origin=request.headers.get('origin')
-        host=request.headers.get('host')
-        if origin:
-            from urllib.parse import urlsplit
-            if urlsplit(origin).netloc != host:
-                return JSONResponse({'detail':'Origen de solicitud no permitido'},status_code=403)
+    if path in MFA_EXEMPT_PATHS:
+        return await call_next(request)
+    if mfa_required() and not identity['totp_enabled']:
+        if path=='/' and request.method=='GET': return RedirectResponse('/mfa-setup',status_code=303)
+        return JSONResponse({'detail':'Active la verificación en dos pasos (MFA) en /mfa-setup antes de continuar'},status_code=403)
     ac=auth_conn()
     grants=ac.execute('SELECT company_id,project_id FROM access_grants WHERE username=?',(identity['username'],)).fetchall()
     ac.close()
@@ -246,29 +305,61 @@ async def enforce_auth(request:Request, call_next):
         response=await call_next(request)
     finally:
         SCOPE_DB.reset(tok);SCOPE_ID.reset(sid)
+    response.headers['Cache-Control']='no-store'
+    return response
+
+# Registrado después de enforce_auth, por lo que se ejecuta antes: filtra Host y origen
+# para toda solicitud (incluidas /login y /logout) y añade cabeceras de seguridad.
+@app.middleware("http")
+async def security_layer(request:Request, call_next):
+    hosts=allowed_hosts()
+    if hosts:
+        from urllib.parse import urlsplit
+        host=(urlsplit('//'+(request.headers.get('host') or '')).hostname or '').lower()
+        if host not in hosts:
+            return JSONResponse({'detail':'Host no permitido'},status_code=400)
+    if request.method not in ('GET','HEAD','OPTIONS') and not same_origin(request):
+        response=JSONResponse({'detail':'Origen de solicitud no permitido'},status_code=403)
+    else:
+        response=await call_next(request)
+    response.headers['Content-Security-Policy']=CSP
     response.headers['X-Content-Type-Options']='nosniff'
     response.headers['X-Frame-Options']='DENY'
-    response.headers['Referrer-Policy']='no-referrer'
-    response.headers['Cache-Control']='no-store'
+    response.headers['Referrer-Policy']='same-origin'
+    response.headers['Permissions-Policy']='camera=(), microphone=(), geolocation=()'
+    if cookie_secure():
+        response.headers['Strict-Transport-Security']='max-age=31536000; includeSubDomains'
     return response
 
 @app.get('/login',response_class=HTMLResponse)
 def login_page():
     return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acceso MASCLI 2.9</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(410px,90vw);padding:32px;background:#1b2a46;border-radius:16px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:22px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}small{color:#c5d3e9}#error{color:#ffaaaa}</style><div class="panel"><h1>MASCLI RC 3.0</h1><p>Acceso al Sistema de Gestión Territorial</p><form id="f"><label>Usuario</label><input name="username" autocomplete="username" required><label>Contraseña</label><input type="password" name="password" autocomplete="current-password" required><label>Código de autenticador (si está activado)</label><input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button>Ingresar</button></form><p id="error" role="alert"></p><small>Acceso exclusivo para personal autorizado.</small></div><script>document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const d=new FormData(e.target);const r=await fetch('/login',{method:'POST',body:d});if(r.ok)location.href='/';else document.querySelector('#error').textContent='Credenciales inválidas o acceso inhabilitado';};</script></html>''')
 
+@app.get('/mfa-setup',response_class=HTMLResponse)
+def mfa_setup_page(request:Request):
+    identity=auth_identity(request)
+    if not identity:return RedirectResponse('/login',status_code=303)
+    if identity['totp_enabled']:return RedirectResponse('/',status_code=303)
+    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activar MFA MASCLI</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(520px,92vw);padding:32px;background:#1b2a46;border-radius:16px}code{display:block;word-break:break-all;background:#0c1528;padding:10px;border-radius:8px;margin:6px 0 14px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:18px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}#error{color:#ffaaaa}</style><div class="panel"><h1>Verificación en dos pasos</h1><p>Para proteger la información territorial, MASCLI exige un autenticador (Google Authenticator, Microsoft Authenticator, Aegis u otro TOTP).</p><p>1. Añada esta clave en su aplicación:</p><code id="secret">Generando…</code><p>o importe este enlace:</p><code id="uri"></code><form id="f"><label>2. Escriba el código de 6 dígitos que muestra la aplicación</label><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required><button>Activar y continuar</button></form><p id="error" role="alert"></p></div><script>fetch('/system/auth/totp/setup',{method:'POST'}).then(r=>r.json()).then(d=>{document.querySelector('#secret').textContent=d.secret;document.querySelector('#uri').textContent=d.otpauth_uri});document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const code=new FormData(e.target).get('code');const r=await fetch('/system/auth/totp/enable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});if(r.ok)location.href='/';else document.querySelector('#error').textContent='Código incorrecto. Verifique la hora del dispositivo e intente de nuevo.';};</script></html>''')
+
 @app.post('/login')
-def login_action(username:str=Form(...),password:str=Form(...),otp:str=Form('')):
+def login_action(request:Request,username:str=Form(...),password:str=Form(...),otp:str=Form('')):
+    username=username.strip().lower()
+    keys=('user:'+username,'ip:'+(request.client.host if request.client else 'desconocido'))
+    wait=throttled(*keys)
+    if wait: raise too_many_attempts(wait)
     c=auth_conn()
-    row=c.execute('SELECT * FROM auth_users WHERE username=?',(username.strip().lower(),)).fetchone()
+    row=c.execute('SELECT * FROM auth_users WHERE username=?',(username,)).fetchone()
     if not row or not row['active'] or not verify_password(password,row['password_hash']):
-        c.close(); raise HTTPException(401,'Credenciales inválidas')
+        c.close(); record_failure(*keys); raise HTTPException(401,'Credenciales inválidas')
     if row['totp_enabled'] and not totp_ok(row['totp_secret'],otp):
-        c.close();raise HTTPException(401,'Código de autenticación inválido')
+        c.close(); record_failure(*keys); raise HTTPException(401,'Código de autenticación inválido')
+    clear_failures(keys[0])
     token=secrets.token_hex(32)
     c.execute('INSERT INTO auth_sessions VALUES(?,?,?,?)',(hashlib.sha256(token.encode()).hexdigest(),row['username'],int(time.time())+SESSION_SECONDS,now()))
     c.commit();c.close()
     response=JSONResponse({'ok':True,'name':row['full_name'],'role':row['role']})
-    response.set_cookie(COOKIE_NAME,token,httponly=True,samesite='strict',secure=os.getenv('MASCLI_COOKIE_SECURE','0')=='1',max_age=SESSION_SECONDS,path='/')
+    response.set_cookie(COOKIE_NAME,token,httponly=True,samesite='strict',secure=cookie_secure(),max_age=SESSION_SECONDS,path='/')
     return response
 
 @app.post('/logout')
@@ -276,7 +367,7 @@ def logout(request:Request):
     token=request.cookies.get(COOKIE_NAME,'')
     if token:
         c=auth_conn();c.execute('DELETE FROM auth_sessions WHERE token_hash=?',(hashlib.sha256(token.encode()).hexdigest(),));c.commit();c.close()
-    response=JSONResponse({'ok':True});response.delete_cookie(COOKIE_NAME,path='/');return response
+    response=JSONResponse({'ok':True});response.delete_cookie(COOKIE_NAME,path='/',secure=cookie_secure(),httponly=True,samesite='strict');return response
 
 @app.get('/system/auth/me')
 def auth_me(request:Request):
@@ -318,13 +409,10 @@ def select_project_page(request:Request):
 def select_project_action(request:Request,scope:str=Form(...)):
     identity=auth_identity(request)
     if not identity:raise HTTPException(401)
-    if request.headers.get('origin'):
-        from urllib.parse import urlsplit
-        if urlsplit(request.headers['origin']).netloc!=request.headers.get('host'):raise HTTPException(403)
     c=auth_conn();ok=c.execute("SELECT 1 FROM access_grants WHERE username=? AND company_id||'/'||project_id=?",(identity['username'],scope)).fetchone();c.close()
     if not ok:raise HTTPException(403,'Proyecto no autorizado')
     resp=RedirectResponse('/',status_code=303)
-    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=os.getenv('MASCLI_COOKIE_SECURE','0')=='1',max_age=SESSION_SECONDS)
+    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=cookie_secure(),max_age=SESSION_SECONDS,path='/')
     return resp
 
 @app.get('/system/auth/current-scope')
@@ -384,12 +472,27 @@ def grant_scope(item:GrantIn,request:Request):
     finally:c.close()
     return {'ok':True}
 
+class TOTPReset(BaseModel):
+    code:str=''
+
 @app.post('/system/auth/totp/setup')
-def totp_setup(request:Request):
+def totp_setup(request:Request,payload:Optional[TOTPReset]=None):
     user=auth_identity(request)
     if not user:raise HTTPException(401)
+    c=auth_conn()
+    if user['totp_enabled']:
+        # Con MFA activo, reemplazar el secreto exige el código vigente: una sesión robada
+        # no debe poder desactivar ni sustituir el segundo factor.
+        key='totp:'+user['username']
+        wait=throttled(key)
+        if wait:c.close();raise too_many_attempts(wait)
+        current=c.execute('SELECT totp_secret FROM auth_users WHERE username=?',(user['username'],)).fetchone()
+        if not payload or not totp_ok(current['totp_secret'],payload.code):
+            c.close();record_failure(key)
+            raise HTTPException(403,'Confirme con el código actual del autenticador para reemplazar el MFA')
+        clear_failures(key)
     secret=base64.b32encode(secrets.token_bytes(20)).decode().rstrip('=')
-    c=auth_conn();c.execute('UPDATE auth_users SET totp_secret=?,totp_enabled=0 WHERE username=?',(secret,user['username']));c.commit();c.close()
+    c.execute('UPDATE auth_users SET totp_secret=?,totp_enabled=0 WHERE username=?',(secret,user['username']));c.commit();c.close()
     from urllib.parse import quote
     uri=f'otpauth://totp/MASCLI:{quote(user["username"])}?secret={secret}&issuer=MASCLI&algorithm=SHA1&digits=6&period=30'
     return {'secret':secret,'otpauth_uri':uri,'instruction':'Añada el código en una aplicación TOTP y confirme con /system/auth/totp/enable.'}
@@ -401,8 +504,12 @@ class TOTPVerify(BaseModel):
 def totp_enable(payload:TOTPVerify,request:Request):
     user=auth_identity(request)
     if not user:raise HTTPException(401)
+    key='totp:'+user['username']
+    wait=throttled(key)
+    if wait:raise too_many_attempts(wait)
     c=auth_conn();r=c.execute('SELECT totp_secret FROM auth_users WHERE username=?',(user['username'],)).fetchone()
-    if not r or not r['totp_secret'] or not totp_ok(r['totp_secret'],payload.code):c.close();raise HTTPException(422,'Código TOTP incorrecto')
+    if not r or not r['totp_secret'] or not totp_ok(r['totp_secret'],payload.code):c.close();record_failure(key);raise HTTPException(422,'Código TOTP incorrecto')
+    clear_failures(key)
     c.execute('UPDATE auth_users SET totp_enabled=1 WHERE username=?',(user['username'],));c.execute('DELETE FROM auth_sessions WHERE username=? AND token_hash!=?',(user['username'],hashlib.sha256(request.cookies.get(COOKIE_NAME,'').encode()).hexdigest()));c.commit();c.close()
     return {'ok':True,'totp_enabled':True}
 
@@ -1316,7 +1423,10 @@ def audit(limit:int=100):
 
 @app.get("/system/export")
 def export_db():
-    return FileResponse(DB, filename="mascli.db", media_type="application/octet-stream")
+    # Exporta solo la base del alcance autenticado; nunca la base histórica global desde otro tenant.
+    company,project=SCOPE_ID.get() or ('MASCLI','PRJ-SECHURA')
+    source=SCOPE_DB.get() or DB
+    return FileResponse(source, filename=f"mascli_{company}_{project}.db", media_type="application/octet-stream")
 
 
 
