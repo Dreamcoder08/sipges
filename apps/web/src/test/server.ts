@@ -1,3 +1,4 @@
+import type { Role } from '@mascli/contracts';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
 
@@ -6,7 +7,7 @@ import { setupServer } from 'msw/node';
  * contracts in packages/contracts.
  */
 export type ApiState = {
-  me: { username: string; full_name: string; role: 'admin' | 'consulta' } | null;
+  me: { username: string; full_name: string; role: Role } | null;
   scope: string | null;
   scopes: { company_id: string; project_id: string; label: string }[];
   otpRequired: boolean;
@@ -48,10 +49,6 @@ const SYNTHETIC_EVENTS = [
 ];
 
 export const handlers = [
-  http.all('*', ({ request }) => {
-    const url = new URL(request.url);
-    api.requests.push(`${request.method} ${url.pathname}`);
-  }),
   http.get('/system/auth/me', () => HttpResponse.json(api.me ? { ...api.me, active: 1 } : null)),
   http.post('/login', async ({ request }) => {
     const form = new URLSearchParams(await request.text());
@@ -142,3 +139,8 @@ export const handlers = [
 ];
 
 export const server = setupServer(...handlers);
+
+// Observe requests even when individual tests override response handlers.
+server.events.on('request:start', ({ request }) => {
+  api.requests.push(`${request.method} ${new URL(request.url).pathname}`);
+});

@@ -5,3 +5,4 @@ export * from './tenancy.ts';
 export * from './records.ts';
 export * from './indicators.ts';
 export * from './analytics.ts';
+export * from './evidence.ts';

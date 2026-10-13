@@ -1,11 +1,21 @@
 /** Screens of the legacy UI (static/index.html) in its menu order; `ready` ones are rebuilt. */
 export const SCREENS = [
   { path: '/', label: 'Dashboard', title: 'Dashboard ejecutivo', ready: true },
-  { path: '/eventos', label: 'Eventos', title: 'Eventos' },
-  { path: '/actores', label: 'Actores', title: 'Mapa y gestión de actores' },
-  { path: '/directorio', label: 'Directorio territorial', title: 'Directorio territorial' },
-  { path: '/demandas', label: 'Demandas', title: 'Demandas y compromisos' },
-  { path: '/narrativas', label: 'Narrativas', title: 'Narrativas y señales digitales' },
+  { path: '/eventos', label: 'Eventos', title: 'Eventos', ready: true },
+  { path: '/actores', label: 'Actores', title: 'Mapa y gestión de actores', ready: true },
+  {
+    path: '/directorio',
+    label: 'Directorio territorial',
+    title: 'Directorio territorial',
+    ready: true,
+  },
+  { path: '/demandas', label: 'Demandas', title: 'Demandas y compromisos', ready: true },
+  {
+    path: '/narrativas',
+    label: 'Narrativas',
+    title: 'Narrativas y señales digitales',
+    ready: true,
+  },
   { path: '/gerencia', label: 'Centro gerencial', title: 'Centro de control gerencial' },
   {
     path: '/inteligencia-redes',
@@ -22,7 +32,7 @@ export const SCREENS = [
   },
   { path: '/irsa', label: 'IRSA-MASCLI', title: 'IRSA-MASCLI' },
   { path: '/validacion', label: 'Validación', title: 'Validación' },
-  { path: '/fuentes', label: 'Fuentes', title: 'Fuentes y evidencias' },
+  { path: '/fuentes', label: 'Fuentes', title: 'Fuentes y evidencias', ready: true },
   { path: '/administracion', label: 'Administración', title: 'Administración del sistema' },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología MASCLI' },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría' },

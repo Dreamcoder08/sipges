@@ -33,6 +33,8 @@ export type RequestBody =
   | { readonly multipart: FormData };
 
 export type RequestOptions = {
+  /** Pins an operation to the authorized scope where it was started. */
+  readonly scope?: string;
   readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   readonly body?: RequestBody;
   readonly signal?: AbortSignal;
@@ -55,6 +57,7 @@ export const request = async (path: string, options: RequestOptions = {}) => {
   const { body, type } = encode(options.body);
   const headers = new Headers({ accept: 'application/json' });
   if (type) headers.set('content-type', type);
+  if (options.scope) headers.set('X-MASCLI-Scope', options.scope);
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     credentials: 'same-origin',

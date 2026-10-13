@@ -1,4 +1,4 @@
-import type { QueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQuery } from '@tanstack/react-query';
 import {
   Link,
   Outlet,
@@ -10,6 +10,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
+import { RecordsPage } from '../features/records/index.ts';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import { LoginPage, UserMenu, meQuery } from '../features/auth/index.ts';
 import {
@@ -146,7 +147,41 @@ const dashboardRoute = createRoute({
   },
 });
 
-const pendingRoutes = SCREENS.filter((screen) => screen.path !== '/').map((screen) =>
+const recordModules = [
+  'eventos',
+  'actores',
+  'directorio',
+  'demandas',
+  'narrativas',
+  'fuentes',
+] as const;
+const recordRoutes = recordModules.map((module) =>
+  createRoute({
+    getParentRoute: () => appRoute,
+    path: `/${module}`,
+    component: function RecordsRoute() {
+      const { scope, me } = appRoute.useRouteContext();
+      const grantedScopes = useQuery(scopesQuery);
+      const label = grantedScopes.data?.find(
+        (item) => `${item.company_id}/${item.project_id}` === scope.scope,
+      )?.label;
+      return (
+        <RecordsPage
+          key={`${scope.scope}/${module}`}
+          module={module}
+          scope={scope.scope}
+          projectId={scope.project_id}
+          projectLabel={label ?? ''}
+          role={me.role}
+        />
+      );
+    },
+  }),
+);
+
+const pendingRoutes = SCREENS.filter(
+  (screen) => screen.path !== '/' && !recordModules.some((module) => screen.path === `/${module}`),
+).map((screen) =>
   createRoute({
     getParentRoute: () => appRoute,
     path: screen.path,
@@ -157,7 +192,7 @@ const pendingRoutes = SCREENS.filter((screen) => screen.path !== '/').map((scree
 const routeTree = rootRoute.addChildren([
   loginRoute,
   selectProjectRoute,
-  appRoute.addChildren([dashboardRoute, ...pendingRoutes]),
+  appRoute.addChildren([dashboardRoute, ...recordRoutes, ...pendingRoutes]),
 ]);
 
 export const createAppRouter = (queryClient: QueryClient) =>

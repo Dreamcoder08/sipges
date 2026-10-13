@@ -6,7 +6,7 @@ Screens are rebuilt, not ported line by line, and land in four steps:
 | Step | Screens |
 | --- | --- |
 | T11a | Shell, sign-in with MFA, project selection and switch, dashboard |
-| T11b | Eventos, Actores, Directorio, Demandas, Narrativas, Fuentes (evidence uploads) |
+| T11b (implementado) | Eventos, Actores, Directorio, Demandas/Compromisos, Narrativas, Fuentes y evidencias vinculadas |
 | T11c | IRSA, Alertas, Mapa, Análisis situacional, Inteligencia estratégica (document lab), Validación |
 | T11d | Centro gerencial, Inteligencia de redes, Administración, Auditoría, Metodología |
 
@@ -17,7 +17,7 @@ Screens not rebuilt yet show an "En migración" notice inside the shell.
 ```
 apps/web/src/
   app/       providers, router, shell layout, navigation, global styles and tokens
-  features/  auth, tenancy, dashboard: api.ts (queries), components, model.ts (pure logic)
+  features/  auth, tenancy, dashboard, records: typed API access, components and pure models
   shared/    api client, UI primitives, text helpers
   test/      MSW server with synthetic data and test setup
 ```
@@ -89,3 +89,21 @@ synthetic data:
 
 The API side has tests for `/api/dashboard` and for SPA delivery and its CSP
 (`apps/api/test/platform/spa.test.ts`).
+
+## Territorial records and linked evidence (T11b)
+
+The six rebuilt routes use the isolated `features/records` feature. Each module has its own field definition, labels and list columns; demands also offers commitments. The shared UI supports search, create, view, full-replacement edit and confirmed delete. Lists use the API's 500-record ceiling and explain when the reader should refine the search. Tables scroll inside a labelled keyboard-focusable region on narrow screens.
+
+- Every record query key includes the authorized company/project. HTTP calls send `X-MASCLI-Scope`, including the fresh GET before PUT, uploads and downloads, so a request started before a project switch remains scoped to its original tenant.
+- The router keys the workspace by scope/module. A project switch discards the old form and detail panel. Server grants, role policies and RLS remain authoritative.
+- Admin and analyst can mutate these records; consultation and coordinator roles see read-only controls. The UI locks conflicting record controls during saves, deletes and uploads.
+- PUT reads the latest record and overlays only editable fields, retaining unknown fields, IDs and evidence links. Existing project display names are preserved; new records use the granted project label when available. Explicitly blank canonical directory fields override imported aliases, so clearing a contact value remains effective.
+- The delete confirmation announces its consequences, traps keyboard focus, supports Escape/cancel and restores focus when possible. Save/upload errors retain the draft or selected file for retry. A 401 clears session state and returns to sign-in.
+- Evidence is a separate operation on a saved record: open its detail, choose a file and submit metadata. A rejected upload does not recreate the territorial record. Attachment answers use the shared `Attachment` contract. Binary downloads fetch the canonical API route with the same scope, then use a local Blob URL; returned `download_url` values are ignored.
+- Narrative links allow only HTTP(S) without credentials; imported unsafe URLs remain escaped text. No HTML rendering or scraping is introduced.
+
+### T11b parity differences retained for later phases
+
+Event dimensions are selected explicitly in the editor. The legacy automatic `/system/analyze` step is not wired into this screen; its TypeScript API remains available for the later assisted-analysis UI. Directory aliases are enumerated rather than fuzzy-matched against arbitrary source column names; unknown fields are preserved by edits, while broader import normalization belongs with T13 migration tooling. Sources can be created before attaching a file, making failed uploads retryable on the same record.
+
+Verification and synthetic-browser evidence: [T11b verification report](t11b-verification.md). These flows do not complete T11c/d, T12 benchmarks, T13 migration tooling or T14's comprehensive parity and deployment readiness.
