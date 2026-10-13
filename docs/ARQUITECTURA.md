@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en `feat/typescript-migration-11b-records-ui`, commit `f9db457d4151d18898163dffb78c653cd859e0a6`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación T11b](migration/t11b-verification.md) registra pruebas y diferencias de paridad pendientes.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en `feat/typescript-migration-11-complete`, commit `90c6b0e6b547eb837e70dcf01d9998ae86707d4c`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Recorrido y reglas de dependencia
 
@@ -24,13 +24,13 @@ El backend organiza cada contexto en `http`, `application`, `domain` e `infrastr
 | Embeddings | EmbeddingProvider con adaptador Ollama | [Migración T10](migration/operations.md) |
 | Herramientas | pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser | Enmienda del [ADR 0001](adr/0001-monorepo-and-toolchain.md): sin Turborepo/Biome |
 
-El mapa agrupa los contextos identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention y management. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
+El mapa agrupa los contextos identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention management y reference. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
 
 ## Persistencia y aislamiento
 
 `MASCLI_DATABASE_URL` selecciona PostgreSQL mediante postgres.js. Sin esa variable, desarrollo usa PGlite embebido; `NODE_ENV=production` exige la URL. Las migraciones se aplican al arrancar. `withTenant` establece `app.tenant_id` y `SET LOCAL ROLE mascli_tenant` dentro de la transacción. Las tablas territoriales llevan RLS, mientras usuarios, sesiones, tenants y grants son globales. Los cambios de registros y su auditoría se escriben en la misma transacción. Esto describe los controles implementados, sin constituir una auditoría de seguridad.
 
-La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptador local o S3 según `MASCLI_STORAGE`; los metadatos quedan en PostgreSQL. El laboratorio procesa documentos mediante puertos y genera DOCX sin invocar Python. Ollama se llama solo al solicitar semántica: `mode=rules` devuelve el análisis por reglas sin invocar embeddings. No se representa ningún proveedor alojado como si ya estuviera desplegado.
+La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptador local o S3 según `MASCLI_STORAGE`; los metadatos quedan en PostgreSQL. El laboratorio procesa documentos mediante puertos y genera DOCX sin invocar Python. Ollama se llama solo al solicitar semántica: `mode=rules` devuelve el análisis por reglas sin invocar embeddings. El adaptador de referencias lee geometría y entidades del repositorio únicamente para su empresa/proyecto registrado; no ofrece la geometría de Sechura como fallback de otro tenant. No se representa ningún proveedor alojado como si ya estuviera desplegado.
 
 ## Estado del ODD en esta revisión
 
@@ -38,12 +38,12 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | --- | --- |
 | T1–T10 | Contratos, ADRs, workspace y contextos backend completados |
 | T11a/b | Shell, login/MFA, selección/cambio de proyecto, dashboard, registros y evidencias completados |
-| T11c–d | Pantallas de análisis y gestión pendientes; rutas con aviso «En migración» |
+| T11c–d | IRSA/validación, alertas/mapa, análisis/documentos, gerencia/inteligencia, administración/auditoría/metodología completados |
 | T12 | Benchmarks pendientes; Go/Rust condicionado a resultados |
 | T13 | Herramientas de migración SQLite → PostgreSQL pendientes |
 | T14 | Paridad E2E y preparación del despliegue pendientes |
 
-La implementación nueva es TypeScript; Python permanece como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; esta entrega no completa ni revalida esas tareas. La validación científica externa del IRSA sigue siendo un proceso separado.
+La implementación nueva es TypeScript; Python permanece como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; esta entrega completa T11 sin cerrar T12–T14. La validación científica externa del IRSA sigue siendo un proceso separado.
 
 ## Fuente editable y regeneración
 

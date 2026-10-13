@@ -7,17 +7,17 @@ Screens are rebuilt, not ported line by line, and land in four steps:
 | --- | --- |
 | T11a | Shell, sign-in with MFA, project selection and switch, dashboard |
 | T11b (implementado) | Eventos, Actores, Directorio, Demandas/Compromisos, Narrativas, Fuentes y evidencias vinculadas |
-| T11c | IRSA, Alertas, Mapa, Análisis situacional, Inteligencia estratégica (document lab), Validación |
-| T11d | Centro gerencial, Inteligencia de redes, Administración, Auditoría, Metodología |
+| T11c (implementado) | IRSA, Alertas, Mapa, Análisis situacional, Inteligencia estratégica (document lab), Validación |
+| T11d (implementado) | Centro gerencial, Inteligencia de redes, Administración, Auditoría, Metodología |
 
-Screens not rebuilt yet show an "En migración" notice inside the shell.
+Todas las secciones del menú tienen una interfaz operativa. T11 se completa con carga por rutas; T12–T14 continúan como fases separadas.
 
 ## Structure
 
 ```
 apps/web/src/
   app/       providers, router, shell layout, navigation, global styles and tokens
-  features/  auth, tenancy, dashboard, records: typed API access, components and pure models
+  features/  auth, tenancy, dashboard, records, indicators, analysis, operations, geography, administration, audit
   shared/    api client, UI primitives, text helpers
   test/      MSW server with synthetic data and test setup
 ```
@@ -74,8 +74,7 @@ selected leads to `/proyecto`.
 - **Dashboard scope:** counters come from the active project only. The legacy dashboard mixed
   global counters with project charts.
 - **Profile:** the name and role come from the session. The legacy header hard-coded a person.
-- **Code splitting:** the bundle is one chunk (about 140 kB gzip). Route-level splitting comes
-  with the heavier screens in T11c.
+- **Code splitting:** las rutas cargan bloques independientes por funcionalidad. El bloque inicial ronda 143 kB gzip; los módulos nuevos se descargan al abrir su sección.
 
 ## Tests
 
@@ -104,6 +103,23 @@ The six rebuilt routes use the isolated `features/records` feature. Each module 
 
 ### T11b parity differences retained for later phases
 
-Event dimensions are selected explicitly in the editor. The legacy automatic `/system/analyze` step is not wired into this screen; its TypeScript API remains available for the later assisted-analysis UI. Directory aliases are enumerated rather than fuzzy-matched against arbitrary source column names; unknown fields are preserved by edits, while broader import normalization belongs with T13 migration tooling. Sources can be created before attaching a file, making failed uploads retryable on the same record.
+T11c incorpora `/system/analyze`: muestra señales y confianza orientativa, y aplica la dimensión solo a petición del usuario. Un cambio de borrador descarta respuestas anteriores. Directory aliases are enumerated rather than fuzzy-matched against arbitrary source column names; unknown fields are preserved by edits, while broader import normalization belongs with T13 migration tooling. Sources can be created before attaching a file, making failed uploads retryable on the same record.
 
-Verification and synthetic-browser evidence: [T11b verification report](t11b-verification.md). These flows do not complete T11c/d, T12 benchmarks, T13 migration tooling or T14's comprehensive parity and deployment readiness.
+Verification and synthetic-browser evidence: [T11b verification report](t11b-verification.md). La entrega histórica T11b se amplía con [la verificación de T11 completo](t11-verification.md). T12 benchmarks, T13 migration tooling y T14 comprehensive parity/deployment readiness siguen pendientes.
+
+
+## Análisis y gestión (T11c/d)
+
+- **IRSA y validación:** puntuaciones, factores, indicadores, disponibilidad, historial y cortes. Solo administradores editan pesos, bandas y contribuciones; administrador/analista guardan cortes. La plantilla CSV para expertos conserva el estado científico pendiente y no inventa calificaciones Aiken.
+- **Alertas:** CRUD de alertas territoriales documentadas y acciones asociadas. Las alertas digitales tienen su bandeja específica en inteligencia de redes y planes preventivos en gerencia.
+- **Mapa:** SVG interactivo sin servicios externos; selección, zoom, navegación, vértices y CSV de las cinco concesiones referenciales. Los datos del adaptador `reference` están registrados únicamente para `MASCLI/PRJ-SECHURA`; otras empresas/proyectos reciben un estado sin geometría. No se inventan coordenadas para actores o eventos. Se muestran CRS, fecha, organización y límites de la fuente.
+- **Situación y estrategia:** análisis situacional, valoración estratégica, consenso e integración con descargas DOCX. Cinco formularios específicos permiten registrar intereses, diálogos, oportunidades, hechos compartidos y AARC. Guardar un registro invalida los resúmenes correspondientes.
+- **Documentos:** lectura, comparación, reporte, importación con huella SHA-256 y decisiones humanas. Corroborar exige una nota de evidencia contrastada. Los candidatos no se convierten automáticamente en hechos, registros ni componentes del IRSA.
+- **Inteligencia:** análisis por reglas, semántico o automático con respaldo. Sin modelo disponible, automático conserva la explicación del respaldo; semántico presenta el error. El servidor no descarga la URL proporcionada.
+- **Gerencia:** métricas y CSV, creación de planes desde alertas `Corroborado`/`En seguimiento`, progreso e historial. El servidor controla transiciones, cierre al 100%, notas de cierre/cancelación y prohibición de reactivar cancelados. Coordinadores pueden realizar operaciones preventivas; consulta permanece en lectura.
+- **Administración:** cuentas reales de identidad, proyectos autorizados, creación de proyectos, concesión/revocación explícita, desactivación confirmada y exportación del proyecto sin credenciales. No hay catálogo global de todos los tenants ni listado de grants porque la API actual no los ofrece. MFA personal permite configurar/activar a los roles que autoriza el servidor; desactivar MFA no está expuesto por la API.
+- **Auditoría y metodología:** búsqueda de operaciones del proyecto para administradores; definiciones y reglas reales de indicadores con el estado de validación del servidor.
+
+Las páginas reciben un contexto común y se reinician al cambiar de alcance. Todas las lecturas, escrituras y descargas protegidas fijan `X-MASCLI-Scope`; también se corrigieron las consultas del dashboard. Los resultados se validan con contratos Zod. Formularios en curso conservan sus valores para reintentar y bloquean controles incompatibles.
+
+La verificación funcional usa datos sintéticos. La cobertura de estas pantallas no sustituye T14 ni certifica el modelo IRSA. La normalización amplia de columnas importadas sigue correspondiendo a T13.

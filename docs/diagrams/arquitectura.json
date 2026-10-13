@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "f9db457d4151d18898163dffb78c653cd859e0a6"
+      "revision": "90c6b0e6b547eb837e70dcf01d9998ae86707d4c"
     }
   },
   "components": [
@@ -27,10 +27,10 @@
       ],
       "sources": [
         {
-          "path": "apps/web/src/app/App.tsx",
-          "line": 1,
-          "end_line": 27,
-          "label": "Router y estado servidor"
+          "path": "apps/web/src/app/router.tsx",
+          "line": 264,
+          "end_line": 292,
+          "label": "Rutas y composición de todas las funciones"
         },
         {
           "path": "apps/web/src/shared/api/client.ts",
@@ -39,10 +39,10 @@
           "label": "HTTP fijado al alcance y Zod"
         },
         {
-          "path": "apps/web/src/features/records/RecordsPage.tsx",
-          "line": 65,
-          "end_line": 113,
-          "label": "Registros, permisos y mutations"
+          "path": "apps/web/src/features/analysis/DocumentLab.tsx",
+          "line": 24,
+          "end_line": 90,
+          "label": "Documentos y revisión fijados al proyecto"
         }
       ]
     },
@@ -96,8 +96,8 @@
       "sources": [
         {
           "path": "apps/api/src/app.ts",
-          "line": 39,
-          "end_line": 58,
+          "line": 44,
+          "end_line": 64,
           "label": "Middleware y rutas"
         },
         {
@@ -384,8 +384,8 @@
       "dot": "cyan",
       "title": "Frontend y acceso",
       "items": [
-        "SPA en TypeScript: React 19, Vite, TanStack Router/Query, CSS Modules y tokens. Registros territoriales y evidencias con contratos Zod compartidos.",
-        "Las cookies HttpOnly llevan sesión y alcance. Registros y evidencias fijan X-MASCLI-Scope; cambiar proyecto descarta los borradores y vuelve a consultar datos.",
+        "SPA TypeScript completa: React 19, Vite, TanStack Router/Query y bloques por funcionalidad. Registros/evidencias, IRSA, análisis/documentos, mapa, inteligencia, gerencia y administración con contratos Zod.",
+        "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-MASCLI-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
         "El servidor ejecuta middleware de sesión/origen, tenancy y roles antes de las rutas protegidas; la entrega del shell y ciertas rutas tienen excepciones."
       ]
     },
@@ -394,7 +394,7 @@
       "title": "Hexágono y datos",
       "items": [
         "http → application → domain; la aplicación invoca interfaces de puertos. compose.ts conecta implementaciones concretas por inyección manual. Las flechas representan llamadas o uso de contratos, no servicios separados.",
-        "Contextos: identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention y management.",
+        "Contextos: identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention, management y reference. Geometría/entidades de referencia solo para el proyecto registrado.",
         "SQL explícito y migraciones versionadas. withTenant fija app.tenant_id y SET LOCAL ROLE mascli_tenant; las tablas de tenant usan RLS. Configuración IRSA y auditoría pasan a SQL."
       ]
     },
@@ -411,8 +411,8 @@
       "dot": "amber",
       "title": "ODD · implementado y pendiente",
       "items": [
-        "Fuente: rama feat/typescript-migration-11b-records-ui, revisión f9db457. ODD y ADRs guían la migración; no son servicios del runtime.",
-        "T1–T10 y T11a/b figuran completos: API, shell/login/MFA, selección de proyecto, dashboard, registros y evidencias. T11c/d, T12 benchmarks, T13 migración de datos y T14 paridad/despliegue siguen pendientes.",
+        "Fuente: rama feat/typescript-migration-11-complete, revisión 90c6b0e. ODD y ADRs guían la migración; no son servicios del runtime.",
+        "T1–T11 completos: backend y todas las secciones web. T12 benchmarks, T13 migración de datos y T14 paridad integral/despliegue siguen pendientes. La validación científica IRSA no se declara completada.",
         "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. El legado Python es referencia, no dependencia de este runtime."
       ]
     }

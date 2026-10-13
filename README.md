@@ -30,9 +30,9 @@ Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron 
 
 ## Estado del ODD
 
-El mapa se basa en `feat/typescript-migration-11b-records-ui`, commit `f9db457d4151d18898163dffb78c653cd859e0a6`: T1–T10 y T11a/b figuran completos. La API y el shell web, login/MFA, selección de proyecto, dashboard, registros territoriales y evidencias están implementados en TypeScript.
+El mapa se basa en `feat/typescript-migration-11-complete`, commit `90c6b0e6b547eb837e70dcf01d9998ae86707d4c`: T1–T11 figuran completos. La API y todas las secciones web están implementadas en TypeScript: acceso/MFA, proyectos, registros/evidencias, IRSA/validación, análisis/documentos, mapa, inteligencia/prevención, gerencia, administración y auditoría.
 
-T11c–d (pantallas de análisis y gestión), T12 (benchmarks), T13 (migración de datos) y T14 (paridad E2E y preparación del despliegue) siguen pendientes. Las pantallas pendientes muestran «En migración». El runtime nuevo no necesita Python; `app.py`, `static/` y sus pruebas siguen en el repositorio como referencia legada. Esto no significa que toda la migración esté terminada ni que el modelo IRSA tenga validación científica externa.
+T12 (benchmarks), T13 (migración de datos) y T14 (paridad E2E completa y preparación del despliegue) siguen pendientes. Consulta [la verificación de T11](docs/migration/t11-verification.md). El runtime nuevo no necesita Python; `app.py`, `static/` y sus pruebas siguen en el repositorio como referencia legada. Esto no significa que toda la migración esté terminada ni que el modelo IRSA tenga validación científica externa.
 
 ## Desarrollo local
 
