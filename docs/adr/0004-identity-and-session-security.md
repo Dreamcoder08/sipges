@@ -17,7 +17,7 @@ Behavior contract §2 and §8.8: PBKDF2-SHA256 (310k) hashes, opaque sessions st
 - **Known trade-off:** anyone can lock a username for 15 minutes with 5 bad attempts. Accepted for an internal tool with few accounts; revisit with CAPTCHA or per-device trust if it is abused.
 - **Client address:** the socket peer by default; with `MASCLI_TRUST_PROXY=1`, the right-most `X-Forwarded-For` entry (the one appended by the trusted proxy). Never trust the header without a proxy in front.
 - **Session purge** runs on every successful login; a scheduled job is left to deployment readiness (T14).
-- **CSP** belongs to the SPA and is delivered in T11; HSTS is sent whenever cookies are Secure.
+- **CSP** belongs to the SPA and is delivered with it (T11a, `apps/api/src/platform/http/spa.ts`, docs/migration/web.md); HSTS is sent whenever cookies are Secure.
 - An unreadable sealed TOTP secret (corruption, wrong key) fails the second factor with 401 and logs an operator hint, never a 500.
 - Timing: unknown users are verified against an eagerly computed Argon2id dummy hash. Accounts still holding a legacy PBKDF2 hash answer measurably slower until their next login rehashes them.
 

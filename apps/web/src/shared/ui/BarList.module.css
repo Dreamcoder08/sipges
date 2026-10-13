@@ -1,0 +1,75 @@
+.list {
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 11rem) 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.row dt {
+  font-size: 0.9rem;
+}
+
+.row dd {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 2.5rem;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: right;
+}
+
+.track {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-brand);
+}
+
+.Verde {
+  background: var(--level-green);
+}
+.Amarillo {
+  background: var(--level-yellow);
+}
+.Naranja {
+  background: var(--level-orange);
+}
+.Rojo {
+  background: var(--level-red);
+}
+.G {
+  background: var(--dim-g);
+}
+.A {
+  background: var(--dim-a);
+}
+.D {
+  background: var(--dim-d);
+}
+.N {
+  background: var(--dim-n);
+}
+.E {
+  background: var(--dim-e);
+}
+.I {
+  background: var(--dim-i);
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-muted);
+}

@@ -1,0 +1,56 @@
+.dimension {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.G {
+  background: var(--dim-g);
+}
+.A {
+  background: var(--dim-a);
+}
+.D {
+  background: var(--dim-d);
+}
+.N {
+  background: var(--dim-n);
+}
+.E {
+  background: var(--dim-e);
+}
+.I {
+  background: var(--dim-i);
+}
+
+.level {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--color-track);
+}
+
+.green {
+  background: var(--level-green-soft);
+  color: var(--level-green-text);
+}
+.yellow {
+  background: var(--level-yellow-soft);
+  color: var(--level-yellow-text);
+}
+.orange {
+  background: var(--level-orange-soft);
+  color: var(--level-orange-text);
+}
+.red {
+  background: var(--level-red-soft);
+  color: var(--level-red-text);
+}

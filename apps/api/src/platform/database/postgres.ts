@@ -19,7 +19,25 @@ const wrap = (sql: Sql, transaction: SqlClient['transaction']): SqlClient => ({
  */
 export const postgresClient = (url: string): { client: SqlClient; close: () => Promise<void> } => {
   const local = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
-  const sql = postgres(url, { max: 10, ssl: local ? false : 'require', prepare: false });
+  const sql = postgres(url, {
+    max: 10,
+    ssl: local ? false : 'require',
+    prepare: false,
+    types: {
+      /**
+       * Repositories pass JSON *text* for `json`/`jsonb` parameters (`$n::jsonb`). postgres.js
+       * learns the server-inferred parameter type after Parse and then applies its own JSON
+       * serializer, which would encode that text a second time and store a JSON string
+       * (breaking `jsonb_typeof(payload) = 'object'`). Pass strings through unchanged.
+       */
+      json: {
+        to: 114,
+        from: [114, 3802],
+        serialize: (value: unknown) => (typeof value === 'string' ? value : JSON.stringify(value)),
+        parse: (value: string) => JSON.parse(value) as unknown,
+      },
+    },
+  });
   const client = wrap(
     sql,
     (fn) =>

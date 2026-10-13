@@ -3,7 +3,15 @@ import type { TenantDataReader, TenantExportData } from '../application/ports.ts
 import { formatScope } from '../domain/scope.ts';
 
 // Identifiers are static code, never request-controlled. New owning contexts extend explicitly.
-const TABLES = ['module_records', 'audit', 'attachments'] as const;
+const TABLES = [
+  'module_records',
+  'audit',
+  'attachments',
+  'document_review',
+  'digital_alert_reviews',
+  'preventive_actions',
+  'preventive_action_log',
+] as const;
 
 export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => ({
   async read(scope) {
@@ -19,6 +27,10 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
           module_records: [],
           audit: [],
           attachments: [],
+          document_review: [],
+          digital_alert_reviews: [],
+          preventive_actions: [],
+          preventive_action_log: [],
         };
         for (const table of TABLES) {
           const [relation] = await tenant.query<{ present: string | null; secured: boolean }>(

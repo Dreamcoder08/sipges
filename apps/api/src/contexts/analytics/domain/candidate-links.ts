@@ -28,25 +28,40 @@ const references = (x: AnalysisRecord, field: string) =>
       .filter(Boolean),
   );
 
-/** app.py record_links: explicit shared ID, or a cross reference between the two records. */
-export const recordLinks = (
-  a: AnalysisRecord,
-  b: AnalysisRecord,
-): readonly [string, string[]] | null => {
-  for (const field of ID_FIELDS) {
-    const left = pyStrip(pyGet(a, field));
-    const right = pyStrip(pyGet(b, field));
-    if (left && right && left.toLowerCase() === right.toLowerCase())
-      return ['referencia explícita', [field]];
+/** What record_links compares, computed once per record instead of once per pair. */
+type LinkKeys = {
+  readonly id: string;
+  /** Stripped, lower-cased ID_FIELDS values ('' when empty), in field order. */
+  readonly ids: readonly string[];
+  /** Comma-separated REFERENCE_FIELDS values as sets, in field order. */
+  readonly refs: readonly ReadonlySet<string>[];
+};
+
+const linkKeys = (x: AnalysisRecord): LinkKeys => ({
+  id: x._id,
+  ids: ID_FIELDS.map((field) => pyStrip(pyGet(x, field)).toLowerCase()),
+  refs: REFERENCE_FIELDS.map((field) => references(x, field)),
+});
+
+const linkBetween = (a: LinkKeys, b: LinkKeys): readonly [string, string[]] | null => {
+  for (let i = 0; i < ID_FIELDS.length; i += 1) {
+    const left = a.ids[i];
+    if (left && left === b.ids[i]) return ['referencia explícita', [ID_FIELDS[i] ?? '']];
   }
-  for (const field of REFERENCE_FIELDS) {
-    const left = references(a, field);
-    const right = references(b, field);
-    if (right.has(a._id) || left.has(b._id) || [...left].some((t) => right.has(t)))
+  for (let i = 0; i < REFERENCE_FIELDS.length; i += 1) {
+    const left = a.refs[i] ?? new Set<string>();
+    const right = b.refs[i] ?? new Set<string>();
+    if (right.has(a.id) || left.has(b.id) || [...left].some((t) => right.has(t)))
       return ['referencia cruzada', []];
   }
   return null;
 };
+
+/** app.py record_links: explicit shared ID, or a cross reference between the two records. */
+export const recordLinks = (
+  a: AnalysisRecord,
+  b: AnalysisRecord,
+): readonly [string, string[]] | null => linkBetween(linkKeys(a), linkKeys(b));
 
 type PairSpec = readonly [ExtendedKey, ExtendedKey, readonly string[], readonly string[]];
 
@@ -84,24 +99,33 @@ export type CandidateLink = {
 export const candidatePairs = (r: ExtendedRecords): CandidateLink[] => {
   const out: CandidateLink[] = [];
   for (const [modA, modB, fieldsA, fieldsB] of SPECS) {
+    // Terms and link keys are computed once per record (ADR 0005, T12); app.py recomputed
+    // them for every pair. Pair order and results are unchanged.
+    const right = r[modB].slice(0, PER_MODULE).map((y) => ({
+      y,
+      keys: linkKeys(y),
+      terms: thematicTerms(joined(y, fieldsB)),
+    }));
     for (const x of r[modA].slice(0, PER_MODULE)) {
-      const left = thematicTerms(joined(x, fieldsA));
-      for (const y of r[modB].slice(0, PER_MODULE)) {
-        const link = recordLinks(x, y);
-        const right = thematicTerms(joined(y, fieldsB));
-        const shared = [...left].filter((t) => right.has(t)).sort();
+      const keys = linkKeys(x);
+      const left = [...thematicTerms(joined(x, fieldsA))];
+      for (const other of right) {
+        const link = linkBetween(keys, other.keys);
+        const shared = left.filter((t) => other.terms.has(t)).sort();
         if (!link && shared.length < 2) continue;
         out.push({
           origen: `${modA}/${x._id}`,
-          destino: `${modB}/${y._id}`,
+          destino: `${modB}/${other.y._id}`,
           criterio: link ? link[0] : 'coincidencia léxica (no implica relación probada)',
           terminos_compartidos: shared.slice(0, 8),
           estado: 'Hipótesis de vínculo; verificar con fuentes y participantes',
           uso_sugerido:
             'Revisar pertinencia del vínculo, intereses expresados y posibles restricciones antes de diseñar opciones',
         });
+        // Only the first MAX_PAIRS are returned, so later pairs cannot change the result.
+        if (out.length === MAX_PAIRS) return out;
       }
     }
   }
-  return out.slice(0, MAX_PAIRS);
+  return out;
 };

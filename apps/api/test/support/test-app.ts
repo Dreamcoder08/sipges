@@ -2,7 +2,10 @@ import { PGlite } from '@electric-sql/pglite';
 import { afterAll } from 'vitest';
 import { trackTestDatabase } from './test-database.ts';
 import { buildContainer } from '../../src/compose.ts';
+import type { ObjectStorage } from '../../src/contexts/evidence/application/index.ts';
+import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import { createApp } from '../../src/app.ts';
+import type { WebAssets } from '../../src/platform/http/spa.ts';
 import { loadConfig } from '../../src/platform/config.ts';
 import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
 import { pgliteClient } from '../../src/platform/database/pglite.ts';
@@ -53,18 +56,41 @@ afterAll(async () => {
   if (db && !db.closed) await db.close();
 });
 
-export const createTestApp = async (env: Record<string, string> = {}) => {
+/** Tests never reach a real model; this provider behaves like an Ollama that is not running. */
+export const offlineEmbeddings: EmbeddingProvider = {
+  model: 'offline-test-model',
+  embed: () => Promise.reject(new Error('Embedding service offline')),
+};
+
+/** In-memory object storage; `objects` lets tests inspect what was stored or removed. */
+export const memoryStorage = () => {
+  const objects = new Map<string, Uint8Array>();
+  const storage: ObjectStorage = {
+    put: async (key, bytes) => void objects.set(key, new Uint8Array(bytes)),
+    get: async (key) => objects.get(key) ?? null,
+    delete: async (key) => void objects.delete(key),
+  };
+  return { objects, storage };
+};
+
+export const createTestApp = async (
+  env: Record<string, string> = {},
+  options: { objectStorage?: ObjectStorage; embeddings?: EmbeddingProvider; web?: WebAssets } = {},
+) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
   const sql = pgliteClient(db);
   const clock = new TestClock();
   const config = loadConfig({ ...TEST_ENV, ...env });
+  const memory = memoryStorage();
   const container = await buildContainer({
     config,
     sql,
     clock,
     clientIp: (c) => c.req.header('x-test-ip') ?? '203.0.113.1',
+    objectStorage: options.objectStorage ?? memory.storage,
+    embeddings: options.embeddings ?? offlineEmbeddings,
   });
-  const app = createApp(container);
+  const app = createApp(container, options.web ? { web: options.web } : {});
 
   const request = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
@@ -114,5 +140,17 @@ export const createTestApp = async (env: Record<string, string> = {}) => {
       body: JSON.stringify(body),
     });
 
-  return { app, db, sql, clock, request, form, login, createAccount, grant, createScope };
+  return {
+    app,
+    db,
+    sql,
+    clock,
+    objects: memory.objects,
+    request,
+    form,
+    login,
+    createAccount,
+    grant,
+    createScope,
+  };
 };

@@ -25,6 +25,10 @@ export type TenantExportData = {
   readonly module_records: Record<string, unknown>[];
   readonly audit: Record<string, unknown>[];
   readonly attachments: Record<string, unknown>[];
+  readonly document_review: Record<string, unknown>[];
+  readonly digital_alert_reviews: Record<string, unknown>[];
+  readonly preventive_actions: Record<string, unknown>[];
+  readonly preventive_action_log: Record<string, unknown>[];
 };
 
 /** Only tenant-owned business data, never a physical database/global directory dump. */

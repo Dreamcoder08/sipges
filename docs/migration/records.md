@@ -30,8 +30,8 @@ their id in `Proyecto_ID`. Audit details keep the Python texts.
 - **DELETE of a missing record** returns 404 and writes no audit entry.
 - **Timestamps** are UTC `YYYY-MM-DDTHH:MM:SSZ` on the wire; payload key order is not preserved
   (`jsonb`).
-- **Attachment cascade** on record delete is pending until the Evidence context (T8) creates
-  `attachments`.
+- **Attachment cascade:** deleting a record cascades its `attachments` rows (T8, see
+  docs/migration/evidence.md).
 
 ## Isolation and atomicity
 

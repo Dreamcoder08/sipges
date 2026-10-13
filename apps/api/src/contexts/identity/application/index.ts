@@ -7,4 +7,4 @@ export {
   type IdentityService,
   type LoginError,
 } from './identity-service.ts';
-export type { Clock } from './ports.ts';
+export type { Clock, SecretCipher } from './ports.ts';

@@ -73,6 +73,10 @@ const expected = (
       },
     ],
     attachments: [],
+    document_review: [],
+    digital_alert_reviews: [],
+    preventive_actions: [],
+    preventive_action_log: [],
   },
 });
 
@@ -159,7 +163,15 @@ describe('GET /system/export versioned tenant JSON', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       ...expected(),
-      data: { module_records: [], audit: [], attachments: [] },
+      data: {
+        module_records: [],
+        audit: [],
+        attachments: [],
+        document_review: [],
+        digital_alert_reviews: [],
+        preventive_actions: [],
+        preventive_action_log: [],
+      },
     });
   });
 

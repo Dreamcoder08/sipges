@@ -10,12 +10,17 @@ export default defineConfig({
       '/api': 'http://127.0.0.1:8000',
       '/system': 'http://127.0.0.1:8000',
       '/health': 'http://127.0.0.1:8000',
-      '/login': 'http://127.0.0.1:8000',
+      // GET /login is the SPA's sign-in screen; only the form POST goes to the API.
+      '/login': {
+        target: 'http://127.0.0.1:8000',
+        bypass: (req) => (req.method === 'GET' ? '/index.html' : undefined),
+      },
       '/logout': 'http://127.0.0.1:8000',
       '/select-project': 'http://127.0.0.1:8000',
     },
   },
   test: {
     environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
   },
 });

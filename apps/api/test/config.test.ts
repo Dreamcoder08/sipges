@@ -104,3 +104,36 @@ describe('MASCLI_TRUST_PROXY', () => {
     );
   });
 });
+
+describe('Ollama embeddings settings (RC 2.5)', () => {
+  it('defaults to a local server and nomic-embed-text like app.py', () => {
+    expect(loadConfig({}).ollama).toEqual({
+      baseUrl: 'http://127.0.0.1:11434',
+      model: 'nomic-embed-text',
+    });
+  });
+
+  it('accepts an http(s) URL and a model name', () => {
+    expect(
+      loadConfig({
+        MASCLI_OLLAMA_URL: 'https://ollama.internal',
+        MASCLI_OLLAMA_EMBED_MODEL: 'bge-m3',
+      }).ollama,
+    ).toEqual({ baseUrl: 'https://ollama.internal', model: 'bge-m3' });
+  });
+
+  it.each([
+    ['not a url', 'MASCLI_OLLAMA_URL must be an absolute URL'],
+    ['file:///tmp/x', 'MASCLI_OLLAMA_URL must use http or https'],
+  ])('rejects %j', (value, message) => {
+    expect(() => loadConfig({ MASCLI_OLLAMA_URL: value })).toThrow(message);
+  });
+});
+
+describe('MASCLI_WEB_DIR', () => {
+  it('is optional and passed through', () => {
+    expect(loadConfig({}).webDir).toBeUndefined();
+    expect(loadConfig({ MASCLI_WEB_DIR: '' }).webDir).toBeUndefined();
+    expect(loadConfig({ MASCLI_WEB_DIR: 'apps/web/dist' }).webDir).toBe('apps/web/dist');
+  });
+});

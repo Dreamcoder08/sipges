@@ -14,3 +14,5 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0008](0008-behavior-contract-corrections.md) | Corrections to Python behavior defects | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
+
+Vista transversal: [arquitectura TypeScript con Archify](../ARQUITECTURA.md), con las enmiendas vigentes y el estado del ODD.
