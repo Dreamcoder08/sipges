@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "MASCLI RC 3.0 · Arquitectura de la aplicación",
+    "locale": "es",
+    "output": "docs/diagrams/arquitectura.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Dreamcoder08/mascli.git",
+      "revision": "c442ebf23fc11f612746d53a11f2f3b470790fa0"
+    }
+  },
+  "components": [
+    {
+      "id": "interfaz",
+      "type": "frontend",
+      "label": "Interfaz web",
+      "sublabel": "HTML · CSS · JavaScript",
+      "pos": [
+        40,
+        240
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "static/app.js",
+          "line": 26,
+          "end_line": 47,
+          "label": "Consultas y proyecto activo"
+        },
+        {
+          "path": "static/app.js",
+          "line": 449,
+          "end_line": 487,
+          "label": "Lectura y revisión documental"
+        },
+        {
+          "path": "app.py",
+          "line": 29,
+          "end_line": 30,
+          "label": "Servicio de archivos estáticos"
+        }
+      ]
+    },
+    {
+      "id": "acceso",
+      "type": "security",
+      "label": "Acceso y alcance",
+      "sublabel": "Sesión · rol · empresa/proyecto",
+      "pos": [
+        355,
+        240
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 179,
+          "end_line": 252,
+          "label": "Middleware y permisos"
+        },
+        {
+          "path": "app.py",
+          "line": 259,
+          "end_line": 272,
+          "label": "Login y TOTP opcional"
+        },
+        {
+          "path": "app.py",
+          "line": 308,
+          "end_line": 329,
+          "label": "Selección autorizada"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Aplicación FastAPI",
+      "sublabel": "CRUD · IRSA · documentos",
+      "pos": [
+        670,
+        240
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 1143,
+          "end_line": 1193,
+          "label": "Registros y auditoría"
+        },
+        {
+          "path": "app.py",
+          "line": 1604,
+          "end_line": 1647,
+          "label": "Cálculo IRSA e indicadores"
+        },
+        {
+          "path": "app.py",
+          "line": 1708,
+          "end_line": 1854,
+          "label": "Extracción y revisión documental"
+        }
+      ]
+    },
+    {
+      "id": "identidades",
+      "type": "database",
+      "label": "Identidades globales",
+      "sublabel": "auth_global.db",
+      "pos": [
+        355,
+        450
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 41,
+          "end_line": 45,
+          "label": "Conexión global"
+        },
+        {
+          "path": "app.py",
+          "line": 415,
+          "end_line": 435,
+          "label": "Usuarios, sesiones y permisos"
+        }
+      ]
+    },
+    {
+      "id": "datos",
+      "type": "database",
+      "label": "Datos del proyecto",
+      "sublabel": "SQLite · registros · auditoría",
+      "pos": [
+        670,
+        450
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 47,
+          "end_line": 50,
+          "label": "Base según contexto"
+        },
+        {
+          "path": "app.py",
+          "line": 72,
+          "end_line": 130,
+          "label": "Esquema y carga inicial"
+        },
+        {
+          "path": "app.py",
+          "line": 348,
+          "end_line": 370,
+          "label": "Bases por empresa/proyecto"
+        }
+      ]
+    },
+    {
+      "id": "configuracion",
+      "type": "database",
+      "label": "Configuración JSON",
+      "sublabel": "Indicadores · pesos IRSA",
+      "pos": [
+        670,
+        40
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 447,
+          "end_line": 470,
+          "label": "Configuración por alcance"
+        },
+        {
+          "path": "app.py",
+          "line": 1347,
+          "end_line": 1356,
+          "label": "Lectura para indicadores"
+        },
+        {
+          "path": "app.py",
+          "line": 1604,
+          "end_line": 1615,
+          "label": "Pesos y umbrales"
+        }
+      ]
+    },
+    {
+      "id": "adjuntos",
+      "type": "database",
+      "label": "Evidencias adjuntas",
+      "sublabel": "Archivos locales · SHA-256",
+      "pos": [
+        985,
+        240
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "app.py",
+          "line": 17,
+          "end_line": 19,
+          "label": "Ubicación y límite"
+        },
+        {
+          "path": "app.py",
+          "line": 52,
+          "end_line": 55,
+          "label": "Carpeta por alcance"
+        },
+        {
+          "path": "app.py",
+          "line": 1064,
+          "end_line": 1112,
+          "label": "Archivo y metadatos"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "peticion",
+      "from": "interfaz",
+      "to": "acceso",
+      "label": "HTTP / JSON",
+      "variant": "emphasis"
+    },
+    {
+      "id": "autorizacion",
+      "from": "acceso",
+      "to": "api",
+      "label": "Si autorizado",
+      "variant": "security"
+    },
+    {
+      "id": "sesiones",
+      "from": "acceso",
+      "to": "identidades",
+      "label": "Sesión y grants",
+      "variant": "default"
+    },
+    {
+      "id": "registros",
+      "from": "api",
+      "to": "datos",
+      "label": "SQL / alcance",
+      "variant": "default"
+    },
+    {
+      "id": "reglas",
+      "from": "api",
+      "to": "configuracion",
+      "label": "Lee reglas",
+      "variant": "default"
+    },
+    {
+      "id": "archivos",
+      "from": "api",
+      "to": "adjuntos",
+      "label": "Carga vinculada",
+      "variant": "default"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Recorrido principal",
+      "items": [
+        "La interfaz llama a /api/* y /system/*. El middleware comprueba sesión, permisos y empresa/proyecto antes de ejecutar las rutas protegidas.",
+        "/health y login tienen excepciones explícitas. TOTP se exige únicamente cuando la cuenta lo tiene habilitado.",
+        "Los componentes lógicos del mapa conviven en app.py; no son microservicios separados."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Persistencia y alcance",
+      "items": [
+        "auth_global.db mantiene usuarios, sesiones, proyectos y permisos. conn() selecciona SQLite usando el contexto del middleware.",
+        "MASCLI/PRJ-SECHURA usa la base principal; otros alcances usan data/tenants/<hash>.db. Las rutas son configurables por entorno.",
+        "La carga de evidencias escribe el archivo, su hash y metadatos, y una entrada de auditoría. El laboratorio documental no guarda el documento original: importa extractos sólo a petición del usuario."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Análisis y revisión humana",
+      "items": [
+        "Los indicadores G1–I6 alimentan el IRSA mediante pesos y umbrales. Son reglas y proxies provisionales, pendientes de calibración y validación experta.",
+        "El laboratorio extrae texto PDF, DOCX, TXT o Markdown y propone hallazgos léxicos. No usa IA generativa ni OCR integrado.",
+        "La revisión de extractos permite pendiente, aceptado_para_revision, descartado y corroborado_documentalmente. Corroborar exige una nota de evidencia."
+      ]
+    }
+  ]
+}
