@@ -32,3 +32,17 @@ corepack pnpm --filter @mascli/web dev   # SPA on http://127.0.0.1:5173 (proxies
 | `MASCLI_COOKIE_SECURE` | exactly `0` or `1` | unset → Secure cookies; any other value stops startup |
 | `MASCLI_HOST` | bind address | `127.0.0.1` |
 | `MASCLI_PORT` | 1–65535 | `8000` |
+| `MASCLI_DATA_KEY` | base64 of exactly 32 bytes (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) | **required**; encrypts TOTP secrets at rest (ADR 0004) |
+| `MASCLI_ADMIN_USERNAME` | lower-cased, trimmed | `admin` |
+| `MASCLI_ADMIN_PASSWORD` | 12+ characters | required only on an empty installation |
+| `MASCLI_ADMIN_FULL_NAME` | display name of the bootstrap admin | `Administrator` |
+| `MASCLI_DATABASE_URL` | PostgreSQL URL; TLS required unless the host is local | unset → embedded PGlite (development only) |
+| `MASCLI_PGLITE_DIR` | embedded database directory | `.data/pglite` |
+
+Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.
+
+## Authentication behavior (T4)
+- Passwords: Argon2id for new hashes; Python `pbkdf2_sha256$…` hashes still verify and are upgraded on the next successful login.
+- Login throttling: 5 failures per username or 20 per client address within 15 minutes → `429` with `Retry-After: 900`.
+- TOTP: a code (time step) can be used only once.
+- Every state-changing request, including `/login` and `/logout`, must be same-origin when it carries an `Origin` header.

@@ -10,10 +10,14 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.9",
     "@hono/node-server": "^2.1.4",
     "@mascli/contracts": "workspace:*",
     "@mascli/kernel": "workspace:*",
-    "hono": "^4.13.13"
+    "@node-rs/argon2": "^2.2.2",
+    "hono": "^4.13.13",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
