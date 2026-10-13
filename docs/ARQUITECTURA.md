@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en `feat/typescript-migration-11-complete`, commit `90c6b0e6b547eb837e70dcf01d9998ae86707d4c`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la consolidación sobre `main`, commit `1044876089eb8f3f8beef3c5e5338c0183edd44c`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Recorrido y reglas de dependencia
 
@@ -39,11 +39,11 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | T1–T10 | Contratos, ADRs, workspace y contextos backend completados |
 | T11a/b | Shell, login/MFA, selección/cambio de proyecto, dashboard, registros y evidencias completados |
 | T11c–d | IRSA/validación, alertas/mapa, análisis/documentos, gerencia/inteligencia, administración/auditoría/metodología completados |
-| T12 | Benchmarks pendientes; Go/Rust condicionado a resultados |
-| T13 | Herramientas de migración SQLite → PostgreSQL pendientes |
-| T14 | Paridad E2E y preparación del despliegue pendientes |
+| T12 | Benchmarks sintéticos completados; Go/Rust no justificado por los resultados |
+| T13 | Migrador SQLite → PostgreSQL y ensayo sintético completados |
+| T14 | Paridad E2E y preparación del despliegue completadas |
 
-La implementación nueva es TypeScript; Python permanece como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; esta entrega completa T11 sin cerrar T12–T14. La validación científica externa del IRSA sigue siendo un proceso separado.
+La implementación nueva es TypeScript; Python permanece en `reference/python` como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; T1–T14 están completos; la publicación de la demo se comprueba por separado. La validación científica externa del IRSA sigue siendo un proceso separado.
 
 ## Fuente editable y regeneración
 

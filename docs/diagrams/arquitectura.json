@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "90c6b0e6b547eb837e70dcf01d9998ae86707d4c"
+      "revision": "1044876089eb8f3f8beef3c5e5338c0183edd44c"
     }
   },
   "components": [
@@ -28,21 +28,21 @@
       "sources": [
         {
           "path": "apps/web/src/app/router.tsx",
-          "line": 264,
-          "end_line": 292,
+          "line": 316,
+          "end_line": 329,
           "label": "Rutas y composición de todas las funciones"
         },
         {
           "path": "apps/web/src/shared/api/client.ts",
           "line": 52,
-          "end_line": 82,
+          "end_line": 88,
           "label": "HTTP fijado al alcance y Zod"
         },
         {
-          "path": "apps/web/src/features/analysis/DocumentLab.tsx",
-          "line": 24,
-          "end_line": 90,
-          "label": "Documentos y revisión fijados al proyecto"
+          "path": "apps/web/src/features/auth/MfaEnrollmentPage.tsx",
+          "line": 14,
+          "end_line": 60,
+          "label": "Alta MFA antes de seleccionar proyecto"
         }
       ]
     },
@@ -96,14 +96,14 @@
       "sources": [
         {
           "path": "apps/api/src/app.ts",
-          "line": 44,
-          "end_line": 64,
+          "line": 46,
+          "end_line": 68,
           "label": "Middleware y rutas"
         },
         {
           "path": "apps/api/src/contexts/identity/http/auth-middleware.ts",
           "line": 21,
-          "end_line": 52,
+          "end_line": 65,
           "label": "Sesión, origen y rol"
         },
         {
@@ -210,8 +210,8 @@
         },
         {
           "path": "apps/api/src/contexts/documents/infrastructure/document-reader.ts",
-          "line": 97,
-          "end_line": 129,
+          "line": 80,
+          "end_line": 112,
           "label": "Lectura PDF y DOCX"
         }
       ]
@@ -266,8 +266,8 @@
       "sources": [
         {
           "path": "apps/api/src/main.ts",
-          "line": 18,
-          "end_line": 30,
+          "line": 13,
+          "end_line": 35,
           "label": "Selección y migraciones"
         },
         {
@@ -306,8 +306,8 @@
         },
         {
           "path": "apps/api/src/platform/config.ts",
-          "line": 116,
-          "end_line": 127,
+          "line": 121,
+          "end_line": 132,
           "label": "URL y modelo"
         }
       ],
@@ -386,7 +386,7 @@
       "items": [
         "SPA TypeScript completa: React 19, Vite, TanStack Router/Query y bloques por funcionalidad. Registros/evidencias, IRSA, análisis/documentos, mapa, inteligencia, gerencia y administración con contratos Zod.",
         "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-MASCLI-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
-        "El servidor ejecuta middleware de sesión/origen, tenancy y roles antes de las rutas protegidas; la entrega del shell y ciertas rutas tienen excepciones."
+        "MFA obligatorio por defecto: el primer acceso permite inscribir el autenticador antes del proyecto. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
       ]
     },
     {
@@ -409,11 +409,11 @@
     },
     {
       "dot": "amber",
-      "title": "ODD · implementado y pendiente",
+      "title": "ODD · T1–T14 completos",
       "items": [
-        "Fuente: rama feat/typescript-migration-11-complete, revisión 90c6b0e. ODD y ADRs guían la migración; no son servicios del runtime.",
-        "T1–T11 completos: backend y todas las secciones web. T12 benchmarks, T13 migración de datos y T14 paridad integral/despliegue siguen pendientes. La validación científica IRSA no se declara completada.",
-        "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. El legado Python es referencia, no dependencia de este runtime."
+        "Fuente: consolidación TypeScript, revisión 1044876. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
+        "T1–T14 completos: API y SPA, benchmarks, migrador ensayado con datos sintéticos y paridad E2E. La publicación de la demo gratuita y la validación científica externa IRSA son pasos separados.",
+        "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime."
       ]
     }
   ]

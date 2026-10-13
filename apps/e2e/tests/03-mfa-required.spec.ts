@@ -48,9 +48,15 @@ test('mandatory MFA enrolls before dashboard and requires a code on the next log
     await page.getByLabel('Usuario').fill('mfa-admin');
     await page.getByLabel('Contraseña', { exact: true }).fill(secrets.adminPassword);
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
+    await expect(page.getByLabel('Código de autenticación')).toBeVisible();
+    // Enrollment consumes the current counter; the accepted adjacent interval is distinct.
+    await page
+      .getByLabel('Código de autenticación')
+      .fill(totpCode(secret ?? '', Date.now() + 30_000));
+    await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
     await expect(
       page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).not.toBeVisible();
+    ).toBeVisible();
   });
   await cleanup();
 });
