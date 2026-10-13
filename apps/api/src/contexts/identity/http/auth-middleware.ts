@@ -5,7 +5,7 @@ import type { AppEnv } from '../../../platform/http/env.ts';
 import { forbiddenOrigin, isWriteMethod, originAllowed } from '../../../platform/http/origin.ts';
 import type { IdentityService } from '../application/index.ts';
 
-/** Routes reachable without a session (app.py enforce_auth exemptions). */
+/** Routes reachable without a session (app.py enforce_auth exemptions, minus ADR 0008 #4). */
 const PUBLIC_PATHS = new Set([
   '/health',
   '/login',
@@ -15,17 +15,15 @@ const PUBLIC_PATHS = new Set([
 ]);
 
 /**
- * Steps 1-3 and 8 of app.py enforce_auth (behavior contract §2): public routes, session,
- * Origin check and role gates. Tenancy steps 4-7 plug in after this middleware (T5).
+ * app.py enforce_auth steps 1-3: public routes, session, Origin check.
  * Unlike Python, public routes also get the Origin check (ADR 0008 #4).
  */
-export const authMiddleware =
+export const sessionMiddleware =
   (identity: IdentityService): MiddlewareHandler<AppEnv> =>
   async (c, next) => {
-    const { path, method } = c.req;
-    const write = isWriteMethod(method);
+    const write = isWriteMethod(c.req.method);
 
-    if (PUBLIC_PATHS.has(path)) {
+    if (PUBLIC_PATHS.has(c.req.path)) {
       if (write && !originAllowed(c)) return forbiddenOrigin(c);
       return next();
     }
@@ -37,10 +35,18 @@ export const authMiddleware =
     }
     if (write && !originAllowed(c)) return forbiddenOrigin(c);
 
-    const decision = identity.checkAccess(principal.role, method, path);
-    if (!decision.allowed) return c.json({ detail: decision.detail }, 403);
-
     c.set('identity', principal);
     c.set('sessionToken', token);
+    return next();
+  };
+
+/** app.py enforce_auth step 8: role gates, evaluated after tenancy resolved the scope. */
+export const roleGate =
+  (identity: IdentityService): MiddlewareHandler<AppEnv> =>
+  async (c, next) => {
+    const principal = c.get('identity');
+    if (!principal) return next();
+    const decision = identity.checkAccess(principal.role, c.req.method, c.req.path);
+    if (!decision.allowed) return c.json({ detail: decision.detail }, 403);
     return next();
   };

@@ -66,6 +66,28 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     }));
   },
 
+  async deactivateUser(username) {
+    return sql.transaction(async (tx) => {
+      await tx.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended('mascli:account-deactivation', 0))",
+      );
+      const [user] = await tx.query<{ role: Role; active: boolean }>(
+        'SELECT role, active FROM users WHERE username = $1 FOR UPDATE',
+        [username],
+      );
+      if (!user) return 'missing';
+      if (user.active && user.role === 'admin') {
+        const [count] = await tx.query<{ n: string | number }>(
+          "SELECT count(*) AS n FROM users WHERE active AND role = 'admin'",
+        );
+        if (Number(count?.n) <= 1) return 'last_admin';
+      }
+      await tx.query('UPDATE users SET active = false WHERE username = $1', [username]);
+      await tx.query('DELETE FROM sessions WHERE username = $1', [username]);
+      return 'deactivated';
+    });
+  },
+
   async updatePasswordHash(username, passwordHash) {
     await sql.query('UPDATE users SET password_hash = $2 WHERE username = $1', [
       username,
@@ -105,10 +127,18 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
   },
 
   async createSession(tokenHash, username, expiresAt, at) {
-    await sql.query(
-      'INSERT INTO sessions (token_hash, username, expires_at, created_at) VALUES ($1, $2, $3, $4)',
-      [tokenHash, username, expiresAt, at],
-    );
+    return sql.transaction(async (tx) => {
+      const users = await tx.query(
+        'SELECT username FROM users WHERE username = $1 AND active FOR SHARE',
+        [username],
+      );
+      if (users.length === 0) return false;
+      await tx.query(
+        'INSERT INTO sessions (token_hash, username, expires_at, created_at) VALUES ($1, $2, $3, $4)',
+        [tokenHash, username, expiresAt, at],
+      );
+      return true;
+    });
   },
 
   async findSessionIdentity(tokenHash, at) {

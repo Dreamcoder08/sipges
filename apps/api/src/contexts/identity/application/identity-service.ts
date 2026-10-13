@@ -143,17 +143,17 @@ export const createIdentityService = ({
       if (hasher.needsRehash(user.passwordHash)) {
         await store.updatePasswordHash(username, await hasher.hash(input.password));
       }
-      await store.releaseLoginAttempt(reservation);
-      await store.clearFailures(userKey);
-      await store.purgeExpiredSessions(now);
-
       const token = tokens.newToken();
-      await store.createSession(
+      const created = await store.createSession(
         tokens.hash(token),
         username,
         new Date(now.getTime() + SESSION_SECONDS * 1000),
         now,
       );
+      if (!created) return err({ kind: 'invalid_credentials' });
+      await store.releaseLoginAttempt(reservation);
+      await store.clearFailures(userKey);
+      await store.purgeExpiredSessions(now);
       return ok({ token, identity: { username, fullName: user.fullName, role: user.role } });
     },
 
@@ -182,6 +182,22 @@ export const createIdentityService = ({
         clock.now(),
       );
       return created ? ok(account) : err({ kind: 'exists' });
+    },
+
+    async deactivateAccount(
+      actor: Identity,
+      rawUsername: string,
+    ): Promise<Result<true, 'forbidden' | 'invalid' | 'missing' | 'last_admin'>> {
+      if (actor.role !== 'admin') return err('forbidden');
+      const username = normalizeUsername(rawUsername);
+      if (!username || username.includes('\u0000') || username.length > MAX_STORED_USERNAME)
+        return err('invalid');
+      const result = await store.deactivateUser(username);
+      return result === 'deactivated' ? ok(true) : err(result);
+    },
+
+    async userExists(username: string): Promise<boolean> {
+      return (await store.findUser(username)) !== null;
     },
 
     listAccounts(): Promise<AccountSummary[]> {

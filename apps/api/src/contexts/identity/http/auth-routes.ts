@@ -98,6 +98,25 @@ export const authRoutes = (deps: {
       return c.json({ ok: true, username: result.value.username, role: result.value.role });
     })
 
+    .post('/system/auth/accounts/:username/deactivate', async (c) => {
+      const result = await identity.deactivateAccount(c.get('identity'), c.req.param('username'));
+      if (!result.ok) {
+        const errors = {
+          forbidden: [403, 'Administración de cuentas restringida'],
+          invalid: [422, 'Usuario inválido'],
+          missing: [404, 'Usuario inexistente'],
+          last_admin: [409, 'No se permite desactivar el último administrador'],
+        } as const;
+        const [status, detail] = errors[result.error];
+        return c.json({ detail }, status);
+      }
+      if (c.req.param('username').trim().toLowerCase() === c.get('identity').username) {
+        clearAuthCookie(c, SESSION_COOKIE, cookieSecure);
+        clearAuthCookie(c, SCOPE_COOKIE, cookieSecure);
+      }
+      return c.json({ ok: true });
+    })
+
     .post('/system/auth/totp/setup', async (c) => {
       const result = await identity.setupTotp(c.get('identity').username);
       if (!result.ok) {

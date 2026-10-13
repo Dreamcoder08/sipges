@@ -23,7 +23,7 @@ API tests run with one Vitest worker and sequential files to bound PGlite's WASM
 Do not raise Node's heap limit to hide missing fixture teardown. PGlite remains a single-connection test adapter; sequential test files do not replace the real-server concurrency checks below.
 
 ### Real PostgreSQL integration tests (optional)
-Unit and HTTP tests use in-process PGlite (single connection). Concurrency, advisory locks and postgres.js typing are checked against a real server when `MASCLI_TEST_DATABASE_URL` is set; each run creates and drops a throwaway database.
+Unit and HTTP tests use in-process PGlite (single connection). Concurrency, advisory locks and postgres.js typing are checked against a real server when `MASCLI_TEST_DATABASE_URL` is set; each run creates and drops a throwaway database. The integration suite also checks tenant isolation across two pools, rejected cross-tenant/identity access, role reset after rollback, concurrent tenant exports and serialized last-administrator protection. Missing credentials skip these checks; skipped tests are not security proof. Use synthetic local databases only.
 ```bash
 docker run -d --rm --name mascli-pg-test -e POSTGRES_PASSWORD=<pw> -p 127.0.0.1:55432:5432 postgres:18-alpine
 MASCLI_TEST_DATABASE_URL=postgres://postgres:<pw>@127.0.0.1:55432/postgres corepack pnpm --filter @mascli/api test

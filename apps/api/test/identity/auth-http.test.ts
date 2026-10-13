@@ -272,6 +272,7 @@ describe('/system/auth/accounts', () => {
     const t = await createTestApp();
     const admin = await t.login(ADMIN.username, ADMIN.password);
     await t.createAccount(admin.cookie, ANALYST);
+    await t.grant(admin.cookie, ANALYST.username);
     const analyst = await t.login(ANALYST.username, ANALYST.password);
     for (const method of ['GET', 'POST']) {
       const res = await t.request('/system/auth/accounts', {
@@ -289,6 +290,7 @@ describe('TOTP enrollment and login', () => {
     const t = await createTestApp();
     const admin = await t.login(ADMIN.username, ADMIN.password);
     await t.createAccount(admin.cookie, ANALYST);
+    await t.grant(admin.cookie, ANALYST.username);
     const analyst = await t.login(ANALYST.username, ANALYST.password);
     return { t, analyst };
   };
@@ -363,6 +365,7 @@ describe('TOTP enrollment and login', () => {
     const t = await createTestApp();
     const admin = await t.login(ADMIN.username, ADMIN.password);
     await t.createAccount(admin.cookie, { ...ANALYST, username: 'lector', role: 'consulta' });
+    await t.grant(admin.cookie, 'lector');
     const reader = await t.login('lector', ANALYST.password);
     const res = await t.request('/system/auth/totp/setup', {
       method: 'POST',
