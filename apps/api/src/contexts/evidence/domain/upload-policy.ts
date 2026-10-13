@@ -56,7 +56,8 @@ export const ALLOWED_EXTENSIONS: readonly string[] = Object.keys(SIGNATURES);
 
 const MAX_STEM = 80;
 
-const extensionOf = (name: string) => {
+/** Lower-cased suffix like Python `Path(name).suffix` (a leading dot is not a suffix). */
+export const extensionOf = (name: string) => {
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.slice(dot).toLowerCase() : '';
 };

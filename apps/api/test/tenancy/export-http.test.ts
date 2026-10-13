@@ -73,6 +73,7 @@ const expected = (
       },
     ],
     attachments: [],
+    document_review: [],
   },
 });
 
@@ -159,7 +160,7 @@ describe('GET /system/export versioned tenant JSON', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
       ...expected(),
-      data: { module_records: [], audit: [], attachments: [] },
+      data: { module_records: [], audit: [], attachments: [], document_review: [] },
     });
   });
 

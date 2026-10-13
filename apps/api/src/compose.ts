@@ -7,6 +7,15 @@ import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastruct
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
+  type DocumentLabService,
+  createDocumentLabService,
+} from './contexts/documents/application/index.ts';
+import {
+  createSqlReviewStore,
+  documentReader,
+  docxRenderer,
+} from './contexts/documents/infrastructure/index.ts';
+import {
   type EvidenceService,
   type ObjectStorage,
   createEvidenceService,
@@ -52,6 +61,7 @@ export type Container = {
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
   readonly evidence: EvidenceService;
+  readonly documents: DocumentLabService;
   readonly clientIp: ClientIp;
 };
 
@@ -106,10 +116,19 @@ export const buildContainer = async (deps: {
   const analytics = createAnalyticsService({
     reader: createSqlAnalyticsRecordReader(deps.sql),
     clock: deps.clock,
+    renderer: docxRenderer,
   });
   const evidence = createEvidenceService({
     storage: deps.objectStorage ?? createObjectStorage(deps.config.storage),
     store: createSqlAttachmentStore(deps.sql),
+    clock: deps.clock,
+    randomHex,
+    maxUploadBytes: deps.config.maxUploadBytes,
+  });
+  const documents = createDocumentLabService({
+    reader: documentReader,
+    renderer: docxRenderer,
+    reviews: createSqlReviewStore(deps.sql),
     clock: deps.clock,
     randomHex,
     maxUploadBytes: deps.config.maxUploadBytes,
@@ -123,6 +142,7 @@ export const buildContainer = async (deps: {
     indicators,
     analytics,
     evidence,
+    documents,
     clientIp: deps.clientIp,
   };
 };

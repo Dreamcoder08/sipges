@@ -4,6 +4,7 @@ import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
 import { auditRoutes } from './contexts/audit/http/audit-routes.ts';
+import { documentLabRoutes } from './contexts/documents/http/document-lab-routes.ts';
 import { evidenceRoutes } from './contexts/evidence/http/evidence-routes.ts';
 import { indicatorsRoutes } from './contexts/indicators/http/indicators-routes.ts';
 import { recordsRoutes } from './contexts/records/http/records-routes.ts';
@@ -16,8 +17,18 @@ import { securityHeaders } from './platform/http/security-headers.ts';
 
 /** Builds the HTTP application from an already-wired container (no I/O here). */
 export const createApp = (container: Container) => {
-  const { config, identity, tenancy, records, audit, indicators, analytics, evidence, clientIp } =
-    container;
+  const {
+    config,
+    identity,
+    tenancy,
+    records,
+    audit,
+    indicators,
+    analytics,
+    evidence,
+    documents,
+    clientIp,
+  } = container;
   const app = new Hono<AppEnv>();
 
   app.use('*', securityHeaders({ hsts: config.cookieSecure }));
@@ -32,6 +43,7 @@ export const createApp = (container: Container) => {
   app.route('/', indicatorsRoutes({ indicators }));
   app.route('/', analyticsRoutes({ analytics }));
   app.route('/', evidenceRoutes(evidence));
+  app.route('/', documentLabRoutes(documents));
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
 
   app.notFound((c) => c.json({ detail: 'Not Found' } satisfies ErrorResponse, 404));
