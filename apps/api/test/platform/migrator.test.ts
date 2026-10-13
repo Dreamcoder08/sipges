@@ -56,3 +56,16 @@ describe('loadMigrations', () => {
     expect(loaded[0]?.version).toBe('0001_identity');
   });
 });
+
+describe('migrate under concurrency', () => {
+  it('applies each migration once when two runners start together', async () => {
+    const db = new PGlite();
+    const client = pgliteClient(db);
+    const [a, b] = await Promise.all([migrate(client, migrations), migrate(client, migrations)]);
+    expect([...a, ...b].sort()).toEqual(['0001_first', '0002_second']);
+    const versions = await db.query<{ version: string }>(
+      'SELECT version FROM schema_migrations ORDER BY 1',
+    );
+    expect(versions.rows.map((r) => r.version)).toEqual(['0001_first', '0002_second']);
+  });
+});

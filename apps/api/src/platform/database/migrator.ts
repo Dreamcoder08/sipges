@@ -4,6 +4,8 @@ import type { SqlClient } from './sql-client.ts';
 export type Migration = { readonly version: string; readonly sql: string };
 
 const MIGRATIONS_DIR = new URL('./migrations/', import.meta.url);
+/** Arbitrary constant shared by every MASCLI instance for pg_advisory_xact_lock. */
+const MIGRATION_LOCK_KEY = 7_361_524_002;
 
 /** Loads `NNNN_name.sql` files bundled with the API, sorted by version. */
 export const loadMigrations = async (): Promise<Migration[]> => {
@@ -40,15 +42,23 @@ export const migrate = async (
   const applied: string[] = [];
   for (const migration of migrations) {
     if (done.has(migration.version)) continue;
+    let ran = false;
     try {
       await client.transaction(async (tx) => {
+        // Another instance may be migrating concurrently: serialize, then re-check.
+        await tx.query('SELECT pg_advisory_xact_lock($1)', [MIGRATION_LOCK_KEY]);
+        const existing = await tx.query('SELECT 1 FROM schema_migrations WHERE version = $1', [
+          migration.version,
+        ]);
+        if (existing.length > 0) return;
         await tx.exec(migration.sql);
         await tx.query('INSERT INTO schema_migrations (version) VALUES ($1)', [migration.version]);
+        ran = true;
       });
     } catch (cause) {
       throw new Error(`Migration ${migration.version} failed`, { cause });
     }
-    applied.push(migration.version);
+    if (ran) applied.push(migration.version);
   }
   return applied;
 };

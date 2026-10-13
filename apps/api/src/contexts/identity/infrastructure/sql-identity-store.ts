@@ -129,19 +129,33 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     await sql.query('DELETE FROM sessions WHERE expires_at <= $1', [at]);
   },
 
-  async countFailures(subject, since) {
-    const [row] = await sql.query<{ n: number | string }>(
-      'SELECT count(*) AS n FROM login_failures WHERE subject = $1 AND failed_at > $2',
-      [subject, since],
-    );
-    return Number(row?.n ?? 0);
+  async reserveLoginAttempt({ userSubject, ipSubject, windowStart, at, decide }) {
+    return sql.transaction(async (tx) => {
+      // Transaction-scoped locks per subject, taken in a fixed order to avoid deadlocks.
+      for (const subject of [userSubject, ipSubject].sort()) {
+        await tx.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [subject]);
+      }
+      await tx.query('DELETE FROM login_failures WHERE failed_at <= $1', [windowStart]);
+      const rows = await tx.query<{ subject: string; n: number | string }>(
+        `SELECT subject, count(*) AS n FROM login_failures
+          WHERE subject = ANY($1::text[]) AND failed_at > $2 GROUP BY subject`,
+        [[userSubject, ipSubject], windowStart],
+      );
+      const count = (subject: string) => Number(rows.find((r) => r.subject === subject)?.n ?? 0);
+      const decision = decide({ userFailures: count(userSubject), ipFailures: count(ipSubject) });
+      if (!decision.allowed) return { decision, reservation: [] };
+
+      const inserted = await tx.query<{ id: number | string }>(
+        'INSERT INTO login_failures (subject, failed_at) VALUES ($1, $3), ($2, $3) RETURNING id',
+        [userSubject, ipSubject, at],
+      );
+      return { decision, reservation: inserted.map((r) => Number(r.id)) };
+    });
   },
 
-  async recordFailures(subjects, at) {
-    await sql.query(
-      'INSERT INTO login_failures (subject, failed_at) SELECT unnest($1::text[]), $2',
-      [[...subjects], at],
-    );
+  async releaseLoginAttempt(reservation) {
+    if (reservation.length === 0) return;
+    await sql.query('DELETE FROM login_failures WHERE id = ANY($1::bigint[])', [[...reservation]]);
   },
 
   async clearFailures(subject) {

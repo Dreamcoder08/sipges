@@ -30,7 +30,8 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
   const adminOnly =
     path.startsWith('/system/export') ||
     path.startsWith('/system/audit') ||
-    (path.startsWith('/system/irsa/config') && !isRead);
+    // Python gates every method except GET here (app.py:244), unlike the read set used elsewhere.
+    (path.startsWith('/system/irsa/config') && method !== 'GET');
   if (adminOnly && !isAdmin) return deny('Requiere rol administrador');
   if ((path.startsWith('/api/usuarios') || path.startsWith('/api/roles')) && !isAdmin) {
     return deny('Acceso administrativo requerido');

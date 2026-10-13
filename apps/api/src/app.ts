@@ -12,7 +12,7 @@ export const createApp = (container: Container) => {
   const { config, identity, clientIp } = container;
   const app = new Hono<AppEnv>();
 
-  app.use('*', securityHeaders());
+  app.use('*', securityHeaders({ hsts: config.cookieSecure }));
   app.use('*', authMiddleware(identity));
 
   app.route('/', healthRoutes());

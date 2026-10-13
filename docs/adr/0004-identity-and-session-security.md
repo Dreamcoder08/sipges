@@ -12,6 +12,15 @@ Behavior contract §2 and §8.8: PBKDF2-SHA256 (310k) hashes, opaque sessions st
 - **CSRF:** keep `SameSite=Strict` + Origin/Host check for every non-GET, now including `/login`, `/logout` and `/system/auth/scopes`.
 - **Headers:** parity headers plus strict **CSP** (no inline script/handlers, see ADR 0006) and **HSTS** when Secure cookies are on.
 
+## Amendment (T4 implementation and independent verification)
+- **Throttling is a fixed 15-minute window, not exponential back-off:** 5 failures per username, 20 per client address. Each attempt is *reserved* atomically before the password is verified (per-subject `pg_advisory_xact_lock`, count, insert) and released on success. The first version counted, verified and then recorded, and an independent verifier bypassed it with 30 parallel requests. Rows outside the window are purged on every attempt.
+- **Known trade-off:** anyone can lock a username for 15 minutes with 5 bad attempts. Accepted for an internal tool with few accounts; revisit with CAPTCHA or per-device trust if it is abused.
+- **Client address:** the socket peer by default; with `MASCLI_TRUST_PROXY=1`, the right-most `X-Forwarded-For` entry (the one appended by the trusted proxy). Never trust the header without a proxy in front.
+- **Session purge** runs on every successful login; a scheduled job is left to deployment readiness (T14).
+- **CSP** belongs to the SPA and is delivered in T11; HSTS is sent whenever cookies are Secure.
+- An unreadable sealed TOTP secret (corruption, wrong key) fails the second factor with 401 and logs an operator hint, never a 500.
+- Timing: unknown users are verified against an eagerly computed Argon2id dummy hash. Accounts still holding a legacy PBKDF2 hash answer measurably slower until their next login rehashes them.
+
 ## Consequences
 - Users keep their passwords; hashes upgrade transparently.
 - `MASCLI_DATA_KEY` becomes a required production secret; key rotation is a documented procedure.

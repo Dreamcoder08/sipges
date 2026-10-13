@@ -52,10 +52,22 @@ export const createIdentityService = ({
   tokens,
   clock,
 }: IdentityDeps) => {
-  let dummyHash: Promise<string> | undefined;
+  // Computed eagerly so the first unknown-user login costs the same as later ones.
+  const dummyHash = hasher.hash(DUMMY_HASH_INPUT);
+  dummyHash.catch(() => undefined);
   const equalizeTiming = async (password: string) => {
-    dummyHash ??= hasher.hash(DUMMY_HASH_INPUT);
     await hasher.verify(password, await dummyHash);
+  };
+
+  /** A sealed secret that cannot be opened (corruption, rotated key) fails the factor, never the request. */
+  const openSecret = (sealed: string | null): string => {
+    if (!sealed) return '';
+    try {
+      return cipher.open(sealed);
+    } catch {
+      console.error('Unreadable sealed TOTP secret; check MASCLI_DATA_KEY');
+      return '';
+    }
   };
 
   return {
@@ -84,42 +96,45 @@ export const createIdentityService = ({
     }): Promise<Result<LoginSuccess, LoginError>> {
       const now = clock.now();
       const username = normalizeUsername(input.username);
-      const subjects = [userSubject(username), ipSubject(input.ip)] as const;
-      const since = new Date(now.getTime() - THROTTLE.windowSeconds * 1000);
-      const decision = throttleDecision({
-        userFailures: await store.countFailures(subjects[0], since),
-        ipFailures: await store.countFailures(subjects[1], since),
+      const userKey = userSubject(username);
+      // Reserve before verifying: the attempt counts as a failure unless it succeeds.
+      const { decision, reservation } = await store.reserveLoginAttempt({
+        userSubject: userKey,
+        ipSubject: ipSubject(input.ip),
+        windowStart: new Date(now.getTime() - THROTTLE.windowSeconds * 1000),
+        at: now,
+        decide: throttleDecision,
       });
       if (!decision.allowed) {
         return err({ kind: 'throttled', retryAfterSeconds: decision.retryAfterSeconds });
       }
 
-      const fail = async (error: LoginError) => {
-        await store.recordFailures(subjects, now);
-        return err(error);
-      };
-
       const user = await store.findUser(username);
       if (!user) {
         await equalizeTiming(input.password);
-        return fail({ kind: 'invalid_credentials' });
+        return err({ kind: 'invalid_credentials' });
       }
       if (!(await hasher.verify(input.password, user.passwordHash)) || !user.active) {
-        return fail({ kind: 'invalid_credentials' });
+        return err({ kind: 'invalid_credentials' });
       }
 
       if (user.totpEnabled) {
-        const secret = user.totpSecretSealed ? cipher.open(user.totpSecretSealed) : '';
-        const check = totp.verify(secret, input.otp, now, user.totpLastStep);
+        const check = totp.verify(
+          openSecret(user.totpSecretSealed),
+          input.otp,
+          now,
+          user.totpLastStep,
+        );
         if (!check.ok || !(await store.consumeTotpStep(username, check.step))) {
-          return fail({ kind: 'invalid_otp' });
+          return err({ kind: 'invalid_otp' });
         }
       }
 
       if (hasher.needsRehash(user.passwordHash)) {
         await store.updatePasswordHash(username, await hasher.hash(input.password));
       }
-      await store.clearFailures(subjects[0]);
+      await store.releaseLoginAttempt(reservation);
+      await store.clearFailures(userKey);
       await store.purgeExpiredSessions(now);
 
       const token = tokens.newToken();
@@ -177,9 +192,9 @@ export const createIdentityService = ({
       currentToken: string,
     ): Promise<Result<true, 'invalid_code'>> {
       const user = await store.findUser(username);
-      if (!user?.totpSecretSealed) return err('invalid_code');
+      if (!user) return err('invalid_code');
       const check = totp.verify(
-        cipher.open(user.totpSecretSealed),
+        openSecret(user.totpSecretSealed),
         code,
         clock.now(),
         user.totpLastStep,

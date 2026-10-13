@@ -73,3 +73,34 @@ describe('bootstrap admin settings', () => {
     expect(loadConfig({ MASCLI_ADMIN_USERNAME: '  Jefa ' }).admin.username).toBe('jefa');
   });
 });
+
+describe('production database guard (verifier finding S1)', () => {
+  it('refuses embedded PGlite when NODE_ENV=production', () => {
+    expect(() => loadConfig({ NODE_ENV: 'production' })).toThrow(
+      'MASCLI_DATABASE_URL is required when NODE_ENV=production',
+    );
+  });
+
+  it('accepts production with a database URL', () => {
+    expect(
+      loadConfig({
+        NODE_ENV: 'production',
+        MASCLI_DATABASE_URL: 'postgres://u:p@db.example:5432/m',
+      }).databaseUrl,
+    ).toBe('postgres://u:p@db.example:5432/m');
+  });
+});
+
+describe('MASCLI_TRUST_PROXY', () => {
+  it('defaults to not trusting forwarded headers', () => {
+    expect(loadConfig({}).trustProxy).toBe(false);
+  });
+
+  it('accepts exactly 0 or 1', () => {
+    expect(loadConfig({ MASCLI_TRUST_PROXY: '1' }).trustProxy).toBe(true);
+    expect(loadConfig({ MASCLI_TRUST_PROXY: '0' }).trustProxy).toBe(false);
+    expect(() => loadConfig({ MASCLI_TRUST_PROXY: 'yes' })).toThrow(
+      "MASCLI_TRUST_PROXY must be unset or exactly '0' or '1'",
+    );
+  });
+});

@@ -28,6 +28,9 @@ export type NewAccount = {
 
 export const normalizeUsername = (raw: string) => raw.trim().toLowerCase();
 
+/** Length in Unicode code points, like Python len() (UTF-16 length would count astral characters twice). */
+const codePoints = (text: string) => [...text].length;
+
 /** Validation rules and messages of app.py:298-302, plus the ADR 0004 maximum length. */
 export const validateNewAccount = (input: {
   username: string;
@@ -37,9 +40,9 @@ export const validateNewAccount = (input: {
 }): Result<NewAccount, string> => {
   if (!USERNAME_PATTERN.test(input.username)) return err('Usuario inválido');
   if (!isRole(input.role)) return err('Rol no válido');
-  if (input.password.length < PASSWORD_MIN)
+  if (codePoints(input.password) < PASSWORD_MIN)
     return err('Contraseña demasiado corta: mínimo 12 caracteres');
-  if (input.password.length > PASSWORD_MAX)
+  if (codePoints(input.password) > PASSWORD_MAX)
     return err('Contraseña demasiado larga: máximo 256 caracteres');
   return ok({
     username: input.username,

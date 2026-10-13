@@ -12,16 +12,26 @@ export type AppConfig = {
   /** PostgreSQL URL; when absent the API uses embedded PGlite at `pgliteDir`. */
   readonly databaseUrl: string | undefined;
   readonly pgliteDir: string;
+  /** Read X-Forwarded-For from a trusted reverse proxy (MASCLI_TRUST_PROXY=1). */
+  readonly trustProxy: boolean;
 };
 
 type Env = Readonly<Record<string, string | undefined>>;
 
-/** Parity with app.py:10-18: unset or "1" -> Secure, "0" -> not Secure, anything else fails. */
-const parseCookieSecure = (value: string | undefined): boolean => {
-  if (value !== undefined && value !== '0' && value !== '1') {
-    throw new Error("MASCLI_COOKIE_SECURE must be unset or exactly '0' or '1'");
+/** Strict boolean switch: unset or exactly '0' / '1' (parity with app.py:10-18 for cookies). */
+const parseSwitch = (name: string, value: string | undefined, fallback: boolean): boolean => {
+  if (value === undefined) return fallback;
+  if (value !== '0' && value !== '1')
+    throw new Error(`${name} must be unset or exactly '0' or '1'`);
+  return value === '1';
+};
+
+const parseDatabaseUrl = (env: Env): string | undefined => {
+  const url = env.MASCLI_DATABASE_URL || undefined;
+  if (!url && env.NODE_ENV === 'production') {
+    throw new Error('MASCLI_DATABASE_URL is required when NODE_ENV=production');
   }
-  return value !== '0';
+  return url;
 };
 
 const parsePort = (value: string | undefined): number => {
@@ -42,7 +52,7 @@ const parseDataKey = (value: string | undefined): Buffer => {
 
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
-  cookieSecure: parseCookieSecure(env.MASCLI_COOKIE_SECURE),
+  cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
   host: env.MASCLI_HOST ?? '127.0.0.1',
   port: parsePort(env.MASCLI_PORT),
   dataKey: parseDataKey(env.MASCLI_DATA_KEY),
@@ -51,6 +61,7 @@ export const loadConfig = (env: Env): AppConfig => ({
     password: env.MASCLI_ADMIN_PASSWORD ?? '',
     fullName: env.MASCLI_ADMIN_FULL_NAME?.trim() || 'Administrator',
   },
-  databaseUrl: env.MASCLI_DATABASE_URL || undefined,
+  databaseUrl: parseDatabaseUrl(env),
   pgliteDir: env.MASCLI_PGLITE_DIR ?? '.data/pglite',
+  trustProxy: parseSwitch('MASCLI_TRUST_PROXY', env.MASCLI_TRUST_PROXY, false),
 });

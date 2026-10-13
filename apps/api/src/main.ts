@@ -7,6 +7,7 @@ import { buildContainer } from './compose.ts';
 import { loadConfig } from './platform/config.ts';
 import { loadMigrations, migrate } from './platform/database/migrator.ts';
 import { pgliteClient } from './platform/database/pglite.ts';
+import { resolveClientIp } from './platform/http/client-ip.ts';
 import { postgresClient } from './platform/database/postgres.ts';
 import type { SqlClient } from './platform/database/sql-client.ts';
 
@@ -31,7 +32,12 @@ const container = await buildContainer({
   config,
   sql: database.sql,
   clock: { now: () => new Date() },
-  clientIp: (c) => getConnInfo(c).remote.address ?? 'unknown',
+  clientIp: (c) =>
+    resolveClientIp({
+      trustProxy: config.trustProxy,
+      forwardedFor: c.req.header('x-forwarded-for'),
+      socket: getConnInfo(c).remote.address,
+    }),
 });
 
 const server = serve(

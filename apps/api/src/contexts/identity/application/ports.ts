@@ -1,3 +1,4 @@
+import type { ThrottleDecision } from '../domain/login-throttle.ts';
 import type { Identity, NewAccount, Role } from '../domain/user.ts';
 
 export type StoredUser = Identity & {
@@ -39,8 +40,21 @@ export type IdentityStore = {
   deleteSession(tokenHash: string): Promise<void>;
   purgeExpiredSessions(at: Date): Promise<void>;
 
-  countFailures(subject: string, since: Date): Promise<number>;
-  recordFailures(subjects: readonly string[], at: Date): Promise<void>;
+  /**
+   * Atomically counts recent failures for both subjects and, when `decide` allows it, records
+   * this attempt as a provisional failure. Serializing per subject makes concurrent bursts
+   * consume the limit instead of all reading the same stale count. Rows at or before
+   * `windowStart` are purged.
+   */
+  reserveLoginAttempt(input: {
+    userSubject: string;
+    ipSubject: string;
+    windowStart: Date;
+    at: Date;
+    decide: (failures: { userFailures: number; ipFailures: number }) => ThrottleDecision;
+  }): Promise<{ decision: ThrottleDecision; reservation: readonly number[] }>;
+  /** Removes a provisional failure after the attempt succeeded. */
+  releaseLoginAttempt(reservation: readonly number[]): Promise<void>;
   clearFailures(subject: string): Promise<void>;
 };
 

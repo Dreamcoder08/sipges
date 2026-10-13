@@ -38,11 +38,13 @@ corepack pnpm --filter @mascli/web dev   # SPA on http://127.0.0.1:5173 (proxies
 | `MASCLI_ADMIN_FULL_NAME` | display name of the bootstrap admin | `Administrator` |
 | `MASCLI_DATABASE_URL` | PostgreSQL URL; TLS required unless the host is local | unset → embedded PGlite (development only) |
 | `MASCLI_PGLITE_DIR` | embedded database directory | `.data/pglite` |
+| `MASCLI_TRUST_PROXY` | exactly `0` or `1`; `1` only behind a reverse proxy that sets `X-Forwarded-For` | `0` (socket address) |
+| `NODE_ENV` | `production` requires `MASCLI_DATABASE_URL` (embedded PGlite is refused) | unset |
 
 Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.
 
 ## Authentication behavior (T4)
 - Passwords: Argon2id for new hashes; Python `pbkdf2_sha256$…` hashes still verify and are upgraded on the next successful login.
-- Login throttling: 5 failures per username or 20 per client address within 15 minutes → `429` with `Retry-After: 900`.
+- Login throttling: 5 failures per username or 20 per client address within 15 minutes → `429` with `Retry-After: 900`. Attempts are reserved atomically, so parallel requests cannot exceed the limit.
 - TOTP: a code (time step) can be used only once.
 - Every state-changing request, including `/login` and `/logout`, must be same-origin when it carries an `Origin` header.
