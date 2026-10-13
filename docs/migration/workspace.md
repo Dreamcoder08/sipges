@@ -12,6 +12,7 @@ corepack pnpm install          # install all workspaces
 corepack pnpm check            # ESLint + Prettier, architecture boundaries, typecheck, tests
 corepack pnpm test             # tests only (all workspaces)
 corepack pnpm boundaries       # hexagonal dependency rules (dependency-cruiser)
+corepack pnpm e2e              # build the SPA + Playwright parity suite in Chromium (apps/e2e)
 corepack pnpm --filter @mascli/api dev   # API on http://127.0.0.1:8000
 corepack pnpm --filter @mascli/web dev   # SPA on http://127.0.0.1:5173 (proxies API routes)
 ```
@@ -30,6 +31,8 @@ MASCLI_TEST_DATABASE_URL=postgres://postgres:<pw>@127.0.0.1:55432/postgres corep
 docker stop mascli-pg-test
 ```
 
+End-to-end coverage, real-PostgreSQL option and the deployment checklist: [docs/deployment/readiness.md](../deployment/readiness.md).
+
 ## Layout
 | Path | Purpose |
 |---|---|
@@ -37,6 +40,7 @@ docker stop mascli-pg-test
 | `apps/api/src/contexts/<context>/{domain,application,infrastructure,http}` | Bounded contexts (ADR 0002) |
 | `apps/api/src/platform` | Config, HTTP middleware, cross-cutting infrastructure |
 | `apps/web` | React + Vite SPA (ADR 0006) |
+| `apps/e2e` | Playwright end-to-end parity suite (T14) |
 | `packages/contracts` | Zod schemas shared by API and SPA |
 | `packages/kernel` | Shared kernel (`Result`, branded IDs) |
 
