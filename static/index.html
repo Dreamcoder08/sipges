@@ -13,7 +13,7 @@
 <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
 <div class="mobile-topbar">
   <button id="menuBtn" class="icon-btn" aria-label="Abrir menú">☰</button>
-  <div class="mobile-brand"><b>MASCLI</b><select id="mobileProjectSelector" aria-label="Proyecto activo" onchange="changeActiveProject(this.value)"><option value="PRJ-SECHURA">Proyecto Sechura</option></select></div>
+  <div class="mobile-brand"><b>MASCLI</b><select id="mobileProjectSelector" aria-label="Proyecto activo" data-on-change="[[&quot;changeActiveProject&quot;, &quot;$value&quot;]]"><option value="PRJ-SECHURA">Proyecto Sechura</option></select></div>
   <span class="status-dot" title="Sistema activo"></span>
 </div>
 <div class="app-shell">
@@ -59,7 +59,7 @@
       </div>
       <div class="topbar-right">
         <div id="connectionStatus" class="connection-status"><i></i><span>Sincronizado</span></div>
-        <div class="project-switcher"><label for="projectSelector">Proyecto activo</label><select id="projectSelector" onchange="changeActiveProject(this.value)"><option value="PRJ-SECHURA">Proyecto Sechura</option></select></div>
+        <div class="project-switcher"><label for="projectSelector">Proyecto activo</label><select id="projectSelector" data-on-change="[[&quot;changeActiveProject&quot;, &quot;$value&quot;]]"><option value="PRJ-SECHURA">Proyecto Sechura</option></select></div>
         <div class="profile-mini"><div class="avatar">CG</div><div class="profile-copy"><b>Crystell Granda</b><span>Administradora</span></div></div>
       </div>
     </header>
@@ -71,7 +71,7 @@
             <span class="hero-kicker">MONITOREO PREVENTIVO · G-A-D-N-E-I</span>
             <h2>Riesgo socioambiental con evidencia, trazabilidad y validación humana.</h2>
             <p>MASCLI integra información territorial, actores, demandas, narrativas, ambiente e institucionalidad para priorizar señales y orientar acciones preventivas.</p>
-            <div class="hero-actions"><button onclick="goTo('eventos')">Registrar evento</button><button class="ghost" onclick="goTo('irsa')">Ver IRSA</button></div>
+            <div class="hero-actions"><button data-on-click="[[&quot;goTo&quot;, &quot;eventos&quot;]]">Registrar evento</button><button class="ghost" data-on-click="[[&quot;goTo&quot;, &quot;irsa&quot;]]">Ver IRSA</button></div>
           </div>
           <div class="hero-status">
             <span>Estado del modelo</span><b>PROTOTIPO FINAL</b><em>Validación externa pendiente</em>
@@ -103,15 +103,15 @@
         </div>
         <div class="grid-2 operational-grid">
           <div class="card priority-card">
-            <div class="card-topline"><div><div class="card-label">LECTURA PRIORITARIA</div><h3>Factores que requieren atención</h3></div><button class="text-button" onclick="goTo('irsa')">Ver análisis →</button></div>
+            <div class="card-topline"><div><div class="card-label">LECTURA PRIORITARIA</div><h3>Factores que requieren atención</h3></div><button class="text-button" data-on-click="[[&quot;goTo&quot;, &quot;irsa&quot;]]">Ver análisis →</button></div>
             <div id="priorityDrivers" class="priority-list"><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
           </div>
           <div class="card quick-card">
             <div class="card-label">ACCESOS RÁPIDOS</div><h3>Actualizar el monitoreo</h3>
             <div class="quick-grid">
-              <button onclick="openEventForm();goTo('eventos')"><span>＋</span><b>Registrar evento</b><small>Incorpora un nuevo hecho territorial</small></button>
-              <button onclick="goTo('alertas')"><span>!</span><b>Revisar alertas</b><small>Prioriza acciones preventivas</small></button>
-              <button onclick="goTo('fuentes')"><span>▰</span><b>Consultar evidencia</b><small>Verifica origen y trazabilidad</small></button>
+              <button data-on-click="[[&quot;openEventForm&quot;], [&quot;goTo&quot;, &quot;eventos&quot;]]"><span>＋</span><b>Registrar evento</b><small>Incorpora un nuevo hecho territorial</small></button>
+              <button data-on-click="[[&quot;goTo&quot;, &quot;alertas&quot;]]"><span>!</span><b>Revisar alertas</b><small>Prioriza acciones preventivas</small></button>
+              <button data-on-click="[[&quot;goTo&quot;, &quot;fuentes&quot;]]"><span>▰</span><b>Consultar evidencia</b><small>Verifica origen y trazabilidad</small></button>
             </div>
           </div>
         </div>
@@ -119,27 +119,27 @@
       </section>
 
       <section id="eventos" class="page">
-        <div class="page-head"><div><span>REGISTRO TERRITORIAL</span><h2>Eventos</h2><p>Hechos, reuniones, cambios institucionales y señales del entorno.</p></div><button onclick="openEventForm()">+ Registrar evento</button></div>
+        <div class="page-head"><div><span>REGISTRO TERRITORIAL</span><h2>Eventos</h2><p>Hechos, reuniones, cambios institucionales y señales del entorno.</p></div><button data-on-click="[[&quot;openEventForm&quot;]]">+ Registrar evento</button></div>
         <div id="eventForm" class="card form hidden">
-          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Evento socioambiental</h3></div><button class="icon-btn light" onclick="openEventForm()">×</button></div>
+          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Evento socioambiental</h3></div><button class="icon-btn light" data-on-click="[[&quot;openEventForm&quot;]]">×</button></div>
           <div class="formgrid">
             <label>Fecha<input id="evFecha" type="date"></label><label>Territorio<input id="evTerritorio" value="Sechura"></label>
             <label>Actor principal<input id="evActor" placeholder="Actor / organización"></label><label>Tipo de evento<input id="evTipo" value="Reunión / hecho territorial"></label>
             <label class="span2">Descripción<textarea id="evDesc" rows="4" placeholder="Describa el hecho con lenguaje verificable..."></textarea></label>
             <label>Relevancia<select id="evRel"><option>Media</option><option>Alta</option><option>Crítica</option></select></label>
             <label>Nivel de verificación<select id="evVer"><option>A - Hecho verificado</option><option>B - Información corroborada</option><option>C - Percepción</option><option>D - Opinión/Narrativa</option><option>E - No verificada</option></select></label>
-            <label class="span2 upload-field"><span>Reporte o evidencia <small>PDF, Office, CSV, TXT o imagen · máximo 10 MB por archivo</small></span><input id="evFiles" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp" onchange="previewFiles('evFiles','eventFileList')"><span class="upload-button"><b>⇧</b> Seleccionar reportes o evidencias</span><div id="eventFileList" class="file-list"></div></label>
+            <label class="span2 upload-field"><span>Reporte o evidencia <small>PDF, Office, CSV, TXT o imagen · máximo 10 MB por archivo</small></span><input id="evFiles" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp" data-on-change="[[&quot;previewFiles&quot;, &quot;evFiles&quot;, &quot;eventFileList&quot;]]"><span class="upload-button"><b>⇧</b> Seleccionar reportes o evidencias</span><div id="eventFileList" class="file-list"></div></label>
           </div>
           <div id="analysis" class="analysis"></div>
-          <div class="actions"><button class="secondary" onclick="analyzeEvent()">Analizar MASCLI</button><button onclick="saveEvent()">Guardar evento</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;analyzeEvent&quot;]]">Analizar MASCLI</button><button data-on-click="[[&quot;saveEvent&quot;]]">Guardar evento</button></div>
         </div>
-        <div class="card"><input class="search" placeholder="Buscar por fecha, actor, territorio o descripción…" oninput="loadTable('eventos','eventTable',this.value)"><div class="table-wrap" id="eventTable"></div></div>
+        <div class="card"><input class="search" placeholder="Buscar por fecha, actor, territorio o descripción…" data-on-input="[[&quot;loadTable&quot;, &quot;eventos&quot;, &quot;eventTable&quot;, &quot;$value&quot;]]"><div class="table-wrap" id="eventTable"></div></div>
       </section>
 
       <section id="actores" class="page">
-        <div class="page-head"><div><span>MAPA DE RELACIONAMIENTO</span><h2>Actores</h2><p>Influencia, legitimidad, interés, posición y capacidad de movilización.</p></div><button onclick="quickCreate('actores')">+ Nuevo actor</button></div>
+        <div class="page-head"><div><span>MAPA DE RELACIONAMIENTO</span><h2>Actores</h2><p>Influencia, legitimidad, interés, posición y capacidad de movilización.</p></div><button data-on-click="[[&quot;quickCreate&quot;, &quot;actores&quot;]]">+ Nuevo actor</button></div>
         <div id="actorForm" class="card form hidden">
-          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Actor territorial</h3></div><button class="icon-btn light" onclick="quickCreate('actores')" aria-label="Cerrar formulario">×</button></div>
+          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Actor territorial</h3></div><button class="icon-btn light" data-on-click="[[&quot;quickCreate&quot;, &quot;actores&quot;]]" aria-label="Cerrar formulario">×</button></div>
           <div class="formgrid">
             <label>Nombre / organización<input id="acNombre" placeholder="Ej. Asociación de pescadores"></label>
             <label>Tipo de actor<select id="acTipo"><option>Comunidad / organización social</option><option>Institución pública</option><option>Empresa</option><option>Autoridad</option><option>Otro</option></select></label>
@@ -148,15 +148,15 @@
             <label>Influencia<select id="acInfluencia"><option>Media</option><option>Alta</option><option>Baja</option><option>Por evaluar</option></select></label>
             <label>Posición frente al proyecto<select id="acPosicion"><option>No determinada</option><option>Favorable</option><option>Neutral</option><option>Crítica</option></select></label>
           </div>
-          <div class="actions"><button class="secondary" onclick="quickCreate('actores')">Cancelar</button><button onclick="saveActor()">Guardar actor</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;quickCreate&quot;, &quot;actores&quot;]]">Cancelar</button><button data-on-click="[[&quot;saveActor&quot;]]">Guardar actor</button></div>
         </div>
         <div class="card network-card">
           <div class="visual-head">
             <div><div class="card-label">RED EXPLORATORIA DE ACTORES</div><h3>Relaciones derivadas de la Base Maestra</h3><p>Seleccione un nodo para enfocar su entorno. Las conexiones son inferencias operativas, no vínculos institucionales confirmados.</p></div>
             <div class="network-controls">
-              <label>Actor focal<select id="networkActorSelect" onchange="selectNetworkActor(this.value)"></select></label>
-              <label>Tipo<select id="networkTypeFilter" onchange="renderActorNetwork()"><option value="ALL">Todos</option></select></label>
-              <button class="secondary compact" onclick="resetActorNetwork()">Restablecer</button>
+              <label>Actor focal<select id="networkActorSelect" data-on-change="[[&quot;selectNetworkActor&quot;, &quot;$value&quot;]]"></select></label>
+              <label>Tipo<select id="networkTypeFilter" data-on-change="[[&quot;renderActorNetwork&quot;]]"><option value="ALL">Todos</option></select></label>
+              <button class="secondary compact" data-on-click="[[&quot;resetActorNetwork&quot;]]">Restablecer</button>
             </div>
           </div>
           <div class="network-stats" id="networkStats"></div>
@@ -171,13 +171,13 @@
           </div>
           <div class="data-caveat">Red demostrativa derivada automáticamente de actores, eventos y demandas registradas. Validar cada relación antes de utilizarla para decisiones o comunicaciones.</div>
         </div>
-        <div class="card"><input class="search" placeholder="Buscar actor, organización o territorio…" oninput="loadTable('actores','actorTable',this.value)"><div class="table-wrap" id="actorTable"></div></div>
+        <div class="card"><input class="search" placeholder="Buscar actor, organización o territorio…" data-on-input="[[&quot;loadTable&quot;, &quot;actores&quot;, &quot;actorTable&quot;, &quot;$value&quot;]]"><div class="table-wrap" id="actorTable"></div></div>
       </section>
 
       <section id="directorio" class="page">
-        <div class="page-head"><div><span>BASE MAESTRA TERRITORIAL</span><h2>Directorio de autoridades y líderes</h2><p>Contactos institucionales, autoridades y referentes registrados. Verifique vigencia y representación antes de utilizarlos.</p></div><button onclick="toggleDirectoryForm()">+ Agregar contacto</button></div>
+        <div class="page-head"><div><span>BASE MAESTRA TERRITORIAL</span><h2>Directorio de autoridades y líderes</h2><p>Contactos institucionales, autoridades y referentes registrados. Verifique vigencia y representación antes de utilizarlos.</p></div><button data-on-click="[[&quot;toggleDirectoryForm&quot;]]">+ Agregar contacto</button></div>
         <div id="directoryForm" class="card form hidden">
-          <div class="form-title"><div><span id="directoryFormMode">NUEVO REGISTRO</span><h3>Ficha territorial</h3></div><button class="icon-btn light" onclick="toggleDirectoryForm(false)" aria-label="Cerrar formulario">×</button></div>
+          <div class="form-title"><div><span id="directoryFormMode">NUEVO REGISTRO</span><h3>Ficha territorial</h3></div><button class="icon-btn light" data-on-click="[[&quot;toggleDirectoryForm&quot;, false]]" aria-label="Cerrar formulario">×</button></div>
           <input id="dirId" type="hidden">
           <div class="formgrid">
             <label>Nombre<input id="dirNombre" placeholder="Nombre de la autoridad o líder"></label>
@@ -191,23 +191,23 @@
             <label>Fuente / referencia<input id="dirFuente" placeholder="Código o referencia documental"></label>
             <label class="span2">Observaciones<textarea id="dirObs" rows="3" placeholder="Alcance, vigencia o notas de seguimiento"></textarea></label>
           </div>
-          <div class="actions"><button class="secondary" onclick="toggleDirectoryForm(false)">Cancelar</button><button onclick="saveDirectoryEntry()">Guardar ficha</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;toggleDirectoryForm&quot;, false]]">Cancelar</button><button data-on-click="[[&quot;saveDirectoryEntry&quot;]]">Guardar ficha</button></div>
         </div>
         <div id="directoryStats" class="territorial-kpis"></div>
         <div class="card filter-card directory-filters">
-          <input id="dirSearch" class="search" placeholder="Buscar nombre, cargo, institución o territorio…" oninput="renderDirectory()">
-          <select id="dirTerritoryFilter" onchange="renderDirectory()"><option value="ALL">Todos los territorios</option></select>
-          <select id="dirTypeFilter" onchange="renderDirectory()"><option value="ALL">Todos los tipos</option></select>
-          <select id="dirPriorityFilter" onchange="renderDirectory()"><option value="ALL">Todas las prioridades</option><option>Alta</option><option>Media</option><option>Baja / revisar</option></select>
+          <input id="dirSearch" class="search" placeholder="Buscar nombre, cargo, institución o territorio…" data-on-input="[[&quot;renderDirectory&quot;]]">
+          <select id="dirTerritoryFilter" data-on-change="[[&quot;renderDirectory&quot;]]"><option value="ALL">Todos los territorios</option></select>
+          <select id="dirTypeFilter" data-on-change="[[&quot;renderDirectory&quot;]]"><option value="ALL">Todos los tipos</option></select>
+          <select id="dirPriorityFilter" data-on-change="[[&quot;renderDirectory&quot;]]"><option value="ALL">Todas las prioridades</option><option>Alta</option><option>Media</option><option>Baja / revisar</option></select>
         </div>
         <div class="directory-layout"><div class="card"><div id="directoryTable" class="table-wrap"></div></div><aside id="directoryDetail" class="card visual-detail"></aside></div>
         <div class="data-caveat">El directorio conserva los nombres y cargos de la matriz fuente. Una ficha visible no confirma mandato, vigencia, representación ni consentimiento de contacto.</div>
       </section>
 
       <section id="demandas" class="page">
-        <div class="page-head"><div><span>AGENDA SOCIAL</span><h2>Demandas y compromisos</h2><p>Registro de expectativas, pedidos, responsables y seguimiento.</p></div><button onclick="quickCreate('demandas')">+ Registrar demanda</button></div>
+        <div class="page-head"><div><span>AGENDA SOCIAL</span><h2>Demandas y compromisos</h2><p>Registro de expectativas, pedidos, responsables y seguimiento.</p></div><button data-on-click="[[&quot;quickCreate&quot;, &quot;demandas&quot;]]">+ Registrar demanda</button></div>
         <div id="demandForm" class="card form hidden">
-          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Demanda territorial</h3></div><button class="icon-btn light" onclick="quickCreate('demandas')" aria-label="Cerrar formulario">×</button></div>
+          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Demanda territorial</h3></div><button class="icon-btn light" data-on-click="[[&quot;quickCreate&quot;, &quot;demandas&quot;]]" aria-label="Cerrar formulario">×</button></div>
           <div class="formgrid">
             <label>Actor / grupo<input id="deActor" placeholder="Actor que plantea la demanda"></label>
             <label>Territorio<input id="deTerritorio" value="Sechura"></label>
@@ -215,17 +215,17 @@
             <label>Prioridad<select id="dePrioridad"><option>Media</option><option>Alta</option><option>Crítica</option><option>Baja</option></select></label>
             <label class="span2">Descripción<textarea id="deDescripcion" rows="4" placeholder="Describa la solicitud o expectativa con precisión..."></textarea></label>
           </div>
-          <div class="actions"><button class="secondary" onclick="quickCreate('demandas')">Cancelar</button><button onclick="saveDemand()">Guardar demanda</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;quickCreate&quot;, &quot;demandas&quot;]]">Cancelar</button><button data-on-click="[[&quot;saveDemand&quot;]]">Guardar demanda</button></div>
         </div>
-        <div class="card"><input class="search" placeholder="Buscar demanda, actor o tema…" oninput="loadTable('demandas','demandTable',this.value)"><div class="table-wrap" id="demandTable"></div></div>
+        <div class="card"><input class="search" placeholder="Buscar demanda, actor o tema…" data-on-input="[[&quot;loadTable&quot;, &quot;demandas&quot;, &quot;demandTable&quot;, &quot;$value&quot;]]"><div class="table-wrap" id="demandTable"></div></div>
       </section>
 
       <section id="narrativas" class="page">
-        <div class="page-head"><div><span>SEÑALES DIGITALES</span><h2>Narrativas</h2><p>Registro y revisión humana de publicaciones, discursos y señales. La clasificación automática es solo orientativa.</p></div><button onclick="toggleNarrativeForm()">+ Registrar narrativa</button></div>
+        <div class="page-head"><div><span>SEÑALES DIGITALES</span><h2>Narrativas</h2><p>Registro y revisión humana de publicaciones, discursos y señales. La clasificación automática es solo orientativa.</p></div><button data-on-click="[[&quot;toggleNarrativeForm&quot;]]">+ Registrar narrativa</button></div>
         <div id="narrativeForm" class="card form hidden">
-          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Narrativa o señal digital</h3></div><button class="icon-btn light" onclick="toggleNarrativeForm(false)">×</button></div>
+          <div class="form-title"><div><span>NUEVO REGISTRO</span><h3>Narrativa o señal digital</h3></div><button class="icon-btn light" data-on-click="[[&quot;toggleNarrativeForm&quot;, false]]">×</button></div>
           <div class="formgrid">
-            <label class="span2">Enlace de publicación (Facebook, Instagram, TikTok, X, YouTube, LinkedIn u otra fuente pública)<input id="narLink" type="url" inputmode="url" placeholder="https://www.linkedin.com/posts/..." oninput="detectNarrativePlatform()"></label>
+            <label class="span2">Enlace de publicación (Facebook, Instagram, TikTok, X, YouTube, LinkedIn u otra fuente pública)<input id="narLink" type="url" inputmode="url" placeholder="https://www.linkedin.com/posts/..." data-on-input="[[&quot;detectNarrativePlatform&quot;]]"></label>
             <label>Fecha de inicio<input id="narFecha" type="date"></label><label>Fuente / plataforma<input id="narFuente" placeholder="Medio, red o reunión"></label>
             <label>Tema<input id="narTema" placeholder="Tema identificado"></label><label>Actor relacionado<input id="narActor" placeholder="Actor u organización"></label>
             <label>Interacciones observadas (reacciones + comentarios + compartidos)<input id="narInteractions" type="number" min="0" step="1" value="0"></label>
@@ -234,17 +234,17 @@
             <label>Nivel de verificación<select id="narVer"><option>E - No verificada</option><option>D - Opinión/Narrativa</option><option>C - Percepción</option><option>B - Información corroborada</option><option>A - Hecho verificado</option></select></label><label>Estado<select id="narEstado"><option>En análisis</option><option>En seguimiento</option><option>Validada</option><option>Descartada</option></select></label>
             <label class="span2">Descripción<textarea id="narDesc" rows="4" placeholder="Registre el contenido de forma verificable, sin afirmar como hecho lo no confirmado"></textarea></label>
           </div>
-          <div class="actions"><button class="secondary" onclick="toggleNarrativeForm(false)">Cancelar</button><button onclick="saveNarrative()">Guardar narrativa</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;toggleNarrativeForm&quot;, false]]">Cancelar</button><button data-on-click="[[&quot;saveNarrative&quot;]]">Guardar narrativa</button></div>
         </div>
         <div id="narrativeStats" class="territorial-kpis"></div>
-        <div class="card filter-card"><input id="narSearch" class="search" placeholder="Buscar tema, actor o fuente…" oninput="renderNarratives()"><select id="narToneFilter" onchange="renderNarratives()"><option value="ALL">Todos los tonos</option><option>Negativo</option><option>Neutral</option><option>Positivo</option><option>Mixto</option></select><select id="narStateFilter" onchange="renderNarratives()"><option value="ALL">Todos los estados</option><option>En análisis</option><option>En seguimiento</option><option>Validada</option><option>Descartada</option></select></div>
+        <div class="card filter-card"><input id="narSearch" class="search" placeholder="Buscar tema, actor o fuente…" data-on-input="[[&quot;renderNarratives&quot;]]"><select id="narToneFilter" data-on-change="[[&quot;renderNarratives&quot;]]"><option value="ALL">Todos los tonos</option><option>Negativo</option><option>Neutral</option><option>Positivo</option><option>Mixto</option></select><select id="narStateFilter" data-on-change="[[&quot;renderNarratives&quot;]]"><option value="ALL">Todos los estados</option><option>En análisis</option><option>En seguimiento</option><option>Validada</option><option>Descartada</option></select></div>
         <div class="grid-2 narratives-grid"><div class="card"><div class="card-label">PUBLICACIONES Y NARRATIVAS</div><div id="narrativeTable" class="table-wrap"></div></div><aside id="narrativeDetail" class="card visual-detail"></aside></div>
         <div class="data-caveat">Los enlaces (incluido LinkedIn) se guardan y pueden abrirse en su fuente original. No se realiza extracción automática ni monitoreo en tiempo real; las métricas deben registrarse manualmente y ser verificadas. MASCLI no monitorea redes sociales en tiempo real. Esta vista organiza registros incorporados por personas usuarias y exige validación humana antes de escalar una alerta.</div>
       </section>
 
 
       <section id="gerencia" class="page">
-        <div class="section-head"><div><span>RC 2.8 · CENTRO GERENCIAL</span><h3>Control de gestión territorial por proyecto</h3></div><button onclick="downloadRC28()">Exportar reporte CSV</button></div>
+        <div class="section-head"><div><span>RC 2.8 · CENTRO GERENCIAL</span><h3>Control de gestión territorial por proyecto</h3></div><button data-on-click="[[&quot;downloadRC28&quot;]]">Exportar reporte CSV</button></div>
         <p class="method-note">Métricas operativas del proyecto activo. No modifican IRSA ni certifican conflictos.</p>
         <div id="rc28Kpis" class="territorial-kpis"></div>
         <div class="grid-2 top-gap">
@@ -257,13 +257,13 @@
         <div class="scope-notice">Los indicadores de compromisos dependen de los registros y sus estados explícitos. No existe verificación automatizada de incumplimiento.</div>
       </section>
       <section id="inteligencia-redes" class="page">
-        <div class="page-head"><div><span>MASCLI RC 2.7 · INTELIGENCIA TERRITORIAL</span><h2>Inteligencia de redes sociales</h2><p>Alertas orientativas, evolución y comparación de narrativas registradas en Facebook, LinkedIn, Instagram, TikTok, YouTube, X y otros medios.</p></div><button onclick="goTo('narrativas');toggleNarrativeForm(true)">+ Registrar publicación</button></div>
-        <div class="card filter-card"><label>Plataforma <select id="socialPlatform" onchange="renderSocialIntelligence()"><option value="ALL">Todas</option><option>LinkedIn</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>X</option><option>Otro medio público</option></select></label><label>Desde <input type="date" id="socialFrom" onchange="renderSocialIntelligence()"></label><label>Hasta <input type="date" id="socialTo" onchange="renderSocialIntelligence()"></label><label>Prioridad <select id="socialPriority" onchange="renderSocialIntelligence()"><option value="ALL">Todas</option><option>Alta</option><option>Media</option><option>Baja</option></select></label><button class="secondary" onclick="exportSocialCSV()">Exportar CSV</button></div>
+        <div class="page-head"><div><span>MASCLI RC 2.7 · INTELIGENCIA TERRITORIAL</span><h2>Inteligencia de redes sociales</h2><p>Alertas orientativas, evolución y comparación de narrativas registradas en Facebook, LinkedIn, Instagram, TikTok, YouTube, X y otros medios.</p></div><button data-on-click="[[&quot;goTo&quot;, &quot;narrativas&quot;], [&quot;toggleNarrativeForm&quot;, true]]">+ Registrar publicación</button></div>
+        <div class="card filter-card"><label>Plataforma <select id="socialPlatform" data-on-change="[[&quot;renderSocialIntelligence&quot;]]"><option value="ALL">Todas</option><option>LinkedIn</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>X</option><option>Otro medio público</option></select></label><label>Desde <input type="date" id="socialFrom" data-on-change="[[&quot;renderSocialIntelligence&quot;]]"></label><label>Hasta <input type="date" id="socialTo" data-on-change="[[&quot;renderSocialIntelligence&quot;]]"></label><label>Prioridad <select id="socialPriority" data-on-change="[[&quot;renderSocialIntelligence&quot;]]"><option value="ALL">Todas</option><option>Alta</option><option>Media</option><option>Baja</option></select></label><button class="secondary" data-on-click="[[&quot;exportSocialCSV&quot;]]">Exportar CSV</button></div>
         <div class="card" id="rc24Panel"><div class="card-label">RC 2.4 · ANÁLISIS DE TEXTO CON EVIDENCIA</div>
           <p>Copie el texto público de la publicación (LinkedIn, Facebook, Instagram, TikTok, YouTube, X) o un fragmento documental. El enlace es opcional y no se descarga automáticamente.</p>
           <label>Enlace de la publicación (opcional) <input id="rc24Link" type="url" placeholder="https://www.linkedin.com/posts/..."></label>
           <label>Texto para analizar <textarea id="rc24Text" rows="5" maxlength="20000" placeholder="Pegue aquí el contenido público que desea revisar..."></textarea></label>
-          <button onclick="analyzeRC24()">Analizar temas y señales</button>
+          <button data-on-click="[[&quot;analyzeRC24&quot;]]">Analizar temas y señales</button>
           <label>Motor de análisis <select id="rc25Mode"><option value="automatic">Automático (semántico local si está disponible)</option><option value="rules">Reglas verificables, sin IA</option><option value="semantic">Solo semántico local (requiere Ollama)</option></select></label>
           <p class="muted">RC 2.5: procesamiento semántico opcional en el equipo local. El enlace se almacena como referencia, no se descarga ni verifica automáticamente.</p>
           <div id="rc24Results" aria-live="polite" class="table-wrap" style="margin-top:16px"></div>
@@ -275,8 +275,8 @@
           <p>Guarde el análisis de texto que aparece arriba en una bandeja auditable. La señal no modifica el índice IRSA-MASCLI.</p>
           <label>Tipo de evidencia <select id="rc26SourceType"><option>Publicación digital</option><option>Documento</option><option>Reporte de campo</option></select></label>
           <label>Nota del analista <textarea id="rc26AnalystNote" rows="2" maxlength="2000" placeholder="Contexto y limitaciones de la fuente"></textarea></label>
-          <button onclick="saveRC26Review()">Analizar y guardar señal para verificación</button>
-          <button class="secondary" onclick="loadRC26Reviews()">Actualizar bandeja</button>
+          <button data-on-click="[[&quot;saveRC26Review&quot;]]">Analizar y guardar señal para verificación</button>
+          <button class="secondary" data-on-click="[[&quot;loadRC26Reviews&quot;]]">Actualizar bandeja</button>
           <div id="rc26Summary" class="territorial-kpis" style="margin-top:16px"></div>
           <div id="rc26ReviewList" class="table-wrap"></div>
           <div class="data-caveat">Los puntajes son prioridades orientativas de revisión, no probabilidades de conflicto. No se evalúan perfiles personales. La validación no modifica el IRSA ni publica alertas de forma autónoma. Evite ingresar datos privados o sensibles.</div>
@@ -292,8 +292,8 @@
             <label>Fecha límite <input id="rc27Due" type="date"></label>
           </div>
           <label>Descripción de la acción <textarea id="rc27Description" rows="2" maxlength="2000" placeholder="Objetivo, actividad y evidencia prevista"></textarea></label>
-          <button onclick="createRC27Action()">Crear plan preventivo</button>
-          <button class="secondary" onclick="loadRC27Actions()">Actualizar seguimiento</button>
+          <button data-on-click="[[&quot;createRC27Action&quot;]]">Crear plan preventivo</button>
+          <button class="secondary" data-on-click="[[&quot;loadRC27Actions&quot;]]">Actualizar seguimiento</button>
           <div id="rc27Summary" class="territorial-kpis" style="margin-top:16px"></div>
           <div id="rc27Table" class="table-wrap"></div>
           <div class="data-caveat">Las acciones requieren verificación de la fuente; sus avances no modifican el índice IRSA ni prueban una reducción de conflicto. No incluir datos sensibles innecesarios.</div>
@@ -310,12 +310,12 @@
       </section>
 
       <section id="mapa" class="page">
-        <div class="page-head map-page-head"><div><span>LECTURA TERRITORIAL</span><h2>Mapa de conflictos de Sechura</h2><p>Exploración geográfica de eventos, demandas y alertas registradas en la Base Maestra.</p></div><div class="map-actions"><button class="secondary" onclick="resetTerritorialFilters()">Limpiar filtros</button><button onclick="goTo('eventos');openEventForm()">+ Registrar evento</button></div></div>
+        <div class="page-head map-page-head"><div><span>LECTURA TERRITORIAL</span><h2>Mapa de conflictos de Sechura</h2><p>Exploración geográfica de eventos, demandas y alertas registradas en la Base Maestra.</p></div><div class="map-actions"><button class="secondary" data-on-click="[[&quot;resetTerritorialFilters&quot;]]">Limpiar filtros</button><button data-on-click="[[&quot;goTo&quot;, &quot;eventos&quot;], [&quot;openEventForm&quot;]]">+ Registrar evento</button></div></div>
         <div class="territorial-filters card" aria-label="Filtros del mapa">
-          <label>Tipo de registro<select id="mapTypeFilter" onchange="renderTerritorialMap()"><option value="ALL">Todos</option><option value="alerta">Alertas</option><option value="evento">Eventos</option><option value="demanda">Demandas</option></select></label>
-          <label>Dimensión<select id="mapDimFilter" onchange="renderTerritorialMap()"><option value="ALL">Todas</option><option value="G">G · Gobernanza</option><option value="A">A · Actores</option><option value="D">D · Demandas</option><option value="N">N · Narrativas</option><option value="E">E · Ambiental</option><option value="I">I · Institucional</option></select></label>
-          <label>Nivel<select id="mapLevelFilter" onchange="renderTerritorialMap()"><option value="ALL">Todos</option><option value="Rojo">Crítico</option><option value="Naranja">Alto</option><option value="Amarillo">Medio</option><option value="Verde">Seguimiento</option></select></label>
-          <label>Localidad<select id="mapLocalityFilter" onchange="renderTerritorialMap()"><option value="ALL">Todas</option></select></label>
+          <label>Tipo de registro<select id="mapTypeFilter" data-on-change="[[&quot;renderTerritorialMap&quot;]]"><option value="ALL">Todos</option><option value="alerta">Alertas</option><option value="evento">Eventos</option><option value="demanda">Demandas</option></select></label>
+          <label>Dimensión<select id="mapDimFilter" data-on-change="[[&quot;renderTerritorialMap&quot;]]"><option value="ALL">Todas</option><option value="G">G · Gobernanza</option><option value="A">A · Actores</option><option value="D">D · Demandas</option><option value="N">N · Narrativas</option><option value="E">E · Ambiental</option><option value="I">I · Institucional</option></select></label>
+          <label>Nivel<select id="mapLevelFilter" data-on-change="[[&quot;renderTerritorialMap&quot;]]"><option value="ALL">Todos</option><option value="Rojo">Crítico</option><option value="Naranja">Alto</option><option value="Amarillo">Medio</option><option value="Verde">Seguimiento</option></select></label>
+          <label>Localidad<select id="mapLocalityFilter" data-on-change="[[&quot;renderTerritorialMap&quot;]]"><option value="ALL">Todas</option></select></label>
         </div>
         <div id="territorialKpis" class="territorial-kpis"></div>
         <div class="territorial-layout">
@@ -327,7 +327,7 @@
             <p class="method-note">Ubicaciones referenciales para exploración. No sustituyen georreferenciación de campo.</p>
           </div>
           <div class="card territorial-map-card">
-            <div class="map-toolbar"><div><b id="mapResultCount">—</b><span>puntos visibles</span></div><div class="map-zoom"><button class="icon-btn light" onclick="zoomTerritorialMap(-.12)" aria-label="Alejar mapa">−</button><button class="icon-btn light" onclick="zoomTerritorialMap(.12)" aria-label="Acercar mapa">+</button><button class="icon-btn light" onclick="zoomTerritorialMap(0,true)" aria-label="Restablecer mapa">⌂</button></div></div>
+            <div class="map-toolbar"><div><b id="mapResultCount">—</b><span>puntos visibles</span></div><div class="map-zoom"><button class="icon-btn light" data-on-click="[[&quot;zoomTerritorialMap&quot;, -0.12]]" aria-label="Alejar mapa">−</button><button class="icon-btn light" data-on-click="[[&quot;zoomTerritorialMap&quot;, 0.12]]" aria-label="Acercar mapa">+</button><button class="icon-btn light" data-on-click="[[&quot;zoomTerritorialMap&quot;, 0, true]]" aria-label="Restablecer mapa">⌂</button></div></div>
             <svg id="territorialMap" class="territorial-map" viewBox="0 0 900 540" role="img" aria-label="Mapa referencial de conflictos y localidades de Sechura"></svg>
             <div class="map-caption"><span>OCÉANO PACÍFICO</span><b>Provincia de Sechura · Piura</b><span>Vista referencial</span></div>
           </div>
@@ -347,7 +347,7 @@
 
       <section id="situacion" class="page">
         <div class="page-head"><div><span>DIAGNÓSTICO TERRITORIAL AUTOMATIZADO</span><h2>Análisis situacional integral</h2><p>Síntesis trazable de eventos, actores, demandas y alertas. Revisión humana obligatoria.</p></div></div>
-        <div class="card"><div class="actions"><button onclick="loadSituational()">Actualizar diagnóstico</button><button class="secondary" onclick="downloadSituational()">Exportar informe Word</button><button class="secondary" onclick="window.print()">Imprimir / guardar PDF</button></div><p class="method-note">Borrador analítico. No atribuye delitos ni confirma hechos no verificados; los escenarios son condicionales.</p></div>
+        <div class="card"><div class="actions"><button data-on-click="[[&quot;loadSituational&quot;]]">Actualizar diagnóstico</button><button class="secondary" data-on-click="[[&quot;downloadSituational&quot;]]">Exportar informe Word</button><button class="secondary" data-on-click="[[&quot;printPage&quot;]]">Imprimir / guardar PDF</button></div><p class="method-note">Borrador analítico. No atribuye delitos ni confirma hechos no verificados; los escenarios son condicionales.</p></div>
         <div id="situationalContent" class="card"><p>Seleccione «Actualizar diagnóstico» para generar la lectura con datos vigentes.</p></div>
       </section>
 
@@ -356,25 +356,25 @@
         <div class="prototype-banner"><b>Prototipo metodológico</b><span>Los datos de esta sección son registros de trabajo, sujetos a contrastación. No son predicciones ni acuerdos oficiales.</span></div>
         <div class="strategy-kpis" id="strategyKpis"></div>
         <div class="card strategy-overview">
-          <div class="section-head"><div><div class="card-label">LECTURA ESTRATÉGICA</div><h3>Situación del relacionamiento</h3></div><div class="actions"><button onclick="loadStrategic()">Actualizar</button><button class="secondary" onclick="downloadStrategic()">Exportar informe Word</button></div></div>
+          <div class="section-head"><div><div class="card-label">LECTURA ESTRATÉGICA</div><h3>Situación del relacionamiento</h3></div><div class="actions"><button data-on-click="[[&quot;loadStrategic&quot;]]">Actualizar</button><button class="secondary" data-on-click="[[&quot;downloadStrategic&quot;]]">Exportar informe Word</button></div></div>
           <div id="strategySummary" class="strategy-summary">Seleccione Actualizar.</div>
         </div>
         <div class="card" id="documentLab">
           <div class="card-label">NUEVO RC 2.1 · COMPARACIÓN Y VALIDACIÓN DOCUMENTAL</div>
           <h3>Laboratorio de documentos y evidencias</h3>
           <p>Analiza PDF con texto, DOCX o TXT para ubicar fragmentos sobre actores, demandas, compromisos, controversias, diálogo y valor compartido. No guarda el documento ni convierte coincidencias en hechos.</p>
-          <form id="docLabForm" onsubmit="analyzeMascliDocument(event)">
-            <div class="actions"><input id="docLabFile" type="file" accept=".pdf,.docx,.txt,.md" required><button type="submit">Analizar documento</button><button type="button" class="secondary" onclick="exportMascliDocument()">Informe Word</button></div>
+          <form id="docLabForm" data-on-submit="[[&quot;analyzeMascliDocument&quot;, &quot;$event&quot;]]">
+            <div class="actions"><input id="docLabFile" type="file" accept=".pdf,.docx,.txt,.md" required><button type="submit">Analizar documento</button><button type="button" class="secondary" data-on-click="[[&quot;exportMascliDocument&quot;]]">Informe Word</button></div>
           </form>
           <p class="method-note">Lectura local basada en reglas · sin OCR · requiere revisión humana · no enviar información sensible a una instancia pública.</p>
-          <div class="actions"><button type="button" onclick="importMascliFindings()">Enviar hallazgos a revisión</button><button type="button" class="secondary" onclick="loadMascliReviews()">Ver bandeja de revisión</button></div>
+          <div class="actions"><button type="button" data-on-click="[[&quot;importMascliFindings&quot;]]">Enviar hallazgos a revisión</button><button type="button" class="secondary" data-on-click="[[&quot;loadMascliReviews&quot;]]">Ver bandeja de revisión</button></div>
           <div id="docLabResults" aria-live="polite">Selecciona un documento y pulsa Analizar.</div>
         </div>
         <div class="card"><div class="card-label">RC 2.1 · COMPARACIÓN DOCUMENTAL</div><h3>Comparar dos fuentes</h3>
           <p>Localiza pasajes con coincidencias temáticas para contrastación humana. No identifica contradicciones de forma concluyente.</p>
-          <form onsubmit="compareMascliDocs(event)"><div class="actions"><input type="file" id="docCompareA" accept=".pdf,.docx,.txt,.md" required><input type="file" id="docCompareB" accept=".pdf,.docx,.txt,.md" required><button>Comparar</button></div></form>
+          <form data-on-submit="[[&quot;compareMascliDocs&quot;, &quot;$event&quot;]]"><div class="actions"><input type="file" id="docCompareA" accept=".pdf,.docx,.txt,.md" required><input type="file" id="docCompareB" accept=".pdf,.docx,.txt,.md" required><button>Comparar</button></div></form>
           <div id="docCompareResults" aria-live="polite"></div></div>
-        <div class="card"><div class="section-head"><div><div class="card-label">RC 2.1 · CONTROL HUMANO</div><h3>Bandeja de hallazgos</h3></div><button onclick="loadMascliReviews()">Actualizar bandeja</button></div>
+        <div class="card"><div class="section-head"><div><div class="card-label">RC 2.1 · CONTROL HUMANO</div><h3>Bandeja de hallazgos</h3></div><button data-on-click="[[&quot;loadMascliReviews&quot;]]">Actualizar bandeja</button></div>
           <p class="method-note">La aprobación para revisión no convierte el hallazgo en hecho comprobado ni crea compromisos automáticamente.</p><div id="docReviewResults"></div></div>
         <div class="card" id="consensusEngine">El motor de recomendaciones se actualiza con los registros del proyecto.</div>
         <div class="card">
@@ -387,7 +387,7 @@
         <div class="card"><div class="card-label">CRITERIOS DE INTERPRETACIÓN</div><h3>Rigor metodológico y derechos</h3><p>La matriz de intereses evita asumir que una posición pública representa todas las necesidades de una persona o colectivo. El análisis AARC es descriptivo y no asigna automáticamente legitimidad o consentimiento. Los hechos controvertidos deben conservar versiones distintas y evidencia verificable.</p><p>Modelo MASCLI (2026): Dick Castillo Inca y Crystell Lizett Granda Agurto. Automatización orientada a tesis: iniciativa de Crystell Lizett Granda Agurto. Esta extensión no modifica los pesos ni el cálculo del IRSA.</p></div>
       </section>
       <section id="irsa" class="page">
-        <div class="page-head"><div><span>ÍNDICE COMPUESTO</span><h2>IRSA-MASCLI</h2><p>Lectura integrada de las seis dimensiones del riesgo socioambiental.</p></div><button onclick="saveSnapshot()">Guardar corte IRSA</button></div>
+        <div class="page-head"><div><span>ÍNDICE COMPUESTO</span><h2>IRSA-MASCLI</h2><p>Lectura integrada de las seis dimensiones del riesgo socioambiental.</p></div><button data-on-click="[[&quot;saveSnapshot&quot;]]">Guardar corte IRSA</button></div>
         <div class="grid-2">
           <div class="card irsa-main"><div class="card-label">IRSA ACTUAL</div><div id="irsaValue" class="irsa-value">—</div><div id="irsaLevel" class="level-pill">—</div><p class="method-note">Escala 0–100 · configuración provisional pendiente de validación.</p></div>
           <div class="card"><div class="card-label">SEMÁFORO</div><div class="risk-scale"><div class="green"><b>0–24</b><span>Verde</span></div><div class="yellow"><b>25–49</b><span>Amarillo</span></div><div class="orange"><b>50–74</b><span>Naranja</span></div><div class="red"><b>75–100</b><span>Rojo</span></div></div></div>
@@ -395,7 +395,7 @@
         <div id="dimensionCards" class="dimension-cards"></div>
         <div class="card">
           <div class="indicator-head"><div><div class="card-label">MATRIZ DE INDICADORES</div><h3>Indicadores G1–I6</h3><p>Disponibilidad, confianza, método y explicación de cada indicador.</p></div>
-          <select id="indicatorFilter" onchange="renderIndicators()"><option value="ALL">Todas las dimensiones</option><option value="G">G · Gobernanza</option><option value="A">A · Actores</option><option value="D">D · Demandas</option><option value="N">N · Narrativas</option><option value="E">E · Ambiental</option><option value="I">I · Institucional</option></select></div>
+          <select id="indicatorFilter" data-on-change="[[&quot;renderIndicators&quot;]]"><option value="ALL">Todas las dimensiones</option><option value="G">G · Gobernanza</option><option value="A">A · Actores</option><option value="D">D · Demandas</option><option value="N">N · Narrativas</option><option value="E">E · Ambiental</option><option value="I">I · Institucional</option></select></div>
           <div class="table-wrap" id="indicatorMatrix"></div>
         </div>
         <div class="grid-2">
@@ -403,7 +403,7 @@
           <div class="card"><div class="card-label">EXPLICABILIDAD</div><h3>Factores que explican el índice</h3><div class="table-wrap" id="driversTable"></div></div>
         </div>
         <div class="grid-2">
-          <div class="card"><div class="card-label">CONFIGURACIÓN</div><h3>Pesos provisionales</h3><p class="method-note">Modificar solo para pruebas metodológicas. Todo cambio queda registrado en auditoría.</p><div id="weightForm" class="weights"></div><div class="actions"><button class="secondary" onclick="loadIRSA()">Restaurar</button><button onclick="saveWeights()">Guardar</button></div></div>
+          <div class="card"><div class="card-label">CONFIGURACIÓN</div><h3>Pesos provisionales</h3><p class="method-note">Modificar solo para pruebas metodológicas. Todo cambio queda registrado en auditoría.</p><div id="weightForm" class="weights"></div><div class="actions"><button class="secondary" data-on-click="[[&quot;loadIRSA&quot;]]">Restaurar</button><button data-on-click="[[&quot;saveWeights&quot;]]">Guardar</button></div></div>
           <div class="card"><div class="card-label">TRAZABILIDAD</div><h3>Historial de cortes</h3><div class="table-wrap" id="irsaHistory"></div></div>
         </div>
       </section>
@@ -419,20 +419,20 @@
       </section>
 
       <section id="fuentes" class="page">
-        <div class="page-head"><div><span>EVIDENCIA</span><h2>Fuentes y evidencias</h2><p>Documentos, informes y registros vinculados a la Base Maestra.</p></div><button onclick="toggleSourceForm()"><span aria-hidden="true">⇧</span> Cargar reporte</button></div>
+        <div class="page-head"><div><span>EVIDENCIA</span><h2>Fuentes y evidencias</h2><p>Documentos, informes y registros vinculados a la Base Maestra.</p></div><button data-on-click="[[&quot;toggleSourceForm&quot;]]"><span aria-hidden="true">⇧</span> Cargar reporte</button></div>
         <div id="sourceForm" class="card form hidden">
-          <div class="form-title"><div><span>NUEVA EVIDENCIA</span><h3>Cargar documento</h3></div><button class="icon-btn light" onclick="toggleSourceForm(false)">×</button></div>
+          <div class="form-title"><div><span>NUEVA EVIDENCIA</span><h3>Cargar documento</h3></div><button class="icon-btn light" data-on-click="[[&quot;toggleSourceForm&quot;, false]]">×</button></div>
           <div class="formgrid">
             <label>Fecha del documento<input id="srcFecha" type="date"></label><label>Tipo de fuente<select id="srcTipo"><option>Reporte de campo</option><option>Acta / ayuda memoria</option><option>Informe técnico</option><option>Fuente oficial</option><option>Registro fotográfico</option><option>Prensa / señal digital</option><option>Otro</option></select></label>
             <label>Institución / autor<input id="srcAutor" placeholder="Autor o entidad responsable"></label><label>Proyecto activo<input id="srcProyecto" value="Proyecto Sechura" readonly></label>
             <label>Periodo cubierto<input id="srcPeriodo" placeholder="Ej. octubre 2026"></label><label>Nivel base de verificación<select id="srcVer"><option>E - No verificada</option><option>D - Opinión/Narrativa</option><option>C - Percepción</option><option>B - Información corroborada</option><option>A - Hecho verificado</option></select></label>
             <label class="span2">Observaciones<textarea id="srcObs" rows="3" placeholder="Origen, alcance y limitaciones del documento"></textarea></label>
-            <label class="span2 upload-field"><span>Archivo <small>PDF, Office, CSV, TXT o imagen · máximo 10 MB</small></span><input id="srcFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp" onchange="previewFiles('srcFile','sourceFileList')"><span class="upload-button"><b>⇧</b> Seleccionar reporte o documento</span><div id="sourceFileList" class="file-list"></div></label>
+            <label class="span2 upload-field"><span>Archivo <small>PDF, Office, CSV, TXT o imagen · máximo 10 MB</small></span><input id="srcFile" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp" data-on-change="[[&quot;previewFiles&quot;, &quot;srcFile&quot;, &quot;sourceFileList&quot;]]"><span class="upload-button"><b>⇧</b> Seleccionar reporte o documento</span><div id="sourceFileList" class="file-list"></div></label>
           </div>
-          <div class="actions"><button class="secondary" onclick="toggleSourceForm(false)">Cancelar</button><button onclick="saveSourceWithFile()">Guardar fuente y archivo</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;toggleSourceForm&quot;, false]]">Cancelar</button><button data-on-click="[[&quot;saveSourceWithFile&quot;]]">Guardar fuente y archivo</button></div>
         </div>
         <div id="sourceStats" class="territorial-kpis"></div>
-        <div class="card filter-card"><input id="sourceSearch" class="search" placeholder="Buscar archivo, autor, tipo u observación…" oninput="loadSources(this.value)"><span class="storage-warning">⚠ En Render gratuito, los archivos locales son efímeros.</span></div>
+        <div class="card filter-card"><input id="sourceSearch" class="search" placeholder="Buscar archivo, autor, tipo u observación…" data-on-input="[[&quot;loadSources&quot;, &quot;$value&quot;]]"><span class="storage-warning">⚠ En Render gratuito, los archivos locales son efímeros.</span></div>
         <div class="sources-layout"><div class="card"><div class="table-wrap" id="sourceTable"></div></div><aside id="sourceDetail" class="card visual-detail"></aside></div>
       </section>
 
@@ -453,32 +453,32 @@
       </section>
 
       <section id="administracion" class="page">
-        <div class="page-head"><div><span>CONFIGURACIÓN DEL PROTOTIPO</span><h2>Administración del sistema</h2><p>Gestión demostrativa de usuarios y roles. No implementa inicio de sesión ni control real de acceso.</p></div><button onclick="toggleUserForm()">+ Crear usuario</button></div>
+        <div class="page-head"><div><span>CONFIGURACIÓN DEL PROTOTIPO</span><h2>Administración del sistema</h2><p>Gestión demostrativa de usuarios y roles. No implementa inicio de sesión ni control real de acceso.</p></div><button data-on-click="[[&quot;toggleUserForm&quot;]]">+ Crear usuario</button></div>
         <div class="prototype-banner"><b>Prototipo sin autenticación</b><span>Los roles documentan el perfil previsto, pero esta versión no aplica permisos ni protege datos sensibles.</span></div>
         <div id="adminStats" class="territorial-kpis"></div>
         <div class="card project-admin-card">
-          <div class="card-topline"><div><div class="card-label">CATÁLOGO DE PROYECTOS</div><h3>Proyectos disponibles</h3><p class="method-note">Sechura es el proyecto predeterminado para todos los registros históricos sin Proyecto_ID.</p></div><button onclick="toggleProjectForm()">+ Agregar proyecto</button></div>
+          <div class="card-topline"><div><div class="card-label">CATÁLOGO DE PROYECTOS</div><h3>Proyectos disponibles</h3><p class="method-note">Sechura es el proyecto predeterminado para todos los registros históricos sin Proyecto_ID.</p></div><button data-on-click="[[&quot;toggleProjectForm&quot;]]">+ Agregar proyecto</button></div>
           <div id="projectForm" class="inline-project-form hidden">
             <input id="projectIdEdit" type="hidden">
             <label>Nombre<input id="projectName" placeholder="Nombre del proyecto"></label>
             <label>Territorio<input id="projectTerritory" placeholder="Territorio o región"></label>
             <label>Estado<select id="projectStatus"><option>Activo</option><option>Inactivo</option></select></label>
             <label class="project-description">Descripción<input id="projectDescription" placeholder="Descripción breve"></label>
-            <div class="actions"><button class="secondary" onclick="toggleProjectForm(false)">Cancelar</button><button onclick="saveProject()">Guardar proyecto</button></div>
+            <div class="actions"><button class="secondary" data-on-click="[[&quot;toggleProjectForm&quot;, false]]">Cancelar</button><button data-on-click="[[&quot;saveProject&quot;]]">Guardar proyecto</button></div>
           </div>
           <div id="projectList" class="project-list"></div>
         </div>
         <div id="userForm" class="card form hidden">
-          <div class="form-title"><div><span id="userFormMode">NUEVO USUARIO</span><h3>Ficha de usuario</h3></div><button class="icon-btn light" onclick="toggleUserForm(false)">×</button></div>
+          <div class="form-title"><div><span id="userFormMode">NUEVO USUARIO</span><h3>Ficha de usuario</h3></div><button class="icon-btn light" data-on-click="[[&quot;toggleUserForm&quot;, false]]">×</button></div>
           <input id="userId" type="hidden">
           <div class="formgrid">
             <label>Nombre<input id="usrNombre" placeholder="Nombre completo"></label><label>Cargo<input id="usrCargo" placeholder="Cargo o función"></label>
             <label>Correo<input id="usrCorreo" type="email" placeholder="correo@organizacion.pe"></label><label>Rol<select id="usrRol"></select></label>
             <label>Estado<select id="usrEstado"><option>Activo</option><option>Inactivo</option><option>Suspendido</option></select></label><label>Último acceso<input id="usrAcceso" value="No disponible" readonly></label>
           </div>
-          <div class="actions"><button class="secondary" onclick="toggleUserForm(false)">Cancelar</button><button onclick="saveUser()">Guardar usuario</button></div>
+          <div class="actions"><button class="secondary" data-on-click="[[&quot;toggleUserForm&quot;, false]]">Cancelar</button><button data-on-click="[[&quot;saveUser&quot;]]">Guardar usuario</button></div>
         </div>
-        <div class="card filter-card admin-filters"><input id="userSearch" class="search" placeholder="Buscar por nombre, cargo o correo…" oninput="renderUsers()"><select id="userRoleFilter" onchange="renderUsers()"><option value="ALL">Todos los roles</option></select><select id="userStatusFilter" onchange="renderUsers()"><option value="ALL">Todos los estados</option><option>Activo</option><option>Inactivo</option><option>Suspendido</option></select></div>
+        <div class="card filter-card admin-filters"><input id="userSearch" class="search" placeholder="Buscar por nombre, cargo o correo…" data-on-input="[[&quot;renderUsers&quot;]]"><select id="userRoleFilter" data-on-change="[[&quot;renderUsers&quot;]]"><option value="ALL">Todos los roles</option></select><select id="userStatusFilter" data-on-change="[[&quot;renderUsers&quot;]]"><option value="ALL">Todos los estados</option><option>Activo</option><option>Inactivo</option><option>Suspendido</option></select></div>
         <div class="admin-layout"><div class="card"><div class="card-label">USUARIOS Y ROLES</div><div id="userTable" class="table-wrap"></div></div><div class="card"><div class="card-label">CATÁLOGO DE ROLES</div><div id="roleList" class="role-list"></div></div></div>
       </section>
 
@@ -491,8 +491,5 @@
 </div>
 <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
 <div id="sessionBadge" style="position:fixed;right:16px;top:10px;z-index:10000;background:#172a45;color:white;padding:7px 12px;border-radius:10px;font:13px system-ui;box-shadow:0 3px 14px #0003"><span id="sessionName">MASCLI</span> <button id="mascliLogout" type="button" style="background:#ddd;border:none;border-radius:5px;cursor:pointer;padding:5px 8px;margin-left:8px">Cerrar sesión</button></div>
-<script src="/static/app.js"></script><script>
-fetch('/system/auth/me').then(r=>r.json()).then(u=>{if(u){document.getElementById('sessionName').textContent=u.full_name+' · '+u.role}});
-document.getElementById('mascliLogout').onclick=async()=>{await fetch('/logout',{method:'POST'});location.href='/login'};
-</script>
+<script src="/static/app.js"></script>
 </body></html>

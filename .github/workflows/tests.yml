@@ -1,0 +1,29 @@
+name: Pruebas
+
+on:
+  push:
+    branches: [feature/secure-mascli-public-deployment]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+      - name: Sintaxis del frontend
+        run: for f in static/*.js; do node --check "$f"; done
+      - name: Pruebas de seguridad y funcionamiento
+        run: python -m pytest -q tests
+      - name: Auditoría de dependencias
+        run: pip-audit -r requirements.txt

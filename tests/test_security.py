@@ -118,27 +118,44 @@ def test_untrusted_host_is_rejected_when_allowlist_configured(app_module, monkey
         assert c.get("/health", headers={"Host": "mascli.example.org"}).status_code == 200
 
 
-INLINE_HANDLER = re.compile(r'\son[a-z]+="[^"]*\$\{[^"]*"')
+INLINE_HANDLER = re.compile(r'\son[a-z]+\s*=\s*["\']', re.I)
+INLINE_SCRIPT = re.compile(r'<script(?![^>]*\bsrc=)[^>]*>', re.I)
 
 
-def test_frontend_handlers_do_not_interpolate_html_escaped_strings():
-    source = (ROOT / "static" / "app.js").read_text(encoding="utf-8")
-    offenders = [m.group(0) for m in INLINE_HANDLER.finditer(source) if "'${" in m.group(0)]
-    assert offenders == []
+def test_csp_forbids_inline_scripts(client):
+    csp = client.get("/health").headers["content-security-policy"]
+    script_src = next(d for d in csp.split(";") if d.strip().startswith("script-src"))
+    assert "unsafe-inline" not in script_src and "unsafe-eval" not in script_src
+
+
+@pytest.mark.parametrize("name", ["static/index.html", "static/app.js", "app.py"])
+def test_no_inline_event_handlers_or_scripts(name):
+    source = (ROOT / name).read_text(encoding="utf-8")
+    assert INLINE_HANDLER.findall(source) == []
+    assert INLINE_SCRIPT.findall(source) == []
+
+
+def test_login_and_mfa_pages_load_their_scripts_without_a_session(client):
+    for page, script in (("/login", "/static/login.js"), ("/mfa-setup", None)):
+        if script:
+            assert f'src="{script}"' in client.get(page).text
+            assert client.get(script).status_code == 200
+    assert client.get("/static/app.js").status_code == 401
 
 
 @pytest.mark.skipif(not shutil.which("node"), reason="node no disponible")
-def test_jsq_neutralises_quote_breakout():
+def test_record_values_travel_as_data_not_code():
     source = (ROOT / "static" / "app.js").read_text(encoding="utf-8")
-    helpers = "\n".join(l for l in source.splitlines() if l.startswith(("function esc(", "function jsq(")))
-    payload = "x');globalThis.pwned=1;// \"</script>"
-    script = helpers + r"""
-const attr = jsq(PAYLOAD);
-const decoded = attr.replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
-let got; const pick = v => { got = v; };
-new Function('pick', 'pick(' + decoded + ')')(pick);
-if (got !== PAYLOAD || globalThis.pwned) { console.error('fallo', got); process.exit(1); }
-""".replace("PAYLOAD", repr(payload).replace("\\u2028", "\\u2028"))
+    helper = "\n".join(l for l in source.splitlines() if l.startswith(("function esc(", "function act(")))
+    payload = "x');globalThis.pwned=1;//\u2028\"</script>"
+    script = helper + r"""
+const attr = act('click', ['selectMapRecord', PAYLOAD]);
+const m = attr.match(/^data-on-click="([^"]*)"$/);
+if (!m) { console.error('atributo roto', attr); process.exit(1); }
+const decoded = m[1].replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+const calls = JSON.parse(decoded);
+if (calls[0][0] !== 'selectMapRecord' || calls[0][1] !== PAYLOAD || globalThis.pwned) { console.error('fallo', calls); process.exit(1); }
+""".replace("PAYLOAD", repr(payload))
     subprocess.run(["node", "-e", script], check=True)
 
 
@@ -149,3 +166,54 @@ def test_enrolled_admin_can_use_core_features(app_module, client):
         assert client.get(path).status_code == 200, path
     r = client.post("/api/eventos", json={"payload": {"Tipo_Evento": "Prueba", "Descripcion_Hecho": "x"}}, headers=ORIGIN)
     assert r.status_code == 200, r.text
+
+
+def create_user(client, username, role="analista"):
+    r = client.post("/system/auth/accounts", json={"username": username, "full_name": username, "password": "otra-clave-segura-456", "role": role}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    r = client.post("/system/auth/grants", json={"username": username, "company_id": "MASCLI", "project_id": "PRJ-SECHURA"}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+
+
+def test_admin_can_reset_another_users_mfa_but_not_their_own(app_module, client):
+    admin_session(app_module, client)
+    create_user(client, "ana")
+    with TestClient(app_module.app, base_url=BASE_URL) as other:
+        assert login(other, "ana", "otra-clave-segura-456").status_code == 200
+        enroll_mfa(app_module, other)
+        assert other.get("/api/dashboard").status_code == 200
+        assert client.post("/system/auth/accounts/ana/reset-mfa", headers=ORIGIN).status_code == 200
+        assert other.get("/api/dashboard").status_code == 401  # sesiones revocadas
+    assert client.post("/system/auth/accounts/admin/reset-mfa", headers=ORIGIN).status_code == 403
+    assert client.post("/system/auth/accounts/nadie/reset-mfa", headers=ORIGIN).status_code == 404
+    accounts = {a["username"]: a for a in client.get("/system/auth/accounts").json()}
+    assert accounts["ana"]["totp_enabled"] == 0 and accounts["admin"]["totp_enabled"] == 1
+
+
+def test_non_admin_cannot_reset_mfa(app_module, client):
+    admin_session(app_module, client)
+    create_user(client, "luis")
+    with TestClient(app_module.app, base_url=BASE_URL) as other:
+        login(other, "luis", "otra-clave-segura-456")
+        enroll_mfa(app_module, other)
+        assert other.post("/system/auth/accounts/admin/reset-mfa", headers=ORIGIN).status_code == 403
+
+
+def test_cli_reset_mfa(app_module, client, capsys):
+    admin_session(app_module, client)
+    import manage
+    assert manage.main(["reset-mfa", "admin"]) == 0
+    assert client.get("/api/dashboard").status_code == 401
+    assert manage.main(["reset-mfa", "nadie"]) == 1
+
+
+def test_all_runtime_state_lives_under_data_dir(app_module, client, tmp_path):
+    admin_session(app_module, client)
+    template = (ROOT / "data" / "irsa_config.json").read_bytes()
+    cfg = client.get("/system/irsa/config").json()
+    r = client.post("/system/irsa/config", json={"payload": cfg}, headers=ORIGIN)
+    assert r.status_code == 200, r.text
+    data = tmp_path / "data"
+    assert (data / "mascli.db").exists() and (data / "auth_global.db").exists()
+    assert (data / "settings" / "irsa_config.json").exists()
+    assert (ROOT / "data" / "irsa_config.json").read_bytes() == template

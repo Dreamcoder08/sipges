@@ -14,12 +14,16 @@ Todos tienen pruebas de regresión en `tests/test_security.py`.
 | CSRF | Origen comprobado solo si el navegador enviaba `Origin`; `/login` y `/logout` sin control | Todo `POST/PUT/PATCH/DELETE` exige `Origin` o `Referer` del mismo host |
 | Cabeceras | Solo en rutas autenticadas, sin CSP ni HSTS | CSP, HSTS, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` en todas las respuestas |
 | Host | Sin control | Lista blanca opcional con `MASCLI_ALLOWED_HOSTS` |
-| Frontend | Identificadores de registros dentro de `onclick="f('…')"` permitían inyectar JavaScript | Argumentos serializados con `jsq()` (JSON + escape HTML) |
+| Frontend | Identificadores de registros dentro de `onclick="f('…')"` permitían inyectar JavaScript; CSP imposible sin `'unsafe-inline'` | Sin JavaScript en línea: acciones declarativas `data-on-*` (JSON, solo datos) y scripts externos; la CSP prohíbe scripts en línea |
+| MFA perdido | Sin recuperación | Un administrador restablece el MFA de otra cuenta (`POST /system/auth/accounts/<usuario>/reset-mfa`); en el servidor, `python manage.py reset-mfa <usuario>` |
+| Almacenamiento | Bases, cuentas, tenants y ajustes repartidos entre `data/` del repo y `/tmp` | Todo bajo `MASCLI_DATA_DIR`; aviso al arrancar si está en `/tmp` |
+| Dependencias | Rangos abiertos | Versiones fijadas y auditadas con `pip-audit`; CI en GitHub Actions |
 
 ## Variables de entorno
 
 | Variable | Valor por defecto | Uso |
 |---|---|---|
+| `MASCLI_DATA_DIR` | `data/` del proyecto | Carpeta persistente para todo el estado (bases, cuentas, tenants, ajustes, adjuntos) |
 | `MASCLI_ADMIN_USERNAME` / `MASCLI_ADMIN_PASSWORD` | `admin` / (obligatoria, ≥12 caracteres) | Cuenta inicial |
 | `MASCLI_REQUIRE_MFA` | `1` | `0` solo para pruebas locales aisladas |
 | `MASCLI_COOKIE_SECURE` | `1` | `0` si un navegador local por HTTP no guarda la sesión. Con `1` también se envía HSTS |
@@ -36,7 +40,7 @@ python -m pytest -q tests
 
 ## Pendiente antes de desplegar
 
-- **Almacenamiento duradero**: la base operativa, `auth_global.db`, tenants, configuración y adjuntos siguen en disco local/efímero (`/tmp` en Render free). Un reinicio en Render borra cuentas y datos. Requiere elegir disco persistente o base gestionada.
+- Publicación: seguir `DESPLIEGUE_CLOUDFLARE.md` (requiere iniciar sesión en Cloudflare desde la PC y un dominio en Cloudflare).
+- Render (pausado): el plan gratuito no tiene disco persistente; si se retoma, montar un disco y apuntar `MASCLI_DATA_DIR` a él.
 - El limitador de intentos es en memoria: válido para una sola instancia.
-- La CSP aún permite `'unsafe-inline'` en scripts y estilos porque la interfaz usa manejadores en línea; eliminarlo exige migrar esos manejadores a `addEventListener`.
-- No hay códigos de recuperación de MFA: si un usuario pierde su autenticador, un administrador debe restablecerlo directamente en la base de autenticación.
+- La CSP mantiene `'unsafe-inline'` solo para estilos (atributos `style=`), de bajo riesgo.

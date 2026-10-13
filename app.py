@@ -7,14 +7,19 @@ from typing import Any, Dict, Optional
 import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars, threading
 
 BASE = Path(__file__).resolve().parent
-DB = Path(os.getenv("MASCLI_DB_PATH", str(BASE / "data" / "mascli.db")))
+# Todo lo que cambia en ejecución (bases, cuentas, tenants, ajustes, adjuntos) vive bajo
+# MASCLI_DATA_DIR. En despliegue debe apuntar a un disco persistente; data/ del repositorio
+# solo aporta los archivos de referencia de solo lectura.
+DATA_DIR = Path(os.getenv("MASCLI_DATA_DIR", str(BASE / "data")))
+DB = Path(os.getenv("MASCLI_DB_PATH", str(DATA_DIR / "mascli.db")))
 SEED = BASE / "data" / "seed.json"
 IRSA_CONFIG = BASE / "data" / "irsa_config.json"
 INDICATOR_CONFIG = BASE / "data" / "indicator_config.json"
 MODEL_STATUS = BASE / "data" / "model_status.json"
 CANONICAL_ENTITIES = BASE / "data" / "canonical_entities.json"
 PROJECT_COORDINATES = BASE / "data" / "project_coordinates.json"
-UPLOAD_DIR = Path(os.getenv("MASCLI_UPLOAD_DIR", str(BASE / "data" / "uploads")))
+UPLOAD_DIR = Path(os.getenv("MASCLI_UPLOAD_DIR", str(DATA_DIR / "uploads")))
+SETTINGS_DIR = Path(os.getenv("MASCLI_SETTINGS_DIR", str(DATA_DIR / "settings")))
 MAX_UPLOAD_BYTES = int(os.getenv("MASCLI_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
 ALLOWED_UPLOAD_EXTENSIONS = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".jpg", ".jpeg", ".png", ".webp", ".txt"}
 
@@ -35,8 +40,8 @@ class RecordIn(BaseModel):
 
 SCOPE_DB=contextvars.ContextVar('mascli_scope_db',default=None)
 SCOPE_ID=contextvars.ContextVar('mascli_scope_id',default=None)
-AUTH_DB=Path(os.getenv('MASCLI_AUTH_DB_PATH',str(BASE/'data'/'auth_global.db')))
-TENANT_DIR=Path(os.getenv('MASCLI_TENANT_DIR',str(BASE/'data'/'tenants')))
+AUTH_DB=Path(os.getenv('MASCLI_AUTH_DB_PATH',str(DATA_DIR/'auth_global.db')))
+TENANT_DIR=Path(os.getenv('MASCLI_TENANT_DIR',str(DATA_DIR/'tenants')))
 
 def auth_conn():
     AUTH_DB.parent.mkdir(parents=True,exist_ok=True)
@@ -163,9 +168,10 @@ def mfa_required():
 def allowed_hosts():
     return [h.strip().lower() for h in os.getenv('MASCLI_ALLOWED_HOSTS','').split(',') if h.strip()]
 
-CSP=("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; "
+CSP=("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
      "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; "
      "base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+PUBLIC_ASSETS=('/static/login.js','/static/mfa.js','/static/style.css')
 MFA_EXEMPT_PATHS=('/mfa-setup','/system/auth/totp/setup','/system/auth/totp/enable')
 
 # Limitador de intentos fallidos en memoria (por usuario y por IP). Suficiente para una
@@ -248,7 +254,7 @@ def auth_identity(request):
 @app.middleware("http")
 async def enforce_auth(request:Request, call_next):
     path=request.url.path
-    if path in ('/health','/login','/logout','/select-project') or path in ('/system/auth/me','/system/auth/scopes'):
+    if path in ('/health','/login','/logout','/select-project') or path in ('/system/auth/me','/system/auth/scopes') or path in PUBLIC_ASSETS:
         return await call_next(request)
     identity=auth_identity(request)
     if not identity:
@@ -333,14 +339,14 @@ async def security_layer(request:Request, call_next):
 
 @app.get('/login',response_class=HTMLResponse)
 def login_page():
-    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acceso MASCLI 2.9</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(410px,90vw);padding:32px;background:#1b2a46;border-radius:16px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:22px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}small{color:#c5d3e9}#error{color:#ffaaaa}</style><div class="panel"><h1>MASCLI RC 3.0</h1><p>Acceso al Sistema de Gestión Territorial</p><form id="f"><label>Usuario</label><input name="username" autocomplete="username" required><label>Contraseña</label><input type="password" name="password" autocomplete="current-password" required><label>Código de autenticador (si está activado)</label><input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button>Ingresar</button></form><p id="error" role="alert"></p><small>Acceso exclusivo para personal autorizado.</small></div><script>document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const d=new FormData(e.target);const r=await fetch('/login',{method:'POST',body:d});if(r.ok)location.href='/';else document.querySelector('#error').textContent='Credenciales inválidas o acceso inhabilitado';};</script></html>''')
+    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acceso MASCLI 2.9</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(410px,90vw);padding:32px;background:#1b2a46;border-radius:16px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:22px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}small{color:#c5d3e9}#error{color:#ffaaaa}</style><div class="panel"><h1>MASCLI RC 3.0</h1><p>Acceso al Sistema de Gestión Territorial</p><form id="f"><label>Usuario</label><input name="username" autocomplete="username" required><label>Contraseña</label><input type="password" name="password" autocomplete="current-password" required><label>Código de autenticador (si está activado)</label><input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button>Ingresar</button></form><p id="error" role="alert"></p><small>Acceso exclusivo para personal autorizado.</small></div><script src="/static/login.js"></script></html>''')
 
 @app.get('/mfa-setup',response_class=HTMLResponse)
 def mfa_setup_page(request:Request):
     identity=auth_identity(request)
     if not identity:return RedirectResponse('/login',status_code=303)
     if identity['totp_enabled']:return RedirectResponse('/',status_code=303)
-    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activar MFA MASCLI</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(520px,92vw);padding:32px;background:#1b2a46;border-radius:16px}code{display:block;word-break:break-all;background:#0c1528;padding:10px;border-radius:8px;margin:6px 0 14px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:18px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}#error{color:#ffaaaa}</style><div class="panel"><h1>Verificación en dos pasos</h1><p>Para proteger la información territorial, MASCLI exige un autenticador (Google Authenticator, Microsoft Authenticator, Aegis u otro TOTP).</p><p>1. Añada esta clave en su aplicación:</p><code id="secret">Generando…</code><p>o importe este enlace:</p><code id="uri"></code><form id="f"><label>2. Escriba el código de 6 dígitos que muestra la aplicación</label><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required><button>Activar y continuar</button></form><p id="error" role="alert"></p></div><script>fetch('/system/auth/totp/setup',{method:'POST'}).then(r=>r.json()).then(d=>{document.querySelector('#secret').textContent=d.secret;document.querySelector('#uri').textContent=d.otpauth_uri});document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const code=new FormData(e.target).get('code');const r=await fetch('/system/auth/totp/enable',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});if(r.ok)location.href='/';else document.querySelector('#error').textContent='Código incorrecto. Verifique la hora del dispositivo e intente de nuevo.';};</script></html>''')
+    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Activar MFA MASCLI</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(520px,92vw);padding:32px;background:#1b2a46;border-radius:16px}code{display:block;word-break:break-all;background:#0c1528;padding:10px;border-radius:8px;margin:6px 0 14px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:18px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}#error{color:#ffaaaa}</style><div class="panel"><h1>Verificación en dos pasos</h1><p>Para proteger la información territorial, MASCLI exige un autenticador (Google Authenticator, Microsoft Authenticator, Aegis u otro TOTP).</p><p>1. Añada esta clave en su aplicación:</p><code id="secret">Generando…</code><p>o importe este enlace:</p><code id="uri"></code><form id="f"><label>2. Escriba el código de 6 dígitos que muestra la aplicación</label><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required><button>Activar y continuar</button></form><p id="error" role="alert"></p></div><script src="/static/mfa.js"></script></html>''')
 
 @app.post('/login')
 def login_action(request:Request,username:str=Form(...),password:str=Form(...),otp:str=Form('')):
@@ -391,9 +397,26 @@ def add_account(data:AccountIn):
     finally: c.close()
     return {'ok':True,'username':data.username,'role':data.role}
 
+def reset_mfa(username):
+    """Borra el segundo factor y cierra todas las sesiones del usuario. Devuelve False si no existe."""
+    c=auth_conn()
+    try:
+        done=c.execute('UPDATE auth_users SET totp_secret=NULL,totp_enabled=0 WHERE username=?',(username,)).rowcount
+        c.execute('DELETE FROM auth_sessions WHERE username=?',(username,));c.commit()
+        return bool(done)
+    finally:c.close()
+
+@app.post('/system/auth/accounts/{username}/reset-mfa')
+def admin_reset_mfa(username:str,request:Request):
+    # Solo administradores (filtrado en enforce_auth). El propio MFA se cambia con el código vigente.
+    if auth_identity(request)['username']==username:raise HTTPException(403,'Use /system/auth/totp/setup con su código actual')
+    if not reset_mfa(username):raise HTTPException(404,'Usuario inexistente')
+    c=conn();c.execute("INSERT INTO audit(ts,module,record_id,action,detail) VALUES(?,?,?,?,?)",(now(),'Seguridad',username,'RESET_MFA','MFA restablecido por '+auth_identity(request)['username']));c.commit();c.close()
+    return {'ok':True,'username':username}
+
 @app.get('/system/auth/accounts')
 def list_accounts():
-    c=auth_conn(); rows=c.execute('SELECT username,full_name,role,active,created_at FROM auth_users').fetchall();c.close()
+    c=auth_conn(); rows=c.execute('SELECT username,full_name,role,active,created_at,totp_enabled FROM auth_users').fetchall();c.close()
     return [dict(r) for r in rows]
 
 @app.get('/select-project',response_class=HTMLResponse)
@@ -515,6 +538,10 @@ def totp_enable(payload:TOTPVerify,request:Request):
 
 @app.on_event("startup")
 def startup():
+    for path in (DB,AUTH_DB,TENANT_DIR,UPLOAD_DIR,SETTINGS_DIR):
+        if str(path.resolve()).startswith('/tmp/'):
+            import logging
+            logging.getLogger('uvicorn.error').warning('MASCLI: %s está en almacenamiento temporal; se perderá al reiniciar. Configure MASCLI_DATA_DIR en un disco persistente.',path)
     init_db()
     init_auth_global()
 
@@ -552,8 +579,9 @@ DIM_LABELS = {
 }
 
 def scoped_config(source):
-    if SCOPE_DB.get() is None or SCOPE_DB.get()==DB:return source
-    folder=TENANT_DIR/(SCOPE_DB.get().stem+'_settings')
+    # Copia editable por alcance: los valores incluidos en el repositorio son solo la plantilla.
+    if SCOPE_DB.get() is None or SCOPE_DB.get()==DB:folder=SETTINGS_DIR
+    else:folder=TENANT_DIR/(SCOPE_DB.get().stem+'_settings')
     folder.mkdir(parents=True,exist_ok=True)
     dest=folder/source.name
     if not dest.exists():

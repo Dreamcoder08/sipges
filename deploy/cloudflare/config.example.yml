@@ -1,0 +1,12 @@
+# Plantilla para %USERPROFILE%\.cloudflared\config.yml (no subir el archivo real ni el JSON de credenciales).
+# Reemplace <TUNNEL_ID>, <USUARIO> y mascli.ejemplo.org por sus valores.
+tunnel: <TUNNEL_ID>
+credentials-file: C:\Users\<USUARIO>\.cloudflared\<TUNNEL_ID>.json
+
+ingress:
+  - hostname: mascli.ejemplo.org
+    service: http://127.0.0.1:8000
+    originRequest:
+      # MASCLI solo escucha en 127.0.0.1; el túnel es la única entrada desde internet.
+      connectTimeout: 30s
+  - service: http_status:404
