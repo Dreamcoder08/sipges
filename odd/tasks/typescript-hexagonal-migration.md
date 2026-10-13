@@ -44,6 +44,11 @@ Branch `feature/typescript-hexagonal-migration` from `c7fec1b` (Python P2b commi
 - T13 [ ] S6,S7 — SQLite → PostgreSQL migration tooling validated on synthetic data only; route: writer; commit: pending
 - T14 [ ] S3,S7 — End-to-end parity (Playwright) and deployment readiness docs; route: verify; commit: pending
 
+## Arquitectura visual
+
+- [Mapa Archify de la implementación TypeScript](../../docs/diagrams/arquitectura.html) y [guía de lectura y regeneración](../../docs/ARQUITECTURA.md).
+- Fuente fijada a `0cbe31d2df9223291d0660bffdeb73a3df92deca` (T11a); refleja código implementado y pendientes de este ODD. ODD/ADRs guían el desarrollo; no se representan como servicios del runtime.
+
 ## Log
 - L54 (T9 documents): Context `documents` (/system/document-lab analyze, report.docx, compare, review import/list/decide) and the four analysis DOCX routes in `analytics`. Ports: DocumentReader (unpdf/pdf.js, fflate + WordprocessingML reader) and ReportRenderer (`docx`); format-neutral ReportDocument in @mascli/kernel. Migration 0007_document_review.sql (forced RLS, audit in the same transaction, included in tenant export). Python parity fixture generated from app.py with synthetic text (scripts/python-parity/document-lab.py): splitlines, findings, caps, recommendations, comparisons, DOCX extraction. Differences documented in docs/migration/documents.md (scope project, generic 422, no hard-coded author names, PDF line splitting).
 - L55 (T10 operations): Contexts `intelligence` (classifier /system/analyze, RC 2.4 text analysis, RC 2.5 semantic analysis behind an EmbeddingProvider port with an Ollama adapter, territorial alert inbox), `prevention` (plans linked to a corroborated alert, progress log, row lock on update) and `management` (overview and RC 2.8 CSV through the other contexts' application APIs). Migration 0008_intelligence_prevention.sql (forced RLS, audit in the same transaction, included in tenant export). Python parity fixture generated from app.py with synthetic data (scripts/python-parity/operations.py). Differences documented in docs/migration/operations.md (scope project, generic 422, CSV formula neutralization, UTC dates).

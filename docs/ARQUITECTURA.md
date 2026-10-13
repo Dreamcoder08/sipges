@@ -1,40 +1,60 @@
-# Arquitectura visual de MASCLI
+# Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa Archify](diagrams/arquitectura.html) explica el recorrido desde la interfaz hasta el almacenamiento. Es una vista de componentes lógicos: las funciones de acceso, API y análisis conviven en `app.py`, dentro de la misma aplicación FastAPI. No representa servicios desplegados por separado.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en `feat/typescript-migration-11a-web-shell`, commit `0cbe31d2df9223291d0660bffdeb73a3df92deca`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión.
 
-## Cómo leer el mapa
+## Recorrido y reglas de dependencia
 
-1. La interfaz `static/` realiza peticiones HTTP a la API.
-2. El middleware verifica la sesión, el rol y el alcance autorizado de empresa/proyecto. Las rutas públicas y el selector de proyecto tienen tratamiento específico.
-3. Las rutas de la aplicación consultan o modifican registros, calculan indicadores e IRSA, o extraen y revisan texto documental.
-4. SQLite conserva datos y auditoría; los JSON aportan configuración, y los adjuntos se escriben en el sistema de archivos.
+La SPA React llama a Hono por HTTP del mismo origen. Zod valida las respuestas del cliente y las entradas HTTP. La sesión y el proyecto activo se mantienen en cookies HttpOnly; cambiar proyecto llama al servidor. Las rutas protegidas pasan por sesión/origen, tenancy y autorización por rol antes del caso de uso.
 
-Cada componente incluye referencias a archivos y líneas fijadas al commit `c442ebf23fc11f612746d53a11f2f3b470790fa0`. El mapa documenta esa revisión; no consulta infraestructura ni datos de usuarios en tiempo real.
+El backend organiza cada contexto en `http`, `application`, `domain` e `infrastructure`. HTTP interpreta entradas y llama a la aplicación; la aplicación ejecuta reglas del dominio e invoca interfaces de puertos. Los adaptadores implementan esas interfaces. `main.ts` abre recursos y `compose.ts` construye los servicios mediante inyección manual. La flecha aplicación → adaptadores representa una llamada a una implementación inyectada: el código de aplicación no importa infraestructura.
 
-## Responsabilidades y persistencia
+`dependency-cruiser` comprueba las reglas de dependencia: dominio puro, aplicación sin dependencias de HTTP/infraestructura, contextos comunicándose mediante APIs públicas de aplicación y features web aisladas. Los componentes del mapa son capas y responsabilidades lógicas dentro del monorepo, no microservicios desplegados individualmente. ODD y ADRs son documentación que guía el desarrollo, no servicios del runtime.
 
-| Componente | Implementación | Almacenamiento o entrada |
+## Stack y decisiones vigentes
+
+| Capa | Implementación | Decisión |
 | --- | --- | --- |
-| Interfaz | `static/index.html`, `static/app.js`, `static/style.css` | Respuestas JSON; selección visible en `localStorage` |
-| Acceso | `auth_identity`, `enforce_auth`, login y selector | Usuarios, sesiones y grants en `auth_global.db` |
-| Registros | Rutas `/api/{module}` | Tabla `records` y cambios en `audit` |
-| Análisis | `compute_indicators`, definición final de `compute_irsa` | Registros del alcance y configuración JSON |
-| Laboratorio documental | `doc_extract`, `document_insights` y rutas de revisión | Texto en memoria; extractos importados en `document_review` |
-| Evidencias | `/system/uploads`, `upload_root` | Archivo local, metadatos y SHA-256 en SQLite |
+| Web | React 19, Vite, TanStack Router/Query, CSS Modules | [ADR 0006](adr/0006-frontend-architecture.md) y [estado T11](migration/web.md) |
+| HTTP | Hono sobre Node.js; validación Zod | [ADR 0007](adr/0007-http-contract-and-errors.md) |
+| Aplicación y dominio | Puertos, políticas puras, `Result` y kernel compartido | [ADR 0002](adr/0002-hexagonal-architecture-and-bounded-contexts.md) |
+| Composición | Inyección manual en `main.ts` / `compose.ts` | [ADR 0002](adr/0002-hexagonal-architecture-and-bounded-contexts.md) |
+| SQL | Puerto SqlClient, postgres.js y migraciones `.sql` | Enmienda del [ADR 0003](adr/0003-persistence-and-tenant-isolation.md): Drizzle no se utiliza |
+| Objetos | ObjectStorage local o S3-compatible con SigV4 | [Migración T8](migration/evidence.md) |
+| Procesamiento | DocumentReader: unpdf/pdf.js y fflate; ReportRenderer: docx | [Migración T9](migration/documents.md) |
+| Embeddings | EmbeddingProvider con adaptador Ollama | [Migración T10](migration/operations.md) |
+| Herramientas | pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser | Enmienda del [ADR 0001](adr/0001-monorepo-and-toolchain.md): sin Turborepo/Biome |
 
-`MASCLI/PRJ-SECHURA` utiliza la base principal. Otros alcances utilizan archivos en `data/tenants/<hash>.db`; las configuraciones se copian a `<hash>_settings` cuando se consultan. `MASCLI_DB_PATH`, `MASCLI_AUTH_DB_PATH`, `MASCLI_TENANT_DIR` y `MASCLI_UPLOAD_DIR` permiten cambiar esas ubicaciones. El proyecto visible en la interfaz no sustituye el alcance autenticado por el servidor.
+El mapa agrupa los contextos identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention y management. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
 
-El laboratorio analiza PDF con texto, DOCX, TXT y Markdown mediante reglas léxicas locales. No incorpora OCR ni IA generativa. Sus resultados son candidatos: la importación y la decisión de revisión son operaciones explícitas. La corroboración documental exige una nota. El IRSA usa reglas y proxies pendientes de validación externa, como declara su respuesta actual.
+## Persistencia y aislamiento
 
-## Archivos editables y regeneración
+`MASCLI_DATABASE_URL` selecciona PostgreSQL mediante postgres.js. Sin esa variable, desarrollo usa PGlite embebido; `NODE_ENV=production` exige la URL. Las migraciones se aplican al arrancar. `withTenant` establece `app.tenant_id` y `SET LOCAL ROLE mascli_tenant` dentro de la transacción. Las tablas territoriales llevan RLS, mientras usuarios, sesiones, tenants y grants son globales. Los cambios de registros y su auditoría se escriben en la misma transacción. Esto describe los controles implementados, sin constituir una auditoría de seguridad.
 
-- `diagrams/arquitectura.json`: fuente tipada, geometría, relaciones y referencias.
-- `diagrams/arquitectura.html`: visor autónomo generado; no editarlo manualmente.
-- [Licencia del visor Archify](ARCHIFY-LICENSE.txt): atribución de la herramienta original.
+La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptador local o S3 según `MASCLI_STORAGE`; los metadatos quedan en PostgreSQL. El laboratorio procesa documentos mediante puertos y genera DOCX sin invocar Python. Ollama se llama solo al solicitar semántica: `mode=rules` devuelve el análisis por reglas sin invocar embeddings. No se representa ningún proveedor alojado como si ya estuviera desplegado.
 
-Se utilizó [tt-a1i/archify](https://github.com/tt-a1i/archify), revisión `c21c31ffb879668900c5487ea24993bf45d89b15`. Archify necesita Node.js 18 o posterior y Chrome/Chromium para su comprobación de navegador. Es una herramienta de documentación, no una dependencia del servidor MASCLI.
+## Estado del ODD en esta revisión
 
-Para reproducir la generación, clona Archify en una carpeta hermana y fija su revisión:
+| Fase | Estado registrado |
+| --- | --- |
+| T1–T10 | Contratos, ADRs, workspace y contextos backend completados |
+| T11a | Shell, login/MFA, selección/cambio de proyecto y dashboard completados |
+| T11b–d | Resto de pantallas pendiente; rutas con aviso «En migración» |
+| T12 | Benchmarks pendientes; Go/Rust condicionado a resultados |
+| T13 | Herramientas de migración SQLite → PostgreSQL pendientes |
+| T14 | Paridad E2E y preparación del despliegue pendientes |
+
+La implementación nueva es TypeScript; Python permanece como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; esta entrega no completa ni revalida esas tareas. La validación científica externa del IRSA sigue siendo un proceso separado.
+
+## Fuente editable y regeneración
+
+- `diagrams/arquitectura.json`: componentes, conexiones, geometría, tarjetas y referencias Git.
+- `diagrams/arquitectura.html`: visor autónomo generado; conservar los bytes generados.
+- `diagrams/arquitectura.png`: vista previa del visor en escritorio.
+- [Licencia Archify](ARCHIFY-LICENSE.txt) y [verificación de la entrega](VERIFICACION.md).
+
+Herramienta: [tt-a1i/archify](https://github.com/tt-a1i/archify), revisión `c21c31ffb879668900c5487ea24993bf45d89b15`. Archify se usa para documentación y no se instala como dependencia de MASCLI. Requiere Node.js y Chrome/Chromium para la comprobación de navegador.
+
+Clona la herramienta en una carpeta hermana y fija su revisión:
 
 ```bash
 git clone https://github.com/tt-a1i/archify.git ../archify-tool
@@ -44,17 +64,9 @@ git -C ../archify-tool checkout c21c31ffb879668900c5487ea24993bf45d89b15
 Desde la raíz de MASCLI:
 
 ```bash
-ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs finalize architecture \
-  docs/diagrams/arquitectura.json docs/diagrams/arquitectura.html \
-  --repo-root . --quality showcase --json --out-dir /tmp/mascli-archify-review
+ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs finalize architecture docs/diagrams/arquitectura.json docs/diagrams/arquitectura.html --repo-root . --quality showcase --json --out-dir /tmp/mascli-archify-review
 ```
 
-En PowerShell, establece primero `$env:ARCHIFY_UPDATE_CHECK_DISABLED="1"` y ejecuta el comando `node` en una línea. Usa una carpeta de revisión nueva si cambias la fuente; conserva los recibos anteriores como evidencia. El comando devuelve un código distinto de cero cuando falla una etapa.
+En PowerShell, establece `$env:ARCHIFY_UPDATE_CHECK_DISABLED="1"` antes del comando `node`. Usa una carpeta de revisión nueva al modificar el candidato y conserva los recibos anteriores. Para actualizarlo, inspecciona el código TypeScript y el ODD, ajusta responsabilidades, conexiones y referencias, y fija `meta.repository.revision` a la revisión que contiene los archivos citados. Las referencias se comprueban contra bytes comprometidos en Git.
 
-Para actualizar el mapa tras un cambio de código, inspecciona las funciones afectadas, actualiza sus referencias y fija `meta.repository.revision` al commit que contiene ese código. Ajusta las relaciones y las tarjetas antes de regenerar. Las fuentes se verifican contra los archivos comprometidos en Git, por lo que no deben citar cambios sin commit como si pertenecieran a la revisión fijada.
-
-## Comprobación de esta entrega
-
-Las etapas automáticas de validación, generación y comprobación estricta de Archify pasaron. Su etapa `browser-check` falló al abrir el archivo local porque el Chromium de este entorno bloquea URLs `file://` (`ERR_BLOCKED_BY_ADMINISTRATOR`). Esto impide afirmar que `finalize` pasó todas sus etapas. La prueba HTTP adicional que se describe en [la verificación](VERIFICACION.md) es independiente y no sustituye ese recibo.
-
-El mapa cubre la arquitectura general. Las rutas de prevención, consenso, inteligencia territorial e informes se agrupan dentro de la aplicación; no se representa cada endpoint ni se certifican seguridad, aislamiento o validez científica.
+Las etapas de validación, generación y comprobación estricta pasaron. `browser-check` de Archify falla en este entorno por el bloqueo de URLs `file://` de Chromium; la prueba HTTP adicional es independiente. Los resultados completos y sus límites figuran en [VERIFICACION.md](VERIFICACION.md).

@@ -2,319 +2,418 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MASCLI RC 3.0 · Arquitectura de la aplicación",
+    "title": "MASCLI TypeScript · Arquitectura hexagonal / ODD",
     "locale": "es",
     "output": "docs/diagrams/arquitectura.html",
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "c442ebf23fc11f612746d53a11f2f3b470790fa0"
+      "revision": "0cbe31d2df9223291d0660bffdeb73a3df92deca"
     }
   },
   "components": [
     {
-      "id": "interfaz",
+      "id": "web",
       "type": "frontend",
-      "label": "Interfaz web",
-      "sublabel": "HTML · CSS · JavaScript",
+      "label": "SPA React 19 / Vite",
+      "sublabel": "TanStack Router y Query",
       "pos": [
         40,
         240
       ],
       "size": [
-        170,
+        190,
         70
       ],
       "sources": [
         {
-          "path": "static/app.js",
-          "line": 26,
-          "end_line": 47,
-          "label": "Consultas y proyecto activo"
+          "path": "apps/web/src/app/App.tsx",
+          "line": 1,
+          "end_line": 27,
+          "label": "Router y estado servidor"
         },
         {
-          "path": "static/app.js",
-          "line": 449,
-          "end_line": 487,
-          "label": "Lectura y revisión documental"
+          "path": "apps/web/src/shared/api/client.ts",
+          "line": 50,
+          "end_line": 79,
+          "label": "HTTP y validación Zod"
         },
         {
-          "path": "app.py",
-          "line": 29,
-          "end_line": 30,
-          "label": "Servicio de archivos estáticos"
+          "path": "apps/web/src/features/tenancy/api.ts",
+          "line": 9,
+          "end_line": 25,
+          "label": "Cambio de proyecto servidor"
         }
       ]
     },
     {
-      "id": "acceso",
-      "type": "security",
-      "label": "Acceso y alcance",
-      "sublabel": "Sesión · rol · empresa/proyecto",
+      "id": "contracts",
+      "type": "backend",
+      "label": "Contratos compartidos",
+      "sublabel": "@mascli/contracts · Zod",
       "pos": [
-        355,
-        240
+        197,
+        40
       ],
       "size": [
-        170,
+        190,
         70
       ],
       "sources": [
         {
-          "path": "app.py",
-          "line": 179,
-          "end_line": 252,
-          "label": "Middleware y permisos"
+          "path": "packages/contracts/src/identity.ts",
+          "line": 1,
+          "end_line": 51,
+          "label": "Esquemas y tipos inferidos"
         },
         {
-          "path": "app.py",
-          "line": 259,
-          "end_line": 272,
-          "label": "Login y TOTP opcional"
+          "path": "apps/web/src/features/tenancy/api.ts",
+          "line": 1,
+          "end_line": 25,
+          "label": "Contratos en la SPA"
         },
         {
-          "path": "app.py",
-          "line": 308,
-          "end_line": 329,
-          "label": "Selección autorizada"
+          "path": "apps/api/src/contexts/records/http/records-routes.ts",
+          "line": 1,
+          "end_line": 30,
+          "label": "Contratos en HTTP"
         }
       ]
     },
     {
       "id": "api",
       "type": "backend",
-      "label": "Aplicación FastAPI",
-      "sublabel": "CRUD · IRSA · documentos",
+      "label": "HTTP y acceso",
+      "sublabel": "Hono · Node.js · sesión/tenant",
+      "pos": [
+        355,
+        240
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/app.ts",
+          "line": 39,
+          "end_line": 58,
+          "label": "Middleware y rutas"
+        },
+        {
+          "path": "apps/api/src/contexts/identity/http/auth-middleware.ts",
+          "line": 21,
+          "end_line": 52,
+          "label": "Sesión, origen y rol"
+        },
+        {
+          "path": "apps/api/src/contexts/tenancy/http/tenancy-middleware.ts",
+          "line": 28,
+          "end_line": 77,
+          "label": "Alcance autorizado"
+        }
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "Casos de uso",
+      "sublabel": "Aplicación · puertos",
       "pos": [
         670,
         240
       ],
       "size": [
-        170,
+        190,
         70
       ],
       "sources": [
         {
-          "path": "app.py",
-          "line": 1143,
-          "end_line": 1193,
-          "label": "Registros y auditoría"
+          "path": "apps/api/src/contexts/records/application/records-service.ts",
+          "line": 26,
+          "end_line": 79,
+          "label": "Invocación de RecordStore"
         },
         {
-          "path": "app.py",
-          "line": 1604,
-          "end_line": 1647,
-          "label": "Cálculo IRSA e indicadores"
+          "path": "apps/api/src/contexts/indicators/application/indicators-service.ts",
+          "line": 48,
+          "end_line": 75,
+          "label": "Datos, configuración y dominio"
         },
         {
-          "path": "app.py",
-          "line": 1708,
-          "end_line": 1854,
-          "label": "Extracción y revisión documental"
+          "path": "apps/api/src/contexts/intelligence/application/intelligence-service.ts",
+          "line": 57,
+          "end_line": 137,
+          "label": "EmbeddingProvider según modo"
         }
       ]
     },
     {
-      "id": "identidades",
-      "type": "database",
-      "label": "Identidades globales",
-      "sublabel": "auth_global.db",
-      "pos": [
-        355,
-        450
-      ],
-      "size": [
-        170,
-        70
-      ],
-      "sources": [
-        {
-          "path": "app.py",
-          "line": 41,
-          "end_line": 45,
-          "label": "Conexión global"
-        },
-        {
-          "path": "app.py",
-          "line": 415,
-          "end_line": 435,
-          "label": "Usuarios, sesiones y permisos"
-        }
-      ]
-    },
-    {
-      "id": "datos",
-      "type": "database",
-      "label": "Datos del proyecto",
-      "sublabel": "SQLite · registros · auditoría",
-      "pos": [
-        670,
-        450
-      ],
-      "size": [
-        170,
-        70
-      ],
-      "sources": [
-        {
-          "path": "app.py",
-          "line": 47,
-          "end_line": 50,
-          "label": "Base según contexto"
-        },
-        {
-          "path": "app.py",
-          "line": 72,
-          "end_line": 130,
-          "label": "Esquema y carga inicial"
-        },
-        {
-          "path": "app.py",
-          "line": 348,
-          "end_line": 370,
-          "label": "Bases por empresa/proyecto"
-        }
-      ]
-    },
-    {
-      "id": "configuracion",
-      "type": "database",
-      "label": "Configuración JSON",
-      "sublabel": "Indicadores · pesos IRSA",
+      "id": "domain",
+      "type": "backend",
+      "label": "Dominio puro",
+      "sublabel": "Reglas · políticas · Result",
       "pos": [
         670,
         40
       ],
       "size": [
-        170,
+        190,
         70
       ],
       "sources": [
         {
-          "path": "app.py",
-          "line": 447,
-          "end_line": 470,
-          "label": "Configuración por alcance"
+          "path": "apps/api/src/contexts/records/domain/modules.ts",
+          "line": 1,
+          "end_line": 48,
+          "label": "Modelo territorial"
         },
         {
-          "path": "app.py",
-          "line": 1347,
-          "end_line": 1356,
-          "label": "Lectura para indicadores"
+          "path": "packages/kernel/src/result.ts",
+          "line": 1,
+          "end_line": 16,
+          "label": "Result compartido"
         },
         {
-          "path": "app.py",
-          "line": 1604,
-          "end_line": 1615,
-          "label": "Pesos y umbrales"
+          "path": ".dependency-cruiser.cjs",
+          "line": 16,
+          "end_line": 44,
+          "label": "Reglas de dependencia"
         }
       ]
     },
     {
-      "id": "adjuntos",
-      "type": "database",
-      "label": "Evidencias adjuntas",
-      "sublabel": "Archivos locales · SHA-256",
+      "id": "adapters",
+      "type": "backend",
+      "label": "Adaptadores inyectados",
+      "sublabel": "SQL · objetos · documentos",
       "pos": [
         985,
         240
       ],
       "size": [
-        170,
+        190,
         70
       ],
       "sources": [
         {
-          "path": "app.py",
-          "line": 17,
-          "end_line": 19,
-          "label": "Ubicación y límite"
+          "path": "apps/api/src/compose.ts",
+          "line": 94,
+          "end_line": 170,
+          "label": "Composición manual"
         },
         {
-          "path": "app.py",
-          "line": 52,
-          "end_line": 55,
-          "label": "Carpeta por alcance"
+          "path": "apps/api/src/contexts/records/infrastructure/sql-record-store.ts",
+          "line": 19,
+          "end_line": 79,
+          "label": "SQL y auditoría transaccional"
         },
         {
-          "path": "app.py",
-          "line": 1064,
-          "end_line": 1112,
-          "label": "Archivo y metadatos"
+          "path": "apps/api/src/contexts/documents/infrastructure/document-reader.ts",
+          "line": 97,
+          "end_line": 129,
+          "label": "Lectura PDF y DOCX"
         }
       ]
+    },
+    {
+      "id": "storage",
+      "type": "database",
+      "label": "Objetos de evidencia",
+      "sublabel": "Local o compatible S3",
+      "pos": [
+        985,
+        40
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/evidence/infrastructure/index.ts",
+          "line": 9,
+          "end_line": 18,
+          "label": "Elección por configuración"
+        },
+        {
+          "path": "apps/api/src/contexts/evidence/infrastructure/local-object-storage.ts",
+          "line": 14,
+          "end_line": 45,
+          "label": "Archivos locales"
+        },
+        {
+          "path": "apps/api/src/contexts/evidence/infrastructure/s3-object-storage.ts",
+          "line": 25,
+          "end_line": 79,
+          "label": "S3 firmado SigV4"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "type": "database",
+      "label": "PostgreSQL / PGlite",
+      "sublabel": "Prod / dev y pruebas · RLS",
+      "pos": [
+        985,
+        450
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/main.ts",
+          "line": 18,
+          "end_line": 30,
+          "label": "Selección y migraciones"
+        },
+        {
+          "path": "apps/api/src/platform/database/postgres.ts",
+          "line": 16,
+          "end_line": 35,
+          "label": "postgres.js y pool"
+        },
+        {
+          "path": "apps/api/src/platform/database/tenant-transaction.ts",
+          "line": 3,
+          "end_line": 21,
+          "label": "Tenant y rol en transacción"
+        }
+      ]
+    },
+    {
+      "id": "ollama",
+      "type": "external",
+      "label": "Ollama · embeddings",
+      "sublabel": "Servidor configurable",
+      "pos": [
+        1300,
+        240
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/intelligence/infrastructure/ollama-embeddings.ts",
+          "line": 7,
+          "end_line": 45,
+          "label": "POST /api/embed"
+        },
+        {
+          "path": "apps/api/src/platform/config.ts",
+          "line": 116,
+          "end_line": 127,
+          "label": "URL y modelo"
+        }
+      ],
+      "tag": "SEGÚN MODO"
     }
   ],
   "connections": [
     {
-      "id": "peticion",
-      "from": "interfaz",
-      "to": "acceso",
-      "label": "HTTP / JSON",
+      "id": "request",
+      "from": "web",
+      "to": "api",
+      "label": "HTTP / cookies",
       "variant": "emphasis"
     },
     {
-      "id": "autorizacion",
-      "from": "acceso",
-      "to": "api",
+      "id": "web-contracts",
+      "from": "web",
+      "to": "contracts",
+      "label": "Zod",
+      "variant": "default"
+    },
+    {
+      "id": "api-contracts",
+      "from": "api",
+      "to": "contracts",
+      "label": "Zod",
+      "variant": "default"
+    },
+    {
+      "id": "authorized",
+      "from": "api",
+      "to": "application",
       "label": "Si autorizado",
       "variant": "security"
     },
     {
-      "id": "sesiones",
-      "from": "acceso",
-      "to": "identidades",
-      "label": "Sesión y grants",
+      "id": "rules",
+      "from": "application",
+      "to": "domain",
+      "label": "Reglas puras",
       "variant": "default"
     },
     {
-      "id": "registros",
-      "from": "api",
-      "to": "datos",
-      "label": "SQL / alcance",
+      "id": "ports",
+      "from": "application",
+      "to": "adapters",
+      "label": "Puertos",
+      "variant": "emphasis"
+    },
+    {
+      "id": "sql",
+      "from": "adapters",
+      "to": "database",
+      "label": "SQL / tenant",
       "variant": "default"
     },
     {
-      "id": "reglas",
-      "from": "api",
-      "to": "configuracion",
-      "label": "Lee reglas",
+      "id": "objects",
+      "from": "adapters",
+      "to": "storage",
+      "label": "Local o S3",
       "variant": "default"
     },
     {
-      "id": "archivos",
-      "from": "api",
-      "to": "adjuntos",
-      "label": "Carga vinculada",
+      "id": "embeddings",
+      "from": "adapters",
+      "to": "ollama",
+      "label": "Modo semántico",
       "variant": "default"
     }
   ],
   "cards": [
     {
       "dot": "cyan",
-      "title": "Recorrido principal",
+      "title": "Frontend y acceso",
       "items": [
-        "La interfaz llama a /api/* y /system/*. El middleware comprueba sesión, permisos y empresa/proyecto antes de ejecutar las rutas protegidas.",
-        "/health y login tienen excepciones explícitas. TOTP se exige únicamente cuando la cuenta lo tiene habilitado.",
-        "Los componentes lógicos del mapa conviven en app.py; no son microservicios separados."
+        "SPA en TypeScript: React 19, Vite, TanStack Router/Query, CSS Modules y tokens. Contratos Zod compartidos con HTTP.",
+        "Las cookies HttpOnly llevan sesión y alcance. El cambio de proyecto usa POST /select-project y vuelve a consultar los datos.",
+        "El servidor ejecuta middleware de sesión/origen, tenancy y roles antes de las rutas protegidas; la entrega del shell y ciertas rutas tienen excepciones."
       ]
     },
     {
       "dot": "emerald",
-      "title": "Persistencia y alcance",
+      "title": "Hexágono y datos",
       "items": [
-        "auth_global.db mantiene usuarios, sesiones, proyectos y permisos. conn() selecciona SQLite usando el contexto del middleware.",
-        "MASCLI/PRJ-SECHURA usa la base principal; otros alcances usan data/tenants/<hash>.db. Las rutas son configurables por entorno.",
-        "La carga de evidencias escribe el archivo, su hash y metadatos, y una entrada de auditoría. El laboratorio documental no guarda el documento original: importa extractos sólo a petición del usuario."
+        "http → application → domain; la aplicación invoca interfaces de puertos. compose.ts conecta implementaciones concretas por inyección manual. Las flechas representan llamadas o uso de contratos, no servicios separados.",
+        "Contextos: identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention y management.",
+        "SQL explícito y migraciones versionadas. withTenant fija app.tenant_id y SET LOCAL ROLE mascli_tenant; las tablas de tenant usan RLS. Configuración IRSA y auditoría pasan a SQL."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Adaptadores y procesamiento",
+      "items": [
+        "Producción usa PostgreSQL vía postgres.js; PGlite queda para desarrollo/pruebas. Evidencias usan ObjectStorage local o S3 según configuración.",
+        "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
+        "Ollama se consulta cuando se solicita análisis semántico; el modo rules no invoca embeddings. La similitud sigue pendiente de corroboración humana."
       ]
     },
     {
       "dot": "amber",
-      "title": "Análisis y revisión humana",
+      "title": "ODD · implementado y pendiente",
       "items": [
-        "Los indicadores G1–I6 alimentan el IRSA mediante pesos y umbrales. Son reglas y proxies provisionales, pendientes de calibración y validación experta.",
-        "El laboratorio extrae texto PDF, DOCX, TXT o Markdown y propone hallazgos léxicos. No usa IA generativa ni OCR integrado.",
-        "La revisión de extractos permite pendiente, aceptado_para_revision, descartado y corroborado_documentalmente. Corroborar exige una nota de evidencia."
+        "Fuente: rama feat/typescript-migration-11a-web-shell, revisión 0cbe31d. ODD y ADRs guían la migración; no son servicios del runtime.",
+        "T1–T10 y T11a figuran completos: API y shell, login/MFA, selección de proyecto y dashboard. T11b–d, T12 benchmarks, T13 migración de datos y T14 paridad/despliegue siguen pendientes.",
+        "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. El legado Python es referencia, no dependencia de este runtime."
       ]
     }
   ]

@@ -1,41 +1,55 @@
-# MASCLI · Gestión Territorial Empresarial
+# MASCLI · TypeScript y arquitectura hexagonal
 
-MASCLI es un prototipo web para registrar eventos, actores, demandas, compromisos y evidencias, y apoyar el análisis territorial del Proyecto Sechura. La aplicación actual se identifica como **3.0.0-rc**; el motor analítico sigue en calibración técnica y pendiente de validación externa.
+La nueva versión de MASCLI es un monorepo TypeScript para la gestión y el análisis territorial. Su evolución se registra en el [ODD de migración](odd/tasks/typescript-hexagonal-migration.md) y en los [ADRs](docs/adr/README.md).
 
-## Documentación visual con Archify
+## Arquitectura visual con Archify
 
-- [Mapa interactivo de arquitectura](docs/diagrams/arquitectura.html): interfaz, acceso por empresa/proyecto, API, datos, configuración y evidencias.
+[![Arquitectura hexagonal TypeScript de MASCLI](docs/diagrams/arquitectura.png)](docs/diagrams/arquitectura.html)
+
+- [Mapa interactivo](docs/diagrams/arquitectura.html): SPA, contratos compartidos, Hono, casos de uso, dominio, adaptadores, PostgreSQL, objetos y embeddings.
 - [Guía de arquitectura y regeneración](docs/ARQUITECTURA.md).
-- [Fuente editable del mapa](docs/diagrams/arquitectura.json).
+- [Fuente JSON editable](docs/diagrams/arquitectura.json) y [verificación](docs/VERIFICACION.md).
 
-Descarga el HTML y ábrelo en el navegador. GitHub muestra su código y no ejecuta el visor. El archivo contiene el visor y el diagrama; los enlaces a las fuentes requieren conexión y acceso al repositorio. Selecciona un componente para consultar sus referencias de código. El visor permite explorar relaciones, cambiar el tema y exportar imágenes.
+Descarga el HTML y ábrelo en el navegador: GitHub muestra el código del archivo y no ejecuta el visor. Selecciona un componente para consultar sus referencias de código. El visor funciona como un archivo autónomo; los enlaces al repositorio requieren conexión y permisos de acceso.
 
-[![Vista previa del mapa de arquitectura MASCLI](docs/diagrams/arquitectura.png)](docs/diagrams/arquitectura.html)
+## Stack implementado
 
-## Inicio local
+| Área | Tecnología |
+| --- | --- |
+| Frontend | React 19, Vite, TanStack Router y Query, CSS Modules y tokens |
+| Backend | Node.js y Hono; arquitectura hexagonal por contextos |
+| Contratos | Zod y tipos TypeScript compartidos en `@mascli/contracts` |
+| Persistencia | PostgreSQL con postgres.js, SQL explícito y migraciones; RLS por tenant |
+| Desarrollo y pruebas SQL | PGlite; PostgreSQL real para integración opcional |
+| Evidencias | Puerto ObjectStorage con adaptadores local y compatible S3 |
+| Documentos | unpdf/pdf.js, fflate y docx detrás de puertos |
+| Semántica | Embeddings de Ollama cuando se solicita el modo semántico |
+| Calidad | pnpm, TypeScript 7 por paquete, TS 6 para herramientas, ESLint, Prettier, dependency-cruiser, Vitest y MSW |
 
-Requiere Python 3.10 o posterior, según la sintaxis del código. Desde la raíz del repositorio:
+Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron Turborepo/Biome. Go/Rust solo se incorporaría si un benchmark lo justifica; no forma parte del runtime actual.
+
+## Estado del ODD
+
+El mapa se basa en `feat/typescript-migration-11a-web-shell`, commit `0cbe31d2df9223291d0660bffdeb73a3df92deca`: T1–T10 y T11a figuran completos. La API y el shell web, login/MFA, selección de proyecto y dashboard están implementados en TypeScript.
+
+T11b–d (resto de pantallas), T12 (benchmarks), T13 (migración de datos) y T14 (paridad E2E y preparación del despliegue) siguen pendientes. Las pantallas pendientes muestran «En migración». El runtime nuevo no necesita Python; `app.py`, `static/` y sus pruebas siguen en el repositorio como referencia legada. Esto no significa que toda la migración esté terminada ni que el modelo IRSA tenga validación científica externa.
+
+## Desarrollo local
+
+Se recomienda Node.js 24 y Corepack. Desde la raíz:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-export MASCLI_ADMIN_USERNAME=admin
-read -rs -p 'Contraseña inicial (mínimo 12 caracteres): ' MASCLI_ADMIN_PASSWORD
-export MASCLI_ADMIN_PASSWORD
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
+corepack pnpm install --frozen-lockfile
+corepack pnpm check
 ```
 
-Abre <http://127.0.0.1:8000>. La contraseña de entorno sirve para inicializar la cuenta cuando no existen usuarios; no sustituye la contraseña de una cuenta ya creada. Para PowerShell, consulta [el inicio RC 3.0](README_RC_3_0_INICIO.txt).
+Antes de arrancar la API, configura `MASCLI_DATA_KEY` (base64 de 32 bytes) y `MASCLI_ADMIN_PASSWORD` (mínimo 12 caracteres para una instalación vacía). Para desarrollo HTTP local, establece `MASCLI_COOKIE_SECURE=0`. Conserva la clave de cifrado entre reinicios. Consulta las variables y comandos en [la guía del workspace](docs/migration/workspace.md).
 
-## Referencias del proyecto
+En dos terminales, con la configuración de entorno preparada:
 
-| Documento | Contenido |
-| --- | --- |
-| [Novedades RC 3.0](NOVEDADES_RC_3_0.md) | Alcances por empresa/proyecto, TOTP y limitaciones del piloto |
-| [Especificación IRSA](IRSA_ESPECIFICACION_TECNICA.txt) | Metodología del índice |
-| [Estado de calibración](README.txt) | Condiciones para declarar validación científica |
-| [Módulo situacional](NUEVO_MODULO_ANALISIS_SITUACIONAL.txt) | Análisis e informes |
-| [Despliegue en Render](README_RENDER.txt) | Instrucciones históricas de despliegue |
+```bash
+corepack pnpm --filter @mascli/api dev
+corepack pnpm --filter @mascli/web dev
+```
 
-Los documentos de versiones anteriores se conservan como historial. Para el comportamiento actual, usa RC 3.0 y el código enlazado desde el mapa. RC 3.0 sigue siendo un piloto técnico; sus análisis no equivalen a hechos corroborados ni a un modelo científicamente validado.
+La API escucha por defecto en <http://127.0.0.1:8000> y Vite en <http://127.0.0.1:5173>, con proxy de las llamadas a la API. Sin `MASCLI_DATABASE_URL`, el modo desarrollo usa PGlite; producción requiere PostgreSQL. La [guía web](docs/migration/web.md) explica cómo compilar la SPA y servirla mediante `MASCLI_WEB_DIR`.
