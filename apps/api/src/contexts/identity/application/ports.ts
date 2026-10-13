@@ -1,0 +1,90 @@
+import type { ThrottleDecision } from '../domain/login-throttle.ts';
+import type { Identity, NewAccount, Role } from '../domain/user.ts';
+
+export type StoredUser = Identity & {
+  readonly passwordHash: string;
+  readonly active: boolean;
+  readonly totpSecretSealed: string | null;
+  readonly totpEnabled: boolean;
+  readonly totpLastStep: number | null;
+};
+
+export type AccountSummary = {
+  readonly username: string;
+  readonly fullName: string;
+  readonly role: Role;
+  readonly active: boolean;
+  readonly createdAt: Date;
+};
+
+/** Persistence for users, sessions and login failures (one adapter keeps multi-row changes atomic). */
+export type IdentityStore = {
+  hasUsers(): Promise<boolean>;
+  findUser(username: string): Promise<StoredUser | null>;
+  /** Returns false when the username already exists. */
+  createUser(
+    account: Omit<NewAccount, 'password'> & { passwordHash: string },
+    at: Date,
+  ): Promise<boolean>;
+  listAccounts(): Promise<AccountSummary[]>;
+  /** Atomically disables the user and deletes sessions; serializes the last-admin guard. */
+  deactivateUser(username: string): Promise<'deactivated' | 'missing' | 'last_admin'>;
+  updatePasswordHash(username: string, passwordHash: string): Promise<void>;
+  /** Stores a new pending secret only while MFA is disabled; returns false otherwise. */
+  startTotpEnrollment(username: string, sealedSecret: string): Promise<boolean>;
+  /** Enables MFA, records the used step and revokes every other session of the user, atomically. */
+  enableTotp(username: string, step: number, keepTokenHash: string): Promise<void>;
+  /** Records a consumed step only if it is newer than the stored one; false means replay. */
+  consumeTotpStep(username: string, step: number): Promise<boolean>;
+
+  /** False when deactivation won the race; holds a user-row lock through session insertion. */
+  createSession(tokenHash: string, username: string, expiresAt: Date, at: Date): Promise<boolean>;
+  findSessionIdentity(tokenHash: string, at: Date): Promise<Identity | null>;
+  deleteSession(tokenHash: string): Promise<void>;
+  purgeExpiredSessions(at: Date): Promise<void>;
+
+  /**
+   * Atomically counts recent failures for both subjects and, when `decide` allows it, records
+   * this attempt as a provisional failure. Serializing per subject makes concurrent bursts
+   * consume the limit instead of all reading the same stale count. Rows at or before
+   * `windowStart` are purged.
+   */
+  reserveLoginAttempt(input: {
+    userSubject: string;
+    ipSubject: string;
+    windowStart: Date;
+    at: Date;
+    decide: (failures: { userFailures: number; ipFailures: number }) => ThrottleDecision;
+  }): Promise<{ decision: ThrottleDecision; reservation: readonly number[] }>;
+  /** Removes a provisional failure after the attempt succeeded. */
+  releaseLoginAttempt(reservation: readonly number[]): Promise<void>;
+  clearFailures(subject: string): Promise<void>;
+};
+
+export type PasswordHasher = {
+  hash(password: string): Promise<string>;
+  verify(password: string, stored: string): Promise<boolean>;
+  needsRehash(stored: string): boolean;
+};
+
+export type TotpVerification =
+  { readonly ok: true; readonly step: number } | { readonly ok: false };
+
+export type TotpService = {
+  generateSecret(): string;
+  uri(username: string, secret: string): string;
+  verify(secret: string, code: string, at: Date, lastStep: number | null): TotpVerification;
+};
+
+export type SecretCipher = {
+  seal(plaintext: string): string;
+  open(sealed: string): string;
+};
+
+export type SessionTokens = {
+  /** 64 hex characters (32 random bytes), like app.py secrets.token_hex(32). */
+  newToken(): string;
+  hash(token: string): string;
+};
+
+export type Clock = { now(): Date };

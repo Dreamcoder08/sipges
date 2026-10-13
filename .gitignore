@@ -7,3 +7,13 @@ venv/
 data/uploads/
 work_uploads*/
 .DS_Store
+
+# Node / TypeScript workspace
+node_modules/
+dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+playwright-report/
+test-results/
+.data/

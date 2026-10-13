@@ -1,0 +1,13 @@
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.hint {
+  color: var(--color-muted);
+}

@@ -1,0 +1,17 @@
+packages:
+  - apps/*
+  - packages/*
+
+# dependency-cruiser loads the TypeScript compiler optionally but does not declare it,
+# so under pnpm's strict layout it cannot see it and silently skips .ts files.
+minimumReleaseAgeExclude:
+  - '@vitest/mocker@5.0.4'
+  - '@vitest/spy@5.0.4'
+  - vitest@5.0.4
+  - zod@4.6.7
+  - '@electric-sql/pglite@0.5.9'
+
+packageExtensions:
+  dependency-cruiser:
+    peerDependencies:
+      typescript: '>=5'

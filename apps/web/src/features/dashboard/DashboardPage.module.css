@@ -1,0 +1,137 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.hero {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-brand-strong), var(--color-brand));
+  color: var(--color-on-brand);
+}
+
+.hero h2 {
+  margin: 0.3rem 0;
+  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+  max-width: 40rem;
+}
+
+.hero p {
+  margin: 0;
+  max-width: 48rem;
+}
+
+.kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.kpis {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: var(--space-3);
+}
+
+.kpi {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+
+.kpi dt {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.kpi dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--space-4);
+}
+
+.dimLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.irsa {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.irsa strong {
+  font-size: 2.6rem;
+}
+
+.dims {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.dims li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+}
+
+.note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.drivers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.drivers li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.drivers small {
+  display: block;
+  color: var(--color-muted);
+}
+
+.points {
+  font-weight: 800;
+  font-size: 1.2rem;
+}
+
+.quick {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.status {
+  display: grid;
+  gap: 0.3rem;
+}

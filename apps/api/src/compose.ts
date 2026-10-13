@@ -1,0 +1,223 @@
+import { randomBytes } from 'node:crypto';
+import {
+  type AnalyticsService,
+  createAnalyticsService,
+} from './contexts/analytics/application/index.ts';
+import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
+import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
+import {
+  type DocumentLabService,
+  createDocumentLabService,
+} from './contexts/documents/application/index.ts';
+import {
+  createSqlReviewStore,
+  documentReader,
+  docxRenderer,
+} from './contexts/documents/infrastructure/index.ts';
+import {
+  createIntelligenceService,
+  type EmbeddingProvider,
+  type IntelligenceService,
+} from './contexts/intelligence/application/index.ts';
+import {
+  createOllamaEmbeddings,
+  createSqlAlertStore,
+} from './contexts/intelligence/infrastructure/index.ts';
+import {
+  createManagementService,
+  type ManagementService,
+} from './contexts/management/application/index.ts';
+import {
+  createPreventionService,
+  type PreventionService,
+} from './contexts/prevention/application/index.ts';
+import { createSqlActionStore } from './contexts/prevention/infrastructure/index.ts';
+import {
+  type EvidenceService,
+  type ObjectStorage,
+  createEvidenceService,
+} from './contexts/evidence/application/index.ts';
+import {
+  createObjectStorage,
+  createSqlAttachmentStore,
+} from './contexts/evidence/infrastructure/index.ts';
+import {
+  type Clock,
+  type IdentityService,
+  createIdentityService,
+} from './contexts/identity/application/index.ts';
+import { passwordHasher } from './contexts/identity/infrastructure/password-hasher.ts';
+import { createSecretCipher } from './contexts/identity/infrastructure/secret-cipher.ts';
+import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
+import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
+import { totp } from './contexts/identity/infrastructure/totp.ts';
+import {
+  createIndicatorsService,
+  type IndicatorsService,
+} from './contexts/indicators/application/index.ts';
+import {
+  createSqlIrsaConfigStore,
+  createSqlIrsaSnapshotStore,
+  createSqlModuleRecordReader,
+} from './contexts/indicators/infrastructure/index.ts';
+import { createRecordsService, type RecordsService } from './contexts/records/application/index.ts';
+import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
+import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
+import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
+import { createSqlTenancyStore } from './contexts/tenancy/infrastructure/sql-tenancy-store.ts';
+import type { AppConfig } from './platform/config.ts';
+import type { SqlClient } from './platform/database/sql-client.ts';
+import type { ClientIp } from './platform/http/env.ts';
+
+export type Container = {
+  readonly config: AppConfig;
+  readonly identity: IdentityService;
+  readonly tenancy: TenancyService;
+  readonly records: RecordsService;
+  readonly audit: AuditService;
+  readonly indicators: IndicatorsService;
+  readonly analytics: AnalyticsService;
+  readonly evidence: EvidenceService;
+  readonly documents: DocumentLabService;
+  readonly intelligence: IntelligenceService;
+  readonly prevention: PreventionService;
+  readonly management: ManagementService;
+  readonly clientIp: ClientIp;
+};
+
+const randomHex = (length: number) =>
+  randomBytes(Math.ceil(length / 2))
+    .toString('hex')
+    .slice(0, length);
+
+/** Wires adapters into use cases (manual constructor injection, docs/adr/0002). */
+export const buildContainer = async (deps: {
+  config: AppConfig;
+  sql: SqlClient;
+  clock: Clock;
+  clientIp: ClientIp;
+  /** Overrides the configured adapter (tests inject failing or in-memory storage). */
+  objectStorage?: ObjectStorage;
+  /** Overrides the Ollama adapter (tests inject a deterministic or failing provider). */
+  embeddings?: EmbeddingProvider;
+}): Promise<Container> => {
+  const identity = createIdentityService({
+    store: createSqlIdentityStore(deps.sql),
+    hasher: passwordHasher,
+    totp,
+    cipher: createSecretCipher(deps.config.dataKey),
+    tokens: sessionTokens,
+    clock: deps.clock,
+  });
+  await identity.bootstrapAdmin(deps.config.admin);
+  const tenancy = createTenancyService({
+    store: createSqlTenancyStore(deps.sql),
+    dataReader: createSqlTenantDataReader(deps.sql),
+    users: {
+      exists: (username) => identity.userExists(username),
+      adminUsernames: async () =>
+        (await identity.listAccounts())
+          .filter((user) => user.role === 'admin')
+          .map((user) => user.username),
+    },
+    clock: deps.clock,
+  });
+  await tenancy.bootstrap();
+  const records = createRecordsService({
+    store: createSqlRecordStore(deps.sql),
+    clock: deps.clock,
+    randomHex: (length) => randomHex(length).toUpperCase(),
+  });
+  const audit = createAuditService(createSqlAuditReader(deps.sql));
+  const indicators = createIndicatorsService({
+    records: createSqlModuleRecordReader(deps.sql),
+    configs: createSqlIrsaConfigStore(deps.sql),
+    snapshots: createSqlIrsaSnapshotStore(deps.sql),
+    clock: deps.clock,
+  });
+  const recordReader = createSqlAnalyticsRecordReader(deps.sql);
+  const analytics = createAnalyticsService({
+    reader: recordReader,
+    clock: deps.clock,
+    renderer: docxRenderer,
+  });
+  const evidence = createEvidenceService({
+    storage: deps.objectStorage ?? createObjectStorage(deps.config.storage),
+    store: createSqlAttachmentStore(deps.sql),
+    clock: deps.clock,
+    randomHex,
+    maxUploadBytes: deps.config.maxUploadBytes,
+  });
+  const documents = createDocumentLabService({
+    reader: documentReader,
+    renderer: docxRenderer,
+    reviews: createSqlReviewStore(deps.sql),
+    clock: deps.clock,
+    randomHex,
+    maxUploadBytes: deps.config.maxUploadBytes,
+  });
+  const intelligence = createIntelligenceService({
+    narratives: {
+      read: async (scope) =>
+        ((await recordReader.read(scope, ['Narrativas']))['Narrativas'] ?? []).map(
+          (r) => r.payload,
+        ),
+    },
+    embeddings: deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama),
+    alerts: createSqlAlertStore(deps.sql),
+    clock: deps.clock,
+    randomHex,
+  });
+  const prevention = createPreventionService({
+    store: createSqlActionStore(deps.sql),
+    alerts: { status: (scope, id) => intelligence.alertStatus(scope, id) },
+    clock: deps.clock,
+    randomHex,
+  });
+  const iso = (date: Date) => `${date.toISOString().slice(0, 19)}Z`;
+  const management = createManagementService({
+    sources: {
+      alerts: async (scope) =>
+        (await intelligence.allAlerts(scope)).map((a) => ({
+          id: a.id,
+          createdAt: iso(a.createdAt),
+          sourceUrl: a.sourceUrl,
+          sourceType: a.sourceType,
+          level: a.level,
+          score: a.score,
+          status: a.status,
+          reviewedAt: a.reviewedAt ? iso(a.reviewedAt) : null,
+        })),
+      actions: async (scope) =>
+        (await prevention.list(scope)).map((a) => ({
+          id: a.id,
+          alertId: a.alertId,
+          title: a.title,
+          responsible: a.responsible,
+          dueDate: a.dueDate,
+          status: a.status,
+          progress: a.progress,
+          updatedAt: iso(a.updatedAt),
+        })),
+      commitmentRecords: async (scope) =>
+        (await recordReader.read(scope, ['Compromisos']))['Compromisos'] ?? [],
+    },
+    clock: deps.clock,
+  });
+  return {
+    config: deps.config,
+    identity,
+    tenancy,
+    records,
+    audit,
+    indicators,
+    analytics,
+    evidence,
+    documents,
+    intelligence,
+    prevention,
+    management,
+    clientIp: deps.clientIp,
+  };
+};
