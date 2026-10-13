@@ -14,7 +14,9 @@
     "format": "prettier --write .",
     "boundaries": "node scripts/check-boundaries.mjs",
     "check": "pnpm lint && pnpm boundaries && pnpm typecheck && pnpm test",
-    "e2e": "pnpm --filter @mascli/web build && pnpm --filter @mascli/e2e run e2e"
+    "e2e": "pnpm --filter @mascli/web build && pnpm --filter @mascli/e2e run e2e",
+    "verify": "bash scripts/verify.sh",
+    "odd:close": "node scripts/odd-close-task.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

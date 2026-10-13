@@ -9,7 +9,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "bench": "node bench/run.ts",
-    "migrate:legacy": "node src/tools/migrate-legacy/cli.ts"
+    "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
+    "bench:compare": "node bench/compare.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.9",
