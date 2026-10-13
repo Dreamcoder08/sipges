@@ -212,9 +212,9 @@ solo aplican si se elige posteriormente esa alternativa.
 | Créditos DOCX | Identificación neutral MASCLI, sin nombres personales inventados. |
 | Controles ADR 0009 | Integrados en la consolidación TypeScript. |
 | Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
-| Recursos de demo | Vercel y Blob privado creados; secretos bootstrap configurados. PostgreSQL gratuito pendiente de conexión. |
+| Recursos de demo | Vercel y Blob privado creados; PostgreSQL Neon vinculado por el propietario. Cuenta bootstrap persistida. |
 | Restore drill and an E2E run against the deployed URL | Not done |
-| Publicación de demo | Autorizada por el usuario para uso académico/personal y datos sintéticos. Pendiente conexión de PostgreSQL y verificación de la URL; no autoriza migración real ni servicios de pago. |
+| Publicación de demo | Publicada y comprobada para salud, login, sesión y logout. Pendientes inscripción MFA del propietario y smoke público de CRUD/Blob/PDF/DOCX. Solo datos sintéticos; sin migración real ni servicios de pago. |
 
 ## Not verifiable in the development environment
 
