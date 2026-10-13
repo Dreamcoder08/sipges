@@ -17,6 +17,8 @@ Fecha: 2026-10-13. Rama: `feat/typescript-migration-11-complete`. Código fijado
 
 Las pruebas nuevas cubren contratos, permisos, escrituras y descargas con alcance fijado, conservación de borradores, bloqueo de operaciones incompatibles, fallos/reintentos, cambio de proyecto durante operaciones, descarte de clasificación obsoleta y CSV seguro. El endpoint de geometría se comprobó contra otra empresa con el mismo identificador de proyecto: devuelve `available: false` y `data: null`.
 
+La primera ejecución remota detectó una incompatibilidad de la propia prueba de descarga: el `Blob` nativo de Node 22 no es aceptado por `FileReader` de jsdom. Se reprodujo con Node 22.23.3 y se corrigió leyendo cada implementación con su API, manteniendo la aserción de bytes, el alcance y la limpieza de URL. La comprobación focalizada pasó en Node 22 y Node 24; el código de descarga de producción no cambió.
+
 ## Navegador → API → datos → respuesta
 
 Chromium accedió a la SPA y Hono del mismo origen, con PGlite y archivos en un directorio temporal. Se usaron únicamente cuentas, registros y documentos sintéticos. Las once rutas nuevas cargaron las respuestas del backend real; no se sustituyó la API por mocks en esta comprobación.
