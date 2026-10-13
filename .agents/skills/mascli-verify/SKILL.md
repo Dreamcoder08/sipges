@@ -1,41 +1,20 @@
 ---
 name: mascli-verify
-description: "Trigger: before commit, push or PR, verify, pnpm check, run tests with PostgreSQL. Runs the full MASCLI gate with real PostgreSQL when available."
-license: Apache-2.0
-metadata:
-  author: Dreamcoder08
-  version: "1.0"
-allowed-tools: Bash(bash scripts/verify.sh*) Bash(pnpm verify*)
+description: "Use when MASCLI code, scripts or configuration must be verified before a commit, push, stacked PR, or after integrating a base branch. For documentation-only changes, check affected links and artifacts."
 ---
 
-## Activation Contract
+# Verificar MASCLI
 
-Use before every commit that will be pushed, and after merging a base branch.
+Desde la raíz, ejecuta `corepack pnpm verify`. El script propaga el estado de `pnpm check`: lint, formato, límites de dependencias, tipos y pruebas. Una comprobación fallida impide afirmar que el cambio está verificado.
 
-## Hard Rules
+Para PostgreSQL real, proporciona `MASCLI_TEST_DATABASE_URL` de un servidor **sintético** autorizado. El script no arranca servicios ni supone credenciales. Sin esa variable, las pruebas opcionales PostgreSQL quedan omitidas; PGlite sigue comprobándose. No imprimas la URL ni sus secretos.
 
-- Run `pnpm verify` (wraps `scripts/verify.sh`) from the repo root; never push on a non-zero exit.
-- The script starts a local PostgreSQL if one is installed and sets `MASCLI_TEST_DATABASE_URL`; never print or commit other database URLs.
-- Never skip, disable or quarantine a test to get green.
-- Fix formatting with `pnpm format` on changed files only, then re-run.
+Si hay cambios web, ejecuta `corepack pnpm --filter @mascli/web build`. Si existe `apps/e2e` y cambian flujos de usuario, ejecuta `corepack pnpm e2e`. Estas operaciones no migran datos reales ni despliegan.
 
-## Decision Gates
+En un cambio exclusivamente documental, comprueba enlaces y artefactos afectados. Archify usa `mascli-archify`; no repitas una suite aprobada si no cambió código ni apareció una preocupación nueva.
 
-| Output | Action |
-| --- | --- |
-| `PostgreSQL integration tests enabled` | Real-PG paths covered; report it. |
-| `PGlite only` | Say the PostgreSQL tests were skipped. |
-| A web `findBy*` timeout only on CI | Check lazy chunks / `asyncUtilTimeout` in `apps/web/src/test/setup.ts`. |
+Ante un fallo, identifica su causa, corrige y vuelve a comprobar lo afectado. Formatea archivos concretos con `corepack pnpm exec prettier --write <archivos>`. No elimines pruebas ni añadas excepciones para obtener verde.
 
-## Execution Steps
+Entrega comandos, resultados, conteos por paquete y si PostgreSQL real se ejecutó. Distingue resultados locales de CI y comprobaciones omitidas.
 
-1. `pnpm verify`
-2. On failure, read the first failing package's output, fix, repeat.
-
-## Output Contract
-
-Report pass/fail, test counts per package and whether PostgreSQL tests ran.
-
-## References
-
-- `scripts/verify.sh`, `package.json` (`check`), `.github/workflows/`
+Referencia: [skills oficiales de Codex](https://developers.openai.com/codex/skills/). Scripts: `scripts/verify.sh`, `package.json`; CI: `.github/workflows/ci.yml`.

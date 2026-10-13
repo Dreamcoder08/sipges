@@ -1,41 +1,24 @@
 ---
 name: mascli-odd-task
-description: "Trigger: continue ODD, close task, T<n> done, update ODD log. Picks the next ODD task and closes it with a log entry via script."
-license: Apache-2.0
-metadata:
-  author: Dreamcoder08
-  version: "1.0"
-allowed-tools: Bash(node scripts/odd-close-task.mjs*) Bash(pnpm odd:close*)
+description: "Use when an implemented MASCLI ODD task must be closed, its evidence recorded, or the next open task identified. A request to update the log alone does not prove task completion."
 ---
 
-## Activation Contract
+# Actualizar una tarea ODD
 
-Use when the user says "continúa con ODD" or a task in `odd/tasks/*.md` is finished.
+Lee `odd/tasks/typescript-hexagonal-migration.md` y los ADRs de la tarea. Preserva las especificaciones del usuario y los logs existentes. Comprueba que se completó lo pedido, que la verificación correspondiente pasó y que el PR existe; el script solo edita Markdown y no prueba esos requisitos.
 
-## Hard Rules
+Redacta evidencia breve en un archivo: cambio, comandos/resultados, revisión, límites y pendientes. No incluyas credenciales ni datos reales.
 
-- The plan is `odd/tasks/typescript-hexagonal-migration.md`; specs S1–S8 are the user's words, never edit them.
-- Close a task only after `mascli-verify` passes and its PR exists.
-- Never edit log numbers by hand; use the script, which appends `L<max+1>` after the highest entry.
-- Log entries state evidence: what changed, tests run, review findings, what stays pending. No real data, no credentials.
+Desde la raíz:
 
-## Decision Gates
+```bash
+corepack pnpm odd:close -- --task T14 --label "T14 E2E" --text @/tmp/evidence.txt --dry-run
+```
 
-| Situation | Action |
-| --- | --- |
-| Next task unclear | First `- T<n> [ ]` in the Tasks list. |
-| Task too big for one PR | Split into `T<n>a..` sub-bullets first, close each. |
-| User decision needed (domain, credits, deploy) | Record it as pending; do not decide. |
+Revisa que solo cambien la casilla de la tarea, `commit: see L<n>` y una entrada `L<max+1>`. Sustituye T14 por la tarea efectivamente completada. Ejecuta el mismo comando sin `--dry-run` y compromete el cambio con su verificación. Usa `--file` para otro ODD.
 
-## Execution Steps
+Una tarea ya cerrada no se vuelve a cerrar: el script rechaza la operación sin modificar el archivo. Añade correcciones de evidencia como cambios de documentación revisados, preservando el log original. Si falta una decisión necesaria para completar la tarea, registra el pendiente; no marques trabajo incompleto como terminado.
 
-1. `pnpm odd:close -- --task T<n> --label "T<n> <topic>" --text @/path/entry.txt --dry-run`
-2. Re-run without `--dry-run`; commit with the task's changes.
+Entrega tarea, entrada de log, PR y pendientes. La publicación usa `mascli-task-pr`; la verificación usa `mascli-verify`.
 
-## Output Contract
-
-Report the task closed, the new `L<n>` and what remains open.
-
-## References
-
-- `scripts/odd-close-task.mjs`, `docs/migration/`, `docs/adr/`
+Referencia: [skills oficiales de Codex](https://developers.openai.com/codex/skills/). Herramienta: `scripts/odd-close-task.mjs`.
