@@ -29,6 +29,8 @@ const boot = async (
     hostname: HOST,
     env: {
       MASCLI_COOKIE_SECURE: cookieSecure,
+      // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
+      MASCLI_REQUIRE_MFA: '0',
       MASCLI_DATA_KEY: secrets.dataKey,
       MASCLI_ADMIN_USERNAME: 'cookie-admin',
       MASCLI_ADMIN_PASSWORD: secrets.adminPassword,

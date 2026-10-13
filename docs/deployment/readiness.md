@@ -56,9 +56,9 @@ able to create databases. A database named `mascli_e2e_<random>` is created and 
       `MASCLI_WEB_DIR` points at `apps/web/dist`.
 - [ ] `NODE_ENV=production`. With it, the API refuses to start without `MASCLI_DATABASE_URL`, so
       embedded PGlite can never be used by mistake.
-- [ ] `render.yaml` and `Procfile` still describe the **legacy Python app** on Render Free, which
-      has ephemeral disk. Do not use them for the TypeScript app. Replace or remove them once the
-      hosting decision below is made.
+- [x] Los archivos de arranque Python históricos se han trasladado a `reference/python`; no se usan para desplegar el runtime TypeScript.
+
+La primera URL es una demo académica/personal con datos sintéticos: Vercel Hobby y el subdominio gratuito del proveedor sustituyen la necesidad inicial de dominio o túnel Cloudflare. No se migran datos reales. Los créditos de DOCX conservan la identificación neutral MASCLI; no se atribuyen autores sin indicación del usuario.
 
 ### 2. Environment variables and secrets
 
@@ -82,11 +82,7 @@ Names only. Values live in the host's secret store or a root-only env file, neve
 | `MASCLI_OLLAMA_URL` / `MASCLI_OLLAMA_EMBED_MODEL` | config | no | Semantic analysis. Without it, automatic mode falls back to rules. |
 | `NODE_ENV` | config | yes | `production` |
 
-The pending ADR 0009 work on branch `claude/project-thread-52hzow` is not merged into this chain
-yet. When it lands, it adds `MASCLI_ALLOWED_HOSTS` (set it to the public host name) and
-`MASCLI_REQUIRE_MFA` (default on; enroll the bootstrap admin at first sign-in). It also requires
-an `Origin` or `Referer` on every write. The E2E harness will then need `MASCLI_REQUIRE_MFA=0`, or
-it must enroll the admin first.
+ADR 0009 está integrado: configura `MASCLI_ALLOWED_HOSTS` con el host público. `MASCLI_REQUIRE_MFA` está activado por defecto; el administrador puede inscribir el autenticador en el primer acceso. Cada escritura exige `Origin` o `Referer`. La suite de paridad/cookies usa explícitamente MFA opcional; `03-mfa-required` comprueba por separado el alta obligatoria y el siguiente inicio de sesión.
 
 ### 3. PostgreSQL with a least-privilege role
 

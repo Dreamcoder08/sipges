@@ -76,15 +76,15 @@ jobs:
           retention-days: 7
 
   python-legacy:
-    name: Python legacy app (pytest)
+    name: Frozen Python parity reference (pytest)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version-file: .python-version
+          python-version-file: reference/python/.python-version
           cache: pip
-          cache-dependency-path: requirements-test.txt
-      - run: pip install -r requirements-test.txt
-      - run: python -m pytest -q tests
+          cache-dependency-path: reference/python/requirements-test.txt
+      - run: pip install -r reference/python/requirements-test.txt
+      - run: PYTHONPATH=reference/python python -m pytest -q reference/python/tests

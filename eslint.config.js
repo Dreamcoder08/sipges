@@ -10,7 +10,7 @@ export default tseslint.config(
       '**/dist/**',
       '**/coverage/**',
       '.venv/**',
-      'static/**',
+      'reference/python/static/**',
       '**/test-results/**',
       '**/playwright-report/**',
     ],

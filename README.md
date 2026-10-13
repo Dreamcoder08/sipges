@@ -30,9 +30,11 @@ Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron 
 
 ## Estado del ODD
 
-El mapa se basa en `feat/typescript-migration-11-complete`, commit `90c6b0e6b547eb837e70dcf01d9998ae86707d4c`: T1–T11 figuran completos. La API y todas las secciones web están implementadas en TypeScript: acceso/MFA, proyectos, registros/evidencias, IRSA/validación, análisis/documentos, mapa, inteligencia/prevención, gerencia, administración y auditoría.
+T1–T14 están completos en el ODD: API y secciones web en TypeScript, benchmarks, migrador con ensayo sintético y paridad E2E. La integración incorpora los controles de ADR 0009: MFA obligatorio por defecto, comprobación de origen en escrituras y hosts permitidos. El primer acceso permite configurar un autenticador antes de seleccionar proyecto.
 
-T12 (benchmarks), T13 (migración de datos) y T14 (paridad E2E completa y preparación del despliegue) siguen pendientes. Consulta [la verificación de T11](docs/migration/t11-verification.md). El runtime nuevo no necesita Python; `app.py`, `static/` y sus pruebas siguen en el repositorio como referencia legada. Esto no significa que toda la migración esté terminada ni que el modelo IRSA tenga validación científica externa.
+Consulta [la verificación de T14](docs/migration/t14-verification.md) y [la consolidación](docs/migration/main-consolidation.md). El runtime usa únicamente TypeScript. La referencia Python congelada está en [`reference/python`](reference/python/README.md) y se conserva para pruebas de paridad y del migrador. La validación científica externa del IRSA sigue siendo un proceso separado.
+
+La primera publicación será una demo académica/personal, con datos sintéticos y una URL gratuita del proveedor. No requiere comprar un dominio de Cloudflare ni migrar datos reales. Estado y configuración en [la guía de despliegue](docs/deployment/readiness.md).
 
 ## Desarrollo local
 

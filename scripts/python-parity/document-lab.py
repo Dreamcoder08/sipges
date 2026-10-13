@@ -5,7 +5,8 @@ Usage (needs the legacy requirements): python3 -I scripts/python-parity/document
 app.py may create its local data files in the working directory).
 """
 import base64, io, json, sys
-sys.path.insert(0, sys.argv[1])
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]) / 'reference' / 'python'))
 import app  # noqa: E402
 from docx import Document
 

@@ -15,14 +15,14 @@ import type { FeatureContext } from '../shared/api/feature-context.ts';
 import type { RecordModule } from '../features/records/modules.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
-import { LoginPage, UserMenu, meQuery } from '../features/auth/index.ts';
+import { LoginPage, UserMenu, MfaEnrollmentPage, logout, meQuery } from '../features/auth/index.ts';
 import {
   ProjectSwitcher,
   SelectProjectPage,
   currentScopeQuery,
   scopesQuery,
 } from '../features/tenancy/index.ts';
-import { isApiError } from '../shared/api/client.ts';
+import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { AppShell } from './layout/AppShell.tsx';
 
@@ -104,6 +104,32 @@ const requireSession = async (queryClient: QueryClient, href: string) => {
   return me;
 };
 
+const mfaRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mfa',
+  beforeLoad: async ({ context, location }) => ({
+    me: await requireSession(context.queryClient, location.href),
+  }),
+  component: function MfaRoute() {
+    const { queryClient } = mfaRoute.useRouteContext();
+    const router = useRouter();
+    return (
+      <MfaEnrollmentPage
+        onEnabled={async () => {
+          queryClient.clear();
+          await router.invalidate();
+          await router.navigate({ to: '/' });
+        }}
+        onSignOut={async () => {
+          await logout();
+          queryClient.clear();
+          await router.navigate({ to: '/login', search: {} });
+        }}
+      />
+    );
+  },
+});
+
 const selectProjectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/proyecto',
@@ -135,6 +161,7 @@ const appRoute = createRoute({
       const scope = await context.queryClient.fetchQuery(currentScopeQuery);
       return { me, scope };
     } catch (error) {
+      if (isMfaRequired(error)) throw redirect({ to: '/mfa' });
       if (isApiError(error, 403)) throw redirect({ to: '/proyecto' });
       throw error;
     }
@@ -288,6 +315,7 @@ const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePa
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  mfaRoute,
   selectProjectRoute,
   appRoute.addChildren([dashboardRoute, ...recordRoutes, ...featureRoutes]),
 ]);

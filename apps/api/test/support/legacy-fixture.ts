@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-const APP_PY = new URL('../../../../app.py', import.meta.url);
+const APP_PY = new URL('../../../../reference/python/app.py', import.meta.url);
 
 /**
  * Pulls `CREATE TABLE IF NOT EXISTS <name>(...)` out of app.py by balancing parentheses.

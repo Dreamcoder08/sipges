@@ -7,5 +7,5 @@
 ## Cómo se probó
 
 - [ ] `pnpm check` (lint, límites de capas, typecheck, tests)
-- [ ] `python -m pytest -q tests` si toca la app Python legada
+- [ ] `PYTHONPATH=reference/python python -m pytest -q reference/python/tests` si toca la app Python legada
 - [ ] Docs/ADR actualizados si cambia una decisión de arquitectura

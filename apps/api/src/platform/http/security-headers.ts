@@ -20,7 +20,8 @@ export const securityHeaders =
     c.header('X-Frame-Options', 'DENY');
     c.header('Referrer-Policy', 'no-referrer');
     c.header('Cache-Control', 'no-store');
-    c.header('Content-Security-Policy', API_CSP);
+    // A trusted SPA middleware supplies its stricter policy for bundled assets.
+    if (!c.res.headers.has('Content-Security-Policy')) c.header('Content-Security-Policy', API_CSP);
     c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     if (options.hsts) c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   };

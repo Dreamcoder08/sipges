@@ -80,3 +80,10 @@ export const requestJson = async <S extends z.ZodType>(
   schema: S,
   options: RequestOptions = {},
 ): Promise<z.infer<S>> => schema.parse(await (await request(path, options)).json());
+
+export const isMfaRequired = (error: unknown): boolean =>
+  isApiError(error, 403) &&
+  error.body !== null &&
+  typeof error.body === 'object' &&
+  'mfa_required' in error.body &&
+  error.body.mfa_required === true;

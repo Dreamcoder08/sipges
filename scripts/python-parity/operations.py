@@ -6,7 +6,8 @@ create local data files there:
     <repo>/apps/api/test/intelligence/python-parity.fixture.json
 """
 import json, sys
-sys.path.insert(0, sys.argv[1])
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]) / 'reference' / 'python'))
 import app  # noqa: E402
 
 payloads = [

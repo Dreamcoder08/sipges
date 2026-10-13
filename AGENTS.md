@@ -1,7 +1,7 @@
 # Agent guide
 
 MASCLI is a pnpm TypeScript monorepo (`apps/api` Hono + PostgreSQL, `apps/web` React/Vite,
-`packages/*`). The Python `app.py` is the legacy behavioural specification only. Work is planned
+`packages/*`). The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
 in `odd/tasks/typescript-hexagonal-migration.md`; decisions live in `docs/adr/`.
 
 ## Skills de Codex (`.agents/skills/`)

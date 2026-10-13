@@ -9,13 +9,21 @@ import './styles/global.css';
 export const App = () => {
   const [{ router, queryClient }] = useState(() => {
     const holder: { router?: ReturnType<typeof createAppRouter> } = {};
-    const queryClient = createQueryClient(() => {
-      queryClient.clear();
-      const current = holder.router?.state.location.href ?? '/';
-      if (!current.startsWith('/login')) {
-        void holder.router?.navigate({ to: '/login', search: { redirect: current } });
-      }
-    });
+    const queryClient = createQueryClient(
+      () => {
+        queryClient.clear();
+        const current = holder.router?.state.location.href ?? '/';
+        if (!current.startsWith('/login')) {
+          void holder.router?.navigate({ to: '/login', search: { redirect: current } });
+        }
+      },
+      () => {
+        if (holder.router?.state.location.pathname !== '/mfa') {
+          queryClient.clear();
+          void holder.router?.navigate({ to: '/mfa' });
+        }
+      },
+    );
     holder.router = createAppRouter(queryClient);
     return { router: holder.router, queryClient };
   });
