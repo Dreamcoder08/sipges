@@ -1,4 +1,6 @@
 import { Hono } from 'hono';
+import { fileURLToPath } from 'node:url';
+import { securityHeaders } from '../../api/src/platform/http/security-headers.ts';
 import { bodyLimit } from 'hono/body-limit';
 import { privateBlobStorage } from './blob-storage.ts';
 import { createApp } from '../../api/src/app.ts';
@@ -6,11 +8,14 @@ import { buildContainer } from '../../api/src/compose.ts';
 import { loadConfig } from '../../api/src/platform/config.ts';
 import { openDatabase } from '../../api/src/platform/database/open.ts';
 import { loadMigrations, migrate } from '../../api/src/platform/database/migrator.ts';
-import { fileWebAssets } from '../../api/src/platform/http/spa.ts';
+import { spaMiddleware, fileWebAssets } from '../../api/src/platform/http/spa.ts';
 import { createHostedApp } from './lazy-app.ts';
 
 /** Vercel entrypoint; the normal API remains the only source of business behavior. */
+const web = fileWebAssets(fileURLToPath(new URL('../public/', import.meta.url)));
 const app = new Hono()
+  .use('*', securityHeaders({ hsts: true }))
+  .use('*', spaMiddleware(web))
   .use(
     '*',
     bodyLimit({
@@ -55,7 +60,7 @@ const app = new Hono()
           // This adapter is exclusively for Vercel, which sets the trusted proxy header.
           clientIp: (c) => c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
         });
-        return createApp(container, { web: fileWebAssets(config.webDir ?? '') });
+        return createApp(container);
       } catch (error) {
         await database.close();
         throw error;
