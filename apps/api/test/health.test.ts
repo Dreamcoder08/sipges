@@ -1,9 +1,9 @@
 import { HealthResponse } from '@mascli/contracts';
 import { describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.ts';
-import { loadConfig } from '../src/platform/config.ts';
+import { createTestApp } from './support/test-app.ts';
 
-const app = createApp({ config: loadConfig({}) });
+const t = await createTestApp();
+const { app } = t;
 
 describe('GET /health', () => {
   it('returns the Python health payload anonymously', async () => {
@@ -26,8 +26,15 @@ describe('GET /health', () => {
     expect(res.headers.get('cache-control')).toBe('no-store');
   });
 
-  it('answers unknown routes with a FastAPI-compatible 404 body', async () => {
+  it('requires a session before revealing whether a route exists (parity with app.py middleware)', async () => {
     const res = await app.request('/does-not-exist');
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+  });
+
+  it('answers unknown routes with a FastAPI-compatible 404 body for signed-in users', async () => {
+    const { cookie } = await t.login('admin', 'admin-password-123');
+    const res = await t.request('/does-not-exist', { headers: { cookie } });
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ detail: 'Not Found' });
   });

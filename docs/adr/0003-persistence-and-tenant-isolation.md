@@ -13,6 +13,9 @@ Python uses one SQLite file per tenant plus a global auth database, JSON setting
 - Per-tenant settings (IRSA config, indicator config) move to a `tenant_settings` table seeded from the JSON defaults.
 - Tests use **PGlite** (real Postgres compiled to WASM, in-process) so RLS and SQL are exercised without Docker; Docker Postgres for end-to-end.
 
+## Amendment (T4)
+Drizzle ORM is not used. Repositories write explicit parameterized SQL through a small `SqlClient` port (`apps/api/src/platform/database/sql-client.ts`) implemented by PGlite and postgres.js, and schema changes are hand-written, versioned `.sql` migrations applied by `migrator.ts`, each in its own transaction. Reasons: RLS policies, `SET LOCAL` and grants are plain SQL anyway; one port keeps tests (PGlite) and production (postgres.js) on the same code path; no generated code to review. Drizzle can still be adopted later behind the same port if query volume justifies it.
+
 ## Alternatives rejected
 - Schema-per-tenant: stronger isolation, but migrations scale with tenant count and `search_path` breaks under transaction poolers.
 - Database-per-tenant: mirrors Python, impossible on free tiers.

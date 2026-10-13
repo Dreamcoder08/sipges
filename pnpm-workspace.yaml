@@ -9,6 +9,7 @@ minimumReleaseAgeExclude:
   - '@vitest/spy@5.0.4'
   - vitest@5.0.4
   - zod@4.6.7
+  - '@electric-sql/pglite@0.5.9'
 
 packageExtensions:
   dependency-cruiser:

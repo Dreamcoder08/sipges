@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../src/platform/config.ts';
+import { loadConfig as load } from '../src/platform/config.ts';
+import { TEST_ENV } from './support/test-app.ts';
+
+const loadConfig = (env: Record<string, string>) => load({ ...TEST_ENV, ...env });
 
 describe('cookie Secure policy (parity with app.py:10-18, docs/secure-cookies.md)', () => {
   it('defaults to Secure when MASCLI_COOKIE_SECURE is unset', () => {
@@ -39,6 +42,65 @@ describe('listen address', () => {
   it.each(['0', '65536', 'abc', '80.5', '', '-1'])('rejects port %j', (value) => {
     expect(() => loadConfig({ MASCLI_PORT: value })).toThrow(
       'MASCLI_PORT must be an integer between 1 and 65535',
+    );
+  });
+});
+
+describe('MASCLI_DATA_KEY (ADR 0004)', () => {
+  it('is required', () => {
+    expect(() => load({})).toThrow('MASCLI_DATA_KEY is required (base64, 32 bytes)');
+  });
+
+  it.each(['', 'not-base64!', Buffer.alloc(16).toString('base64')])('rejects %j', (value) => {
+    expect(() => loadConfig({ MASCLI_DATA_KEY: value })).toThrow(
+      'MASCLI_DATA_KEY must decode to 32 bytes',
+    );
+  });
+
+  it('decodes a 32-byte base64 key', () => {
+    expect(loadConfig({}).dataKey).toHaveLength(32);
+  });
+});
+
+describe('bootstrap admin settings', () => {
+  it('defaults like Python with the neutral display name of ADR 0008 #13', () => {
+    expect(load({ MASCLI_DATA_KEY: TEST_ENV.MASCLI_DATA_KEY })).toMatchObject({
+      admin: { username: 'admin', password: '', fullName: 'Administrator' },
+    });
+  });
+
+  it('normalizes the admin username', () => {
+    expect(loadConfig({ MASCLI_ADMIN_USERNAME: '  Jefa ' }).admin.username).toBe('jefa');
+  });
+});
+
+describe('production database guard (verifier finding S1)', () => {
+  it('refuses embedded PGlite when NODE_ENV=production', () => {
+    expect(() => loadConfig({ NODE_ENV: 'production' })).toThrow(
+      'MASCLI_DATABASE_URL is required when NODE_ENV=production',
+    );
+  });
+
+  it('accepts production with a database URL', () => {
+    expect(
+      loadConfig({
+        NODE_ENV: 'production',
+        MASCLI_DATABASE_URL: 'postgres://u:p@db.example:5432/m',
+      }).databaseUrl,
+    ).toBe('postgres://u:p@db.example:5432/m');
+  });
+});
+
+describe('MASCLI_TRUST_PROXY', () => {
+  it('defaults to not trusting forwarded headers', () => {
+    expect(loadConfig({}).trustProxy).toBe(false);
+  });
+
+  it('accepts exactly 0 or 1', () => {
+    expect(loadConfig({ MASCLI_TRUST_PROXY: '1' }).trustProxy).toBe(true);
+    expect(loadConfig({ MASCLI_TRUST_PROXY: '0' }).trustProxy).toBe(false);
+    expect(() => loadConfig({ MASCLI_TRUST_PROXY: 'yes' })).toThrow(
+      "MASCLI_TRUST_PROXY must be unset or exactly '0' or '1'",
     );
   });
 });

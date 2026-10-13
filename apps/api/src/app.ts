@@ -1,19 +1,22 @@
 import type { ErrorResponse } from '@mascli/contracts';
 import { Hono } from 'hono';
+import type { Container } from './compose.ts';
+import { authMiddleware } from './contexts/identity/http/auth-middleware.ts';
+import { authRoutes } from './contexts/identity/http/auth-routes.ts';
 import { healthRoutes } from './contexts/system/http/health.routes.ts';
-import type { AppConfig } from './platform/config.ts';
+import type { AppEnv } from './platform/http/env.ts';
 import { securityHeaders } from './platform/http/security-headers.ts';
 
-export type AppDeps = {
-  readonly config: AppConfig;
-};
+/** Builds the HTTP application from an already-wired container (no I/O here). */
+export const createApp = (container: Container) => {
+  const { config, identity, clientIp } = container;
+  const app = new Hono<AppEnv>();
 
-/** Builds the HTTP application from already-constructed dependencies (no I/O here). */
-export const createApp = (_deps: AppDeps) => {
-  const app = new Hono();
+  app.use('*', securityHeaders({ hsts: config.cookieSecure }));
+  app.use('*', authMiddleware(identity));
 
-  app.use('*', securityHeaders());
   app.route('/', healthRoutes());
+  app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
 
   app.notFound((c) => c.json({ detail: 'Not Found' } satisfies ErrorResponse, 404));
   app.onError((error, c) => {

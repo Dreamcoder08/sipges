@@ -17,6 +17,7 @@ User decision L7: fix the defects in behavior contract §8 in the TypeScript ver
 11. **Open/closed states:** one shared `ClosedStates` policy used by dashboard, analysis and IRSA.
 12. **Dead code** is not ported; IRSA reports the configuration file's version.
 13. **No personal names** hard-coded; bootstrap display name comes from `MASCLI_ADMIN_FULL_NAME` (default `Administrator`).
+14. **Timestamps** are stored as `timestamptz` and returned as UTC ISO-8601 with seconds and a `Z` suffix (`2026-10-12T12:00:00Z`). Python returned naive server-local time (`datetime.now().isoformat(timespec="seconds")`), which is ambiguous across hosts.
 
 ## Consequences
 - Each item is a named test in the owning context; the parity suite marks these as intentional differences.
