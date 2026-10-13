@@ -8,6 +8,9 @@ import { createSecretCipher } from './contexts/identity/infrastructure/secret-ci
 import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
 import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
 import { totp } from './contexts/identity/infrastructure/totp.ts';
+import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
+import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
+import { createSqlTenancyStore } from './contexts/tenancy/infrastructure/sql-tenancy-store.ts';
 import type { AppConfig } from './platform/config.ts';
 import type { SqlClient } from './platform/database/sql-client.ts';
 import type { ClientIp } from './platform/http/env.ts';
@@ -15,6 +18,7 @@ import type { ClientIp } from './platform/http/env.ts';
 export type Container = {
   readonly config: AppConfig;
   readonly identity: IdentityService;
+  readonly tenancy: TenancyService;
   readonly clientIp: ClientIp;
 };
 
@@ -34,5 +38,18 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   await identity.bootstrapAdmin(deps.config.admin);
-  return { config: deps.config, identity, clientIp: deps.clientIp };
+  const tenancy = createTenancyService({
+    store: createSqlTenancyStore(deps.sql),
+    dataReader: createSqlTenantDataReader(deps.sql),
+    users: {
+      exists: (username) => identity.userExists(username),
+      adminUsernames: async () =>
+        (await identity.listAccounts())
+          .filter((user) => user.role === 'admin')
+          .map((user) => user.username),
+    },
+    clock: deps.clock,
+  });
+  await tenancy.bootstrap();
+  return { config: deps.config, identity, tenancy, clientIp: deps.clientIp };
 };

@@ -27,6 +27,8 @@ export type IdentityStore = {
     at: Date,
   ): Promise<boolean>;
   listAccounts(): Promise<AccountSummary[]>;
+  /** Atomically disables the user and deletes sessions; serializes the last-admin guard. */
+  deactivateUser(username: string): Promise<'deactivated' | 'missing' | 'last_admin'>;
   updatePasswordHash(username: string, passwordHash: string): Promise<void>;
   /** Stores a new pending secret only while MFA is disabled; returns false otherwise. */
   startTotpEnrollment(username: string, sealedSecret: string): Promise<boolean>;
@@ -35,7 +37,8 @@ export type IdentityStore = {
   /** Records a consumed step only if it is newer than the stored one; false means replay. */
   consumeTotpStep(username: string, step: number): Promise<boolean>;
 
-  createSession(tokenHash: string, username: string, expiresAt: Date, at: Date): Promise<void>;
+  /** False when deactivation won the race; holds a user-row lock through session insertion. */
+  createSession(tokenHash: string, username: string, expiresAt: Date, at: Date): Promise<boolean>;
   findSessionIdentity(tokenHash: string, at: Date): Promise<Identity | null>;
   deleteSession(tokenHash: string): Promise<void>;
   purgeExpiredSessions(at: Date): Promise<void>;

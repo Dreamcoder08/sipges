@@ -94,5 +94,25 @@ export const createTestApp = async (env: Record<string, string> = {}) => {
       body: JSON.stringify(account),
     });
 
-  return { app, db, sql, clock, request, form, login, createAccount };
+  const grant = async (adminCookie: string, username: string, scope = 'MASCLI/PRJ-SECHURA') => {
+    const [company_id, project_id] = scope.split('/');
+    const res = await request('/system/auth/grants', {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ username, company_id, project_id }),
+    });
+    if (res.status !== 200) throw new Error(`grant failed: ${res.status} ${await res.text()}`);
+  };
+
+  const createScope = async (
+    adminCookie: string,
+    body: { company_id: string; project_id: string; label: string; username: string },
+  ) =>
+    request('/system/auth/scopes', {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  return { app, db, sql, clock, request, form, login, createAccount, grant, createScope };
 };

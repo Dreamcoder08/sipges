@@ -1,0 +1,161 @@
+import { describe, expect, it, vi } from 'vitest';
+import { createTestApp } from '../support/test-app.ts';
+
+const setup = async () => {
+  const t = await createTestApp();
+  const admin = await t.login('admin', 'admin-password-123');
+  // Synthetic future business table, exercising the real exporter and RLS boundary.
+  await t.sql.exec(`
+    CREATE TABLE module_records (tenant_id text NOT NULL, id text NOT NULL, payload jsonb NOT NULL, PRIMARY KEY(tenant_id,id));
+    ALTER TABLE module_records ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE module_records FORCE ROW LEVEL SECURITY;
+    CREATE POLICY tenant_export ON module_records
+      USING (tenant_id = current_setting('app.tenant_id', true))
+      WITH CHECK (tenant_id = current_setting('app.tenant_id', true));
+    GRANT SELECT ON module_records TO mascli_tenant;
+    INSERT INTO module_records VALUES
+      ('MASCLI/PRJ-SECHURA','a','{"name":"Sechura-only"}'),
+      ('ACME/NORTE','b','{"name":"North-only"}');
+  `);
+  return { t, admin };
+};
+const exportRequest = (
+  t: Awaited<ReturnType<typeof createTestApp>>,
+  cookie: string,
+  scope?: string,
+) =>
+  t.request('/system/export', {
+    headers: { cookie, ...(scope ? { 'x-mascli-scope': scope } : {}) },
+  });
+const expected = (
+  company = 'MASCLI',
+  project = 'PRJ-SECHURA',
+  id = 'a',
+  name = 'Sechura-only',
+) => ({
+  format: 'mascli.tenant-export',
+  version: 1,
+  scope: { company_id: company, project_id: project },
+  exported_at: '2026-10-12T12:00:00Z',
+  data: {
+    module_records: [{ tenant_id: `${company}/${project}`, id, payload: { name } }],
+    audit: [],
+    attachments: [],
+  },
+});
+
+describe('GET /system/export versioned tenant JSON', () => {
+  it('downloads only active-tenant business data without auth tables or credentials', async () => {
+    const { t, admin } = await setup();
+    const res = await exportRequest(t, admin.cookie);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('application/json; charset=UTF-8');
+    expect(res.headers.get('content-disposition')).toBe(
+      'attachment; filename="mascli-tenant.json"',
+    );
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    const text = await res.text();
+    expect(JSON.parse(text)).toEqual(expected());
+    for (const forbidden of [
+      'North-only',
+      'password_hash',
+      'token_hash',
+      'totp_secret',
+      '$argon2id$',
+    ]) {
+      expect(text).not.toContain(forbidden);
+    }
+    expect(await (await exportRequest(t, admin.cookie)).json()).toEqual(expected());
+  });
+
+  it('honours selected granted tenant and restores identity access after export', async () => {
+    const { t, admin } = await setup();
+    expect(
+      (
+        await t.createScope(admin.cookie, {
+          company_id: 'ACME',
+          project_id: 'NORTE',
+          label: 'North',
+          username: 'admin',
+        })
+      ).status,
+    ).toBe(200);
+    const north = await exportRequest(t, admin.cookie, 'ACME/NORTE');
+    expect(north.status).toBe(200);
+    expect(await north.json()).toEqual(expected('ACME', 'NORTE', 'b', 'North-only'));
+    const south = await exportRequest(t, admin.cookie, 'MASCLI/PRJ-SECHURA');
+    expect(await south.json()).toEqual(expected());
+    const me = await t.request('/system/auth/me', { headers: { cookie: admin.cookie } });
+    expect(me.status).toBe(200);
+    expect(await me.json()).toMatchObject({ username: 'admin' });
+  });
+
+  it('requires a session and admin role without changing exported data', async () => {
+    const { t, admin } = await setup();
+    const anon = await t.request('/system/export');
+    expect(anon.status).toBe(401);
+    expect(await anon.json()).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+    expect(
+      (
+        await t.createAccount(admin.cookie, {
+          username: 'reader',
+          full_name: 'Reader',
+          password: 'reader-password-123',
+          role: 'consulta',
+        })
+      ).status,
+    ).toBe(200);
+    await t.grant(admin.cookie, 'reader');
+    const user = await t.login('reader', 'reader-password-123');
+    const denied = await exportRequest(t, user.cookie);
+    expect(denied.status).toBe(403);
+    expect(await denied.json()).toEqual({ detail: 'Requiere rol administrador' });
+    expect(await (await exportRequest(t, admin.cookie)).json()).toEqual(expected());
+  });
+
+  it('rejects an ungranted tenant and mismatching project query before export', async () => {
+    const { t, admin } = await setup();
+    const ungranted = await exportRequest(t, admin.cookie, 'OTHER/SECRET');
+    expect(ungranted.status).toBe(403);
+    expect(await ungranted.json()).toEqual({
+      detail: 'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project',
+      projects: ['MASCLI/PRJ-SECHURA'],
+    });
+    const mismatch = await t.request('/system/export?project_id=NORTE', {
+      headers: { cookie: admin.cookie },
+    });
+    expect(mismatch.status).toBe(403);
+    expect(await mismatch.json()).toEqual({ detail: 'Proyecto fuera de alcance' });
+    expect(await (await exportRequest(t, admin.cookie)).json()).toEqual(expected());
+  });
+
+  it('exports empty arrays for business contexts not installed yet', async () => {
+    const t = await createTestApp();
+    const admin = await t.login('admin', 'admin-password-123');
+    const res = await exportRequest(t, admin.cookie);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      ...expected(),
+      data: { module_records: [], audit: [], attachments: [] },
+    });
+  });
+
+  it('fails closed on missing table privileges without returning partial data', async () => {
+    const { t, admin } = await setup();
+    await t.sql.exec(
+      "CREATE TABLE audit (tenant_id text, id text); INSERT INTO audit VALUES ('ACME/NORTE','hidden');",
+    );
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const res = await exportRequest(t, admin.cookie);
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({ detail: 'Internal Server Error' });
+      expect(log).toHaveBeenCalledTimes(1);
+      const me = await t.request('/system/auth/me', { headers: { cookie: admin.cookie } });
+      expect(me.status).toBe(200);
+      expect(await me.json()).toMatchObject({ username: 'admin' });
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
