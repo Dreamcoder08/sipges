@@ -111,7 +111,12 @@ const MIN_SEGMENT_LENGTH = 20;
 export const takeCodePoints = (text: string, count: number) =>
   Array.from(text).slice(0, count).join('');
 
-const codePointLength = (text: string) => Array.from(text).length;
+/**
+ * Whether `text` has fewer than `n` code points. A code point takes one or two UTF-16 units,
+ * so only lengths between n and 2n need counting.
+ */
+const hasFewerCodePoints = (text: string, n: number) =>
+  text.length < n || (text.length < 2 * n && Array.from(text).length < n);
 
 /** `unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')`: accents folded away. */
 export const foldAscii = (text: string) => text.normalize('NFKD').replace(/\P{ASCII}/gu, '');
@@ -130,9 +135,12 @@ export const documentInsights = (chunks: readonly TextChunk[]) => {
   const items: Finding[] = [];
   const counts = new Map<string, number>();
   for (const { location, text } of chunks) {
+    // Nothing is added after MAX_FINDINGS, so the rest of the document cannot change the result.
+    if (items.length === MAX_FINDINGS) break;
     for (const raw of text.split(SEGMENT_BREAK)) {
+      if (items.length === MAX_FINDINGS) break;
       const segment = collapseWhitespace(raw);
-      if (codePointLength(segment) < MIN_SEGMENT_LENGTH) continue;
+      if (hasFewerCodePoints(segment, MIN_SEGMENT_LENGTH)) continue;
       const simplified = foldAscii(segment.toLowerCase());
       for (const [theme, words] of FOLDED_TERMS) {
         const hits = words.filter((w) => simplified.includes(w.folded)).map((w) => w.word);
@@ -212,12 +220,13 @@ export const MAX_COMPARISONS = 40;
  */
 export const compareFindings = (a: readonly Finding[], b: readonly Finding[]) => {
   const candidates: ComparisonCandidate[] = [];
+  // Fingerprints of the second document are computed once (ADR 0005, T12), not per pair.
+  const right = b.map((ib) => ({ ib, fb: fingerprint(ib.fragmento) }));
   for (const ia of a) {
     const fa = fingerprint(ia.fragmento);
     if (fa.size === 0) continue;
-    for (const ib of b) {
+    for (const { ib, fb } of right) {
       if (ia.tema !== ib.tema) continue;
-      const fb = fingerprint(ib.fragmento);
       const overlap = [...fa].filter((word) => fb.has(word));
       if (overlap.length < 2) continue;
       const union = new Set([...fa, ...fb]).size;

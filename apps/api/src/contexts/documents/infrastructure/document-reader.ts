@@ -1,6 +1,6 @@
 import { strFromU8, unzipSync } from 'fflate';
-import { getDocumentProxy } from 'unpdf';
 import type { DocumentReader, DocxContent } from '../application/index.ts';
+import { createPdfWorkerPool } from './pdf-worker-pool.ts';
 
 const DOCUMENT_PART = 'word/document.xml';
 /** Upper bound for the uncompressed body part; a larger one is treated as a zip bomb. */
@@ -94,29 +94,12 @@ const docxContent = (xml: string): DocxContent => {
   };
 };
 
-/** PDF text via pdf.js (unpdf) and DOCX text via fflate; nothing touches the filesystem. */
+/** PDF parsing blocks for hundreds of ms on large files, so it runs off the event loop (T12). */
+const pdfWorkers = createPdfWorkerPool();
+
+/** PDF text via pdf.js (unpdf) in worker threads and DOCX text via fflate; no filesystem. */
 export const documentReader: DocumentReader = {
-  async readPdf(bytes, maxPages) {
-    // pdf.js transfers the buffer it is given, so it gets its own copy.
-    const pdf = await getDocumentProxy(new Uint8Array(bytes));
-    try {
-      if (pdf.numPages > maxPages) return { kind: 'too_many_pages' };
-      const pages: string[] = [];
-      for (let n = 1; n <= pdf.numPages; n += 1) {
-        const page = await pdf.getPage(n);
-        const content = await page.getTextContent();
-        pages.push(
-          content.items
-            .map((item) => ('str' in item ? item.str + (item.hasEOL ? '\n' : '') : ''))
-            .join(''),
-        );
-        page.cleanup();
-      }
-      return { kind: 'pages', pages };
-    } finally {
-      await pdf.loadingTask.destroy();
-    }
-  },
+  readPdf: (bytes, maxPages) => pdfWorkers.read(bytes, maxPages),
 
   async readDocx(bytes) {
     const files = unzipSync(bytes, {

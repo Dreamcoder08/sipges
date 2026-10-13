@@ -108,11 +108,12 @@ export const createIntelligenceService = (deps: {
     };
     if (input.mode === 'rules') return ok(report);
     try {
-      const content = await embeddings.embed(input.text.trim());
       const entries = Object.entries(SEMANTIC_CONCEPTS);
-      const vectors = await Promise.all(
-        entries.map(([, description]) => conceptVector(description)),
-      );
+      // The text and any uncached concept are embedded concurrently: one model round trip.
+      const [content, vectors] = await Promise.all([
+        embeddings.embed(input.text.trim()),
+        Promise.all(entries.map(([, description]) => conceptVector(description))),
+      ]);
       const scored = entries
         .map(([theme, reference], i) => ({
           theme,

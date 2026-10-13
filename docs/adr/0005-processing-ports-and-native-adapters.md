@@ -13,6 +13,7 @@ User requirement S4: Go or Rust "where it should be" for performance and scalabi
 ## Consequences
 - No second language unless the numbers demand it; when they do, swapping is an adapter change, not a rewrite.
 - Benchmark results are recorded in `docs/benchmarks/` with method and hardware.
+- T12 (2026-10-13): the gate did not trip. Algorithmic fixes (candidate links, finding comparison), a PDF worker-thread pool and concurrent embeddings kept every 10× scenario under 500 ms p95 and 50 ms of loop block; no Go/Rust adapter (docs/benchmarks/README.md).
 
 ## References
 Brendan Gregg "Systems Performance"; Node.js "Don't Block the Event Loop" guide.

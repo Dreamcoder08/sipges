@@ -49,6 +49,22 @@ describe('Python parity (scripts/python-parity/document-lab.py)', () => {
 });
 
 describe('document insights', () => {
+  it('measures the minimum segment length in code points, not UTF-16 units', () => {
+    const segment = (emoji: number) => `agua ${'😀'.repeat(emoji)}`;
+    // 5 + 14 = 19 code points (33 UTF-16 units) is too short; 5 + 15 = 20 is kept.
+    expect(documentInsights([{ location: 'L1', text: segment(14) }]).items).toHaveLength(0);
+    expect(documentInsights([{ location: 'L1', text: segment(15) }]).items).toHaveLength(1);
+  });
+
+  it('stops at 75 findings with the same result as a full scan', () => {
+    const line = 'La asamblea pidió empleo, un acuerdo, evidencia, diálogo, inversión y agua.';
+    const chunks = Array.from({ length: 200 }, (_, i) => ({ location: `L${i}`, text: line }));
+    const { items, themes } = documentInsights(chunks);
+    expect(items).toHaveLength(75);
+    expect(items.at(-1)?.id).toBe('H075');
+    expect(Object.values(themes).reduce((a, b) => a + b, 0)).toBe(75);
+  });
+
   it('skips segments shorter than 20 characters and folds accents in both directions', () => {
     const { items } = documentInsights([
       { location: 'Línea 1', text: 'Mesa corta.' },
