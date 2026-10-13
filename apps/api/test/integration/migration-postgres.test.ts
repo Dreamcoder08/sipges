@@ -79,9 +79,14 @@ describe.skipIf(!adminUrl)('legacy migration on real PostgreSQL', () => {
     expect(verified.tenants.flatMap((t) => t.problems).map((p) => p.code)).not.toContain(
       'verify_count_mismatch',
     );
-    expect(
-      verified.tenants.every((t) => t.checksums.targetRecords === t.checksums.sourceRecords),
-    ).toBe(true);
+    // Every tenant table's canonical rows (timestamps, json/jsonb, bigint) read back identically
+    // through postgres.js.
+    expect(verified.tenants.flatMap((t) => t.problems).map((p) => p.code)).not.toContain(
+      'verify_checksum_mismatch',
+    );
+    for (const tenant of verified.tenants)
+      expect(tenant.checksums.target).toEqual(tenant.checksums.source);
+    expect(verified.problems.filter((p) => p.code.startsWith('verify_'))).toEqual([]);
 
     // Rows really are tenant-scoped: inside one tenant's transaction the other is invisible.
     const visible = await withTenant(pool.client, 'MASCLI/PRJ-SECHURA', async (tx) =>

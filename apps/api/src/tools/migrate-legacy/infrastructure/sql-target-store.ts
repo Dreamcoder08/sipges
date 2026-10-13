@@ -3,17 +3,19 @@
  * written in one transaction as the owner role; every tenant's business tables are written in
  * one `withTenant` transaction, so they commit or roll back together under forced RLS.
  *
- * All inserts are `ON CONFLICT DO NOTHING` on the natural key, so a partially applied run can
- * be repeated. `audit` has a generated key and is therefore append-only: re-running a tenant
- * is refused by the emptiness guard unless the operator explicitly allows it.
+ * Keyed inserts are `ON CONFLICT DO NOTHING` on the natural key; every key that already
+ * existed is returned as a skipped row so the use case reports it (a bootstrap `admin` must never
+ * silently win over the legacy account). `audit` and `irsa_snapshots` have generated keys and
+ * are append-only: the use case never writes into a tenant whose tables already hold rows.
  */
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import type { SecretCipher } from '../../../contexts/identity/application/index.ts';
-import { TENANT_TABLES, type TableCounts } from '../domain/legacy.ts';
-import { recordFingerprint } from '../domain/mapping.ts';
+import { TENANT_TABLES, type TableCounts, type TenantTable } from '../domain/legacy.ts';
+import { rowFingerprint } from '../domain/mapping.ts';
 import type {
   GlobalCounts,
+  SkippedRow,
   TargetAttachmentDigest,
   TargetStore,
   TenantBatch,
@@ -26,6 +28,9 @@ const countRows = async (sql: SqlClient, table: string, where: string, params: u
   );
   return Number(row?.n ?? 0);
 };
+
+const date = (value: unknown): Date => new Date(value as string | Date);
+const json = (value: unknown): unknown => JSON.parse(String(value));
 
 export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): TargetStore => ({
   async globalCounts(): Promise<GlobalCounts> {
@@ -51,6 +56,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
 
   writeGlobal: (batch) =>
     sql.transaction(async (tx) => {
+      const skipped: SkippedRow[] = [];
       let tenants = 0;
       for (const tenant of batch.tenants) {
         const rows = await tx.query(
@@ -59,6 +65,8 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
           [tenant.companyId, tenant.projectId, tenant.label],
         );
         tenants += rows.length;
+        if (!rows.length)
+          skipped.push({ table: 'tenants', id: `${tenant.companyId}/${tenant.projectId}` });
       }
       let users = 0;
       for (const user of batch.users) {
@@ -81,6 +89,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
           ],
         );
         users += rows.length;
+        if (!rows.length) skipped.push({ table: 'users', id: user.username });
       }
       let grants = 0;
       for (const grant of batch.grants) {
@@ -90,8 +99,10 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
           [grant.username, grant.tenantId],
         );
         grants += rows.length;
+        if (!rows.length)
+          skipped.push({ table: 'grants', id: `${grant.username}@${grant.tenantId}` });
       }
-      return { users, tenants, grants };
+      return { counts: { users, tenants, grants }, skipped };
     }),
 
   writeTenant: (tenantId, batch: TenantBatch) =>
@@ -99,8 +110,10 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
       const counts: Record<string, number> = Object.fromEntries(
         TENANT_TABLES.map((table) => [table, 0]),
       );
-      const bump = (table: string, rows: readonly unknown[]) => {
+      const skipped: SkippedRow[] = [];
+      const bump = (table: TenantTable, rows: readonly unknown[], id?: string) => {
         counts[table] = (counts[table] ?? 0) + rows.length;
+        if (id !== undefined && !rows.length) skipped.push({ table, id });
       };
 
       for (const record of batch.records) {
@@ -118,6 +131,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
               record.updatedAt.toISOString(),
             ],
           ),
+          `${record.module}/${record.id}`,
         );
       }
 
@@ -140,6 +154,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
              ON CONFLICT (tenant_id) DO NOTHING RETURNING tenant_id`,
             [tenantId, JSON.stringify(batch.irsaConfig)],
           ),
+          tenantId,
         );
       }
 
@@ -193,6 +208,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
               attachment.createdAt.toISOString(),
             ],
           ),
+          attachment.id,
         );
       }
 
@@ -221,6 +237,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
               review.updatedAt.toISOString(),
             ],
           ),
+          review.id,
         );
       }
 
@@ -255,6 +272,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
               alert.reviewedAt === null ? null : alert.reviewedAt.toISOString(),
             ],
           ),
+          alert.id,
         );
       }
 
@@ -281,6 +299,7 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
               action.updatedAt.toISOString(),
             ],
           ),
+          action.id,
         );
       }
 
@@ -302,27 +321,215 @@ export const createSqlTargetStore = (sql: SqlClient, cipher: SecretCipher): Targ
               entry.evidenceUrl,
             ],
           ),
+          entry.id,
         );
       }
 
-      return counts as TableCounts;
+      return { counts: counts as TableCounts, skipped };
     }),
 
-  recordFingerprints: (tenantId) =>
-    withTenant(sql, tenantId, async (tx) =>
-      (
-        await tx.query<{ module: string; id: string; payload: unknown }>(
-          'SELECT module, id, payload FROM module_records WHERE tenant_id = $1',
-          [tenantId],
-        )
-      ).map((row) =>
-        recordFingerprint(
-          row.module,
-          row.id,
-          typeof row.payload === 'string' ? JSON.parse(row.payload) : row.payload,
+  async identity() {
+    const users = await sql.query<{
+      username: string;
+      full_name: string;
+      password_hash: string;
+      role: string;
+      active: boolean;
+      totp_enabled: boolean;
+      totp_present: boolean;
+    }>(
+      `SELECT username, full_name, password_hash, role, active, totp_enabled,
+         totp_secret_sealed IS NOT NULL AS totp_present FROM users`,
+    );
+    const tenants = await sql.query<{ company_id: string; project_id: string; label: string }>(
+      'SELECT company_id, project_id, label FROM tenants',
+    );
+    const grants = await sql.query<{ username: string; tenant_id: string }>(
+      'SELECT username, tenant_id FROM grants',
+    );
+    return {
+      users: users.map((u) => ({
+        username: u.username,
+        fullName: u.full_name,
+        passwordHash: u.password_hash,
+        role: u.role,
+        active: u.active,
+        totpEnabled: u.totp_enabled,
+        totpPresent: u.totp_present,
+      })),
+      tenants: tenants.map((t) => ({
+        companyId: t.company_id,
+        projectId: t.project_id,
+        label: t.label,
+      })),
+      grants: grants.map((g) => ({ username: g.username, tenantId: g.tenant_id })),
+    };
+  },
+
+  // JSON columns are read as text and numbers/timestamps normalized, so PGlite and postgres.js
+  // produce the same canonical rows as the mapped source.
+  rowFingerprints: (tenantId) =>
+    withTenant(sql, tenantId, async (tx) => {
+      const rows = (text: string) =>
+        tx.query<Record<string, unknown>>(`${text} WHERE tenant_id = $1`, [tenantId]);
+      const s = (value: unknown) => value as string;
+      const n = (value: unknown) => (value === null ? null : (value as string));
+      const out: Record<TenantTable, string[]> = {
+        module_records: (
+          await rows(
+            'SELECT module, id, payload::text AS payload, created_at, updated_at FROM module_records',
+          )
+        ).map((r) =>
+          rowFingerprint.module_records({
+            module: s(r['module']),
+            id: s(r['id']),
+            payload: json(r['payload']) as Record<string, unknown>,
+            createdAt: date(r['created_at']),
+            updatedAt: date(r['updated_at']),
+          }),
         ),
-      ),
-    ),
+        audit: (await rows('SELECT ts, module, record_id, action, detail FROM audit')).map((r) =>
+          rowFingerprint.audit({
+            ts: date(r['ts']),
+            module: s(r['module']),
+            recordId: n(r['record_id']),
+            action: s(r['action']),
+            detail: n(r['detail']),
+          }),
+        ),
+        irsa_configs: (await rows('SELECT config::text AS config FROM irsa_configs')).map((r) =>
+          rowFingerprint.irsa_configs(json(r['config']) as Record<string, unknown>),
+        ),
+        irsa_snapshots: (
+          await rows(
+            'SELECT ts, irsa, level, scores::text AS scores, config_version, note FROM irsa_snapshots',
+          )
+        ).map((r) =>
+          rowFingerprint.irsa_snapshots({
+            ts: date(r['ts']),
+            irsa: Number(r['irsa']),
+            level: s(r['level']),
+            scores: json(r['scores']),
+            configVersion: n(r['config_version']),
+            note: n(r['note']),
+          }),
+        ),
+        attachments: (
+          await rows(
+            `SELECT id, storage_key, original_name, content_type, size_bytes::text AS size_bytes,
+               sha256, linked_module, record_module, linked_record_id, document_type, author,
+               verification, notes, project_id, project_name, created_at FROM attachments`,
+          )
+        ).map((r) =>
+          rowFingerprint.attachments({
+            id: s(r['id']),
+            storageKey: s(r['storage_key']),
+            originalName: s(r['original_name']),
+            contentType: s(r['content_type']),
+            sizeBytes: Number(r['size_bytes']),
+            sha256: n(r['sha256']),
+            linkedModule: s(r['linked_module']),
+            recordModule: s(r['record_module']),
+            linkedRecordId: s(r['linked_record_id']),
+            documentType: s(r['document_type']),
+            author: s(r['author']),
+            verification: s(r['verification']),
+            notes: s(r['notes']),
+            projectId: s(r['project_id']),
+            projectName: s(r['project_name']),
+            createdAt: date(r['created_at']),
+          }),
+        ),
+        document_review: (
+          await rows(
+            `SELECT id, project_id, source_file, source_sha256, location, theme, excerpt, action,
+               status, reviewer, note, created_at, updated_at FROM document_review`,
+          )
+        ).map((r) =>
+          rowFingerprint.document_review({
+            id: s(r['id']),
+            projectId: s(r['project_id']),
+            sourceFile: s(r['source_file']),
+            sourceSha256: s(r['source_sha256']),
+            location: s(r['location']),
+            theme: s(r['theme']),
+            excerpt: s(r['excerpt']),
+            action: s(r['action']),
+            status: s(r['status']),
+            reviewer: s(r['reviewer']),
+            note: s(r['note']),
+            createdAt: date(r['created_at']),
+            updatedAt: date(r['updated_at']),
+          }),
+        ),
+        digital_alert_reviews: (
+          await rows(
+            `SELECT id, project_id, created_at, source_url, source_type, excerpt, sha256, level,
+               score, method, themes::text AS themes, signals::text AS signals,
+               suggestions::text AS suggestions, semantic_active, status, analyst_note,
+               reviewer_note, reviewed_at FROM digital_alert_reviews`,
+          )
+        ).map((r) =>
+          rowFingerprint.digital_alert_reviews({
+            id: s(r['id']),
+            projectId: s(r['project_id']),
+            createdAt: date(r['created_at']),
+            sourceUrl: s(r['source_url']),
+            sourceType: s(r['source_type']),
+            excerpt: s(r['excerpt']),
+            sha256: s(r['sha256']),
+            level: s(r['level']),
+            score: Number(r['score']),
+            method: s(r['method']),
+            themes: json(r['themes']),
+            signals: json(r['signals']),
+            suggestions: json(r['suggestions']),
+            semanticActive: r['semantic_active'] === true,
+            status: s(r['status']),
+            analystNote: s(r['analyst_note']),
+            reviewerNote: n(r['reviewer_note']),
+            reviewedAt: r['reviewed_at'] === null ? null : date(r['reviewed_at']),
+          }),
+        ),
+        preventive_actions: (
+          await rows(
+            `SELECT id, project_id, alert_id, title, responsible, due_date, description, status,
+               progress, created_at, updated_at FROM preventive_actions`,
+          )
+        ).map((r) =>
+          rowFingerprint.preventive_actions({
+            id: s(r['id']),
+            projectId: s(r['project_id']),
+            alertId: s(r['alert_id']),
+            title: s(r['title']),
+            responsible: s(r['responsible']),
+            dueDate: s(r['due_date']),
+            description: s(r['description']),
+            status: s(r['status']),
+            progress: Number(r['progress']),
+            createdAt: date(r['created_at']),
+            updatedAt: date(r['updated_at']),
+          }),
+        ),
+        preventive_action_log: (
+          await rows(
+            `SELECT id, action_id, created_at, status, progress, note, evidence_url
+               FROM preventive_action_log`,
+          )
+        ).map((r) =>
+          rowFingerprint.preventive_action_log({
+            id: s(r['id']),
+            actionId: s(r['action_id']),
+            createdAt: date(r['created_at']),
+            status: s(r['status']),
+            progress: Number(r['progress']),
+            note: s(r['note']),
+            evidenceUrl: n(r['evidence_url']),
+          }),
+        ),
+      };
+      return out;
+    }),
 
   attachmentDigests: (tenantId) =>
     withTenant(sql, tenantId, async (tx) =>

@@ -21,6 +21,11 @@ import type {
 export type ProblemCode =
   | 'tenant_db_missing'
   | 'tenant_not_in_directory'
+  | 'tenant_row_invalid'
+  | 'tenant_not_empty'
+  | 'tenant_write_failed'
+  | 'identity_write_failed'
+  | 'row_already_present'
   | 'user_username_invalid'
   | 'user_full_name_invalid'
   | 'user_password_hash_invalid'
@@ -39,6 +44,7 @@ export type ProblemCode =
   | 'attachment_object_missing'
   | 'attachment_sha256_mismatch'
   | 'attachment_name_sanitized'
+  | 'attachment_stored_name_unsafe'
   | 'document_review_row_invalid'
   | 'alert_row_invalid'
   | 'action_row_invalid'
@@ -46,12 +52,19 @@ export type ProblemCode =
   | 'action_log_row_invalid'
   | 'action_log_action_missing'
   | 'irsa_config_invalid'
+  | 'irsa_config_inherited'
   | 'sessions_not_migrated'
   | 'target_not_empty'
   | 'verify_count_mismatch'
   | 'verify_checksum_mismatch'
   | 'verify_attachment_missing'
-  | 'verify_attachment_mismatch';
+  | 'verify_attachment_mismatch'
+  | 'verify_user_missing'
+  | 'verify_user_mismatch'
+  | 'verify_tenant_missing'
+  | 'verify_tenant_mismatch'
+  | 'verify_grant_missing'
+  | 'verify_row_unexpected';
 
 export const ROLES = ['admin', 'analista', 'coordinador', 'consulta'] as const;
 export const REVIEW_STATUSES = [
@@ -137,6 +150,13 @@ const hasNul = (value: unknown): boolean => {
 
 export const storableText = (value: string): boolean => !value.includes('\u0000');
 
+/** A parsed JSON value PostgreSQL json/jsonb can hold (no NUL in any key or string). */
+export const storableJson = (value: unknown): boolean => !hasNul(value);
+
+/** Every text value a mapper outputs must be storable; `null` (SQL NULL) always is. */
+const allStorable = (values: readonly (string | null)[]): boolean =>
+  values.every((value) => value === null || storableText(value));
+
 /** Parses a legacy JSON column into a plain object, rejecting anything PostgreSQL refuses. */
 export const parseJsonObject = (value: LegacyValue): Record<string, unknown> | null => {
   const text = asText(value);
@@ -151,14 +171,15 @@ export const parseJsonObject = (value: LegacyValue): Record<string, unknown> | n
   return hasNul(parsed) ? null : (parsed as Record<string, unknown>);
 };
 
-export const parseJsonValue = (value: LegacyValue, fallback: unknown): unknown => {
+/** Parses a legacy JSON column app.py reads with `json.loads`; `undefined` when it cannot. */
+const parseJsonStrict = (value: LegacyValue): unknown => {
   const text = asText(value);
-  if (text === null) return fallback;
+  if (text === null) return undefined;
   try {
     const parsed: unknown = JSON.parse(text);
-    return hasNul(parsed) ? fallback : parsed;
+    return hasNul(parsed) ? undefined : parsed;
   } catch {
-    return fallback;
+    return undefined;
   }
 };
 
@@ -171,6 +192,18 @@ export const scopeDigest = (tenantId: string) =>
   createHash('sha256').update(tenantId).digest('hex').slice(0, 24);
 
 export const sha256Hex = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+
+/**
+ * app.py:1104 writes `stored_name = f"{uuid4().hex}_{safe_name}"` directly under the scope's
+ * upload root. The default scope's root also contains every other tenant's folder, so a name
+ * with a path separator, a parent reference or a NUL could read another tenant's file.
+ */
+export const legacyStoredNameSafe = (storedName: string): boolean =>
+  storedName.length > 0 &&
+  !/[/\\]/.test(storedName) &&
+  storableText(storedName) &&
+  !storedName.includes('..') &&
+  storedName !== '.';
 
 /**
  * Object key for a migrated attachment: the tenant prefix used by the evidence context plus
@@ -325,6 +358,16 @@ export type TargetActionLog = {
 const oneOf = <T extends string>(options: readonly T[], value: string): value is T =>
   (options as readonly string[]).includes(value);
 
+/** Tenant directory entry (`tenant_projects`): ids and label must be storable. */
+export const mapTenant = (scope: {
+  readonly companyId: string;
+  readonly projectId: string;
+  readonly label: string;
+}): Result<TargetTenant, ProblemCode> =>
+  scope.companyId && scope.projectId && allStorable([scope.companyId, scope.projectId, scope.label])
+    ? ok({ companyId: scope.companyId, projectId: scope.projectId, label: scope.label })
+    : err('tenant_row_invalid');
+
 export const mapUser = (row: LegacyUserRow): Result<TargetUser, ProblemCode> => {
   const username = asText(row['username'])?.trim() ?? '';
   if (!username || username.length > 120 || !storableText(username))
@@ -382,16 +425,11 @@ export const mapSnapshot = (row: LegacySnapshotRow): Result<TargetSnapshot, Prob
   const irsa = asNumber(row['irsa']);
   const level = asText(row['level']);
   const scores = parseJsonObject(row['scores']);
-  if (!ts || irsa === null || level === null || !scores || !storableText(level))
-    return err('snapshot_row_invalid');
-  return ok({
-    ts,
-    irsa,
-    level,
-    scores,
-    configVersion: asText(row['config_version']),
-    note: asText(row['note']),
-  });
+  const configVersion = asText(row['config_version']);
+  const note = asText(row['note']);
+  if (!ts || irsa === null || level === null || !scores) return err('snapshot_row_invalid');
+  if (!allStorable([level, configVersion, note])) return err('snapshot_row_invalid');
+  return ok({ ts, irsa, level, scores, configVersion, note });
 };
 
 /**
@@ -414,12 +452,13 @@ export const mapAttachment = (
   if (!id || !storedName || !linkedRecordId || !createdAt || !storableText(id))
     return err('attachment_row_invalid');
   if (!Number.isInteger(sizeBytes) || sizeBytes <= 0) return err('attachment_row_invalid');
+  if (!legacyStoredNameSafe(storedName)) return err('attachment_stored_name_unsafe');
   const linkedModule = (asText(row['linked_module']) ?? '').trim().toLowerCase();
   const recordModule = deps.moduleForSlug(linkedModule);
   if (!recordModule) return err('attachment_module_unknown');
   const sha256 = asText(row['sha256']);
   const projectId = textOr(row['project_id'], 'PRJ-SECHURA');
-  return ok({
+  const attachment = {
     id,
     storageKey: objectKeyFor(deps.tenantId, storedName).key,
     legacyStoredName: storedName,
@@ -437,7 +476,20 @@ export const mapAttachment = (
     projectId,
     projectName: textOr(row['project_name'], projectId === 'PRJ-SECHURA' ? 'Proyecto Sechura' : ''),
     createdAt,
-  });
+  };
+  const texts = [
+    attachment.linkedModule,
+    attachment.linkedRecordId,
+    attachment.originalName,
+    attachment.contentType,
+    attachment.documentType,
+    attachment.author,
+    attachment.verification,
+    attachment.notes,
+    attachment.projectId,
+    attachment.projectName,
+  ];
+  return allStorable(texts) ? ok(attachment) : err('attachment_row_invalid');
 };
 
 export const mapDocumentReview = (
@@ -493,6 +545,16 @@ export const mapAlert = (row: LegacyAlertRow): Result<TargetAlert, ProblemCode> 
   const score = asNumber(row['score']) ?? 0;
   if (!id || !createdAt || !SHA256.test(sha256) || !oneOf(ALERT_STATUSES, status))
     return err('alert_row_invalid');
+  // app.py:2093 reads these columns with json.loads: a value it cannot parse is reported, never
+  // silently replaced by an empty list.
+  const themes = parseJsonStrict(row['themes_json']);
+  const signals = parseJsonStrict(row['signals_json']);
+  const suggestions = parseJsonStrict(row['suggestions_json']);
+  if (themes === undefined || signals === undefined || suggestions === undefined)
+    return err('alert_row_invalid');
+  const reviewedText = asText(row['reviewed_at'])?.trim() ?? '';
+  const reviewedAt = reviewedText ? parseLegacyTimestamp(reviewedText) : null;
+  if (reviewedText && !reviewedAt) return err('alert_row_invalid');
   const alert = {
     id,
     projectId: textOr(row['project_id'], 'PRJ-SECHURA'),
@@ -504,14 +566,14 @@ export const mapAlert = (row: LegacyAlertRow): Result<TargetAlert, ProblemCode> 
     level: textOr(row['level'], ''),
     score: Math.trunc(score),
     method: textOr(row['method'], ''),
-    themes: parseJsonValue(row['themes_json'], []),
-    signals: parseJsonValue(row['signals_json'], []),
-    suggestions: parseJsonValue(row['suggestions_json'], []),
+    themes,
+    signals,
+    suggestions,
     semanticActive: asBoolean(row['semantic_active'] ?? 0),
     status,
     analystNote: textOr(row['analyst_note'], ''),
     reviewerNote: asText(row['reviewer_note']),
-    reviewedAt: parseLegacyTimestamp(row['reviewed_at']),
+    reviewedAt,
   };
   const texts = [
     alert.id,
@@ -522,9 +584,9 @@ export const mapAlert = (row: LegacyAlertRow): Result<TargetAlert, ProblemCode> 
     alert.level,
     alert.method,
     alert.analystNote,
-    alert.reviewerNote ?? '',
+    alert.reviewerNote,
   ];
-  return texts.every(storableText) ? ok(alert) : err('alert_row_invalid');
+  return allStorable(texts) ? ok(alert) : err('alert_row_invalid');
 };
 
 export const mapAction = (row: LegacyActionRow): Result<TargetAction, ProblemCode> => {
@@ -552,8 +614,15 @@ export const mapAction = (row: LegacyActionRow): Result<TargetAction, ProblemCod
     createdAt,
     updatedAt,
   };
-  const texts = [action.id, action.projectId, action.alertId, action.title, action.responsible];
-  return texts.every(storableText) ? ok(action) : err('action_row_invalid');
+  const texts = [
+    action.id,
+    action.projectId,
+    action.alertId,
+    action.title,
+    action.responsible,
+    action.description,
+  ];
+  return allStorable(texts) ? ok(action) : err('action_row_invalid');
 };
 
 export const mapActionLog = (row: LegacyActionLogRow): Result<TargetActionLog, ProblemCode> => {
@@ -565,15 +634,10 @@ export const mapActionLog = (row: LegacyActionLogRow): Result<TargetActionLog, P
   if (!id || !actionId || !createdAt || !status) return err('action_log_row_invalid');
   if (!Number.isInteger(progress) || progress < 0 || progress > 100)
     return err('action_log_row_invalid');
-  return ok({
-    id,
-    actionId,
-    createdAt,
-    status,
-    progress,
-    note: textOr(row['note'], ''),
-    evidenceUrl: asText(row['evidence_url']),
-  });
+  const note = textOr(row['note'], '');
+  const evidenceUrl = asText(row['evidence_url']);
+  if (!allStorable([id, actionId, status, note, evidenceUrl])) return err('action_log_row_invalid');
+  return ok({ id, actionId, createdAt, status, progress, note, evidenceUrl });
 };
 
 // ---------------------------------------------------------------- checksums
@@ -596,3 +660,103 @@ export const setChecksum = (rows: readonly string[]): string => {
 
 export const recordFingerprint = (module: string, id: string, payload: unknown): string =>
   `${module}\u0001${id}\u0001${canonicalJson(payload)}`;
+
+const iso = (date: Date | null): string | null => (date === null ? null : date.toISOString());
+
+/**
+ * Canonical row fingerprints compared by `--verify`, one per tenant table. They cover every
+ * migrated column except generated surrogate ids (`audit.id`, `irsa_snapshots.id`) and the
+ * legacy-only `stored_name`; the writer reads target rows back into the same shapes.
+ */
+export const rowFingerprint = {
+  module_records: (r: TargetRecord) =>
+    canonicalJson([
+      recordFingerprint(r.module, r.id, r.payload),
+      iso(r.createdAt),
+      iso(r.updatedAt),
+    ]),
+  audit: (a: TargetAudit) => canonicalJson([iso(a.ts), a.module, a.recordId, a.action, a.detail]),
+  irsa_configs: (config: Record<string, unknown>) => canonicalJson(config),
+  irsa_snapshots: (s: TargetSnapshot) =>
+    canonicalJson([iso(s.ts), s.irsa, s.level, s.scores, s.configVersion, s.note]),
+  attachments: (a: Omit<TargetAttachment, 'legacyStoredName'>) =>
+    canonicalJson([
+      a.id,
+      a.storageKey,
+      a.originalName,
+      a.contentType,
+      a.sizeBytes,
+      a.sha256,
+      a.linkedModule,
+      a.recordModule,
+      a.linkedRecordId,
+      a.documentType,
+      a.author,
+      a.verification,
+      a.notes,
+      a.projectId,
+      a.projectName,
+      iso(a.createdAt),
+    ]),
+  document_review: (r: TargetDocumentReview) =>
+    canonicalJson([
+      r.id,
+      r.projectId,
+      r.sourceFile,
+      r.sourceSha256,
+      r.location,
+      r.theme,
+      r.excerpt,
+      r.action,
+      r.status,
+      r.reviewer,
+      r.note,
+      iso(r.createdAt),
+      iso(r.updatedAt),
+    ]),
+  digital_alert_reviews: (a: TargetAlert) =>
+    canonicalJson([
+      a.id,
+      a.projectId,
+      iso(a.createdAt),
+      a.sourceUrl,
+      a.sourceType,
+      a.excerpt,
+      a.sha256,
+      a.level,
+      a.score,
+      a.method,
+      a.themes,
+      a.signals,
+      a.suggestions,
+      a.semanticActive,
+      a.status,
+      a.analystNote,
+      a.reviewerNote,
+      iso(a.reviewedAt),
+    ]),
+  preventive_actions: (a: TargetAction) =>
+    canonicalJson([
+      a.id,
+      a.projectId,
+      a.alertId,
+      a.title,
+      a.responsible,
+      a.dueDate,
+      a.description,
+      a.status,
+      a.progress,
+      iso(a.createdAt),
+      iso(a.updatedAt),
+    ]),
+  preventive_action_log: (l: TargetActionLog) =>
+    canonicalJson([
+      l.id,
+      l.actionId,
+      iso(l.createdAt),
+      l.status,
+      l.progress,
+      l.note,
+      l.evidenceUrl,
+    ]),
+} as const;

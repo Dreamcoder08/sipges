@@ -5,8 +5,11 @@
  *
  * Modes:
  * - `dry-run`: reads everything, writes nothing, reports counts and problems;
- * - `apply`: one transaction per tenant, refuses a non-empty target unless told otherwise;
- * - `verify`: compares source and target counts, record checksums and attachment bytes.
+ * - `apply`: one transaction per tenant, refuses a non-empty target unless told otherwise; a
+ *   tenant that fails is reported and the others still run, and every keyed row that already
+ *   existed in the target is reported as an error (`row_already_present`);
+ * - `verify`: compares source and target counts, canonical row checksums of every tenant table,
+ *   attachment bytes, and the migrated users, tenants and grants.
  *
  * The report contains counts and identifiers only: never record contents, password hashes
  * or TOTP secrets.
@@ -25,6 +28,7 @@ import {
   type TargetTenant,
   canonicalJson,
   formatTenantId,
+  mapTenant,
   mapAction,
   mapActionLog,
   mapAlert,
@@ -35,14 +39,16 @@ import {
   mapSnapshot,
   mapUser,
   objectKeyFor,
-  recordFingerprint,
+  rowFingerprint,
   setChecksum,
   sha256Hex,
+  storableJson,
 } from '../domain/mapping.ts';
 import type {
   GlobalBatch,
   LegacySource,
   ObjectStorage,
+  SkippedRow,
   TargetStore,
   TenantBatch,
 } from './ports.ts';
@@ -78,12 +84,15 @@ export type TenantReport = {
   readonly written: TableCounts;
   readonly target: TableCounts;
   readonly objects: ObjectReport;
+  /** Per-table canonical row checksums; `target` is filled by `verify` only. */
   readonly checksums: {
-    readonly sourceRecords: string;
-    readonly targetRecords: string | null;
+    readonly source: TableChecksums;
+    readonly target: TableChecksums | null;
   };
   readonly problems: readonly Problem[];
 };
+
+export type TableChecksums = Readonly<Record<TenantTable, string>>;
 
 export type CountPair = {
   readonly source: number;
@@ -128,8 +137,10 @@ export type MigrationDeps = {
 
 const SEVERITY: Partial<Record<ProblemCode, Severity>> = {
   attachment_name_sanitized: 'warning',
+  irsa_config_inherited: 'info',
   sessions_not_migrated: 'info',
   tenant_db_missing: 'warning',
+  verify_row_unexpected: 'warning',
 };
 
 const problem = (code: ProblemCode, extra: Omit<Problem, 'code' | 'severity'> = {}): Problem => ({
@@ -172,8 +183,26 @@ type Prepared = {
   readonly batch: TenantBatch;
   /** Attachment bytes held for the apply phase; never part of a report. */
   readonly bytes: Map<string, Uint8Array>;
-  readonly sourceChecksum: string;
+  readonly sourceChecksums: TableChecksums;
 };
+
+/** Canonical row fingerprints of a mapped tenant, table by table (domain `rowFingerprint`). */
+const batchFingerprints = (batch: TenantBatch): Record<TenantTable, readonly string[]> => ({
+  module_records: batch.records.map(rowFingerprint.module_records),
+  audit: batch.audit.map(rowFingerprint.audit),
+  irsa_configs: batch.irsaConfig ? [rowFingerprint.irsa_configs(batch.irsaConfig)] : [],
+  irsa_snapshots: batch.snapshots.map(rowFingerprint.irsa_snapshots),
+  attachments: batch.attachments.map(rowFingerprint.attachments),
+  document_review: batch.documentReviews.map(rowFingerprint.document_review),
+  digital_alert_reviews: batch.alerts.map(rowFingerprint.digital_alert_reviews),
+  preventive_actions: batch.actions.map(rowFingerprint.preventive_actions),
+  preventive_action_log: batch.actionLog.map(rowFingerprint.preventive_action_log),
+});
+
+const checksumsOf = (rows: Readonly<Record<TenantTable, readonly string[]>>): TableChecksums =>
+  Object.fromEntries(
+    TENANT_TABLES.map((table) => [table, setChecksum(rows[table])]),
+  ) as TableChecksums;
 
 const prepareTenant = async (
   deps: MigrationDeps,
@@ -221,11 +250,14 @@ const prepareTenant = async (
     );
     mapped.irsa_snapshots = snapshots.length;
 
-    const config = await reader.irsaConfig();
+    const { config, inherited } = await reader.irsaConfig();
     source.irsa_configs = config === null ? 0 : 1;
-    if (config === 'invalid')
+    const configValid = config !== 'invalid' && (config === null || storableJson(config));
+    if (!configValid)
       problems.push(problem('irsa_config_invalid', { tenantId, table: 'irsa_configs' }));
-    const irsaConfig = config === 'invalid' ? null : config;
+    else if (inherited)
+      problems.push(problem('irsa_config_inherited', { tenantId, table: 'irsa_configs' }));
+    const irsaConfig = configValid ? config : null;
     mapped.irsa_configs = irsaConfig ? 1 : 0;
 
     const attachmentRows = await reader.attachments();
@@ -316,6 +348,17 @@ const prepareTenant = async (
     });
     mapped.preventive_action_log = actionLog.length;
 
+    const batch: TenantBatch = {
+      records,
+      audit,
+      irsaConfig,
+      snapshots,
+      attachments,
+      documentReviews,
+      alerts,
+      actions,
+      actionLog,
+    };
     return {
       tenantId,
       label: scope.label,
@@ -325,18 +368,8 @@ const prepareTenant = async (
       objects,
       problems,
       bytes,
-      sourceChecksum: setChecksum(records.map((r) => recordFingerprint(r.module, r.id, r.payload))),
-      batch: {
-        records,
-        audit,
-        irsaConfig,
-        snapshots,
-        attachments,
-        documentReviews,
-        alerts,
-        actions,
-        actionLog,
-      },
+      sourceChecksums: checksumsOf(batchFingerprints(batch)),
+      batch,
     };
   } finally {
     await reader.close();
@@ -352,9 +385,17 @@ export const runMigration = async (
 
   const scopes = await deps.source.scopes();
   const wanted = options.only ?? [];
-  const selected = wanted.length
-    ? scopes.filter((s) => wanted.includes(formatTenantId(s.companyId, s.projectId)))
-    : scopes;
+  const tenants: TargetTenant[] = [];
+  const selected = (
+    wanted.length
+      ? scopes.filter((s) => wanted.includes(formatTenantId(s.companyId, s.projectId)))
+      : scopes
+  ).filter((scope, index) => {
+    const mapped = mapTenant(scope);
+    if (mapped.ok) tenants.push(mapped.value);
+    else globalProblems.push(problem(mapped.error, { table: 'tenants', id: `#${index}` }));
+    return mapped.ok;
+  });
   for (const id of wanted) {
     if (!scopes.some((s) => formatTenantId(s.companyId, s.projectId) === id))
       globalProblems.push(problem('tenant_not_in_directory', { tenantId: id }));
@@ -368,11 +409,6 @@ export const runMigration = async (
     );
   });
   const usernames = new Set(users.map((u) => u.username));
-  const tenants: TargetTenant[] = selected.map((scope) => ({
-    companyId: scope.companyId,
-    projectId: scope.projectId,
-    label: scope.label,
-  }));
   const tenantIds = new Set(tenants.map((t) => formatTenantId(t.companyId, t.projectId)));
   const grantRows = await deps.source.grants();
   const grants: TargetGrant[] = [];
@@ -421,23 +457,59 @@ export const runMigration = async (
   };
   const applied = options.mode === 'apply' && !refuse;
   const written = new Map<string, TableCounts>();
+  // A keyed row that already existed was not written: the target keeps its own version (for
+  // example an `admin` the API bootstrapped), so it is an error, never a silent success.
+  const alreadyPresent = (rows: readonly SkippedRow[], into: Problem[], tenantId?: string) => {
+    for (const row of rows)
+      into.push(
+        problem('row_already_present', {
+          ...(tenantId ? { tenantId } : {}),
+          table: row.table,
+          id: row.id,
+        }),
+      );
+  };
 
   if (applied) {
     const batch: GlobalBatch = { tenants, users, grants };
-    const counts = await deps.target.writeGlobal(batch);
-    identity.users.written = counts.users;
-    identity.tenants.written = counts.tenants;
-    identity.grants.written = counts.grants;
-    for (const entry of prepared) {
-      for (const attachment of entry.batch.attachments) {
-        const data = entry.bytes.get(attachment.id);
-        if (!data) continue;
-        // Objects are written before the metadata transaction. Keys are deterministic, so a
-        // retried run reuses the same key instead of leaving a second copy behind.
-        await deps.storage.put(attachment.storageKey, data, attachment.contentType);
-        entry.objects.copied += 1;
+    let identityWritten = false;
+    try {
+      const result = await deps.target.writeGlobal(batch);
+      identity.users.written = result.counts.users;
+      identity.tenants.written = result.counts.tenants;
+      identity.grants.written = result.counts.grants;
+      alreadyPresent(result.skipped, globalProblems);
+      identityWritten = true;
+    } catch {
+      // Codes only: a driver message could quote the rejected values.
+      globalProblems.push(problem('identity_write_failed', { table: 'users' }));
+    }
+    for (const entry of identityWritten ? prepared : []) {
+      const present = existing.get(entry.tenantId);
+      if (present && totalRows(present) > 0) {
+        // Only reachable with --allow-non-empty. audit and irsa_snapshots have generated keys,
+        // so writing again would duplicate them: the tenant is skipped as a whole.
+        entry.problems.push(
+          problem('tenant_not_empty', { tenantId: entry.tenantId, count: totalRows(present) }),
+        );
+        continue;
       }
-      written.set(entry.tenantId, await deps.target.writeTenant(entry.tenantId, entry.batch));
+      try {
+        for (const attachment of entry.batch.attachments) {
+          const data = entry.bytes.get(attachment.id);
+          if (!data) continue;
+          // Objects are written before the metadata transaction. Keys are deterministic, so a
+          // retried run reuses the same key instead of leaving a second copy behind.
+          await deps.storage.put(attachment.storageKey, data, attachment.contentType);
+          entry.objects.copied += 1;
+        }
+        const result = await deps.target.writeTenant(entry.tenantId, entry.batch);
+        written.set(entry.tenantId, result.counts);
+        alreadyPresent(result.skipped, entry.problems, entry.tenantId);
+      } catch {
+        // The tenant transaction rolled back; the other tenants still run. Code and id only.
+        entry.problems.push(problem('tenant_write_failed', { tenantId: entry.tenantId }));
+      }
     }
   }
 
@@ -445,16 +517,15 @@ export const runMigration = async (
   const tenantReports: TenantReport[] = [];
   for (const entry of prepared) {
     const target = await deps.target.tenantCounts(entry.tenantId);
-    let targetChecksum: string | null = null;
+    let targetChecksums: TableChecksums | null = null;
     if (options.mode === 'verify') {
-      targetChecksum = setChecksum(await deps.target.recordFingerprints(entry.tenantId));
-      if (targetChecksum !== entry.sourceChecksum)
-        entry.problems.push(
-          problem('verify_checksum_mismatch', {
-            tenantId: entry.tenantId,
-            table: 'module_records',
-          }),
-        );
+      targetChecksums = checksumsOf(await deps.target.rowFingerprints(entry.tenantId));
+      for (const table of TENANT_TABLES) {
+        if (targetChecksums[table] !== entry.sourceChecksums[table])
+          entry.problems.push(
+            problem('verify_checksum_mismatch', { tenantId: entry.tenantId, table }),
+          );
+      }
       for (const table of TENANT_TABLES) {
         if (entry.mapped[table] !== target[table])
           entry.problems.push(
@@ -483,9 +554,65 @@ export const runMigration = async (
       written: written.get(entry.tenantId) ?? emptyCounts(),
       target,
       objects: entry.objects,
-      checksums: { sourceRecords: entry.sourceChecksum, targetRecords: targetChecksum },
+      checksums: { source: entry.sourceChecksums, target: targetChecksums },
       problems: entry.problems,
     });
+  }
+
+  if (options.mode === 'verify') {
+    const target = await deps.target.identity();
+    const targetUsers = new Map(target.users.map((u) => [u.username, u]));
+    for (const user of users) {
+      const at = { table: 'users', id: user.username };
+      const stored = targetUsers.get(user.username);
+      if (!stored) globalProblems.push(problem('verify_user_missing', at));
+      else if (
+        stored.fullName !== user.fullName ||
+        stored.passwordHash !== user.passwordHash ||
+        stored.role !== user.role ||
+        stored.active !== user.active ||
+        stored.totpPresent !== (user.totpSecret !== null) ||
+        stored.totpEnabled !== (user.totpEnabled && user.totpSecret !== null)
+      )
+        globalProblems.push(problem('verify_user_mismatch', at));
+    }
+    for (const username of targetUsers.keys())
+      if (!usernames.has(username))
+        globalProblems.push(problem('verify_row_unexpected', { table: 'users', id: username }));
+
+    const targetTenants = new Map(
+      target.tenants.map((t) => [formatTenantId(t.companyId, t.projectId), t]),
+    );
+    for (const tenant of tenants) {
+      const tenantId = formatTenantId(tenant.companyId, tenant.projectId);
+      const stored = targetTenants.get(tenantId);
+      const at = { tenantId, table: 'tenants', id: tenantId };
+      if (!stored) globalProblems.push(problem('verify_tenant_missing', at));
+      else if (stored.label !== tenant.label)
+        globalProblems.push(problem('verify_tenant_mismatch', at));
+    }
+
+    const grantKey = (g: TargetGrant) => `${g.username}@${g.tenantId}`;
+    const mappedGrants = new Set(grants.map(grantKey));
+    const storedGrants = new Set(target.grants.map(grantKey));
+    for (const grant of grants)
+      if (!storedGrants.has(grantKey(grant)))
+        globalProblems.push(
+          problem('verify_grant_missing', {
+            tenantId: grant.tenantId,
+            table: 'grants',
+            id: grantKey(grant),
+          }),
+        );
+    for (const grant of target.grants)
+      if (tenantIds.has(grant.tenantId) && !mappedGrants.has(grantKey(grant)))
+        globalProblems.push(
+          problem('verify_row_unexpected', {
+            tenantId: grant.tenantId,
+            table: 'grants',
+            id: grantKey(grant),
+          }),
+        );
   }
 
   const everyProblem = [...globalProblems, ...tenantReports.flatMap((t) => t.problems)];

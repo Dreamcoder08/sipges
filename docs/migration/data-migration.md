@@ -24,8 +24,8 @@ ODD forbids doing so without an explicit user decision.
 | `records` | `module_records` (ids, timestamps and the full payload, unknown fields included) |
 | `audit` | `audit` (ts, module, record id, action, detail) |
 | `irsa_snapshots` | `irsa_snapshots` |
-| `irsa_config.json` (`data/` or `TENANT_DIR/<digest>_settings/`) | `irsa_configs` |
-| `attachments` + `UPLOAD_DIR[/<digest>]/<stored_name>` | `attachments` + object storage (bytes copied through the ObjectStorage port, sha256 verified) |
+| `irsa_config.json` (`data/` or `TENANT_DIR/<digest>_settings/`) | `irsa_configs` (a tenant without its own file gets the default scope's `data/irsa_config.json`, exactly what app.py `scoped_config` copies on first use; reported as `irsa_config_inherited`, info) |
+| `attachments` + `UPLOAD_DIR[/<digest>]/<stored_name>` | `attachments` + object storage (bytes copied through the ObjectStorage port, sha256 verified). A `stored_name` must be one path component (no `/`, `\`, `..` or NUL; app.py writes `<uuid hex>_<safe name>`) and a regular file: symlinks are never followed, because the default scope's upload root also holds every other tenant's folder (`attachment_stored_name_unsafe` / `attachment_object_missing`) |
 | `document_review`, `digital_alert_reviews`, `preventive_actions`, `preventive_action_log` | same tables |
 
 ## What is **not** migrated
@@ -41,8 +41,10 @@ ODD forbids doing so without an explicit user decision.
 - **Legacy `auth_users` rows that may sit inside a tenant database** (behavior contract §8.7).
   Accounts come from `auth_global.db` only.
 - **Rows the new schema refuses**: unknown role, malformed password hash, payload that is not a
-  JSON object, NUL characters (PostgreSQL text/jsonb cannot store them), status values outside
-  the documented state machines, attachments whose file is missing or whose sha256 does not match
+  JSON object, NUL characters in any migrated text or JSON value (PostgreSQL text/jsonb cannot
+  store them), alerts whose `themes_json`/`signals_json`/`suggestions_json` app.py could not
+  `json.loads` or whose `reviewed_at` is not a timestamp (`alert_row_invalid`), status values
+  outside the documented state machines, attachments whose file is missing or whose sha256 does not match
   the bytes, preventive actions without their alert. Each one is reported with its code, table and
   identifier, and nothing else about it.
 
@@ -59,6 +61,11 @@ and uploads). Back up the target PostgreSQL database as well, even when it is em
 never writes to the legacy side, but a backup is what makes the rollback below trivial.
 
 ### 2. Configure the target
+
+Run the migration **before the API starts for the first time**, against an empty database. On
+its first start the API bootstraps an `admin` account (`MASCLI_ADMIN_USERNAME`), the default
+tenant and that account's grant; a later migration cannot replace them (see step 4). If the API
+has already started, restore the empty backup (or drop and re-create the database) first.
 
 The tool uses the API configuration: `MASCLI_DATABASE_URL` (or `MASCLI_PGLITE_DIR` for a local
 trial), `MASCLI_DATA_KEY` (the same key the API runs with — it seals migrated TOTP secrets) and
@@ -91,11 +98,29 @@ completely or not at all. Attachment bytes are copied before the tenant transact
 deterministic object key.
 
 The run **refuses a non-empty target**: if the users table already holds accounts or any tenant
-already holds rows, it reports `target_not_empty` and writes nothing. `--allow-non-empty` is the
-explicit override (for example when the API has already bootstrapped its admin account, or to
-resume an interrupted run). With it, keyed tables skip rows that already exist; `audit` is
-append-only and would be duplicated, so prefer restoring the backup over repeating a run that
-already wrote audit rows.
+already holds rows, it reports `target_not_empty` and writes nothing. Do not use
+`--allow-non-empty` to get past an API-bootstrapped admin: start from an empty database instead.
+
+If one tenant fails (constraint, connection, storage), its transaction rolls back, the report
+records `tenant_write_failed` with the tenant id only (no driver message, which could quote
+data), the remaining tenants are still applied, the report is still written and the process
+exits 1. Objects already copied for the failed tenant stay under their deterministic keys and
+are reused by the next attempt.
+
+`--allow-non-empty` is the explicit override for **resuming** such a run. With it:
+
+- every tenant whose business tables already hold rows is skipped as a whole and reported as
+  `tenant_not_empty` (error): `audit` and `irsa_snapshots` have generated keys, so writing a
+  tenant twice would duplicate them; a tenant that committed in an earlier run is complete,
+  because each tenant is one transaction;
+- every keyed row whose key already exists — users, tenants, grants and any keyed tenant table —
+  is left as it is in the target and reported as `row_already_present` (error, with table and
+  key). This is also how a bootstrap admin conflict surfaces: the target keeps the bootstrap
+  hash, role and TOTP state instead of the legacy account's, so fix that account (or start
+  from an empty database) before going live.
+
+A resumed run therefore always exits 1 for the rows of the earlier run; `--verify` (step 5) is
+what proves the result.
 
 ### 5. Verify
 
@@ -104,10 +129,19 @@ pnpm --filter @mascli/api migrate:legacy -- --legacy-root /srv/mascli-legacy --v
 ```
 
 Verify re-reads the legacy installation and compares, per tenant: row counts per table, an
-order-independent checksum over every record (`module`, id, canonical payload), and the sha256 of
-every attachment object fetched back through the storage port. Mismatches appear as
-`verify_count_mismatch`, `verify_checksum_mismatch`, `verify_attachment_missing` or
-`verify_attachment_mismatch`. The rows the source itself cannot migrate are reported again, so a
+order-independent checksum of the canonical rows of **every** tenant table (`module_records`,
+`audit`, `irsa_configs`, `irsa_snapshots`, `attachments` metadata, `document_review`,
+`digital_alert_reviews`, `preventive_actions`, `preventive_action_log`: every migrated column,
+timestamps normalized to UTC, generated `audit`/`irsa_snapshots` ids excluded), and the sha256 of
+every attachment object fetched back through the storage port. It also compares the migrated
+accounts (username, full name, password hash, role, active, TOTP enabled/present), tenants
+(label) and grants by key. Mismatches appear as `verify_count_mismatch`,
+`verify_checksum_mismatch` (with the table), `verify_attachment_missing`,
+`verify_attachment_mismatch`, `verify_user_missing`, `verify_user_mismatch`,
+`verify_tenant_missing`, `verify_tenant_mismatch` and `verify_grant_missing`; accounts or grants
+of a migrated tenant that the legacy installation does not have are listed as
+`verify_row_unexpected` (warning). Run verify right after apply: once users sign in, their
+PBKDF2 hashes are rehashed to Argon2id and `verify_user_mismatch` is expected. The rows the source itself cannot migrate are reported again, so a
 clean verification means: no `verify_*` code, and the same problem list as the dry run.
 
 Then check the application: sign in with a migrated account (the legacy password still works and
@@ -135,10 +169,14 @@ tables are created with the `CREATE TABLE` statements extracted from `app.py`, s
 cannot drift from the schema it claims to migrate. It contains two tenants, two migratable
 accounts (one with TOTP), uploads on disk and deliberately broken rows.
 
-- `test/migration/mapping.test.ts` — pure mapping: timestamps, NUL rejection, hash formats,
+- `test/migration/mapping.test.ts` — pure mapping: timestamps, NUL rejection on every output
+  text field, alert JSON/review date rejection, safe stored names, hash formats,
   module slug to stored module name, deterministic object keys, checksums.
 - `test/migration/migrate-legacy.test.ts` — dry-run writes nothing, apply/verify, re-run refusal,
-  idempotent keyed tables, redaction of the summary and report.
+  `--allow-non-empty` (whole-tenant skip, `row_already_present` for a bootstrapped account and
+  `verify_user_mismatch`), per-table verify checksums against edited target rows, a failing
+  tenant reported and resumed without duplicates, inherited IRSA configuration, upload reads that
+  refuse other tenants' folders and symlinks, redaction of the summary and report.
 - `test/migration/migrated-app-http.test.ts` — through the real HTTP app: login with a legacy
   PBKDF2 hash (and the migrated TOTP enrolment), scoped record lists, tenant isolation 403/404
   (S7), attachment download byte-for-byte, IRSA config/history and `GET /system/export`.

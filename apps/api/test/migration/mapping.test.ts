@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   canonicalJson,
+  legacyStoredNameSafe,
+  mapAction,
+  mapActionLog,
+  mapAlert,
   mapAttachment,
   mapRecord,
+  mapSnapshot,
+  mapTenant,
   mapUser,
   objectKeyFor,
   parseLegacyTimestamp,
@@ -140,5 +146,121 @@ describe('legacy mapping', () => {
     expect(setChecksum([a, b])).toBe(setChecksum([b, a]));
     expect(canonicalJson({ b: 1, a: { d: 4, c: 3 } })).toBe('{"a":{"c":3,"d":4},"b":1}');
     expect(setChecksum([a])).not.toBe(setChecksum([b]));
+  });
+
+  it('reports any output text PostgreSQL cannot store instead of failing on insert', () => {
+    const nul = 'con\u0000nul';
+    const attachment = {
+      id: 'ADJ-1',
+      stored_name: 'abc_evidencia.txt',
+      size_bytes: 10,
+      linked_module: 'eventos',
+      linked_record_id: 'EV-1',
+      created_at: '2026-10-01T09:00:00',
+    };
+    const deps = { tenantId: 'MASCLI/PRJ-SECHURA', moduleForSlug };
+    expect(mapAttachment(attachment, deps).ok).toBe(true);
+    for (const field of [
+      'original_name',
+      'content_type',
+      'document_type',
+      'author',
+      'verification',
+      'notes',
+      'project_id',
+      'project_name',
+      'linked_record_id',
+    ]) {
+      const mapped = mapAttachment({ ...attachment, [field]: nul }, deps);
+      expect(!mapped.ok && mapped.error, field).toBe('attachment_row_invalid');
+    }
+
+    const action = {
+      id: 'ACC-1',
+      alert_id: 'DIG-1',
+      due_date: '2026-11-15',
+      status: 'Pendiente',
+      progress: 0,
+      created_at: '2026-10-01T09:00:00',
+      updated_at: '2026-10-01T09:00:00',
+    };
+    expect(mapAction(action).ok).toBe(true);
+    const description = mapAction({ ...action, description: nul });
+    expect(!description.ok && description.error).toBe('action_row_invalid');
+
+    const log = {
+      id: 'LOG-1',
+      action_id: 'ACC-1',
+      status: 'Pendiente',
+      progress: 0,
+      created_at: '2026-10-01T09:00:00',
+    };
+    expect(mapActionLog(log).ok).toBe(true);
+    for (const field of ['status', 'note', 'evidence_url']) {
+      const mapped = mapActionLog({ ...log, [field]: nul });
+      expect(!mapped.ok && mapped.error, field).toBe('action_log_row_invalid');
+    }
+
+    const snapshot = {
+      ts: '2026-10-01T09:00:00',
+      irsa: 42.5,
+      level: 'Amarillo',
+      scores: '{"G":40}',
+    };
+    expect(mapSnapshot(snapshot).ok).toBe(true);
+    for (const field of ['config_version', 'note']) {
+      const mapped = mapSnapshot({ ...snapshot, [field]: nul });
+      expect(!mapped.ok && mapped.error, field).toBe('snapshot_row_invalid');
+    }
+
+    expect(mapTenant({ companyId: 'ACME', projectId: 'PRJ-1', label: 'Norte' }).ok).toBe(true);
+    const label = mapTenant({ companyId: 'ACME', projectId: 'PRJ-1', label: nul });
+    expect(!label.ok && label.error).toBe('tenant_row_invalid');
+  });
+
+  it('rejects alerts whose JSON columns or review date app.py could not read', () => {
+    const alert = {
+      id: 'DIG-1',
+      created_at: '2026-10-01T09:00:00',
+      status: 'Corroborado',
+      sha256: 'a'.repeat(64),
+      themes_json: '[{"tema":"agua"}]',
+      signals_json: '[]',
+      suggestions_json: '["verificar"]',
+      reviewed_at: '2026-10-02T09:00:00',
+    };
+    const mapped = mapAlert(alert);
+    expect(mapped.ok && mapped.value.themes).toEqual([{ tema: 'agua' }]);
+    expect(mapped.ok && mapped.value.reviewedAt?.toISOString()).toBe('2026-10-02T09:00:00.000Z');
+    expect(mapAlert({ ...alert, reviewed_at: null }).ok).toBe(true);
+    for (const broken of [
+      { themes_json: '{not json' },
+      { signals_json: null },
+      { suggestions_json: JSON.stringify(['con\u0000nul']) },
+      { reviewed_at: 'ayer' },
+    ]) {
+      const result = mapAlert({ ...alert, ...broken });
+      expect(!result.ok && result.error, Object.keys(broken)[0]).toBe('alert_row_invalid');
+    }
+  });
+
+  it('only accepts stored names that stay inside one upload folder', () => {
+    expect(legacyStoredNameSafe(`${'0'.repeat(32)}_informe.pdf`)).toBe(true);
+    expect(legacyStoredNameSafe('perdido_archivo.txt')).toBe(true);
+    for (const name of ['', '.', '..', '../x.pdf', 'abc/x.pdf', 'abc\\x.pdf', 'a\u0000b']) {
+      expect(legacyStoredNameSafe(name), name).toBe(false);
+    }
+    const escaped = mapAttachment(
+      {
+        id: 'ADJ-1',
+        stored_name: `${'0'.repeat(24)}/${'1'.repeat(32)}_otro.pdf`,
+        size_bytes: 10,
+        linked_module: 'eventos',
+        linked_record_id: 'EV-1',
+        created_at: '2026-10-01T09:00:00',
+      },
+      { tenantId: 'MASCLI/PRJ-SECHURA', moduleForSlug },
+    );
+    expect(!escaped.ok && escaped.error).toBe('attachment_stored_name_unsafe');
   });
 });

@@ -12,6 +12,7 @@ import type {
   LegacySnapshotRow,
   LegacyUserRow,
   TableCounts,
+  TenantTable,
 } from '../domain/legacy.ts';
 import type {
   TargetAction,
@@ -45,9 +46,16 @@ export type LegacyTenantReader = {
   alerts(): Promise<readonly LegacyAlertRow[]>;
   actions(): Promise<readonly LegacyActionRow[]>;
   actionLog(): Promise<readonly LegacyActionLogRow[]>;
-  /** Parsed `irsa_config.json` for this scope; 'invalid' when the file cannot be parsed. */
-  irsaConfig(): Promise<Record<string, unknown> | null | 'invalid'>;
-  /** Bytes of an uploaded file, or null when it is gone from the legacy upload root. */
+  /**
+   * Parsed `irsa_config.json` for this scope; 'invalid' when the file cannot be parsed.
+   * `inherited` is true when the scope has no file of its own and app.py would copy the
+   * default scope's file on first use (app.py `scoped_config`), so that file is returned.
+   */
+  irsaConfig(): Promise<{
+    readonly config: Record<string, unknown> | null | 'invalid';
+    readonly inherited: boolean;
+  }>;
+  /** Bytes of an uploaded file, or null when it is gone, unsafe or not a regular file. */
   readObject(storedName: string): Promise<Uint8Array | null>;
   close(): Promise<void>;
 };
@@ -91,13 +99,39 @@ export type TargetAttachmentDigest = {
   readonly storageKey: string;
 };
 
+/** A keyed row whose insert wrote nothing because the key already existed in the target. */
+export type SkippedRow = { readonly table: string; readonly id: string };
+
+export type WriteResult<Counts> = {
+  readonly counts: Counts;
+  readonly skipped: readonly SkippedRow[];
+};
+
+/** What verify compares for an account; read only in memory, never reported. */
+export type TargetUserState = {
+  readonly username: string;
+  readonly fullName: string;
+  readonly passwordHash: string;
+  readonly role: string;
+  readonly active: boolean;
+  readonly totpEnabled: boolean;
+  readonly totpPresent: boolean;
+};
+
+export type TargetIdentity = {
+  readonly users: readonly TargetUserState[];
+  readonly tenants: readonly TargetTenant[];
+  readonly grants: readonly TargetGrant[];
+};
+
 /** Writes and reads the PostgreSQL side; every tenant write is one transaction. */
 export type TargetStore = {
   globalCounts(): Promise<GlobalCounts>;
   tenantCounts(tenantId: string): Promise<TableCounts>;
-  writeGlobal(batch: GlobalBatch): Promise<GlobalCounts>;
-  writeTenant(tenantId: string, batch: TenantBatch): Promise<TableCounts>;
-  /** `module \u0001 id \u0001 canonical payload` for every stored record. */
-  recordFingerprints(tenantId: string): Promise<readonly string[]>;
+  writeGlobal(batch: GlobalBatch): Promise<WriteResult<GlobalCounts>>;
+  writeTenant(tenantId: string, batch: TenantBatch): Promise<WriteResult<TableCounts>>;
+  identity(): Promise<TargetIdentity>;
+  /** Canonical row fingerprints (domain `rowFingerprint`) of every tenant table. */
+  rowFingerprints(tenantId: string): Promise<Readonly<Record<TenantTable, readonly string[]>>>;
   attachmentDigests(tenantId: string): Promise<readonly TargetAttachmentDigest[]>;
 };

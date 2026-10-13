@@ -3,12 +3,12 @@
  * `node:sqlite` in read-only mode), the JSON settings files and the upload directory.
  * Nothing here writes to the legacy installation.
  */
-import { readFile, stat } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { LegacyRow, LegacyScope } from '../domain/legacy.ts';
-import { scopeDigest } from '../domain/mapping.ts';
+import { legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
 import type { LegacyGrantRow, LegacySource, LegacyTenantReader } from '../application/ports.ts';
 
 /** Default scope of a legacy installation (app.py:61, :444). */
@@ -57,11 +57,13 @@ const isDefaultScope = (scope: LegacyScope) =>
 
 /** app.py:62 and :459-467: non-default scopes live in their own file, folder and upload root. */
 export const tenantPaths = (layout: LegacyLayout, scope: LegacyScope) => {
+  const defaultIrsaConfig = join(layout.configDir, 'irsa_config.json');
   if (isDefaultScope(scope)) {
     return {
       db: layout.defaultDb,
       uploadRoot: layout.uploadDir,
-      irsaConfig: join(layout.configDir, 'irsa_config.json'),
+      irsaConfig: defaultIrsaConfig,
+      defaultIrsaConfig,
     };
   }
   const digest = scopeDigest(`${scope.companyId}/${scope.projectId}`);
@@ -69,27 +71,9 @@ export const tenantPaths = (layout: LegacyLayout, scope: LegacyScope) => {
     db: join(layout.tenantDir, `${digest}.db`),
     uploadRoot: join(layout.uploadDir, digest),
     irsaConfig: join(layout.tenantDir, `${digest}_settings`, 'irsa_config.json'),
+    defaultIrsaConfig,
   };
 };
-
-const EMPTY: readonly LegacyRow[] = [];
-
-const missingTenantReader = (scope: LegacyScope, tenantId: string): LegacyTenantReader => ({
-  scope,
-  tenantId,
-  present: false,
-  records: () => Promise.resolve(EMPTY),
-  audit: () => Promise.resolve(EMPTY),
-  snapshots: () => Promise.resolve(EMPTY),
-  attachments: () => Promise.resolve(EMPTY),
-  documentReviews: () => Promise.resolve(EMPTY),
-  alerts: () => Promise.resolve(EMPTY),
-  actions: () => Promise.resolve(EMPTY),
-  actionLog: () => Promise.resolve(EMPTY),
-  irsaConfig: () => Promise.resolve(null),
-  readObject: () => Promise.resolve(null),
-  close: () => Promise.resolve(),
-});
 
 const readJsonObject = async (path: string) => {
   if (!existsSync(path)) return null;
@@ -101,6 +85,41 @@ const readJsonObject = async (path: string) => {
     return 'invalid' as const;
   }
 };
+
+/**
+ * app.py `scoped_config` copies the default scope's `data/irsa_config.json` into a tenant's
+ * `_settings` folder on first use, so a tenant without its own file computes IRSA with the
+ * default configuration. The migration carries that file over to keep results unchanged.
+ */
+const readIrsaConfig = async (paths: ReturnType<typeof tenantPaths>) => {
+  if (existsSync(paths.irsaConfig) || paths.irsaConfig === paths.defaultIrsaConfig)
+    return { config: await readJsonObject(paths.irsaConfig), inherited: false };
+  const config = await readJsonObject(paths.defaultIrsaConfig);
+  return { config, inherited: config !== null };
+};
+
+const EMPTY: readonly LegacyRow[] = [];
+
+const missingTenantReader = (
+  scope: LegacyScope,
+  tenantId: string,
+  paths: ReturnType<typeof tenantPaths>,
+): LegacyTenantReader => ({
+  scope,
+  tenantId,
+  present: false,
+  records: () => Promise.resolve(EMPTY),
+  audit: () => Promise.resolve(EMPTY),
+  snapshots: () => Promise.resolve(EMPTY),
+  attachments: () => Promise.resolve(EMPTY),
+  documentReviews: () => Promise.resolve(EMPTY),
+  alerts: () => Promise.resolve(EMPTY),
+  actions: () => Promise.resolve(EMPTY),
+  actionLog: () => Promise.resolve(EMPTY),
+  irsaConfig: () => readIrsaConfig(paths),
+  readObject: () => Promise.resolve(null),
+  close: () => Promise.resolve(),
+});
 
 /** The source owns the auth database handle; `close` releases it. */
 export type ClosableLegacySource = LegacySource & { readonly close: () => void };
@@ -144,7 +163,8 @@ export const createSqliteLegacySource = (layout: LegacyLayout): ClosableLegacySo
     openTenant: (scope) => {
       const tenantId = `${scope.companyId}/${scope.projectId}`;
       const paths = tenantPaths(layout, scope);
-      if (!existsSync(paths.db)) return Promise.resolve(missingTenantReader(scope, tenantId));
+      if (!existsSync(paths.db))
+        return Promise.resolve(missingTenantReader(scope, tenantId, paths));
       const db = openReadOnly(paths.db);
       const uploadRoot = resolve(paths.uploadRoot);
 
@@ -160,14 +180,17 @@ export const createSqliteLegacySource = (layout: LegacyLayout): ClosableLegacySo
         alerts: () => Promise.resolve(selectAll(db, 'digital_alert_reviews', 'created_at, id')),
         actions: () => Promise.resolve(selectAll(db, 'preventive_actions', 'created_at, id')),
         actionLog: () => Promise.resolve(selectAll(db, 'preventive_action_log', 'created_at, id')),
-        irsaConfig: () => readJsonObject(paths.irsaConfig),
+        irsaConfig: () => readIrsaConfig(paths),
         readObject: async (storedName) => {
           // Stored names come from the legacy database; never let one escape the upload root.
-          if (!storedName || isAbsolute(storedName) || storedName.includes('\u0000')) return null;
+          // The default scope's root also holds every other tenant's folder, so a name must be
+          // a single path component (app.py writes `<uuid hex>_<safe name>`), and a symlink is
+          // never followed.
+          if (!legacyStoredNameSafe(storedName) || isAbsolute(storedName)) return null;
           const path = resolve(join(uploadRoot, storedName));
-          if (path !== uploadRoot && !path.startsWith(uploadRoot + sep)) return null;
+          if (!path.startsWith(uploadRoot + sep)) return null;
           try {
-            const info = await stat(path);
+            const info = await lstat(path);
             if (!info.isFile()) return null;
             return new Uint8Array(await readFile(path));
           } catch {
