@@ -14,6 +14,8 @@ export type AppConfig = {
   readonly pgliteDir: string;
   /** Read X-Forwarded-For from a trusted reverse proxy (MASCLI_TRUST_PROXY=1). */
   readonly trustProxy: boolean;
+  readonly requireMfa: boolean;
+  readonly allowedHosts: readonly string[];
   /** Largest accepted evidence file (MASCLI_MAX_UPLOAD_BYTES, docs/adr/0008 #9). */
   readonly maxUploadBytes: number;
   /** Where evidence file bytes live (docs/migration/evidence.md). */
@@ -127,6 +129,22 @@ const parseOllama = (env: Env) => {
   return { baseUrl, model };
 };
 
+const HOSTNAME =
+  /^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/;
+
+/** Comma-separated host names without port, e.g. `mascli.example.org,localhost`. */
+const parseAllowedHosts = (value: string | undefined): readonly string[] => {
+  const hosts = (value ?? '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  const invalid = hosts.find((host) => !HOSTNAME.test(host));
+  if (invalid !== undefined) {
+    throw new Error(`MASCLI_ALLOWED_HOSTS has an invalid host name: ${invalid}`);
+  }
+  return hosts;
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -145,4 +163,6 @@ export const loadConfig = (env: Env): AppConfig => ({
   storage: parseStorage(env),
   ollama: parseOllama(env),
   webDir: env.MASCLI_WEB_DIR || undefined,
+  requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),
+  allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
 });

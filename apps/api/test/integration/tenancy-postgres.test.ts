@@ -129,7 +129,7 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
     const login = async (username: string, password: string) => {
       const res = await app.request('/login', {
         method: 'POST',
-        headers: { host: 'localhost' },
+        headers: { host: 'localhost', origin: 'http://localhost' },
         body: new URLSearchParams({ username, password }),
       });
       expect(res.status).toBe(200);
@@ -140,7 +140,12 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
       (
         await app.request('/system/auth/accounts', {
           method: 'POST',
-          headers: { cookie, host: 'localhost', 'content-type': 'application/json' },
+          headers: {
+            cookie,
+            host: 'localhost',
+            origin: 'http://localhost',
+            'content-type': 'application/json',
+          },
           body: JSON.stringify({
             username: 'second.admin',
             full_name: 'Second',
@@ -153,7 +158,7 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
     const deactivate = (username: string) =>
       app.request(`/system/auth/accounts/${username}/deactivate`, {
         method: 'POST',
-        headers: { cookie, host: 'localhost' },
+        headers: { cookie, host: 'localhost', origin: 'http://localhost' },
       });
     const results = await Promise.all([deactivate('admin'), deactivate('second.admin')]);
     expect(results.map((r) => r.status).sort()).toEqual([200, 409]);

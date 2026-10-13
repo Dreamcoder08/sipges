@@ -207,9 +207,11 @@ describe('scope resolution middleware (app.py enforce_auth steps 4-7)', () => {
   it('denies every scoped route to a user without grants', async () => {
     const { t } = await setup();
     const ana = await t.login(ANA.username, ANA.password);
-    const res = await t.request('/system/auth/totp/setup', {
+    // MFA enrollment is scope-free (ADR 0009), so a scoped business route is used here.
+    const res = await t.request('/api/eventos', {
       method: 'POST',
-      headers: { cookie: ana.cookie },
+      headers: { cookie: ana.cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: { Descripcion_Hecho: 'x' } }),
     });
     expect(res.status).toBe(403);
     expect(await json(res)).toEqual({
@@ -235,26 +237,28 @@ describe('scope resolution middleware (app.py enforce_auth steps 4-7)', () => {
     'rejects a JSON body that targets another project (%j) before the handler runs',
     async (body) => {
       const { t, admin } = await setup();
-      const res = await t.request('/system/auth/totp/setup', {
+      const count = async () =>
+        Number(
+          (await t.sql.query<{ n: string }>('SELECT count(*) AS n FROM module_records'))[0]?.n,
+        );
+      const before = await count();
+      const res = await t.request('/api/eventos', {
         method: 'POST',
         headers: { cookie: admin.cookie, 'content-type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify('payload' in body ? body : { ...body, payload: {} }),
       });
       expect(res.status).toBe(403);
       expect(await json(res)).toEqual({ detail: 'No se permite escribir en otro proyecto' });
-      const [row] = await t.sql.query<{ totp_secret_sealed: string | null }>(
-        "SELECT totp_secret_sealed FROM users WHERE username = 'admin'",
-      );
-      expect(row?.totp_secret_sealed).toBeNull();
+      expect(await count()).toBe(before);
     },
   );
 
   it('lets a JSON body that names the active project through', async () => {
     const { t, admin } = await setup();
-    const res = await t.request('/system/auth/totp/setup', {
+    const res = await t.request('/api/eventos', {
       method: 'POST',
       headers: { cookie: admin.cookie, 'content-type': 'application/json' },
-      body: JSON.stringify({ project_id: 'PRJ-SECHURA' }),
+      body: JSON.stringify({ project_id: 'PRJ-SECHURA', payload: { Descripcion_Hecho: 'x' } }),
     });
     expect(res.status).toBe(200);
   });

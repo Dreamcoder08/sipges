@@ -19,6 +19,9 @@ export type Identity = {
   readonly role: Role;
 };
 
+/** Principal resolved from a session, plus whether its second factor is enrolled (ADR 0009). */
+export type SessionIdentity = Identity & { readonly mfaEnabled: boolean };
+
 export type NewAccount = {
   readonly username: string;
   readonly fullName: string;

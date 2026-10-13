@@ -17,6 +17,7 @@ import { tenancyRoutes } from './contexts/tenancy/http/tenancy-routes.ts';
 import { authRoutes } from './contexts/identity/http/auth-routes.ts';
 import { healthRoutes } from './contexts/system/http/health.routes.ts';
 import type { AppEnv } from './platform/http/env.ts';
+import { hostAllowlist } from './platform/http/host.ts';
 import { securityHeaders } from './platform/http/security-headers.ts';
 import { type WebAssets, spaMiddleware } from './platform/http/spa.ts';
 
@@ -40,8 +41,9 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   const app = new Hono<AppEnv>();
 
   app.use('*', securityHeaders({ hsts: config.cookieSecure }));
+  app.use('*', hostAllowlist(config.allowedHosts));
   if (options.web) app.use('*', spaMiddleware(options.web));
-  app.use('*', sessionMiddleware(identity));
+  app.use('*', sessionMiddleware(identity, { requireMfa: config.requireMfa }));
   app.use('*', tenancyMiddleware(tenancy));
   app.use('*', roleGate(identity));
 

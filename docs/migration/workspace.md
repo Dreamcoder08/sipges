@@ -66,6 +66,8 @@ End-to-end coverage, real-PostgreSQL option and the deployment checklist: [docs/
 | `MASCLI_OLLAMA_URL` | http(s) base URL of the Ollama embeddings server (T10) | `http://127.0.0.1:11434` |
 | `MASCLI_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
 | `MASCLI_WEB_DIR` | built SPA to serve, e.g. `apps/web/dist` (docs/migration/web.md) | unset → API only |
+| `MASCLI_REQUIRE_MFA` | exactly `0` or `1` | unset → every session must enroll TOTP before using the API (ADR 0009) |
+| `MASCLI_ALLOWED_HOSTS` | comma-separated host names without port, e.g. `mascli.example.org` | unset → no Host check (local development); set it in every deployment (ADR 0009) |
 | `NODE_ENV` | `production` requires `MASCLI_DATABASE_URL` (embedded PGlite is refused) | unset |
 
 Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.

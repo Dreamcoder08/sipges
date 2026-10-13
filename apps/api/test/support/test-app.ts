@@ -19,6 +19,8 @@ export const TEST_ENV = {
   MASCLI_DATA_KEY: TEST_DATA_KEY,
   MASCLI_ADMIN_USERNAME: 'admin',
   MASCLI_ADMIN_PASSWORD: 'admin-password-123',
+  // Most suites exercise features, not enrollment; MFA enforcement has its own tests.
+  MASCLI_REQUIRE_MFA: '0',
 } as const;
 
 export const ORIGIN = 'http://localhost';
@@ -95,6 +97,15 @@ export const createTestApp = async (
   const request = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);
     if (!headers.has('host')) headers.set('host', 'localhost');
+    // Behave like a browser: same-origin writes carry Origin. Pass `origin: ''` to omit it.
+    const method = (init.method ?? 'GET').toUpperCase();
+    if (
+      !['GET', 'HEAD', 'OPTIONS'].includes(method) &&
+      !headers.has('origin') &&
+      !headers.has('referer')
+    )
+      headers.set('origin', ORIGIN);
+    if (headers.get('origin') === '') headers.delete('origin');
     return app.request(path, { ...init, headers });
   };
 
