@@ -1,4 +1,6 @@
 import { PGlite } from '@electric-sql/pglite';
+import { afterAll } from 'vitest';
+import { trackTestDatabase } from './test-database.ts';
 import { buildContainer } from '../../src/compose.ts';
 import { createApp } from '../../src/app.ts';
 import { loadConfig } from '../../src/platform/config.ts';
@@ -35,12 +37,24 @@ let template: Promise<PGlite> | undefined;
 const migratedTemplate = () =>
   (template ??= (async () => {
     const db = new PGlite();
-    await migrate(pgliteClient(db), await loadMigrations());
-    return db;
+    try {
+      await migrate(pgliteClient(db), await loadMigrations());
+      return db;
+    } catch (error) {
+      await db.close();
+      throw error;
+    }
   })());
 
+afterAll(async () => {
+  if (!template) return;
+  // A failed migration already closes its allocation in migratedTemplate.
+  const db = await template.catch(() => undefined);
+  if (db && !db.closed) await db.close();
+});
+
 export const createTestApp = async (env: Record<string, string> = {}) => {
-  const db = await (await migratedTemplate()).clone();
+  const db = trackTestDatabase(await (await migratedTemplate()).clone());
   const sql = pgliteClient(db);
   const clock = new TestClock();
   const config = loadConfig({ ...TEST_ENV, ...env });

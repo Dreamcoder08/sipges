@@ -1,4 +1,5 @@
 import { PGlite } from '@electric-sql/pglite';
+import { trackTestDatabase } from '../support/test-database.ts';
 import { describe, expect, it } from 'vitest';
 import { pgliteClient } from '../../src/platform/database/pglite.ts';
 import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
@@ -16,20 +17,20 @@ const tables = async (db: PGlite) =>
 
 describe('migrate', () => {
   it('applies pending migrations in order and records them', async () => {
-    const db = new PGlite();
+    const db = trackTestDatabase(new PGlite());
     const applied = await migrate(pgliteClient(db), migrations);
     expect(applied).toEqual(['0001_first', '0002_second']);
     expect(await tables(db)).toEqual(['first', 'schema_migrations', 'second']);
   });
 
   it('is idempotent: a second run applies nothing', async () => {
-    const db = new PGlite();
+    const db = trackTestDatabase(new PGlite());
     await migrate(pgliteClient(db), migrations);
     expect(await migrate(pgliteClient(db), migrations)).toEqual([]);
   });
 
   it('rolls back a failing migration and leaves earlier ones applied', async () => {
-    const db = new PGlite();
+    const db = trackTestDatabase(new PGlite());
     const broken = [
       first,
       { version: '0002_broken', sql: 'CREATE TABLE half (id int); SELECT * FROM missing_table;' },
@@ -41,7 +42,7 @@ describe('migrate', () => {
   });
 
   it('rejects migrations that are out of order', async () => {
-    const db = new PGlite();
+    const db = trackTestDatabase(new PGlite());
     await expect(migrate(pgliteClient(db), [second, first])).rejects.toThrow(
       'Migrations must be sorted by version',
     );
@@ -59,7 +60,7 @@ describe('loadMigrations', () => {
 
 describe('migrate under concurrency', () => {
   it('applies each migration once when two runners start together', async () => {
-    const db = new PGlite();
+    const db = trackTestDatabase(new PGlite());
     const client = pgliteClient(db);
     const [a, b] = await Promise.all([migrate(client, migrations), migrate(client, migrations)]);
     expect([...a, ...b].sort()).toEqual(['0001_first', '0002_second']);

@@ -1,13 +1,15 @@
 import { HealthResponse } from '@mascli/contracts';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from './support/test-app.ts';
 
-const t = await createTestApp();
-const { app } = t;
+let t: Awaited<ReturnType<typeof createTestApp>>;
+beforeEach(async () => {
+  t = await createTestApp();
+});
 
 describe('GET /health', () => {
   it('returns the Python health payload anonymously', async () => {
-    const res = await app.request('/health');
+    const res = await t.app.request('/health');
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/^application\/json/);
     const body = await res.json();
@@ -19,7 +21,7 @@ describe('GET /health', () => {
   });
 
   it('sets the parity security headers', async () => {
-    const res = await app.request('/health');
+    const res = await t.app.request('/health');
     expect(res.headers.get('x-content-type-options')).toBe('nosniff');
     expect(res.headers.get('x-frame-options')).toBe('DENY');
     expect(res.headers.get('referrer-policy')).toBe('no-referrer');
@@ -27,7 +29,7 @@ describe('GET /health', () => {
   });
 
   it('requires a session before revealing whether a route exists (parity with app.py middleware)', async () => {
-    const res = await app.request('/does-not-exist');
+    const res = await t.app.request('/does-not-exist');
     expect(res.status).toBe(401);
     expect(await res.json()).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
   });
