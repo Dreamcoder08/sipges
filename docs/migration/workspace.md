@@ -16,6 +16,12 @@ corepack pnpm --filter @mascli/api dev   # API on http://127.0.0.1:8000
 corepack pnpm --filter @mascli/web dev   # SPA on http://127.0.0.1:5173 (proxies API routes)
 ```
 
+### Test database lifecycle
+
+API tests run with one Vitest worker and sequential files to bound PGlite's WASM memory. `createTestApp` registers each clone before configuration/bootstrap; an `afterEach` hook closes it even when setup or an assertion fails. The migrated template is retained only for its test file and closed in `afterAll`. Direct PGlite tests must call `trackTestDatabase(new PGlite())` immediately after allocation. Tests sharing this registry must not use `.concurrent`.
+
+Do not raise Node's heap limit to hide missing fixture teardown. PGlite remains a single-connection test adapter; sequential test files do not replace the real-server concurrency checks below.
+
 ### Real PostgreSQL integration tests (optional)
 Unit and HTTP tests use in-process PGlite (single connection). Concurrency, advisory locks and postgres.js typing are checked against a real server when `MASCLI_TEST_DATABASE_URL` is set; each run creates and drops a throwaway database.
 ```bash
