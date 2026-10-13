@@ -21,6 +21,8 @@ Behavior contract §2 and §8.8: PBKDF2-SHA256 (310k) hashes, opaque sessions st
 - An unreadable sealed TOTP secret (corruption, wrong key) fails the second factor with 401 and logs an operator hint, never a 500.
 - Timing: unknown users are verified against an eagerly computed Argon2id dummy hash. Accounts still holding a legacy PBKDF2 hash answer measurably slower until their next login rehashes them.
 
+See [ADR 0009](0009-internet-exposure-hardening.md) for the stricter Origin rule, API CSP, host allowlist, mandatory MFA and MFA reset added before publishing the API.
+
 ## Consequences
 - Users keep their passwords; hashes upgrade transparently.
 - `MASCLI_DATA_KEY` becomes a required production secret; key rotation is a documented procedure.

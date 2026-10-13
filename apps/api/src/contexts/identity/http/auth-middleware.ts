@@ -14,12 +14,22 @@ const PUBLIC_PATHS = new Set([
   '/system/auth/me',
 ]);
 
+/** The only routes a session without an enrolled second factor may use (ADR 0009). */
+export const MFA_ENROLLMENT_PATHS = new Set([
+  '/system/auth/totp/setup',
+  '/system/auth/totp/enable',
+]);
+
+export const MFA_REQUIRED_DETAIL =
+  'Active la verificación en dos pasos (MFA) con /system/auth/totp/setup antes de continuar';
+
 /**
  * app.py enforce_auth steps 1-3: public routes, session, Origin check.
- * Unlike Python, public routes also get the Origin check (ADR 0008 #4).
+ * Unlike Python, public routes also get the Origin check (ADR 0008 #4), and with
+ * `requireMfa` a session must enroll TOTP before reaching anything else (ADR 0009).
  */
 export const sessionMiddleware =
-  (identity: IdentityService): MiddlewareHandler<AppEnv> =>
+  (identity: IdentityService, options: { requireMfa: boolean }): MiddlewareHandler<AppEnv> =>
   async (c, next) => {
     const write = isWriteMethod(c.req.method);
 
@@ -34,6 +44,9 @@ export const sessionMiddleware =
       return c.json({ detail: 'Inicie sesión para acceder a MASCLI' }, 401);
     }
     if (write && !originAllowed(c)) return forbiddenOrigin(c);
+    if (options.requireMfa && !principal.mfaEnabled && !MFA_ENROLLMENT_PATHS.has(c.req.path)) {
+      return c.json({ detail: MFA_REQUIRED_DETAIL, mfa_required: true }, 403);
+    }
 
     c.set('identity', principal);
     c.set('sessionToken', token);

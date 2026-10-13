@@ -28,7 +28,9 @@ describe('checkRoleAccess', () => {
     ['coordinador', 'POST', '/system/prevention/actions', allowed],
     ['coordinador', 'PATCH', '/system/intelligence/territorial-alerts/7', allowed],
     ['analista', 'POST', '/system/auth/totp/setup', allowed],
-    ['consulta', 'POST', '/system/auth/totp/setup', denied('Rol de consulta: solo lectura')],
+    ['consulta', 'POST', '/system/auth/totp/setup', allowed],
+    ['consulta', 'POST', '/system/auth/totp/enable', allowed],
+    ['coordinador', 'POST', '/system/auth/totp/setup', allowed],
   ] as const)('%s %s %s', (role, method, path, expected) => {
     expect(checkRoleAccess(role, method, path)).toEqual(expected);
   });

@@ -14,6 +14,10 @@ export type AppConfig = {
   readonly pgliteDir: string;
   /** Read X-Forwarded-For from a trusted reverse proxy (MASCLI_TRUST_PROXY=1). */
   readonly trustProxy: boolean;
+  /** Every session must enroll TOTP before using the application (MASCLI_REQUIRE_MFA, ADR 0009). */
+  readonly requireMfa: boolean;
+  /** Accepted Host names; empty disables the check (MASCLI_ALLOWED_HOSTS, ADR 0009). */
+  readonly allowedHosts: readonly string[];
 };
 
 type Env = Readonly<Record<string, string | undefined>>;
@@ -50,6 +54,22 @@ const parseDataKey = (value: string | undefined): Buffer => {
   return key;
 };
 
+const HOSTNAME =
+  /^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/;
+
+/** Comma-separated host names without port, e.g. `mascli.example.org,localhost`. */
+const parseAllowedHosts = (value: string | undefined): readonly string[] => {
+  const hosts = (value ?? '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  const invalid = hosts.find((host) => !HOSTNAME.test(host));
+  if (invalid !== undefined) {
+    throw new Error(`MASCLI_ALLOWED_HOSTS has an invalid host name: ${invalid}`);
+  }
+  return hosts;
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -64,4 +84,6 @@ export const loadConfig = (env: Env): AppConfig => ({
   databaseUrl: parseDatabaseUrl(env),
   pgliteDir: env.MASCLI_PGLITE_DIR ?? '.data/pglite',
   trustProxy: parseSwitch('MASCLI_TRUST_PROXY', env.MASCLI_TRUST_PROXY, false),
+  requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),
+  allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
 });

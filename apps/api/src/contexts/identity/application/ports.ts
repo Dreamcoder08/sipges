@@ -1,5 +1,5 @@
 import type { ThrottleDecision } from '../domain/login-throttle.ts';
-import type { Identity, NewAccount, Role } from '../domain/user.ts';
+import type { Identity, NewAccount, Role, SessionIdentity } from '../domain/user.ts';
 
 export type StoredUser = Identity & {
   readonly passwordHash: string;
@@ -32,6 +32,8 @@ export type IdentityStore = {
   updatePasswordHash(username: string, passwordHash: string): Promise<void>;
   /** Stores a new pending secret only while MFA is disabled; returns false otherwise. */
   startTotpEnrollment(username: string, sealedSecret: string): Promise<boolean>;
+  /** Clears the second factor and deletes every session of the user, atomically (ADR 0009). */
+  resetTotp(username: string): Promise<'reset' | 'missing'>;
   /** Enables MFA, records the used step and revokes every other session of the user, atomically. */
   enableTotp(username: string, step: number, keepTokenHash: string): Promise<void>;
   /** Records a consumed step only if it is newer than the stored one; false means replay. */
@@ -39,7 +41,7 @@ export type IdentityStore = {
 
   /** False when deactivation won the race; holds a user-row lock through session insertion. */
   createSession(tokenHash: string, username: string, expiresAt: Date, at: Date): Promise<boolean>;
-  findSessionIdentity(tokenHash: string, at: Date): Promise<Identity | null>;
+  findSessionIdentity(tokenHash: string, at: Date): Promise<SessionIdentity | null>;
   deleteSession(tokenHash: string): Promise<void>;
   purgeExpiredSessions(at: Date): Promise<void>;
 

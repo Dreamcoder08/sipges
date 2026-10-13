@@ -11,6 +11,7 @@ import { tenancyRoutes } from './contexts/tenancy/http/tenancy-routes.ts';
 import { authRoutes } from './contexts/identity/http/auth-routes.ts';
 import { healthRoutes } from './contexts/system/http/health.routes.ts';
 import type { AppEnv } from './platform/http/env.ts';
+import { hostAllowlist } from './platform/http/host.ts';
 import { securityHeaders } from './platform/http/security-headers.ts';
 
 /** Builds the HTTP application from an already-wired container (no I/O here). */
@@ -19,7 +20,8 @@ export const createApp = (container: Container) => {
   const app = new Hono<AppEnv>();
 
   app.use('*', securityHeaders({ hsts: config.cookieSecure }));
-  app.use('*', sessionMiddleware(identity));
+  app.use('*', hostAllowlist(config.allowedHosts));
+  app.use('*', sessionMiddleware(identity, { requireMfa: config.requireMfa }));
   app.use('*', tenancyMiddleware(tenancy));
   app.use('*', roleGate(identity));
 

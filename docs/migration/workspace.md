@@ -53,6 +53,8 @@ docker stop mascli-pg-test
 | `MASCLI_DATABASE_URL` | PostgreSQL URL; TLS required unless the host is local | unset → embedded PGlite (development only) |
 | `MASCLI_PGLITE_DIR` | embedded database directory | `.data/pglite` |
 | `MASCLI_TRUST_PROXY` | exactly `0` or `1`; `1` only behind a reverse proxy that sets `X-Forwarded-For` | `0` (socket address) |
+| `MASCLI_REQUIRE_MFA` | exactly `0` or `1` | unset → every session must enroll TOTP before using the API (ADR 0009) |
+| `MASCLI_ALLOWED_HOSTS` | comma-separated host names without port, e.g. `mascli.example.org` | unset → no Host check (local development); set it in every deployment (ADR 0009) |
 | `NODE_ENV` | `production` requires `MASCLI_DATABASE_URL` (embedded PGlite is refused) | unset |
 
 Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.

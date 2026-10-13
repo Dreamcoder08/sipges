@@ -4,8 +4,16 @@ import { SCOPE_COOKIE } from '../../../platform/http/cookies.ts';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import type { TenancyService } from '../application/index.ts';
 
-/** Global directory operations: authenticated and role-checked, but not business-scope writes. */
-const SCOPE_FREE_PATHS = new Set(['/system/auth/scopes', '/system/auth/grants']);
+/**
+ * Global directory operations and personal MFA enrollment: authenticated and role-checked, but
+ * not business-scope writes. Enrollment must work before any project is granted (ADR 0009).
+ */
+const SCOPE_FREE_PATHS = new Set([
+  '/system/auth/scopes',
+  '/system/auth/grants',
+  '/system/auth/totp/setup',
+  '/system/auth/totp/enable',
+]);
 
 const BODY_CHECKED_METHODS = new Set(['POST', 'PUT', 'PATCH']);
 
@@ -29,7 +37,9 @@ export const tenancyMiddleware =
   (tenancy: TenancyService): MiddlewareHandler<AppEnv> =>
   async (c, next) => {
     const identity = c.get('identity');
-    const accountDeactivation = /^\/system\/auth\/accounts\/[^/]+\/deactivate$/.test(c.req.path);
+    const accountDeactivation = /^\/system\/auth\/accounts\/[^/]+\/(deactivate|reset-mfa)$/.test(
+      c.req.path,
+    );
     if (!identity || SCOPE_FREE_PATHS.has(c.req.path) || accountDeactivation) return next();
 
     const resolution = await tenancy.resolve({
