@@ -15,6 +15,11 @@ in `odd/tasks/typescript-hexagonal-migration.md`; decisions live in `docs/adr/`.
 
 Skills require at least three independent uses evidenced in [docs/agents/skills.md](docs/agents/skills.md). Benchmarking has only two archived runs and remains a documented procedure. Load only the matching SKILL.md; repository skills do not grant permissions.
 
+The official `neon` and `neon-postgres` skills are installed at the user's explicit request,
+with provenance in `skills-lock.json`. They are vendor instructions, not newly authored
+MASCLI workflows. Use them for Neon setup and PostgreSQL connections; installing skills
+does not authenticate the CLI or authorize additional services.
+
 ## Scripts
 
 | Command | What it does |
