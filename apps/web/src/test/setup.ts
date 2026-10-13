@@ -1,6 +1,6 @@
 import { File as NodeFile } from 'node:buffer';
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import { server } from './server.ts';
 
@@ -19,6 +19,10 @@ globalThis.fetch = (input, init) =>
 
 // jsdom does not implement scrolling; the router restores scroll on navigation.
 window.scrollTo = () => undefined;
+
+// Screens are lazy-loaded route chunks; on a busy CI runner the first render of a file can
+// take longer than Testing Library's 1 s default for `findBy*`.
+configure({ asyncUtilTimeout: 5000 });
 
 beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
 afterEach(() => {
