@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en `feat/typescript-migration-11a-web-shell`, commit `0cbe31d2df9223291d0660bffdeb73a3df92deca`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en `feat/typescript-migration-11b-records-ui`, commit `f9db457d4151d18898163dffb78c653cd859e0a6`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación T11b](migration/t11b-verification.md) registra pruebas y diferencias de paridad pendientes.
 
 ## Recorrido y reglas de dependencia
 
@@ -37,8 +37,8 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | Fase | Estado registrado |
 | --- | --- |
 | T1–T10 | Contratos, ADRs, workspace y contextos backend completados |
-| T11a | Shell, login/MFA, selección/cambio de proyecto y dashboard completados |
-| T11b–d | Resto de pantallas pendiente; rutas con aviso «En migración» |
+| T11a/b | Shell, login/MFA, selección/cambio de proyecto, dashboard, registros y evidencias completados |
+| T11c–d | Pantallas de análisis y gestión pendientes; rutas con aviso «En migración» |
 | T12 | Benchmarks pendientes; Go/Rust condicionado a resultados |
 | T13 | Herramientas de migración SQLite → PostgreSQL pendientes |
 | T14 | Paridad E2E y preparación del despliegue pendientes |

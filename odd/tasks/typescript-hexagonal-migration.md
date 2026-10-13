@@ -47,7 +47,7 @@ Branch `feature/typescript-hexagonal-migration` from `c7fec1b` (Python P2b commi
 ## Arquitectura visual
 
 - [Mapa Archify de la implementación TypeScript](../../docs/diagrams/arquitectura.html) y [guía de lectura y regeneración](../../docs/ARQUITECTURA.md).
-- Fuente fijada a `0cbe31d2df9223291d0660bffdeb73a3df92deca` (T11a); refleja código implementado y pendientes de este ODD. ODD/ADRs guían el desarrollo; no se representan como servicios del runtime.
+- Fuente fijada a `f9db457d4151d18898163dffb78c653cd859e0a6` (T11a/b); refleja código implementado y pendientes de este ODD. ODD/ADRs guían el desarrollo; no se representan como servicios del runtime.
 
 ## Log
 - L57 (T11b records UI): Rebuilt Eventos, Actores, Directorio, Demandas/Compromisos, Narrativas and Fuentes in one isolated React feature with module-specific fields, scoped queries/mutations, CRUD, delete confirmation and linked evidence. Added shared record/attachment contracts. PUT preserves latest unknown fields and attachment links; project display names and cleared imported contact values survive editing. Conflicting saves/deletes/uploads are locked. Independent review identified a save/editor race, overwritten project names and resurrected aliases; covering regressions were observed RED→GREEN and fixed. Real Chromium against an isolated synthetic Hono/PGlite instance checked six modules plus commitments, file bytes through upload/download, edit preservation, delete cancel/confirm, tenant switching and mobile containment. Parity differences (explicit event dimension and enumerated directory aliases) are documented in docs/migration/web.md. Detailed verification: docs/migration/t11b-verification.md. T11c/d, T12–T14 stay pending; no real-data migration or deployment.

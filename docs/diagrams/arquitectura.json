@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "0cbe31d2df9223291d0660bffdeb73a3df92deca"
+      "revision": "f9db457d4151d18898163dffb78c653cd859e0a6"
     }
   },
   "components": [
@@ -34,15 +34,15 @@
         },
         {
           "path": "apps/web/src/shared/api/client.ts",
-          "line": 50,
-          "end_line": 79,
-          "label": "HTTP y validación Zod"
+          "line": 52,
+          "end_line": 82,
+          "label": "HTTP fijado al alcance y Zod"
         },
         {
-          "path": "apps/web/src/features/tenancy/api.ts",
-          "line": 9,
-          "end_line": 25,
-          "label": "Cambio de proyecto servidor"
+          "path": "apps/web/src/features/records/RecordsPage.tsx",
+          "line": 65,
+          "end_line": 113,
+          "label": "Registros, permisos y mutations"
         }
       ]
     },
@@ -384,8 +384,8 @@
       "dot": "cyan",
       "title": "Frontend y acceso",
       "items": [
-        "SPA en TypeScript: React 19, Vite, TanStack Router/Query, CSS Modules y tokens. Contratos Zod compartidos con HTTP.",
-        "Las cookies HttpOnly llevan sesión y alcance. El cambio de proyecto usa POST /select-project y vuelve a consultar los datos.",
+        "SPA en TypeScript: React 19, Vite, TanStack Router/Query, CSS Modules y tokens. Registros territoriales y evidencias con contratos Zod compartidos.",
+        "Las cookies HttpOnly llevan sesión y alcance. Registros y evidencias fijan X-MASCLI-Scope; cambiar proyecto descarta los borradores y vuelve a consultar datos.",
         "El servidor ejecuta middleware de sesión/origen, tenancy y roles antes de las rutas protegidas; la entrega del shell y ciertas rutas tienen excepciones."
       ]
     },
@@ -411,8 +411,8 @@
       "dot": "amber",
       "title": "ODD · implementado y pendiente",
       "items": [
-        "Fuente: rama feat/typescript-migration-11a-web-shell, revisión 0cbe31d. ODD y ADRs guían la migración; no son servicios del runtime.",
-        "T1–T10 y T11a figuran completos: API y shell, login/MFA, selección de proyecto y dashboard. T11b–d, T12 benchmarks, T13 migración de datos y T14 paridad/despliegue siguen pendientes.",
+        "Fuente: rama feat/typescript-migration-11b-records-ui, revisión f9db457. ODD y ADRs guían la migración; no son servicios del runtime.",
+        "T1–T10 y T11a/b figuran completos: API, shell/login/MFA, selección de proyecto, dashboard, registros y evidencias. T11c/d, T12 benchmarks, T13 migración de datos y T14 paridad/despliegue siguen pendientes.",
         "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. El legado Python es referencia, no dependencia de este runtime."
       ]
     }
