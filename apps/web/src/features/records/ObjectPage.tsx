@@ -4,6 +4,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { recordQuery } from './api.ts';
 import { EvidencePanel } from './EvidencePanel.tsx';
+import { GraphPanel } from './GraphPanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
 import { canWriteRecords, presentText } from './model.ts';
@@ -38,6 +39,7 @@ const ObjectView = ({
       </Card>
       {record.data ? (
         <Card title="Relaciones y trazabilidad">
+          <GraphPanel module={module} id={id} scope={scope} />
           <LinksPanel module={module} id={id} scope={scope} writable={writable} />
           <EvidencePanel
             module={module}

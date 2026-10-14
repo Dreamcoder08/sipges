@@ -1,0 +1,80 @@
+.figure {
+  margin: 0;
+}
+.svg {
+  width: 100%;
+  height: auto;
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.edge {
+  stroke: var(--color-muted);
+  stroke-width: 1.4;
+  opacity: 0.7;
+}
+.dashed {
+  stroke-dasharray: 5 4;
+}
+.arrow {
+  fill: var(--color-muted);
+}
+.edgeLabel {
+  font-size: 10px;
+  fill: var(--color-muted);
+  text-anchor: middle;
+  pointer-events: none;
+}
+.node {
+  cursor: pointer;
+  outline: none;
+}
+.node circle {
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+.node:hover circle,
+.node:focus-visible circle {
+  stroke: var(--color-focus);
+  stroke-width: 3;
+}
+.nodeLabel {
+  font-size: 11px;
+  fill: var(--color-text);
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-surface);
+  stroke-width: 3px;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.t0 {
+  fill: #2b6cb0;
+}
+.t1 {
+  fill: #2f855a;
+}
+.t2 {
+  fill: #dd6b20;
+}
+.t3 {
+  fill: #805ad5;
+}
+.t4 {
+  fill: #c53030;
+}
+.t5 {
+  fill: #d69e2e;
+}
+.t6 {
+  fill: #319795;
+}
+.t7 {
+  fill: #5b6673;
+}
