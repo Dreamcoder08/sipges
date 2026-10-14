@@ -44,6 +44,16 @@ it('renders scoped geometry, lets the reader select and zoom, and shows its prov
   await userEvent.selectOptions(screen.getByLabelText('Concesión'), '12000442Y01');
   expect(screen.getByRole('heading', { name: 'BAYOVAR N° 6' })).toBeVisible();
   expect(screen.getByText('EPSG:4326')).toBeVisible();
+  // INGEMMET's cadastre sits under the concessions and can be hidden.
+  const cadastreImage = () =>
+    [...map.querySelectorAll('image')].find((i) => i.getAttribute('href')?.includes('geocatmin'));
+  expect(cadastreImage()).toBeDefined();
+  expect(screen.getByRole('link', { name: 'INGEMMET – GEOCATMIN' })).toHaveAttribute(
+    'href',
+    'https://geocatmin.ingemmet.gob.pe/geocatmin_v3/',
+  );
+  await userEvent.click(screen.getByLabelText('Catastro minero de INGEMMET (GEOCATMIN)'));
+  expect(cadastreImage()).toBeUndefined();
 });
 it('does not draw Sechura geometry when the scope has no registered reference', async () => {
   server.use(
