@@ -8,6 +8,7 @@ import {
   type RecordGraph,
   type RecordLinks,
   type SearchResults,
+  type Timeline,
 } from '@mascli/contracts';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
@@ -95,6 +96,26 @@ export const ontologyRoutes = (ontology: OntologyService) =>
         query: q,
         hits: hits.map((hit) => ({ ...summaryOut(hit), match: hit.match })),
       } satisfies SearchResults);
+    })
+
+    .get('/system/timeline', async (c) => {
+      const limit = parseIntQuery(c, 'limit', 200);
+      if (!limit.ok) return limit.response;
+      const modules = c.req.query('modules');
+      const timeline = await ontology.timeline(tenantOf(c), {
+        from: (c.req.query('from') ?? '').slice(0, 10),
+        to: (c.req.query('to') ?? '').slice(0, 10),
+        slugs: modules ? modules.split(',').filter(Boolean) : null,
+        limit: limit.value,
+      });
+      if (!timeline)
+        return c.json({ detail: 'Fechas no válidas: use AAAA, AAAA-MM o AAAA-MM-DD' }, 422);
+      return c.json({
+        from: timeline.from,
+        to: timeline.to,
+        entries: timeline.entries.map(summaryOut),
+        truncated: timeline.truncated,
+      } satisfies Timeline);
     })
 
     .get('/system/links', async (c) => {

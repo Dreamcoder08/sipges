@@ -43,3 +43,10 @@ export const dimensionOf = (value: unknown): DimensionCode | null => {
 
 export const formatDateTime = (date: Date) =>
   new Intl.DateTimeFormat('es-PE', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+
+const MONTH = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+/** "2026-10" → "Octubre de 2026". */
+export const monthLabel = (month: string) => {
+  const label = MONTH.format(new Date(`${month}-01T12:00:00Z`));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+};

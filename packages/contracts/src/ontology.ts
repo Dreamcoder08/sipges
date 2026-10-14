@@ -135,3 +135,12 @@ export const Briefing = z.object({
   ),
 });
 export type Briefing = z.infer<typeof Briefing>;
+
+/** GET /system/timeline (docs/adr/0011 §7): dated records across object types. */
+export const Timeline = z.object({
+  from: z.string(),
+  to: z.string(),
+  entries: z.array(ObjectSummary),
+  truncated: z.boolean(),
+});
+export type Timeline = z.infer<typeof Timeline>;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { localityOf } from './localities.ts';
-import { filterPoints, mapPoints, monthsOf } from './territorial-model.ts';
+import { filterPoints, mapPoints, monthlyCounts, monthsOf } from './territorial-model.ts';
 
 describe('territorial map model', () => {
   it('finds the locality named in a free-text territory, longest name first', () => {
@@ -42,8 +42,35 @@ describe('territorial map model', () => {
     expect(points[1]?.at).not.toEqual(points[0]?.at);
     expect(points[2]?.at).toEqual([-80.9, -5.6]);
     expect(monthsOf(points)).toEqual(['2026-10', '2026-09']);
+    const none = { layer: '', dimension: '', locality: '', from: '', to: '' };
     expect(
-      filterPoints(points, { layer: 'Eventos', dimension: '', locality: 'vice', month: '2026-10' }),
+      filterPoints(points, { ...none, layer: 'Eventos', locality: 'vice', from: '2026-10' }),
     ).toHaveLength(1);
+    expect(filterPoints(points, none)).toHaveLength(3);
+    // A time range hides undated points.
+    expect(filterPoints(points, { ...none, to: '2026-09' }).map((p) => p.id)).toEqual(['E-2']);
+    expect(monthlyCounts(points)).toEqual([
+      { month: '2026-09', count: 1 },
+      { month: '2026-10', count: 1 },
+    ]);
+  });
+
+  it('counts points per month over a continuous span', () => {
+    const at = (id: string, date: string) =>
+      ({ id, date }) as unknown as Parameters<typeof monthlyCounts>[0][number];
+    expect(
+      monthlyCounts([
+        at('1', '2025-11-03'),
+        at('2', '2026-02-01'),
+        at('3', '2026-02-20'),
+        at('4', ''),
+      ]),
+    ).toEqual([
+      { month: '2025-11', count: 1 },
+      { month: '2025-12', count: 0 },
+      { month: '2026-01', count: 0 },
+      { month: '2026-02', count: 2 },
+    ]);
+    expect(monthlyCounts([])).toEqual([]);
   });
 });

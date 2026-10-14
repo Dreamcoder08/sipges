@@ -77,6 +77,9 @@ const AuditPage = lazy(() =>
 const GeographyPage = lazy(() =>
   import('../features/geography/index.ts').then((module) => ({ default: module.GeographyPage })),
 );
+const TimelinePage = lazy(() =>
+  import('../features/timeline/index.ts').then((module) => ({ default: module.TimelinePage })),
+);
 const TerritorialMapPage = lazy(() =>
   import('../features/geography/index.ts').then((module) => ({
     default: module.TerritorialMapPage,
@@ -317,6 +320,7 @@ const featurePages = {
   '/inteligencia-redes': IntelligencePage,
   '/alertas': AlertsPage,
   '/mapa': TerritorialMapPage,
+  '/cronologia': TimelinePage,
   '/ubicacion': GeographyPage,
   '/situacion': SituationalPage,
   '/estrategia': StrategicPage,

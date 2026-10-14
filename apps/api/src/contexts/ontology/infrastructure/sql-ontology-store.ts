@@ -74,6 +74,29 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
       ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
     ),
 
+  dated: (tenantId, fields, from, to, limit) =>
+    withTenant(sql, tenantId, async (tx) =>
+      (
+        await tx.query<{
+          module: string;
+          id: string;
+          payload: Record<string, unknown>;
+          marking: string;
+          updated_at: Date | string;
+          day: string;
+        }>(
+          `SELECT r.module, r.id, r.payload, r.marking, r.updated_at, d.day
+           FROM module_records r
+           JOIN unnest($1::text[], $2::text[]) AS f(module, field) ON f.module = r.module
+           CROSS JOIN LATERAL (SELECT left(r.payload->>f.field, 10) AS day) d
+           WHERE d.day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' AND d.day >= $3 AND d.day <= $4
+           ORDER BY d.day DESC, r.module, r.id
+           LIMIT $5`,
+          [fields.map((f) => f.module), fields.map((f) => f.field), from, to, limit],
+        )
+      ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
+    ),
+
   links: (tenantId, refs) =>
     withTenant(sql, tenantId, async (tx) =>
       (

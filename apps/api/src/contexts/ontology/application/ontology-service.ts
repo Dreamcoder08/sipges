@@ -21,6 +21,17 @@ export const MAX_GRAPH_NODES = 150;
 
 const MAX_ID = 200;
 export const MAX_SEARCH_RESULTS = 50;
+export const MAX_TIMELINE_RESULTS = 500;
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+/** Accepts yyyy, yyyy-mm or yyyy-mm-dd and expands it to the first or last day it covers. */
+export const dayBound = (value: string, end: boolean): string | null => {
+  const trimmed = value.trim();
+  if (!trimmed) return end ? '9999-12-31' : '0000-01-01';
+  if (/^\d{4}$/.test(trimmed)) return `${trimmed}-${end ? '12-31' : '01-01'}`;
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(trimmed)) return `${trimmed}-${end ? '31' : '01'}`;
+  return ISO_DAY.test(trimmed) ? trimmed : null;
+};
 
 export type SearchHit = ObjectSummary & {
   readonly match: { readonly field: string; readonly excerpt: string } | null;
@@ -287,6 +298,36 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
           },
         ];
       });
+    },
+
+    /** Dated records across object types, newest first (docs/adr/0011 §7). */
+    async timeline(
+      tenantId: string,
+      input: { from: string; to: string; slugs: readonly string[] | null; limit: number },
+    ) {
+      const from = dayBound(input.from, false);
+      const to = dayBound(input.to, true);
+      if (!from || !to) return null;
+      const types = (input.slugs?.length ? input.slugs : OBJECT_TYPES.map((t) => t.slug)).flatMap(
+        (slug) => {
+          const objectType = objectTypeForSlug(slug);
+          return objectType?.dateField ? [objectType] : [];
+        },
+      );
+      if (!types.length || from > to) return { from, to, entries: [], truncated: false };
+      const bounded = Math.max(1, Math.min(MAX_TIMELINE_RESULTS, Math.trunc(input.limit) || 1));
+      const rows = await store.dated(
+        tenantId,
+        types.map((t) => ({ module: t.module, field: t.dateField ?? '' })),
+        from,
+        to,
+        bounded + 1,
+      );
+      const entries = rows.slice(0, bounded).flatMap((row) => {
+        const objectType = objectTypeForModule(row.module);
+        return objectType ? [{ ...summarize(objectType, row), date: row.day }] : [];
+      });
+      return { from, to, entries, truncated: rows.length > bounded };
     },
 
     async link(

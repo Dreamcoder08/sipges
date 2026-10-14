@@ -55,6 +55,17 @@ export type OntologyStore = {
     modules: readonly string[],
     limit: number,
   ): Promise<NodeRow[]>;
+  /**
+   * Records whose date field (per module, ISO yyyy-mm-dd prefix) falls in [from, to], newest
+   * first, with that day.
+   */
+  dated(
+    tenantId: string,
+    fields: readonly { module: string; field: string }[],
+    from: string,
+    to: string,
+    limit: number,
+  ): Promise<(NodeRow & { day: string })[]>;
   /** Explicit links with either end in `refs`. */
   links(tenantId: string, refs: readonly NodeRef[]): Promise<StoredLink[]>;
   /** Inferred matches with either end in `refs`. */

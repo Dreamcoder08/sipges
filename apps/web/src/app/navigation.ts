@@ -1,4 +1,7 @@
-/** Screens of the legacy UI (static/index.html) in its menu order; `ready` ones are rebuilt. */
+/**
+ * Screens of the legacy UI (static/index.html) in its menu order, plus the cross-module
+ * chronology (docs/adr/0011 §7); `ready` ones are rebuilt.
+ */
 export const SCREENS = [
   { path: '/', label: 'Dashboard', title: 'Dashboard ejecutivo', ready: true },
   { path: '/eventos', label: 'Eventos', title: 'Eventos', ready: true },
@@ -34,6 +37,12 @@ export const SCREENS = [
     path: '/ubicacion',
     label: 'Ubicación geoespacial',
     title: 'Ubicación geoespacial del proyecto',
+    ready: true,
+  },
+  {
+    path: '/cronologia',
+    label: 'Cronología',
+    title: 'Cronología territorial',
     ready: true,
   },
   { path: '/situacion', label: 'Análisis situacional', title: 'Análisis situacional', ready: true },
@@ -76,7 +85,10 @@ export const NAV_GROUPS = [
     label: 'Gestión y alertas',
     paths: ['/gerencia', '/inteligencia-redes', '/alertas', '/mapa', '/ubicacion'],
   },
-  { label: 'Análisis', paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'] },
+  {
+    label: 'Análisis',
+    paths: ['/cronologia', '/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'],
+  },
   { label: 'Sistema', paths: ['/administracion', '/metodologia', '/auditoria'] },
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
 

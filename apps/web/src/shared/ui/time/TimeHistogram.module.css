@@ -1,0 +1,35 @@
+.figure {
+  margin: 0;
+  display: grid;
+  gap: var(--space-1);
+}
+.chart {
+  width: 100%;
+  height: 4rem;
+  display: block;
+}
+.bar {
+  cursor: pointer;
+  fill: var(--color-border);
+}
+.bar:hover {
+  fill: var(--color-muted);
+}
+.bar:focus-visible {
+  outline: none;
+  fill: var(--color-brand-strong);
+  stroke: var(--color-focus);
+  stroke-width: 0.6;
+}
+.selected {
+  fill: var(--color-brand);
+}
+.hit {
+  fill: transparent;
+}
+.axis {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
