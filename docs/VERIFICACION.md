@@ -1,6 +1,23 @@
 # Verificación del mapa Archify
 
-Fecha: 2026-10-13. Fuente MASCLI TypeScript: `70d2c40ed6ec7c24c2895889890716168aed4587` (rama de consolidación sobre `main`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`.
+## Plataforma de ontología (2026-10-14)
+
+Fuente: `49290423d4ea2de329b0b09924916cd2e9a588ac` (rama `claude/project-thread-yqrjlu`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`. HTML: `diagrams/arquitectura.html`, SHA-256 `c1d14a8969bc1d99b8eec0951d2c7db4adf5ea1c32b99b7cdfd6d48171969a1c`.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Validación de fuente, geometría y referencias Git | Pasó (tras acortar dos etiquetas a 48 caracteres) |
+| Generación del HTML con Archify | Pasó |
+| Comprobación estricta de integridad y procedencia | Pasó |
+| `browser-check` integrado en `finalize` | Pasó con el Chromium de Playwright (`ARCHIFY_CHROME`) |
+| Prueba adicional por HTTP local | 1440×1217 y 390×844 en tema oscuro, sin desbordamiento horizontal ni errores de página |
+| Inspección visual | Captura de escritorio revisada: diez nodos, el externo Claude marcado como opcional, etiquetas legibles |
+
+No se comprobaron los formatos exportados. La demo pública no se redesplegó con estos cambios.
+
+## Consolidación sobre `main` (2026-10-13)
+
+Fuente MASCLI TypeScript: `70d2c40ed6ec7c24c2895889890716168aed4587` (rama de consolidación sobre `main`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`.
 
 HTML comprobado: `diagrams/arquitectura.html`, SHA-256 `8974bd8941d30bf79eda117fad99fe19c8d8585bbd883aac563e5add567102f1`.
 

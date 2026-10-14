@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "70d2c40ed6ec7c24c2895889890716168aed4587"
+      "revision": "49290423d4ea2de329b0b09924916cd2e9a588ac"
     }
   },
   "components": [
@@ -28,8 +28,8 @@
       "sources": [
         {
           "path": "apps/web/src/app/router.tsx",
-          "line": 316,
-          "end_line": 329,
+          "line": 318,
+          "end_line": 332,
           "label": "Rutas y composición de todas las funciones"
         },
         {
@@ -39,10 +39,10 @@
           "label": "HTTP fijado al alcance y Zod"
         },
         {
-          "path": "apps/web/src/features/auth/MfaEnrollmentPage.tsx",
-          "line": 14,
-          "end_line": 60,
-          "label": "Alta MFA antes de seleccionar proyecto"
+          "path": "apps/web/src/features/records/BriefingPanel.tsx",
+          "line": 1,
+          "end_line": 123,
+          "label": "Vista 360°: informe del analista con citas"
         }
       ]
     },
@@ -96,15 +96,15 @@
       "sources": [
         {
           "path": "apps/api/src/app.ts",
-          "line": 46,
-          "end_line": 68,
-          "label": "Middleware y rutas"
+          "line": 49,
+          "end_line": 89,
+          "label": "Contexto, observabilidad, middleware y rutas"
         },
         {
           "path": "apps/api/src/contexts/identity/http/auth-middleware.ts",
           "line": 21,
           "end_line": 65,
-          "label": "Sesión, origen y rol"
+          "label": "Sesión, origen, rol y habilitación"
         },
         {
           "path": "apps/api/src/contexts/tenancy/http/tenancy-middleware.ts",
@@ -130,21 +130,21 @@
       "sources": [
         {
           "path": "apps/api/src/contexts/records/application/records-service.ts",
-          "line": 26,
-          "end_line": 79,
-          "label": "Invocación de RecordStore"
+          "line": 1,
+          "end_line": 163,
+          "label": "Registros, historial e importación"
         },
         {
-          "path": "apps/api/src/contexts/indicators/application/indicators-service.ts",
-          "line": 48,
-          "end_line": 75,
-          "label": "Datos, configuración y dominio"
+          "path": "apps/api/src/contexts/ontology/application/ontology-service.ts",
+          "line": 227,
+          "end_line": 340,
+          "label": "Grafo, búsqueda y cronología"
         },
         {
-          "path": "apps/api/src/contexts/intelligence/application/intelligence-service.ts",
-          "line": 57,
-          "end_line": 137,
-          "label": "EmbeddingProvider según modo"
+          "path": "apps/api/src/contexts/analyst/application/analyst-service.ts",
+          "line": 27,
+          "end_line": 85,
+          "label": "Informe extractivo y narración opcional"
         }
       ]
     },
@@ -163,10 +163,10 @@
       ],
       "sources": [
         {
-          "path": "apps/api/src/contexts/records/domain/modules.ts",
-          "line": 1,
-          "end_line": 48,
-          "label": "Modelo territorial"
+          "path": "apps/api/src/contexts/ontology/domain/catalog.ts",
+          "line": 29,
+          "end_line": 312,
+          "label": "Ontología: tipos, vínculos e inferencia"
         },
         {
           "path": "packages/kernel/src/result.ts",
@@ -198,15 +198,15 @@
       "sources": [
         {
           "path": "apps/api/src/compose.ts",
-          "line": 94,
-          "end_line": 170,
+          "line": 118,
+          "end_line": 288,
           "label": "Composición manual"
         },
         {
-          "path": "apps/api/src/contexts/records/infrastructure/sql-record-store.ts",
-          "line": 19,
-          "end_line": 79,
-          "label": "SQL y auditoría transaccional"
+          "path": "apps/api/src/contexts/ontology/infrastructure/sql-ontology-store.ts",
+          "line": 54,
+          "end_line": 140,
+          "label": "Búsqueda, cronología e inferencia en SQL"
         },
         {
           "path": "apps/api/src/contexts/documents/infrastructure/document-reader.ts",
@@ -254,7 +254,7 @@
       "id": "database",
       "type": "database",
       "label": "PostgreSQL / PGlite",
-      "sublabel": "Prod / dev y pruebas · RLS",
+      "sublabel": "Prod / dev y pruebas · RLS · historial",
       "pos": [
         985,
         450
@@ -271,16 +271,16 @@
           "label": "Selección y migraciones"
         },
         {
-          "path": "apps/api/src/platform/database/postgres.ts",
-          "line": 16,
-          "end_line": 35,
-          "label": "postgres.js y pool"
+          "path": "apps/api/src/platform/database/tenant-transaction.ts",
+          "line": 15,
+          "end_line": 31,
+          "label": "Tenant, actor y habilitación en la transacción"
         },
         {
-          "path": "apps/api/src/platform/database/tenant-transaction.ts",
-          "line": 3,
-          "end_line": 21,
-          "label": "Tenant y rol en transacción"
+          "path": "apps/api/src/platform/database/migrations/0013_classification.sql",
+          "line": 1,
+          "end_line": 74,
+          "label": "Marcas de clasificación con RLS"
         }
       ]
     },
@@ -306,12 +306,41 @@
         },
         {
           "path": "apps/api/src/platform/config.ts",
-          "line": 121,
-          "end_line": 132,
+          "line": 134,
+          "end_line": 145,
           "label": "URL y modelo"
         }
       ],
       "tag": "SEGÚN MODO"
+    },
+    {
+      "id": "claude",
+      "type": "external",
+      "label": "Claude · Anthropic",
+      "sublabel": "Narración de informes",
+      "pos": [
+        1300,
+        450
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/analyst/infrastructure/claude-narrator.ts",
+          "line": 1,
+          "end_line": 46,
+          "label": "Mensajes con fallbacks; sin restringidos"
+        },
+        {
+          "path": "apps/api/src/platform/config.ts",
+          "line": 148,
+          "end_line": 160,
+          "label": "Desactivado salvo MASCLI_ANALYST_PROVIDER"
+        }
+      ],
+      "tag": "OPCIONAL"
     }
   ],
   "connections": [
@@ -377,6 +406,13 @@
       "to": "ollama",
       "label": "Modo semántico",
       "variant": "default"
+    },
+    {
+      "id": "narration",
+      "from": "adapters",
+      "to": "claude",
+      "label": "Informe sin restringidos",
+      "variant": "default"
     }
   ],
   "cards": [
@@ -384,7 +420,7 @@
       "dot": "cyan",
       "title": "Frontend y acceso",
       "items": [
-        "SPA TypeScript completa: React 19, Vite, TanStack Router/Query y bloques por funcionalidad. Registros/evidencias, IRSA, análisis/documentos, mapa, inteligencia, gerencia y administración con contratos Zod.",
+        "SPA TypeScript: React 19, Vite, TanStack Router/Query. Registros con historial, vínculos e importación CSV; vista 360° con grafo e informe citado; búsqueda global Ctrl+K y cronología transversal.",
         "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-MASCLI-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
         "MFA obligatorio por defecto: el primer acceso permite inscribir el autenticador antes del proyecto. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
       ]
@@ -394,8 +430,8 @@
       "title": "Hexágono y datos",
       "items": [
         "http → application → domain; la aplicación invoca interfaces de puertos. compose.ts conecta implementaciones concretas por inyección manual. Las flechas representan llamadas o uso de contratos, no servicios separados.",
-        "Contextos: identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention, management y reference. Geometría/entidades de referencia solo para el proyecto registrado.",
-        "SQL explícito y migraciones versionadas. withTenant fija app.tenant_id y SET LOCAL ROLE mascli_tenant; las tablas de tenant usan RLS. Configuración IRSA y auditoría pasan a SQL."
+        "Contextos: identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management y reference. La ontología tipa objetos y vínculos (ADR 0011).",
+        "SQL explícito y migraciones versionadas. withTenant fija tenant, actor y habilitación; RLS aísla tenants y oculta registros restringidos al rol consulta (ADR 0012). Un trigger guarda el historial append-only."
       ]
     },
     {
@@ -404,15 +440,15 @@
       "items": [
         "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por MASCLI.",
         "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
-        "Ollama se consulta cuando se solicita análisis semántico; el modo rules no invoca embeddings. La similitud sigue pendiente de corroboración humana."
+        "Ollama solo en modo semántico. Claude es opcional (ADR 0013): reescribe el informe extractivo sin registros restringidos, con citas validadas y vuelta al texto extractivo ante cualquier fallo."
       ]
     },
     {
       "dot": "amber",
-      "title": "ODD · T1–T14 completos",
+      "title": "ODD · migración + plataforma de ontología",
       "items": [
-        "Fuente: consolidación TypeScript y adaptador de demo, revisión 70d2c40. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
-        "T1–T14 completos: API/SPA, benchmarks, migrador sintético y E2E. Demo académica publicada en Vercel gratuito con PostgreSQL Neon conectado; login y sesión verificados, inscripción MFA del propietario pendiente. La validación científica IRSA sigue separada.",
+        "Fuente: revisión 4929042 de la rama de la plataforma de ontología. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
+        "Migración T1–T14 completa. ODD de ontología e inteligencia T1–T11: historial, vínculos, búsqueda, grafo, observabilidad, clasificación, importación, analista con citas, cronología y E2E. Demo pública sin redesplegar.",
         "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime."
       ]
     }
