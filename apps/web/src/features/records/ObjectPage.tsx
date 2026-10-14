@@ -4,6 +4,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { recordQuery } from './api.ts';
 import { BriefingPanel } from './BriefingPanel.tsx';
+import { ProposalsPanel } from './ProposalsPanel.tsx';
 import { EvidencePanel } from './EvidencePanel.tsx';
 import { GraphPanel } from './GraphPanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
@@ -51,6 +52,7 @@ const ObjectView = ({
       {record.data ? (
         <Card title="Análisis">
           <BriefingPanel module={module} id={id} scope={scope} />
+          {writable ? <ProposalsPanel module={module} id={id} scope={scope} /> : null}
         </Card>
       ) : null}
       {record.data ? (

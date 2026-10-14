@@ -136,6 +136,30 @@ export const Briefing = z.object({
 });
 export type Briefing = z.infer<typeof Briefing>;
 
+const ProposalRef = z.object({ module: z.string(), id: z.string() });
+
+/** GET /system/briefing/proposals (docs/adr/0014 §8): actions a person may approve. */
+export const AnalystProposal = z.object({
+  fingerprint: z.string(),
+  kind: z.enum(['link', 'record']),
+  title: z.string(),
+  reason: z.string(),
+  link: z.object({ link_type: z.string(), source: ProposalRef, target: ProposalRef }).nullable(),
+  record: z.object({ module: z.string(), payload: z.record(z.string(), z.string()) }).nullable(),
+});
+export type AnalystProposal = z.infer<typeof AnalystProposal>;
+export const AnalystProposals = z.array(AnalystProposal);
+
+/** POST /system/briefing/proposals: approve applies the action, reject only records it. */
+export const ProposalDecisionIn = z.object({
+  module: z.string().min(1).max(40),
+  id: z.string().min(1).max(200),
+  fingerprint: z.string().min(1).max(500),
+  decision: z.enum(['approve', 'reject']),
+});
+export type ProposalDecisionIn = z.infer<typeof ProposalDecisionIn>;
+export const ProposalDecisionOut = z.object({ ok: z.literal(true), result: z.string().nullable() });
+
 /** GET /system/timeline (docs/adr/0011 §7): dated records across object types. */
 export const Timeline = z.object({
   from: z.string(),

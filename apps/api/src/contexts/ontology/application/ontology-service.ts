@@ -12,6 +12,7 @@ import {
   objectTypeForSlug,
   titleOf,
 } from '../domain/catalog.ts';
+import { findMention, suggestedLink } from '../domain/mentions.ts';
 import { matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
 import type { Clock, NodeRef, NodeRow, OntologyStore, ResolvedRule } from './ports.ts';
 
@@ -60,6 +61,22 @@ export type Edge = {
   readonly createdBy: string | null;
   readonly createdAt: Date | null;
 };
+
+/** A record that names another in its text, with no link between them yet. */
+export type Mention = {
+  readonly other: ObjectSummary;
+  /** Which record's text holds the mention. */
+  readonly holder: 'self' | 'other';
+  readonly field: string;
+  readonly excerpt: string;
+  readonly linkType: string;
+  readonly source: { readonly slug: string; readonly id: string };
+  readonly target: { readonly slug: string; readonly id: string };
+};
+
+/** Candidates scanned per call and mentions returned (docs/adr/0014 §8). */
+export const MAX_MENTION_CANDIDATES = 2000;
+export const MAX_MENTIONS = 12;
 
 export type Neighbour = {
   readonly edge: Edge;
@@ -221,6 +238,63 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
         ];
       });
       return { record: self, neighbours };
+    },
+
+    /**
+     * Unlinked records whose title appears in this record's text, or that name this record in
+     * theirs. Only object types with a specific link type to this one are scanned.
+     */
+    async mentions(tenantId: string, slug: string, id: string): Promise<Mention[] | null> {
+      const ref = refFor(slug, id);
+      const objectType = objectTypeForSlug(slug);
+      if (!ref || !objectType) return null;
+      const [row] = await store.nodes(tenantId, [ref]);
+      if (!row) return null;
+      const self = { slug, id };
+      const linkable = OBJECT_TYPES.filter(
+        (t) => suggestedLink(self, { slug: t.slug, id: '' }).linkType !== 'relacionado_con',
+      );
+      if (!linkable.length) return [];
+      const connected = new Set(
+        (await edgesTouching(tenantId, [ref])).map((edge) =>
+          edge.source.slug === slug && edge.source.id === id
+            ? `${edge.target.slug}\u0000${edge.target.id}`
+            : `${edge.source.slug}\u0000${edge.source.id}`,
+        ),
+      );
+      const textOf = (payload: Readonly<Record<string, unknown>>) =>
+        Object.fromEntries(
+          Object.entries(payload).flatMap(([field, value]) =>
+            typeof value === 'string' && value.trim() ? [[field, value]] : [],
+          ),
+        );
+      const selfText = textOf(row.payload);
+      const selfTitle = titleOf(objectType, id, row.payload);
+      const found: Mention[] = [];
+      for (const candidate of await store.recent(
+        tenantId,
+        linkable.map((t) => t.module),
+        MAX_MENTION_CANDIDATES,
+      )) {
+        const otherType = objectTypeForModule(candidate.module);
+        if (!otherType || (otherType.slug === slug && candidate.id === id)) continue;
+        if (connected.has(`${otherType.slug}\u0000${candidate.id}`)) continue;
+        const other = summarize(otherType, candidate);
+        const inSelf = other.title !== candidate.id ? findMention(selfText, other.title) : null;
+        const inOther =
+          inSelf ?? (selfTitle !== id ? findMention(textOf(candidate.payload), selfTitle) : null);
+        if (!inOther) continue;
+        const proposal = suggestedLink(self, { slug: otherType.slug, id: candidate.id });
+        found.push({
+          other,
+          holder: inSelf ? 'self' : 'other',
+          field: inOther.field,
+          excerpt: inOther.excerpt,
+          ...proposal,
+        });
+        if (found.length >= MAX_MENTIONS) break;
+      }
+      return found;
     },
 
     /** Breadth-first neighbourhood of one record, bounded by depth and node count. */

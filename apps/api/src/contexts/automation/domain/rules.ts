@@ -156,6 +156,7 @@ export const SYSTEM_EVENT_SOURCES = [
   { module: 'Vinculos', label: 'Vínculos entre registros' },
   { module: 'Laboratorio_Documental', label: 'Laboratorio documental' },
   { module: 'IRSA', label: 'Indicador IRSA' },
+  { module: 'Analista', label: 'Propuestas del analista' },
 ] as const;
 
 export type RuleInput = {

@@ -66,6 +66,8 @@ export type OntologyStore = {
     to: string,
     limit: number,
   ): Promise<(NodeRow & { day: string })[]>;
+  /** The most recently updated records of `modules`, for entity resolution in text. */
+  recent(tenantId: string, modules: readonly string[], limit: number): Promise<NodeRow[]>;
   /** Explicit links with either end in `refs`. */
   links(tenantId: string, refs: readonly NodeRef[]): Promise<StoredLink[]>;
   /** Inferred matches with either end in `refs`. */

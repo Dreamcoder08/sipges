@@ -110,6 +110,7 @@ export const handlers = [
   http.get('/system/notifications', () =>
     signedIn(() => HttpResponse.json({ unread: 0, items: [] })),
   ),
+  http.get('/system/briefing/proposals', () => signedIn(() => HttpResponse.json([]))),
   http.get('/system/notifications/push', () =>
     signedIn(() => HttpResponse.json({ enabled: false, public_key: null })),
   ),

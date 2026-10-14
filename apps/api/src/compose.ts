@@ -9,7 +9,10 @@ import {
   type Narrator,
   createAnalystService,
 } from './contexts/analyst/application/index.ts';
-import { createClaudeNarrator } from './contexts/analyst/infrastructure/index.ts';
+import {
+  createClaudeNarrator,
+  createSqlProposalStore,
+} from './contexts/analyst/infrastructure/index.ts';
 import {
   type AnalyticsService,
   createAnalyticsService,
@@ -100,6 +103,7 @@ import {
   createSqlModuleRecordReader,
 } from './contexts/indicators/infrastructure/index.ts';
 import {
+  LINK_TYPES,
   createOntologyService,
   type OntologyService,
 } from './contexts/ontology/application/index.ts';
@@ -107,6 +111,7 @@ import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-o
 import {
   RECORD_MODULES,
   createRecordsService,
+  moduleForSlug,
   type RecordsService,
 } from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
@@ -215,6 +220,36 @@ export const buildContainer = async (deps: {
               })),
             }
           : null;
+      },
+      async mentions(tenantId, slug, id) {
+        const found = await ontology.mentions(tenantId, slug, id);
+        return (
+          found?.map((m) => ({
+            other: m.other,
+            label: LINK_TYPES.find((t) => t.id === m.linkType)?.label ?? m.linkType,
+            holder: m.holder,
+            field: m.field,
+            excerpt: m.excerpt,
+            linkType: m.linkType,
+            source: m.source,
+            target: m.target,
+          })) ?? null
+        );
+      },
+    },
+    proposals: {
+      store: createSqlProposalStore(deps.sql),
+      actions: {
+        async link(tenantId, link, note, actor) {
+          const created = await ontology.link(tenantId, { ...link, note }, actor);
+          return created.ok ? 'created' : created.error === 'duplicate' ? 'duplicate' : 'failed';
+        },
+        async create(tenantId, record) {
+          const module = moduleForSlug(record.slug);
+          if (!module) return null;
+          const created = await records.create(tenantId, module, record.payload);
+          return created.ok ? created.value : null;
+        },
       },
     },
     narrator:

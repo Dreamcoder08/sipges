@@ -140,6 +140,21 @@ curl -X POST https://<tu-dominio>/hooks/ingest/demandas \
 - Cada registro queda en el historial como `api:<nombre de la clave>` y dispara las
   automatizaciones de **creación** como si se hubiera creado en la app.
 
+## Propuestas del analista
+
+En la ficha de cada registro, bajo **Análisis**, el analista propone acciones que una persona
+aprueba o descarta (roles analista y administrador):
+
+- **Vínculos** cuando un registro nombra a otro en su texto (por ejemplo, un evento que
+  menciona a una comunidad registrada como actor) y aún no están vinculados. Se propone el
+  tipo de vínculo del catálogo; nunca alianzas ni conflictos.
+- **Seguimientos** para una alerta abierta de nivel alto sin acción que la atienda (crea una
+  acción pendiente) o una demanda prioritaria abierta sin compromiso (crea un compromiso).
+
+Nada cambia hasta que alguien aprueba. Cada decisión queda en la auditoría (módulo
+*Analista*, acción revisión) y la propuesta no vuelve a aparecer. Las automatizaciones pueden
+reaccionar a esas decisiones con el origen **Propuestas del analista**.
+
 ## OCR de PDF escaneados
 
 El laboratorio documental lee el texto de los PDF. Para los escaneados (sin capa de texto)
