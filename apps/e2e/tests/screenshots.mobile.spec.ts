@@ -12,12 +12,56 @@ test.skip(!dir, 'MASCLI_E2E_SCREENSHOT_DIR is not set');
 const shot = (page: Page, name: string) =>
   page.screenshot({ path: `${dir}/${name}.png`, animations: 'disabled' });
 
-test('capture the mobile shell', async ({ page, admin }) => {
+/** Synthetic records so the "Hoy" summary has something to show (never real data). */
+const SAMPLE = {
+  alertas: [
+    {
+      Causa: 'Bloqueo sintético de la vía de acceso',
+      Nivel_Preliminar: 'Rojo',
+      Fecha: '2026-10-12',
+    },
+    {
+      Causa: 'Reclamo sintético por calidad del agua',
+      Nivel_Preliminar: 'Naranja',
+      Fecha: '2026-10-10',
+    },
+    { Causa: 'Asamblea sintética convocada', Nivel_Preliminar: 'Amarillo', Fecha: '2026-10-08' },
+  ],
+  eventos: [
+    {
+      Descripcion_Hecho: 'Reunión sintética con la comunidad',
+      Dimension_Principal: 'G',
+      Fecha: '2026-10-13',
+    },
+    {
+      Descripcion_Hecho: 'Monitoreo sintético de efluentes',
+      Dimension_Principal: 'E',
+      Fecha: '2026-10-11',
+    },
+    {
+      Descripcion_Hecho: 'Publicación sintética en redes',
+      Dimension_Principal: 'N',
+      Fecha: '2026-10-09',
+    },
+  ],
+};
+
+test('capture the mobile shell', async ({ page, admin, adminApi }) => {
+  for (const [module, rows] of Object.entries(SAMPLE)) {
+    for (const payload of rows) {
+      const created = await adminApi.post(`/api/${module}`, {
+        headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE },
+        data: { payload },
+      });
+      expect(created.status(), await created.text()).toBe(200);
+    }
+  }
   await page.setViewportSize({ width: 390, height: 844 });
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await page.waitForTimeout(800);
   await shot(page, 'movil-inicio');
+  await page.screenshot({ path: `${dir}/movil-hoy-completo.png`, fullPage: true });
   await page.getByRole('button', { name: /^Más/ }).click();
   await page.waitForTimeout(400);
   await shot(page, 'movil-mas');

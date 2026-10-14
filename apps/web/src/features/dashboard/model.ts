@@ -71,3 +71,48 @@ export const eventsByMonth = (events: readonly ModuleRecord[], projectId: string
     };
   });
 };
+
+const RANK: Readonly<Record<Level, number>> = { Rojo: 3, Naranja: 2, Amarillo: 1, Verde: 0 };
+const text = (value: unknown) => (typeof value === 'string' ? value.trim() : '');
+const dateOf = (record: ModuleRecord) => text(record['Fecha']);
+
+/** One line of the phone "Hoy" view: what it is, when, and where to open it. */
+export type TodayItem = { id: string; title: string; date: string };
+
+/**
+ * Open alerts of the active project that need attention first (docs/adr/0015): highest band,
+ * then most recent. Green alerts are left out; they do not need action today.
+ */
+export const criticalAlerts = (
+  alerts: readonly ModuleRecord[],
+  projectId: string,
+  limit = 3,
+): (TodayItem & { level: Level })[] =>
+  alerts
+    .filter((a) => counted(a, projectId) && !CLOSED.has(foldText(a['Estado'])))
+    .map((a) => ({
+      id: a._id,
+      title: text(a['Causa']) || 'Alerta sin causa documentada',
+      date: dateOf(a),
+      level: severityLevel(a['Nivel_Preliminar'] || a['Nivel']),
+    }))
+    .filter((a) => a.level !== 'Verde')
+    .sort((x, y) => RANK[y.level] - RANK[x.level] || y.date.localeCompare(x.date))
+    .slice(0, limit);
+
+/** Latest real events of the active project, newest first; undated ones go last. */
+export const recentEvents = (
+  events: readonly ModuleRecord[],
+  projectId: string,
+  limit = 3,
+): (TodayItem & { dimension: DimensionCode | null })[] =>
+  events
+    .filter((e) => counted(e, projectId))
+    .map((e) => ({
+      id: e._id,
+      title: text(e['Descripcion_Hecho']) || 'Evento sin descripción',
+      date: dateOf(e),
+      dimension: dimensionOf(e['Dimension_Principal']),
+    }))
+    .sort((x, y) => y.date.localeCompare(x.date))
+    .slice(0, limit);

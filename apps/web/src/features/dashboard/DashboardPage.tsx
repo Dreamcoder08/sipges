@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { DIMENSIONS, DIMENSION_NAMES, LEVELS } from '../../shared/lib/text.ts';
 import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
 import { BarList } from '../../shared/ui/BarList.tsx';
@@ -8,6 +9,7 @@ import { ColumnChart, DonutChart, RadarChart } from '../../shared/ui/charts/Char
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { dashboardQuery, irsaQuery, modelStatusQuery, moduleRecordsQuery } from './api.ts';
 import { alertsByLevel, eventsByDimension, eventsByMonth } from './model.ts';
+import { TodayView } from './TodayView.tsx';
 import styles from './DashboardPage.module.css';
 
 /** Counter, label, module it comes from and the rule it applies (shown to the reader). */
@@ -32,7 +34,9 @@ const KPIS = [
 
 /**
  * Executive dashboard (legacy `#dashboard`). Links are rendered by the app shell through
- * `renderLink`, so this feature does not depend on the router's route tree.
+ * `renderLink`, so this feature does not depend on the router's route tree. Phones and
+ * tablets open on the "Hoy" summary instead of the hero, counters and shortcuts, and keep the
+ * analysis cards below it (docs/adr/0015).
  */
 export const DashboardPage = ({
   projectId,
@@ -48,53 +52,60 @@ export const DashboardPage = ({
   const status = useQuery(modelStatusQuery(scope));
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
+  const compact = useMediaQuery(COMPACT_QUERY);
 
   return (
     <div className={styles.page}>
-      <section className={styles.hero} aria-labelledby="hero-title">
-        <p className={styles.kicker}>Monitoreo preventivo · G-A-D-N-E-I</p>
-        <h2 id="hero-title">
-          Riesgo socioambiental con evidencia, trazabilidad y validación humana.
-        </h2>
-        <p>
-          MASCLI integra información territorial, actores, demandas, narrativas, ambiente e
-          institucionalidad para priorizar señales y orientar acciones preventivas.
-        </p>
-      </section>
+      {compact ? (
+        <TodayView projectId={projectId} scope={scope} renderLink={renderLink} />
+      ) : (
+        <>
+          <section className={styles.hero} aria-labelledby="hero-title">
+            <p className={styles.kicker}>Monitoreo preventivo · G-A-D-N-E-I</p>
+            <h2 id="hero-title">
+              Riesgo socioambiental con evidencia, trazabilidad y validación humana.
+            </h2>
+            <p>
+              MASCLI integra información territorial, actores, demandas, narrativas, ambiente e
+              institucionalidad para priorizar señales y orientar acciones preventivas.
+            </p>
+          </section>
 
-      <Card eyebrow="Resumen operativo" title="Base Maestra del proyecto activo">
-        <QueryState query={summary} label="el resumen">
-          {(data) => {
-            const demo = Object.values(data.demostracion).reduce((sum, n) => sum + n, 0);
-            return (
-              <>
-                <dl className={styles.kpis}>
-                  {KPIS.map(([key, label, to, rule]) => (
-                    <div key={key} className={styles.kpi}>
-                      <dt>{label}</dt>
-                      <dd>{data[key]}</dd>
-                      <dd className={styles.kpiRule}>
-                        {rule}
-                        {data.demostracion[key]
-                          ? ` No incluye ${data.demostracion[key]} de demostración.`
-                          : ''}{' '}
-                        {to ? renderLink(to, 'Ver registros') : null}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-                <p className={styles.kpiNote}>
-                  Los indicadores cuentan solo registros reales del proyecto activo y se actualizan
-                  al guardar, importar o eliminar registros.
-                  {demo
-                    ? ` Hay ${demo} registros de demostración (caso académico sintético) excluidos; se consultan en cada módulo con el filtro «Origen».`
-                    : ''}
-                </p>
-              </>
-            );
-          }}
-        </QueryState>
-      </Card>
+          <Card eyebrow="Resumen operativo" title="Base Maestra del proyecto activo">
+            <QueryState query={summary} label="el resumen">
+              {(data) => {
+                const demo = Object.values(data.demostracion).reduce((sum, n) => sum + n, 0);
+                return (
+                  <>
+                    <dl className={styles.kpis}>
+                      {KPIS.map(([key, label, to, rule]) => (
+                        <div key={key} className={styles.kpi}>
+                          <dt>{label}</dt>
+                          <dd>{data[key]}</dd>
+                          <dd className={styles.kpiRule}>
+                            {rule}
+                            {data.demostracion[key]
+                              ? ` No incluye ${data.demostracion[key]} de demostración.`
+                              : ''}{' '}
+                            {to ? renderLink(to, 'Ver registros') : null}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <p className={styles.kpiNote}>
+                      Los indicadores cuentan solo registros reales del proyecto activo y se
+                      actualizan al guardar, importar o eliminar registros.
+                      {demo
+                        ? ` Hay ${demo} registros de demostración (caso académico sintético) excluidos; se consultan en cada módulo con el filtro «Origen».`
+                        : ''}
+                    </p>
+                  </>
+                );
+              }}
+            </QueryState>
+          </Card>
+        </>
+      )}
 
       <div className={styles.grid}>
         <Card eyebrow="Alertas por nivel" title="Alertas abiertas del proyecto">
@@ -230,13 +241,15 @@ export const DashboardPage = ({
             }
           </QueryState>
         </Card>
-        <Card eyebrow="Accesos rápidos" title="Actualizar el monitoreo">
-          <ul className={styles.quick}>
-            <li>{renderLink('/eventos', 'Registrar evento')}</li>
-            <li>{renderLink('/alertas', 'Revisar alertas')}</li>
-            <li>{renderLink('/fuentes', 'Consultar evidencia')}</li>
-          </ul>
-        </Card>
+        {compact ? null : (
+          <Card eyebrow="Accesos rápidos" title="Actualizar el monitoreo">
+            <ul className={styles.quick}>
+              <li>{renderLink('/eventos', 'Registrar evento')}</li>
+              <li>{renderLink('/alertas', 'Revisar alertas')}</li>
+              <li>{renderLink('/fuentes', 'Consultar evidencia')}</li>
+            </ul>
+          </Card>
+        )}
       </div>
 
       <Card eyebrow="Estado del modelo">

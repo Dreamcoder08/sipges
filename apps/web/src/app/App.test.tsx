@@ -284,6 +284,29 @@ describe('phone shell', () => {
     );
   });
 
+  it('opens on the "Hoy" summary with counters, alerts that need action and shortcuts', async () => {
+    signIn();
+    at('/');
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: 'Resumen del proyecto' })).toBeVisible();
+    expect(screen.queryByText(/Riesgo socioambiental con evidencia/)).toBeNull();
+    const tiles = screen.getByRole('region', { name: 'Indicadores del día' });
+    await waitFor(() =>
+      expect(within(tiles).getByRole('link', { name: /Alertas activas/ })).toHaveTextContent('1'),
+    );
+    const urgent = (await screen.findByRole('heading', { name: 'Requiere atención' })).closest(
+      'section',
+    );
+    if (!urgent) throw new Error('missing alerts block');
+    expect(await within(urgent).findByRole('link', { name: /Naranja/ })).toHaveAttribute(
+      'href',
+      '/objeto/alertas/AL-1',
+    );
+    const shortcuts = screen.getByRole('navigation', { name: 'Accesos rápidos' });
+    expect(within(shortcuts).getAllByRole('link')).toHaveLength(4);
+    expect(await screen.findByText('Conflicto por agua')).toBeVisible();
+  });
+
   it('keeps the project selector, inbox and sign-out one tap away', async () => {
     signIn();
     at('/');
