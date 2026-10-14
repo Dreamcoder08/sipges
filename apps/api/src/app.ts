@@ -6,6 +6,7 @@ import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middl
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
 import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
 import { apiKeyRoutes } from './contexts/integration/http/api-key-routes.ts';
+import { ingestRoutes } from './contexts/integration/http/ingest-routes.ts';
 import { mcpRoutes } from './contexts/integration/http/mcp-routes.ts';
 import { auditRoutes } from './contexts/audit/http/audit-routes.ts';
 import { documentLabRoutes } from './contexts/documents/http/document-lab-routes.ts';
@@ -89,6 +90,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
       },
     }),
   );
+  app.route('/', ingestRoutes({ keys: container.apiKeys, ingest: container.ingest }));
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
   app.route(
     '/',

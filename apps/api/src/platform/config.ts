@@ -43,6 +43,11 @@ export type AppConfig = {
       | { readonly publicKey: string; readonly privateKey: string; readonly subject: string }
       | undefined;
   };
+  /**
+   * OCR for scanned PDFs in the document lab (MASCLI_OCR=ocrmypdf); runs the local
+   * ocrmypdf/Tesseract install with MASCLI_OCR_LANGUAGES. Unset keeps text-only reading.
+   */
+  readonly ocr: { readonly languages: string } | undefined;
   /** Google OAuth client for "Entrar con Google" (ADR 0010); unset hides the option. */
   readonly google:
     | {
@@ -231,6 +236,17 @@ const parseVapid = (env: Env): AppConfig['automation']['vapid'] => {
   return { publicKey, privateKey, subject };
 };
 
+const parseOcr = (env: Env): AppConfig['ocr'] => {
+  const engine = env.MASCLI_OCR?.trim() ?? '';
+  if (!engine) return undefined;
+  if (engine !== 'ocrmypdf') throw new Error('MASCLI_OCR must be "ocrmypdf" or unset');
+  const languages = env.MASCLI_OCR_LANGUAGES?.trim() || 'spa+eng';
+  if (!/^[a-z_]{3,16}(\+[a-z_]{3,16}){0,5}$/.test(languages)) {
+    throw new Error('MASCLI_OCR_LANGUAGES must be Tesseract codes joined by +, e.g. spa+eng');
+  }
+  return { languages };
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -255,4 +271,5 @@ export const loadConfig = (env: Env): AppConfig => ({
   allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
   google: parseGoogle(env),
   automation: parseAutomation(env),
+  ocr: parseOcr(env),
 });

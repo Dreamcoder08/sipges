@@ -115,6 +115,45 @@ Las claves solo sirven para `/mcp` y para los webhooks de entrada, nunca para la
 navegador. Lo que escribe una clave aparece en el historial y la auditoría como `api:<nombre>`.
 Revoca una clave en cuanto deje de usarse.
 
+## Webhooks de entrada
+
+`POST /hooks/ingest/<módulo>` crea registros en el proyecto de la clave (de **escritura**).
+Sirve para Zapier, n8n, Make, Power Automate, formularios web o cualquier sistema que pueda
+hacer un POST. `<módulo>` es el tipo de objeto (`alertas`, `demandas`, `eventos`…).
+
+```bash
+curl -X POST https://<tu-dominio>/hooks/ingest/demandas \
+  -H "Authorization: Bearer mscli_..." \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: pedido-123" \
+  -d '{"Demanda": "Acceso a agua", "Prioridad": "Alta"}'
+```
+
+- El cuerpo puede ser un registro, una lista o `{"records": [...]}` (hasta 50). También se
+  acepta un formulario (`application/x-www-form-urlencoded` o `multipart/form-data`) con un
+  registro por envío.
+- Se revisan todos los registros antes de escribir el primero. Un error responde `422` (o
+  `403` si un registro nombra otro proyecto) con `index`, la posición del registro.
+- La respuesta `201` trae `ids`, los identificadores asignados.
+- Con `Idempotency-Key` (o la cabecera `webhook-id` de Standard Webhooks) un reintento con la
+  misma clave devuelve la primera respuesta, con `Idempotent-Replayed: true`, sin duplicar.
+- Cada registro queda en el historial como `api:<nombre de la clave>` y dispara las
+  automatizaciones de **creación** como si se hubiera creado en la app.
+
+## OCR de PDF escaneados
+
+El laboratorio documental lee el texto de los PDF. Para los escaneados (sin capa de texto)
+el servidor puede usar [OCRmyPDF](https://ocrmypdf.readthedocs.io) con Tesseract instalados
+en la misma máquina; el documento no sale del servidor.
+
+| Variable | Valor |
+| --- | --- |
+| `MASCLI_OCR` | `ocrmypdf` para activarlo. |
+| `MASCLI_OCR_LANGUAGES` | Idiomas de Tesseract, por defecto `spa+eng`. |
+
+No está disponible en Vercel (no hay binarios de OCR); úsalo en un servidor Node o un
+contenedor con `ocrmypdf` y los paquetes de idioma.
+
 ## Servidor MCP
 
 `POST /mcp` implementa el transporte *Streamable HTTP* del

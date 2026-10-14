@@ -29,9 +29,15 @@ import {
 } from './contexts/automation/infrastructure/index.ts';
 import {
   type ApiKeyService,
+  type IngestService,
   createApiKeyService,
+  createIngestService,
 } from './contexts/integration/application/index.ts';
-import { createSqlApiKeyStore, keyCrypto } from './contexts/integration/infrastructure/index.ts';
+import {
+  createSqlApiKeyStore,
+  createSqlIngestReceipts,
+  keyCrypto,
+} from './contexts/integration/infrastructure/index.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
@@ -41,6 +47,8 @@ import {
 import {
   createSqlReviewStore,
   documentReader,
+  ocrmypdfRecognizer,
+  withOcr,
   docxRenderer,
 } from './contexts/documents/infrastructure/index.ts';
 import {
@@ -129,6 +137,7 @@ export type Container = {
   readonly management: ManagementService;
   readonly automation: AutomationService;
   readonly apiKeys: ApiKeyService;
+  readonly ingest: IngestService;
   readonly clientIp: ClientIp;
 };
 
@@ -237,7 +246,9 @@ export const buildContainer = async (deps: {
     maxUploadBytes: deps.config.maxUploadBytes,
   });
   const documents = createDocumentLabService({
-    reader: documentReader,
+    reader: deps.config.ocr
+      ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
+      : documentReader,
     renderer: docxRenderer,
     reviews: createSqlReviewStore(deps.sql),
     clock: deps.clock,
@@ -331,6 +342,11 @@ export const buildContainer = async (deps: {
     apiKeys: createApiKeyService({
       store: createSqlApiKeyStore(deps.sql),
       crypto: keyCrypto,
+      clock: deps.clock,
+    }),
+    ingest: createIngestService({
+      records,
+      receipts: createSqlIngestReceipts(deps.sql),
       clock: deps.clock,
     }),
     clientIp: deps.clientIp,

@@ -48,3 +48,20 @@ export type KeyCrypto = {
 };
 
 export type Clock = { now(): Date };
+
+export type IngestResponse = {
+  readonly status: number;
+  readonly body: Readonly<Record<string, unknown>>;
+};
+
+export type IngestClaim =
+  | { readonly kind: 'claimed' }
+  | { readonly kind: 'in_progress' }
+  | { readonly kind: 'stored'; readonly response: IngestResponse };
+
+/** Idempotency receipts of inbound webhooks, per key, inside the key's tenant. */
+export type IngestReceipts = {
+  claim(tenantId: string, keyId: number, key: string, at: Date): Promise<IngestClaim>;
+  complete(tenantId: string, keyId: number, key: string, response: IngestResponse): Promise<void>;
+  release(tenantId: string, keyId: number, key: string): Promise<void>;
+};

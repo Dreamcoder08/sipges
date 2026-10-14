@@ -135,4 +135,35 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
     );
     expect(audit.map((a) => a.action)).toEqual(['CREATE', 'DELETE']);
   });
+
+  it('keeps ingest receipts per tenant and replays them', async () => {
+    const container = await buildContainer({
+      config: loadConfig(TEST_ENV),
+      sql: pool.client,
+      clock: new TestClock(),
+      clientIp: () => '203.0.113.74',
+    });
+    const created = await container.apiKeys.create(
+      'MASCLI/PRJ-SECHURA',
+      { name: 'Formulario PG', access: 'write', clearance: 'limited' },
+      'admin',
+    );
+    if (!created.ok) throw new Error('key not created');
+    const principal = await container.apiKeys.authenticate(created.value.token);
+    if (!principal) throw new Error('key not authenticated');
+    const request = {
+      principal,
+      projectId: 'PRJ-SECHURA',
+      slug: 'demandas',
+      body: { Demanda: 'Demanda sintética PG' },
+      idempotencyKey: 'pg-1',
+    };
+    const first = await container.ingest.ingest(request);
+    expect(first).toMatchObject({ status: 201, replayed: false });
+    const again = await container.ingest.ingest(request);
+    expect(again).toMatchObject({ status: 201, replayed: true, body: first.body });
+    await withTenant(pool.client, 'ACME/NORTE', async (tx) => {
+      expect(await tx.query('SELECT * FROM ingest_receipts')).toEqual([]);
+    });
+  });
 });

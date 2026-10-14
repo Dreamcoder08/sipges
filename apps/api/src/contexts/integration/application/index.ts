@@ -9,5 +9,24 @@ export {
   keyActor,
   payloadProject,
 } from '../domain/api-key.ts';
-export type { ApiKeyStore, KeyCrypto, StoredKey } from './ports.ts';
+export {
+  MAX_INGEST_RECORDS,
+  formPayload,
+  idempotencyKey,
+  ingestPayloads,
+} from '../domain/ingest.ts';
+export type {
+  ApiKeyStore,
+  IngestClaim,
+  IngestReceipts,
+  IngestResponse,
+  KeyCrypto,
+  StoredKey,
+} from './ports.ts';
 export { type ApiKeyService, createApiKeyService } from './api-key-service.ts';
+export {
+  type IngestOutcome,
+  type IngestRequest,
+  type IngestService,
+  createIngestService,
+} from './ingest-service.ts';
