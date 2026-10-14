@@ -8,6 +8,7 @@ Turn the signed-in MASCLI web app from a desktop dashboard squeezed into a narro
 - S4: "Continua mejorando el desing responsiva en todos los módulos del proyecto, cuando seleccionó la sección "automatizaciones" todo se desconfigura corrije ese módulo y más" (owner, 2026-10-14, after #45 merged). Screen contents are now in scope for responsive fixes; new PR from `main`.
 - S5: "Yo quiero ver una consecion en la ubicación geoespacial y todo se pone negro, corrije porfavor" (owner, 2026-10-14, on a phone; audit error 06 was not reproduced in desktop Chromium).
 - S6: "https://geocatmin.ingemmet.gob.pe/geocatmin_v3/, Este sistema lo puedes meter ahí en ubicación del Proyectos" (owner, 2026-10-14).
+- S7: "La ubicación geoespacial debe ser funcional, el mapa territorial y más 10/10" (owner via coordinator, 2026-10-14; review zoom, panning, selection, layers, legend, concession detail and phone behaviour).
 - S3: Desktop must not break (coordinator brief). Keep the existing guarantees: WCAG 2.1 AA (axe clean in E2E), keyboard and screen-reader parity, CSP without inline styles from the server, no horizontal page scroll at 360 px, every screen reachable, existing E2E and unit suites green.
 
 ## Design rules (acceptance criteria for every task)
@@ -39,6 +40,7 @@ Measured at 390×844 (iPhone 14/15) and 360×780 (narrowest common Android) unle
 - T13 [x] S5 — Ubicación geoespacial: draw maps in SVG units of 1e-5° instead of raw degrees, so a framed concession no longer has a 0.06-wide viewBox and 0.002 font sizes that phone browsers clamp to a minimum (labels and north arrow then cover the map in dark ink); same for the territorial map and tiles; route: inline
 - T14 [x] S4,S3 — CI without the Inter font: the radar's screen-reader table ignored `width: 1px` and widened IRSA to 373 px; hidden chart and graph tables sit inside a clipping wrapper; route: verify
 - T15 [x] S6 — Ubicación del proyecto overlays INGEMMET's mining cadastre: one transparent `export` image per view from GEOCATMIN's `SERV_CATASTRO_MINERO` MapServer (WGS 84) under the concessions, a checkbox to hide it, legend and a link to the viewer; CSP `img-src` and ADR 0006 addendum; route: inline
+- T16 [ ] S7,S3 — Interactive maps: `useMapView` and `MapFrame` give both maps drag and two-finger pan, pinch and Ctrl + wheel zoom around the fingers or cursor, arrows and +/−/0 keys, and floating 44 px Acercar/Alejar/home controls; Ubicación opens framed on the concessions with the map first, a concession picker, "Centrar concesión" and vertices in a collapsible table; the territorial map shows the map first, folds its filters on phones and spreads markers that share a locality; GEOCATMIN image waits until the view settles; route: inline
 
 ## Log
 - L1 (plan, 2026-10-14): Captured the current phone shell at 390×844 with the synthetic E2E instance: two-row header with a hamburger, title, a clipped search button, bell emoji, a native select, avatar and "Salir"; navy drawer of 21 links in four equal groups under the header. The owner's diagnosis (S1) and target architecture (S2) were accepted as the plan; screen contents stay with the parallel audit thread.

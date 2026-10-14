@@ -53,6 +53,7 @@ export const BaseMap = ({
   districtProps,
   showBase = true,
   background,
+  describedBy,
   children,
 }: {
   /** Visible [minLon, minLat, maxLon, maxLat]. */
@@ -65,6 +66,8 @@ export const BaseMap = ({
   showBase?: boolean;
   /** Raster basemap drawn over the vector land; district outlines and labels stay on top. */
   background?: ReactNode;
+  /** Id of the gesture hint; makes the map focusable for keyboard panning and zoom. */
+  describedBy?: string;
   children?: ReactNode;
 }) => {
   const [minX, minY, maxX, maxY] = view.map((v) => v * UNITS_PER_DEGREE) as unknown as Extent;
@@ -87,6 +90,8 @@ export const BaseMap = ({
       preserveAspectRatio="xMidYMid meet"
       role="group"
       aria-label={label}
+      tabIndex={describedBy ? 0 : undefined}
+      aria-describedby={describedBy}
     >
       <title>{title}</title>
       {/* Explicit fills: if the stylesheet is missing, shapes must not fall back to black. */}

@@ -17,7 +17,10 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { TimeHistogram } from '../../shared/ui/time/TimeHistogram.tsx';
-import { BaseMap, type Extent, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
+import { BaseMap, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
+import { MapFrame } from './MapFrame.tsx';
+import { useMapView } from './useMapView.ts';
+import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { LOCALITIES } from './localities.ts';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import {
@@ -80,6 +83,31 @@ export const TerritorialMapPage = ({ scope, projectId }: FeatureContext) => {
   );
 };
 
+/**
+ * Places markers in map units. Records of the same locality share its coordinates, so they
+ * are set around it on a small ring (in screen-sized units) instead of hiding each other.
+ */
+const spread = (points: readonly MapPoint[], unit: number) => {
+  const groups = new Map<string, MapPoint[]>();
+  for (const p of points) {
+    const key = `${p.at[0]},${p.at[1]}`;
+    groups.set(key, [...(groups.get(key) ?? []), p]);
+  }
+  return [...groups.values()].flatMap((group) =>
+    group.map((point, i) => {
+      const radius = group.length > 1 ? unit * (2.4 + group.length * 0.5) : 0;
+      const angle = (2 * Math.PI * i) / group.length - Math.PI / 2;
+      return {
+        point,
+        at: [
+          svgX(point.at[0]) + radius * Math.cos(angle),
+          svgY(point.at[1]) + radius * Math.sin(angle),
+        ] as const,
+      };
+    }),
+  );
+};
+
 const TerritorialWorkspace = ({
   layers,
   projectId,
@@ -98,8 +126,7 @@ const TerritorialWorkspace = ({
     to: '',
   });
   const [selectedId, setSelectedId] = useState('');
-  const [zoom, setZoom] = useState(1);
-  const [center, setCenter] = useState<readonly [number, number] | null>(null);
+  const compact = useMediaQuery(COMPACT_QUERY);
   const { points, unlocated } = useMemo(() => mapPoints(layers, projectId), [layers, projectId]);
   const placed = filterPlace(points, filters);
   const visible = placed.filter((p) => inPeriod(p, filters.from, filters.to));
@@ -122,24 +149,23 @@ const TerritorialWorkspace = ({
   const homeSpan = visible.length
     ? Math.max(maxLon - minLon, maxLat - minLat, 0.2) * 1.4
     : Math.max(maxLon - minLon, maxLat - minLat) * 1.05;
-  const [cx, cy] = center ?? home;
-  const span = homeSpan / zoom;
-  const view: Extent = [cx - span / 2, cy - span / 2, cx + span / 2, cy + span / 2];
-  const unit = (span / 100) * UNITS_PER_DEGREE;
+  const map = useMapView({ home, homeSpan, maxZoom: 32 });
+  const view = map.view;
+  const unit = (map.span / 100) * UNITS_PER_DEGREE;
+  const markers = spread(visible, unit);
+  const activeFilters = Object.values(filters).filter(Boolean).length;
 
   const set = (key: keyof typeof filters) => (value: string) => {
     setFilters((f) => ({ ...f, [key]: value }));
     setSelectedId('');
     if (key === 'locality') {
       const place = LOCALITIES.find((l) => l.name === value);
-      setCenter(place ? place.at : null);
-      setZoom(1);
+      map.focus(place ? place.at : null, 1);
     }
   };
   const focus = (point: MapPoint) => {
     setSelectedId(point.id);
-    setCenter(point.at);
-    setZoom((z) => Math.max(z, 2));
+    map.focus(point.at, Math.max(map.zoom, 4));
   };
   const exportCsv = () => {
     const rows = [
@@ -183,156 +209,90 @@ const TerritorialWorkspace = ({
 
   return (
     <div className={styles.page}>
-      <div className={styles.toolbar}>
-        {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}
-        {select('locality', 'Localidad', [
-          ['', 'Toda la provincia'],
-          ...LOCALITIES.map((l): [string, string] => [l.name, l.name]),
-        ])}
-        {select('dimension', 'Dimensión', [
-          ['', 'Todas'],
-          ...DIMENSIONS.map((d): [string, string] => [d, `${d} · ${DIMENSION_NAMES[d]}`]),
-        ])}
-        {select('from', 'Desde', [
-          ['', 'El inicio'],
-          ...months.map((m): [string, string] => [m, monthLabel(m)]),
-        ])}
-        {select('to', 'Hasta', [
-          ['', 'Hoy'],
-          ...months.map((m): [string, string] => [m, monthLabel(m)]),
-        ])}
-        <Button variant="secondary" onClick={exportCsv} disabled={!visible.length}>
-          Exportar CSV
-        </Button>
-      </div>
-
-      {activity.length > 1 ? (
-        <Card title="Actividad por mes" eyebrow="Filtro temporal">
-          <TimeHistogram
-            series={activity}
-            from={filters.from}
-            to={filters.to}
-            label="Registros georreferenciados por mes"
-            onChange={(from, to) => {
-              setFilters((f) => ({ ...f, from, to }));
-              setSelectedId('');
-            }}
-          />
-          <p className={styles.note}>
-            Pulse un mes para ver solo ese periodo; con Mayús amplía el rango. Pulse de nuevo el mes
-            seleccionado para ver todo el periodo.
-          </p>
-        </Card>
-      ) : null}
-
-      <dl className={styles.kpis}>
-        <div>
-          <dt>Localidades monitoreadas</dt>
-          <dd>{localities.size}</dd>
+      <details className={styles.filters} key={String(compact)} open={!compact || undefined}>
+        <summary>
+          Filtros{activeFilters ? ` (${activeFilters} activos)` : ''} · {visible.length} registro(s)
+          en el mapa
+        </summary>
+        <div className={styles.toolbar}>
+          {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}
+          {select('locality', 'Localidad', [
+            ['', 'Toda la provincia'],
+            ...LOCALITIES.map((l): [string, string] => [l.name, l.name]),
+          ])}
+          {select('dimension', 'Dimensión', [
+            ['', 'Todas'],
+            ...DIMENSIONS.map((d): [string, string] => [d, `${d} · ${DIMENSION_NAMES[d]}`]),
+          ])}
+          {select('from', 'Desde', [
+            ['', 'El inicio'],
+            ...months.map((m): [string, string] => [m, monthLabel(m)]),
+          ])}
+          {select('to', 'Hasta', [
+            ['', 'Hoy'],
+            ...months.map((m): [string, string] => [m, monthLabel(m)]),
+          ])}
+          <Button variant="secondary" onClick={exportCsv} disabled={!visible.length}>
+            Exportar CSV
+          </Button>
         </div>
-        <div>
-          <dt>Eventos georreferenciados</dt>
-          <dd>{visible.filter((p) => p.layer === 'Eventos').length}</dd>
-        </div>
-        <div>
-          <dt>Actores georreferenciados</dt>
-          <dd>{visible.filter((p) => p.layer === 'Actores').length}</dd>
-        </div>
-        <div className={openAlerts ? styles.alertKpi : undefined}>
-          <dt>Alertas abiertas</dt>
-          <dd>{openAlerts}</dd>
-        </div>
-      </dl>
+      </details>
 
       <div className={styles.layout}>
-        <Card title="Dimensiones MASCLI" eyebrow="Código de color">
-          <ul className={styles.legend}>
+        <section className={styles.mapCard} aria-label="Mapa">
+          <MapFrame map={map} homeLabel="Ver toda la provincia">
+            {(hint) => (
+              <BaseMap
+                view={view}
+                label="Mapa territorial de la provincia de Sechura"
+                title="Registros georreferenciados en la provincia de Sechura"
+                background={<TileLayer view={view} />}
+                describedBy={hint}
+              >
+                {markers.map(({ point: p, at }) => {
+                  const active = p.id === selectedId;
+                  const r = unit * (active ? 3.4 : 2.6);
+                  return (
+                    <g
+                      key={`${p.layer}-${p.id}`}
+                      className={`${styles.marker} ${styles[p.dimension] ?? ''}`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${p.layer}: ${p.title} (${p.locality})`}
+                      aria-pressed={active}
+                      onClick={() => setSelectedId(p.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          setSelectedId(p.id);
+                        }
+                      }}
+                    >
+                      <circle cx={at[0]} cy={at[1]} r={r} strokeWidth={unit * 0.4} />
+                      <text x={at[0]} y={at[1] + r * 0.38} fontSize={r * 1.1} textAnchor="middle">
+                        {p.dimension}
+                      </text>
+                    </g>
+                  );
+                })}
+              </BaseMap>
+            )}
+          </MapFrame>
+          <ul className={styles.legendInline} aria-label="Dimensiones MASCLI">
             {DIMENSIONS.map((d) => (
               <li key={d}>
                 <DimensionBadge code={d} /> {DIMENSION_NAMES[d]}
               </li>
             ))}
           </ul>
-          <p className={styles.note}>
-            Cada punto es un registro con localidad identificada en su campo Territorio (o con
-            coordenadas propias).
-            {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
-          </p>
-        </Card>
-
-        <section className={styles.mapCard} aria-label="Mapa">
-          <div className={styles.mapControls}>
-            <Button
-              variant="secondary"
-              aria-label="Acercar"
-              disabled={zoom >= 32}
-              onClick={() => setZoom((z) => Math.min(z * 2, 32))}
-            >
-              +
-            </Button>
-            <Button
-              variant="secondary"
-              aria-label="Alejar"
-              disabled={zoom <= 1}
-              onClick={() => setZoom((z) => Math.max(z / 2, 1))}
-            >
-              −
-            </Button>
-            <Button
-              variant="secondary"
-              aria-label="Ver toda la provincia"
-              onClick={() => {
-                setZoom(1);
-                setCenter(null);
-              }}
-            >
-              ⌂
-            </Button>
-          </div>
-          <BaseMap
-            view={view}
-            label="Mapa territorial de la provincia de Sechura"
-            title="Registros georreferenciados en la provincia de Sechura"
-            background={<TileLayer view={view} />}
-          >
-            {visible.map((p) => {
-              const active = p.id === selectedId;
-              const r = unit * (active ? 3.4 : 2.6);
-              return (
-                <g
-                  key={`${p.layer}-${p.id}`}
-                  className={`${styles.marker} ${styles[p.dimension] ?? ''}`}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`${p.layer}: ${p.title} (${p.locality})`}
-                  aria-pressed={active}
-                  onClick={() => setSelectedId(p.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      setSelectedId(p.id);
-                    }
-                  }}
-                >
-                  <circle cx={svgX(p.at[0])} cy={svgY(p.at[1])} r={r} strokeWidth={unit * 0.4} />
-                  <text
-                    x={svgX(p.at[0])}
-                    y={svgY(p.at[1]) + r * 0.38}
-                    fontSize={r * 1.1}
-                    textAnchor="middle"
-                  >
-                    {p.dimension}
-                  </text>
-                </g>
-              );
-            })}
-          </BaseMap>
           <p className={styles.attribution}>
             Mapa base{' '}
             <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
               {TILE_ATTRIBUTION}
             </a>
-            . Ubicaciones aproximadas por localidad.
+            . Ubicaciones aproximadas por localidad; los registros de una misma localidad se separan
+            alrededor de ella.
+            {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
           </p>
         </section>
 
@@ -377,6 +337,44 @@ const TerritorialWorkspace = ({
           )}
         </Card>
       </div>
+
+      {activity.length > 1 ? (
+        <Card title="Actividad por mes" eyebrow="Filtro temporal">
+          <TimeHistogram
+            series={activity}
+            from={filters.from}
+            to={filters.to}
+            label="Registros georreferenciados por mes"
+            onChange={(from, to) => {
+              setFilters((f) => ({ ...f, from, to }));
+              setSelectedId('');
+            }}
+          />
+          <p className={styles.note}>
+            Pulse un mes para ver solo ese periodo; con Mayús amplía el rango. Pulse de nuevo el mes
+            seleccionado para ver todo el periodo.
+          </p>
+        </Card>
+      ) : null}
+
+      <dl className={styles.kpis}>
+        <div>
+          <dt>Localidades monitoreadas</dt>
+          <dd>{localities.size}</dd>
+        </div>
+        <div>
+          <dt>Eventos georreferenciados</dt>
+          <dd>{visible.filter((p) => p.layer === 'Eventos').length}</dd>
+        </div>
+        <div>
+          <dt>Actores georreferenciados</dt>
+          <dd>{visible.filter((p) => p.layer === 'Actores').length}</dd>
+        </div>
+        <div className={openAlerts ? styles.alertKpi : undefined}>
+          <dt>Alertas abiertas</dt>
+          <dd>{openAlerts}</dd>
+        </div>
+      </dl>
 
       <div className={styles.bottom}>
         <Card title="Ubicaciones recientes">
