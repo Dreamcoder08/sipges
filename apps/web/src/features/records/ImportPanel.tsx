@@ -6,6 +6,7 @@ import { parseCsv } from '../../shared/lib/csv.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { importRecords } from './api.ts';
+import { useReveal } from '../../shared/lib/reveal.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -50,6 +51,8 @@ export const ImportPanel = ({
   const [readError, setReadError] = useState('');
   const [report, setReport] = useState<ImportReport | null>(null);
   const fields = MODULES[module].fields;
+  // The panel opens below the whole list; on a long list or a phone it would be off-screen.
+  const heading = useReveal('open');
 
   const mappedRows = () =>
     (file?.rows ?? []).map((cells) => {
@@ -94,7 +97,9 @@ export const ImportPanel = ({
   const mappedCount = mapping.filter(Boolean).length;
   return (
     <section className={styles.importPanel} aria-labelledby={`${ids}-title`}>
-      <h4 id={`${ids}-title`}>Importar desde CSV</h4>
+      <h4 id={`${ids}-title`} ref={heading} tabIndex={-1}>
+        Importar desde CSV
+      </h4>
       <p className={styles.muted}>
         Las celdas vacías no borran datos. Si una fila trae un código existente, se actualiza ese
         registro; si hay cualquier error, no se importa nada.

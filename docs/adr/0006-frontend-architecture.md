@@ -54,3 +54,34 @@ project concessions; a checkbox hides it and the note links to the GEOCATMIN vie
 adds `https://geocatmin.ingemmet.gob.pe` in the SPA and Vercel policies; scripts, styles and
 connections stay same-origin, and the request carries only the app origin as referrer. The
 layer is referential, as INGEMMET states. E2E resolves the host to nothing, like the OSM tiles.
+
+## Addendum (2026-10-14): satellite basemap and smooth map gestures
+
+At the owner's request ("la ubicación geoespacial debe verse bien, realista"), both maps offer a
+basemap choice: satellite, streets (the OSM tiles above) or none. Satellite imagery is EOX's
+Sentinel-2 cloudless 2020 mosaic from
+`https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg`, without
+key or token, licensed CC BY-NC-SA 4.0 for this non-commercial academic demo, with the linked
+credit "Sentinel-2 cloudless 2020 de EOX IT Services GmbH (contiene datos modificados de
+Copernicus Sentinel 2020)" under the map. Its resolution is about 10 m per pixel, so the client
+requests at most level 14 and stretches it closer in. The project location screen opens on
+satellite; the territorial map keeps streets by default. `img-src` adds
+`https://tiles.maps.eox.at` in the SPA and Vercel policies; E2E resolves it to nothing.
+
+During a drag, pinch or Ctrl + wheel gesture the view lives in a ref and only an SVG transform
+on the map content changes, once per animation frame; React renders once when the gesture ends.
+The tile layer loads a quarter of the view beyond each edge and keeps the previous level's tiles
+underneath until the new level loads. Profiling a drag with 4× CPU throttling showed the real
+cost was rasterising district outlines whose CSS dash (0.01 map units, about 1 m) produced
+millions of dashes; dashes are now sized to the view (p95 frame 267 ms → 17 ms).
+
+## Addendum (2026-10-14): caching hashed assets
+
+Vite names every JS and CSS file by its content hash, so `/assets/*` is served with
+`Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable` by the SPA middleware
+and in `vercel.json`. Every other response keeps `no-store`: the HTML shell (so a deploy is seen
+at once), the service worker, API data and errors. The security middleware only lets that exact
+asset value through. Measured on 4G with a 4× slower CPU, a reload went from 1.6 s and 724 KB
+to 0.9 s and 49 KB. Signed-in navigation reuses the cached session and project (refreshed in the
+background, refetched when invalidated) and preloads the other screens' code while idle, except
+under Save-Data.

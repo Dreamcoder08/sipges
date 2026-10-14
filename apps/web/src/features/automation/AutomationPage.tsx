@@ -27,6 +27,8 @@ import {
   tick,
 } from './api.ts';
 import { ApiKeysCard } from './ApiKeysCard.tsx';
+import { useReveal } from '../../shared/lib/reveal.ts';
+import { ConfirmDialog } from '../../shared/ui/ConfirmDialog.tsx';
 import styles from './AutomationPage.module.css';
 
 type Step = RuleIn['steps'][number];
@@ -87,6 +89,12 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
   const [channelKind, setChannelKind] = useState<ChannelKind>('webhook');
   const [channelName, setChannelName] = useState('');
   const [settings, setSettings] = useState<Record<string, string>>({});
+  // Rules and channels are deleted for good; ask first, as record deletion does.
+  const [removing, setRemoving] = useState<{
+    kind: 'rule' | 'channel';
+    id: number;
+    name: string;
+  } | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (run: () => Promise<string>) => run(),
@@ -95,6 +103,26 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
     onSettled: () => client.invalidateQueries({ queryKey: ['automation', scope] }),
   });
   const busy = mutation.isPending;
+  const confirmRemoval = () => {
+    if (!removing) return;
+    const target = removing;
+    mutation.mutate(
+      async () => {
+        if (target.kind === 'rule') {
+          await deleteRule(scope, target.id);
+          return 'Regla eliminada.';
+        }
+        await deleteChannel(scope, target.id);
+        return 'Canal eliminado.';
+      },
+      { onSuccess: () => setRemoving(null) },
+    );
+  };
+  // Outcomes render at the top and the rule form below the list: bring each into view.
+  const outcome = useReveal<HTMLDivElement>(
+    notice || (mutation.error ? errorDetail(mutation.error) : ''),
+  );
+  const ruleForm = useReveal<HTMLLegendElement>(editing === null ? '' : String(editing));
 
   if (!admin)
     return <Alert tone="info">Las automatizaciones solo las configura el rol administrador.</Alert>;
@@ -115,8 +143,10 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
         bandeja y envía mensajes a los canales configurados. Las reglas nuevas solo miran eventos
         posteriores a su creación.
       </p>
-      {notice && <Alert tone="success">{notice}</Alert>}
-      {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
+      <div ref={outcome} tabIndex={-1} className={styles.outcome}>
+        {notice && <Alert tone="success">{notice}</Alert>}
+        {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
+      </div>
       <QueryState query={overview} label="las automatizaciones">
         {(data) => (
           <>
@@ -177,12 +207,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                           variant="ghost"
                           disabled={busy}
                           aria-label={`Eliminar regla ${r.name}`}
-                          onClick={() =>
-                            mutation.mutate(async () => {
-                              await deleteRule(scope, r.id);
-                              return 'Regla eliminada.';
-                            })
-                          }
+                          onClick={() => setRemoving({ kind: 'rule', id: r.id, name: r.name })}
                         >
                           Eliminar
                         </Button>
@@ -204,7 +229,9 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                 }}
               >
                 <fieldset disabled={busy}>
-                  <legend>{editing ? 'Editar regla' : 'Nueva regla'}</legend>
+                  <legend ref={ruleForm} tabIndex={-1}>
+                    {editing ? 'Editar regla' : 'Nueva regla'}
+                  </legend>
                   <Field
                     label="Nombre de la regla"
                     required
@@ -424,12 +451,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                           variant="ghost"
                           disabled={busy}
                           aria-label={`Eliminar canal ${c.name}`}
-                          onClick={() =>
-                            mutation.mutate(async () => {
-                              await deleteChannel(scope, c.id);
-                              return 'Canal eliminado.';
-                            })
-                          }
+                          onClick={() => setRemoving({ kind: 'channel', id: c.id, name: c.name })}
                         >
                           Eliminar
                         </Button>
@@ -537,6 +559,25 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
           </>
         )}
       </QueryState>
+      {removing && (
+        <ConfirmDialog
+          title={removing.kind === 'rule' ? 'Eliminar regla' : 'Eliminar canal'}
+          confirmLabel="Confirmar eliminación"
+          pendingLabel="Eliminando…"
+          pending={busy}
+          error={mutation.error ? errorDetail(mutation.error) : null}
+          onConfirm={confirmRemoval}
+          onCancel={() => {
+            mutation.reset();
+            setRemoving(null);
+          }}
+        >
+          {removing.kind === 'rule'
+            ? `Se eliminará la regla «${removing.name}» y su registro de entregas.`
+            : `Se eliminará el canal «${removing.name}» y su secreto cifrado. Si una regla activa lo usa, pausa o edita esa regla antes.`}{' '}
+          Esta acción no se puede deshacer.
+        </ConfirmDialog>
+      )}
     </div>
   );
 };

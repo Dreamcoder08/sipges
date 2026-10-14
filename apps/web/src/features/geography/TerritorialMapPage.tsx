@@ -34,7 +34,8 @@ import {
   monthlyCounts,
   monthsOf,
 } from './territorial-model.ts';
-import { TILE_ATTRIBUTION, TileLayer } from './TileLayer.tsx';
+import { type Basemap, TileLayer } from './TileLayer.tsx';
+import { BasemapCredit, BasemapPicker } from './BasemapPicker.tsx';
 import styles from './TerritorialMap.module.css';
 
 const Records = z.array(z.looseObject({ _id: z.string() }));
@@ -126,6 +127,7 @@ const TerritorialWorkspace = ({
     to: '',
   });
   const [selectedId, setSelectedId] = useState('');
+  const [basemap, setBasemap] = useState<Basemap>('calles');
   const compact = useMediaQuery(COMPACT_QUERY);
   const { points, unlocated } = useMemo(() => mapPoints(layers, projectId), [layers, projectId]);
   const placed = filterPlace(points, filters);
@@ -246,7 +248,10 @@ const TerritorialWorkspace = ({
                 view={view}
                 label="Mapa territorial de la provincia de Sechura"
                 title="Registros georreferenciados en la provincia de Sechura"
-                background={<TileLayer view={view} />}
+                background={
+                  basemap === 'ninguno' ? undefined : <TileLayer view={view} basemap={basemap} />
+                }
+                imagery={basemap === 'satelite'}
                 describedBy={hint}
               >
                 {markers.map(({ point: p, at }) => {
@@ -278,6 +283,7 @@ const TerritorialWorkspace = ({
               </BaseMap>
             )}
           </MapFrame>
+          <BasemapPicker value={basemap} onChange={setBasemap} />
           <ul className={styles.legendInline} aria-label="Dimensiones MASCLI">
             {DIMENSIONS.map((d) => (
               <li key={d}>
@@ -286,12 +292,8 @@ const TerritorialWorkspace = ({
             ))}
           </ul>
           <p className={styles.attribution}>
-            Mapa base{' '}
-            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
-              {TILE_ATTRIBUTION}
-            </a>
-            . Ubicaciones aproximadas por localidad; los registros de una misma localidad se separan
-            alrededor de ella.
+            <BasemapCredit basemap={basemap} /> Ubicaciones aproximadas por localidad; los registros
+            de una misma localidad se separan alrededor de ella.
             {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
           </p>
         </section>

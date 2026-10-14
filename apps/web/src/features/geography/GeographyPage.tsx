@@ -15,6 +15,8 @@ import { useMapView } from './useMapView.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
 import { GEOCATMIN_VIEWER, MiningCadastreLayer } from './MiningCadastreLayer.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
+import { BasemapCredit, BasemapPicker } from './BasemapPicker.tsx';
+import { type Basemap, TileLayer } from './TileLayer.tsx';
 import styles from './Geography.module.css';
 
 export const GeographyPage = ({ scope }: FeatureContext) => {
@@ -46,6 +48,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
   const { valid: concessions, invalid } = checkConcessions(data.concessions);
   const [selection, setSelection] = useState(concessions[0]?.code ?? '');
   const [cadastre, setCadastre] = useState(true);
+  const [basemap, setBasemap] = useState<Basemap>('satelite');
   const selected = concessions.find((c) => c.code === selection);
   // The map opens on the project: every drawable concession with a margin. Inside the Sechura
   // province the generalised districts and towns are drawn around it.
@@ -151,6 +154,12 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
                 label="Geometría de referencia"
                 title={`Concesiones referenciales en ${data.project_name}`}
                 showBase={onBase}
+                background={
+                  basemap === 'ninguno' ? undefined : (
+                    <TileLayer view={map.view} basemap={basemap} />
+                  )
+                }
+                imagery={basemap === 'satelite'}
                 describedBy={hint}
               >
                 {cadastre ? <MiningCadastreLayer view={map.view} /> : null}
@@ -181,6 +190,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
             )}
           </MapFrame>
         </MapErrorBoundary>
+        <BasemapPicker value={basemap} onChange={setBasemap} />
         <label className={styles.toggle}>
           <input
             type="checkbox"
@@ -212,6 +222,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
           ) : null}
         </ul>
         <p className={styles.note}>
+          <BasemapCredit basemap={basemap} />{' '}
           {onBase
             ? 'Coordenadas WGS 84, norte hacia arriba. Límites distritales generalizados (INEI) solo para orientación; no reemplazan cartografía oficial ni medición certificada.'
             : 'Plano referencial en longitud y latitud. Norte hacia arriba; sin base cartográfica ni medición certificada.'}

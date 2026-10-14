@@ -2,7 +2,12 @@ import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { SPA_CSP, type WebAssets, fileWebAssets } from '../../src/platform/http/spa.ts';
+import {
+  ASSET_CACHE,
+  SPA_CSP,
+  type WebAssets,
+  fileWebAssets,
+} from '../../src/platform/http/spa.ts';
 import { createTestApp } from '../support/test-app.ts';
 
 const SHELL = '<!doctype html><title>MASCLI</title><div id="root"></div>';
@@ -33,6 +38,12 @@ describe('single-page app delivery', () => {
     const js = await t.request('/assets/index-abc.js');
     expect(js.status).toBe(200);
     expect(js.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
+    // Hashed names never change meaning: cached for a year by browsers and the CDN.
+    expect(js.headers.get('cache-control')).toBe(ASSET_CACHE);
+    expect(js.headers.get('x-content-type-options')).toBe('nosniff');
+    const shell = await t.request('/eventos', { headers: html });
+    expect(shell.headers.get('cache-control')).toBe('no-store');
+    expect((await t.request('/assets/missing.js')).headers.get('cache-control')).toBe('no-store');
     for (const path of ['/assets/missing.js', '/assets/index.exe', '/assets/..%2Fsecret.js']) {
       expect((await t.request(path)).status, path).toBe(404);
     }

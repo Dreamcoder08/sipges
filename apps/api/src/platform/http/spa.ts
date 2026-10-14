@@ -26,7 +26,7 @@ export const SPA_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: https://tile.openstreetmap.org https://geocatmin.ingemmet.gob.pe",
+  "img-src 'self' data: https://tile.openstreetmap.org https://tiles.maps.eox.at https://geocatmin.ingemmet.gob.pe",
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",
@@ -43,6 +43,13 @@ const ASSET_TYPES: Readonly<Record<string, string>> = {
   '.woff2': 'font/woff2',
   '.json': 'application/json',
 };
+
+/**
+ * Vite puts a content hash in every asset name, so a name never changes meaning: browsers and
+ * the CDN keep it for a year. Sending `no-store` here made every visit and every screen
+ * download the whole bundle again through the server function.
+ */
+export const ASSET_CACHE = 'public, max-age=31536000, s-maxage=31536000, immutable';
 
 const ASSET_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 /** Paths the API owns; everything else a browser navigates to is a client route. */
@@ -76,7 +83,10 @@ export const spaMiddleware =
       const type = ASSET_TYPES[extname(name)];
       const bytes = type && ASSET_NAME.test(name) ? await web.asset(name) : null;
       if (!type || !bytes) return c.json({ detail: 'Not Found' }, 404);
-      return c.body(new Uint8Array(bytes), 200, { 'Content-Type': type });
+      return c.body(new Uint8Array(bytes), 200, {
+        'Content-Type': type,
+        'Cache-Control': ASSET_CACHE,
+      });
     }
     if (!isClientRoute(path) || !(c.req.header('accept') ?? '').includes('text/html')) {
       return next();

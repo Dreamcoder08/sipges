@@ -53,6 +53,7 @@ export const BaseMap = ({
   districtProps,
   showBase = true,
   background,
+  imagery = false,
   describedBy,
   children,
 }: {
@@ -64,8 +65,10 @@ export const BaseMap = ({
   districtProps?: (name: string) => Record<string, unknown>;
   /** False outside the province: only the overlay, scale and north arrow are drawn. */
   showBase?: boolean;
-  /** Raster basemap drawn over the vector land; district outlines and labels stay on top. */
+  /** Raster basemap drawn over the vector land; district outlines stay on top. */
   background?: ReactNode;
+  /** The background is imagery: light outlines, and town names stay drawn over it. */
+  imagery?: boolean;
   /** Id of the gesture hint; makes the map focusable for keyboard panning and zoom. */
   describedBy?: string;
   children?: ReactNode;
@@ -85,7 +88,7 @@ export const BaseMap = ({
   const arrowY = -maxY + unit * 6;
   return (
     <svg
-      className={styles.map}
+      className={`${styles.map} ${imagery ? styles.imagery : ''}`}
       viewBox={`${minX} ${-maxY} ${width} ${height}`}
       preserveAspectRatio="xMidYMid meet"
       role="group"
@@ -94,17 +97,18 @@ export const BaseMap = ({
       aria-describedby={describedBy}
     >
       <title>{title}</title>
-      {/* Explicit fills: if the stylesheet is missing, shapes must not fall back to black. */}
-      <rect
-        className={styles.sea}
-        fill="#d6e8f3"
-        x={minX - width}
-        y={-maxY - height}
-        width={width * 3}
-        height={height * 3}
-      />
-      {showBase ? (
-        <>
+      {/* Everything that moves with the map; gestures transform this group between renders. */}
+      <g data-map-content="">
+        {/* Explicit fills: if the stylesheet is missing, shapes must not fall back to black. */}
+        <rect
+          className={styles.sea}
+          fill="#d6e8f3"
+          x={minX - width}
+          y={-maxY - height}
+          width={width * 3}
+          height={height * 3}
+        />
+        {showBase ? (
           <g>
             {SECHURA_DISTRICTS.map((district) => (
               <path
@@ -118,19 +122,24 @@ export const BaseMap = ({
               />
             ))}
           </g>
-          {background}
-          {background ? (
-            <g aria-hidden="true">
-              {SECHURA_DISTRICTS.map((district) => (
-                <path
-                  key={district.name}
-                  className={styles.outline}
-                  d={ringsPath([district.ring])}
-                  strokeWidth={unit * 0.3}
-                />
-              ))}
-            </g>
-          ) : null}
+        ) : null}
+        {background}
+        {showBase && background ? (
+          <g aria-hidden="true">
+            {SECHURA_DISTRICTS.map((district) => (
+              <path
+                key={district.name}
+                className={styles.outline}
+                d={ringsPath([district.ring])}
+                strokeWidth={unit * (imagery ? 0.4 : 0.3)}
+                // Dashes sized to the view: a fixed CSS dash in map units (about 1 m) made
+                // millions of dashes per district and froze every frame of a drag.
+                strokeDasharray={`${unit * 1.2} ${unit * 0.8}`}
+              />
+            ))}
+          </g>
+        ) : null}
+        {showBase ? (
           <g aria-hidden="true" display={background ? 'none' : undefined}>
             {SECHURA_LABELS.map((item) => (
               <text
@@ -145,30 +154,30 @@ export const BaseMap = ({
               </text>
             ))}
           </g>
-        </>
-      ) : null}
-      {children}
-      <g aria-hidden="true" display={showBase && !background ? undefined : 'none'}>
-        {SECHURA_PLACES.map((place) => (
-          <g key={place.name}>
-            <circle
-              className={place.kind === 'port' ? styles.port : styles.town}
-              cx={svgX(place.at[0])}
-              cy={svgY(place.at[1])}
-              r={unit * 0.9}
-              strokeWidth={unit * 0.3}
-            />
-            <text
-              className={styles.placeLabel}
-              x={svgX(place.at[0]) + unit * 1.4}
-              y={svgY(place.at[1]) + unit * 1}
-              fontSize={unit * 2.8}
-              strokeWidth={unit * 0.5}
-            >
-              {place.name}
-            </text>
-          </g>
-        ))}
+        ) : null}
+        {children}
+        <g aria-hidden="true" display={showBase && (!background || imagery) ? undefined : 'none'}>
+          {SECHURA_PLACES.map((place) => (
+            <g key={place.name}>
+              <circle
+                className={place.kind === 'port' ? styles.port : styles.town}
+                cx={svgX(place.at[0])}
+                cy={svgY(place.at[1])}
+                r={unit * 0.9}
+                strokeWidth={unit * 0.3}
+              />
+              <text
+                className={styles.placeLabel}
+                x={svgX(place.at[0]) + unit * 1.4}
+                y={svgY(place.at[1]) + unit * 1}
+                fontSize={unit * 2.8}
+                strokeWidth={unit * 0.5}
+              >
+                {place.name}
+              </text>
+            </g>
+          ))}
+        </g>
       </g>
       <g aria-hidden="true" className={styles.furniture}>
         <path

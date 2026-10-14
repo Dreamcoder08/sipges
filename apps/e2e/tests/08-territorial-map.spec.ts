@@ -35,7 +35,12 @@ test('events with a known locality appear on the territorial map with their deta
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3, { steps: 6 });
+  // While the finger or mouse moves, only a transform follows it; the page renders on release.
+  const content = map.locator('[data-map-content]');
+  await expect(content).toHaveAttribute('transform', /scale\(1\)/);
+  await expect(map).toHaveAttribute('viewBox', provinceView);
   await page.mouse.up();
+  await expect(content).not.toHaveAttribute('transform');
   await expect(map).not.toHaveAttribute('viewBox', provinceView);
   await page.getByRole('button', { name: 'Ver toda la provincia', exact: true }).click();
   await map.focus();
@@ -58,5 +63,18 @@ test('events with a known locality appear on the territorial map with their deta
   await expect(
     page.getByRole('heading', { level: 1, name: 'Ubicación geoespacial del proyecto' }),
   ).toBeVisible();
-  await expect(page.getByLabel('Geometría de referencia')).toBeVisible();
+  const location = page.getByLabel('Geometría de referencia');
+  await expect(location).toBeVisible();
+  // Satellite imagery by default, with its credit; streets on request.
+  const basemaps = page.getByRole('group', { name: 'Mapa base' });
+  await expect(basemaps.getByLabel('Satélite')).toBeChecked();
+  await expect(
+    location.locator('image[href^="https://tiles.maps.eox.at/"]').first(),
+  ).toBeAttached();
+  await expect(page.getByRole('link', { name: /Sentinel-2 cloudless 2020/ })).toBeVisible();
+  await basemaps.getByLabel('Calles').check();
+  await expect(
+    location.locator('image[href^="https://tile.openstreetmap.org/"]').first(),
+  ).toBeAttached();
+  await expect(location.locator('image[href^="https://tiles.maps.eox.at/"]')).toHaveCount(0);
 });
