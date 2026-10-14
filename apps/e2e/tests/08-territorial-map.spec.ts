@@ -28,6 +28,21 @@ test('events with a known locality appear on the territorial map with their deta
   await page.getByRole('button', { name: 'Alejar', exact: true }).click();
   await page.getByRole('button', { name: 'Ver toda la provincia', exact: true }).click();
   await expect(map).toHaveAttribute('viewBox', provinceView);
+  // Dragging moves the map; the arrow keys too once it has focus.
+  await map.scrollIntoViewIfNeeded();
+  const box = await map.boundingBox();
+  if (!box) throw new Error('Missing map box');
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3, { steps: 6 });
+  await page.mouse.up();
+  await expect(map).not.toHaveAttribute('viewBox', provinceView);
+  await page.getByRole('button', { name: 'Ver toda la provincia', exact: true }).click();
+  await map.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(map).not.toHaveAttribute('viewBox', provinceView);
+  await page.keyboard.press('0');
+  await expect(map).toHaveAttribute('viewBox', provinceView);
   const marker = page.getByRole('button', { name: `Eventos: ${description} (Vice)` });
   await marker.click();
   await expect(marker).toHaveAttribute('aria-pressed', 'true');

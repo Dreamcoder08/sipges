@@ -10,6 +10,8 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { BaseMap, type Extent, intersects, ringsPath, UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import { checkConcessions, ringsExtent } from './geometry.ts';
+import { MapFrame } from './MapFrame.tsx';
+import { useMapView } from './useMapView.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
 import { GEOCATMIN_VIEWER, MiningCadastreLayer } from './MiningCadastreLayer.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
@@ -43,42 +45,34 @@ const csvCell = (value: unknown) =>
 const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: string }) => {
   const { valid: concessions, invalid } = checkConcessions(data.concessions);
   const [selection, setSelection] = useState(concessions[0]?.code ?? '');
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [cadastre, setCadastre] = useState(true);
   const selected = concessions.find((c) => c.code === selection);
-  const [minX, minY, maxX, maxY] = data.bbox;
-  const width = Math.max(maxX - minX, 0.001);
-  const height = Math.max(maxY - minY, 0.001);
-  // Inside the Sechura province the map opens on the whole province around the project.
-  const onBase = intersects(data.bbox, SECHURA_EXTENT);
-  const centerX = (minX + maxX) / 2;
-  const centerY = (minY + maxY) / 2;
-  const half = onBase
-    ? Math.max(
-        centerX - SECHURA_EXTENT[0],
-        SECHURA_EXTENT[2] - centerX,
-        centerY - SECHURA_EXTENT[1],
-        SECHURA_EXTENT[3] - centerY,
-      ) * 1.05
-    : (Math.max(width, height) * 1.1) / 2;
-  const maxZoom = onBase ? 16 : 4;
-  const span = (half * 2) / zoom;
-  const view: Extent = [
-    centerX + pan.x - span / 2,
-    centerY - pan.y - span / 2,
-    centerX + pan.x + span / 2,
-    centerY - pan.y + span / 2,
-  ];
-  const step = span / 6;
+  // The map opens on the project: every drawable concession with a margin. Inside the Sechura
+  // province the generalised districts and towns are drawn around it.
+  const all = concessions.map((c) => ringsExtent(c.geometry.coordinates));
+  const extent: Extent = all.length
+    ? [
+        Math.min(...all.map((e) => e[0])),
+        Math.min(...all.map((e) => e[1])),
+        Math.max(...all.map((e) => e[2])),
+        Math.max(...all.map((e) => e[3])),
+      ]
+    : data.bbox;
+  const onBase = intersects(extent, SECHURA_EXTENT);
+  const homeSpan = Math.max(extent[2] - extent[0], extent[3] - extent[1], 0.01) * 1.3;
+  const map = useMapView({
+    home: [(extent[0] + extent[2]) / 2, (extent[1] + extent[3]) / 2],
+    homeSpan,
+    // Down to about 500 m across.
+    maxZoom: Math.max(homeSpan / 0.005, 1),
+  });
   /** Frames one concession: centred, with a margin, within the zoom range. */
   const focus = (code: string) => {
     const concession = concessions.find((c) => c.code === code);
     if (!concession) return;
     const [x0, y0, x1, y1] = ringsExtent(concession.geometry.coordinates);
     const size = Math.max(x1 - x0, y1 - y0, 0.001) * 1.4;
-    setZoom(Math.min(Math.max((half * 2) / size, 1), maxZoom));
-    setPan({ x: (x0 + x1) / 2 - centerX, y: centerY - (y0 + y1) / 2 });
+    map.focus([(x0 + x1) / 2, (y0 + y1) / 2], homeSpan / size);
   };
   if (!concessions.length)
     return (
@@ -111,33 +105,82 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
       'coordenadas-referenciales.csv',
     );
   };
+  const vertices = selected?.geometry.coordinates.reduce((n, ring) => n + ring.length, 0) ?? 0;
   return (
     <div className={styles.page}>
-      <Card title={data.project_name}>
-        <p>{data.initiative}</p>
-        <p>{data.description}</p>
-        <p>{notice}</p>
+      <Card title={data.project_name} eyebrow="Concesiones del proyecto">
         {invalid.length ? (
           <Alert tone="error">
             No se dibujan {invalid.length} concesión(es) con geometría inválida:{' '}
             {invalid.map((item) => `${item.name} (${item.code}): ${item.problem}`).join('; ')}.
           </Alert>
         ) : null}
-        <label htmlFor="concession">Concesión</label>
-        <select
-          id="concession"
-          value={selection}
-          onChange={(event) => {
-            setSelection(event.target.value);
-            focus(event.target.value);
-          }}
-        >
-          {concessions.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <div className={styles.picker}>
+          <label htmlFor="concession">Concesión</label>
+          <select
+            id="concession"
+            value={selection}
+            onChange={(event) => {
+              setSelection(event.target.value);
+              focus(event.target.value);
+            }}
+          >
+            {concessions.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <MapErrorBoundary>
+          <MapFrame
+            map={map}
+            homeLabel="Ver todas las concesiones"
+            actions={[
+              {
+                label: 'Centrar concesión',
+                icon: 'target',
+                onClick: () => focus(selection),
+                disabled: !selected,
+              },
+            ]}
+          >
+            {(hint) => (
+              <BaseMap
+                view={map.view}
+                label="Geometría de referencia"
+                title={`Concesiones referenciales en ${data.project_name}`}
+                showBase={onBase}
+                describedBy={hint}
+              >
+                {cadastre ? <MiningCadastreLayer view={map.view} /> : null}
+                {concessions.map((c) => (
+                  <path
+                    key={c.code}
+                    className={`${styles.concession} ${c.code === selection ? styles.concessionSelected : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Seleccionar ${c.name}`}
+                    aria-pressed={c.code === selection}
+                    onClick={() => setSelection(c.code)}
+                    onDoubleClick={() => focus(c.code)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelection(c.code);
+                      }
+                    }}
+                    d={ringsPath(c.geometry.coordinates)}
+                    fill={c.code === selection ? '#e6b54a' : '#669bb5'}
+                    stroke="#243b53"
+                    fillRule="evenodd"
+                    strokeWidth={(map.span / 400) * UNITS_PER_DEGREE}
+                  />
+                ))}
+              </BaseMap>
+            )}
+          </MapFrame>
+        </MapErrorBoundary>
         <label className={styles.toggle}>
           <input
             type="checkbox"
@@ -146,77 +189,6 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
           />
           Catastro minero de INGEMMET (GEOCATMIN)
         </label>
-        <div className={styles.actions}>
-          <Button
-            disabled={zoom >= maxZoom}
-            onClick={() => setZoom((z) => Math.min(z * 2, maxZoom))}
-          >
-            Acercar
-          </Button>
-          <Button disabled={zoom <= 1} onClick={() => setZoom((z) => Math.max(z / 2, 1))}>
-            Alejar
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setZoom(1);
-              setPan({ x: 0, y: 0 });
-            }}
-          >
-            Restablecer vista
-          </Button>
-          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, x: p.x - step }))}>
-            Oeste
-          </Button>
-          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, x: p.x + step }))}>
-            Este
-          </Button>
-          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, y: p.y - step }))}>
-            Norte
-          </Button>
-          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, y: p.y + step }))}>
-            Sur
-          </Button>
-          <Button variant="secondary" disabled={!selected} onClick={() => focus(selection)}>
-            Centrar concesión
-          </Button>
-          <Button variant="secondary" onClick={exportCoordinates}>
-            Exportar coordenadas CSV
-          </Button>
-        </div>
-        <MapErrorBoundary>
-          <BaseMap
-            view={view}
-            label="Geometría de referencia"
-            title={`Concesiones referenciales en ${data.project_name}`}
-            showBase={onBase}
-          >
-            {cadastre ? <MiningCadastreLayer view={view} /> : null}
-            {concessions.map((c) => (
-              <path
-                key={c.code}
-                className={`${styles.concession} ${c.code === selection ? styles.concessionSelected : ''}`}
-                role="button"
-                tabIndex={0}
-                aria-label={`Seleccionar ${c.name}`}
-                aria-pressed={c.code === selection}
-                onClick={() => setSelection(c.code)}
-                onDoubleClick={() => focus(c.code)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    setSelection(c.code);
-                  }
-                }}
-                d={ringsPath(c.geometry.coordinates)}
-                fill={c.code === selection ? '#e6b54a' : '#669bb5'}
-                stroke="#243b53"
-                fillRule="evenodd"
-                strokeWidth={(span / 400) * UNITS_PER_DEGREE}
-              />
-            ))}
-          </BaseMap>
-        </MapErrorBoundary>
         <ul className={styles.legend}>
           <li>
             <span className={`${styles.swatch} ${styles.swatchConcession}`} aria-hidden="true" />
@@ -256,7 +228,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
         </p>
       </Card>
       {selected ? (
-        <Card title={selected.name}>
+        <Card title={selected.name} eyebrow="Concesión seleccionada">
           <dl className={styles.facts}>
             <dt>Código</dt>
             <dd>{selected.code}</dd>
@@ -271,38 +243,54 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
               {selected.centroid.longitude}, {selected.centroid.latitude}
             </dd>
           </dl>
-          <div
-            className={styles.scroll}
-            tabIndex={0}
-            role="region"
-            aria-label={`Vértices de ${selected.name}`}
-          >
-            <table>
-              <caption>Vértices de {selected.name}</caption>
-              <thead>
-                <tr>
-                  <th>Anillo</th>
-                  <th>Vértice</th>
-                  <th>Longitud</th>
-                  <th>Latitud</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selected.geometry.coordinates.flatMap((points, ring) =>
-                  points.map(([lon, lat], index) => (
-                    <tr key={`${ring}-${index}`}>
-                      <td>{ring + 1}</td>
-                      <td>{index + 1}</td>
-                      <td>{lon}</td>
-                      <td>{lat}</td>
-                    </tr>
-                  )),
-                )}
-              </tbody>
-            </table>
+          <div className={styles.actions}>
+            <Button variant="secondary" onClick={() => focus(selection)}>
+              Ver en el mapa
+            </Button>
+            <Button variant="secondary" onClick={exportCoordinates}>
+              Exportar coordenadas CSV
+            </Button>
           </div>
+          <details className={styles.vertices}>
+            <summary>Vértices ({vertices})</summary>
+            <div
+              className={styles.scroll}
+              tabIndex={0}
+              role="region"
+              aria-label={`Vértices de ${selected.name}`}
+            >
+              <table>
+                <caption>Vértices de {selected.name}</caption>
+                <thead>
+                  <tr>
+                    <th>Anillo</th>
+                    <th>Vértice</th>
+                    <th>Longitud</th>
+                    <th>Latitud</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selected.geometry.coordinates.flatMap((points, ring) =>
+                    points.map(([lon, lat], index) => (
+                      <tr key={`${ring}-${index}`}>
+                        <td>{ring + 1}</td>
+                        <td>{index + 1}</td>
+                        <td>{lon}</td>
+                        <td>{lat}</td>
+                      </tr>
+                    )),
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </details>
         </Card>
       ) : null}
+      <Card title="Acerca del proyecto">
+        <p>{data.initiative}</p>
+        <p>{data.description}</p>
+        <p className={styles.note}>{notice}</p>
+      </Card>
       <Card title="Origen y sistema de coordenadas">
         <dl className={styles.facts}>
           <dt>Organización</dt>

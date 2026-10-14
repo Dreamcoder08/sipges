@@ -33,7 +33,7 @@
 .kpis {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
   gap: var(--space-3);
 }
 
@@ -53,7 +53,7 @@
 
 .kpis dd {
   margin: 0;
-  font-size: 1.8rem;
+  font-size: clamp(1.375rem, 5vw, 1.8rem);
   font-weight: 800;
 }
 
@@ -67,7 +67,7 @@
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr) minmax(15rem, 19rem);
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
   gap: var(--space-4);
   align-items: start;
 }
@@ -80,24 +80,8 @@
   min-width: 0;
 }
 
-.mapCard svg {
+.mapCard svg[role='group'] {
   height: min(70vh, 36rem);
-}
-
-.mapControls {
-  position: absolute;
-  top: var(--space-3);
-  left: var(--space-3);
-  z-index: 1;
-  display: grid;
-  gap: var(--space-1);
-}
-
-.mapControls button {
-  width: 2.5rem;
-  padding: 0.35rem 0;
-  font-size: 1.1rem;
-  box-shadow: var(--shadow-sm);
 }
 
 .attribution {
@@ -268,27 +252,44 @@
   border: 2px solid var(--color-surface);
 }
 
-@media (max-width: 75rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
-  }
-  .layout > :first-child {
-    grid-column: 1 / -1;
-    order: 3;
-  }
-}
-
 @media (max-width: 48rem) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
   }
-  .layout > :first-child {
-    order: 0;
-  }
-  .mapCard {
-    order: -1;
-  }
-  .mapCard svg {
+  .mapCard svg[role='group'] {
     height: 62vh;
   }
+}
+
+.filters {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.filters summary {
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-4);
+  font-weight: 600;
+  cursor: pointer;
+}
+.filters .toolbar {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.legendInline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+}
+.legendInline li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }

@@ -114,7 +114,7 @@ test('the geospatial view frames a concession and the directory lists contacts',
   const map = page.getByLabel('Geometría de referencia');
   await expect(map).toBeVisible();
   const province = await map.getAttribute('viewBox');
-  await page.getByLabel('Concesión').selectOption('12000442Y01');
+  await page.getByLabel('Concesión', { exact: true }).selectOption('12000442Y01');
   await expect(map).not.toHaveAttribute('viewBox', province ?? '');
   const selected = page.getByRole('button', { name: 'Seleccionar BAYOVAR N° 6' });
   await expect(selected).toHaveAttribute('aria-pressed', 'true');
