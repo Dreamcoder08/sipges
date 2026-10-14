@@ -7,11 +7,13 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
+import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { deleteRecord, recordQuery, recordsQuery, saveRecord } from './api.ts';
 import { EvidencePanel } from './EvidencePanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
+import { LinksPanel } from './LinksPanel.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
@@ -300,9 +302,12 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
         <Card
           title={`Ficha ${selection.id}`}
           action={
-            <Button variant="ghost" disabled={busy} onClick={() => setSelection(null)}>
-              Cerrar ficha
-            </Button>
+            <div className={styles.actions}>
+              <InternalLink href={objectHref(module, selection.id)}>Vista 360°</InternalLink>
+              <Button variant="ghost" disabled={busy} onClick={() => setSelection(null)}>
+                Cerrar ficha
+              </Button>
+            </div>
           }
         >
           <QueryState query={detail} label="la ficha">
@@ -328,6 +333,13 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                     scope={scope}
                     writable={writable}
                     onBusyChange={setUploadBusy}
+                  />
+                  <LinksPanel
+                    key={`links/${scope}/${module}/${record._id}`}
+                    module={module}
+                    id={record._id}
+                    scope={scope}
+                    writable={writable}
                   />
                   <HistoryPanel
                     key={`history/${scope}/${module}/${record._id}`}

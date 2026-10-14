@@ -89,6 +89,7 @@ const expected = (
         at: '2026-10-12T12:00:00.000Z',
       },
     ],
+    record_links: [],
   },
 });
 
@@ -184,6 +185,7 @@ describe('GET /system/export versioned tenant JSON', () => {
         preventive_actions: [],
         preventive_action_log: [],
         record_versions: [],
+        record_links: [],
       },
     });
   });

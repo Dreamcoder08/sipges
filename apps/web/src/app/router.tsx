@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { lazy, Suspense, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import type { RecordModule } from '../features/records/modules.ts';
+import { NavigateProvider } from '../shared/lib/navigation.tsx';
 import { Button } from '../shared/ui/Button.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import {
@@ -37,6 +38,9 @@ import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
 
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
+);
+const ObjectPage = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.ObjectPage })),
 );
 const IrsaPage = lazy(() =>
   import('../features/indicators/index.ts').then((module) => ({ default: module.IrsaPage })),
@@ -209,9 +213,11 @@ const appRoute = createRoute({
           />
         }
       >
-        <Suspense fallback={<p role="status">Cargando sección…</p>}>
-          <Outlet />
-        </Suspense>
+        <NavigateProvider value={(href) => void router.navigate({ href })}>
+          <Suspense fallback={<p role="status">Cargando sección…</p>}>
+            <Outlet />
+          </Suspense>
+        </NavigateProvider>
       </AppShell>
     );
   },
@@ -330,11 +336,21 @@ const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePa
   }),
 );
 
+const objectRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/objeto/$module/$id',
+  component: function ObjectRoute() {
+    const context = useFeatureContext();
+    const { module, id } = objectRoute.useParams();
+    return <ObjectPage module={module} id={id} scope={context.scope} role={context.role} />;
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   mfaRoute,
   selectProjectRoute,
-  appRoute.addChildren([dashboardRoute, ...recordRoutes, ...featureRoutes]),
+  appRoute.addChildren([dashboardRoute, objectRoute, ...recordRoutes, ...featureRoutes]),
 ]);
 
 export const createAppRouter = (queryClient: QueryClient) =>

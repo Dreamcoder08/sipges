@@ -68,6 +68,11 @@ import {
   createSqlIrsaSnapshotStore,
   createSqlModuleRecordReader,
 } from './contexts/indicators/infrastructure/index.ts';
+import {
+  createOntologyService,
+  type OntologyService,
+} from './contexts/ontology/application/index.ts';
+import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-ontology-store.ts';
 import { createRecordsService, type RecordsService } from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
@@ -85,6 +90,7 @@ export type Container = {
   readonly googleSignIn: GoogleSignIn | undefined;
   readonly tenancy: TenancyService;
   readonly records: RecordsService;
+  readonly ontology: OntologyService;
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
@@ -143,6 +149,10 @@ export const buildContainer = async (deps: {
     store: createSqlRecordStore(deps.sql),
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
+  });
+  const ontology = createOntologyService({
+    store: createSqlOntologyStore(deps.sql),
+    clock: deps.clock,
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
   const indicators = createIndicatorsService({
@@ -229,6 +239,7 @@ export const buildContainer = async (deps: {
       (deps.config.google ? createGoogleSignIn(deps.config.google) : undefined),
     tenancy,
     records,
+    ontology,
     audit,
     indicators,
     analytics,

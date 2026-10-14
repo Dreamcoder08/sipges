@@ -49,6 +49,17 @@ export const installRecordsApi = (initial: Record<string, Row[]> = {}) => {
       return HttpResponse.json({ ok: true });
     }),
     http.get('/system/uploads', () => HttpResponse.json([])),
+    http.get('/api/:module/:id/history', () => HttpResponse.json([])),
+    http.get('/system/ontology', () => HttpResponse.json({ object_types: [], link_types: [] })),
+    http.get('/system/links', ({ request }) => {
+      const url = new URL(request.url);
+      const module = url.searchParams.get('module') ?? '';
+      const id = url.searchParams.get('id') ?? '';
+      return HttpResponse.json({
+        record: { module, id, type_label: module, title: id, date: null, fields: {} },
+        links: [],
+      });
+    }),
   );
   return { rows, payloads };
 };

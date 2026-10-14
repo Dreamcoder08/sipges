@@ -11,3 +11,4 @@ export * from './administration.ts';
 export * from './operations.ts';
 export * from './reference.ts';
 export * from './document-lab.ts';
+export * from './ontology.ts';
