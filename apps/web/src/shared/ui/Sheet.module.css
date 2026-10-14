@@ -1,0 +1,125 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--color-scrim);
+  animation: fade var(--motion-medium) var(--ease-out);
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 36rem;
+  max-height: 85dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-raised);
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: rise var(--motion-medium) var(--ease-out);
+}
+
+.handle {
+  align-self: center;
+  width: 2.25rem;
+  height: 0.3125rem;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-hairline-strong);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3) var(--space-2) var(--space-5);
+}
+
+.header h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.close {
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  color: var(--color-muted);
+  font-size: 1.125rem;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: var(--color-text);
+}
+
+.body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-1) var(--space-5) var(--space-6);
+}
+
+/* Wide screens: a panel under the top bar's right edge instead of a bottom sheet. */
+@media (min-width: 60.01rem) {
+  .layer {
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 4.25rem var(--space-6) var(--space-6);
+  }
+
+  .backdrop {
+    background: transparent;
+  }
+
+  .panel {
+    width: 23rem;
+    max-height: calc(100dvh - 6rem);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-hairline);
+    animation-name: drop;
+  }
+
+  .handle {
+    display: none;
+  }
+
+  .header {
+    padding-top: var(--space-3);
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

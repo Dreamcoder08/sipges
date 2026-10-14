@@ -24,7 +24,7 @@ export const InternalLink = ({
   'aria-label': label,
 }: {
   href: string;
-  className?: string;
+  className?: string | undefined;
   children: ReactNode;
   'aria-label'?: string;
 }) => {

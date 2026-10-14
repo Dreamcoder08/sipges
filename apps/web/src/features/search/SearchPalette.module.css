@@ -2,24 +2,37 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
+  min-width: 13rem;
+  height: 2.5rem;
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
   color: var(--color-muted);
   font: inherit;
+  font-size: var(--text-sm);
   cursor: pointer;
+  transition:
+    background var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+.trigger:hover {
+  background: var(--color-fill-hover);
+}
+.trigger :global(svg) {
+  font-size: 1.05rem;
+}
+.label {
+  flex: 1;
+  text-align: left;
 }
 .trigger kbd {
-  font-size: 0.75rem;
-  padding: 0 0.3rem;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-}
-@media (max-width: 40rem) {
-  .trigger kbd {
-    display: none;
-  }
+  font: inherit;
+  font-size: var(--text-xs);
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--color-hairline-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
 }
 .backdrop {
   position: fixed;
@@ -29,7 +42,7 @@
   justify-items: center;
   align-items: start;
   padding: 10vh var(--space-4) var(--space-4);
-  background: rgb(15 37 65 / 45%);
+  background: var(--color-scrim);
 }
 .dialog {
   width: min(40rem, 100%);
@@ -37,8 +50,8 @@
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: 0 20px 50px rgb(0 0 0 / 25%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
   overflow: hidden;
 }
 .input {
@@ -68,7 +81,7 @@
   overflow-wrap: anywhere;
 }
 .option[aria-selected='true'] {
-  background: var(--color-info-soft);
+  background: var(--color-accent-tint);
 }
 .option small {
   color: var(--color-muted);
@@ -78,4 +91,31 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-info);
+}
+/* Phones and tablets: an icon button; the dialog becomes a top sheet. */
+@media (max-width: 60rem) {
+  .trigger {
+    min-width: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    font-size: 1.25rem;
+  }
+  .trigger :global(svg) {
+    font-size: 1.25rem;
+  }
+  .label,
+  .trigger kbd {
+    display: none;
+  }
+  .backdrop {
+    padding: var(--space-2);
+  }
+  .dialog {
+    max-height: 80dvh;
+    border-radius: var(--radius-lg);
+  }
 }

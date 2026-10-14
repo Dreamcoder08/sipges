@@ -1,36 +1,38 @@
 .switcher {
   display: grid;
   gap: 0.15rem;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 
 .switcher label {
   color: var(--color-muted);
   font-weight: 600;
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
 }
 
 .switcher select {
   min-width: 12rem;
+  border-color: var(--color-hairline);
 }
 
 .error {
   color: var(--color-danger);
 }
 
-@media (max-width: 40rem) {
-  /* The label stays for assistive technology; the top bar has no room for it on phones. */
+/* Phones and tablets show the selector inside the project sheet, at full width. */
+@media (max-width: 60rem) {
+  .switcher {
+    gap: var(--space-2);
+  }
+
   .switcher label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    font-size: var(--text-sm);
   }
 
   .switcher select {
     width: 100%;
     min-width: 0;
-    min-height: 2.75rem;
+    min-height: 3rem;
   }
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { alertsByLevel, eventsByDimension, eventsByMonth } from './model.ts';
+import {
+  alertsByLevel,
+  criticalAlerts,
+  eventsByDimension,
+  eventsByMonth,
+  recentEvents,
+} from './model.ts';
 
 describe('dashboard model', () => {
   it('counts open alerts of the project by severity, like app.js', () => {
@@ -48,5 +54,80 @@ describe('dashboard model', () => {
       { key: '2026-01', label: 'ene 26', value: 2 },
     ]);
     expect(eventsByMonth([{ _id: '1', Proyecto_ID: 'P' }], 'P')).toEqual([]);
+  });
+
+  it('lists the open alerts that need action first, highest band and newest first', () => {
+    const items = criticalAlerts(
+      [
+        {
+          _id: 'a',
+          Causa: 'Bloqueo de vía',
+          Nivel_Preliminar: 'Naranja',
+          Fecha: '2026-10-01',
+          Proyecto_ID: 'P',
+        },
+        {
+          _id: 'b',
+          Causa: 'Paro',
+          Nivel_Preliminar: 'Rojo',
+          Fecha: '2026-09-01',
+          Proyecto_ID: 'P',
+        },
+        {
+          _id: 'c',
+          Causa: 'Reclamo',
+          Nivel_Preliminar: 'Naranja',
+          Fecha: '2026-10-09',
+          Proyecto_ID: 'P',
+        },
+        { _id: 'd', Causa: 'Rumor', Nivel_Preliminar: 'Verde', Proyecto_ID: 'P' },
+        {
+          _id: 'e',
+          Causa: 'Cerrada',
+          Nivel_Preliminar: 'Rojo',
+          Estado: 'Cerrada',
+          Proyecto_ID: 'P',
+        },
+        { _id: 'f', Causa: 'Otro proyecto', Nivel_Preliminar: 'Rojo', Proyecto_ID: 'Q' },
+        {
+          _id: 'g',
+          Causa: 'Demo',
+          Nivel_Preliminar: 'Rojo',
+          Proyecto_ID: 'P',
+          Dato_Sintetico: true,
+        },
+      ],
+      'P',
+    );
+    expect(items.map((i) => [i.id, i.level])).toEqual([
+      ['b', 'Rojo'],
+      ['c', 'Naranja'],
+      ['a', 'Naranja'],
+    ]);
+  });
+
+  it('lists the newest events of the project with their dimension', () => {
+    const items = recentEvents(
+      [
+        { _id: '1', Descripcion_Hecho: 'Asamblea', Fecha: '2026-08-01', Proyecto_ID: 'P' },
+        {
+          _id: '2',
+          Descripcion_Hecho: 'Derrame',
+          Dimension_Principal: 'E',
+          Fecha: '2026-10-02',
+          Proyecto_ID: 'P',
+        },
+        { _id: '3', Proyecto_ID: 'P' },
+        { _id: '4', Descripcion_Hecho: 'Ajeno', Fecha: '2026-12-01', Proyecto_ID: 'Q' },
+      ],
+      'P',
+      5,
+    );
+    expect(items.map((i) => [i.id, i.dimension])).toEqual([
+      ['2', 'E'],
+      ['1', null],
+      ['3', null],
+    ]);
+    expect(items[2]?.title).toBe('Evento sin descripción');
   });
 });

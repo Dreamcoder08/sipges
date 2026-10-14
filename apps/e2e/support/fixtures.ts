@@ -57,19 +57,39 @@ export const signIn = async (page: Page, credentials: Credentials, otp?: string)
 
 /**
  * Signs in and makes `scope` the active project: through the selection screen when the account
- * has several projects and none is selected, otherwise through the header switcher.
+ * has several projects and none is selected, otherwise through the header switcher (in the
+ * project sheet on phones).
  */
 export const signInToProject = async (page: Page, credentials: Credentials, scope: string) => {
   await signIn(page, credentials);
   const switcher = page.getByLabel('Proyecto activo');
   const chooser = page.getByRole('heading', { name: 'Seleccione un proyecto' });
-  await expect(switcher.or(chooser)).toBeVisible();
+  // Phones keep the selector in a sheet opened from the project context (docs/adr/0015).
+  const context = page.getByRole('button', { name: /Cambiar de proyecto/ });
+  await expect(switcher.or(chooser).or(context)).toBeVisible();
   if (await chooser.isVisible()) {
     await page.getByRole('button', { name: new RegExp(scope.replace('/', '\\/')) }).click();
-  } else if ((await switcher.inputValue()) !== scope) {
-    await switcher.selectOption(scope);
+    await expect(switcher.or(context)).toBeVisible();
   }
+  if (await context.isVisible()) {
+    await context.click();
+    const sheet = page.getByRole('dialog', { name: 'Cambiar de proyecto' });
+    if ((await switcher.inputValue()) !== scope) await switcher.selectOption(scope);
+    else await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    return;
+  }
+  if ((await switcher.inputValue()) !== scope) await switcher.selectOption(scope);
   await expect(switcher).toHaveValue(scope);
+};
+
+/** Signs out through the account menu, where the action lives on every viewport. */
+export const signOut = async (page: Page) => {
+  await page.getByRole('button', { name: /^Cuenta de / }).click();
+  await page
+    .getByRole('dialog', { name: 'Cuenta' })
+    .getByRole('button', { name: 'Cerrar sesión' })
+    .click();
 };
 
 /** Creates a synthetic account through the admin API and grants it the given scopes. */

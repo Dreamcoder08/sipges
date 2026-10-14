@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
 import { isApiError } from '../../shared/api/client.ts';
 import { objectHref, useInternalNavigate } from '../../shared/lib/navigation.tsx';
+import { Icon } from '../../shared/ui/Icon.tsx';
 import { searchQuery } from './api.ts';
 import styles from './SearchPalette.module.css';
 
@@ -52,7 +53,7 @@ const Results = ({ scope, onClose }: { scope: string; onClose: () => void }) => 
         aria-controls={listId}
         aria-autocomplete="list"
         {...(hits.length ? { 'aria-activedescendant': optionId(current) } : {})}
-        placeholder="Actores, eventos, demandas, fuentes…"
+        placeholder="Buscar actor, demanda, evento, alerta…"
         autoFocus
         value={text}
         onChange={(event) => {
@@ -129,7 +130,9 @@ export const SearchPalette = ({ scope }: { scope: string }) => {
         aria-keyshortcuts="Control+K Meta+K"
         onClick={() => setOpen(true)}
       >
-        <span aria-hidden="true">⌕</span> Buscar <kbd>Ctrl K</kbd>
+        <Icon name="search" />
+        <span className={styles.label}>Buscar</span>
+        <kbd>Ctrl K</kbd>
       </button>
       {open ? (
         <div className={styles.backdrop} onClick={close}>
