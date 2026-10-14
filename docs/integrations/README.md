@@ -170,6 +170,19 @@ compartan palabras. Usa el modelo de embeddings de Ollama ya configurado
   de texto para quien puede verlos.
 - Si el modelo no responde, la búsqueda sigue funcionando solo por texto.
 
+## Tiempo real y trazas
+
+Las pantallas abiertas se actualizan solas: el navegador escucha `GET /system/events`
+(*server-sent events*) y, cuando hay actividad en el proyecto, vuelve a pedir sus datos. Cada
+evento lleva solo el módulo y la acción, nunca el id ni el contenido de un registro. En
+Vercel cada conexión dura menos de 60 s y se reanuda sola con `Last-Event-ID`.
+
+Cada respuesta trae `traceresponse` ([W3C Trace Context](https://www.w3.org/TR/trace-context/)).
+Si la petición llega con `traceparent`, MASCLI continúa esa traza; si no, empieza una. Los logs
+JSON incluyen `trace_id` y `span_id`, y las llamadas salientes a webhooks firmados, Ollama y
+S3 llevan `traceparent` con la misma traza, para seguir una operación de punta a punta en
+Grafana, Datadog, Honeycomb o cualquier visor compatible con OpenTelemetry.
+
 ## OCR de PDF escaneados
 
 El laboratorio documental lee el texto de los PDF. Para los escaneados (sin capa de texto)

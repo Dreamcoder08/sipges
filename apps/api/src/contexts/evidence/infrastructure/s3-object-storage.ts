@@ -6,6 +6,7 @@ import {
   sha256Hex,
   signRequest,
 } from './s3-signature.ts';
+import { outboundTraceHeaders } from '../../../platform/observability/trace.ts';
 
 export type S3Options = {
   /** Base URL of the S3-compatible API, e.g. `https://<account>.r2.cloudflarestorage.com`. */
@@ -48,7 +49,8 @@ export const createS3ObjectStorage = (options: S3Options): ObjectStorage => {
     });
     return doFetch(new URL(path, endpoint), {
       method,
-      headers: { ...headers, authorization },
+      // traceparent is not signed, so it may change without breaking SigV4.
+      headers: { ...headers, authorization, ...outboundTraceHeaders() },
       ...(body ? { body } : {}),
     });
   };

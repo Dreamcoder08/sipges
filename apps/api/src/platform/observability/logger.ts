@@ -26,6 +26,7 @@ export const log = (level: LogLevel, message: string, fields: LogFields = {}) =>
     level,
     msg: message,
     ...(context ? { request_id: context.requestId } : {}),
+    ...(context?.trace ? { trace_id: context.trace.traceId, span_id: context.trace.spanId } : {}),
     ...(context?.actor ? { actor: context.actor } : {}),
     ...fields,
   };

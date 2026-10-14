@@ -1,3 +1,4 @@
+import type { ActivityOptions } from '../../src/contexts/audit/http/activity-routes.ts';
 import { PGlite } from '@electric-sql/pglite';
 import { afterAll } from 'vitest';
 import { trackTestDatabase } from './test-database.ts';
@@ -104,6 +105,7 @@ export const createTestApp = async (
     narrator?: Narrator | null;
     channelSender?: ChannelSender;
     pushSender?: PushSender | null;
+    activity?: Partial<ActivityOptions>;
   } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
@@ -124,7 +126,10 @@ export const createTestApp = async (
     channelSender: options.channelSender ?? outbox.sender,
     pushSender: options.pushSender ?? null,
   });
-  const app = createApp(container, options.web ? { web: options.web } : {});
+  const app = createApp(container, {
+    ...(options.web ? { web: options.web } : {}),
+    ...(options.activity ? { activity: options.activity } : {}),
+  });
 
   const request = (path: string, init: RequestInit = {}) => {
     const headers = new Headers(init.headers);

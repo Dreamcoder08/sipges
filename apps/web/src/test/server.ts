@@ -110,6 +110,13 @@ export const handlers = [
   http.get('/system/notifications', () =>
     signedIn(() => HttpResponse.json({ unread: 0, items: [] })),
   ),
+  http.get(
+    '/system/events',
+    () =>
+      new HttpResponse('event: ready\nid: 1\ndata: {}\n\n', {
+        headers: { 'content-type': 'text/event-stream' },
+      }),
+  ),
   http.get('/system/briefing/proposals', () => signedIn(() => HttpResponse.json([]))),
   http.get('/system/notifications/push', () =>
     signedIn(() => HttpResponse.json({ enabled: false, public_key: null })),

@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import type { ChannelSender, OutboundMessage } from '../application/ports.ts';
 import type { ChannelConfig } from '../domain/channels.ts';
+import { outboundTraceHeaders } from '../../../platform/observability/trace.ts';
 
 export const SEND_TIMEOUT_MS = 10_000;
 
@@ -114,6 +115,8 @@ export const createHttpChannelSender = (fetchImpl: Fetch = fetch): ChannelSender
         headers: {
           'content-type': 'application/json',
           'user-agent': 'MASCLI-Automation/1',
+          // Own systems behind a signed webhook can join the trace; chat services cannot use it.
+          ...(config.kind === 'webhook' ? outboundTraceHeaders() : {}),
           ...request.headers,
         },
         body: request.body,

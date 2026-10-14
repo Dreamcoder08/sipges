@@ -33,6 +33,7 @@ import {
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette } from '../features/search/index.ts';
+import { LiveUpdates } from '../features/live/index.ts';
 import { NotificationBell } from '../features/notifications/index.ts';
 import { AppShell } from './layout/AppShell.tsx';
 
@@ -207,6 +208,7 @@ const appRoute = createRoute({
             <>
               <SearchPalette scope={scope.scope} />
               <NotificationBell scope={scope.scope} />
+              <LiveUpdates scope={scope.scope} />
             </>
           }
           projectSwitcher={
