@@ -17,7 +17,7 @@ export const SPA_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: https://a.basemaps.cartocdn.com https://b.basemaps.cartocdn.com https://c.basemaps.cartocdn.com https://d.basemaps.cartocdn.com",
+  "img-src 'self' data: https://tile.openstreetmap.org",
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",
@@ -65,6 +65,7 @@ export const spaMiddleware =
     const html = await web.index();
     if (html === null) return next();
     c.header('Content-Security-Policy', SPA_CSP);
+    c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     return c.html(html);
   };
 

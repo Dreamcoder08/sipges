@@ -1,13 +1,10 @@
 import type { Extent } from './BaseMap.tsx';
 
-/**
- * CARTO "Voyager" raster tiles (OpenStreetMap data). Their hosts are the only external images
- * the SPA's CSP allows (img-src); the attribution is shown under the map.
- */
+/** Public OSM raster tiles; normal browser caching and origin referrer apply. */
 const tileUrl = (z: number, x: number, y: number) =>
-  `https://${'abcd'[(x + y) % 4]}.basemaps.cartocdn.com/rastertiles/voyager/${z}/${x}/${y}.png`;
+  `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
 
-export const TILE_ATTRIBUTION = '© OpenStreetMap contributors © CARTO';
+export const TILE_ATTRIBUTION = '© OpenStreetMap contributors';
 
 const lonToX = (lon: number, z: number) => ((lon + 180) / 360) * 2 ** z;
 const latToY = (lat: number, z: number) => {

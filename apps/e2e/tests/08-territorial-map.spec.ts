@@ -18,6 +18,16 @@ test('events with a known locality appear on the territorial map with their deta
   await expect(
     page.getByRole('heading', { level: 1, name: 'Mapa territorial MASCLI' }),
   ).toBeVisible();
+  const map = page.getByRole('group', {
+    name: 'Mapa territorial de la provincia de Sechura',
+  });
+  const provinceView = await map.getAttribute('viewBox');
+  if (!provinceView) throw new Error('Missing map extent');
+  await page.getByRole('button', { name: 'Acercar', exact: true }).click();
+  await expect(map).not.toHaveAttribute('viewBox', provinceView);
+  await page.getByRole('button', { name: 'Alejar', exact: true }).click();
+  await page.getByRole('button', { name: 'Ver toda la provincia', exact: true }).click();
+  await expect(map).toHaveAttribute('viewBox', provinceView);
   const marker = page.getByRole('button', { name: `Eventos: ${description} (Vice)` });
   await marker.click();
   await expect(marker).toHaveAttribute('aria-pressed', 'true');

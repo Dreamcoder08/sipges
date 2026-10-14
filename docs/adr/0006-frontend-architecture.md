@@ -26,11 +26,21 @@ React docs, TanStack docs, Bulletproof React, Feature-Sliced Design, OWASP XSS P
 
 ## Addendum (2026-10-14): basemap tiles for the territorial map
 
-The territorial map draws CARTO "Voyager" raster tiles (OpenStreetMap data) under its points.
-`img-src` therefore lists the four tile hosts `https://{a,b,c,d}.basemaps.cartocdn.com`
-explicitly (no wildcard) in the API's SPA policy and in `apps/hosting/vercel.json`. Only images
-are allowed from them; scripts, styles and connections stay same-origin. CARTO was chosen over
-`tile.openstreetmap.org` because OSM's tile policy expects a Referer and the app sends
-`Referrer-Policy: no-referrer`. The attribution "© OpenStreetMap contributors © CARTO" is shown
-under the map, and a generalised vector outline of the Sechura districts stays underneath, so the
-map remains readable if the tiles cannot load.
+The territorial map draws public OpenStreetMap raster tiles from
+`https://tile.openstreetmap.org/{z}/{x}/{y}.png`. The former CARTO Voyager endpoint returned
+HTTP 200 images containing “API KEY REQUIRED” during visual verification, so a successful
+HTTP status alone did not prove that the basemap rendered.
+
+`img-src` names only `https://tile.openstreetmap.org` as an external image origin in the SPA
+and Vercel policies; scripts, styles and connections remain same-origin. Browser documents
+use `strict-origin-when-cross-origin`, sending the public app origin without paths or queries
+to the tile service. The API middleware retains `no-referrer` for API responses. Normal browser
+caching honors the tile service's response headers. The linked attribution “© OpenStreetMap
+contributors” remains visible under the map, including on mobile.
+
+This personal academic demo uses normal interactive views, without prefetch, bulk downloads
+or offline tile export. CI substitutes a local image response for public tiles; actual imagery
+is checked separately in the preview browser. For larger usage, choose a suitable hosted or
+self-hosted provider rather than relying on this best-effort community service.
+
+Policy checked on 2026-10-14: [OSMF Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/).

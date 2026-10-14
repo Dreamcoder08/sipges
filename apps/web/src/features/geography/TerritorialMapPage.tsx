@@ -294,7 +294,11 @@ const TerritorialWorkspace = ({
             })}
           </BaseMap>
           <p className={styles.attribution}>
-            Mapa base {TILE_ATTRIBUTION}. Ubicaciones aproximadas por localidad.
+            Mapa base{' '}
+            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
+              {TILE_ATTRIBUTION}
+            </a>
+            . Ubicaciones aproximadas por localidad.
           </p>
         </section>
 
