@@ -1,5 +1,11 @@
 # Demo académica gratuita en Vercel
 
+## Acceso simplificado (2026-10-14)
+
+Por petición del propietario, esta demo académica con datos sintéticos usa `MASCLI_REQUIRE_MFA=0` en producción. Permite entrar con usuario y contraseña sin inscribir un autenticador. Esta es una configuración del proyecto Vercel, no un cambio del valor predeterminado de MASCLI. Una cuenta que active TOTP voluntariamente seguirá solicitando su código al iniciar sesión.
+
+Despliegue `dpl_A46t3io9oYwH1WZT2dcYn9Sudk8L`, revisión `b19cd6b70d40b97614a5f052f915649b81d00286`, READY. Chromium público comprobó login con contraseña, acceso directo al dashboard y administración, persistencia tras recargar, cookies Secure/HttpOnly/SameSite=Strict y logout. El propietario no necesita completar la pantalla de inscripción MFA para esta demo: puede abrir la URL raíz. Esta comprobación sustituye el requisito de inscripción pendiente descrito en la verificación histórica del 2026-10-13.
+
 Este adaptador despliega la SPA React y la API Hono existente. No duplica las reglas de negocio, no usa Python y no migra datos reales. El proyecto es `mascli-demo-academica`, en el equipo `agurtofarfanalbert-8641s-projects`.
 
 Configuración del proyecto: framework Hono, Node 22, raíz `apps/hosting`, archivos externos a la raíz habilitados, instalación `corepack pnpm install --frozen-lockfile`, build `node build.mjs`. El build compila la SPA y copia únicamente sus archivos a `public`; agrega el aviso de datos sintéticos y del límite de envío. `public` es generado y no se versiona. En el checkout efímero de Vercel, el build emite kernel/contratos a JavaScript con declaraciones de tipos y ajusta sus exports de runtime a dist: Vercel transforma .ts en .js pero no corrige los exports originales de los paquetes workspace. Ese ajuste no se hace en el build local normal ni se versiona; para reproducir el modo VERCEL=1, usar un worktree desechable. Las rutas públicas de la SPA se sirven antes de inicializar PostgreSQL y se resuelven respecto al módulo, no al directorio de ejecución.
