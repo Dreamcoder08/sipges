@@ -1,4 +1,4 @@
-import type { Extent } from './BaseMap.tsx';
+import { type Extent, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
 
 /** Public OSM raster tiles; normal browser caching and origin referrer apply. */
 const tileUrl = (z: number, x: number, y: number) =>
@@ -38,10 +38,10 @@ export const TileLayer = ({ view }: { view: Extent }) => {
         <image
           key={`${zoom}/${x}/${y}`}
           href={tileUrl(zoom, x, y)}
-          x={west}
-          y={-north}
-          width={east - west}
-          height={north - south}
+          x={svgX(west)}
+          y={svgY(north)}
+          width={(east - west) * UNITS_PER_DEGREE}
+          height={(north - south) * UNITS_PER_DEGREE}
           preserveAspectRatio="none"
         />,
       );

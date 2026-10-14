@@ -7,10 +7,11 @@ import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { BaseMap, type Extent, intersects, ringsPath } from './BaseMap.tsx';
+import { BaseMap, type Extent, intersects, ringsPath, UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import { checkConcessions, ringsExtent } from './geometry.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
+import { GEOCATMIN_VIEWER, MiningCadastreLayer } from './MiningCadastreLayer.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import styles from './Geography.module.css';
 
@@ -44,6 +45,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
   const [selection, setSelection] = useState(concessions[0]?.code ?? '');
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [cadastre, setCadastre] = useState(true);
   const selected = concessions.find((c) => c.code === selection);
   const [minX, minY, maxX, maxY] = data.bbox;
   const width = Math.max(maxX - minX, 0.001);
@@ -136,6 +138,14 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
             </option>
           ))}
         </select>
+        <label className={styles.toggle}>
+          <input
+            type="checkbox"
+            checked={cadastre}
+            onChange={(event) => setCadastre(event.target.checked)}
+          />
+          Catastro minero de INGEMMET (GEOCATMIN)
+        </label>
         <div className={styles.actions}>
           <Button
             disabled={zoom >= maxZoom}
@@ -181,6 +191,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
             title={`Concesiones referenciales en ${data.project_name}`}
             showBase={onBase}
           >
+            {cadastre ? <MiningCadastreLayer view={view} /> : null}
             {concessions.map((c) => (
               <path
                 key={c.code}
@@ -201,7 +212,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
                 fill={c.code === selection ? '#e6b54a' : '#669bb5'}
                 stroke="#243b53"
                 fillRule="evenodd"
-                strokeWidth={span / 400}
+                strokeWidth={(span / 400) * UNITS_PER_DEGREE}
               />
             ))}
           </BaseMap>
@@ -221,11 +232,27 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
               Distritos de la provincia de Sechura
             </li>
           ) : null}
+          {cadastre ? (
+            <li>
+              <span className={`${styles.swatch} ${styles.swatchCadastre}`} aria-hidden="true" />
+              Derechos mineros INGEMMET: azul titulado, verde en trámite, negro extinguido
+            </li>
+          ) : null}
         </ul>
         <p className={styles.note}>
           {onBase
             ? 'Coordenadas WGS 84, norte hacia arriba. Límites distritales generalizados (INEI) solo para orientación; no reemplazan cartografía oficial ni medición certificada.'
             : 'Plano referencial en longitud y latitud. Norte hacia arriba; sin base cartográfica ni medición certificada.'}
+          {cadastre ? (
+            <>
+              {' '}
+              Catastro minero de{' '}
+              <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer">
+                INGEMMET – GEOCATMIN
+              </a>
+              , referencial y de actualización diaria.
+            </>
+          ) : null}
         </p>
       </Card>
       {selected ? (

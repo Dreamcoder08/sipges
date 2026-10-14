@@ -169,3 +169,17 @@
   stroke-dasharray: 0.01 0.006;
   stroke-opacity: 0.7;
 }
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  min-height: 2.75rem;
+}
+.toggle input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+.swatchCadastre {
+  background: linear-gradient(90deg, #2f5fd0 0 33%, #3a9d3a 33% 66%, #222 66%);
+}

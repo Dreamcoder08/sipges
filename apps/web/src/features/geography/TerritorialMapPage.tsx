@@ -17,7 +17,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { TimeHistogram } from '../../shared/ui/time/TimeHistogram.tsx';
-import { BaseMap, type Extent } from './BaseMap.tsx';
+import { BaseMap, type Extent, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { LOCALITIES } from './localities.ts';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import {
@@ -125,7 +125,7 @@ const TerritorialWorkspace = ({
   const [cx, cy] = center ?? home;
   const span = homeSpan / zoom;
   const view: Extent = [cx - span / 2, cy - span / 2, cx + span / 2, cy + span / 2];
-  const unit = span / 100;
+  const unit = (span / 100) * UNITS_PER_DEGREE;
 
   const set = (key: keyof typeof filters) => (value: string) => {
     setFilters((f) => ({ ...f, [key]: value }));
@@ -314,8 +314,13 @@ const TerritorialWorkspace = ({
                     }
                   }}
                 >
-                  <circle cx={p.at[0]} cy={-p.at[1]} r={r} strokeWidth={unit * 0.4} />
-                  <text x={p.at[0]} y={-p.at[1] + r * 0.38} fontSize={r * 1.1} textAnchor="middle">
+                  <circle cx={svgX(p.at[0])} cy={svgY(p.at[1])} r={r} strokeWidth={unit * 0.4} />
+                  <text
+                    x={svgX(p.at[0])}
+                    y={svgY(p.at[1]) + r * 0.38}
+                    fontSize={r * 1.1}
+                    textAnchor="middle"
+                  >
                     {p.dimension}
                   </text>
                 </g>

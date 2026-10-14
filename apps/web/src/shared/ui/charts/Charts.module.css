@@ -159,4 +159,8 @@
   .legend {
     width: 100%;
   }
+  /* A one-column track is the whole card wide; keep the ring at its desktop size. */
+  .donutLayout .svg {
+    max-width: 10rem;
+  }
 }

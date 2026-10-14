@@ -44,3 +44,13 @@ is checked separately in the preview browser. For larger usage, choose a suitabl
 self-hosted provider rather than relying on this best-effort community service.
 
 Policy checked on 2026-10-14: [OSMF Tile Usage Policy](https://operations.osmfoundation.org/policies/tiles/).
+
+## Addendum (2026-10-14): INGEMMET mining cadastre on the project location map
+
+At the owner's request, the project location screen overlays INGEMMET's public mining cadastre
+from GEOCATMIN (`SERV_CATASTRO_MINERO` MapServer, WGS 84). The browser requests one transparent
+`export` image per view (`bbox` in lon/lat, `layers=show:0`, no credentials), drawn under the
+project concessions; a checkbox hides it and the note links to the GEOCATMIN viewer. `img-src`
+adds `https://geocatmin.ingemmet.gob.pe` in the SPA and Vercel policies; scripts, styles and
+connections stay same-origin, and the request carries only the app origin as referrer. The
+layer is referential, as INGEMMET states. E2E resolves the host to nothing, like the OSM tiles.

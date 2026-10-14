@@ -29,7 +29,8 @@
   font-weight: 600;
 }
 .score {
-  font-size: 2.5rem;
+  font-size: clamp(1.75rem, 7vw, 2.5rem);
+  line-height: 1.15;
   font-weight: 700;
   margin: var(--space-3) 0;
 }
@@ -53,4 +54,27 @@
   max-width: 17rem;
   width: 100%;
   margin-inline: auto;
+}
+.facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+}
+.facts dt {
+  font-weight: 600;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+.facts dd {
+  margin: 0 0 var(--space-3);
+  overflow-wrap: anywhere;
+}
+@media (min-width: 40rem) {
+  .facts {
+    grid-template-columns: minmax(10rem, 1fr) minmax(0, 2fr);
+  }
+  .facts dd {
+    margin-bottom: 0;
+  }
 }

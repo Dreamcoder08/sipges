@@ -4,13 +4,17 @@ import { SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
-/** Wide tables scroll inside their own region; the page itself must never scroll sideways. */
-const expectNoHorizontalPageScroll = async (page: Page) => {
+/**
+ * Wide tables scroll inside their own region; the page itself must never scroll sideways.
+ * Compares with the layout viewport: on a touch device a too-wide page zooms out, so
+ * `innerWidth` grows with it and would hide the overflow (Automatizaciones did at 622px).
+ */
+const expectNoHorizontalPageScroll = async (page: Page, where = 'page') => {
   const { scrollWidth, viewport } = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
-    viewport: window.innerWidth,
+    viewport: document.documentElement.clientWidth,
   }));
-  expect(scrollWidth, 'page wider than the viewport').toBeLessThanOrEqual(viewport);
+  expect(scrollWidth, `${where} wider than the viewport`).toBeLessThanOrEqual(viewport);
 };
 
 /** Axe at WCAG 2.1 AA over whatever is on screen (an open sheet included). */
@@ -103,12 +107,14 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   ).toHaveValue(DEFAULT_SCOPE);
   await page.keyboard.press('Escape');
 
-  // The narrowest phones in common use are 360px wide.
-  await page.setViewportSize({ width: 360, height: 780 });
-  for (const screen of SCREENS) {
-    await page.goto(screen.path);
-    await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
-    await settled();
-    await expectNoHorizontalPageScroll(page);
+  // The narrowest phones in common use are 360px wide; 820px is a portrait tablet.
+  for (const width of [360, 820]) {
+    await page.setViewportSize({ width, height: 780 });
+    for (const screen of SCREENS) {
+      await page.goto(screen.path);
+      await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
+      await settled();
+      await expectNoHorizontalPageScroll(page, `${screen.path} at ${width}px`);
+    }
   }
 });

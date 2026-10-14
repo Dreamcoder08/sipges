@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
 import coordinates from '../../../../../data/project_coordinates.json';
 import { server } from '../../test/server.ts';
+import { UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { GeographyPage } from './GeographyPage.tsx';
 const renderPage = () =>
   render(
@@ -43,6 +44,16 @@ it('renders scoped geometry, lets the reader select and zoom, and shows its prov
   await userEvent.selectOptions(screen.getByLabelText('Concesión'), '12000442Y01');
   expect(screen.getByRole('heading', { name: 'BAYOVAR N° 6' })).toBeVisible();
   expect(screen.getByText('EPSG:4326')).toBeVisible();
+  // INGEMMET's cadastre sits under the concessions and can be hidden.
+  const cadastreImage = () =>
+    [...map.querySelectorAll('image')].find((i) => i.getAttribute('href')?.includes('geocatmin'));
+  expect(cadastreImage()).toBeDefined();
+  expect(screen.getByRole('link', { name: 'INGEMMET – GEOCATMIN' })).toHaveAttribute(
+    'href',
+    'https://geocatmin.ingemmet.gob.pe/geocatmin_v3/',
+  );
+  await userEvent.click(screen.getByLabelText('Catastro minero de INGEMMET (GEOCATMIN)'));
+  expect(cadastreImage()).toBeUndefined();
 });
 it('does not draw Sechura geometry when the scope has no registered reference', async () => {
   server.use(
@@ -70,7 +81,7 @@ it('frames the selected concession and draws it with explicit fills', async () =
   expect(map.getAttribute('viewBox')).not.toBe(province);
   // The view is centred on BAYOVAR N° 6 (lon/−lat space) and smaller than the province.
   const concession = coordinates.concessions.find((c) => c.code === '12000442Y01');
-  const [x = 0, y = 0, w = 0, h = 0] = framed;
+  const [x = 0, y = 0, w = 0, h = 0] = framed.map((v) => v / UNITS_PER_DEGREE);
   expect(concession?.centroid.longitude).toBeGreaterThan(x);
   expect(concession?.centroid.longitude).toBeLessThan(x + w);
   expect(-(concession?.centroid.latitude ?? 0)).toBeGreaterThan(y);

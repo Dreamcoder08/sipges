@@ -30,18 +30,22 @@ const useWidth = (fallback: number) => {
 
 const tone = (name?: string) => (name ? (styles[name] ?? '') : '');
 
+// A table ignores `width: 1px` and keeps its content width, which widened phone pages;
+// the hiding wrapper clips it instead.
 const DataTable = ({ caption, data }: { caption: string; data: readonly Datum[] }) => (
-  <table className="visually-hidden">
-    <caption>{caption}</caption>
-    <tbody>
-      {data.map((d) => (
-        <tr key={d.key}>
-          <th scope="row">{d.label}</th>
-          <td>{d.value}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  <div className="visually-hidden">
+    <table>
+      <caption>{caption}</caption>
+      <tbody>
+        {data.map((d) => (
+          <tr key={d.key}>
+            <th scope="row">{d.label}</th>
+            <td>{d.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 );
 
 /** A "nice" upper bound for an axis (1, 2, 5 × 10ⁿ). */
