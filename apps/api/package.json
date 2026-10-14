@@ -10,7 +10,8 @@
     "test": "vitest run",
     "bench": "node bench/run.ts",
     "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
-    "bench:compare": "node bench/compare.ts"
+    "bench:compare": "node bench/compare.ts",
+    "demo:seed": "node src/tools/academic-demo/cli.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.9",
