@@ -1,3 +1,4 @@
+import { accountDisplayName } from '../../shared/ui/account-name.ts';
 import {
   DocumentReviewDecisionResponse,
   type DocumentReviewItem,
@@ -157,7 +158,8 @@ export const ReviewInbox = (context: FeatureContext) => {
                   <p className={styles.muted}>SHA-256: {item.source_sha256}</p>
                   <p>{item.action}</p>
                   <p>
-                    Estado: {labels[item.status]}. Revisor: {item.reviewer || 'Sin asignar'}.
+                    Estado: {labels[item.status]}. Revisor:{' '}
+                    {accountDisplayName(item.reviewer) || 'Sin asignar'}.
                   </p>
                   {item.note ? <p>Nota registrada: {item.note}</p> : null}
                   {writable ? (

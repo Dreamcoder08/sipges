@@ -1,3 +1,4 @@
+import { accountDisplayName } from '../../shared/ui/account-name.ts';
 import {
   AccountCreated,
   AccountList,
@@ -212,7 +213,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                         {rows.map((row) => (
                           <tr key={row.username}>
                             <td>{row.username}</td>
-                            <td>{row.full_name}</td>
+                            <td>{accountDisplayName(row.full_name)}</td>
                             <td>{row.role}</td>
                             <td>{row.google_email ?? '—'}</td>
                             <td>{row.active ? 'Activa' : 'Inactiva'}</td>
