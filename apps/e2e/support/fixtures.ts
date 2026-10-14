@@ -120,16 +120,6 @@ export const test = base.extend<Fixtures>({
   browserHygiene: [
     async ({ page }, use, testInfo) => {
       const problems: string[] = [];
-      // CI never downloads public OSM tiles; live visual verification is separate.
-      await page.route('https://tile.openstreetmap.org/**', (route) =>
-        route.fulfill({
-          contentType: 'image/png',
-          body: Buffer.from(
-            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
-            'base64',
-          ),
-        }),
-      );
       // CDP-injected init scripts are not subject to the page CSP.
       await page.addInitScript(() => {
         document.addEventListener('securitypolicyviolation', (event) => {
