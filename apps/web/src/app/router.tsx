@@ -32,6 +32,7 @@ import {
 } from '../features/tenancy/index.ts';
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
+import { SearchPalette } from '../features/search/index.ts';
 import { AppShell } from './layout/AppShell.tsx';
 
 import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
@@ -192,33 +193,34 @@ const appRoute = createRoute({
     const scopes = queryClient.getQueryData(scopesQuery.queryKey);
     const label = scopes?.find((s) => `${s.company_id}/${s.project_id}` === scope.scope)?.label;
     return (
-      <AppShell
-        projectLabel={label || scope.project_id}
-        projectSwitcher={
-          <ProjectSwitcher
-            current={scope}
-            onSwitched={async () => {
-              await queryClient.invalidateQueries();
-              await router.invalidate();
-            }}
-          />
-        }
-        userMenu={
-          <UserMenu
-            me={me}
-            onSignedOut={async () => {
-              queryClient.clear();
-              await router.navigate({ to: '/login', search: {} });
-            }}
-          />
-        }
-      >
-        <NavigateProvider value={(href) => void router.navigate({ href })}>
+      <NavigateProvider value={(href) => void router.navigate({ href })}>
+        <AppShell
+          projectLabel={label || scope.project_id}
+          search={<SearchPalette scope={scope.scope} />}
+          projectSwitcher={
+            <ProjectSwitcher
+              current={scope}
+              onSwitched={async () => {
+                await queryClient.invalidateQueries();
+                await router.invalidate();
+              }}
+            />
+          }
+          userMenu={
+            <UserMenu
+              me={me}
+              onSignedOut={async () => {
+                queryClient.clear();
+                await router.navigate({ to: '/login', search: {} });
+              }}
+            />
+          }
+        >
           <Suspense fallback={<p role="status">Cargando sección…</p>}>
             <Outlet />
           </Suspense>
-        </NavigateProvider>
-      </AppShell>
+        </AppShell>
+      </NavigateProvider>
     );
   },
 });

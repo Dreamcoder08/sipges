@@ -46,6 +46,14 @@ export type NewLink = {
 /** Every call runs in one tenant transaction (docs/adr/0003). */
 export type OntologyStore = {
   nodes(tenantId: string, refs: readonly NodeRef[]): Promise<NodeRow[]>;
+  /** Records of `modules` whose id equals `exactId` or that match a prefix tsquery. */
+  search(
+    tenantId: string,
+    query: string | null,
+    exactId: string,
+    modules: readonly string[],
+    limit: number,
+  ): Promise<NodeRow[]>;
   /** Explicit links with either end in `refs`. */
   links(tenantId: string, refs: readonly NodeRef[]): Promise<StoredLink[]>;
   /** Inferred matches with either end in `refs`. */

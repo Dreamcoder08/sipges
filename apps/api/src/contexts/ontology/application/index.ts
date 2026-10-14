@@ -13,6 +13,8 @@ export type { NodeRef, NodeRow, OntologyStore } from './ports.ts';
 export {
   MAX_GRAPH_DEPTH,
   MAX_GRAPH_NODES,
+  MAX_SEARCH_RESULTS,
+  type SearchHit,
   type Edge,
   type Neighbour,
   type ObjectSummary,

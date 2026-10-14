@@ -50,6 +50,28 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
       ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
     ),
 
+  search: (tenantId, query, exactId, modules, limit) =>
+    withTenant(sql, tenantId, async (tx) =>
+      (
+        await tx.query<{
+          module: string;
+          id: string;
+          payload: Record<string, unknown>;
+          updated_at: Date | string;
+        }>(
+          `SELECT module, id, payload, updated_at
+           FROM module_records,
+                to_tsquery('pg_catalog.simple'::regconfig, COALESCE($1, '')) AS query
+           WHERE module = ANY($3::text[])
+             AND (lower(id) = lower($2) OR ($1 IS NOT NULL AND record_search_document(id, payload) @@ query))
+           ORDER BY lower(id) = lower($2) DESC,
+                    ts_rank(record_search_document(id, payload), query) DESC, updated_at DESC, id
+           LIMIT $4`,
+          [query, exactId, modules, limit],
+        )
+      ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
+    ),
+
   links: (tenantId, refs) =>
     withTenant(sql, tenantId, async (tx) =>
       (

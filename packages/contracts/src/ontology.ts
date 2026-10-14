@@ -92,3 +92,14 @@ export const RecordGraph = z.object({
   truncated: z.boolean(),
 });
 export type RecordGraph = z.infer<typeof RecordGraph>;
+
+/** GET /system/search?q=&modules=&limit= (docs/adr/0011 §5). */
+export const SearchResults = z.object({
+  query: z.string(),
+  hits: z.array(
+    ObjectSummary.extend({
+      match: z.object({ field: z.string(), excerpt: z.string() }).nullable(),
+    }),
+  ),
+});
+export type SearchResults = z.infer<typeof SearchResults>;

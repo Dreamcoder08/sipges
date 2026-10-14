@@ -6,6 +6,7 @@ import {
   type OntologyCatalog,
   type RecordGraph,
   type RecordLinks,
+  type SearchResults,
 } from '@mascli/contracts';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
@@ -75,6 +76,23 @@ export const ontologyRoutes = (ontology: OntologyService) =>
           symmetric: t.symmetric,
         })),
       } satisfies OntologyCatalog);
+    })
+
+    .get('/system/search', async (c) => {
+      const q = (c.req.query('q') ?? '').slice(0, 200);
+      const limit = parseIntQuery(c, 'limit', 20);
+      if (!limit.ok) return limit.response;
+      const modules = c.req.query('modules');
+      const hits = await ontology.search(
+        tenantOf(c),
+        q,
+        modules ? modules.split(',').filter(Boolean) : null,
+        limit.value,
+      );
+      return c.json({
+        query: q,
+        hits: hits.map((hit) => ({ ...summaryOut(hit), match: hit.match })),
+      } satisfies SearchResults);
     })
 
     .get('/system/links', async (c) => {

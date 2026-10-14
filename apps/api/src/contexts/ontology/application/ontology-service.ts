@@ -11,6 +11,7 @@ import {
   objectTypeForSlug,
   titleOf,
 } from '../domain/catalog.ts';
+import { matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
 import type { Clock, NodeRef, NodeRow, OntologyStore, ResolvedRule } from './ports.ts';
 
 /** Graph bounds (docs/adr/0011 §6). */
@@ -18,6 +19,11 @@ export const MAX_GRAPH_DEPTH = 2;
 export const MAX_GRAPH_NODES = 150;
 
 const MAX_ID = 200;
+export const MAX_SEARCH_RESULTS = 50;
+
+export type SearchHit = ObjectSummary & {
+  readonly match: { readonly field: string; readonly excerpt: string } | null;
+};
 
 export type ObjectSummary = {
   readonly slug: string;
@@ -241,6 +247,43 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
           nodes.has(`${edge.target.slug}\u0000${edge.target.id}`),
       );
       return { root: { slug, id }, nodes: [...nodes.values()], edges: present, truncated };
+    },
+
+    /** Ranked full-text search across object types (docs/adr/0011 §5). */
+    async search(
+      tenantId: string,
+      raw: string,
+      slugs: readonly string[] | null,
+      limit: number,
+    ): Promise<SearchHit[]> {
+      const terms = searchTerms(raw);
+      const query = toPrefixQuery(terms);
+      const types = (slugs?.length ? slugs : OBJECT_TYPES.map((t) => t.slug)).flatMap(
+        (slug) => objectTypeForSlug(slug) ?? [],
+      );
+      const exactId = raw.trim();
+      if ((!query && !isUsableId(exactId)) || types.length === 0) return [];
+      const bounded = Math.max(1, Math.min(MAX_SEARCH_RESULTS, Math.trunc(limit) || 1));
+      const rows = await store.search(
+        tenantId,
+        query,
+        exactId,
+        types.map((t) => t.module),
+        bounded,
+      );
+      return rows.flatMap((row) => {
+        const objectType = objectTypeForModule(row.module);
+        if (!objectType) return [];
+        return [
+          {
+            ...summarize(objectType, row),
+            match: matchExcerpt(row.payload, terms, [
+              objectType.titleField,
+              ...objectType.summaryFields,
+            ]),
+          },
+        ];
+      });
     },
 
     async link(
