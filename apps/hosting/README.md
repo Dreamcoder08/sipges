@@ -26,7 +26,7 @@ Variables necesarias, con valores exclusivamente en el almacén de secretos:
 | `MASCLI_DATA_KEY`                                                          | Clave base64 de 32 bytes, estable entre despliegues.                                                                            |
 | `MASCLI_ADMIN_USERNAME`, `MASCLI_ADMIN_PASSWORD`, `MASCLI_ADMIN_FULL_NAME` | Bootstrap de administración sintética sobre la base vacía.                                                                      |
 | `BLOB_READ_WRITE_TOKEN`                                                    | Token del almacén privado conectado al proyecto. Solo servidor.                                                                 |
-| `MASCLI_REQUIRE_MFA=1`, `MASCLI_COOKIE_SECURE=1`                           | Controles de seguridad de la demo pública.                                                                                      |
+| `MASCLI_REQUIRE_MFA=0`, `MASCLI_COOKIE_SECURE=1`                           | Acceso con contraseña para la demo sintética; cookies seguras habilitadas.                                                      |
 | `MASCLI_ALLOWED_HOSTS`                                                     | Hosts públicos explícitos. Si no se configura, el adaptador usa los hosts del despliegue proporcionados por Vercel.             |
 | `MASCLI_OLLAMA_URL`                                                        | Sin servicio de embeddings contratado; el modo automático usa reglas.                                                           |
 
