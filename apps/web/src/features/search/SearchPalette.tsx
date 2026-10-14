@@ -123,6 +123,8 @@ export const SearchPalette = ({ scope }: { scope: string }) => {
         type="button"
         className={styles.trigger}
         aria-haspopup="dialog"
+        aria-label="Búsqueda global"
+        aria-keyshortcuts="Control+K Meta+K"
         onClick={() => setOpen(true)}
       >
         <span aria-hidden="true">⌕</span> Buscar <kbd>Ctrl K</kbd>

@@ -52,7 +52,7 @@ it('searches every object type with Ctrl+K and opens the chosen record', async (
   window.history.replaceState(null, '', '/');
   render(<App />);
   const user = userEvent.setup();
-  await screen.findByRole('button', { name: /Buscar/ });
+  await screen.findByRole('button', { name: 'Búsqueda global' });
   await user.keyboard('{Control>}k{/Control}');
   const box = await screen.findByRole('combobox', { name: 'Buscar en todo el proyecto' });
   await user.type(box, 'agua');
