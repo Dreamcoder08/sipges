@@ -1,5 +1,11 @@
 # Demo académica gratuita en Vercel
 
+## Acceso simplificado (2026-10-14)
+
+Por petición del propietario, esta demo académica con datos sintéticos usa `MASCLI_REQUIRE_MFA=0` en producción. Permite entrar con usuario y contraseña sin inscribir un autenticador. Esta es una configuración del proyecto Vercel, no un cambio del valor predeterminado de MASCLI. Una cuenta que active TOTP voluntariamente seguirá solicitando su código al iniciar sesión.
+
+Despliegue `dpl_A46t3io9oYwH1WZT2dcYn9Sudk8L`, revisión `b19cd6b70d40b97614a5f052f915649b81d00286`, READY. Chromium público comprobó login con contraseña, acceso directo al dashboard y administración, persistencia tras recargar, cookies Secure/HttpOnly/SameSite=Strict y logout. El propietario no necesita completar la pantalla de inscripción MFA para esta demo: puede abrir la URL raíz. Esta comprobación sustituye el requisito de inscripción pendiente descrito en la verificación histórica del 2026-10-13.
+
 Este adaptador despliega la SPA React y la API Hono existente. No duplica las reglas de negocio, no usa Python y no migra datos reales. El proyecto es `mascli-demo-academica`, en el equipo `agurtofarfanalbert-8641s-projects`.
 
 Configuración del proyecto: framework Hono, Node 22, raíz `apps/hosting`, archivos externos a la raíz habilitados, instalación `corepack pnpm install --frozen-lockfile`, build `node build.mjs`. El build compila la SPA y copia únicamente sus archivos a `public`; agrega el aviso de datos sintéticos y del límite de envío. `public` es generado y no se versiona. En el checkout efímero de Vercel, el build emite kernel/contratos a JavaScript con declaraciones de tipos y ajusta sus exports de runtime a dist: Vercel transforma .ts en .js pero no corrige los exports originales de los paquetes workspace. Ese ajuste no se hace en el build local normal ni se versiona; para reproducir el modo VERCEL=1, usar un worktree desechable. Las rutas públicas de la SPA se sirven antes de inicializar PostgreSQL y se resuelven respecto al módulo, no al directorio de ejecución.
@@ -20,7 +26,7 @@ Variables necesarias, con valores exclusivamente en el almacén de secretos:
 | `MASCLI_DATA_KEY`                                                          | Clave base64 de 32 bytes, estable entre despliegues.                                                                            |
 | `MASCLI_ADMIN_USERNAME`, `MASCLI_ADMIN_PASSWORD`, `MASCLI_ADMIN_FULL_NAME` | Bootstrap de administración sintética sobre la base vacía.                                                                      |
 | `BLOB_READ_WRITE_TOKEN`                                                    | Token del almacén privado conectado al proyecto. Solo servidor.                                                                 |
-| `MASCLI_REQUIRE_MFA=1`, `MASCLI_COOKIE_SECURE=1`                           | Controles de seguridad de la demo pública.                                                                                      |
+| `MASCLI_REQUIRE_MFA=0`, `MASCLI_COOKIE_SECURE=1`                           | Acceso con contraseña para la demo sintética; cookies seguras habilitadas.                                                      |
 | `MASCLI_ALLOWED_HOSTS`                                                     | Hosts públicos explícitos. Si no se configura, el adaptador usa los hosts del despliegue proporcionados por Vercel.             |
 | `MASCLI_OLLAMA_URL`                                                        | Sin servicio de embeddings contratado; el modo automático usa reglas.                                                           |
 

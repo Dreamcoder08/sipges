@@ -1,5 +1,7 @@
 # Deployment readiness (T14)
 
+Actualización 2026-10-14: el propietario solicitó acceso sencillo para la demo académica con datos sintéticos. Vercel producción usa `MASCLI_REQUIRE_MFA=0`; login con contraseña, dashboard, administración, recarga y logout se comprobaron en la URL pública. La inscripción MFA ya no es un requisito de esa demo. Las recomendaciones MFA institucionales de este documento y el valor predeterminado del runtime se mantienen como guía para un futuro uso con datos reales. Véase [la comprobación actualizada](public-demo-verification.md).
+
 This is the checklist for putting the TypeScript MASCLI (`apps/api` serving the built
 `apps/web`) in front of users. It records what is verified, what an operator still has to do and
 what needs a decision. La primera publicación autorizada es una demo académica/personal con datos sintéticos.
