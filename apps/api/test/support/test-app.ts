@@ -2,6 +2,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { afterAll } from 'vitest';
 import { trackTestDatabase } from './test-database.ts';
 import { buildContainer } from '../../src/compose.ts';
+import type { Narrator } from '../../src/contexts/analyst/application/index.ts';
 import type { ObjectStorage } from '../../src/contexts/evidence/application/index.ts';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import type { GoogleSignIn } from '../../src/contexts/identity/application/ports.ts';
@@ -85,6 +86,7 @@ export const createTestApp = async (
     embeddings?: EmbeddingProvider;
     web?: WebAssets;
     googleSignIn?: GoogleSignIn;
+    narrator?: Narrator | null;
   } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
@@ -100,6 +102,7 @@ export const createTestApp = async (
     objectStorage: options.objectStorage ?? memory.storage,
     embeddings: options.embeddings ?? offlineEmbeddings,
     ...(options.googleSignIn ? { googleSignIn: options.googleSignIn } : {}),
+    narrator: options.narrator ?? null,
   });
   const app = createApp(container, options.web ? { web: options.web } : {});
 

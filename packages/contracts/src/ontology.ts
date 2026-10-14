@@ -112,3 +112,26 @@ export const MarkingIn = z.object({
   marking: z.enum(['publico', 'interno', 'restringido']),
 });
 export type MarkingIn = z.infer<typeof MarkingIn>;
+
+const BriefingSentence = z.object({ text: z.string(), refs: z.array(z.number().int()) });
+
+/** GET /system/briefing (docs/adr/0013): extractive briefing with numbered citations. */
+export const Briefing = z.object({
+  subject: ObjectSummary,
+  generated_at: z.string(),
+  engine: z.enum(['extractivo', 'asistido']),
+  narrator: z.string().nullable(),
+  notice: z.string().nullable(),
+  narrative: BriefingSentence.nullable(),
+  sections: z.array(z.object({ title: z.string(), sentences: z.array(BriefingSentence) })),
+  sources: z.array(
+    z.object({
+      ref: z.number().int(),
+      module: z.string(),
+      id: z.string(),
+      type_label: z.string(),
+      title: z.string(),
+    }),
+  ),
+});
+export type Briefing = z.infer<typeof Briefing>;

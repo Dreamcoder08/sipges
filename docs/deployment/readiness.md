@@ -84,6 +84,7 @@ Names only. Values live in the host's secret store or a root-only env file, neve
 | `MASCLI_S3_ENDPOINT` / `MASCLI_S3_REGION` / `MASCLI_S3_BUCKET` | config | `s3` | HTTPS endpoint |
 | `MASCLI_S3_ACCESS_KEY_ID` / `MASCLI_S3_SECRET_ACCESS_KEY` | **secret** | `s3` | Key scoped to this bucket only |
 | `MASCLI_OLLAMA_URL` / `MASCLI_OLLAMA_EMBED_MODEL` | config | no | Semantic analysis. Without it, automatic mode falls back to rules. |
+| `MASCLI_ANALYST_PROVIDER` / `MASCLI_ANALYST_MODEL` / `ANTHROPIC_API_KEY` | config + secret | no | Optional prose for analyst briefings (ADR 0013). Off by default; sends non-restricted briefing text to Anthropic, so enable only with the data owner's approval. Without it, briefings stay extractive. |
 | `NODE_ENV` | config | yes | `production` |
 
 ADR 0009 está integrado: configura `MASCLI_ALLOWED_HOSTS` con el host público. `MASCLI_REQUIRE_MFA` está activado por defecto; el administrador puede inscribir el autenticador en el primer acceso. Cada escritura exige `Origin` o `Referer`. La suite de paridad/cookies usa explícitamente MFA opcional; `03-mfa-required` comprueba por separado el alta obligatoria y el siguiente inicio de sesión.

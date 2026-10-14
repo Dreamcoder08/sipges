@@ -21,10 +21,12 @@ export const InternalLink = ({
   href,
   className,
   children,
+  'aria-label': label,
 }: {
   href: string;
   className?: string;
   children: ReactNode;
+  'aria-label'?: string;
 }) => {
   const navigate = useContext(NavigateContext);
   const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -34,7 +36,7 @@ export const InternalLink = ({
     navigate(href);
   };
   return (
-    <a href={href} className={className} onClick={onClick}>
+    <a href={href} className={className} aria-label={label} onClick={onClick}>
       {children}
     </a>
   );

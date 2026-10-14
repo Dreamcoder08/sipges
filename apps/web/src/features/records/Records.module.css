@@ -348,3 +348,25 @@
 .importPanel select {
   min-width: 12rem;
 }
+
+.briefing h5 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.95rem;
+}
+.briefing ul,
+.sources {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: grid;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.narrative {
+  margin: 0 0 var(--space-2);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.cites a {
+  margin-left: 0.1rem;
+  font-size: 0.75rem;
+}

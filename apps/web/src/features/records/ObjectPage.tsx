@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { recordQuery } from './api.ts';
+import { BriefingPanel } from './BriefingPanel.tsx';
 import { EvidencePanel } from './EvidencePanel.tsx';
 import { GraphPanel } from './GraphPanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
@@ -47,6 +48,11 @@ const ObjectView = ({
           {(data) => <RecordDetail module={module} record={data} />}
         </QueryState>
       </Card>
+      {record.data ? (
+        <Card title="Análisis">
+          <BriefingPanel module={module} id={id} scope={scope} />
+        </Card>
+      ) : null}
       {record.data ? (
         <Card title="Relaciones y trazabilidad">
           <GraphPanel module={module} id={id} scope={scope} />

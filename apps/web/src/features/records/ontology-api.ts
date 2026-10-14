@@ -1,4 +1,5 @@
 import {
+  Briefing,
   LinkCreated,
   type LinkIn,
   type MarkingIn,
@@ -46,4 +47,12 @@ export const setMarking = (scope: string, body: MarkingIn) =>
     method: 'PUT',
     scope,
     body: { json: body },
+  });
+
+export const briefingQuery = (module: string, id: string, scope: string) =>
+  queryOptions({
+    queryKey: ['records', scope, 'briefing', module, id],
+    queryFn: ({ signal }) =>
+      requestJson(`/system/briefing?${recordParams(module, id)}`, Briefing, { scope, signal }),
+    staleTime: 5 * 60_000,
   });

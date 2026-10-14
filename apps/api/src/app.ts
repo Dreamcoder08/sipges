@@ -11,6 +11,7 @@ import { managementRoutes } from './contexts/management/http/management-routes.t
 import { preventionRoutes } from './contexts/prevention/http/prevention-routes.ts';
 import { evidenceRoutes } from './contexts/evidence/http/evidence-routes.ts';
 import { indicatorsRoutes } from './contexts/indicators/http/indicators-routes.ts';
+import { analystRoutes } from './contexts/analyst/http/analyst-routes.ts';
 import { ontologyRoutes } from './contexts/ontology/http/ontology-routes.ts';
 import { recordsRoutes } from './contexts/records/http/records-routes.ts';
 import { tenancyMiddleware } from './contexts/tenancy/http/tenancy-middleware.ts';
@@ -64,6 +65,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.route('/', analyticsRoutes({ analytics }));
   app.route('/', recordsRoutes(records));
   app.route('/', ontologyRoutes(container.ontology));
+  app.route('/', analystRoutes(container.analyst));
   app.route('/', auditRoutes(audit));
   app.route('/', indicatorsRoutes({ indicators }));
   app.route('/', evidenceRoutes(evidence));
