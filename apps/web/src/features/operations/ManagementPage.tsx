@@ -17,6 +17,7 @@ import { BarList } from '../../shared/ui/BarList.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './Operations.module.css';
 const labels: Record<string, string> = {
   digital_alerts: 'Alertas digitales',
@@ -44,6 +45,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
   const [progress, setProgress] = useState(0);
   const [note, setNote] = useState('');
   const [evidence, setEvidence] = useState('');
+  const planHeading = useReveal(selected);
   const overview = useQuery({
     queryKey: ['operations', scope, 'management'],
     queryFn: ({ signal }) =>
@@ -387,7 +389,9 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
         </QueryState>
         {current && (
           <div className={styles.form}>
-            <h4>{current.title}</h4>
+            <h4 ref={planHeading} tabIndex={-1}>
+              {current.title}
+            </h4>
             <p>{current.description || 'Sin descripción'}</p>
             <p>Alerta: {current.alert_id}</p>
             <h4>Historial de avances</h4>

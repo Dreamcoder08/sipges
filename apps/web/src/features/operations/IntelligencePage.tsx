@@ -16,6 +16,7 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './Operations.module.css';
 export const IntelligencePage = (context: FeatureContext) => {
   const { scope, projectId, role } = context;
@@ -29,6 +30,7 @@ export const IntelligencePage = (context: FeatureContext) => {
   const [selected, setSelected] = useState('');
   const [status, setStatus] = useState('Corroborado');
   const [note, setNote] = useState('');
+  const alertHeading = useReveal(selected);
   const alerts = useQuery({
     queryKey: ['operations', scope, 'alerts'],
     queryFn: ({ signal }) =>
@@ -338,7 +340,9 @@ export const IntelligencePage = (context: FeatureContext) => {
         </QueryState>
         {selectedAlert && (
           <div className={styles.form}>
-            <h4>Alerta {selectedAlert.id}</h4>
+            <h4 ref={alertHeading} tabIndex={-1}>
+              Alerta {selectedAlert.id}
+            </h4>
             <p className={styles.fragment}>{selectedAlert.excerpt}</p>
             <p>
               Fuente: {selectedAlert.source_url || 'Sin enlace'} · {selectedAlert.source_type}

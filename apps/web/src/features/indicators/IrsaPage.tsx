@@ -12,6 +12,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { LineChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { configQuery, historyQuery, irsaQuery } from './api.ts';
 import { IndicatorTable } from './IndicatorTable.tsx';
+import { DemoDataNotice } from '../../shared/ui/DemoDataNotice.tsx';
 import styles from './Indicators.module.css';
 
 const dimensions = ['G', 'A', 'D', 'N', 'E', 'I'] as const;
@@ -41,6 +42,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
   return (
     <div className={styles.page}>
       <p>Índice de riesgo socioambiental · {projectLabel}</p>
+      <DemoDataNotice scope={scope} />
       <Card title="IRSA actual">
         <QueryState query={report} label="IRSA">
           {(data) => (

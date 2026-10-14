@@ -21,6 +21,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './AdministrationPage.module.css';
 
 type Access = { username: string; company_id: string; project_id: string };
@@ -176,6 +177,18 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
     },
   });
   const busy = mutation.isPending;
+  // Outcomes and confirmations render away from the form that triggered them; bring them into
+  // view so a submit at the bottom of the page never looks like it did nothing.
+  const outcome = useReveal<HTMLDivElement>(
+    notice || (mutation.error ? errorDetail(mutation.error) : ''),
+  );
+  const confirmationPanel = useReveal<HTMLDivElement>(
+    confirmation
+      ? confirmation.kind === 'deactivate'
+        ? `deactivate:${confirmation.username}`
+        : `revoke:${confirmation.access.username}:${confirmation.access.company_id}/${confirmation.access.project_id}`
+      : '',
+  );
   const run = (operation: Operation) => {
     if (operationLock.current) return;
     operationLock.current = true;
@@ -188,8 +201,10 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
         Proyecto activo: <strong>{projectLabel}</strong> ({scope}). Los cambios de identidad y
         accesos requieren autorización del servidor.
       </p>
-      {notice && <Alert tone="success">{notice}</Alert>}
-      {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
+      <div ref={outcome} tabIndex={-1} className={styles.outcome}>
+        {notice && <Alert tone="success">{notice}</Alert>}
+        {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
+      </div>
       {!admin && <Alert tone="info">Administración restringida al rol administrador.</Alert>}
       {admin && (
         <>
@@ -418,23 +433,25 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
             </form>
           </Card>
           {confirmation && (
-            <Card title="Confirmación requerida">
-              <p>
-                {confirmation.kind === 'deactivate'
-                  ? `Desactivar ${confirmation.username} revoca todas sus sesiones. El servidor protege al último administrador.`
-                  : `Revocar el acceso de ${confirmation.access.username} a ${confirmation.access.company_id}/${confirmation.access.project_id}.`}
-              </p>
-              <div className={styles.actions}>
-                <Button disabled={busy} onClick={() => run(confirmation)}>
+            <div ref={confirmationPanel} tabIndex={-1} className={styles.outcome}>
+              <Card title="Confirmación requerida">
+                <p>
                   {confirmation.kind === 'deactivate'
-                    ? 'Confirmar desactivación'
-                    : 'Confirmar revocación'}
-                </Button>
-                <Button disabled={busy} variant="secondary" onClick={() => setConfirmation(null)}>
-                  Cancelar
-                </Button>
-              </div>
-            </Card>
+                    ? `Desactivar ${confirmation.username} revoca todas sus sesiones. El servidor protege al último administrador.`
+                    : `Revocar el acceso de ${confirmation.access.username} a ${confirmation.access.company_id}/${confirmation.access.project_id}.`}
+                </p>
+                <div className={styles.actions}>
+                  <Button disabled={busy} onClick={() => run(confirmation)}>
+                    {confirmation.kind === 'deactivate'
+                      ? 'Confirmar desactivación'
+                      : 'Confirmar revocación'}
+                  </Button>
+                  <Button disabled={busy} variant="secondary" onClick={() => setConfirmation(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </Card>
+            </div>
           )}
           <Card title="Exportación del proyecto">
             <p>

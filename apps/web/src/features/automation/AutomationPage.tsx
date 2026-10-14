@@ -27,6 +27,7 @@ import {
   tick,
 } from './api.ts';
 import { ApiKeysCard } from './ApiKeysCard.tsx';
+import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './AutomationPage.module.css';
 
 type Step = RuleIn['steps'][number];
@@ -95,6 +96,11 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
     onSettled: () => client.invalidateQueries({ queryKey: ['automation', scope] }),
   });
   const busy = mutation.isPending;
+  // Outcomes render at the top and the rule form below the list: bring each into view.
+  const outcome = useReveal<HTMLDivElement>(
+    notice || (mutation.error ? errorDetail(mutation.error) : ''),
+  );
+  const ruleForm = useReveal<HTMLLegendElement>(editing === null ? '' : String(editing));
 
   if (!admin)
     return <Alert tone="info">Las automatizaciones solo las configura el rol administrador.</Alert>;
@@ -115,8 +121,10 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
         bandeja y envía mensajes a los canales configurados. Las reglas nuevas solo miran eventos
         posteriores a su creación.
       </p>
-      {notice && <Alert tone="success">{notice}</Alert>}
-      {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
+      <div ref={outcome} tabIndex={-1} className={styles.outcome}>
+        {notice && <Alert tone="success">{notice}</Alert>}
+        {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
+      </div>
       <QueryState query={overview} label="las automatizaciones">
         {(data) => (
           <>
@@ -204,7 +212,9 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                 }}
               >
                 <fieldset disabled={busy}>
-                  <legend>{editing ? 'Editar regla' : 'Nueva regla'}</legend>
+                  <legend ref={ruleForm} tabIndex={-1}>
+                    {editing ? 'Editar regla' : 'Nueva regla'}
+                  </legend>
                   <Field
                     label="Nombre de la regla"
                     required

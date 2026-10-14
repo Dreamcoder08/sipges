@@ -83,3 +83,15 @@
     border-bottom: 0;
   }
 }
+/* Outcome and confirmation wrappers: revealed (scrolled to and focused) by useReveal. */
+.outcome {
+  display: grid;
+  gap: var(--space-3);
+  scroll-margin-top: 5rem;
+}
+.outcome:empty {
+  display: none;
+}
+.outcome:focus {
+  outline: none;
+}
