@@ -24,7 +24,7 @@ export default defineConfig({
     // as aborted.
     launchOptions: {
       args: [
-        '--host-resolver-rules=MAP tile.openstreetmap.org ~NOTFOUND, MAP geocatmin.ingemmet.gob.pe ~NOTFOUND',
+        '--host-resolver-rules=MAP tile.openstreetmap.org ~NOTFOUND, MAP tiles.maps.eox.at ~NOTFOUND, MAP geocatmin.ingemmet.gob.pe ~NOTFOUND',
       ],
     },
   },

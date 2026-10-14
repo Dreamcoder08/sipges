@@ -26,7 +26,7 @@ export const SPA_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: https://tile.openstreetmap.org https://geocatmin.ingemmet.gob.pe",
+  "img-src 'self' data: https://tile.openstreetmap.org https://tiles.maps.eox.at https://geocatmin.ingemmet.gob.pe",
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",
