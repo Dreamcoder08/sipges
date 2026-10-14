@@ -20,7 +20,11 @@ import { googleRoutes } from './contexts/identity/http/google-routes.ts';
 import { healthRoutes } from './contexts/system/http/health.routes.ts';
 import type { AppEnv } from './platform/http/env.ts';
 import { hostAllowlist } from './platform/http/host.ts';
+import { observability } from './platform/http/observability.ts';
 import { requestContext } from './platform/http/request-context.ts';
+import { log } from './platform/observability/logger.ts';
+import { createMetrics } from './platform/observability/metrics.ts';
+import { metricsRoutes } from './contexts/system/http/metrics.routes.ts';
 import { securityHeaders } from './platform/http/security-headers.ts';
 import { type WebAssets, spaMiddleware } from './platform/http/spa.ts';
 
@@ -43,7 +47,9 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   } = container;
   const app = new Hono<AppEnv>();
 
+  const metrics = createMetrics();
   app.use('*', requestContext());
+  app.use('*', observability(metrics, { accessLog: config.accessLog }));
   app.use('*', securityHeaders({ hsts: config.cookieSecure }));
   app.use('*', hostAllowlist(config.allowedHosts));
   if (options.web) app.use('*', spaMiddleware(options.web));
@@ -52,6 +58,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.use('*', roleGate(identity));
 
   app.route('/', healthRoutes());
+  app.route('/', metricsRoutes(metrics));
   app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
   app.route('/', analyticsRoutes({ analytics }));
@@ -72,7 +79,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
 
   app.notFound((c) => c.json({ detail: 'Not Found' } satisfies ErrorResponse, 404));
   app.onError((error, c) => {
-    console.error(error);
+    log('error', 'unhandled_error', { method: c.req.method, path: c.req.path, error });
     return c.json({ detail: 'Internal Server Error' } satisfies ErrorResponse, 500);
   });
 

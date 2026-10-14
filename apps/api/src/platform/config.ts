@@ -15,6 +15,8 @@ export type AppConfig = {
   /** Read X-Forwarded-For from a trusted reverse proxy (MASCLI_TRUST_PROXY=1). */
   readonly trustProxy: boolean;
   readonly requireMfa: boolean;
+  /** One JSON access-log line per request (MASCLI_ACCESS_LOG, default on). */
+  readonly accessLog: boolean;
   readonly allowedHosts: readonly string[];
   /** Largest accepted evidence file (MASCLI_MAX_UPLOAD_BYTES, docs/adr/0008 #9). */
   readonly maxUploadBytes: number;
@@ -187,6 +189,7 @@ export const loadConfig = (env: Env): AppConfig => ({
   ollama: parseOllama(env),
   webDir: env.MASCLI_WEB_DIR || undefined,
   requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),
+  accessLog: parseSwitch('MASCLI_ACCESS_LOG', env.MASCLI_ACCESS_LOG, true),
   allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
   google: parseGoogle(env),
 });

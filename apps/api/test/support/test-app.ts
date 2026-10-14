@@ -22,6 +22,8 @@ export const TEST_ENV = {
   MASCLI_ADMIN_PASSWORD: 'admin-password-123',
   // Most suites exercise features, not enrollment; MFA enforcement has its own tests.
   MASCLI_REQUIRE_MFA: '0',
+  // Access logs are covered by their own test; keep the other suites' output readable.
+  MASCLI_ACCESS_LOG: '0',
 } as const;
 
 export const ORIGIN = 'http://localhost';
