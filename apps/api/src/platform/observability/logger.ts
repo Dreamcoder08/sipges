@@ -4,7 +4,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 export type LogFields = Readonly<Record<string, unknown>>;
 
 const SINKS: Record<LogLevel, (line: string) => void> = {
-  debug: (line) => console.debug(line),
+  debug: (line) => console.log(line),
   info: (line) => console.info(line),
   warn: (line) => console.warn(line),
   error: (line) => console.error(line),
