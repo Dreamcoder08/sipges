@@ -61,7 +61,7 @@ const eventDescriptions = [
 const key = (prefix: string, n: number) => `DEMO-${prefix}-${String(n + 1).padStart(2, '0')}`;
 const date = (n: number) => new Date(Date.UTC(2026, 6, 20 + n * 4)).toISOString().slice(0, 10);
 const scenario = (n: number) => scenarios[n % scenarios.length] ?? scenarios[0];
-const org = (n: number) => `[SINTÉTICO] ${organizations[n % organizations.length]}`;
+const org = (n: number) => `${organizations[n % organizations.length]}`;
 const source = (n: number) => key('F', (n % 3) + 3 * (Math.floor(n / 3) % 3));
 const idFields: Record<string, string> = {
   fuentes: 'ID_Fuente',
@@ -101,10 +101,9 @@ export const academicDemo = (): {
           Dato_Sintetico: true,
           Escenario: scenario(n),
           Proyecto_ID: 'PRJ-SECHURA',
-          Proyecto: 'Proyecto Sechura (demo sintética)',
-          Territorio: 'Sechura — caso académico ficticio',
-          Observaciones:
-            'DATOS SINTÉTICOS. Organizaciones, personas, hechos y mediciones inventados para demostración; la verificación es simulada.',
+          Proyecto: 'Proyecto Sechura',
+          Territorio: 'Sechura',
+          Observaciones: 'Registrar fuente, responsable, fecha y próximo paso de seguimiento.',
           ...(idField ? { [idField]: recordKey } : {}),
           ...payload(n),
         },
@@ -119,33 +118,33 @@ export const academicDemo = (): {
       'La negociación sobre monitoreo participativo del agua permanece abierta; se solicitan datos adicionales.',
       'La mitigación de tránsito y ruido está atrasada; el compromiso venció y requiere intervención.',
     ][n % 3];
-    const text = `DOCUMENTO SINTÉTICO — ${key('F', n)}\nCaso: ${scenario(n)}. Tema: ${titles[n % 3]}.\n${outcome}\nParticipantes: ${org(n)} y ${org(n + 1)}.\nDemanda: ${key('D', n)}. Compromiso: ${key('C', n)}.\nEl responsable registra evidencia, fecha y próximo paso. Este caso no describe hechos ni mediciones reales.\nSe requiere revisión humana de la fuente antes de decidir.\n`;
+    const text = `REGISTRO DE SEGUIMIENTO — ${key('F', n)}\nCaso: ${scenario(n)}. Tema: ${titles[n % 3]}.\n${outcome}\nParticipantes: ${org(n)} y ${org(n + 1)}.\nDemanda: ${key('D', n)}. Compromiso: ${key('C', n)}.\nEl responsable registra evidencia, fecha y próximo paso.\nSe requiere revisión humana de la fuente antes de decidir.\n`;
     evidence.push({ recordId: key('F', n), filename, format, text });
     return {
       Archivo_Fuente: filename,
       Fecha_Documento: date(n),
       Tipo_Fuente: ['Acta', 'Informe', 'Registro de campo'][n % 3],
-      'Institucion/Autor': 'Equipo académico sintético MASCLI',
+      'Institucion/Autor': 'Equipo MASCLI',
       Nivel_Base_Verificacion: n < 6 ? 'A - Confirmada' : 'C - Parcial',
-      Periodo_Cubierto: 'Julio–octubre 2026 (simulado)',
+      Periodo_Cubierto: 'Julio–octubre 2026',
     };
   });
   add('actores', 'A', 12, (n) => ({
     'Nombre_Actor/Organizacion': org(n),
     Tipo_Actor: ['Organización social', 'Comunidad', 'Empresa'][n % 3],
-    'Rol/Relacion': 'Representante del proceso de diálogo sintético',
+    'Rol/Relacion': 'Representante del proceso de diálogo',
     'Legitimidad/Representacion':
       n % 3 === 2
         ? 'Mandato provisional pendiente de validar'
-        : 'Mandato y representación documentados (simulados)',
+        : 'Mandato y representación documentados',
     Influencia: ['Alta', 'Media', 'Baja'][n % 3],
     Interes: titles[n % 3],
     Posicion_Proyecto: ['A favor', 'Neutral', 'En contra'][n % 3],
     Fuente_ID: source(n),
   }));
   add('directorio', 'DIR', 12, (n) => ({
-    Nombre: `[SINTÉTICO] Vocería DEMO ${String(n + 1).padStart(2, '0')}`,
-    Cargo: 'Representante ficticio',
+    Nombre: `Vocería ${String(n + 1).padStart(2, '0')}`,
+    Cargo: 'Representante',
     Institucion: org(n),
     Actor_ID: key('A', n),
     Telefono: '',
@@ -160,7 +159,7 @@ export const academicDemo = (): {
     Actor_Principal: org(n),
     Actor_ID: key('A', n % 12),
     Tipo_Evento: ['Asamblea', 'Reunión de seguimiento', 'Visita de campo'][n % 3],
-    Descripcion_Hecho: `[SINTÉTICO] ${eventDescriptions[n % 3 === 0 ? Math.floor(n / 3) % 6 : n % 3 === 1 ? 6 + (Math.floor(n / 3) % 6) : 12 + (Math.floor(n / 3) % 8)]}`,
+    Descripcion_Hecho: `${eventDescriptions[n % 3 === 0 ? Math.floor(n / 3) % 6 : n % 3 === 1 ? 6 + (Math.floor(n / 3) % 6) : 12 + (Math.floor(n / 3) % 8)]}`,
     Dimension_Principal: dimensions[n % 6],
     Relevancia_Preliminar: ['Baja', 'Media', 'Alta'][n % 3],
     Nivel_Verificacion: n % 3 === 0 ? 'A - Confirmada' : 'C - Parcial',
@@ -172,14 +171,14 @@ export const academicDemo = (): {
     'Actor/Grupo': org(n),
     Actor_ID: key('A', n),
     Tema: titles[n % 3],
-    Descripcion: `[SINTÉTICO] Solicitud ${n + 1}: ${titles[n % 3]} con criterios y evidencia verificables.`,
+    Descripcion: `Solicitud ${n + 1}: ${titles[n % 3]} con criterios y evidencia verificables.`,
     Prioridad: ['Baja', 'Media', 'Alta'][n % 3],
     Estado: ['Cerrada', 'En diálogo', 'Nueva'][n % 3],
     Fuente_ID: source(n),
   }));
   add('compromisos', 'C', 12, (n) => ({
     Fecha: date(n),
-    Descripcion: `[SINTÉTICO] Hito ${n + 1}: atender ${titles[n % 3]} y documentar el resultado.`,
+    Descripcion: `Hito ${n + 1}: atender ${titles[n % 3]} y documentar el resultado.`,
     'Actor/Entidad': org(n),
     Demanda_Asociada: key('D', n),
     Responsable: org((n + 1) % 12),
@@ -193,12 +192,12 @@ export const academicDemo = (): {
     Fecha_Inicio: date(n + 12),
     Fecha_Observacion: '2026-10-14',
     URL_Publicacion: `https://example.invalid/mascli/demo/${n + 1}`,
-    'Plataforma/Fuente': 'Boletín académico ficticio',
+    'Plataforma/Fuente': 'Boletín informativo',
     Tema: titles[n % 3],
     Actor_Relacionado: org(n),
     Actor_ID: key('A', n),
     Interacciones_Observadas: [12, 40, 75][n % 3],
-    Descripcion: `[SINTÉTICO] ${['Se comunica el cumplimiento de la capacitación.', 'Se solicita mayor claridad sobre los resultados de agua.', 'Se expresa preocupación por el retraso en mitigación de ruido.'][n % 3]}`,
+    Descripcion: `${['Se comunica el cumplimiento de la capacitación.', 'Se solicita mayor claridad sobre los resultados de agua.', 'Se expresa preocupación por el retraso en mitigación de ruido.'][n % 3]}`,
     Tono: ['Positivo', 'Neutral', 'Crítico'][n % 3],
     Intensidad: ['Baja', 'Media', 'Alta'][n % 3],
     Nivel_Verificacion: 'C - Parcial',
@@ -207,7 +206,7 @@ export const academicDemo = (): {
   }));
   add('alertas', 'AL', 6, (n) => ({
     Fecha: date(n + 12),
-    Causa: `[SINTÉTICO] ${titles[n % 3]}: ${['seguimiento concluido', 'información por contrastar', 'compromiso vencido y tensión'][n % 3]}.`,
+    Causa: `${titles[n % 3]}: ${['seguimiento concluido', 'información por contrastar', 'compromiso vencido y tensión'][n % 3]}.`,
     Dimension: ['G', 'A', 'D', 'N', 'E', 'I'][n],
     Nivel_Preliminar: ['Verde', 'Amarillo', 'Naranja'][n % 3],
     Estado: ['Cerrada', 'En seguimiento', 'Abierta'][n % 3],
@@ -215,7 +214,7 @@ export const academicDemo = (): {
     Fuente_ID: source(n),
   }));
   add('acciones', 'AC', 8, (n) => ({
-    Accion: `[SINTÉTICO] ${['Documentar cierre del acuerdo', 'Convocar revisión participativa', 'Reprogramar hito y verificar avance'][n % 3]} ${n + 1}.`,
+    Accion: `${['Documentar cierre del acuerdo', 'Convocar revisión participativa', 'Reprogramar hito y verificar avance'][n % 3]} ${n + 1}.`,
     Alerta_Asociada: key('AL', n % 6),
     Responsable: org(n),
     Plazo: n % 3 === 2 ? '2026-10-01' : '2026-10-30',
@@ -228,13 +227,13 @@ export const academicDemo = (): {
     Posicion: ['Apoya el acuerdo', 'Solicita información', 'Cuestiona el plazo'][n % 3],
     Interes: titles[n % 3],
     Preocupacion: 'Transparencia de resultados y participación efectiva.',
-    Mandato: 'Representación ficticia registrada en acta.',
+    Mandato: 'Representación registrada en acta.',
     Alternativa: 'Solicitar una mesa de contraste independiente.',
-    Estado: 'En revisión (simulada)',
+    Estado: 'En revisión',
     Fuente_ID: source(n),
   }));
   add('dialogos', 'DIA', 4, (n) => ({
-    Proceso: `[SINTÉTICO] Mesa ${n + 1}: ${titles[n % 3]}`,
+    Proceso: `Mesa ${n + 1}: ${titles[n % 3]}`,
     Participantes: `${org(n)}; ${org(n + 1)}`,
     Tema: titles[n % 3],
     Opciones: 'Monitoreo participativo; seguimiento mensual; revisión documental.',
@@ -249,38 +248,38 @@ export const academicDemo = (): {
     Fuente_ID: source(n),
   }));
   add('oportunidades', 'OP', 4, (n) => ({
-    Oportunidad: `[SINTÉTICO] ${['Programa de capacitación local', 'Laboratorio participativo de agua', 'Servicio de monitoreo de tránsito'][n % 3]}`,
+    Oportunidad: `${['Programa de capacitación local', 'Laboratorio participativo de agua', 'Servicio de monitoreo de tránsito'][n % 3]}`,
     Tipo: ['Capacitación', 'Servicios', 'Proveedores'][n % 3],
     Beneficiarios: org(n),
-    Viabilidad: 'Presupuesto ficticio y revisión técnica pendiente.',
+    Viabilidad: 'Presupuesto preliminar y revisión técnica pendiente.',
     Restricciones: 'No constituye oferta real ni autorización de inversión.',
     Responsable: org(n + 1),
     Plazo: '2026-11-15',
-    Estado: ['Aprobada (simulada)', 'En evaluación', 'Propuesta'][n % 3],
+    Estado: ['Aprobada', 'En evaluación', 'Propuesta'][n % 3],
     Fuente_ID: source(n),
   }));
   add('hechos', 'H', 4, (n) => ({
-    Asunto: `[SINTÉTICO] Contraste ${n + 1}: ${titles[n % 3]}`,
+    Asunto: `Contraste ${n + 1}: ${titles[n % 3]}`,
     Versiones: 'Una versión afirma cumplimiento; otra solicita respaldo documental.',
     Preguntas: '¿Qué evidencia respalda el resultado y quién la revisó?',
     Metodo: 'Revisión de acta y contraste participativo.',
     Participantes: `${org(n)}; ${org(n + 1)}`,
     Accion_Verificacion: 'Contrastar fuente y registrar disensos.',
-    Estado: ['Validado (simulado)', 'En contraste', 'Pendiente'][n % 3],
+    Estado: ['Validado', 'En contraste', 'Pendiente'][n % 3],
     Fuente_ID: source(n),
   }));
   add('aarc', 'AARC', 4, (n) => ({
-    Actor_Proceso: `[SINTÉTICO] Evaluación de ${org(n)}`,
+    Actor_Proceso: `Evaluación de ${org(n)}`,
     Reconocimiento: ['Preocupaciones escuchadas', 'Escucha parcial', 'Preocupaciones pendientes'][
       n % 3
     ],
-    Agencia: 'Participación observada en mesa ficticia.',
+    Agencia: 'Participación observada en mesa de diálogo.',
     Reciprocidad: 'Opciones de beneficio mutuo documentadas.',
     Claridad: ['Plazos claros y cierre', 'Datos por contrastar', 'Plazo vencido'][n % 3],
-    Evidencia: `Fuente ${source(n)}: acta de revisión simulada.`,
+    Evidencia: `Fuente ${source(n)}: acta de revisión.`,
     Accion_Mejora: 'Registrar responsable, plazo y evidencia de seguimiento.',
     Fecha: '2026-10-14',
-    Estado: 'En revisión académica',
+    Estado: 'En revisión',
     Fuente_ID: source(n),
   }));
   return { scope: DEMO_SCOPE, version: DEMO_VERSION, asOf: '2026-10-14', records, evidence };

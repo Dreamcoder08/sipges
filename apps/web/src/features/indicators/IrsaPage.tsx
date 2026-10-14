@@ -164,7 +164,11 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                         {row.irsa.toFixed(2)} / {row.level}
                       </td>
                       <td>{row.config_version ?? 'Sin versión'}</td>
-                      <td>{row.note || 'Sin nota'}</td>
+                      <td>
+                        {row.note === 'DEMO mascli-academic-v1: corte inicial sintético'
+                          ? 'Corte inicial de seguimiento'
+                          : row.note || 'Sin nota'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -73,10 +73,10 @@ export const seedDemoEvidence = async (request: DemoRequest) => {
     form.set('file', new File([await renderDemoEvidence(file)], file.filename, { type }));
     form.set('linked_module', 'fuentes');
     form.set('linked_record_id', file.recordId);
-    form.set('document_type', 'Evidencia académica sintética');
-    form.set('author', 'Equipo académico sintético MASCLI');
+    form.set('document_type', 'Evidencia de seguimiento');
+    form.set('author', 'Equipo MASCLI');
     form.set('verification', 'C - Parcial');
-    form.set('notes', `DATOS SINTÉTICOS. Verificación simulada. ${marker}`);
+    form.set('notes', `Registro de seguimiento. ${marker}`);
     AttachmentUploaded.parse(await request('POST', '/system/uploads', form));
     evidenceCreated++;
   }
