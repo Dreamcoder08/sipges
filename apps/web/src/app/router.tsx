@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { lazy, Suspense, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import type { RecordModule } from '../features/records/modules.ts';
+import { NavigateProvider } from '../shared/lib/navigation.tsx';
 import { Button } from '../shared/ui/Button.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import {
@@ -31,12 +32,16 @@ import {
 } from '../features/tenancy/index.ts';
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
+import { SearchPalette } from '../features/search/index.ts';
 import { AppShell } from './layout/AppShell.tsx';
 
 import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
 
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
+);
+const ObjectPage = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.ObjectPage })),
 );
 const IrsaPage = lazy(() =>
   import('../features/indicators/index.ts').then((module) => ({ default: module.IrsaPage })),
@@ -71,6 +76,9 @@ const AuditPage = lazy(() =>
 );
 const GeographyPage = lazy(() =>
   import('../features/geography/index.ts').then((module) => ({ default: module.GeographyPage })),
+);
+const TimelinePage = lazy(() =>
+  import('../features/timeline/index.ts').then((module) => ({ default: module.TimelinePage })),
 );
 const TerritorialMapPage = lazy(() =>
   import('../features/geography/index.ts').then((module) => ({
@@ -188,31 +196,34 @@ const appRoute = createRoute({
     const scopes = queryClient.getQueryData(scopesQuery.queryKey);
     const label = scopes?.find((s) => `${s.company_id}/${s.project_id}` === scope.scope)?.label;
     return (
-      <AppShell
-        projectLabel={label || scope.project_id}
-        projectSwitcher={
-          <ProjectSwitcher
-            current={scope}
-            onSwitched={async () => {
-              await queryClient.invalidateQueries();
-              await router.invalidate();
-            }}
-          />
-        }
-        userMenu={
-          <UserMenu
-            me={me}
-            onSignedOut={async () => {
-              queryClient.clear();
-              await router.navigate({ to: '/login', search: {} });
-            }}
-          />
-        }
-      >
-        <Suspense fallback={<p role="status">Cargando sección…</p>}>
-          <Outlet />
-        </Suspense>
-      </AppShell>
+      <NavigateProvider value={(href) => void router.navigate({ href })}>
+        <AppShell
+          projectLabel={label || scope.project_id}
+          search={<SearchPalette scope={scope.scope} />}
+          projectSwitcher={
+            <ProjectSwitcher
+              current={scope}
+              onSwitched={async () => {
+                await queryClient.invalidateQueries();
+                await router.invalidate();
+              }}
+            />
+          }
+          userMenu={
+            <UserMenu
+              me={me}
+              onSignedOut={async () => {
+                queryClient.clear();
+                await router.navigate({ to: '/login', search: {} });
+              }}
+            />
+          }
+        >
+          <Suspense fallback={<p role="status">Cargando sección…</p>}>
+            <Outlet />
+          </Suspense>
+        </AppShell>
+      </NavigateProvider>
     );
   },
 });
@@ -309,6 +320,7 @@ const featurePages = {
   '/inteligencia-redes': IntelligencePage,
   '/alertas': AlertsPage,
   '/mapa': TerritorialMapPage,
+  '/cronologia': TimelinePage,
   '/ubicacion': GeographyPage,
   '/situacion': SituationalPage,
   '/estrategia': StrategicPage,
@@ -330,11 +342,21 @@ const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePa
   }),
 );
 
+const objectRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/objeto/$module/$id',
+  component: function ObjectRoute() {
+    const context = useFeatureContext();
+    const { module, id } = objectRoute.useParams();
+    return <ObjectPage module={module} id={id} scope={context.scope} role={context.role} />;
+  },
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   mfaRoute,
   selectProjectRoute,
-  appRoute.addChildren([dashboardRoute, ...recordRoutes, ...featureRoutes]),
+  appRoute.addChildren([dashboardRoute, objectRoute, ...recordRoutes, ...featureRoutes]),
 ]);
 
 export const createAppRouter = (queryClient: QueryClient) =>

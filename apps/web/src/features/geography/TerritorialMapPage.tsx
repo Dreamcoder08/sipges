@@ -9,12 +9,14 @@ import {
   DIMENSION_NAMES,
   type DimensionCode,
   foldText,
+  monthLabel,
 } from '../../shared/lib/text.ts';
 import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { TimeHistogram } from '../../shared/ui/time/TimeHistogram.tsx';
 import { BaseMap, type Extent } from './BaseMap.tsx';
 import { LOCALITIES } from './localities.ts';
 import { SECHURA_EXTENT } from './sechura-base.ts';
@@ -23,8 +25,10 @@ import {
   type Layer,
   type MapPoint,
   type TerritorialRecord,
-  filterPoints,
+  filterPlace,
+  inPeriod,
   mapPoints,
+  monthlyCounts,
   monthsOf,
 } from './territorial-model.ts';
 import { TILE_ATTRIBUTION, TileLayer } from './TileLayer.tsx';
@@ -38,12 +42,6 @@ const useLayer = (slug: string, scope: string) =>
     queryKey: ['records', scope, slug, 'all'],
     queryFn: ({ signal }) => requestJson(`/api/${slug}?limit=-1`, Records, { scope, signal }),
   });
-
-const MONTH = new Intl.DateTimeFormat('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-const monthLabel = (month: string) => {
-  const label = MONTH.format(new Date(`${month}-01T12:00:00Z`));
-  return label.charAt(0).toUpperCase() + label.slice(1);
-};
 
 const csvCell = (value: unknown) =>
   `"${String(value)
@@ -92,13 +90,21 @@ const TerritorialWorkspace = ({
   openAlerts: number;
 }) => {
   const id = useId();
-  const [filters, setFilters] = useState({ layer: '', dimension: '', locality: '', month: '' });
+  const [filters, setFilters] = useState({
+    layer: '',
+    dimension: '',
+    locality: '',
+    from: '',
+    to: '',
+  });
   const [selectedId, setSelectedId] = useState('');
   const [zoom, setZoom] = useState(1);
   const [center, setCenter] = useState<readonly [number, number] | null>(null);
   const { points, unlocated } = useMemo(() => mapPoints(layers, projectId), [layers, projectId]);
-  const visible = filterPoints(points, filters);
+  const placed = filterPlace(points, filters);
+  const visible = placed.filter((p) => inPeriod(p, filters.from, filters.to));
   const months = monthsOf(points);
+  const activity = monthlyCounts(placed);
   const selected = visible.find((p) => p.id === selectedId) ?? null;
   const localities = new Set(visible.map((p) => p.locality));
   const recent = [...visible].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
@@ -187,14 +193,37 @@ const TerritorialWorkspace = ({
           ['', 'Todas'],
           ...DIMENSIONS.map((d): [string, string] => [d, `${d} · ${DIMENSION_NAMES[d]}`]),
         ])}
-        {select('month', 'Periodo', [
-          ['', 'Todo el periodo'],
+        {select('from', 'Desde', [
+          ['', 'El inicio'],
+          ...months.map((m): [string, string] => [m, monthLabel(m)]),
+        ])}
+        {select('to', 'Hasta', [
+          ['', 'Hoy'],
           ...months.map((m): [string, string] => [m, monthLabel(m)]),
         ])}
         <Button variant="secondary" onClick={exportCsv} disabled={!visible.length}>
           Exportar CSV
         </Button>
       </div>
+
+      {activity.length > 1 ? (
+        <Card title="Actividad por mes" eyebrow="Filtro temporal">
+          <TimeHistogram
+            series={activity}
+            from={filters.from}
+            to={filters.to}
+            label="Registros georreferenciados por mes"
+            onChange={(from, to) => {
+              setFilters((f) => ({ ...f, from, to }));
+              setSelectedId('');
+            }}
+          />
+          <p className={styles.note}>
+            Pulse un mes para ver solo ese periodo; con Mayús amplía el rango. Pulse de nuevo el mes
+            seleccionado para ver todo el periodo.
+          </p>
+        </Card>
+      ) : null}
 
       <dl className={styles.kpis}>
         <div>

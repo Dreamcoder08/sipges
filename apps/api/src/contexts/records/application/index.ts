@@ -6,9 +6,13 @@ export {
   validatePayload,
 } from '../domain/modules.ts';
 export type { StoredRecord } from './ports.ts';
+export { type FieldChange, diffPayloads } from '../domain/history.ts';
+export { MAX_IMPORT_ROWS, isImportable } from '../domain/import.ts';
 export {
   MAX_LIMIT,
   boundLimit,
   createRecordsService,
+  type ImportReport,
+  type RecordVersion,
   type RecordsService,
 } from './records-service.ts';

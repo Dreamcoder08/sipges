@@ -38,3 +38,38 @@ export const ModuleRecord = z.looseObject({
   _updated_at: z.string().optional(),
 });
 export type ModuleRecord = z.infer<typeof ModuleRecord>;
+
+/** One field difference against the previous version (`before`/`after` absent = no value). */
+export const FieldChange = z.object({
+  field: z.string(),
+  before: z.unknown().optional(),
+  after: z.unknown().optional(),
+});
+export type FieldChange = z.infer<typeof FieldChange>;
+
+/** GET /api/{module}/{id}/history item, newest first (docs/adr/0011 §4). */
+export const RecordVersion = z.object({
+  version: z.number().int().positive(),
+  operation: z.enum(['BASELINE', 'CREATE', 'UPDATE', 'DELETE']),
+  actor: z.string(),
+  at: z.string(),
+  payload: z.record(z.string(), z.unknown()).nullable(),
+  changes: z.array(FieldChange),
+});
+export type RecordVersion = z.infer<typeof RecordVersion>;
+
+/** POST /system/import/{module}: rows already mapped to field names (spreadsheet import). */
+export const ImportIn = z.object({
+  rows: z.array(z.record(z.string(), z.string())).max(2000),
+  dry_run: z.boolean().default(true),
+  source: z.string().max(200).default(''),
+});
+export type ImportIn = z.infer<typeof ImportIn>;
+
+export const ImportReport = z.object({
+  applied: z.boolean(),
+  created: z.number().int(),
+  updated: z.number().int(),
+  problems: z.array(z.object({ row: z.number().int(), message: z.string() })),
+});
+export type ImportReport = z.infer<typeof ImportReport>;

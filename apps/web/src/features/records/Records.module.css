@@ -243,3 +243,130 @@
     flex: 1;
   }
 }
+
+.history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.history > li {
+  border-left: 3px solid var(--color-border);
+  padding-left: var(--space-3);
+  overflow-wrap: anywhere;
+}
+.history p {
+  margin: 0;
+}
+.history small {
+  color: var(--color-muted);
+}
+.history ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: 0.875rem;
+}
+.history del {
+  color: var(--color-danger-strong);
+}
+.history ins {
+  color: var(--color-success);
+  text-decoration: none;
+}
+
+.linkLabel {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+.linkForm {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  margin-top: var(--space-4);
+}
+.linkForm > [role],
+.linkForm > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+@media (max-width: 640px) {
+  .linkForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.graphHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.graphHeader h4 {
+  margin: 0;
+}
+
+.marking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.marking small {
+  color: var(--color-muted);
+}
+.markingBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+.marking_publico {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.marking_restringido {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+}
+
+.importPanel {
+  display: grid;
+  gap: var(--space-3);
+}
+.importPanel h4 {
+  margin: 0;
+}
+.importPanel select {
+  min-width: 12rem;
+}
+
+.briefing h5 {
+  margin: var(--space-4) 0 var(--space-2);
+  font-size: 0.95rem;
+}
+.briefing ul,
+.sources {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: grid;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.narrative {
+  margin: 0 0 var(--space-2);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.cites a {
+  margin-left: 0.1rem;
+  font-size: 0.75rem;
+}

@@ -1,0 +1,146 @@
+import { z } from 'zod';
+
+const RecordRef = z.object({
+  module: z.string().min(1).max(40),
+  id: z
+    .string()
+    .min(1)
+    .max(200)
+    .refine((id) => !id.includes('\u0000'), { message: 'Text must not contain NUL characters' }),
+});
+export type RecordRef = z.infer<typeof RecordRef>;
+
+/** GET /system/ontology (docs/adr/0011 §1-2). */
+export const OntologyCatalog = z.object({
+  object_types: z.array(
+    z.object({
+      module: z.string(),
+      label: z.string(),
+      title_field: z.string(),
+      summary_fields: z.array(z.string()),
+      date_field: z.string().nullable(),
+    }),
+  ),
+  link_types: z.array(
+    z.object({
+      id: z.string(),
+      label: z.string(),
+      inverse_label: z.string(),
+      sources: z.array(z.string()).nullable(),
+      targets: z.array(z.string()).nullable(),
+      symmetric: z.boolean(),
+    }),
+  ),
+});
+export type OntologyCatalog = z.infer<typeof OntologyCatalog>;
+
+/** A record as shown in links, search hits and the graph. */
+export const ObjectSummary = z.object({
+  module: z.string(),
+  id: z.string(),
+  type_label: z.string(),
+  title: z.string(),
+  date: z.string().nullable(),
+  marking: z.enum(['publico', 'interno', 'restringido']),
+  fields: z.record(z.string(), z.string()),
+});
+export type ObjectSummary = z.infer<typeof ObjectSummary>;
+
+export const LinkEdge = z.object({
+  id: z.number().int().nullable(),
+  link_type: z.string(),
+  source: RecordRef,
+  target: RecordRef,
+  inferred: z.boolean(),
+  via: z.string().nullable(),
+  note: z.string(),
+  created_by: z.string().nullable(),
+  created_at: z.string().nullable(),
+});
+export type LinkEdge = z.infer<typeof LinkEdge>;
+
+/** GET /system/links?module=&id= */
+export const RecordLinks = z.object({
+  record: ObjectSummary,
+  links: z.array(
+    z.object({
+      edge: LinkEdge,
+      direction: z.enum(['out', 'in']),
+      label: z.string(),
+      other: ObjectSummary,
+    }),
+  ),
+});
+export type RecordLinks = z.infer<typeof RecordLinks>;
+
+/** POST /system/links */
+export const LinkIn = z.object({
+  link_type: z.string().min(1).max(40),
+  source: RecordRef,
+  target: RecordRef,
+  note: z.string().max(500).default(''),
+});
+export type LinkIn = z.infer<typeof LinkIn>;
+
+export const LinkCreated = z.object({ ok: z.literal(true), id: z.number().int() });
+export type LinkCreated = z.infer<typeof LinkCreated>;
+
+/** GET /system/graph?module=&id=&depth= */
+export const RecordGraph = z.object({
+  root: RecordRef,
+  nodes: z.array(ObjectSummary),
+  edges: z.array(LinkEdge),
+  truncated: z.boolean(),
+});
+export type RecordGraph = z.infer<typeof RecordGraph>;
+
+/** GET /system/search?q=&modules=&limit= (docs/adr/0011 §5). */
+export const SearchResults = z.object({
+  query: z.string(),
+  hits: z.array(
+    ObjectSummary.extend({
+      match: z.object({ field: z.string(), excerpt: z.string() }).nullable(),
+    }),
+  ),
+});
+export type SearchResults = z.infer<typeof SearchResults>;
+
+/** PUT /system/marking (docs/adr/0012). */
+export const MarkingIn = z.object({
+  module: z.string().min(1).max(40),
+  id: z.string().min(1).max(200),
+  marking: z.enum(['publico', 'interno', 'restringido']),
+});
+export type MarkingIn = z.infer<typeof MarkingIn>;
+
+const BriefingSentence = z.object({ text: z.string(), refs: z.array(z.number().int()) });
+
+/** GET /system/briefing (docs/adr/0013): extractive briefing with numbered citations. */
+export const Briefing = z.object({
+  subject: ObjectSummary,
+  generated_at: z.string(),
+  engine: z.enum(['extractivo', 'asistido']),
+  narrator: z.string().nullable(),
+  notice: z.string().nullable(),
+  narrative: BriefingSentence.nullable(),
+  sections: z.array(z.object({ title: z.string(), sentences: z.array(BriefingSentence) })),
+  sources: z.array(
+    z.object({
+      ref: z.number().int(),
+      module: z.string(),
+      id: z.string(),
+      type_label: z.string(),
+      title: z.string(),
+    }),
+  ),
+});
+export type Briefing = z.infer<typeof Briefing>;
+
+/** GET /system/timeline (docs/adr/0011 §7): dated records across object types. */
+export const Timeline = z.object({
+  from: z.string(),
+  to: z.string(),
+  entries: z.array(ObjectSummary),
+  truncated: z.boolean(),
+});
+export type Timeline = z.infer<typeof Timeline>;

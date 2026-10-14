@@ -11,6 +11,8 @@ const TABLES = [
   'digital_alert_reviews',
   'preventive_actions',
   'preventive_action_log',
+  'record_versions',
+  'record_links',
 ] as const;
 
 export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => ({
@@ -19,7 +21,11 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
     return sql.transaction(async (tx) => {
       // Must precede any snapshot-acquiring query. Never expose a partial multi-table dump.
       await tx.exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
-      await tx.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
+      // An administrator's export includes records marked 'restringido' (ADR 0012).
+      await tx.query(
+        "SELECT set_config('app.tenant_id', $1, true), set_config('app.clearance', 'full', true)",
+        [tenantId],
+      );
       await tx.exec('SET LOCAL ROLE mascli_tenant');
       const tenant = tx;
       {
@@ -31,6 +37,8 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
           digital_alert_reviews: [],
           preventive_actions: [],
           preventive_action_log: [],
+          record_versions: [],
+          record_links: [],
         };
         for (const table of TABLES) {
           const [relation] = await tenant.query<{ present: string | null; secured: boolean }>(

@@ -15,6 +15,8 @@ export type AppConfig = {
   /** Read X-Forwarded-For from a trusted reverse proxy (MASCLI_TRUST_PROXY=1). */
   readonly trustProxy: boolean;
   readonly requireMfa: boolean;
+  /** One JSON access-log line per request (MASCLI_ACCESS_LOG, default on). */
+  readonly accessLog: boolean;
   readonly allowedHosts: readonly string[];
   /** Largest accepted evidence file (MASCLI_MAX_UPLOAD_BYTES, docs/adr/0008 #9). */
   readonly maxUploadBytes: number;
@@ -22,6 +24,11 @@ export type AppConfig = {
   readonly storage: StorageConfig;
   /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
   readonly ollama: { readonly baseUrl: string; readonly model: string };
+  /**
+   * Language model that rewrites extractive briefings (docs/adr/0013). Off unless
+   * MASCLI_ANALYST_PROVIDER=anthropic; the key comes from ANTHROPIC_API_KEY at the SDK.
+   */
+  readonly analyst: { readonly provider: 'anthropic'; readonly model: string } | undefined;
   /** Built web app to serve (MASCLI_WEB_DIR, e.g. apps/web/dist); unset serves the API only. */
   readonly webDir: string | undefined;
   /** Google OAuth client for "Entrar con Google" (ADR 0010); unset hides the option. */
@@ -138,6 +145,20 @@ const parseOllama = (env: Env) => {
   return { baseUrl, model };
 };
 
+const MODEL_ID = /^[a-z0-9][a-z0-9.-]{1,63}$/;
+
+const parseAnalyst = (env: Env): AppConfig['analyst'] => {
+  const provider = env.MASCLI_ANALYST_PROVIDER ?? '';
+  if (provider === '' || provider === 'none') return undefined;
+  if (provider !== 'anthropic')
+    throw new Error("MASCLI_ANALYST_PROVIDER must be unset, 'none' or 'anthropic'");
+  if (!env.ANTHROPIC_API_KEY && !env.ANTHROPIC_AUTH_TOKEN)
+    throw new Error('MASCLI_ANALYST_PROVIDER=anthropic requires ANTHROPIC_API_KEY');
+  const model = env.MASCLI_ANALYST_MODEL || 'claude-opus-5-5';
+  if (!MODEL_ID.test(model)) throw new Error('MASCLI_ANALYST_MODEL is not a valid model id');
+  return { provider, model };
+};
+
 const HOSTNAME =
   /^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/;
 
@@ -185,8 +206,10 @@ export const loadConfig = (env: Env): AppConfig => ({
   maxUploadBytes: parseMaxUpload(env.MASCLI_MAX_UPLOAD_BYTES),
   storage: parseStorage(env),
   ollama: parseOllama(env),
+  analyst: parseAnalyst(env),
   webDir: env.MASCLI_WEB_DIR || undefined,
   requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),
+  accessLog: parseSwitch('MASCLI_ACCESS_LOG', env.MASCLI_ACCESS_LOG, true),
   allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
   google: parseGoogle(env),
 });

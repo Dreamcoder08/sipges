@@ -1,3 +1,4 @@
+import type { VersionOperation } from '../domain/history.ts';
 import type { ModuleName, Payload } from '../domain/modules.ts';
 
 export type StoredRecord = {
@@ -6,9 +7,17 @@ export type StoredRecord = {
   readonly updatedAt: Date;
 };
 
+/** One stored version of a record, oldest first; `payload` is null for a deletion. */
+export type StoredVersion = {
+  readonly operation: VersionOperation;
+  readonly payload: Payload | null;
+  readonly actor: string;
+  readonly at: Date;
+};
+
 /** Audit text the store writes in the same transaction as each change (app.py parity). */
 export type AuditNote = {
-  readonly action: 'CREATE' | 'UPDATE' | 'DELETE';
+  readonly action: 'CREATE' | 'UPDATE' | 'DELETE' | 'IMPORT';
   readonly detail: string;
 };
 
@@ -20,6 +29,8 @@ export type RecordStore = {
     query: { limit: number; q: string | null },
   ): Promise<StoredRecord[]>;
   get(tenantId: string, module: ModuleName, id: string): Promise<StoredRecord | null>;
+  /** Every version of one record (also after its deletion), oldest first. */
+  history(tenantId: string, module: ModuleName, id: string): Promise<StoredVersion[]>;
   /**
    * Inserts with the first free id among `candidates()` and audits it; returns the id used.
    * `candidates` yields the preferred id first, then collision fallbacks.
@@ -41,6 +52,19 @@ export type RecordStore = {
     note: AuditNote,
     at: Date,
   ): Promise<boolean>;
+  /** Ids among `ids` that already exist in `module`. */
+  existing(tenantId: string, module: ModuleName, ids: readonly string[]): Promise<Set<string>>;
+  /**
+   * One transaction: merges each item into its record (creating it when missing) and appends
+   * one audit entry for the batch. Returns how many records were created and updated.
+   */
+  importBatch(
+    tenantId: string,
+    module: ModuleName,
+    items: readonly { id: string; payload: Payload }[],
+    note: AuditNote,
+    at: Date,
+  ): Promise<{ created: number; updated: number }>;
   /** false when missing (nothing audited). */
   remove(
     tenantId: string,

@@ -1,4 +1,10 @@
-import { type RecordCreated, RecordIn } from '@mascli/contracts';
+import {
+  ImportIn,
+  type ImportReport,
+  type RecordCreated,
+  RecordIn,
+  type RecordVersion,
+} from '@mascli/contracts';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
@@ -8,6 +14,7 @@ import { formatScope } from '../../tenancy/application/index.ts';
 import {
   type ModuleName,
   type RecordsService,
+  isImportable,
   moduleForSlug,
   validatePayload,
 } from '../application/index.ts';
@@ -63,6 +70,43 @@ export const recordsRoutes = (records: RecordsService) =>
       const row = await records.get(tenantOf(c), module, c.req.param('id'));
       if (!row) return c.json(MISSING_RECORD, 404);
       return c.json({ ...row.payload, _id: row.id });
+    })
+
+    .get('/api/:module/:id/history', async (c) => {
+      const module = moduleForSlug(c.req.param('module'));
+      if (!module) return c.json(UNKNOWN_MODULE, 404);
+      const versions = await records.history(tenantOf(c), module, c.req.param('id'));
+      if (versions.length === 0) return c.json(MISSING_RECORD, 404);
+      return c.json(
+        versions.map((version): RecordVersion => ({
+          version: version.version,
+          operation: version.operation,
+          actor: version.actor,
+          at: isoSeconds(version.at),
+          payload: version.payload,
+          changes: version.changes,
+        })),
+      );
+    })
+
+    .post('/system/import/:module', async (c) => {
+      const module = moduleForSlug(c.req.param('module'));
+      if (!module || !isImportable(module)) return c.json(UNKNOWN_MODULE, 404);
+      const body = await parseJson(c, ImportIn);
+      if (!body.ok) return body.response;
+      const report = await records.importRows(tenantOf(c), module, body.value.rows, {
+        dryRun: body.value.dry_run,
+        source: body.value.source,
+      });
+      return c.json(
+        {
+          applied: report.applied,
+          created: report.created,
+          updated: report.updated,
+          problems: [...report.problems],
+        } satisfies ImportReport,
+        report.problems.length && !body.value.dry_run ? 422 : 200,
+      );
     })
 
     .post('/api/:module', async (c) => {

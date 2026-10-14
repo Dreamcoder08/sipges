@@ -1,3 +1,4 @@
+import { currentRequestContext } from '../request-context.ts';
 import type { SqlClient } from './sql-client.ts';
 
 /**
@@ -5,7 +6,11 @@ import type { SqlClient } from './sql-client.ts';
  * - `app.tenant_id` is set transaction-locally and read by every RLS policy;
  * - the transaction drops to the non-owner role `mascli_tenant`, so policies are enforced
  *   and global tables (users, sessions, grants) are unreadable.
- * Both settings end with the transaction, which keeps pooled connections clean.
+ * - `app.actor` names the authenticated user of the current request, read by the record
+ *   history trigger (docs/adr/0011); it is empty outside a request.
+ * - `app.clearance` is 'full' unless the request's role has limited clearance (ADR 0012);
+ *   work outside a request (bootstrap, tools) runs with full clearance.
+ * All settings end with the transaction, which keeps pooled connections clean.
  */
 export const withTenant = async <T>(
   sql: SqlClient,
@@ -14,7 +19,12 @@ export const withTenant = async <T>(
 ): Promise<T> => {
   if (!tenantId) throw new Error('Tenant id is required');
   return sql.transaction(async (tx) => {
-    await tx.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
+    const context = currentRequestContext();
+    await tx.query(
+      `SELECT set_config('app.tenant_id', $1, true), set_config('app.actor', $2, true),
+              set_config('app.clearance', $3, true)`,
+      [tenantId, context?.actor ?? '', context?.clearance ?? 'full'],
+    );
     await tx.exec('SET LOCAL ROLE mascli_tenant');
     return fn(tx);
   });

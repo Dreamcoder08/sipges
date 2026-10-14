@@ -5,6 +5,7 @@ import {
   foldText,
   severityLevel,
 } from '../../shared/lib/text.ts';
+import { monthlySeries } from '../../shared/ui/time/series.ts';
 import { localityOf } from './localities.ts';
 import type { LonLat } from './sechura-base.ts';
 
@@ -107,21 +108,43 @@ export const mapPoints = (
   return { points, unlocated };
 };
 
-/** Points matching the toolbar filters; an empty filter value means "all". */
-export const filterPoints = (
-  points: readonly MapPoint[],
-  filters: { layer: string; dimension: string; locality: string; month: string },
-) =>
+export type MapFilters = {
+  layer: string;
+  dimension: string;
+  locality: string;
+  /** Inclusive month range (YYYY-MM); empty means open-ended. */
+  from: string;
+  to: string;
+};
+
+const monthOf = (point: MapPoint) => {
+  const month = point.date.slice(0, 7);
+  return /^\d{4}-\d{2}$/.test(month) ? month : '';
+};
+
+/** Points matching the toolbar filters except time; an empty filter value means "all". */
+export const filterPlace = (points: readonly MapPoint[], filters: MapFilters) =>
   points.filter(
     (p) =>
       (!filters.layer || p.layer === filters.layer) &&
       (!filters.dimension || p.dimension === filters.dimension) &&
-      (!filters.locality || foldText(p.locality) === foldText(filters.locality)) &&
-      (!filters.month || p.date.startsWith(filters.month)),
+      (!filters.locality || foldText(p.locality) === foldText(filters.locality)),
   );
+
+/** Undated points are shown only while no time range is set. */
+export const inPeriod = (point: MapPoint, from: string, to: string) => {
+  if (!from && !to) return true;
+  const month = monthOf(point);
+  return Boolean(month) && (!from || month >= from) && (!to || month <= to);
+};
+
+export const filterPoints = (points: readonly MapPoint[], filters: MapFilters) =>
+  filterPlace(points, filters).filter((p) => inPeriod(p, filters.from, filters.to));
 
 /** Months (YYYY-MM) present in the points, newest first. */
 export const monthsOf = (points: readonly MapPoint[]) =>
-  [...new Set(points.map((p) => p.date.slice(0, 7)).filter((m) => /^\d{4}-\d{2}$/.test(m)))]
-    .sort()
-    .reverse();
+  [...new Set(points.map(monthOf).filter(Boolean))].sort().reverse();
+
+/** Points per month over the continuous span of dated points (oldest first). */
+export const monthlyCounts = (points: readonly MapPoint[]) =>
+  monthlySeries(points.map((p) => p.date));

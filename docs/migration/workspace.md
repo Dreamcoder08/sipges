@@ -65,6 +65,8 @@ End-to-end coverage, real-PostgreSQL option and the deployment checklist: [docs/
 | `MASCLI_S3_BUCKET` / `MASCLI_S3_ACCESS_KEY_ID` / `MASCLI_S3_SECRET_ACCESS_KEY` | bucket and credentials | required for `s3` |
 | `MASCLI_OLLAMA_URL` | http(s) base URL of the Ollama embeddings server (T10) | `http://127.0.0.1:11434` |
 | `MASCLI_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
+| `MASCLI_ANALYST_PROVIDER` | `anthropic` enables narrated briefings (ADR 0013); requires `ANTHROPIC_API_KEY` | unset (extractive only) |
+| `MASCLI_ANALYST_MODEL` | Claude model for narrated briefings | `claude-opus-5-5` |
 | `MASCLI_WEB_DIR` | built SPA to serve, e.g. `apps/web/dist` (docs/migration/web.md) | unset → API only |
 | `MASCLI_REQUIRE_MFA` | exactly `0` or `1` | unset → every session must enroll TOTP before using the API (ADR 0009) |
 | `MASCLI_ALLOWED_HOSTS` | comma-separated host names without port, e.g. `mascli.example.org` | unset → no Host check (local development); set it in every deployment (ADR 0009) |

@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la consolidación sobre `main`, commit `70d2c40ed6ec7c24c2895889890716168aed4587`. Su marco de decisiones es el [ODD](../odd/tasks/typescript-hexagonal-migration.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la rama de la plataforma de ontología, commit `49290423d4ea2de329b0b09924916cd2e9a588ac`. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Recorrido y reglas de dependencia
 
@@ -22,11 +22,14 @@ El backend organiza cada contexto en `http`, `application`, `domain` e `infrastr
 | Objetos | ObjectStorage local, S3-compatible con SigV4 o Blob privado | [Migración T8](migration/evidence.md) |
 | Procesamiento | DocumentReader: unpdf/pdf.js y fflate; ReportRenderer: docx | [Migración T9](migration/documents.md) |
 | Embeddings | EmbeddingProvider con adaptador Ollama | [Migración T10](migration/operations.md) |
+| Ontología | Catálogo de objetos y vínculos, historial por trigger, búsqueda GIN, grafo y cronología | [ADR 0011](adr/0011-ontology-links-and-provenance.md) |
+| Observabilidad y clasificación | Request id, logs JSON, métricas Prometheus; marcas con RLS | [ADR 0012](adr/0012-observability-and-classification.md) |
+| Analista | Informe extractivo con citas; Narrator opcional con Claude (`@anthropic-ai/sdk`) | [ADR 0013](adr/0013-cited-analyst-briefings.md) |
 | Herramientas | pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser | Enmienda del [ADR 0001](adr/0001-monorepo-and-toolchain.md): sin Turborepo/Biome |
 
 El adaptador de demo en `apps/hosting` reutiliza Hono y añade Blob privado al puerto ObjectStorage. La demo académica está publicada en Vercel con la integración PostgreSQL Neon del propietario. Se comprobaron salud, login, sesión y el bloqueo previo a MFA en la URL pública. El propietario debe inscribir su autenticador antes del smoke público de CRUD, evidencias y documentos; esos flujos ya se verificaron en CI contra PostgreSQL sintético.
 
-El mapa agrupa los contextos identity, tenancy, records, audit, indicators, analytics, evidence, documents, intelligence, prevention management y reference. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
+El mapa agrupa los contextos identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention management y reference. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
 
 ## Persistencia y aislamiento
 
@@ -44,6 +47,7 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | T12 | Benchmarks sintéticos completados; Go/Rust no justificado por los resultados |
 | T13 | Migrador SQLite → PostgreSQL y ensayo sintético completados |
 | T14 | Paridad E2E y preparación del despliegue completadas |
+| Ontología T1–T11 | Historial, vínculos tipados e inferidos, búsqueda, grafo, observabilidad, clasificación, importación CSV, analista con citas, cronología y E2E |
 
 La implementación nueva es TypeScript; Python permanece en `reference/python` como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; T1–T14 están completos; la publicación de la demo se comprueba por separado. La validación científica externa del IRSA sigue siendo un proceso separado.
 

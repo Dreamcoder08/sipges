@@ -19,9 +19,11 @@ export const AppShell = ({
   projectLabel,
   projectSwitcher,
   userMenu,
+  search,
   children,
 }: {
   projectLabel: string;
+  search?: ReactNode;
   projectSwitcher: ReactNode;
   userMenu: ReactNode;
   children: ReactNode;
@@ -152,6 +154,7 @@ export const AppShell = ({
             </h1>
           </div>
           <div className={styles.tools}>
+            {search}
             {projectSwitcher}
             {userMenu}
           </div>
