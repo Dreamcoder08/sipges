@@ -1,5 +1,6 @@
 import { type Result, err, ok } from '@mascli/kernel';
 import { type FieldChange, type VersionOperation, diffPayloads } from '../domain/history.ts';
+import { type ImportProblem, MAX_IMPORT_ROWS, planImport } from '../domain/import.ts';
 import {
   type ModuleName,
   type Payload,
@@ -17,6 +18,13 @@ export type RecordVersion = {
   readonly at: Date;
   readonly payload: Payload | null;
   readonly changes: FieldChange[];
+};
+
+export type ImportReport = {
+  readonly applied: boolean;
+  readonly created: number;
+  readonly updated: number;
+  readonly problems: readonly ImportProblem[];
 };
 
 /** Absolute ceiling for list sizes (docs/adr/0008 #10). */
@@ -94,6 +102,56 @@ export const createRecordsService = (deps: {
         isLookupableId(id) &&
         store.replace(tenantId, module, id, payload, NOTES.update, clock.now())
       );
+    },
+
+    /**
+     * Spreadsheet import, all or nothing: a dry run reports what would be created, updated or
+     * rejected; a real run refuses any batch with problems and merges the rest in one
+     * transaction with a single IMPORT audit entry naming the source.
+     */
+    async importRows(
+      tenantId: string,
+      module: ModuleName,
+      rows: readonly Readonly<Record<string, string>>[],
+      options: { dryRun: boolean; source: string },
+    ): Promise<ImportReport> {
+      if (rows.length > MAX_IMPORT_ROWS) {
+        return {
+          applied: false,
+          created: 0,
+          updated: 0,
+          problems: [{ row: 0, message: `Máximo ${MAX_IMPORT_ROWS} filas por importación` }],
+        };
+      }
+      const plan = planImport(module, rows, randomHex);
+      if (options.dryRun || plan.problems.length > 0 || plan.items.length === 0) {
+        const existing = plan.items.length
+          ? await store.existing(
+              tenantId,
+              module,
+              plan.items.map((item) => item.id),
+            )
+          : new Set<string>();
+        const updated = plan.items.filter((item) => existing.has(item.id)).length;
+        return {
+          applied: false,
+          created: plan.items.length - updated,
+          updated,
+          problems: plan.problems,
+        };
+      }
+      const source = options.source.trim().slice(0, 120) || 'archivo sin nombre';
+      const result = await store.importBatch(
+        tenantId,
+        module,
+        plan.items,
+        {
+          action: 'IMPORT',
+          detail: `Importación de ${plan.items.length} filas desde ${source}`,
+        },
+        clock.now(),
+      );
+      return { applied: true, ...result, problems: [] };
     },
 
     async remove(tenantId: string, module: ModuleName, id: string): Promise<boolean> {

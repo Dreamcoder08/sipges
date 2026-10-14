@@ -1,4 +1,6 @@
 import {
+  type ImportIn,
+  ImportReport,
   ModuleRecord,
   OkResponse,
   RecordCreated,
@@ -7,7 +9,7 @@ import {
 } from '@mascli/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
-import { requestJson } from '../../shared/api/client.ts';
+import { isApiError, requestJson } from '../../shared/api/client.ts';
 import { recordPayload } from './model.ts';
 import type { RecordModule } from './modules.ts';
 
@@ -67,3 +69,14 @@ export const saveRecord = async (
 };
 export const deleteRecord = (module: RecordModule, scope: string, id: string) =>
   requestJson(recordPath(module, id), OkResponse, { method: 'DELETE', scope });
+export const importRecords = (module: RecordModule, scope: string, body: ImportIn) =>
+  requestJson(`/system/import/${module}`, ImportReport, {
+    method: 'POST',
+    scope,
+    body: { json: body },
+  }).catch((error: unknown) => {
+    // A refused batch answers 422 with the same report shape.
+    const parsed = isApiError(error, 422) ? ImportReport.safeParse(error.body) : null;
+    if (parsed?.success) return parsed.data;
+    throw error;
+  });

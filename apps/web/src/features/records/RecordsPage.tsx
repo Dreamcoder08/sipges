@@ -13,6 +13,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { deleteRecord, recordQuery, recordsQuery, saveRecord } from './api.ts';
 import { EvidencePanel } from './EvidencePanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
+import { ImportPanel } from './ImportPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
@@ -74,6 +75,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
   const [deleting, setDeleting] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [uploadBusy, setUploadBusy] = useState(false);
+  const [importing, setImporting] = useState(false);
   const client = useQueryClient();
   const rows = useQuery(recordsQuery(module, scope, search));
   const detail = useQuery({
@@ -130,17 +132,26 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
         title={definition.label}
         action={
           writable ? (
-            <Button
-              disabled={busy}
-              onClick={() => {
-                save.reset();
-                setNotice('');
-                setSelection(null);
-                setCreating(true);
-              }}
-            >
-              Nuevo registro
-            </Button>
+            <div className={styles.actions}>
+              <Button
+                disabled={busy}
+                onClick={() => {
+                  save.reset();
+                  setNotice('');
+                  setSelection(null);
+                  setCreating(true);
+                }}
+              >
+                Nuevo registro
+              </Button>
+              <Button
+                variant="secondary"
+                aria-expanded={importing}
+                onClick={() => setImporting((open) => !open)}
+              >
+                Importar CSV
+              </Button>
+            </div>
           ) : undefined
         }
       >
@@ -286,6 +297,11 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
           </Button>
         ) : null}
       </Card>
+      {importing && writable ? (
+        <Card>
+          <ImportPanel module={module} scope={scope} onClose={() => setImporting(false)} />
+        </Card>
+      ) : null}
       {creating && writable ? (
         <Card title="Nuevo registro">
           <RecordEditor

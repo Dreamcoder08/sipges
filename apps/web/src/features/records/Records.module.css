@@ -337,3 +337,14 @@
   background: var(--color-danger-soft);
   color: var(--color-danger-strong);
 }
+
+.importPanel {
+  display: grid;
+  gap: var(--space-3);
+}
+.importPanel h4 {
+  margin: 0;
+}
+.importPanel select {
+  min-width: 12rem;
+}

@@ -82,6 +82,41 @@ export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
       return true;
     }),
 
+  existing: (tenantId, module, ids) =>
+    withTenant(
+      sql,
+      tenantId,
+      async (tx) =>
+        new Set(
+          (
+            await tx.query<{ id: string }>(
+              'SELECT id FROM module_records WHERE module = $1 AND id = ANY($2::text[])',
+              [module, ids],
+            )
+          ).map((row) => row.id),
+        ),
+    ),
+
+  importBatch: (tenantId, module, items, note, at) =>
+    withTenant(sql, tenantId, async (tx) => {
+      let created = 0;
+      let updated = 0;
+      for (const item of items) {
+        const [row] = await tx.query<{ inserted: boolean }>(
+          `INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at)
+           VALUES (current_setting('app.tenant_id', true), $1, $2, $3::jsonb, $4, $4)
+           ON CONFLICT (tenant_id, module, id) DO UPDATE
+             SET payload = module_records.payload || EXCLUDED.payload, updated_at = EXCLUDED.updated_at
+           RETURNING (xmax = 0) AS inserted`,
+          [module, item.id, JSON.stringify(item.payload), at],
+        );
+        if (row?.inserted) created++;
+        else updated++;
+      }
+      await appendAudit(tx, { module, recordId: null, ...note, at });
+      return { created, updated };
+    }),
+
   remove: (tenantId, module, id, note, at) =>
     withTenant(sql, tenantId, async (tx) => {
       const deleted = await tx.query(

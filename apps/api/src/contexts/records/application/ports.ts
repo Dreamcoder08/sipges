@@ -17,7 +17,7 @@ export type StoredVersion = {
 
 /** Audit text the store writes in the same transaction as each change (app.py parity). */
 export type AuditNote = {
-  readonly action: 'CREATE' | 'UPDATE' | 'DELETE';
+  readonly action: 'CREATE' | 'UPDATE' | 'DELETE' | 'IMPORT';
   readonly detail: string;
 };
 
@@ -52,6 +52,19 @@ export type RecordStore = {
     note: AuditNote,
     at: Date,
   ): Promise<boolean>;
+  /** Ids among `ids` that already exist in `module`. */
+  existing(tenantId: string, module: ModuleName, ids: readonly string[]): Promise<Set<string>>;
+  /**
+   * One transaction: merges each item into its record (creating it when missing) and appends
+   * one audit entry for the batch. Returns how many records were created and updated.
+   */
+  importBatch(
+    tenantId: string,
+    module: ModuleName,
+    items: readonly { id: string; payload: Payload }[],
+    note: AuditNote,
+    at: Date,
+  ): Promise<{ created: number; updated: number }>;
   /** false when missing (nothing audited). */
   remove(
     tenantId: string,
