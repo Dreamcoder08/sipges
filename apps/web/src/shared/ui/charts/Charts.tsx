@@ -1,0 +1,295 @@
+import { type ReactNode, useEffect, useState } from 'react';
+import styles from './Charts.module.css';
+
+/**
+ * Dependency-free SVG charts. Every chart carries its numbers in text (a legend or a hidden
+ * table) for screen readers; the drawing itself is decoration (aria-hidden). Colours come from
+ * CSS classes, so the strict CSP needs no inline styles.
+ */
+
+export type Datum = { key: string; label: string; value: number; tone?: string };
+
+/**
+ * Width of the chart's box in CSS pixels, so axis text keeps its real size at any width
+ * (a fixed viewBox would scale 11px labels up to 30px on a wide card).
+ */
+const useWidth = (fallback: number) => {
+  const [node, setNode] = useState<SVGSVGElement | null>(null);
+  const [width, setWidth] = useState(fallback);
+  useEffect(() => {
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      const next = Math.round(entry?.contentRect.width ?? 0);
+      if (next > 0) setWidth(next);
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [node]);
+  return [setNode, width] as const;
+};
+
+const tone = (name?: string) => (name ? (styles[name] ?? '') : '');
+
+const DataTable = ({ caption, data }: { caption: string; data: readonly Datum[] }) => (
+  <table className="visually-hidden">
+    <caption>{caption}</caption>
+    <tbody>
+      {data.map((d) => (
+        <tr key={d.key}>
+          <th scope="row">{d.label}</th>
+          <td>{d.value}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+/** A "nice" upper bound for an axis (1, 2, 5 × 10ⁿ). */
+export const niceMax = (value: number) => {
+  if (value <= 0) return 1;
+  const power = 10 ** Math.floor(Math.log10(value));
+  const step = [1, 2, 5, 10].find((n) => n * power >= value) ?? 10;
+  return step * power;
+};
+
+/** Ring chart with the total in the middle and a legend with each count. */
+export const DonutChart = ({
+  data,
+  caption,
+  totalLabel,
+  empty,
+}: {
+  data: readonly Datum[];
+  caption: string;
+  totalLabel: string;
+  empty: string;
+}) => {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const radius = 42;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  return (
+    <figure className={styles.figure}>
+      <div className={styles.donutLayout}>
+        <svg className={styles.svg} viewBox="0 0 120 120" aria-hidden="true">
+          <circle className={styles.donutTrack} cx="60" cy="60" r={radius} strokeWidth="16" />
+          {total
+            ? data
+                .filter((d) => d.value > 0)
+                .map((d) => {
+                  const length = (d.value / total) * circumference;
+                  const segment = (
+                    <circle
+                      key={d.key}
+                      className={tone(d.tone)}
+                      cx="60"
+                      cy="60"
+                      r={radius}
+                      fill="none"
+                      strokeWidth="16"
+                      strokeDasharray={`${length} ${circumference - length}`}
+                      strokeDashoffset={-offset}
+                      transform="rotate(-90 60 60)"
+                    />
+                  );
+                  offset += length;
+                  return segment;
+                })
+            : null}
+          <text className={styles.donutTotal} x="60" y="64" textAnchor="middle">
+            {total}
+          </text>
+          <text className={styles.donutCaption} x="60" y="80" textAnchor="middle">
+            {totalLabel}
+          </text>
+        </svg>
+        <dl className={styles.legend} aria-label={caption}>
+          {data.map((d) => (
+            <div key={d.key}>
+              <dt>
+                <span className={`${styles.swatch} ${tone(d.tone)}`} aria-hidden="true" />
+                <span>{d.label}</span>
+              </dt>
+              <dd>{d.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+      {total ? null : <p className={styles.empty}>{empty}</p>}
+    </figure>
+  );
+};
+
+/** Vertical bars over labelled categories (e.g. months). */
+export const ColumnChart = ({
+  data,
+  caption,
+  empty,
+}: {
+  data: readonly Datum[];
+  caption: string;
+  empty: string;
+}) => {
+  const [ref, width] = useWidth(320);
+  if (!data.length || data.every((d) => d.value === 0))
+    return <p className={styles.empty}>{empty}</p>;
+  const height = 180;
+  const left = 26;
+  const bottom = 22;
+  const top = 14;
+  const max = niceMax(Math.max(...data.map((d) => d.value)));
+  const slot = (width - left) / data.length;
+  const bar = Math.min(44, slot * 0.6);
+  const y = (v: number) => top + (height - top - bottom) * (1 - v / max);
+  return (
+    <figure className={styles.figure}>
+      <svg ref={ref} className={styles.svg} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        {[0, 0.5, 1].map((f) => (
+          <g key={f}>
+            <line className={styles.grid} x1={left} x2={width} y1={y(max * f)} y2={y(max * f)} />
+            <text className={styles.tick} x={left - 6} y={y(max * f) + 4} textAnchor="end">
+              {Math.round(max * f)}
+            </text>
+          </g>
+        ))}
+        {data.map((d, i) => {
+          const x = left + slot * i + (slot - bar) / 2;
+          return (
+            <g key={d.key}>
+              <rect
+                className={`${styles.bar} ${tone(d.tone)}`}
+                x={x}
+                y={y(d.value)}
+                width={bar}
+                height={Math.max(0, y(0) - y(d.value))}
+                rx="3"
+              />
+              {d.value ? (
+                <text
+                  className={styles.value}
+                  x={x + bar / 2}
+                  y={y(d.value) - 4}
+                  textAnchor="middle"
+                >
+                  {d.value}
+                </text>
+              ) : null}
+              <text className={styles.tick} x={x + bar / 2} y={height - 6} textAnchor="middle">
+                {d.label}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <DataTable caption={caption} data={data} />
+    </figure>
+  );
+};
+
+/** Line over time with a soft area (e.g. IRSA snapshots), on a fixed 0–max scale. */
+export const LineChart = ({
+  data,
+  caption,
+  empty,
+  max = 100,
+}: {
+  data: readonly Datum[];
+  caption: string;
+  empty: string;
+  max?: number;
+}) => {
+  const [ref, width] = useWidth(320);
+  if (data.length < 2) return <p className={styles.empty}>{empty}</p>;
+  const height = 180;
+  const left = 30;
+  const right = 10;
+  const bottom = 22;
+  const top = 14;
+  const x = (i: number) => left + ((width - left - right) * i) / (data.length - 1);
+  const y = (v: number) => top + (height - top - bottom) * (1 - v / max);
+  const points = data.map((d, i) => `${x(i)},${y(d.value)}`).join(' ');
+  const every = Math.ceil(data.length / 6);
+  return (
+    <figure className={styles.figure}>
+      <svg ref={ref} className={styles.svg} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        {[0, 0.5, 1].map((f) => (
+          <g key={f}>
+            <line
+              className={styles.grid}
+              x1={left}
+              x2={width - right}
+              y1={y(max * f)}
+              y2={y(max * f)}
+            />
+            <text className={styles.tick} x={left - 6} y={y(max * f) + 4} textAnchor="end">
+              {Math.round(max * f)}
+            </text>
+          </g>
+        ))}
+        <polygon
+          className={styles.area}
+          points={`${x(0)},${y(0)} ${points} ${x(data.length - 1)},${y(0)}`}
+        />
+        <polyline className={styles.line} points={points} />
+        {data.map((d, i) => (
+          <g key={d.key}>
+            <circle className={styles.dot} cx={x(i)} cy={y(d.value)} r="3.5" />
+            {i % every === 0 || i === data.length - 1 ? (
+              <text className={styles.tick} x={x(i)} y={height - 6} textAnchor="middle">
+                {d.label}
+              </text>
+            ) : null}
+          </g>
+        ))}
+      </svg>
+      <DataTable caption={caption} data={data} />
+    </figure>
+  );
+};
+
+/** Spider chart over a shared 0–max scale (e.g. the six G-A-D-N-E-I dimensions). */
+export const RadarChart = ({
+  data,
+  caption,
+  max = 100,
+  renderLabel,
+}: {
+  data: readonly Datum[];
+  caption: string;
+  max?: number;
+  renderLabel?: (d: Datum) => ReactNode;
+}) => {
+  const size = 240;
+  const center = size / 2;
+  const radius = 84;
+  const angle = (i: number) => (Math.PI * 2 * i) / data.length - Math.PI / 2;
+  const at = (i: number, r: number) =>
+    [center + Math.cos(angle(i)) * r, center + Math.sin(angle(i)) * r] as const;
+  const ring = (f: number) => data.map((_, i) => at(i, radius * f).join(',')).join(' ');
+  const shape = data
+    .map((d, i) => at(i, (radius * Math.min(Math.max(d.value, 0), max)) / max).join(','))
+    .join(' ');
+  return (
+    <figure className={styles.figure}>
+      <svg className={styles.svg} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+        {[0.25, 0.5, 0.75, 1].map((f) => (
+          <polygon key={f} className={styles.grid} points={ring(f)} />
+        ))}
+        {data.map((d, i) => {
+          const [x, y] = at(i, radius);
+          return <line key={d.key} className={styles.axis} x1={center} y1={center} x2={x} y2={y} />;
+        })}
+        <polygon className={styles.radarShape} points={shape} />
+        {data.map((d, i) => {
+          const [x, y] = at(i, radius + 18);
+          return (
+            <text key={d.key} className={styles.radarLabel} x={x} y={y + 4} textAnchor="middle">
+              {renderLabel ? renderLabel(d) : d.label}
+            </text>
+          );
+        })}
+      </svg>
+      <DataTable caption={caption} data={data} />
+    </figure>
+  );
+};

@@ -23,3 +23,14 @@
 
 ## References
 React docs, TanStack docs, Bulletproof React, Feature-Sliced Design, OWASP XSS Prevention Cheat Sheet, WCAG 2.2.
+
+## Addendum (2026-10-14): basemap tiles for the territorial map
+
+The territorial map draws CARTO "Voyager" raster tiles (OpenStreetMap data) under its points.
+`img-src` therefore lists the four tile hosts `https://{a,b,c,d}.basemaps.cartocdn.com`
+explicitly (no wildcard) in the API's SPA policy and in `apps/hosting/vercel.json`. Only images
+are allowed from them; scripts, styles and connections stay same-origin. CARTO was chosen over
+`tile.openstreetmap.org` because OSM's tile policy expects a Referer and the app sends
+`Referrer-Policy: no-referrer`. The attribution "© OpenStreetMap contributors © CARTO" is shown
+under the map, and a generalised vector outline of the Sechura districts stays underneath, so the
+map remains readable if the tiles cannot load.

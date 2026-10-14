@@ -11,12 +11,13 @@ export type WebAssets = {
 /**
  * Strict policy for the SPA (ADR 0004, ADR 0006): bundled scripts and styles only, no inline
  * code, same-origin API calls. React sets styles through the CSSOM, which `style-src` allows.
+ * The only external origin is the basemap tile host of the territorial map (images only).
  */
 export const SPA_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https://a.basemaps.cartocdn.com https://b.basemaps.cartocdn.com https://c.basemaps.cartocdn.com https://d.basemaps.cartocdn.com",
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",

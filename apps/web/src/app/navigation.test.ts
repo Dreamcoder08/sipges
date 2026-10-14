@@ -10,8 +10,8 @@ describe('navigation', () => {
   });
 
   it('lists every legacy screen once with a title', () => {
-    expect(SCREENS).toHaveLength(18);
-    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(18);
+    expect(SCREENS).toHaveLength(19);
+    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(19);
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
     expect(titleFor('/nope')).toBe('MASCLI');
   });

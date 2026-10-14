@@ -38,3 +38,32 @@ export const eventsByDimension = (events: readonly ModuleRecord[], projectId: st
   }
   return counts;
 };
+
+const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
+/**
+ * Events of the active project per month (from `Fecha`, YYYY-MM-DD), over the `span` months
+ * that end with the latest dated event. Empty when no event has a usable date.
+ */
+export const eventsByMonth = (events: readonly ModuleRecord[], projectId: string, span = 6) => {
+  const counts = new Map<number, number>();
+  for (const event of events) {
+    if (projectOf(event) !== projectId) continue;
+    const match = /^(\d{4})-(\d{2})/.exec(String(event['Fecha'] ?? ''));
+    if (!match) continue;
+    const index = Number(match[1]) * 12 + Number(match[2]) - 1;
+    counts.set(index, (counts.get(index) ?? 0) + 1);
+  }
+  if (!counts.size) return [];
+  const last = Math.max(...counts.keys());
+  return Array.from({ length: span }, (_, i) => {
+    const index = last - span + 1 + i;
+    const year = Math.floor(index / 12);
+    const month = index % 12;
+    return {
+      key: `${year}-${String(month + 1).padStart(2, '0')}`,
+      label: `${MONTHS[month]} ${String(year).slice(2)}`,
+      value: counts.get(index) ?? 0,
+    };
+  });
+};

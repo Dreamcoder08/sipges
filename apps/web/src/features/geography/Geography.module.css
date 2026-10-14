@@ -10,19 +10,135 @@
   margin: 1rem 0;
 }
 .map {
+  display: block;
   width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  contain: paint;
   height: min(60vh, 34rem);
-  background: #f2f6f8;
-  border: 1px solid #cad5de;
-  border-radius: 0.5rem;
+  background: var(--map-sea);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  --map-sea: #d6e8f3;
+  --map-land: #f6f3ea;
+  --map-line: #9aa8b4;
 }
-.map path {
+.sea {
+  fill: var(--map-sea);
+}
+.district {
+  fill: var(--map-land);
+  stroke: var(--map-line);
+  stroke-linejoin: round;
+}
+.seaLabel {
+  fill: #4f7a96;
+  font-style: italic;
+  letter-spacing: 0.05em;
+}
+.areaLabel {
+  fill: #8a7d5c;
+  font-style: italic;
+}
+.town,
+.port {
+  fill: #fff;
+  stroke: #243b53;
+}
+.port {
+  fill: #243b53;
+}
+.placeLabel {
+  fill: #17212b;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 0.85);
+}
+.furniture {
+  fill: #243b53;
+}
+.scale {
+  fill: #243b53;
+  stroke: #fff;
+}
+.concession {
+  fill: #669bb5;
+  fill-opacity: 0.85;
+  stroke: #243b53;
+}
+.concessionSelected {
+  fill: #e6b54a;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 3px;
+  border: 1px solid #243b53;
+}
+.swatchConcession {
+  background: #669bb5;
+}
+.swatchSelected {
+  background: #e6b54a;
+}
+.swatchLand {
+  background: #f6f3ea;
+}
+.heat0 {
+  fill: var(--map-land);
+}
+.heat1 {
+  fill: #fde7c4;
+}
+.heat2 {
+  fill: #f8c27a;
+}
+.heat3 {
+  fill: #ee8f44;
+}
+.heat4 {
+  fill: #cf5a2a;
+}
+.selectedDistrict {
+  stroke: #17212b;
+  stroke-width: 0.004;
+}
+.district[role='button'] {
   cursor: pointer;
 }
-.map path:focus {
-  fill: #e6b54a;
+.district[role='button']:focus-visible,
+.district[role='button']:hover {
+  stroke: #17212b;
+  outline: none;
+}
+
+.concession {
+  cursor: pointer;
+}
+.concession:focus-visible {
   outline: none;
   stroke: #c34040;
+  stroke-width: 0.004;
+}
+.note {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.85rem;
 }
 .facts {
   display: grid;
@@ -45,4 +161,11 @@
   padding: 0.5rem;
   text-align: left;
   border-bottom: 1px solid #cad5de;
+}
+
+.outline {
+  fill: none;
+  stroke: #5b6673;
+  stroke-dasharray: 0.01 0.006;
+  stroke-opacity: 0.7;
 }

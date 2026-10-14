@@ -9,6 +9,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { LineChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { configQuery, historyQuery, irsaQuery } from './api.ts';
 import { IndicatorTable } from './IndicatorTable.tsx';
 import styles from './Indicators.module.css';
@@ -52,33 +53,41 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
               {data.notes.map((note) => (
                 <p key={note}>{note}</p>
               ))}
-              <div
-                className={styles.table}
-                tabIndex={0}
-                role="region"
-                aria-label="Puntuaciones por dimensión"
-              >
-                <table>
-                  <caption>Puntuación y disponibilidad por dimensión</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Dimensión</th>
-                      <th scope="col">Puntuación</th>
-                      <th scope="col">Peso</th>
-                      <th scope="col">Disponibilidad</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dimensions.map((d) => (
-                      <tr key={d}>
-                        <th scope="row">{d}</th>
-                        <td>{data.scores[d].toFixed(2)}</td>
-                        <td>{data.weights[d] ?? 0}</td>
-                        <td>{data.availability[d].toFixed(1)}%</td>
+              <div className={styles.split}>
+                <div className={styles.radar}>
+                  <RadarChart
+                    caption="Puntuación IRSA por dimensión (0 a 100)"
+                    data={dimensions.map((d) => ({ key: d, label: d, value: data.scores[d] }))}
+                  />
+                </div>
+                <div
+                  className={styles.table}
+                  tabIndex={0}
+                  role="region"
+                  aria-label="Puntuaciones por dimensión"
+                >
+                  <table>
+                    <caption>Puntuación y disponibilidad por dimensión</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">Dimensión</th>
+                        <th scope="col">Puntuación</th>
+                        <th scope="col">Peso</th>
+                        <th scope="col">Disponibilidad</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {dimensions.map((d) => (
+                        <tr key={d}>
+                          <th scope="row">{d}</th>
+                          <td>{data.scores[d].toFixed(2)}</td>
+                          <td>{data.weights[d] ?? 0}</td>
+                          <td>{data.availability[d].toFixed(1)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
               <p>
                 La disponibilidad mide cuántos indicadores son calculables; no representa precisión
@@ -145,32 +154,45 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
       <Card title="Historial de cortes">
         <QueryState query={history} label="historial">
           {(rows) => (
-            <div className={styles.table} tabIndex={0} role="region" aria-label="Historial IRSA">
-              <table>
-                <caption>Últimos 50 cortes del proyecto</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">IRSA / nivel</th>
-                    <th scope="col">Versión</th>
-                    <th scope="col">Nota</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr key={row.id}>
-                      <td>{row.ts}</td>
-                      <td>
-                        {row.irsa.toFixed(2)} / {row.level}
-                      </td>
-                      <td>{row.config_version ?? 'Sin versión'}</td>
-                      <td>{row.note || 'Sin nota'}</td>
+            <>
+              <LineChart
+                caption="Evolución del IRSA en los cortes guardados"
+                empty="Guarde al menos dos cortes para ver la evolución del índice."
+                data={[...rows]
+                  .sort((a, b) => a.ts.localeCompare(b.ts))
+                  .map((row) => ({
+                    key: String(row.id),
+                    label: row.ts.slice(5, 10),
+                    value: Math.round(row.irsa * 10) / 10,
+                  }))}
+              />
+              <div className={styles.table} tabIndex={0} role="region" aria-label="Historial IRSA">
+                <table>
+                  <caption>Últimos 50 cortes del proyecto</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Fecha</th>
+                      <th scope="col">IRSA / nivel</th>
+                      <th scope="col">Versión</th>
+                      <th scope="col">Nota</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {rows.length === 0 ? <p>No se han guardado cortes.</p> : null}
-            </div>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr key={row.id}>
+                        <td>{row.ts}</td>
+                        <td>
+                          {row.irsa.toFixed(2)} / {row.level}
+                        </td>
+                        <td>{row.config_version ?? 'Sin versión'}</td>
+                        <td>{row.note || 'Sin nota'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {rows.length === 0 ? <p>No se han guardado cortes.</p> : null}
+              </div>
+            </>
           )}
         </QueryState>
       </Card>

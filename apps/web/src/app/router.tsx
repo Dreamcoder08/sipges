@@ -72,6 +72,11 @@ const AuditPage = lazy(() =>
 const GeographyPage = lazy(() =>
   import('../features/geography/index.ts').then((module) => ({ default: module.GeographyPage })),
 );
+const TerritorialMapPage = lazy(() =>
+  import('../features/geography/index.ts').then((module) => ({
+    default: module.TerritorialMapPage,
+  })),
+);
 
 type RouterContext = { queryClient: QueryClient };
 
@@ -303,7 +308,8 @@ const featurePages = {
   '/gerencia': ManagementPage,
   '/inteligencia-redes': IntelligencePage,
   '/alertas': AlertsPage,
-  '/mapa': GeographyPage,
+  '/mapa': TerritorialMapPage,
+  '/ubicacion': GeographyPage,
   '/situacion': SituationalPage,
   '/estrategia': StrategicPage,
   '/irsa': IrsaPage,

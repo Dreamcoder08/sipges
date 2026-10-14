@@ -162,7 +162,7 @@ describe('dashboard and navigation', () => {
     const summary = screen.getByText('Actores analíticos').closest('div');
     expect(summary).toHaveTextContent('7');
     expect(await screen.findByText('42.3')).toBeVisible();
-    expect(screen.getByText('Amarillo', { selector: 'span' })).toBeVisible();
+    expect(screen.getByText('Amarillo', { selector: 'p > span' })).toBeVisible();
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
     expect(await screen.findByText('Motor sintético')).toBeVisible();
     const alerts = (
