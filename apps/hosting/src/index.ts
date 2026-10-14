@@ -58,7 +58,8 @@ const app = new Hono()
           // This adapter is exclusively for Vercel, which sets the trusted proxy header.
           clientIp: (c) => c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
         });
-        return createApp(container);
+        // Streams end before the 60 s function limit; the browser reconnects with Last-Event-ID.
+        return createApp(container, { activity: { maxMs: 50_000 } });
       } catch (error) {
         await database.close();
         throw error;

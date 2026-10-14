@@ -18,7 +18,15 @@ const READ_ONLY_POSTS = new Set([
 ]);
 
 /** Personal account security every role must be able to complete (ADR 0009). */
-const SELF_SERVICE_POSTS = new Set(['/system/auth/totp/setup', '/system/auth/totp/enable']);
+const SELF_SERVICE_POSTS = new Set([
+  '/system/auth/totp/setup',
+  '/system/auth/totp/enable',
+  // Marking one's own notifications as read (ADR 0014).
+  '/system/notifications/read',
+  // Enabling or disabling one's own device notifications.
+  '/system/notifications/push',
+  '/system/notifications/push/unsubscribe',
+]);
 
 const COORDINATOR_WRITABLE = ['/system/prevention/', '/system/intelligence/territorial-alerts'];
 
@@ -34,6 +42,8 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
     path.startsWith('/system/export') ||
     path.startsWith('/system/audit') ||
     path.startsWith('/system/metrics') ||
+    path.startsWith('/system/automations') ||
+    path.startsWith('/system/integrations') ||
     // Python gates every method except GET here (app.py:244), unlike the read set used elsewhere.
     (path.startsWith('/system/irsa/config') && method !== 'GET');
   if (adminOnly && !isAdmin) return deny('Requiere rol administrador');

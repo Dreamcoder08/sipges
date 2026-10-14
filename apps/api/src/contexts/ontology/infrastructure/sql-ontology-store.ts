@@ -51,6 +51,23 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
       ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
     ),
 
+  recent: (tenantId, modules, limit) =>
+    withTenant(sql, tenantId, async (tx) =>
+      (
+        await tx.query<{
+          module: string;
+          id: string;
+          payload: Record<string, unknown>;
+          marking: string;
+          updated_at: Date | string;
+        }>(
+          `SELECT module, id, payload, marking, updated_at FROM module_records
+           WHERE module = ANY($1::text[]) ORDER BY updated_at DESC, id LIMIT $2`,
+          [[...modules], limit],
+        )
+      ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
+    ),
+
   search: (tenantId, query, exactId, modules, limit) =>
     withTenant(sql, tenantId, async (tx) =>
       (

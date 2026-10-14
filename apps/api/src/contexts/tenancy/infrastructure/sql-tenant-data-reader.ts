@@ -13,6 +13,11 @@ const TABLES = [
   'preventive_action_log',
   'record_versions',
   'record_links',
+  // Automation configuration and history (ADR 0014); channels are left out because their
+  // settings hold sealed third-party secrets.
+  'automation_rules',
+  'automation_runs',
+  'notifications',
 ] as const;
 
 export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => ({
@@ -39,6 +44,9 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
           preventive_action_log: [],
           record_versions: [],
           record_links: [],
+          automation_rules: [],
+          automation_runs: [],
+          notifications: [],
         };
         for (const table of TABLES) {
           const [relation] = await tenant.query<{ present: string | null; secured: boolean }>(

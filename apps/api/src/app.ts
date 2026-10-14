@@ -4,6 +4,11 @@ import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
+import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
+import { apiKeyRoutes } from './contexts/integration/http/api-key-routes.ts';
+import { ingestRoutes } from './contexts/integration/http/ingest-routes.ts';
+import { mcpRoutes } from './contexts/integration/http/mcp-routes.ts';
+import { type ActivityOptions, activityRoutes } from './contexts/audit/http/activity-routes.ts';
 import { auditRoutes } from './contexts/audit/http/audit-routes.ts';
 import { documentLabRoutes } from './contexts/documents/http/document-lab-routes.ts';
 import { intelligenceRoutes } from './contexts/intelligence/http/intelligence-routes.ts';
@@ -30,7 +35,10 @@ import { securityHeaders } from './platform/http/security-headers.ts';
 import { type WebAssets, spaMiddleware } from './platform/http/spa.ts';
 
 /** Builds the HTTP application from an already-wired container (no I/O here). */
-export const createApp = (container: Container, options: { web?: WebAssets } = {}) => {
+export const createApp = (
+  container: Container,
+  options: { web?: WebAssets; activity?: Partial<ActivityOptions> } = {},
+) => {
   const {
     config,
     identity,
@@ -67,12 +75,27 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.route('/', ontologyRoutes(container.ontology));
   app.route('/', analystRoutes(container.analyst));
   app.route('/', auditRoutes(audit));
+  app.route('/', activityRoutes(audit, options.activity));
   app.route('/', indicatorsRoutes({ indicators }));
   app.route('/', evidenceRoutes(evidence));
   app.route('/', documentLabRoutes(documents));
   app.route('/', intelligenceRoutes(intelligence));
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
+  app.route('/', automationRoutes(container.automation, config.automation.cronSecret));
+  app.route('/', apiKeyRoutes(container.apiKeys));
+  app.route(
+    '/',
+    mcpRoutes({
+      keys: container.apiKeys,
+      services: {
+        ontology: container.ontology,
+        records: container.records,
+        analyst: container.analyst,
+      },
+    }),
+  );
+  app.route('/', ingestRoutes({ keys: container.apiKeys, ingest: container.ingest }));
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
   app.route(
     '/',

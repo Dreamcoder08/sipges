@@ -33,6 +33,8 @@ import {
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette } from '../features/search/index.ts';
+import { LiveUpdates } from '../features/live/index.ts';
+import { NotificationBell } from '../features/notifications/index.ts';
 import { AppShell } from './layout/AppShell.tsx';
 
 import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
@@ -70,6 +72,9 @@ const AdministrationPage = lazy(() =>
   import('../features/administration/index.ts').then((module) => ({
     default: module.AdministrationPage,
   })),
+);
+const AutomationPage = lazy(() =>
+  import('../features/automation/index.ts').then((module) => ({ default: module.AutomationPage })),
 );
 const AuditPage = lazy(() =>
   import('../features/audit/index.ts').then((module) => ({ default: module.AuditPage })),
@@ -199,7 +204,13 @@ const appRoute = createRoute({
       <NavigateProvider value={(href) => void router.navigate({ href })}>
         <AppShell
           projectLabel={label || scope.project_id}
-          search={<SearchPalette scope={scope.scope} />}
+          search={
+            <>
+              <SearchPalette scope={scope.scope} />
+              <NotificationBell scope={scope.scope} />
+              <LiveUpdates scope={scope.scope} />
+            </>
+          }
           projectSwitcher={
             <ProjectSwitcher
               current={scope}
@@ -329,6 +340,7 @@ const featurePages = {
   '/administracion': AdministrationPage,
   '/metodologia': MethodologyPage,
   '/auditoria': AuditPage,
+  '/automatizaciones': AutomationPage,
 } as const;
 const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePages>).map((path) =>
   createRoute({

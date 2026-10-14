@@ -6,6 +6,15 @@ import type { MiddlewareHandler } from 'hono';
 export type WebAssets = {
   index(): Promise<string | null>;
   asset(name: string): Promise<Uint8Array | null>;
+  /** One of ROOT_FILES from the build root (Vite's `public/` directory). */
+  rootFile?(name: string): Promise<Uint8Array | null>;
+};
+
+/** Installable-app files that must live at the site root (docs/adr/0014). */
+const ROOT_FILES: Readonly<Record<string, string>> = {
+  '/manifest.webmanifest': 'application/manifest+json',
+  '/sw.js': 'text/javascript; charset=utf-8',
+  '/icon.svg': 'image/svg+xml',
 };
 
 /**
@@ -52,6 +61,16 @@ export const spaMiddleware =
   async (c, next) => {
     if (c.req.method !== 'GET' && c.req.method !== 'HEAD') return next();
     const path = c.req.path;
+    const rootType = Object.hasOwn(ROOT_FILES, path) ? ROOT_FILES[path] : undefined;
+    if (rootType) {
+      const bytes = web.rootFile ? await web.rootFile(path.slice(1)) : null;
+      if (!bytes) return c.json({ detail: 'Not Found' }, 404);
+      // The worker runs under its own CSP: the SPA policy lets it show the app icon.
+      return c.body(new Uint8Array(bytes), 200, {
+        'Content-Type': rootType,
+        'Content-Security-Policy': SPA_CSP,
+      });
+    }
     if (path.startsWith('/assets/')) {
       const name = path.slice('/assets/'.length);
       const type = ASSET_TYPES[extname(name)];
@@ -74,6 +93,14 @@ export const fileWebAssets = (dir: string): WebAssets => ({
   async index() {
     try {
       return await readFile(join(dir, 'index.html'), 'utf8');
+    } catch {
+      return null;
+    }
+  },
+  async rootFile(name) {
+    if (!Object.hasOwn(ROOT_FILES, `/${name}`)) return null;
+    try {
+      return await readFile(join(dir, name));
     } catch {
       return null;
     }

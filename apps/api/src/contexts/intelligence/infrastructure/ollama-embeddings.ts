@@ -1,4 +1,5 @@
 import type { EmbeddingProvider } from '../application/index.ts';
+import { outboundTraceHeaders } from '../../../platform/observability/trace.ts';
 
 const TIMEOUT_MS = 12_000;
 const MAX_RESPONSE_BYTES = 1_500_000;
@@ -20,7 +21,7 @@ export const createOllamaEmbeddings = (config: {
     async embed(text) {
       const res = await doFetch(endpoint, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...outboundTraceHeaders() },
         body: JSON.stringify({
           model: config.model,
           input: Array.from(text).slice(0, MAX_INPUT_CODE_POINTS).join(''),

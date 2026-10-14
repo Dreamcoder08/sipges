@@ -24,6 +24,8 @@ export type AppConfig = {
   readonly storage: StorageConfig;
   /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
   readonly ollama: { readonly baseUrl: string; readonly model: string };
+  /** Hybrid search with stored embeddings from the Ollama model (MASCLI_SEMANTIC_SEARCH=1). */
+  readonly semanticSearch: boolean;
   /**
    * Language model that rewrites extractive briefings (docs/adr/0013). Off unless
    * MASCLI_ANALYST_PROVIDER=anthropic; the key comes from ANTHROPIC_API_KEY at the SDK.
@@ -31,6 +33,23 @@ export type AppConfig = {
   readonly analyst: { readonly provider: 'anthropic'; readonly model: string } | undefined;
   /** Built web app to serve (MASCLI_WEB_DIR, e.g. apps/web/dist); unset serves the API only. */
   readonly webDir: string | undefined;
+  /**
+   * Automation engine (ADR 0014): in-process tick period in seconds (0 disables it) and the
+   * bearer secret serverless cron jobs present to POST /system/automations/cron.
+   */
+  readonly automation: {
+    readonly intervalSeconds: number;
+    readonly cronSecret: string | undefined;
+    /** Web Push keys (RFC 8292); unset disables device notifications. */
+    readonly vapid:
+      | { readonly publicKey: string; readonly privateKey: string; readonly subject: string }
+      | undefined;
+  };
+  /**
+   * OCR for scanned PDFs in the document lab (MASCLI_OCR=ocrmypdf); runs the local
+   * ocrmypdf/Tesseract install with MASCLI_OCR_LANGUAGES. Unset keeps text-only reading.
+   */
+  readonly ocr: { readonly languages: string } | undefined;
   /** Google OAuth client for "Entrar con Google" (ADR 0010); unset hides the option. */
   readonly google:
     | {
@@ -189,6 +208,47 @@ const parseGoogle = (env: Env): AppConfig['google'] => {
   return { clientId, clientSecret, adminEmail };
 };
 
+const parseAutomation = (env: Env): AppConfig['automation'] => {
+  const raw = env.MASCLI_AUTOMATION_INTERVAL;
+  const interval = raw === undefined ? 30 : /^\d+$/.test(raw) ? Number(raw) : Number.NaN;
+  if (!Number.isInteger(interval) || (interval !== 0 && (interval < 5 || interval > 3600))) {
+    throw new Error('MASCLI_AUTOMATION_INTERVAL must be 0 (off) or between 5 and 3600 seconds');
+  }
+  // Vercel Cron sends CRON_SECRET as a bearer token; MASCLI_CRON_SECRET takes precedence.
+  const cronSecret = (env.MASCLI_CRON_SECRET || env.CRON_SECRET || '').trim() || undefined;
+  if (cronSecret !== undefined && cronSecret.length < 24) {
+    throw new Error('MASCLI_CRON_SECRET (or CRON_SECRET) must be at least 24 characters');
+  }
+  return { intervalSeconds: interval, cronSecret, vapid: parseVapid(env) };
+};
+
+const parseVapid = (env: Env): AppConfig['automation']['vapid'] => {
+  const publicKey = env.MASCLI_VAPID_PUBLIC_KEY?.trim() ?? '';
+  const privateKey = env.MASCLI_VAPID_PRIVATE_KEY?.trim() ?? '';
+  const subject = env.MASCLI_VAPID_SUBJECT?.trim() ?? '';
+  if (!publicKey && !privateKey) return undefined;
+  if (!/^[A-Za-z0-9_-]{87}$/.test(publicKey) || !/^[A-Za-z0-9_-]{43}$/.test(privateKey)) {
+    throw new Error(
+      'MASCLI_VAPID_PUBLIC_KEY and MASCLI_VAPID_PRIVATE_KEY must be base64url P-256 keys (pnpm --filter @mascli/api vapid:keys)',
+    );
+  }
+  if (!/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/.test(subject)) {
+    throw new Error('MASCLI_VAPID_SUBJECT must be a mailto: address or an https URL');
+  }
+  return { publicKey, privateKey, subject };
+};
+
+const parseOcr = (env: Env): AppConfig['ocr'] => {
+  const engine = env.MASCLI_OCR?.trim() ?? '';
+  if (!engine) return undefined;
+  if (engine !== 'ocrmypdf') throw new Error('MASCLI_OCR must be "ocrmypdf" or unset');
+  const languages = env.MASCLI_OCR_LANGUAGES?.trim() || 'spa+eng';
+  if (!/^[a-z_]{3,16}(\+[a-z_]{3,16}){0,5}$/.test(languages)) {
+    throw new Error('MASCLI_OCR_LANGUAGES must be Tesseract codes joined by +, e.g. spa+eng');
+  }
+  return { languages };
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -206,10 +266,13 @@ export const loadConfig = (env: Env): AppConfig => ({
   maxUploadBytes: parseMaxUpload(env.MASCLI_MAX_UPLOAD_BYTES),
   storage: parseStorage(env),
   ollama: parseOllama(env),
+  semanticSearch: parseSwitch('MASCLI_SEMANTIC_SEARCH', env.MASCLI_SEMANTIC_SEARCH, false),
   analyst: parseAnalyst(env),
   webDir: env.MASCLI_WEB_DIR || undefined,
   requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),
   accessLog: parseSwitch('MASCLI_ACCESS_LOG', env.MASCLI_ACCESS_LOG, true),
   allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
   google: parseGoogle(env),
+  automation: parseAutomation(env),
+  ocr: parseOcr(env),
 });

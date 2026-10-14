@@ -45,8 +45,8 @@ export const MAX_TIMELINE_ENTRIES = 6;
 export const MAX_SIGNALS = 8;
 const MAX_QUOTE = 160;
 
-const CLOSED = /cerrad|cumplid|resuelt|atendid|finaliz|archiv|descartad|complet|superad/i;
-const SEVERE = /alt|crít|crit|urgent|grave|roj/i;
+export const CLOSED = /cerrad|cumplid|resuelt|atendid|finaliz|archiv|descartad|complet|superad/i;
+export const SEVERE = /alt|crít|crit|urgent|grave|roj/i;
 const OPPOSED = /contra|oposi|opuest|rechaz|hostil/i;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
 
@@ -58,7 +58,7 @@ const quote = (value: string) => {
 const named = (subject: Subject) => `${subject.typeLabel} «${quote(subject.title)}»`;
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
-const isOpen = (subject: Subject) => !CLOSED.test(subject.fields['Estado'] ?? '');
+export const isOpen = (subject: Subject) => !CLOSED.test(subject.fields['Estado'] ?? '');
 
 /** Signals worth an analyst's attention in one record, in priority order. */
 const signalsOf = (subject: Subject, today: string): string[] => {

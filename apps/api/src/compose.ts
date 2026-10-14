@@ -9,12 +9,38 @@ import {
   type Narrator,
   createAnalystService,
 } from './contexts/analyst/application/index.ts';
-import { createClaudeNarrator } from './contexts/analyst/infrastructure/index.ts';
+import {
+  createClaudeNarrator,
+  createSqlProposalStore,
+} from './contexts/analyst/infrastructure/index.ts';
 import {
   type AnalyticsService,
   createAnalyticsService,
 } from './contexts/analytics/application/index.ts';
 import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import {
+  type AutomationService,
+  type ChannelSender,
+  type PushSender,
+  createAutomationService,
+} from './contexts/automation/application/index.ts';
+import {
+  createHttpChannelSender,
+  createSqlAutomationStore,
+  createSqlPushStore,
+  createWebPushSender,
+} from './contexts/automation/infrastructure/index.ts';
+import {
+  type ApiKeyService,
+  type IngestService,
+  createApiKeyService,
+  createIngestService,
+} from './contexts/integration/application/index.ts';
+import {
+  createSqlApiKeyStore,
+  createSqlIngestReceipts,
+  keyCrypto,
+} from './contexts/integration/infrastructure/index.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
@@ -24,6 +50,8 @@ import {
 import {
   createSqlReviewStore,
   documentReader,
+  ocrmypdfRecognizer,
+  withOcr,
   docxRenderer,
 } from './contexts/documents/infrastructure/index.ts';
 import {
@@ -75,11 +103,18 @@ import {
   createSqlModuleRecordReader,
 } from './contexts/indicators/infrastructure/index.ts';
 import {
+  LINK_TYPES,
   createOntologyService,
   type OntologyService,
 } from './contexts/ontology/application/index.ts';
+import { createSqlEmbeddingIndex } from './contexts/ontology/infrastructure/sql-embedding-index.ts';
 import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-ontology-store.ts';
-import { createRecordsService, type RecordsService } from './contexts/records/application/index.ts';
+import {
+  RECORD_MODULES,
+  createRecordsService,
+  moduleForSlug,
+  type RecordsService,
+} from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
 import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
@@ -106,6 +141,9 @@ export type Container = {
   readonly intelligence: IntelligenceService;
   readonly prevention: PreventionService;
   readonly management: ManagementService;
+  readonly automation: AutomationService;
+  readonly apiKeys: ApiKeyService;
+  readonly ingest: IngestService;
   readonly clientIp: ClientIp;
 };
 
@@ -128,12 +166,17 @@ export const buildContainer = async (deps: {
   narrator?: Narrator | null;
   /** Overrides the Google client (tests inject a fake identity provider). */
   googleSignIn?: GoogleSignIn;
+  /** Overrides outbound HTTP for automation channels (tests record messages instead). */
+  channelSender?: ChannelSender;
+  /** Overrides browser push delivery (tests record pushes instead). */
+  pushSender?: PushSender | null;
 }): Promise<Container> => {
+  const cipher = createSecretCipher(deps.config.dataKey);
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
     hasher: passwordHasher,
     totp,
-    cipher: createSecretCipher(deps.config.dataKey),
+    cipher,
     tokens: sessionTokens,
     clock: deps.clock,
   });
@@ -159,9 +202,13 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
   });
+  const embeddings = deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama);
   const ontology = createOntologyService({
     store: createSqlOntologyStore(deps.sql),
     clock: deps.clock,
+    ...(deps.config.semanticSearch
+      ? { semantic: { index: createSqlEmbeddingIndex(deps.sql), embedder: embeddings } }
+      : {}),
   });
   const analyst = createAnalystService({
     source: {
@@ -178,6 +225,36 @@ export const buildContainer = async (deps: {
               })),
             }
           : null;
+      },
+      async mentions(tenantId, slug, id) {
+        const found = await ontology.mentions(tenantId, slug, id);
+        return (
+          found?.map((m) => ({
+            other: m.other,
+            label: LINK_TYPES.find((t) => t.id === m.linkType)?.label ?? m.linkType,
+            holder: m.holder,
+            field: m.field,
+            excerpt: m.excerpt,
+            linkType: m.linkType,
+            source: m.source,
+            target: m.target,
+          })) ?? null
+        );
+      },
+    },
+    proposals: {
+      store: createSqlProposalStore(deps.sql),
+      actions: {
+        async link(tenantId, link, note, actor) {
+          const created = await ontology.link(tenantId, { ...link, note }, actor);
+          return created.ok ? 'created' : created.error === 'duplicate' ? 'duplicate' : 'failed';
+        },
+        async create(tenantId, record) {
+          const module = moduleForSlug(record.slug);
+          if (!module) return null;
+          const created = await records.create(tenantId, module, record.payload);
+          return created.ok ? created.value : null;
+        },
       },
     },
     narrator:
@@ -209,7 +286,9 @@ export const buildContainer = async (deps: {
     maxUploadBytes: deps.config.maxUploadBytes,
   });
   const documents = createDocumentLabService({
-    reader: documentReader,
+    reader: deps.config.ocr
+      ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
+      : documentReader,
     renderer: docxRenderer,
     reviews: createSqlReviewStore(deps.sql),
     clock: deps.clock,
@@ -223,7 +302,7 @@ export const buildContainer = async (deps: {
           (r) => r.payload,
         ),
     },
-    embeddings: deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama),
+    embeddings,
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
@@ -264,6 +343,22 @@ export const buildContainer = async (deps: {
     },
     clock: deps.clock,
   });
+  const automation = createAutomationService({
+    store: createSqlAutomationStore(deps.sql),
+    sender: deps.channelSender ?? createHttpChannelSender(),
+    sealer: cipher,
+    clock: deps.clock,
+    recordModules: RECORD_MODULES,
+    push: {
+      store: createSqlPushStore(deps.sql),
+      sender:
+        deps.pushSender !== undefined
+          ? deps.pushSender
+          : deps.config.automation.vapid
+            ? createWebPushSender(deps.config.automation.vapid)
+            : null,
+    },
+  });
   return {
     reference: createReferenceService(fileReferenceReader),
     config: deps.config,
@@ -283,6 +378,17 @@ export const buildContainer = async (deps: {
     intelligence,
     prevention,
     management,
+    automation,
+    apiKeys: createApiKeyService({
+      store: createSqlApiKeyStore(deps.sql),
+      crypto: keyCrypto,
+      clock: deps.clock,
+    }),
+    ingest: createIngestService({
+      records,
+      receipts: createSqlIngestReceipts(deps.sql),
+      clock: deps.clock,
+    }),
     clientIp: deps.clientIp,
   };
 };

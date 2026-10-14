@@ -1,5 +1,6 @@
 import { SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
+import { watchNetwork } from '../support/network.ts';
 
 /** Directives that would weaken the SPA policy (docs/migration/web.md, ADR 0006). */
 const UNSAFE = /'unsafe-(inline|eval|hashes)'|'wasm-unsafe-eval'|\*|data:\s*;?\s*script/;
@@ -61,6 +62,7 @@ test('the policy is enforced: injected inline scripts and handlers are blocked',
 
 test('every screen renders without CSP violations or script errors', async ({ page, admin }) => {
   // browserHygiene (auto fixture) fails the test on any CSP report, page error or console error.
+  const settled = watchNetwork(page);
   await signInToProject(page, admin, DEFAULT_SCOPE);
   for (const screen of SCREENS) {
     await page.goto(screen.path);
@@ -72,6 +74,6 @@ test('every screen renders without CSP violations or script errors', async ({ pa
         .getByRole('link', { name: screen.label, exact: true }),
     ).toHaveAttribute('aria-current', 'page');
     // Let lazy chunks and their queries settle before moving on.
-    await page.waitForLoadState('networkidle');
+    await settled();
   }
 });

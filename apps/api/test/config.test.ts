@@ -137,3 +137,17 @@ describe('MASCLI_WEB_DIR', () => {
     expect(loadConfig({ MASCLI_WEB_DIR: 'apps/web/dist' }).webDir).toBe('apps/web/dist');
   });
 });
+
+describe('OCR for scanned PDFs', () => {
+  it('is off by default and accepts ocrmypdf with Tesseract language codes', () => {
+    expect(loadConfig({}).ocr).toBeUndefined();
+    expect(loadConfig({ MASCLI_OCR: 'ocrmypdf' }).ocr).toEqual({ languages: 'spa+eng' });
+    expect(loadConfig({ MASCLI_OCR: 'ocrmypdf', MASCLI_OCR_LANGUAGES: 'spa+que' }).ocr).toEqual({
+      languages: 'spa+que',
+    });
+    expect(() => loadConfig({ MASCLI_OCR: 'cloud' })).toThrow(/MASCLI_OCR/);
+    expect(() => loadConfig({ MASCLI_OCR: 'ocrmypdf', MASCLI_OCR_LANGUAGES: 'spa; rm' })).toThrow(
+      /MASCLI_OCR_LANGUAGES/,
+    );
+  });
+});

@@ -94,7 +94,11 @@ export const ontologyRoutes = (ontology: OntologyService) =>
       );
       return c.json({
         query: q,
-        hits: hits.map((hit) => ({ ...summaryOut(hit), match: hit.match })),
+        hits: hits.map((hit) => ({
+          ...summaryOut(hit),
+          match: hit.match,
+          semantic: hit.semantic,
+        })),
       } satisfies SearchResults);
     })
 

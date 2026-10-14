@@ -8,7 +8,7 @@
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "49290423d4ea2de329b0b09924916cd2e9a588ac"
+      "revision": "4673f4bd842cc960192ba1450349ea49e89288e0"
     }
   },
   "components": [
@@ -28,8 +28,8 @@
       "sources": [
         {
           "path": "apps/web/src/app/router.tsx",
-          "line": 318,
-          "end_line": 332,
+          "line": 367,
+          "end_line": 386,
           "label": "Rutas y composición de todas las funciones"
         },
         {
@@ -39,10 +39,10 @@
           "label": "HTTP fijado al alcance y Zod"
         },
         {
-          "path": "apps/web/src/features/records/BriefingPanel.tsx",
+          "path": "apps/web/src/features/live/LiveUpdates.tsx",
           "line": 1,
-          "end_line": 123,
-          "label": "Vista 360°: informe del analista con citas"
+          "end_line": 87,
+          "label": "Pantallas que se actualizan solas"
         }
       ]
     },
@@ -96,21 +96,21 @@
       "sources": [
         {
           "path": "apps/api/src/app.ts",
-          "line": 49,
-          "end_line": 89,
+          "line": 38,
+          "end_line": 111,
           "label": "Contexto, observabilidad, middleware y rutas"
         },
         {
-          "path": "apps/api/src/contexts/identity/http/auth-middleware.ts",
-          "line": 21,
-          "end_line": 65,
-          "label": "Sesión, origen, rol y habilitación"
+          "path": "apps/api/src/platform/observability/trace.ts",
+          "line": 1,
+          "end_line": 53,
+          "label": "W3C Trace Context"
         },
         {
-          "path": "apps/api/src/contexts/tenancy/http/tenancy-middleware.ts",
-          "line": 28,
-          "end_line": 77,
-          "label": "Alcance autorizado"
+          "path": "apps/api/src/contexts/audit/http/activity-routes.ts",
+          "line": 26,
+          "end_line": 56,
+          "label": "Actividad en vivo (SSE)"
         }
       ]
     },
@@ -129,22 +129,22 @@
       ],
       "sources": [
         {
-          "path": "apps/api/src/contexts/records/application/records-service.ts",
-          "line": 1,
-          "end_line": 163,
-          "label": "Registros, historial e importación"
-        },
-        {
           "path": "apps/api/src/contexts/ontology/application/ontology-service.ts",
-          "line": 227,
-          "end_line": 340,
+          "line": 323,
+          "end_line": 530,
           "label": "Grafo, búsqueda y cronología"
         },
         {
-          "path": "apps/api/src/contexts/analyst/application/analyst-service.ts",
-          "line": 27,
-          "end_line": 85,
-          "label": "Informe extractivo y narración opcional"
+          "path": "apps/api/src/contexts/automation/application/automation-service.ts",
+          "line": 84,
+          "end_line": 325,
+          "label": "Reglas, ejecuciones y reintentos"
+        },
+        {
+          "path": "apps/api/src/contexts/integration/application/ingest-service.ts",
+          "line": 32,
+          "end_line": 98,
+          "label": "Ingesta con idempotencia"
         }
       ]
     },
@@ -169,16 +169,16 @@
           "label": "Ontología: tipos, vínculos e inferencia"
         },
         {
-          "path": "packages/kernel/src/result.ts",
-          "line": 1,
-          "end_line": 16,
-          "label": "Result compartido"
-        },
-        {
           "path": ".dependency-cruiser.cjs",
           "line": 16,
           "end_line": 44,
           "label": "Reglas de dependencia"
+        },
+        {
+          "path": "apps/api/src/contexts/analyst/domain/proposals.ts",
+          "line": 1,
+          "end_line": 129,
+          "label": "Propuestas del analista"
         }
       ]
     },
@@ -198,14 +198,14 @@
       "sources": [
         {
           "path": "apps/api/src/compose.ts",
-          "line": 118,
-          "end_line": 288,
+          "line": 156,
+          "end_line": 394,
           "label": "Composición manual"
         },
         {
           "path": "apps/api/src/contexts/ontology/infrastructure/sql-ontology-store.ts",
           "line": 54,
-          "end_line": 140,
+          "end_line": 160,
           "label": "Búsqueda, cronología e inferencia en SQL"
         },
         {
@@ -244,8 +244,8 @@
         },
         {
           "path": "apps/api/src/contexts/evidence/infrastructure/s3-object-storage.ts",
-          "line": 25,
-          "end_line": 79,
+          "line": 26,
+          "end_line": 81,
           "label": "S3 firmado SigV4"
         }
       ]
@@ -267,7 +267,7 @@
         {
           "path": "apps/api/src/main.ts",
           "line": 13,
-          "end_line": 35,
+          "end_line": 45,
           "label": "Selección y migraciones"
         },
         {
@@ -288,7 +288,7 @@
       "id": "ollama",
       "type": "external",
       "label": "Ollama · embeddings",
-      "sublabel": "Servidor configurable",
+      "sublabel": "Búsqueda híbrida e inteligencia",
       "pos": [
         1300,
         240
@@ -300,15 +300,21 @@
       "sources": [
         {
           "path": "apps/api/src/contexts/intelligence/infrastructure/ollama-embeddings.ts",
-          "line": 7,
-          "end_line": 45,
+          "line": 12,
+          "end_line": 46,
           "label": "POST /api/embed"
         },
         {
           "path": "apps/api/src/platform/config.ts",
-          "line": 134,
-          "end_line": 145,
+          "line": 153,
+          "end_line": 165,
           "label": "URL y modelo"
+        },
+        {
+          "path": "apps/api/src/contexts/ontology/domain/semantic.ts",
+          "line": 1,
+          "end_line": 59,
+          "label": "Coseno y fusión por rango recíproco"
         }
       ],
       "tag": "SEGÚN MODO"
@@ -335,12 +341,70 @@
         },
         {
           "path": "apps/api/src/platform/config.ts",
-          "line": 148,
-          "end_line": 160,
+          "line": 169,
+          "end_line": 183,
           "label": "Desactivado salvo MASCLI_ANALYST_PROVIDER"
         }
       ],
       "tag": "OPCIONAL"
+    },
+    {
+      "id": "agents",
+      "type": "external",
+      "label": "Agentes e integraciones",
+      "sublabel": "MCP · webhooks de entrada",
+      "pos": [
+        40,
+        450
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/integration/http/mcp-routes.ts",
+          "line": 36,
+          "end_line": 144,
+          "label": "Servidor MCP sin sesión"
+        },
+        {
+          "path": "apps/api/src/contexts/integration/http/ingest-routes.ts",
+          "line": 24,
+          "end_line": 62,
+          "label": "POST /hooks/ingest/{módulo}"
+        }
+      ],
+      "tag": "CLAVE DE API"
+    },
+    {
+      "id": "channels",
+      "type": "external",
+      "label": "Canales y dispositivos",
+      "sublabel": "Webhooks · chat · correo · Web Push",
+      "pos": [
+        1300,
+        40
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/automation/infrastructure/http-channel-sender.ts",
+          "line": 108,
+          "end_line": 135,
+          "label": "Envío HTTPS firmado"
+        },
+        {
+          "path": "apps/api/src/contexts/automation/infrastructure/web-push.ts",
+          "line": 114,
+          "end_line": 147,
+          "label": "Web Push RFC 8291/8292"
+        }
+      ],
+      "tag": "SEGÚN CONFIGURACIÓN"
     }
   ],
   "connections": [
@@ -413,6 +477,20 @@
       "to": "claude",
       "label": "Informe sin restringidos",
       "variant": "default"
+    },
+    {
+      "id": "machines",
+      "from": "agents",
+      "to": "api",
+      "label": "Bearer mscli_…",
+      "variant": "security"
+    },
+    {
+      "id": "outbound",
+      "from": "adapters",
+      "to": "channels",
+      "label": "Automatizaciones",
+      "variant": "default"
     }
   ],
   "cards": [
@@ -420,7 +498,7 @@
       "dot": "cyan",
       "title": "Frontend y acceso",
       "items": [
-        "SPA TypeScript: React 19, Vite, TanStack Router/Query. Registros con historial, vínculos e importación CSV; vista 360° con grafo e informe citado; búsqueda global Ctrl+K y cronología transversal.",
+        "SPA TypeScript: React 19, Vite, TanStack Router/Query. Registros con historial, vínculos e importación CSV; vista 360° con grafo e informe citado; búsqueda global Ctrl+K y cronología transversal. Campana de avisos, avisos en el dispositivo (PWA) y actualización en vivo por SSE.",
         "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-MASCLI-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
         "MFA obligatorio por defecto: el primer acceso permite inscribir el autenticador antes del proyecto. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
       ]
@@ -430,7 +508,7 @@
       "title": "Hexágono y datos",
       "items": [
         "http → application → domain; la aplicación invoca interfaces de puertos. compose.ts conecta implementaciones concretas por inyección manual. Las flechas representan llamadas o uso de contratos, no servicios separados.",
-        "Contextos: identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management y reference. La ontología tipa objetos y vínculos (ADR 0011).",
+        "Contextos: identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management, reference, automation e integration. La ontología tipa objetos y vínculos (ADR 0011). La auditoría es el flujo de eventos de las automatizaciones (ADR 0014).",
         "SQL explícito y migraciones versionadas. withTenant fija tenant, actor y habilitación; RLS aísla tenants y oculta registros restringidos al rol consulta (ADR 0012). Un trigger guarda el historial append-only."
       ]
     },
@@ -440,15 +518,16 @@
       "items": [
         "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por MASCLI.",
         "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
-        "Ollama solo en modo semántico. Claude es opcional (ADR 0013): reescribe el informe extractivo sin registros restringidos, con citas validadas y vuelta al texto extractivo ante cualquier fallo."
+        "Ollama para inteligencia y, con MASCLI_SEMANTIC_SEARCH=1, búsqueda híbrida con vectores real[] sin restringidos. Claude es opcional (ADR 0013) y nunca ve registros restringidos. OCR local opcional con ocrmypdf.",
+        "Canales salientes (webhook firmado, Slack, Teams, Discord, Google Chat, Telegram, Resend) con secretos sellados y destinos https públicos; Web Push propio; traceparent hacia webhooks, Ollama y S3."
       ]
     },
     {
       "dot": "amber",
-      "title": "ODD · migración + plataforma de ontología",
+      "title": "ODD · migración, ontología y automatización",
       "items": [
-        "Fuente: revisión 4929042 de la rama de la plataforma de ontología. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
-        "Migración T1–T14 completa. ODD de ontología e inteligencia T1–T11: historial, vínculos, búsqueda, grafo, observabilidad, clasificación, importación, analista con citas, cronología y E2E. Demo pública sin redesplegar.",
+        "Fuente: revisión 4673f4b de la rama de automatización e integración. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
+        "Migración T1–T14 completa. ODD de ontología e inteligencia T1–T11: historial, vínculos, búsqueda, grafo, observabilidad, clasificación, importación, analista con citas, cronología y E2E. Demo pública sin redesplegar. ODD de automatización e integración T1–T8: motor de reglas, MCP y claves, avisos y Web Push, ingesta, propuestas del analista, búsqueda semántica y tiempo real.",
         "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime."
       ]
     }

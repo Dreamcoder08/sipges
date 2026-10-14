@@ -19,6 +19,14 @@ const PUBLIC_PATHS = new Set([
   GOOGLE_CALLBACK_PATH,
 ]);
 
+/**
+ * Machine endpoints authenticate with a bearer credential of their own (cron secret, API key)
+ * and never with the session cookie, so neither the session nor the Origin check applies
+ * (ADR 0014 §4, §6). Their routes refuse any request without that credential.
+ */
+const isMachinePath = (path: string) =>
+  path === '/system/automations/cron' || path === '/mcp' || path.startsWith('/hooks/');
+
 /** The only routes a session without an enrolled second factor may use (ADR 0009). */
 export const MFA_ENROLLMENT_PATHS = new Set([
   '/system/auth/totp/setup',
@@ -37,6 +45,7 @@ export const sessionMiddleware =
   (identity: IdentityService, options: { requireMfa: boolean }): MiddlewareHandler<AppEnv> =>
   async (c, next) => {
     const write = isWriteMethod(c.req.method);
+    if (isMachinePath(c.req.path)) return next();
 
     if (PUBLIC_PATHS.has(c.req.path)) {
       if (write && !originAllowed(c)) return forbiddenOrigin(c);

@@ -11,6 +11,7 @@
     "bench": "node bench/run.ts",
     "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
     "bench:compare": "node bench/compare.ts",
+    "vapid:keys": "node src/tools/vapid-keys.ts",
     "demo:seed": "node src/tools/academic-demo/cli.ts"
   },
   "dependencies": {

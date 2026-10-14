@@ -1,5 +1,8 @@
 import {
+  AnalystProposals,
   Briefing,
+  ProposalDecisionOut,
+  type ProposalDecisionIn,
   LinkCreated,
   type LinkIn,
   type MarkingIn,
@@ -55,4 +58,21 @@ export const briefingQuery = (module: string, id: string, scope: string) =>
     queryFn: ({ signal }) =>
       requestJson(`/system/briefing?${recordParams(module, id)}`, Briefing, { scope, signal }),
     staleTime: 5 * 60_000,
+  });
+
+export const proposalsQuery = (module: string, id: string, scope: string) =>
+  queryOptions({
+    queryKey: ['records', scope, 'proposals', module, id],
+    queryFn: ({ signal }) =>
+      requestJson(`/system/briefing/proposals?${recordParams(module, id)}`, AnalystProposals, {
+        scope,
+        signal,
+      }),
+  });
+
+export const decideProposal = (scope: string, body: ProposalDecisionIn) =>
+  requestJson('/system/briefing/proposals', ProposalDecisionOut, {
+    method: 'POST',
+    scope,
+    body: { json: body },
   });

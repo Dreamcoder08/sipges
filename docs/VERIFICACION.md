@@ -1,5 +1,18 @@
 # Verificación del mapa Archify
 
+## Automatización e integración (2026-10-14)
+
+Fuente: `4673f4bd842cc960192ba1450349ea49e89288e0` (rama `claude/project-thread-67pd9u`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`. HTML: `diagrams/arquitectura.html`, SHA-256 `c037c1073fb65932c9fee7173342945d04dc6248c766962cdf7a638a9f2d49c1`.
+
+| Comprobación | Resultado |
+| --- | --- |
+| Validación de fuente, geometría y referencias Git | Pasó (tras dejar tres fuentes por componente, el máximo del esquema) |
+| Generación del HTML con Archify | Pasó |
+| Comprobación estricta de integridad y procedencia | Pasó |
+| `browser-check` integrado en `finalize` | Pasó con el Chromium de Playwright (`ARCHIFY_CHROME`) |
+
+Se añadieron los nodos de agentes e integraciones (MCP, webhooks entrantes) y de canales de salida. No se comprobaron los formatos exportados ni se redesplegó la demo pública.
+
 ## Plataforma de ontología (2026-10-14)
 
 Fuente: `49290423d4ea2de329b0b09924916cd2e9a588ac` (rama `claude/project-thread-yqrjlu`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`. HTML: `diagrams/arquitectura.html`, SHA-256 `c1d14a8969bc1d99b8eec0951d2c7db4adf5ea1c32b99b7cdfd6d48171969a1c`.

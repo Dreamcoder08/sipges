@@ -54,6 +54,10 @@ export const MAX_RECORD_ID = 200;
 
 export type Payload = Readonly<Record<string, unknown>>;
 
+/** Every module as slug and stored name, in menu order. */
+export const RECORD_MODULES: readonly { readonly slug: string; readonly module: ModuleName }[] =
+  Object.entries(MODULES).map(([slug, module]) => ({ slug, module }));
+
 export const moduleForSlug = (slug: string): ModuleName | null =>
   Object.hasOwn(MODULES, slug) ? MODULES[slug as keyof typeof MODULES] : null;
 

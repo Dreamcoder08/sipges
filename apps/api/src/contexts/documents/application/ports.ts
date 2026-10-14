@@ -45,3 +45,8 @@ export type ReviewStore = {
     },
   ): Promise<boolean>;
 };
+
+/** Optional OCR for scanned PDFs: one text per page, in page order. */
+export type TextRecognizer = {
+  recognizePdf(bytes: Uint8Array): Promise<string[]>;
+};
