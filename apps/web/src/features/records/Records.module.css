@@ -308,3 +308,32 @@
 .graphHeader h4 {
   margin: 0;
 }
+
+.marking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.marking small {
+  color: var(--color-muted);
+}
+.markingBadge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-info-soft);
+  color: var(--color-info);
+}
+.marking_publico {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.marking_restringido {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+}

@@ -64,7 +64,15 @@ export const installRecordsApi = (initial: Record<string, Row[]> = {}) => {
       const module = url.searchParams.get('module') ?? '';
       const id = url.searchParams.get('id') ?? '';
       return HttpResponse.json({
-        record: { module, id, type_label: module, title: id, date: null, fields: {} },
+        record: {
+          module,
+          id,
+          type_label: module,
+          title: id,
+          date: null,
+          marking: 'interno',
+          fields: {},
+        },
         links: [],
       });
     }),

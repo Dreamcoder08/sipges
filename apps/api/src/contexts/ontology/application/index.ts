@@ -2,6 +2,8 @@
 export {
   INFERENCE_RULES,
   LINK_TYPES,
+  MARKINGS,
+  type Marking,
   OBJECT_TYPES,
   type LinkType,
   type ObjectType,

@@ -13,6 +13,7 @@ const node = (module: string, id: string, title: string, type_label: string) => 
   title,
   type_label,
   date: null,
+  marking: 'interno',
   fields: {},
 });
 

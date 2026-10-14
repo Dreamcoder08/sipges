@@ -4,7 +4,14 @@ import { AsyncLocalStorage } from 'node:async_hooks';
  * Per-request values that infrastructure needs without threading them through every port:
  * the request id for logs and the authenticated actor recorded in record history (ADR 0011).
  */
-export type RequestContext = { readonly requestId: string; actor: string | null };
+export type RequestContext = {
+  readonly requestId: string;
+  actor: string | null;
+  /** Whether rows marked 'restringido' are visible (docs/adr/0012); limited until signed in. */
+  clearance: Clearance;
+};
+
+export type Clearance = 'full' | 'limited';
 
 const storage = new AsyncLocalStorage<RequestContext>();
 

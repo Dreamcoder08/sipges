@@ -1,6 +1,7 @@
 import {
   LinkCreated,
   type LinkIn,
+  type MarkingIn,
   OkResponse,
   OntologyCatalog,
   RecordGraph,
@@ -39,3 +40,10 @@ export const createLink = (scope: string, link: LinkIn) =>
 
 export const deleteLink = (scope: string, id: number) =>
   requestJson(`/system/links/${id}`, OkResponse, { method: 'DELETE', scope });
+
+export const setMarking = (scope: string, body: MarkingIn) =>
+  requestJson('/system/marking', OkResponse.loose(), {
+    method: 'PUT',
+    scope,
+    body: { json: body },
+  });

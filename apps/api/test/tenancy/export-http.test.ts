@@ -59,6 +59,7 @@ const expected = (
         payload: { ID_Evento: id, name },
         created_at: '2026-10-12T12:00:00.000Z',
         updated_at: '2026-10-12T12:00:00.000Z',
+        marking: 'interno',
       },
     ],
     audit: [
@@ -87,6 +88,7 @@ const expected = (
         payload: { ID_Evento: id, name },
         actor: 'admin',
         at: '2026-10-12T12:00:00.000Z',
+        marking: 'interno',
       },
     ],
     record_links: [],

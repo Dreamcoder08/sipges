@@ -11,5 +11,5 @@ export const requestContext = (): MiddlewareHandler<AppEnv> => async (c, next) =
   const incoming = c.req.header('x-request-id');
   const requestId = incoming && SAFE_REQUEST_ID.test(incoming) ? incoming : randomUUID();
   c.header('X-Request-Id', requestId);
-  await runWithRequestContext({ requestId, actor: null }, () => next());
+  await runWithRequestContext({ requestId, actor: null, clearance: 'limited' }, () => next());
 };

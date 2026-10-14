@@ -3,6 +3,7 @@ export type NodeRef = { readonly module: string; readonly id: string };
 
 export type NodeRow = NodeRef & {
   readonly payload: Readonly<Record<string, unknown>>;
+  readonly marking: string;
   readonly updatedAt: Date;
 };
 
@@ -68,6 +69,8 @@ export type OntologyStore = {
     link: NewLink,
     at: Date,
   ): Promise<{ ok: true; id: number } | { ok: false; error: 'missing' | 'duplicate' }>;
+  /** Sets a record's marking and audits it; false when the record is not visible. */
+  setMarking(tenantId: string, ref: NodeRef, marking: string, at: Date): Promise<boolean>;
   /** Audits the deletion; false when absent. */
   deleteLink(tenantId: string, id: number, at: Date): Promise<boolean>;
 };

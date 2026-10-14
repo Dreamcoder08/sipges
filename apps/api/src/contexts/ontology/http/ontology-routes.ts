@@ -2,6 +2,7 @@ import {
   type LinkCreated,
   type LinkEdge,
   LinkIn,
+  MarkingIn,
   type ObjectSummary as ObjectSummaryOut,
   type OntologyCatalog,
   type RecordGraph,
@@ -34,6 +35,7 @@ export const summaryOut = (summary: ObjectSummary): ObjectSummaryOut => ({
   type_label: summary.typeLabel,
   title: summary.title,
   date: summary.date,
+  marking: summary.marking as ObjectSummaryOut['marking'],
   fields: { ...summary.fields },
 });
 
@@ -128,6 +130,18 @@ export const ontologyRoutes = (ontology: OntologyService) =>
         return c.json({ detail }, status);
       }
       return c.json({ ok: true, id: created.value } satisfies LinkCreated);
+    })
+
+    .put('/system/marking', async (c) => {
+      const body = await parseJson(c, MarkingIn);
+      if (!body.ok) return body.response;
+      const result = await ontology.classify(
+        tenantOf(c),
+        body.value.module,
+        body.value.id,
+        body.value.marking,
+      );
+      return result.ok ? c.json({ ok: true, marking: result.value }) : c.json(MISSING_RECORD, 404);
     })
 
     .delete('/system/links/:id', async (c) => {

@@ -42,9 +42,10 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
           module: string;
           id: string;
           payload: Record<string, unknown>;
+          marking: string;
           updated_at: Date | string;
         }>(
-          `SELECT module, id, payload, updated_at FROM module_records WHERE ${inRefs('module', 'id', 1)}`,
+          `SELECT module, id, payload, marking, updated_at FROM module_records WHERE ${inRefs('module', 'id', 1)}`,
           columns(refs),
         )
       ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
@@ -57,9 +58,10 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
           module: string;
           id: string;
           payload: Record<string, unknown>;
+          marking: string;
           updated_at: Date | string;
         }>(
-          `SELECT module, id, payload, updated_at
+          `SELECT module, id, payload, marking, updated_at
            FROM module_records,
                 to_tsquery('pg_catalog.simple'::regconfig, COALESCE($1, '')) AS query
            WHERE module = ANY($3::text[])
@@ -173,6 +175,29 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
         at,
       });
       return { ok: true as const, id };
+    }),
+
+  setMarking: (tenantId, ref, marking, at) =>
+    withTenant(sql, tenantId, async (tx) => {
+      const [previous] = await tx.query<{ marking: string }>(
+        'SELECT marking FROM module_records WHERE module = $1 AND id = $2 FOR UPDATE',
+        [ref.module, ref.id],
+      );
+      if (!previous) return false;
+      if (previous.marking === marking) return true;
+      await tx.query('UPDATE module_records SET marking = $3 WHERE module = $1 AND id = $2', [
+        ref.module,
+        ref.id,
+        marking,
+      ]);
+      await appendAudit(tx, {
+        module: ref.module,
+        recordId: ref.id,
+        action: 'CLASSIFY',
+        detail: `Clasificación: ${previous.marking} → ${marking}`,
+        at,
+      });
+      return true;
     }),
 
   deleteLink: (tenantId, id, at) =>

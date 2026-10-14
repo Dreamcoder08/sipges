@@ -41,6 +41,7 @@ export const ObjectSummary = z.object({
   type_label: z.string(),
   title: z.string(),
   date: z.string().nullable(),
+  marking: z.enum(['publico', 'interno', 'restringido']),
   fields: z.record(z.string(), z.string()),
 });
 export type ObjectSummary = z.infer<typeof ObjectSummary>;
@@ -103,3 +104,11 @@ export const SearchResults = z.object({
   ),
 });
 export type SearchResults = z.infer<typeof SearchResults>;
+
+/** PUT /system/marking (docs/adr/0012). */
+export const MarkingIn = z.object({
+  module: z.string().min(1).max(40),
+  id: z.string().min(1).max(200),
+  marking: z.enum(['publico', 'interno', 'restringido']),
+});
+export type MarkingIn = z.infer<typeof MarkingIn>;

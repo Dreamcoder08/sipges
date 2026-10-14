@@ -2,6 +2,7 @@ import { type Result, err, ok } from '@mascli/kernel';
 import {
   INFERENCE_RULES,
   LINK_TYPES,
+  isMarking,
   type LinkProblem,
   OBJECT_TYPES,
   type ObjectType,
@@ -31,6 +32,7 @@ export type ObjectSummary = {
   readonly typeLabel: string;
   readonly title: string;
   readonly date: string | null;
+  readonly marking: string;
   readonly fields: Readonly<Record<string, string>>;
 };
 
@@ -85,6 +87,7 @@ export const summarize = (objectType: ObjectType, row: NodeRow): ObjectSummary =
   typeLabel: objectType.label,
   title: titleOf(objectType, row.id, row.payload),
   date: objectType.dateField ? text(row.payload[objectType.dateField]) || null : null,
+  marking: row.marking,
   fields: Object.fromEntries(
     objectType.summaryFields
       .map((field) => [field, text(row.payload[field])] as const)
@@ -316,6 +319,15 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
         clock.now(),
       );
       return created.ok ? ok(created.id) : err(created.error);
+    },
+
+    async classify(tenantId: string, slug: string, id: string, marking: string) {
+      const ref = refFor(slug, id);
+      if (!ref) return err('missing' as const);
+      if (!isMarking(marking)) return err('invalid' as const);
+      return (await store.setMarking(tenantId, ref, marking, clock.now()))
+        ? ok(marking)
+        : err('missing' as const);
     },
 
     unlink: (tenantId: string, id: number) => store.deleteLink(tenantId, id, clock.now()),

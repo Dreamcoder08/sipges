@@ -304,3 +304,9 @@ export const titleOf = (
   const text = typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
   return text ? (text.length > 140 ? `${text.slice(0, 139)}…` : text) : id;
 };
+
+/** Classification markings, least to most sensitive (docs/adr/0012). */
+export const MARKINGS = ['publico', 'interno', 'restringido'] as const;
+export type Marking = (typeof MARKINGS)[number];
+export const isMarking = (value: string): value is Marking =>
+  (MARKINGS as readonly string[]).includes(value);

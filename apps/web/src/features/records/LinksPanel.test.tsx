@@ -43,6 +43,7 @@ const summary = (module: string, id: string, title: string, typeLabel: string) =
   type_label: typeLabel,
   title,
   date: null,
+  marking: 'interno',
   fields: {},
 });
 

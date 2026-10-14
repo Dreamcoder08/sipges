@@ -7,6 +7,7 @@ import { EvidencePanel } from './EvidencePanel.tsx';
 import { GraphPanel } from './GraphPanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
+import { MarkingControl } from './MarkingControl.tsx';
 import { canWriteRecords, presentText } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import { RecordDetail } from './RecordDetail.tsx';
@@ -33,6 +34,15 @@ const ObjectView = ({
   return (
     <div className={styles.page}>
       <Card eyebrow={`${MODULES[module].label} · ${id}`} title={title}>
+        {summary.data ? (
+          <MarkingControl
+            module={module}
+            id={id}
+            scope={scope}
+            marking={summary.data.record.marking}
+            writable={writable}
+          />
+        ) : null}
         <QueryState query={record} label="el registro">
           {(data) => <RecordDetail module={module} record={data} />}
         </QueryState>

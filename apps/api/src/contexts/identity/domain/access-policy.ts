@@ -51,3 +51,7 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
   }
   return ALLOW;
 };
+
+/** Read-only accounts never see records marked 'restringido' (docs/adr/0012). */
+export const clearanceFor = (role: Role): 'full' | 'limited' =>
+  role === 'consulta' ? 'limited' : 'full';
