@@ -1,3 +1,4 @@
+import { accountDisplayName } from '../../shared/ui/account-name.ts';
 import type { Me } from '@mascli/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '../../shared/ui/Button.tsx';
@@ -35,10 +36,10 @@ export const UserMenu = ({
   return (
     <div className={styles.menu}>
       <span className={styles.avatar} aria-hidden="true">
-        {initials(me.full_name) || '?'}
+        {initials(accountDisplayName(me.full_name)) || '?'}
       </span>
       <span className={styles.copy}>
-        <b>{me.full_name}</b>
+        <b>{accountDisplayName(me.full_name)}</b>
         <span>{ROLE_LABELS[me.role]}</span>
       </span>
       <Button variant="ghost" onClick={() => mutation.mutate()} disabled={mutation.isPending}>
