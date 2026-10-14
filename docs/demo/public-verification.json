@@ -1,0 +1,55 @@
+{
+  "url": "https://mascli-demo-academica-agurtofarfanalbert-8641s-projects.vercel.app",
+  "dataset": "mascli-academic-v1",
+  "records": {
+    "aarc": 4,
+    "acciones": 8,
+    "actores": 12,
+    "alertas": 6,
+    "compromisos": 12,
+    "demandas": 12,
+    "dialogos": 4,
+    "directorio": 12,
+    "eventos": 20,
+    "fuentes": 10,
+    "hechos": 4,
+    "intereses": 6,
+    "narrativas": 8,
+    "oportunidades": 4
+  },
+  "checks": [
+    "122 marked synthetic records present across 14 modules",
+    "Dashboard counters match the seeded scenario",
+    "10 private Blob evidence files downloaded with exact SHA-256",
+    "IRSA computed and one initial synthetic snapshot persisted",
+    "Four generated analysis DOCX reports are valid archives",
+    "Public PDF worker, DOCX reader and two-document comparison work",
+    "Seeded screens render; mobile dashboard fits; no browser page errors"
+  ],
+  "dashboard": {
+    "eventos": 20,
+    "actores": 12,
+    "demandas_abiertas": 8,
+    "alertas_activas": 4,
+    "directorio": 12,
+    "priorizados": 0,
+    "niveles": {
+      "Naranja": 2,
+      "Amarillo": 2,
+      "Verde": 2
+    }
+  },
+  "irsa": {
+    "value": 26.14,
+    "level": "Amarillo",
+    "dimensions": {
+      "G": 21.87,
+      "A": 11.07,
+      "D": 25.87,
+      "N": 19.7,
+      "E": 49.8,
+      "I": 28.55
+    }
+  },
+  "ok": true
+}

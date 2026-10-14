@@ -61,3 +61,11 @@ La carga de registros y archivos no es una sola transacción: si falla a mitad, 
 7. Consensos/AARC: comparar preocupaciones, opciones, hechos por verificar y próximos pasos.
 
 Las pruebas comprueban integridad de referencias, importación por HTTP real sobre una base temporal sintética, idempotencia de registros/evidencias, límites de listados, PDF legible y DOCX real. La comprobación de la URL pública debe registrarse por separado: pruebas locales aprobadas no significan que la carga pública ya se completó.
+
+## Comprobación pública del 2026-10-14
+
+Se cargaron 122 registros y diez evidencias en la demo mediante la API. La segunda carga creó cero elementos: omitió los 122 registros y los diez archivos existentes. Chromium comprobó las 14 colecciones, contadores del dashboard, SHA-256 de las diez descargas Blob, cálculo IRSA y corte inicial, cuatro reportes DOCX válidos, lectura PDF/DOCX y comparación documental; pantallas pobladas y vista móvil sin errores de página. El [recibo](public-verification.json) contiene resultados y conteos, sin identidades ni credenciales.
+
+IRSA sobre este caso ficticio: 26.14, Amarillo. Es una salida de las reglas provisionales sobre datos sintéticos, no una medición de riesgo real ni validación científica. Se conservan cuestiones pendientes en el escenario: algunas alertas carecen de responsable efectivo y no hay actores priorizados; esos ceros y avisos son tareas que el evaluador puede trabajar.
+
+La suite local aprobó API 465/7 PostgreSQL opcionales omitidas, web102, kernel3, limpieza3, hosting6 y herramientas4. CI del código `c1bec2a` aprobada con PostgreSQL real y 29 E2E, ejecución38503196268. No se modificaron pesos de indicadores, cuentas o datos reales.
