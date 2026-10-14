@@ -1,6 +1,6 @@
 # Consolidación del runtime TypeScript
 
-La rama `chore/typescript-main-consolidation` integra la cadena T8–T14, las skills/scripts y los controles de seguridad de ADR 0009 sobre `main`, conservando la ascendencia Git de los PR. La fusión se realiza después de comprobar la integración.
+La rama `chore/typescript-main-consolidation` integra la cadena T8–T14, las skills/scripts y los controles de seguridad de ADR 0009 sobre `main`, conservando la ascendencia Git de los PR. El PR #24 se fusionó en `main` con el commit `a9c80574886c322d9f1ad3b2536a7768bcb056ad`, después de aprobar la CI completa.
 
 ## Comportamiento integrado
 
@@ -18,7 +18,9 @@ El arranque actual es `node apps/api/src/main.ts` tras compilar la SPA. Python, 
 - `03-mfa-required.spec.ts`: alta MFA obligatoria y siguiente login aprobados en Chromium local.
 - Referencia congelada: 40 pruebas pytest aprobadas tras el traslado.
 
-La suite completa de integración y la CI del PR deben comprobarse antes de fusionar. Los tres casos de cookies con `mascli-e2e.test` siguen sujetos al bloqueo de red del entorno local; se ejecutan sin excepciones en GitHub Actions.
+La verificación final local `pnpm verify` aprobó 439 pruebas API (7 PostgreSQL opcionales omitidas), 99 web, 3 kernel, 3 limpieza E2E y 4 herramientas. E2E local: 26 aprobadas y tres bloqueadas por red. La [CI de #24](https://github.com/Dreamcoder08/mascli/actions/runs/38472258557) aprobó el código final con PostgreSQL real y las 29 pruebas E2E.
+
+Se cerraron los diez PR apilados ya incorporados y se eliminaron 23 ramas remotas después de comprobar su ascendencia respecto a main. El [manifiesto](merged-branches.json) conserva nombres y revisiones; todos esos commits son alcanzables desde main. La rama predeterminada antigua se conserva porque el token rechazó el cambio de configuración con HTTP 403. El permiso requerido por GitHub es `administration:write`; la integración actual no lo tiene. Para que la portada no quede en Python, la rama predeterminada antigua se sincronizó por avance rápido con el commit de main, sin reescribir historial. El nombre predeterminado sigue pendiente. Los tres casos de cookies con `mascli-e2e.test` siguen sujetos al bloqueo de red del entorno local; se ejecutan sin excepciones en GitHub Actions.
 
 ## Primera publicación
 

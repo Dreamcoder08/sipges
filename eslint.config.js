@@ -8,6 +8,7 @@ export default tseslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
+      'apps/hosting/public/**',
       '**/coverage/**',
       '.venv/**',
       'reference/python/static/**',
@@ -18,7 +19,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.strict,
   {
-    files: ['*.cjs', '*.js', 'scripts/**/*.mjs'],
+    files: ['*.cjs', '*.js', 'scripts/**/*.mjs', 'apps/**/*.mjs'],
     languageOptions: { globals: { ...globals.node } },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },

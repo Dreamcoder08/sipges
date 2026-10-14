@@ -133,7 +133,7 @@ const HOSTNAME =
   /^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/;
 
 /** Comma-separated host names without port, e.g. `mascli.example.org,localhost`. */
-const parseAllowedHosts = (value: string | undefined): readonly string[] => {
+export const parseAllowedHosts = (value: string | undefined): readonly string[] => {
   const hosts = (value ?? '')
     .split(',')
     .map((host) => host.trim().toLowerCase())

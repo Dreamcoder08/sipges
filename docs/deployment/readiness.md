@@ -2,8 +2,10 @@
 
 This is the checklist for putting the TypeScript MASCLI (`apps/api` serving the built
 `apps/web`) in front of users. It records what is verified, what an operator still has to do and
-what needs a decision. **Nothing here has been deployed.** No production environment, domain,
-tunnel, bucket or real data exists yet.
+what needs a decision. La primera publicación autorizada es una demo académica/personal con datos sintéticos.
+Vercel, Blob privado y la integración PostgreSQL Neon están conectados. Salud, login, sesión
+y el bloqueo previo a MFA se comprobaron en la URL pública; falta inscripción MFA del propietario
+y el smoke público de CRUD/evidencias/documentos. No hay migración de datos reales ni dominio adquirido.
 
 Related documents: [workspace and configuration](../migration/workspace.md),
 [legacy data migration runbook](../migration/data-migration.md),
@@ -112,9 +114,9 @@ API startup. A migration lock makes concurrent starts safe (real-PostgreSQL inte
 There is no separate migrate command. The first start against an empty database creates the
 schema, the bootstrap admin and the default tenant `MASCLI/PRJ-SECHURA`.
 
-### 5. Legacy data migration (before the first API start)
+### 5. Legacy data migration (future institutional deployment)
 
-Follow [data-migration.md](../migration/data-migration.md) end to end:
+No aplica a la demo académica: usa únicamente datos sintéticos. Para una futura migración institucional autorizada, follow [data-migration.md](../migration/data-migration.md) end to end:
 
 1. Back up the legacy SQLite files, `data/` configs and uploads, and back up the target database
    even when it is empty.
@@ -141,11 +143,11 @@ Follow [data-migration.md](../migration/data-migration.md) end to end:
 
 ### 7. Network exposure: Cloudflare Tunnel and Access
 
-This is the route the user chose: a named tunnel from the host to Cloudflare, protected by
-Cloudflare Access. It is **not** independent cloud hosting, so the machine and the API must stay
-on.
+Esta alternativa queda para un futuro alojamiento institucional. La demo actual usa Vercel
+y su URL gratuita; no requiere cuenta, dominio ni túnel Cloudflare. Los pasos siguientes
+solo aplican si se elige posteriormente esa alternativa.
 
-- [ ] **Decision pending:** the Cloudflare account and the managed zone/hostname for MASCLI.
+- [ ] **Solo para esa alternativa futura:** elegir cuenta Cloudflare y zona/hostname.
 - [ ] Create a named tunnel with `cloudflared`. **Never** use a Quick Tunnel with real data.
       Route the public hostname to `http://127.0.0.1:8000` and keep the API bound to loopback.
 - [ ] Protect the hostname with an Access application. Use an allow policy for named emails or
@@ -205,14 +207,14 @@ on.
 
 | Item | Status |
 | --- | --- |
-| Cloudflare account, zone and hostname | **User decision pending.** No tunnel or Access app exists. |
-| Hosting target for the TypeScript app (the local PC via tunnel, or a VM or managed host) | Decision pending. `render.yaml` and `Procfile` still target the legacy Python app. |
-| DOCX author credits (ADR 0008 #13) | **User decision pending.** Reports currently have no hard-coded author names. |
-| Merge of ADR 0009 hardening (host allowlist, mandatory MFA, strict Origin/Referer, MFA reset) | On a separate branch, not in this chain |
-| Real-data migration | Not run. Only synthetic fixtures have been migrated. It needs the legacy files, the UTC/timezone decision and a maintenance window. |
-| Production PostgreSQL, bucket, secrets and backups | Not provisioned |
+| Cloudflare account, zone and hostname | No requerido para la demo: se usa el subdominio gratuito de Vercel. |
+| Alojamiento de la demo | Vercel Hobby, proyecto `mascli-demo-academica`, adaptador `apps/hosting`. |
+| Créditos DOCX | Identificación neutral MASCLI, sin nombres personales inventados. |
+| Controles ADR 0009 | Integrados en la consolidación TypeScript. |
+| Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
+| Recursos de demo | Vercel y Blob privado creados; PostgreSQL Neon vinculado por el propietario. Cuenta bootstrap persistida. |
 | Restore drill and an E2E run against the deployed URL | Not done |
-| Production deployment | **Not done.** This document does not authorize one. Every step needs explicit user approval (ODD constraint). |
+| Publicación de demo | Publicada y comprobada para salud, login, sesión y logout. Pendientes inscripción MFA del propietario y smoke público de CRUD/Blob/PDF/DOCX. Solo datos sintéticos; sin migración real ni servicios de pago. |
 
 ## Not verifiable in the development environment
 
