@@ -108,27 +108,6 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgb(15 37 65 / 0.4);
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-}
-.dialog {
-  width: min(100%, 32rem);
-  max-height: calc(100dvh - 2 * var(--space-4));
-  overflow-y: auto;
-  background: var(--color-surface);
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-}
-.dialog h2 {
-  margin-top: 0;
-}
 @media (max-width: 640px) {
   .fields,
   .details {
@@ -173,8 +152,15 @@
   color: var(--color-muted);
 }
 @media (max-width: 640px) {
+  /* A column must not wrap: the viewer's 100% basis would become a height and push it into a
+     second column beside the file, wider than the phone. */
   .attachments li {
     flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+  }
+  .attachments .viewer {
+    flex-basis: auto;
   }
 }
 
@@ -228,20 +214,6 @@
   .rowActions {
     min-width: 0;
     flex-wrap: wrap;
-  }
-  /* Dialogs open as a bottom sheet within thumb reach. */
-  .backdrop {
-    place-items: end stretch;
-    padding: 0;
-  }
-  .dialog {
-    width: 100%;
-    max-height: 90dvh;
-    padding: var(--space-4);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  }
-  .dialog .actions > * {
-    flex: 1;
   }
 }
 

@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { server } from '../../test/server.ts';
-import { HistoryPanel } from './HistoryPanel.tsx';
+import { HistoryPanel, readable } from './HistoryPanel.tsx';
 
 it('lists versions newest first with labelled field changes', async () => {
   let scope: string | null = null;
@@ -49,4 +49,19 @@ it('lists versions newest first with labelled field changes', async () => {
   expect(screen.getByText('Comunidad del Norte', { selector: 'ins' })).toBeInTheDocument();
   expect(screen.getByText(/v1 · Creación/)).toBeInTheDocument();
   expect(scope).toBe('A/B');
+});
+
+describe('readable history values', () => {
+  it('shows attachments by file name and type, and objects as key: value pairs', () => {
+    expect(
+      readable([
+        { id: 'ADJ-1', tipo: 'Acta', archivo: 'acta.txt', verificacion: 'E - No verificada' },
+        { id: 'ADJ-2', archivo: 'foto.png' },
+      ]),
+    ).toBe('acta.txt (Acta), foto.png');
+    expect(readable({ hitos: 2, estado: 'Abierto', nota: null })).toBe(
+      'hitos: 2 · estado: Abierto',
+    );
+    expect(readable('Texto')).toBe('Texto');
+  });
 });

@@ -34,9 +34,17 @@ export const automationJourney = async (page: Page, stamp: string) => {
   await page.getByLabel('Secreto de firma').fill(`secreto-sintetico-${stamp}-largo`);
   await page.getByRole('button', { name: 'Crear canal' }).click();
   await expect(notice('Canal creado.')).toBeInViewport();
+  // Deleting asks first: cancelling keeps the channel, confirming removes it.
+  const confirm = (title: string) => page.getByRole('alertdialog', { name: title });
   await page.getByRole('button', { name: `Eliminar canal ${channel}` }).click();
+  await confirm('Eliminar canal').getByRole('button', { name: 'Cancelar' }).click();
+  await expect(page.getByText(channel, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: `Eliminar canal ${channel}` }).click();
+  await confirm('Eliminar canal').getByRole('button', { name: 'Confirmar eliminación' }).click();
   await expect(notice('Canal eliminado.')).toBeInViewport();
+  await expect(confirm('Eliminar canal')).toHaveCount(0);
   await page.getByRole('button', { name: `Eliminar regla ${name} editada` }).click();
+  await confirm('Eliminar regla').getByRole('button', { name: 'Confirmar eliminación' }).click();
   await expect(notice('Regla eliminada.')).toBeInViewport();
   await expect(edited).toHaveCount(0);
 };

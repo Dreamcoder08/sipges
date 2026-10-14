@@ -40,10 +40,32 @@ export const recordsExtrasJourney = async (page: Page, stamp: string) => {
 
   // Link the first actor to the second one from its card.
   await firstRow.getByRole('button', { name: /^Ver / }).click();
+
+  // Evidence: upload a file to the card and read it in place.
+  const evidenceName = `acta-${stamp}.txt`;
+  await page.getByLabel('Archivo de evidencia').setInputFiles({
+    name: evidenceName,
+    mimeType: 'text/plain',
+    buffer: Buffer.from(`Acta sintética ${stamp}: acuerdo de monitoreo participativo.\n`, 'utf8'),
+  });
+  await page.getByLabel('Tipo de documento').fill('Acta');
+  await page.getByLabel('Autor de la evidencia').fill('Equipo sintético');
+  await page.getByRole('button', { name: 'Subir evidencia' }).click();
+  await expect(page.getByText('Evidencia guardada.')).toBeVisible();
+  await page.getByRole('button', { name: `Ver contenido de ${evidenceName}` }).click();
+  await expect(page.getByRole('region', { name: `Contenido de ${evidenceName}` })).toContainText(
+    'acuerdo de monitoreo participativo',
+  );
   const links = page.getByRole('form', { name: 'Nuevo vínculo' });
   await links.getByLabel('Este registro…').selectOption({ label: 'es aliado de' });
   await links.getByLabel('Tipo de registro').selectOption('actores');
   await links.getByLabel('Registro', { exact: true }).selectOption(secondId);
+  // The open viewer must not widen the page (on a phone it zoomed out and broke every tap).
+  const width = await page.evaluate(() => [
+    document.documentElement.scrollWidth,
+    document.documentElement.clientWidth,
+  ]);
+  expect(width[0], 'page width with the evidence viewer open').toBeLessThanOrEqual(width[1] ?? 0);
   await links.getByRole('button', { name: 'Vincular' }).click();
   await expect(links.getByText('Vínculo guardado.')).toBeVisible();
   const remove = page.getByRole('button', { name: `Quitar vínculo con ${second}` });

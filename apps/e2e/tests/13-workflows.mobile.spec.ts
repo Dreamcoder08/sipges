@@ -1,9 +1,16 @@
+import { objectJourney } from '../support/object-journey.ts';
 import { homeLinksJourney } from '../support/links-journey.ts';
 import { automationJourney } from '../support/automation-journey.ts';
 import { analysisJourney, recordsExtrasJourney } from '../support/analysis-journey.ts';
 import { adminJourney } from '../support/admin-journey.ts';
 import { preventionJourney } from '../support/prevention-journey.ts';
-import { DEFAULT_SCOPE, signInToProject, test } from '../support/fixtures.ts';
+import {
+  DEFAULT_SCOPE,
+  apiSession,
+  createAccount,
+  signInToProject,
+  test,
+} from '../support/fixtures.ts';
 
 test('digital signal to completed preventive plan on a phone', async ({ page, admin }) => {
   await signInToProject(page, admin, DEFAULT_SCOPE);
@@ -42,4 +49,21 @@ test('phone · automation rules edited, paused and removed; webhook channel adde
 test('phone · every link on the home screen opens a real screen', async ({ page, admin }) => {
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await homeLinksJourney(page);
+});
+
+test('phone · 360° view: approve an analyst proposal and restrict a record', async ({
+  page,
+  admin,
+  adminApi,
+  baseURL,
+}) => {
+  const credentials = await createAccount(
+    adminApi,
+    { username: `lector-${Date.now()}`, role: 'consulta' },
+    [DEFAULT_SCOPE],
+  );
+  const reader = await apiSession(baseURL ?? '', credentials);
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await objectJourney(page, adminApi, reader, `m${Date.now()}`);
+  await reader.dispose();
 });

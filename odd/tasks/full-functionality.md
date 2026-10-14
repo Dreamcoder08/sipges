@@ -5,6 +5,7 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 ## Specs
 - S1: "Hey bro crea ODD o lo que sea necesario pero todo los módulos todo el proyecto debe ser funcional 10/10" (owner, 2026-10-14).
 - S2: Method from the coordinator brief: walk every module and every action end to end in the real app (desktop and phone, Playwright E2E), record what fails or is only visual, and fix it with regression tests. Start from an updated `main`; do not touch maps or the shell/navigation (PR #47); demo records stay apart through `recordOrigin`; no invented real data.
+- S4: "Continúe" (owner, 2026-10-14, after T1-T8): keep going on the same PR; `main` now includes PR #47 (maps).
 - S3: Keep the existing guarantees: hexagonal boundaries, tenant isolation, ADR 0007 HTTP contract, CSP, WCAG 2.1 AA, and every existing unit and E2E test green.
 
 ## Inventory
@@ -23,7 +24,10 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - F4 (Automatizaciones): the same off-screen notices as F2 for channels and rules further down, and «Editar» on a rule filled a form below the list without bringing it into view.
 - F5 (IRSA, Análisis situacional, Inteligencia estratégica): the dashboard counts real records only, but these engines read every record, demo included (audit pending item 4), so their figures did not match the dashboard and nothing said why.
 - No defect found in: create/search/read/edit/delete of the 14 record modules on desktop and phone; CSV review and apply; links and history; evidence; document review decisions; strategic DOCX reports; chronology filters; automation rules and channels; account, project and grant administration; home-screen links; any screen for analista, coordinador or consulta (no error banner, no refused request).
-- Observations, not changed: deleting an automation rule or channel has no confirmation step; Validación only downloads the expert template by design (no ratings are stored); maps are left to PR #47.
+- F6 (record card, phone): opening an evidence viewer pushed it into a second flex column beside the file (`flex-direction: column` with `flex-wrap: wrap` turned its 100% basis into a height), 686 px on a 412 px phone; the page zoomed out and taps landed on the wrong controls («Vincular» could not be pressed).
+- F7 (record history): attachments and other structured values were shown as raw JSON (`[{"id":"ADJ-…","archivo":…}]`).
+- F8 (Automatizaciones): deleting a rule or a channel happened at once, without the confirmation records have (was an observation in L1).
+- Observations, not changed: Validación only downloads the expert template by design (no ratings are stored); maps are left to PR #47.
 
 ## Tasks
 - T1 [x] S1,S2 — This ODD: inventory, method, sweep findings; route: inline; commit: see L2
@@ -35,6 +39,10 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - T7 [x] S1,S3 — Roles and navigation: every screen for analista, coordinador and consulta without errors or refused requests (`14-roles`); every home-screen link opens a real screen; route: inline; commit: see L8
 - T8 [x] S3 — Unit regressions, `pnpm verify` with PostgreSQL, full `pnpm e2e`; route: verify; commit: see L9
 
+- T9 [ ] S4 — Shared `ConfirmDialog` (records' dialog moved to `shared/ui`); confirmation before deleting automation rules and channels (F8); route: inline; commit: pending
+- T10 [ ] S4 — 360° view journey: approve an analyst proposal and restrict a record for read-only accounts, desktop and phone; route: inline; commit: pending
+- T11 [ ] S4 — Evidence upload and viewer in the phone journey; fix F6 (viewer layout) and F7 (readable history values); route: inline; commit: pending
+- T12 [ ] S3,S4 — Verification after merging `main` (PR #47): `pnpm verify` with PostgreSQL and full `pnpm e2e`; route: verify; commit: pending
 ## Log
 - L1 (plan, 2026-10-14): Inventoried 21 screens, 14 record modules and 4 roles on `main` 9e4bb3b; ran the M1 sweep on the synthetic academic case; findings F1-F5 above.
 - L2 (T1 ODD): Inventario de 21 pantallas, 14 módulos de registros y 4 roles; barrido exploratorio en Chromium de escritorio sobre la API real con el caso académico sintético (122 registros): cada control visible de <main> pulsado en una carga limpia; hallazgos F1-F5 (ac7a3d2).

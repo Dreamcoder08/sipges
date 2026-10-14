@@ -2,7 +2,6 @@ import type { RecordVersion } from '@mascli/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { historyQuery } from './api.ts';
-import { displayValue } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -16,7 +15,28 @@ const OPERATIONS: Record<RecordVersion['operation'], string> = {
 const when = (iso: string) =>
   new Date(iso).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 
-const shown = (value: unknown) => (value === undefined ? '—' : displayValue(value) || '—');
+/**
+ * A changed value as a person reads it. Lists and objects (attachments, follow-up data) were
+ * shown as raw JSON; an attachment reads as its file name and type.
+ */
+export const readable = (value: unknown): string => {
+  if (value == null) return '';
+  if (Array.isArray(value)) return value.map(readable).filter(Boolean).join(', ');
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>);
+    const file = (value as Record<string, unknown>).archivo;
+    if (typeof file === 'string') {
+      const kind = (value as Record<string, unknown>).tipo;
+      return typeof kind === 'string' && kind ? `${file} (${kind})` : file;
+    }
+    return entries
+      .map(([key, item]) => `${key}: ${readable(item)}`)
+      .filter((text) => !text.endsWith(': '))
+      .join(' · ');
+  }
+  return String(value);
+};
+const shown = (value: unknown) => (value === undefined ? '—' : readable(value) || '—');
 
 /** Who changed what and when (docs/adr/0011 §4), newest version first. */
 export const HistoryPanel = ({
