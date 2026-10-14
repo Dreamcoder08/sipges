@@ -86,12 +86,19 @@ test('the HTTP seeder defaults to dry run, persists usable records, and never du
   expect(await seedDemo(request, true)).toMatchObject({ created: 0, skipped: 122 });
   expect(await seedDemoEvidence(request)).toEqual({ evidenceCreated: 10, evidenceSkipped: 0 });
   expect(await seedDemoEvidence(request)).toEqual({ evidenceCreated: 0, evidenceSkipped: 10 });
+  // These are exactly the figures of the functional audit (error 01): they are demo data,
+  // so they are reported apart and the real counters stay at zero.
   expect(await request('GET', '/api/dashboard')).toMatchObject({
-    eventos: 20,
-    actores: 12,
-    demandas_abiertas: 8,
-    alertas_activas: 4,
-    directorio: 12,
+    eventos: 0,
+    actores: 0,
+    demandas_abiertas: 0,
+    demostracion: {
+      eventos: 20,
+      actores: 12,
+      demandas_abiertas: 8,
+      alertas_activas: 4,
+      directorio: 12,
+    },
   });
   const indicators = IndicatorsReport.parse(await request('GET', '/system/indicators'));
   expect(indicators.indicators.some((i) => i.evidence_count > 0)).toBe(true);

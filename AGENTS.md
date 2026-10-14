@@ -28,6 +28,7 @@ does not authenticate the CLI or authorize additional services.
 | `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
 | `pnpm --filter @mascli/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @mascli/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
+| `pnpm --filter @mascli/api import:base-maestra -- --seed <file>` | Insert-only load of the prototype's Base Maestra (dry-run by default). |
 
 ## Rules
 

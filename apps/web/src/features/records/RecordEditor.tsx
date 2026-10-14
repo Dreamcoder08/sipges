@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
-import { initialValues } from './model.ts';
+import { displayValue, extraFields, initialExtras, initialValues } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -24,10 +24,12 @@ export const RecordEditor = ({
   record?: ModuleRecord;
   pending: boolean;
   error: string | null;
-  onSave: (values: Record<string, string>) => void;
+  onSave: (values: Record<string, string>, extras: Record<string, string>) => void;
   onCancel: () => void;
 }) => {
   const [values, setValues] = useState(() => initialValues(module, record));
+  const [extras, setExtras] = useState(() => initialExtras(module, record));
+  const others = extraFields(module, record);
   const form = useRef<HTMLFormElement>(null);
   const prefix = useId();
   const [revision, setRevision] = useState(0);
@@ -61,7 +63,7 @@ export const RecordEditor = ({
       aria-label={record ? 'Editar registro' : 'Nuevo registro'}
       onSubmit={(event) => {
         event.preventDefault();
-        if (!pending && !classify.isPending) onSave(values);
+        if (!pending && !classify.isPending) onSave(values, extras);
       }}
     >
       <p>
@@ -122,6 +124,33 @@ export const RecordEditor = ({
           );
         })}
       </fieldset>
+      {others.length ? (
+        <fieldset disabled={pending} className={styles.fields}>
+          <legend>Otros datos del registro</legend>
+          <p className={`${styles.muted} ${styles.wide}`}>
+            Campos guardados en el registro que no forman parte del formulario del módulo (por
+            ejemplo, columnas de una matriz importada). Se conservan al guardar.
+          </p>
+          {others.map((field, index) =>
+            field.editable ? (
+              <Field
+                key={field.key}
+                id={`${prefix}-extra-${index}`}
+                label={field.key}
+                value={extras[field.key] ?? ''}
+                onChange={(event) =>
+                  setExtras((current) => ({ ...current, [field.key]: event.target.value }))
+                }
+              />
+            ) : (
+              <div className={styles.field} key={field.key}>
+                <span>{field.key}</span>
+                <code>{displayValue(field.value)}</code>
+              </div>
+            ),
+          )}
+        </fieldset>
+      ) : null}
       {module === 'eventos' ? (
         <section aria-label="Clasificación asistida">
           <Button

@@ -12,7 +12,8 @@
     "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
     "bench:compare": "node bench/compare.ts",
     "vapid:keys": "node src/tools/vapid-keys.ts",
-    "demo:seed": "node src/tools/academic-demo/cli.ts"
+    "demo:seed": "node src/tools/academic-demo/cli.ts",
+    "import:base-maestra": "node src/tools/base-maestra/cli.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.128.0",

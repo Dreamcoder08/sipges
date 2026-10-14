@@ -54,3 +54,44 @@ it('does not draw Sechura geometry when the scope has no registered reference', 
   expect(await screen.findByText('No hay geometría registrada.')).toBeVisible();
   expect(screen.queryByLabelText('Geometría de referencia')).toBeNull();
 });
+// Regression (functional audit, error 06): a selected concession is framed with its real
+// geometry, shapes never fall back to the default black fill, and bad geometry is reported.
+it('frames the selected concession and draws it with explicit fills', async () => {
+  server.use(
+    http.get('/system/project-coordinates', () =>
+      HttpResponse.json({ available: true, data: coordinates, notice: coordinates.source.scope }),
+    ),
+  );
+  renderPage();
+  const map = await screen.findByLabelText('Geometría de referencia');
+  const province = map.getAttribute('viewBox');
+  await userEvent.selectOptions(screen.getByLabelText('Concesión'), '12000442Y01');
+  const framed = (map.getAttribute('viewBox') ?? '').split(' ').map(Number);
+  expect(map.getAttribute('viewBox')).not.toBe(province);
+  // The view is centred on BAYOVAR N° 6 (lon/−lat space) and smaller than the province.
+  const concession = coordinates.concessions.find((c) => c.code === '12000442Y01');
+  const [x = 0, y = 0, w = 0, h = 0] = framed;
+  expect(concession?.centroid.longitude).toBeGreaterThan(x);
+  expect(concession?.centroid.longitude).toBeLessThan(x + w);
+  expect(-(concession?.centroid.latitude ?? 0)).toBeGreaterThan(y);
+  expect(-(concession?.centroid.latitude ?? 0)).toBeLessThan(y + h);
+  const selected = screen.getByRole('button', { name: 'Seleccionar BAYOVAR N° 6' });
+  expect(selected).toHaveAttribute('aria-pressed', 'true');
+  expect(selected).toHaveAttribute('fill', '#e6b54a');
+  for (const path of map.querySelectorAll('path[role="button"]'))
+    expect(path.getAttribute('fill')).toMatch(/^#/);
+});
+
+it('reports concessions whose geometry cannot be drawn', async () => {
+  const broken = structuredClone(coordinates);
+  const first = broken.concessions[0];
+  if (first) first.geometry.coordinates[0]?.pop();
+  server.use(
+    http.get('/system/project-coordinates', () =>
+      HttpResponse.json({ available: true, data: broken, notice: broken.source.scope }),
+    ),
+  );
+  renderPage();
+  expect(await screen.findByText(/No se dibujan 1 concesión/)).toHaveTextContent('anillo abierto');
+  expect(screen.queryByRole('button', { name: 'Seleccionar BAYOVAR N° 5' })).toBeNull();
+});

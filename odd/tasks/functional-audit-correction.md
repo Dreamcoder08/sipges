@@ -1,0 +1,29 @@
+# Functional Audit and Correction
+
+Audit and fix the seven defects a user reported after a functional test, comparing the TypeScript product on `main` with the original prototype. Branch `claude/project-thread-cgnhcp` from `main` 06a127e. Synthetic data only in tests; no deletion or rewrite of stored records, no deployment and no real-data import without the user's word.
+
+## Specs
+- S1: "AUDITORÍA Y CORRECCIÓN INTEGRAL DEL SOFTWARE" (2026-10-14): seven reported errors (dashboard vs. data, unknown demands, «Ver» without information, incomplete «Editar», original reports not viewable, black geospatial view, empty directory); fix root causes, keep data, separate demo from real records reversibly, regression tests for all seven.
+- S2: Reference prototype: the RC 3.0 static frontend `static/app.js` and `static/index.html` at commit 6fa43ca (imported "MASCLI RC 3.0 source"), plus `reference/python/app.py`. Requirements not present there are not invented.
+- S3: Keep the existing guarantees: hexagonal contexts, forced RLS per tenant, append-only audit, MFA, HTTP contract (ADR 0007) and every existing test green.
+
+## Diagnosis
+- D1 (errors 01, 02): the dashboard counters are correct counts of the stored records, but the only records in the TypeScript database are the synthetic academic case loaded with `pnpm --filter @mascli/api demo:seed` (`apps/api/src/tools/academic-demo/dataset.ts`: exactly 20 events and 12 demands, 8 of them not «Cerrada»; demand D-03 is «Solicitud 3: Información sobre tránsito y ruido…»). Commit e0afaf6 removed the «[SINTÉTICO]» labels and the global banner, and `presentText` hides the `DEMO-` code prefix, so demo rows became indistinguishable. Every demo row still carries `Dato_Sintetico: true`, `Demo_Dataset` and `Demo_ID`, so provenance is recoverable without touching data.
+- D2 (errors 01, 07): the prototype loaded `data/seed.json` («Base Maestra octubre 2026») into an empty database (`app.py:125-134`). The TypeScript API never loads it and `docs/migration/data-migration.md` treats it as reference data, so the Base Maestra (directory contacts with name, position, place, phone) was never imported into PostgreSQL.
+- D3 (error 03): «Ver» sets the selection, but the record card is rendered after the whole list (`RecordsPage.tsx`) without scrolling or focus; on a phone it appears below every row, so nothing visibly happens.
+- D4 (error 04): the editor and the detail only render the fixed field list of `modules.ts`; payload keys from imports or legacy matrices (other column names) are kept on save but never shown, and the same off-screen placement as D3 applies. The demand form itself matches the prototype (date, actor/group, territory, topic, description, priority, status).
+- D5 (error 05): evidence is listed only inside the record card (D3) and can only be downloaded; there is no viewer. Legacy files (Render's ephemeral disk) only exist where the legacy `data/uploads` was kept; `migrate:legacy` copies them, but it has not been run.
+- D6 (error 06): not reproduced in Chromium (desktop, mobile, dark scheme). The map draws in raw degrees (viewBox about -80.8, width down to 0.03 at zoom 16), which exceeds single-precision rasterizers on some GPUs/WebKit; unstyled SVG shapes default to black fill if the route stylesheet is missing; selecting a concession does not frame it, and invalid geometry has no error state.
+- D7 (error 07): the directory uses the generic list (search box only). The prototype offered territory, type and priority filters, contact counters, the place/phone columns and a detail card.
+
+## Tasks
+- T1 [ ] S1,S2 — This ODD with the diagnosis; route: inline; commit: see L2
+- T2 [ ] S1,S3 — Record provenance: shared `recordOrigin`, dashboard counts real records with demo counts reported apart and links to each module, lists default to real records with an origin filter and a «Demostración» badge, codes shown verbatim; route: inline; commit: see L3
+- T3 [ ] S1 — «Ver» and «Editar» open in place of the list with focus and return; detail and editor show every stored field («Otros datos»), demands list their commitments; route: inline; commit: see L4
+- T4 [ ] S1,S3 — Evidence viewer: `GET /system/uploads/{id}/preview` (PDF and DOCX text, TXT/CSV) and images inline, with metadata, missing-file and unsupported-format states; route: inline; commit: see L5
+- T5 [ ] S1 — Geospatial view in local projected coordinates, explicit fills, frame the selected concession, geometry validation with a visible error; route: inline; commit: see L6
+- T6 [ ] S1,S2 — Directory with the prototype's filters, counters, place/city and phone; Base Maestra import tool (dry run by default, insert-only, audited); route: inline; commit: see L7
+- T7 [ ] S1,S3 — Regression tests for the seven errors (API, web, E2E), docs and verification; route: verify; commit: see L8
+
+## Log
+- L1 (plan, 2026-10-14): Inspected the monorepo, the RC 3.0 prototype at 6fa43ca, the academic demo tool and the project screenshots; diagnosis D1-D7 above.

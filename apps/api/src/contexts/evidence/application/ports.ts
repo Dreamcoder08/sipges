@@ -38,3 +38,14 @@ export type AttachmentStore = {
 
 export type Clock = { now(): Date };
 export type RandomHex = (length: number) => string;
+
+/**
+ * Plain text of an untrusted document, for the in-app viewer. Implementations throw on
+ * unreadable input; the service reports that without parser details.
+ */
+export type TextExtractor = {
+  /** Page texts, or null when the PDF has more than `maxPages` pages. */
+  pdf(bytes: Uint8Array, maxPages: number): Promise<readonly string[] | null>;
+  /** Paragraphs, then table rows as tab-separated lines. */
+  docx(bytes: Uint8Array): Promise<readonly string[]>;
+};

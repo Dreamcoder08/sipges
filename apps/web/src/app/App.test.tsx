@@ -161,6 +161,15 @@ describe('dashboard and navigation', () => {
     expect(await screen.findByText('Actores analíticos')).toBeVisible();
     const summary = screen.getByText('Actores analíticos').closest('div');
     expect(summary).toHaveTextContent('7');
+    // Regression (functional audit, error 01): demo records are counted apart, with the rule.
+    const demands = screen.getByText('Demandas abiertas').closest('div');
+    expect(demands).toHaveTextContent('3');
+    expect(demands).toHaveTextContent('No incluye 8 de demostración.');
+    expect(demands).toHaveTextContent('estado distinto de «Cerrada»');
+    expect(
+      within(demands as HTMLElement).getByRole('link', { name: 'Ver registros' }),
+    ).toHaveAttribute('href', '/demandas');
+    expect(screen.getByText(/Hay 28 registros de demostración/)).toBeVisible();
     expect(await screen.findByText('42.3')).toBeVisible();
     expect(screen.getByText('Amarillo', { selector: 'p > span' })).toBeVisible();
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
