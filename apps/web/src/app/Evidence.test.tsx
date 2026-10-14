@@ -110,7 +110,7 @@ describe('linked evidence', () => {
       }),
     );
     // Reopen to refetch after the initial fixture request.
-    await userEvent.setup().click(await screen.findByRole('button', { name: 'Cerrar ficha' }));
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Volver a la lista' }));
     await userEvent.setup().click(screen.getByRole('button', { name: 'Ver F-1' }));
     await userEvent
       .setup()
@@ -196,9 +196,9 @@ it('blocks record editing and deletion while its evidence upload is pending', as
   await user.click(screen.getByRole('button', { name: 'Subir evidencia' }));
   await waitFor(() => expect(started).toBe(true));
   try {
-    expect(screen.getByRole('button', { name: 'Editar F-1' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Eliminar F-1' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cerrar ficha' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Editar' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Eliminar F-1' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Volver a la lista' })).toBeDisabled();
   } finally {
     release();
   }

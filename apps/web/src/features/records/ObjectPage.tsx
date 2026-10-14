@@ -10,7 +10,7 @@ import { GraphPanel } from './GraphPanel.tsx';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
 import { MarkingControl } from './MarkingControl.tsx';
-import { canWriteRecords, presentText } from './model.ts';
+import { canWriteRecords } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import { RecordDetail } from './RecordDetail.tsx';
 import { linksQuery } from './ontology-api.ts';
@@ -32,7 +32,7 @@ const ObjectView = ({
   const record = useQuery(recordQuery(module, scope, id));
   const summary = useQuery(linksQuery(module, id, scope));
   const writable = canWriteRecords(role);
-  const title = summary.data ? presentText(summary.data.record.title) : id;
+  const title = summary.data ? summary.data.record.title : id;
   return (
     <div className={styles.page}>
       <Card eyebrow={`${MODULES[module].label} · ${id}`} title={title}>

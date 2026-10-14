@@ -5,7 +5,7 @@ import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { presentText } from './model.ts';
+
 import { briefingQuery } from './ontology-api.ts';
 import styles from './Records.module.css';
 
@@ -37,7 +37,7 @@ const Narrative = ({ text, sources }: { text: string; sources: readonly Source[]
       return ref ? (
         <Cite key={index} refs={[Number(ref)]} sources={sources} />
       ) : (
-        <span key={index}>{presentText(part)}</span>
+        <span key={index}>{part}</span>
       );
     })}
   </p>
@@ -96,8 +96,7 @@ export const BriefingPanel = ({
                   <ul>
                     {section.sentences.map((sentence, index) => (
                       <li key={index}>
-                        {presentText(sentence.text)}{' '}
-                        <Cite refs={sentence.refs} sources={data.sources} />
+                        {sentence.text} <Cite refs={sentence.refs} sources={data.sources} />
                       </li>
                     ))}
                   </ul>
@@ -110,7 +109,7 @@ export const BriefingPanel = ({
                     <InternalLink href={objectHref(source.module, source.id)}>
                       {source.type_label} {source.id}
                     </InternalLink>{' '}
-                    · {presentText(source.title)}
+                    · {source.title}
                   </li>
                 ))}
               </ol>

@@ -278,17 +278,32 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     renderer: docxRenderer,
   });
+  const reader = deps.config.ocr
+    ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
+    : documentReader;
   const evidence = createEvidenceService({
     storage: deps.objectStorage ?? createObjectStorage(deps.config.storage),
     store: createSqlAttachmentStore(deps.sql),
     clock: deps.clock,
     randomHex,
     maxUploadBytes: deps.config.maxUploadBytes,
+    // The evidence viewer reads text with the same parsers as the document lab.
+    text: {
+      pdf: async (bytes, maxPages) => {
+        const result = await reader.readPdf(bytes, maxPages);
+        return result.kind === 'pages' ? result.pages : null;
+      },
+      docx: async (bytes) => {
+        const content = await reader.readDocx(bytes);
+        return [
+          ...content.paragraphs,
+          ...content.tables.flatMap((rows) => rows.map((row) => row.join('\t'))),
+        ];
+      },
+    },
   });
   const documents = createDocumentLabService({
-    reader: deps.config.ocr
-      ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
-      : documentReader,
+    reader,
     renderer: docxRenderer,
     reviews: createSqlReviewStore(deps.sql),
     clock: deps.clock,

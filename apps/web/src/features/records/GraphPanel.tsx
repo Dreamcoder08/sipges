@@ -4,7 +4,7 @@ import { objectHref, useInternalNavigate } from '../../shared/lib/navigation.tsx
 import { Button } from '../../shared/ui/Button.tsx';
 import { ForceGraph } from '../../shared/ui/graph/ForceGraph.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { presentText } from './model.ts';
+
 import { catalogQuery, graphQuery } from './ontology-api.ts';
 import styles from './Records.module.css';
 
@@ -53,7 +53,7 @@ export const GraphPanel = ({
                 root={nodeKey(data.root)}
                 nodes={data.nodes.map((node) => ({
                   id: nodeKey(node),
-                  label: presentText(node.title),
+                  label: node.title,
                   group: node.type_label,
                 }))}
                 edges={data.edges.map((edge) => ({

@@ -1,12 +1,20 @@
-import type { ModuleRecord, Role } from '@mascli/contracts';
+import { type ModuleRecord, type Role, recordOrigin } from '@mascli/contracts';
 import { MODULES, type RecordField, type RecordModule } from './modules.ts';
 
 export const canWriteRecords = (role: Role) => role === 'admin' || role === 'analista';
 export const displayValue = (value: unknown) =>
   value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
-/** Display-only: hides the seed's internal "DEMO-" code prefix and file prefix; stored data is untouched. */
-export const presentText = (text: string) =>
-  text.replace(/\bDEMO-([A-Z]{1,3}-\d{2})\b/g, '$1').replace(/\bdemo-(fuente-\d{2})/g, '$1');
+/** Which records a list shows: real ones by default, demo ones only when asked for. */
+export type OriginFilter = 'real' | 'demo' | 'todos';
+export const ORIGIN_LABELS: Record<OriginFilter, string> = {
+  real: 'Registros reales',
+  demo: 'Demostración (sintéticos)',
+  todos: 'Todos',
+};
+export const byOrigin = <T extends Readonly<Record<string, unknown>>>(
+  rows: readonly T[],
+  filter: OriginFilter,
+) => rows.filter((row) => filter === 'todos' || recordOrigin(row) === filter);
 export const fieldValue = (record: ModuleRecord | undefined, field: RecordField) => {
   if (!record)
     return field.initial ?? (field.type === 'date' ? new Date().toISOString().slice(0, 10) : '');
@@ -17,6 +25,44 @@ export const fieldValue = (record: ModuleRecord | undefined, field: RecordField)
   }
   return '';
 };
+/** Bookkeeping keys: shown elsewhere (code, project, origin) or never edited by hand. */
+const INTERNAL_KEYS = new Set([
+  '_id',
+  '_updated_at',
+  'Proyecto_ID',
+  'Proyecto',
+  'Demo_Dataset',
+  'Demo_ID',
+  'Dato_Sintetico',
+  // Evidence links written by uploads; the evidence panel lists them with their files.
+  'Adjuntos',
+]);
+const isScalar = (value: unknown): value is string | number | boolean =>
+  ['string', 'number', 'boolean'].includes(typeof value);
+/**
+ * Stored keys the module form does not cover (other matrix columns, imports, integrations).
+ * They are shown and, when scalar, edited as «Otros datos» so no stored content stays hidden.
+ */
+export const extraFields = (module: RecordModule, record: ModuleRecord | undefined) => {
+  if (!record) return [];
+  const covered = new Set<string>();
+  for (const field of MODULES[module].fields) {
+    covered.add(field.key);
+    if (Object.hasOwn(record, field.key)) continue;
+    const alias = field.aliases?.find((key) => record[key] != null && record[key] !== '');
+    if (alias) covered.add(alias);
+  }
+  return Object.keys(record)
+    .filter((key) => !covered.has(key) && !INTERNAL_KEYS.has(key))
+    .map((key) => ({ key, value: record[key], editable: isScalar(record[key]) }));
+};
+export const initialExtras = (module: RecordModule, record?: ModuleRecord) =>
+  Object.fromEntries(
+    extraFields(module, record)
+      .filter((field) => field.editable)
+      .map((field) => [field.key, displayValue(field.value)]),
+  );
+
 export const initialValues = (module: RecordModule, record?: ModuleRecord) =>
   Object.fromEntries(MODULES[module].fields.map((field) => [field.key, fieldValue(record, field)]));
 export const safePublicUrl = (value: string) => {
@@ -40,6 +86,7 @@ export const recordPayload = (
   projectId: string,
   projectLabel: string,
   latest?: ModuleRecord,
+  extras: Record<string, string> = {},
 ) => {
   const payload: Record<string, unknown> = {
     ...latest,
@@ -67,6 +114,16 @@ export const recordPayload = (
         throw new Error(`Revise ${field.label.toLowerCase()}.`);
       payload[field.key] = n;
     } else payload[field.key] = value;
+  }
+  // Only changed «Otros datos» are written; untouched ones keep their stored type.
+  for (const [key, raw] of Object.entries(extras)) {
+    const before = latest?.[key];
+    if (INTERNAL_KEYS.has(key) || !isScalar(before) || displayValue(before) === raw) continue;
+    const value = raw.trim();
+    payload[key] =
+      typeof before === 'number' && value !== '' && Number.isFinite(Number(value))
+        ? Number(value)
+        : value;
   }
   return payload;
 };

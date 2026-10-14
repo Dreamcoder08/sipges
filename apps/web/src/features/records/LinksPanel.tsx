@@ -7,7 +7,7 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { recordsQuery } from './api.ts';
-import { presentText } from './model.ts';
+
 import { MODULES, type RecordModule } from './modules.ts';
 import { catalogQuery, createLink, deleteLink, linksQuery } from './ontology-api.ts';
 import styles from './Records.module.css';
@@ -151,7 +151,7 @@ const LinkForm = ({
           .filter((record) => !(effectiveModule === module && record._id === id))
           .map((record) => (
             <option key={record._id} value={record._id}>
-              {presentText(String(record[titleField] ?? '') || record._id)} ({record._id})
+              {String(record[titleField] ?? '') || record._id} ({record._id})
             </option>
           ))}
       </select>
@@ -184,7 +184,7 @@ const LinkItem = ({
     <div>
       <span className={styles.linkLabel}>{link.label}</span>{' '}
       <InternalLink href={objectHref(link.other.module, link.other.id)}>
-        {presentText(link.other.title)}
+        {link.other.title}
       </InternalLink>{' '}
       <small>
         {link.other.type_label}

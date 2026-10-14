@@ -9,6 +9,9 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { BaseMap, type Extent, intersects, ringsPath } from './BaseMap.tsx';
 import { SECHURA_EXTENT } from './sechura-base.ts';
+import { checkConcessions, ringsExtent } from './geometry.ts';
+import { MapErrorBoundary } from './MapErrorBoundary.tsx';
+import { Alert } from '../../shared/ui/Alert.tsx';
 import styles from './Geography.module.css';
 
 export const GeographyPage = ({ scope }: FeatureContext) => {
@@ -37,10 +40,11 @@ const csvCell = (value: unknown) =>
     .replace(/^[=+@-]/, "'$&")
     .replaceAll('"', '""')}"`;
 const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: string }) => {
-  const [selection, setSelection] = useState(data.concessions[0]?.code ?? '');
+  const { valid: concessions, invalid } = checkConcessions(data.concessions);
+  const [selection, setSelection] = useState(concessions[0]?.code ?? '');
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const selected = data.concessions.find((c) => c.code === selection);
+  const selected = concessions.find((c) => c.code === selection);
   const [minX, minY, maxX, maxY] = data.bbox;
   const width = Math.max(maxX - minX, 0.001);
   const height = Math.max(maxY - minY, 0.001);
@@ -65,6 +69,25 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
     centerY - pan.y + span / 2,
   ];
   const step = span / 6;
+  /** Frames one concession: centred, with a margin, within the zoom range. */
+  const focus = (code: string) => {
+    const concession = concessions.find((c) => c.code === code);
+    if (!concession) return;
+    const [x0, y0, x1, y1] = ringsExtent(concession.geometry.coordinates);
+    const size = Math.max(x1 - x0, y1 - y0, 0.001) * 1.4;
+    setZoom(Math.min(Math.max((half * 2) / size, 1), maxZoom));
+    setPan({ x: (x0 + x1) / 2 - centerX, y: centerY - (y0 + y1) / 2 });
+  };
+  if (!concessions.length)
+    return (
+      <Card title={data.project_name}>
+        <Alert tone="error">
+          Ninguna concesión tiene una geometría válida para dibujar (
+          {invalid.map((item) => `${item.name}: ${item.problem}`).join('; ')}). Revise el archivo de
+          referencia antes de usar el mapa.
+        </Alert>
+      </Card>
+    );
   const exportCoordinates = () => {
     const rows = [['Concesión', 'Código', 'Anillo', 'Vértice', 'Longitud', 'Latitud', 'CRS']];
     for (const c of data.concessions)
@@ -92,13 +115,22 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
         <p>{data.initiative}</p>
         <p>{data.description}</p>
         <p>{notice}</p>
+        {invalid.length ? (
+          <Alert tone="error">
+            No se dibujan {invalid.length} concesión(es) con geometría inválida:{' '}
+            {invalid.map((item) => `${item.name} (${item.code}): ${item.problem}`).join('; ')}.
+          </Alert>
+        ) : null}
         <label htmlFor="concession">Concesión</label>
         <select
           id="concession"
           value={selection}
-          onChange={(event) => setSelection(event.target.value)}
+          onChange={(event) => {
+            setSelection(event.target.value);
+            focus(event.target.value);
+          }}
         >
-          {data.concessions.map((c) => (
+          {concessions.map((c) => (
             <option key={c.code} value={c.code}>
               {c.name}
             </option>
@@ -135,37 +167,45 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
           <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, y: p.y + step }))}>
             Sur
           </Button>
+          <Button variant="secondary" disabled={!selected} onClick={() => focus(selection)}>
+            Centrar concesión
+          </Button>
           <Button variant="secondary" onClick={exportCoordinates}>
             Exportar coordenadas CSV
           </Button>
         </div>
-        <BaseMap
-          view={view}
-          label="Geometría de referencia"
-          title={`Concesiones referenciales en ${data.project_name}`}
-          showBase={onBase}
-        >
-          {data.concessions.map((c) => (
-            <path
-              key={c.code}
-              className={`${styles.concession} ${c.code === selection ? styles.concessionSelected : ''}`}
-              role="button"
-              tabIndex={0}
-              aria-label={`Seleccionar ${c.name}`}
-              aria-pressed={c.code === selection}
-              onClick={() => setSelection(c.code)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  setSelection(c.code);
-                }
-              }}
-              d={ringsPath(c.geometry.coordinates)}
-              fillRule="evenodd"
-              strokeWidth={span / 400}
-            />
-          ))}
-        </BaseMap>
+        <MapErrorBoundary>
+          <BaseMap
+            view={view}
+            label="Geometría de referencia"
+            title={`Concesiones referenciales en ${data.project_name}`}
+            showBase={onBase}
+          >
+            {concessions.map((c) => (
+              <path
+                key={c.code}
+                className={`${styles.concession} ${c.code === selection ? styles.concessionSelected : ''}`}
+                role="button"
+                tabIndex={0}
+                aria-label={`Seleccionar ${c.name}`}
+                aria-pressed={c.code === selection}
+                onClick={() => setSelection(c.code)}
+                onDoubleClick={() => focus(c.code)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setSelection(c.code);
+                  }
+                }}
+                d={ringsPath(c.geometry.coordinates)}
+                fill={c.code === selection ? '#e6b54a' : '#669bb5'}
+                stroke="#243b53"
+                fillRule="evenodd"
+                strokeWidth={span / 400}
+              />
+            ))}
+          </BaseMap>
+        </MapErrorBoundary>
         <ul className={styles.legend}>
           <li>
             <span className={`${styles.swatch} ${styles.swatchConcession}`} aria-hidden="true" />

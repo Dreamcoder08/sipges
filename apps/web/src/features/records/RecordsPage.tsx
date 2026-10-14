@@ -1,6 +1,6 @@
-import type { Role } from '@mascli/contracts';
+import { type ModuleRecord, type Role, recordOrigin } from '@mascli/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ZodError } from 'zod';
 import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
@@ -12,14 +12,22 @@ import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { deleteRecord, recordQuery, recordsQuery, saveRecord } from './api.ts';
 import { EvidencePanel } from './EvidencePanel.tsx';
+import { moduleAttachmentsQuery } from './evidence-api.ts';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
+import { OriginBadge } from './OriginBadge.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
-import { canWriteRecords, fieldValue, presentText } from './model.ts';
-import { MODULES, type RecordModule } from './modules.ts';
+import {
+  ORIGIN_LABELS,
+  type OriginFilter,
+  byOrigin,
+  canWriteRecords,
+  fieldValue,
+} from './model.ts';
+import { FACETS, MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
 type Props = {
@@ -67,23 +75,55 @@ export const RecordsPage = (props: Props) => {
   );
 };
 
+/** What the workspace shows in place of the list: one record, read or edited, or a new one. */
+type Panel = { kind: 'list' } | { kind: 'create' } | { kind: 'view' | 'edit'; id: string };
+
+const facetValue = (row: ModuleRecord, module: RecordModule, key: string) => {
+  const field = MODULES[module].fields.find((item) => item.key === key);
+  return field ? fieldValue(row, field).trim() : '';
+};
+
 const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Props) => {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [selection, setSelection] = useState<{ id: string; mode: 'view' | 'edit' } | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [origin, setOrigin] = useState<OriginFilter>('real');
+  const [facets, setFacets] = useState<Record<string, string>>({});
+  const [panel, setPanel] = useState<Panel>({ kind: 'list' });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [uploadBusy, setUploadBusy] = useState(false);
   const [importing, setImporting] = useState(false);
+  // Where focus returns when a record panel closes (the row's own «Ver»/«Editar» button).
+  const returnTo = useRef<string | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
   const client = useQueryClient();
   const rows = useQuery(recordsQuery(module, scope, search));
-  const detail = useQuery({
-    ...recordQuery(module, scope, selection?.id ?? ''),
-    enabled: selection !== null,
-  });
+  const selectedId = panel.kind === 'view' || panel.kind === 'edit' ? panel.id : '';
+  const detail = useQuery({ ...recordQuery(module, scope, selectedId), enabled: !!selectedId });
   const definition = MODULES[module];
   const writable = canWriteRecords(role);
+  // Sources are reports: the list says which ones have their file stored (error 05).
+  const files = useQuery({
+    ...moduleAttachmentsQuery(module, scope),
+    enabled: module === 'fuentes',
+  });
+  const fileCount = (id: string) =>
+    files.data?.filter((f) => f.linked_record_id === id).length ?? 0;
+  useEffect(() => {
+    if (panel.kind === 'list') {
+      if (returnTo.current)
+        document.querySelector<HTMLElement>(`[data-return="${returnTo.current}"]`)?.focus();
+      returnTo.current = null;
+      return;
+    }
+    heading.current?.focus();
+    heading.current?.scrollIntoView?.({ block: 'start' });
+  }, [panel]);
+  const openPanel = (next: Panel, from?: string) => {
+    returnTo.current = from ?? null;
+    setPanel(next);
+  };
+  const closePanel = () => setPanel({ kind: 'list' });
   const refresh = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: ['records'] }),
@@ -93,19 +133,25 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
       client.invalidateQueries({ queryKey: ['operations', scope] }),
     ]);
   const save = useMutation({
-    mutationFn: (values: Record<string, string>) =>
+    mutationFn: ({
+      values,
+      extras,
+    }: {
+      values: Record<string, string>;
+      extras: Record<string, string>;
+    }) =>
       saveRecord(
         module,
         scope,
         projectId,
         projectLabel,
         values,
-        creating ? undefined : selection?.id,
+        panel.kind === 'edit' ? panel.id : undefined,
+        extras,
       ),
     onSuccess: async (id) => {
-      setCreating(false);
-      setSelection(null);
-      setNotice(`Registro ${id} guardado. Abre su ficha para adjuntar evidencias.`);
+      setNotice(`Registro ${id} guardado. Usa «Ver» para revisar su ficha y adjuntar evidencias.`);
+      setPanel({ kind: 'list' });
       await refresh();
     },
   });
@@ -113,12 +159,116 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
     mutationFn: (id: string) => deleteRecord(module, scope, id),
     onSuccess: async () => {
       setDeleting(null);
-      setSelection(null);
+      setPanel({ kind: 'list' });
       setNotice('Registro eliminado.');
       await refresh();
     },
   });
   const busy = save.isPending || remove.isPending || uploadBusy;
+  const moduleFacets = FACETS[module] ?? [];
+
+  if (panel.kind !== 'list') {
+    const title =
+      panel.kind === 'create'
+        ? `Nuevo registro · ${definition.label}`
+        : `${panel.kind === 'edit' ? 'Editar' : 'Ficha'} ${panel.id}`;
+    return (
+      <>
+        {notice ? <Alert tone="success">{notice}</Alert> : null}
+        <section className={styles.panel} aria-labelledby="record-panel-title">
+          <header className={styles.panelHeader}>
+            <h3 id="record-panel-title" ref={heading} tabIndex={-1}>
+              {title}
+            </h3>
+            <div className={styles.actions}>
+              {panel.kind === 'view' && writable ? (
+                <Button
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    save.reset();
+                    setNotice('');
+                    setPanel({ kind: 'edit', id: panel.id });
+                  }}
+                >
+                  Editar
+                </Button>
+              ) : null}
+              {panel.kind !== 'create' ? (
+                <InternalLink href={objectHref(module, panel.id)}>Vista 360°</InternalLink>
+              ) : null}
+              <Button variant="ghost" disabled={busy} onClick={closePanel}>
+                Volver a la lista
+              </Button>
+            </div>
+          </header>
+          {panel.kind === 'create' ? (
+            <RecordEditor
+              module={module}
+              scope={scope}
+              pending={save.isPending}
+              error={message(save.error)}
+              onSave={(values, extras) => save.mutate({ values, extras })}
+              onCancel={closePanel}
+            />
+          ) : (
+            <QueryState query={detail} label="la ficha">
+              {(record) =>
+                panel.kind === 'edit' && writable ? (
+                  <RecordEditor
+                    key={record._id}
+                    module={module}
+                    scope={scope}
+                    record={record}
+                    pending={save.isPending}
+                    error={message(save.error)}
+                    onSave={(values, extras) => save.mutate({ values, extras })}
+                    onCancel={() => setPanel({ kind: 'view', id: panel.id })}
+                  />
+                ) : (
+                  <>
+                    <RecordDetail module={module} record={record} />
+                    {module === 'demandas' ? (
+                      <DemandCommitments scope={scope} id={record._id} />
+                    ) : null}
+                    <EvidencePanel
+                      key={`${scope}/${module}/${record._id}`}
+                      module={module}
+                      id={record._id}
+                      scope={scope}
+                      writable={writable}
+                      onBusyChange={setUploadBusy}
+                    />
+                    <LinksPanel
+                      key={`links/${scope}/${module}/${record._id}`}
+                      module={module}
+                      id={record._id}
+                      scope={scope}
+                      writable={writable}
+                    />
+                    <HistoryPanel
+                      key={`history/${scope}/${module}/${record._id}`}
+                      module={module}
+                      id={record._id}
+                      scope={scope}
+                    />
+                  </>
+                )
+              }
+            </QueryState>
+          )}
+          {detail.error ? (
+            <div className={styles.actions}>
+              <Button variant="secondary" onClick={() => void detail.refetch()}>
+                Reintentar
+              </Button>
+            </div>
+          ) : null}
+        </section>
+      </>
+    );
+  }
+
   return (
     <>
       {!writable ? (
@@ -138,8 +288,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                 onClick={() => {
                   save.reset();
                   setNotice('');
-                  setSelection(null);
-                  setCreating(true);
+                  openPanel({ kind: 'create' });
                 }}
               >
                 Nuevo registro
@@ -173,123 +322,211 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
           </Button>
         </form>
         <QueryState query={rows} label="los registros">
-          {(data) => (
-            <>
-              <p className={styles.muted}>
-                {data.length} registro(s)
-                {data.length >= 500
-                  ? ' · Se muestran los primeros 500. Refina la búsqueda para encontrar otros registros.'
-                  : ''}
-              </p>
-              {data.length ? (
-                <div
-                  className={styles.tableWrap}
-                  tabIndex={0}
-                  role="region"
-                  aria-label={`Tabla de ${definition.label.toLowerCase()}`}
-                >
-                  <table className={styles.table}>
-                    <caption className="visually-hidden">
-                      Registros de {definition.label.toLowerCase()} del proyecto activo
-                    </caption>
-                    <thead>
-                      <tr>
-                        {definition.columns.map((key) => (
-                          <th scope="col" key={key}>
-                            {definition.fields.find((field) => field.key === key)?.label ?? key}
-                          </th>
-                        ))}
-                        <th scope="col">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.map((row) => (
-                        <tr key={row._id}>
-                          {definition.columns.map((key) => {
-                            const field = definition.fields.find((item) => item.key === key) ?? {
-                              key,
-                              label: key,
-                            };
-                            return (
-                              <td key={key} data-label={field.label}>
-                                {presentText(fieldValue(row, field)) || '—'}
-                              </td>
-                            );
-                          })}
-                          <td data-label="Acciones">
-                            <div className={styles.rowActions}>
-                              <Button
-                                variant="ghost"
-                                disabled={busy}
-                                aria-label={`Ver ${row._id}`}
-                                onClick={() => {
-                                  setCreating(false);
-                                  setSelection({ id: row._id, mode: 'view' });
-                                }}
-                              >
-                                Ver
-                              </Button>
-                              {writable ? (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    disabled={busy}
-                                    aria-label={`Editar ${row._id}`}
-                                    onClick={() => {
-                                      save.reset();
-                                      setCreating(false);
-                                      setNotice('');
-                                      setSelection({ id: row._id, mode: 'edit' });
-                                    }}
-                                  >
-                                    Editar
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    disabled={busy}
-                                    aria-label={`Eliminar ${row._id}`}
-                                    onClick={() => {
-                                      remove.reset();
-                                      setDeleting(row._id);
-                                    }}
-                                  >
-                                    Eliminar
-                                  </Button>
-                                </>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : search ? (
-                <EmptyState
-                  title="Sin registros para esta búsqueda."
-                  action={
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setSearchInput('');
-                        setSearch('');
-                      }}
+          {(data) => {
+            const demoCount = data.filter((row) => recordOrigin(row) === 'demo').length;
+            const realCount = data.length - demoCount;
+            const inOrigin = byOrigin(data, origin);
+            const visible = inOrigin.filter((row) =>
+              moduleFacets.every(
+                ({ key }) => !facets[key] || facetValue(row, module, key) === facets[key],
+              ),
+            );
+            return (
+              <>
+                <div className={styles.filters}>
+                  <div className={styles.field}>
+                    <label htmlFor={`origin-${module}`}>Origen</label>
+                    <select
+                      id={`origin-${module}`}
+                      value={origin}
+                      onChange={(event) => setOrigin(event.target.value as OriginFilter)}
                     >
-                      Limpiar búsqueda
-                    </Button>
-                  }
-                >
-                  Prueba con otras palabras o revisa la ortografía.
-                </EmptyState>
-              ) : (
-                <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>
-                  {writable
-                    ? 'Usa «Nuevo registro» para crear el primero en el proyecto activo.'
-                    : 'Cuando el equipo registre información aparecerá aquí.'}
-                </EmptyState>
-              )}
-            </>
-          )}
+                      {(Object.keys(ORIGIN_LABELS) as OriginFilter[]).map((key) => (
+                        <option key={key} value={key}>
+                          {ORIGIN_LABELS[key]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {moduleFacets.map(({ key, label }) => {
+                    const options = [
+                      ...new Set(inOrigin.map((row) => facetValue(row, module, key))),
+                    ]
+                      .filter(Boolean)
+                      .sort((a, b) => a.localeCompare(b, 'es'));
+                    return (
+                      <div className={styles.field} key={key}>
+                        <label htmlFor={`facet-${module}-${key}`}>{label}</label>
+                        <select
+                          id={`facet-${module}-${key}`}
+                          value={facets[key] ?? ''}
+                          onChange={(event) =>
+                            setFacets((current) => ({ ...current, [key]: event.target.value }))
+                          }
+                        >
+                          <option value="">Todos</option>
+                          {options.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className={styles.muted} role="status">
+                  {visible.length} registro(s) mostrados · {realCount} real(es) · {demoCount} de
+                  demostración
+                  {origin === 'real' && demoCount ? ' (ocultos; elija «Origen» para verlos)' : ''}
+                  {data.length >= 500
+                    ? ' · Se muestran los primeros 500. Refina la búsqueda para encontrar otros registros.'
+                    : ''}
+                </p>
+                {visible.length ? (
+                  <div
+                    className={styles.tableWrap}
+                    tabIndex={0}
+                    role="region"
+                    aria-label={`Tabla de ${definition.label.toLowerCase()}`}
+                  >
+                    <table className={styles.table}>
+                      <caption className="visually-hidden">
+                        Registros de {definition.label.toLowerCase()} del proyecto activo
+                      </caption>
+                      <thead>
+                        <tr>
+                          {definition.columns.map((key) => (
+                            <th scope="col" key={key}>
+                              {definition.fields.find((field) => field.key === key)?.label ?? key}
+                            </th>
+                          ))}
+                          {module === 'fuentes' ? <th scope="col">Archivos</th> : null}
+                          <th scope="col">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visible.map((row) => (
+                          <tr key={row._id}>
+                            {definition.columns.map((key, index) => {
+                              const field = definition.fields.find((item) => item.key === key) ?? {
+                                key,
+                                label: key,
+                              };
+                              return (
+                                <td key={key} data-label={field.label}>
+                                  {fieldValue(row, field) || '—'}
+                                  {index === 0 ? (
+                                    <>
+                                      {' '}
+                                      <OriginBadge record={row} />
+                                    </>
+                                  ) : null}
+                                </td>
+                              );
+                            })}
+                            {module === 'fuentes' ? (
+                              <td data-label="Archivos">
+                                {files.isPending
+                                  ? '…'
+                                  : fileCount(row._id)
+                                    ? `${fileCount(row._id)} archivo(s) · abrir con «Ver»`
+                                    : 'Sin archivo almacenado'}
+                              </td>
+                            ) : null}
+                            <td data-label="Acciones">
+                              <div className={styles.rowActions}>
+                                <Button
+                                  variant="ghost"
+                                  disabled={busy}
+                                  aria-label={`Ver ${row._id}`}
+                                  data-return={`ver-${row._id}`}
+                                  onClick={() =>
+                                    openPanel({ kind: 'view', id: row._id }, `ver-${row._id}`)
+                                  }
+                                >
+                                  Ver
+                                </Button>
+                                {writable ? (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      disabled={busy}
+                                      aria-label={`Editar ${row._id}`}
+                                      data-return={`editar-${row._id}`}
+                                      onClick={() => {
+                                        save.reset();
+                                        setNotice('');
+                                        openPanel(
+                                          { kind: 'edit', id: row._id },
+                                          `editar-${row._id}`,
+                                        );
+                                      }}
+                                    >
+                                      Editar
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      disabled={busy}
+                                      aria-label={`Eliminar ${row._id}`}
+                                      onClick={() => {
+                                        remove.reset();
+                                        setDeleting(row._id);
+                                      }}
+                                    >
+                                      Eliminar
+                                    </Button>
+                                  </>
+                                ) : null}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : search || Object.values(facets).some(Boolean) ? (
+                  <EmptyState
+                    title="Sin registros para esta búsqueda."
+                    action={
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setSearchInput('');
+                          setSearch('');
+                          setFacets({});
+                        }}
+                      >
+                        Limpiar búsqueda
+                      </Button>
+                    }
+                  >
+                    Prueba con otras palabras, otros filtros o revisa la ortografía.
+                  </EmptyState>
+                ) : origin === 'real' && demoCount ? (
+                  <EmptyState
+                    title={`No hay registros reales de ${definition.label.toLowerCase()}.`}
+                    action={
+                      <Button variant="secondary" onClick={() => setOrigin('demo')}>
+                        Ver {demoCount} de demostración
+                      </Button>
+                    }
+                  >
+                    Este proyecto solo contiene {demoCount} registros del caso académico sintético.
+                    {writable
+                      ? ' Usa «Nuevo registro» o «Importar CSV» para cargar datos reales.'
+                      : ''}
+                  </EmptyState>
+                ) : (
+                  <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>
+                    {writable
+                      ? 'Usa «Nuevo registro» o «Importar CSV» para cargar el primero en el proyecto activo.'
+                      : 'Cuando el equipo registre información aparecerá aquí.'}
+                  </EmptyState>
+                )}
+              </>
+            );
+          }}
         </QueryState>
         {rows.error ? (
           <Button variant="secondary" onClick={() => void rows.refetch()}>
@@ -302,73 +539,6 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
           <ImportPanel module={module} scope={scope} onClose={() => setImporting(false)} />
         </Card>
       ) : null}
-      {creating && writable ? (
-        <Card title="Nuevo registro">
-          <RecordEditor
-            module={module}
-            scope={scope}
-            pending={save.isPending}
-            error={message(save.error)}
-            onSave={(values) => save.mutate(values)}
-            onCancel={() => setCreating(false)}
-          />
-        </Card>
-      ) : null}
-      {selection ? (
-        <Card
-          title={`Ficha ${selection.id}`}
-          action={
-            <div className={styles.actions}>
-              <InternalLink href={objectHref(module, selection.id)}>Vista 360°</InternalLink>
-              <Button variant="ghost" disabled={busy} onClick={() => setSelection(null)}>
-                Cerrar ficha
-              </Button>
-            </div>
-          }
-        >
-          <QueryState query={detail} label="la ficha">
-            {(record) =>
-              selection.mode === 'edit' && writable ? (
-                <RecordEditor
-                  key={record._id}
-                  module={module}
-                  scope={scope}
-                  record={record}
-                  pending={save.isPending}
-                  error={message(save.error)}
-                  onSave={(values) => save.mutate(values)}
-                  onCancel={() => setSelection(null)}
-                />
-              ) : (
-                <>
-                  <RecordDetail module={module} record={record} />
-                  <EvidencePanel
-                    key={`${scope}/${module}/${record._id}`}
-                    module={module}
-                    id={record._id}
-                    scope={scope}
-                    writable={writable}
-                    onBusyChange={setUploadBusy}
-                  />
-                  <LinksPanel
-                    key={`links/${scope}/${module}/${record._id}`}
-                    module={module}
-                    id={record._id}
-                    scope={scope}
-                    writable={writable}
-                  />
-                  <HistoryPanel
-                    key={`history/${scope}/${module}/${record._id}`}
-                    module={module}
-                    id={record._id}
-                    scope={scope}
-                  />
-                </>
-              )
-            }
-          </QueryState>
-        </Card>
-      ) : null}
       {deleting ? (
         <ConfirmDelete
           id={deleting}
@@ -379,5 +549,35 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
         />
       ) : null}
     </>
+  );
+};
+
+/** Commitments whose «Demanda asociada» is this demand: its follow-up, read from real data. */
+const DemandCommitments = ({ scope, id }: { scope: string; id: string }) => {
+  const commitments = useQuery(recordsQuery('compromisos', scope, ''));
+  return (
+    <section aria-labelledby={`commitments-${id}`}>
+      <h4 id={`commitments-${id}`}>Compromisos de seguimiento</h4>
+      <QueryState query={commitments} label="los compromisos">
+        {(rows) => {
+          const related = rows.filter((row) => String(row.Demanda_Asociada ?? '') === id);
+          return related.length ? (
+            <ul>
+              {related.map((row) => (
+                <li key={row._id}>
+                  <InternalLink href={objectHref('compromisos', row._id)}>{row._id}</InternalLink>
+                  {' · '}
+                  {String(row.Descripcion ?? 'Sin descripción')} ·{' '}
+                  {String(row.Estado ?? 'Sin estado')}
+                  {row['Avance_%'] != null ? ` · ${String(row['Avance_%'])} %` : ''}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.muted}>Ningún compromiso registrado cita esta demanda.</p>
+          );
+        }}
+      </QueryState>
+    </section>
   );
 };

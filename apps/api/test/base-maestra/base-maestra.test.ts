@@ -1,0 +1,121 @@
+import { PGlite } from '@electric-sql/pglite';
+import { describe, expect, it } from 'vitest';
+import { createSqlRecordStore } from '../../src/contexts/records/infrastructure/sql-record-store.ts';
+import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
+import { pgliteClient } from '../../src/platform/database/pglite.ts';
+import { baseMaestraId, planBaseMaestra } from '../../src/tools/base-maestra/plan.ts';
+import { importBaseMaestra } from '../../src/tools/base-maestra/run.ts';
+import { trackTestDatabase } from '../support/test-database.ts';
+
+/** Synthetic stand-in for data/seed.json (the real file is never read in tests). */
+const SEED = {
+  Eventos: [{ ID_Evento: 'EV-T1', Fecha: '2026-10-01', Descripcion_Hecho: 'Hecho de prueba' }],
+  Demandas: [{ ID_Demanda: 'D-T1', Descripcion: 'Demanda de prueba', Estado: 'Nueva' }],
+  Directorio_Territorial: [
+    {
+      'Nombre actualizado 2026': 'Contacto de prueba',
+      Cargo: 'Cargo de prueba',
+      'Lugar / ámbito': 'Ciudad de prueba',
+      Celular: '000 000 000',
+    },
+    { Nombre: 'Otro contacto de prueba', Cargo: 'Teniente gobernador' },
+  ],
+  Usuarios: [{ ID_Usuario: 'USR-T', Nombre: 'No se importa' }],
+};
+
+const database = async () => {
+  const db = trackTestDatabase(new PGlite());
+  const sql = pgliteClient(db);
+  await migrate(sql, await loadMigrations());
+  await sql.query(
+    "INSERT INTO tenants (company_id, project_id, label, created_at) VALUES ('MASCLI', 'PRJ-T', 'Prueba', now())",
+  );
+  return { sql, store: createSqlRecordStore(sql) };
+};
+const now = () => new Date('2026-10-14T12:00:00Z');
+
+// Regression (functional audit, errors 01 and 07): the prototype's Base Maestra can be
+// loaded into the TypeScript database without inventing or overwriting records.
+describe('Base Maestra import', () => {
+  it('keeps module ids and gives rows without one a stable code', () => {
+    const row = SEED.Directorio_Territorial[0] ?? {};
+    expect(baseMaestraId('Eventos', { ID_Evento: 'EV-9' })).toBe('EV-9');
+    expect(baseMaestraId('Directorio_Territorial', row)).toMatch(/^DIR-[0-9A-F]{8}$/);
+    expect(baseMaestraId('Directorio_Territorial', { ...row })).toBe(
+      baseMaestraId('Directorio_Territorial', row),
+    );
+  });
+
+  it('reports unknown modules and malformed rows without record values', () => {
+    const plan = planBaseMaestra({ Desconocido: [], Eventos: ['texto', { ID_Evento: {} }] });
+    expect(plan.problems).toEqual([
+      'Módulo desconocido: Desconocido',
+      'Eventos[0]: no es un objeto',
+      'Eventos[1]: ID_Evento no es un código válido',
+    ]);
+  });
+
+  it('dry-runs by default, then inserts only missing records with an audit entry', async () => {
+    const { sql, store } = await database();
+    const dry = await importBaseMaestra(store, 'MASCLI/PRJ-T', SEED, {
+      apply: false,
+      source: 'seed.json',
+      now,
+    });
+    expect(dry.applied).toBe(false);
+    expect(dry.modules).toEqual([
+      { module: 'Eventos', en_archivo: 1, nuevos: 1, ya_existentes: 0 },
+      { module: 'Demandas', en_archivo: 1, nuevos: 1, ya_existentes: 0 },
+      { module: 'Directorio_Territorial', en_archivo: 2, nuevos: 2, ya_existentes: 0 },
+    ]);
+    expect(await sql.query('SELECT 1 FROM module_records')).toHaveLength(0);
+
+    const applied = await importBaseMaestra(store, 'MASCLI/PRJ-T', SEED, {
+      apply: true,
+      source: 'seed.json',
+      now,
+    });
+    expect(applied.applied).toBe(true);
+    const contacts = await store.list('MASCLI/PRJ-T', 'Directorio_Territorial', {
+      limit: 10,
+      q: null,
+    });
+    expect(contacts.map((r) => r.payload)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ Celular: '000 000 000' })]),
+    );
+    expect(await store.list('MASCLI/PRJ-T', 'Usuarios', { limit: 10, q: null })).toEqual([]);
+    const audit = await sql.query<{ action: string; detail: string }>(
+      "SELECT action, detail FROM audit WHERE module = 'Directorio_Territorial'",
+    );
+    expect(audit).toEqual([
+      { action: 'IMPORT', detail: 'Base Maestra: 2 registros nuevos desde seed.json' },
+    ]);
+
+    // A person edits a demand; re-running the import must not touch it.
+    const [demand] = await store.list('MASCLI/PRJ-T', 'Demandas', { limit: 1, q: null });
+    await sql.query(
+      'UPDATE module_records SET payload = payload || \'{"Estado":"Cerrada"}\' WHERE id = \'D-T1\'',
+    );
+    const again = await importBaseMaestra(store, 'MASCLI/PRJ-T', SEED, {
+      apply: true,
+      source: 'seed.json',
+      now,
+    });
+    expect(again.modules.every((m) => m.nuevos === 0)).toBe(true);
+    const [after] = await store.list('MASCLI/PRJ-T', 'Demandas', { limit: 1, q: null });
+    expect(demand?.payload.Estado).toBe('Nueva');
+    expect(after?.payload.Estado).toBe('Cerrada');
+  });
+
+  it('applies nothing when the file has problems', async () => {
+    const { sql, store } = await database();
+    const report = await importBaseMaestra(
+      store,
+      'MASCLI/PRJ-T',
+      { ...SEED, Desconocido: [] },
+      { apply: true, source: 'seed.json', now },
+    );
+    expect(report.applied).toBe(false);
+    expect(await sql.query('SELECT 1 FROM module_records')).toHaveLength(0);
+  });
+});

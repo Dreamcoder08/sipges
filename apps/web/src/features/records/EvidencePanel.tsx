@@ -10,16 +10,16 @@ import {
   ACCEPTED_FILES,
   attachmentsQuery,
   downloadAttachment,
+  imageDataUrl,
+  previewQuery,
   uploadAttachment,
 } from './evidence-api.ts';
-import { presentText } from './model.ts';
+
 import type { RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
-const isSeedProvenance = (note: string) =>
-  /^(?:DATOS SINTÉTICOS\. Verificación simulada\.|Registro de seguimiento\.) mascli-academic-v1:DEMO-F-\d{2}$/.test(
-    note,
-  );
+/** Evidence uploaded by the synthetic academic case (`demo:seed`) carries this marker. */
+const isDemoEvidence = (note: string) => /\bmascli-academic-v1:DEMO-F-\d{2}$/.test(note);
 
 const errorText = (error: unknown) =>
   isApiError(error)
@@ -44,6 +44,7 @@ export const EvidencePanel = ({
   const attachments = useQuery(query);
   const client = useQueryClient();
   const [file, setFile] = useState<File | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [metadata, setMetadata] = useState({
     documentType: 'Reporte / evidencia',
@@ -70,7 +71,7 @@ export const EvidencePanel = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = presentText(attachment.original_name);
+      link.download = attachment.original_name;
       document.body.append(link);
       link.click();
       link.remove();
@@ -91,17 +92,24 @@ export const EvidencePanel = ({
               {items.map((item) => (
                 <li key={item.id}>
                   <div>
-                    <strong>{presentText(item.original_name)}</strong>
+                    <strong>{item.original_name}</strong>
                     <small>
-                      {(item.size_bytes / 1024).toFixed(1)} KB ·{' '}
-                      {isSeedProvenance(item.notes)
-                        ? 'Evidencia de seguimiento'
-                        : item.document_type}{' '}
-                      · {item.verification}
+                      {(item.size_bytes / 1024).toFixed(1)} KB · {item.document_type} ·{' '}
+                      {item.verification}
+                      {item.author ? ` · ${item.author}` : ''} · {item.created_at.slice(0, 10)}
+                      {isDemoEvidence(item.notes) ? ' · Demostración (sintético)' : ''}
                     </small>
                     <small>SHA-256: {item.sha256}</small>
-                    {item.notes && !isSeedProvenance(item.notes) ? <p>{item.notes}</p> : null}
+                    {item.notes ? <p>{item.notes}</p> : null}
                   </div>
+                  <Button
+                    variant="secondary"
+                    aria-expanded={viewing === item.id}
+                    aria-label={`Ver contenido de ${item.original_name}`}
+                    onClick={() => setViewing((current) => (current === item.id ? null : item.id))}
+                  >
+                    {viewing === item.id ? 'Ocultar contenido' : 'Ver contenido'}
+                  </Button>
                   <Button
                     variant="secondary"
                     disabled={download.isPending}
@@ -113,6 +121,7 @@ export const EvidencePanel = ({
                   >
                     Descargar
                   </Button>
+                  {viewing === item.id ? <EvidenceViewer attachment={item} scope={scope} /> : null}
                 </li>
               ))}
             </ul>
@@ -195,6 +204,54 @@ export const EvidencePanel = ({
           </div>
         </form>
       ) : null}
+    </section>
+  );
+};
+
+const PREVIEW_MESSAGES = {
+  no_text:
+    'El archivo está almacenado, pero no contiene texto legible (por ejemplo, un PDF escaneado). Descárguelo para revisarlo.',
+  too_long: 'El PDF supera las 60 páginas que muestra el visor. Descárguelo para leerlo completo.',
+  unsupported:
+    'Este formato (Word 97-2003 u hoja de cálculo) no tiene visor en la aplicación. Descárguelo para abrirlo.',
+} as const;
+
+/** In-app reader of one stored evidence file: its text, or the image itself. */
+const EvidenceViewer = ({ attachment, scope }: { attachment: Attachment; scope: string }) => {
+  const preview = useQuery(previewQuery(attachment.id, scope));
+  const image = useQuery({
+    queryKey: ['evidence', scope, 'image', attachment.id],
+    queryFn: () => imageDataUrl(attachment.id, scope),
+    enabled: preview.data?.kind === 'image',
+    staleTime: Infinity,
+  });
+  return (
+    <section className={styles.viewer} aria-label={`Contenido de ${attachment.original_name}`}>
+      <QueryState query={preview} label="el contenido del archivo">
+        {(data) =>
+          data.kind === 'text' ? (
+            <>
+              {data.pages.map((page, index) => (
+                <article key={index}>
+                  {data.format === 'pdf' ? <h5>Página {index + 1}</h5> : null}
+                  <pre>{page}</pre>
+                </article>
+              ))}
+              {data.truncated ? (
+                <p className={styles.muted}>
+                  El visor muestra el comienzo del documento. Descárguelo para leerlo completo.
+                </p>
+              ) : null}
+            </>
+          ) : data.kind === 'image' ? (
+            <QueryState query={image} label="la imagen">
+              {(src) => <img src={src} alt={attachment.original_name} className={styles.image} />}
+            </QueryState>
+          ) : (
+            <p>{PREVIEW_MESSAGES[data.kind]}</p>
+          )
+        }
+      </QueryState>
     </section>
   );
 };

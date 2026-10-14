@@ -120,6 +120,27 @@ export const evidenceRoutes = (evidence: EvidenceService) =>
       return row ? c.json(toJson(row)) : c.json(NOT_FOUND, 404);
     })
 
+    // In-app viewer (functional audit, error 05): text of PDF/DOCX/TXT/CSV with metadata.
+    .get('/system/uploads/:id/preview', async (c) => {
+      const result = await evidence.preview(formatScope(c.get('scope')), c.req.param('id'));
+      if (result.kind === 'missing_metadata') return c.json(NOT_FOUND, 404);
+      const attachment = toJson(result.attachment);
+      switch (result.kind) {
+        case 'missing_object':
+          return c.json({ detail: 'El archivo ya no está disponible en este almacenamiento' }, 410);
+        case 'text':
+          return c.json({
+            kind: 'text',
+            format: result.format,
+            pages: result.pages,
+            truncated: result.truncated,
+            attachment,
+          });
+        default:
+          return c.json({ kind: result.kind, attachment });
+      }
+    })
+
     .get('/system/uploads/:id/download', async (c) => {
       const result = await evidence.download(formatScope(c.get('scope')), c.req.param('id'));
       if (result.kind === 'missing_metadata') return c.json(NOT_FOUND, 404);

@@ -76,8 +76,10 @@ export const BaseMap = ({
       aria-label={label}
     >
       <title>{title}</title>
+      {/* Explicit fills: if the stylesheet is missing, shapes must not fall back to black. */}
       <rect
         className={styles.sea}
+        fill="#d6e8f3"
         x={minX - width}
         y={-maxY - height}
         width={width * 3}
@@ -90,6 +92,8 @@ export const BaseMap = ({
               <path
                 key={district.name}
                 className={`${styles.district} ${districtClass?.(district.name) ?? ''}`}
+                fill="#f6f3ea"
+                stroke="#9aa8b4"
                 d={ringsPath([district.ring])}
                 strokeWidth={unit * 0.35}
                 {...districtProps?.(district.name)}

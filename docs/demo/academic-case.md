@@ -73,3 +73,7 @@ La suite local aprobó API 465/7 PostgreSQL opcionales omitidas, web102, kernel3
 ## Presentación de la interfaz
 
 A petición del propietario, la interfaz ya no añade un aviso global de demo ni repite etiquetas de datos sintéticos en los nombres y descripciones del ejercicio. Los marcadores internos `Demo_Dataset`, `Demo_ID` y `Dato_Sintetico` se conservan: el conjunto sigue siendo ficticio. Los límites de carga se muestran en el formulario y en errores de tamaño. Las notas originales de procedencia de las evidencias y del corte inicial se presentan con títulos breves; las notas editadas por el usuario se conservan visibles. Los archivos ya cargados se mantienen intactos, incluidos sus textos originales; los documentos generados por futuras cargas usan títulos neutrales.
+
+### Separación de datos de demostración (auditoría funcional, 2026-10-14)
+
+Una prueba funcional mostró que, sin etiquetas, el caso se confundía con datos reales (el dashboard mostraba sus 20 eventos y 8 demandas abiertas, y la demanda «Información sobre tránsito y ruido» parecía propia). Sin cambiar ni borrar ningún registro, la aplicación ahora lee los marcadores `Dato_Sintetico`/`Demo_Dataset`: los contadores del dashboard cuentan solo registros reales e informan aparte los de demostración, y cada módulo muestra por defecto los registros reales, con el filtro «Origen» para ver los de demostración, marcados con la etiqueta «Demostración». Los códigos se muestran tal como están guardados (`DEMO-…`). No se añade aviso global. Ver `odd/tasks/functional-audit-correction.md`.
