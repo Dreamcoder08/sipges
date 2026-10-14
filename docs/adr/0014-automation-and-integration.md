@@ -45,7 +45,22 @@ classification markings (ADR 0012) or the append-only audit.
    responses): `initialize`, `ping`, `tools/list`, `tools/call`. Tools reuse the ontology,
    records and analyst services inside the key's tenant transaction, so RLS and markings still
    decide what an agent sees. Write tools exist only for write keys and are audited with the
-   key's name as actor.
+   key's name as actor. Inbound webhooks (`POST /hooks/ingest/{module}`) need a write key,
+   check every payload before the first write, create each record with its own audited
+   CREATE (so rules react) and replay a retried call that repeats its `Idempotency-Key`.
+8. **The analyst proposes; people decide.** Proposals (links between records that name each
+   other in their text, follow-up records for severe open items) are computed on request,
+   recomputed before an approval is applied through the owning context, and remembered once
+   decided, with an audit row. No proposal is applied without a person.
+9. **Hybrid search without extensions.** When enabled, record embeddings from the configured
+   model are stored as `real[]` with a hash of the embedded payload, refreshed a few at a time
+   on search, compared by cosine over visible records only and fused with the lexical ranking
+   by reciprocal rank. Restricted records are never sent to the model; any model failure
+   leaves the lexical search unchanged.
+10. **Live activity and traces.** `GET /system/events` streams the project's audit tail as
+    server-sent events naming only module and action, resumable with `Last-Event-ID`; the
+    web app refreshes its queries when something changes. Requests join or start a W3C trace,
+    logs carry its ids and outbound calls to owned systems continue it with `traceparent`.
 
 ## Consequences
 
@@ -53,3 +68,7 @@ classification markings (ADR 0012) or the append-only audit.
 - Serverless deployments need a cron schedule; on plans without minute crons the delay grows.
 - Webhook receivers must verify signatures; the docs show how.
 - An API key is a bearer secret: anyone holding it acts on that project until revoked.
+- Each open screen keeps one streaming request and polls the audit table every few seconds;
+  serverless streams end before the function limit and reconnect.
+- Semantic ranking is linear in the number of embedded records, fine for project-sized data;
+  a much larger corpus would need an index such as pgvector.

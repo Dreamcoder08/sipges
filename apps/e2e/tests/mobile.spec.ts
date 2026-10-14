@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
+import { watchNetwork } from '../support/network.ts';
 
 /** Wide tables scroll inside their own region; the page itself must never scroll sideways. */
 const expectNoHorizontalPageScroll = async (page: Page) => {
@@ -18,6 +19,7 @@ test('mobile viewport: sign-in, menu navigation and every screen fit the width',
 }) => {
   await page.goto('/login');
   await expectNoHorizontalPageScroll(page);
+  const settled = watchNetwork(page);
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await expect(page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' })).toBeVisible();
   await expectNoHorizontalPageScroll(page);
@@ -59,7 +61,7 @@ test('mobile viewport: sign-in, menu navigation and every screen fit the width',
   for (const screen of SCREENS) {
     await page.goto(screen.path);
     await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
-    await page.waitForLoadState('networkidle');
+    await settled();
     await expectNoHorizontalPageScroll(page);
   }
 });

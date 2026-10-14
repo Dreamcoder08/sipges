@@ -223,3 +223,17 @@ claude mcp add --transport http mascli https://<tu-dominio>/mcp \
 
 Otros clientes (Claude Desktop, VS Code, Cursor) aceptan la misma URL y la cabecera
 `Authorization` en su configuración de servidores MCP remotos.
+
+## Variables de entorno
+
+| Variable | Para qué | Por defecto |
+| --- | --- | --- |
+| `MASCLI_AUTOMATION_INTERVAL` | Segundos entre revisiones de reglas en un servidor Node (`0` las apaga). | `30` |
+| `MASCLI_CRON_SECRET` o `CRON_SECRET` | Secreto del cron de `/system/automations/cron` (24+ caracteres). | sin cron |
+| `MASCLI_VAPID_PUBLIC_KEY`, `MASCLI_VAPID_PRIVATE_KEY`, `MASCLI_VAPID_SUBJECT` | Avisos en el dispositivo (`pnpm --filter @mascli/api vapid:keys`). | apagado |
+| `MASCLI_SEMANTIC_SEARCH` | `1` activa la búsqueda semántica con Ollama. | `0` |
+| `MASCLI_OCR`, `MASCLI_OCR_LANGUAGES` | OCR local de PDF escaneados con `ocrmypdf`. | apagado |
+
+En Vercel, define las variables en el proyecto (Settings → Environment Variables) y vuelve a
+desplegar. Las conexiones de tiempo real duran menos que el límite de 60 s de la función y se
+reanudan solas.

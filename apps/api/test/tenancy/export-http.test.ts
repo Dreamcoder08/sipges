@@ -92,6 +92,9 @@ const expected = (
       },
     ],
     record_links: [],
+    automation_rules: [],
+    automation_runs: [],
+    notifications: [],
   },
 });
 
@@ -188,6 +191,9 @@ describe('GET /system/export versioned tenant JSON', () => {
         preventive_action_log: [],
         record_versions: [],
         record_links: [],
+        automation_rules: [],
+        automation_runs: [],
+        notifications: [],
       },
     });
   });
