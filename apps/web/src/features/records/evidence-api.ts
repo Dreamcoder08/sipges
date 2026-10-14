@@ -1,4 +1,4 @@
-import { Attachment, AttachmentUploaded } from '@mascli/contracts';
+import { Attachment, AttachmentPreview, AttachmentUploaded } from '@mascli/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { request, requestJson } from '../../shared/api/client.ts';
@@ -51,3 +51,36 @@ export const uploadAttachment = (
 /** Ignore supplied download_url: route and scope are always chosen by this client. */
 export const downloadAttachment = async (id: string, scope: string) =>
   (await request(`/system/uploads/${encodeURIComponent(id)}/download`, { scope })).blob();
+
+export const previewQuery = (id: string, scope: string) =>
+  queryOptions({
+    queryKey: ['evidence', scope, 'preview', id],
+    queryFn: ({ signal }) =>
+      requestJson(`/system/uploads/${encodeURIComponent(id)}/preview`, AttachmentPreview, {
+        scope,
+        signal,
+      }),
+  });
+
+/** Images are shown as data: URLs, which the SPA's CSP already allows (no blob: source). */
+export const imageDataUrl = async (id: string, scope: string) => {
+  const blob = await downloadAttachment(id, scope);
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('No se pudo leer la imagen.'));
+    reader.readAsDataURL(blob);
+  });
+};
+
+/** Evidence of every record of a module, to show which records have files (one request). */
+export const moduleAttachmentsQuery = (module: RecordModule, scope: string) =>
+  queryOptions({
+    queryKey: ['evidence', scope, module, 'all'],
+    queryFn: ({ signal }) =>
+      requestJson(
+        `/system/uploads?${new URLSearchParams({ linked_module: module, limit: '500' })}`,
+        z.array(Attachment),
+        { scope, signal },
+      ),
+  });

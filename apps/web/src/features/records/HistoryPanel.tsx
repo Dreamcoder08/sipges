@@ -2,7 +2,7 @@ import type { RecordVersion } from '@mascli/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { historyQuery } from './api.ts';
-import { displayValue, presentText } from './model.ts';
+import { displayValue } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -16,8 +16,7 @@ const OPERATIONS: Record<RecordVersion['operation'], string> = {
 const when = (iso: string) =>
   new Date(iso).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
 
-const shown = (value: unknown) =>
-  value === undefined ? '—' : presentText(displayValue(value)) || '—';
+const shown = (value: unknown) => (value === undefined ? '—' : displayValue(value) || '—');
 
 /** Who changed what and when (docs/adr/0011 §4), newest version first. */
 export const HistoryPanel = ({

@@ -277,9 +277,9 @@ it('blocks conflicting editors while a save is still running', async () => {
   await user.click(screen.getByRole('button', { name: 'Guardar registro' }));
   await waitFor(() => expect(started).toBe(true));
   try {
-    expect(screen.getByRole('button', { name: 'Editar A-2' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Eliminar A-2' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Cerrar ficha' })).toBeDisabled();
+    // The editor replaces the list, so no other record can be opened until the save ends.
+    expect(screen.queryByRole('button', { name: 'Editar A-2' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Volver a la lista' })).toBeDisabled();
   } finally {
     release();
   }

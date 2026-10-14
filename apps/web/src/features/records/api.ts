@@ -43,13 +43,14 @@ export const saveRecord = async (
   projectLabel: string,
   values: Record<string, string>,
   id?: string,
+  extras: Record<string, string> = {},
 ) => {
   const latest =
     id === undefined
       ? undefined
       : await requestJson(recordPath(module, id), ModuleRecord, { scope });
   const body = RecordIn.parse({
-    payload: recordPayload(module, values, projectId, projectLabel, latest),
+    payload: recordPayload(module, values, projectId, projectLabel, latest, extras),
   });
   if (id !== undefined) {
     await requestJson(recordPath(module, id), OkResponse, {

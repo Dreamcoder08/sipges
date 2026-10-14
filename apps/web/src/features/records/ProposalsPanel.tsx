@@ -3,7 +3,7 @@ import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { presentText } from './model.ts';
+
 import { decideProposal, proposalsQuery } from './ontology-api.ts';
 import styles from './Records.module.css';
 
@@ -44,8 +44,8 @@ export const ProposalsPanel = ({
             <ul className={styles.proposals}>
               {items.map((item) => (
                 <li key={item.fingerprint}>
-                  <strong>{presentText(item.title)}</strong>
-                  <p className={styles.muted}>{presentText(item.reason)}</p>
+                  <strong>{item.title}</strong>
+                  <p className={styles.muted}>{item.reason}</p>
                   <div className={styles.proposalActions}>
                     <Button
                       disabled={decide.isPending}

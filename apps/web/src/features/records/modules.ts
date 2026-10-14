@@ -22,6 +22,14 @@ export type RecordField = {
   initial?: string;
   aliases?: readonly string[];
 };
+/** List filters by field value (the prototype's directory filters). */
+export const FACETS: Partial<Record<RecordModule, readonly { key: string; label: string }[]>> = {
+  directorio: [
+    { key: 'Territorio', label: 'Territorio / ciudad' },
+    { key: 'Tipo_Actor', label: 'Tipo de actor' },
+    { key: 'Prioridad', label: 'Prioridad' },
+  ],
+};
 export type ModuleDefinition = {
   label: string;
   fields: readonly RecordField[];
@@ -259,12 +267,16 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
   directorio: {
     label: 'Directorio territorial',
     titleField: 'Nombre',
-    columns: ['Nombre', 'Cargo', 'Institucion', 'Territorio', 'Telefono'],
+    columns: ['Nombre', 'Cargo', 'Institucion', 'Territorio', 'Telefono', 'Prioridad'],
     fields: [
       { key: 'Nombre', label: 'Nombre', required: true, aliases: ['Nombre actualizado 2026'] },
-      { key: 'Cargo', label: 'Cargo' },
+      { key: 'Cargo', label: 'Cargo', aliases: ['Cargo actual'] },
       { key: 'Institucion', label: 'Institución', aliases: ['Institución / Organización'] },
-      { ...territory, aliases: ['Lugar / ámbito'] },
+      {
+        ...territory,
+        label: 'Territorio / ciudad',
+        aliases: ['Lugar / ámbito', 'Ciudad', 'Distrito', 'Localidad'],
+      },
       {
         key: 'Telefono',
         label: 'Teléfono',

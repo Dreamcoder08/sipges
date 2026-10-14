@@ -38,6 +38,8 @@ ODD forbids doing so without an explicit user decision.
 - **Other JSON configuration** (`indicator_config.json`, `model_status.json`,
   `canonical_entities.json`, `project_coordinates.json`, `seed.json`). They are reference data
   shipped with the application, not tenant state; only `irsa_config.json` is editable per scope.
+  Exception: `seed.json` is the prototype's Base Maestra, which app.py loaded into an empty
+  database; load it explicitly with `import:base-maestra` (docs/migration/base-maestra.md).
 - **Legacy `auth_users` rows that may sit inside a tenant database** (behavior contract §8.7).
   Accounts come from `auth_global.db` only.
 - **Rows the new schema refuses**: unknown role, malformed password hash, payload that is not a

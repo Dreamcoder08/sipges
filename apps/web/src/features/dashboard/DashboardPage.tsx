@@ -10,13 +10,24 @@ import { dashboardQuery, irsaQuery, modelStatusQuery, moduleRecordsQuery } from 
 import { alertsByLevel, eventsByDimension, eventsByMonth } from './model.ts';
 import styles from './DashboardPage.module.css';
 
+/** Counter, label, module it comes from and the rule it applies (shown to the reader). */
 const KPIS = [
-  ['eventos', 'Eventos'],
-  ['actores', 'Actores analíticos'],
-  ['demandas_abiertas', 'Demandas abiertas'],
-  ['alertas_activas', 'Alertas activas'],
-  ['directorio', 'Directorio territorial'],
-  ['priorizados', 'Actores priorizados'],
+  ['eventos', 'Eventos', '/eventos', 'Todos los eventos registrados.'],
+  ['actores', 'Actores analíticos', '/actores', 'Todos los actores registrados.'],
+  [
+    'demandas_abiertas',
+    'Demandas abiertas',
+    '/demandas',
+    'Demandas con estado distinto de «Cerrada».',
+  ],
+  [
+    'alertas_activas',
+    'Alertas activas',
+    '/alertas',
+    'Alertas que no están cerradas ni descartadas.',
+  ],
+  ['directorio', 'Directorio territorial', '/directorio', 'Contactos del directorio.'],
+  ['priorizados', 'Actores priorizados', null, 'Matriz de priorización importada.'],
 ] as const;
 
 /**
@@ -53,16 +64,35 @@ export const DashboardPage = ({
 
       <Card eyebrow="Resumen operativo" title="Base Maestra del proyecto activo">
         <QueryState query={summary} label="el resumen">
-          {(data) => (
-            <dl className={styles.kpis}>
-              {KPIS.map(([key, label]) => (
-                <div key={key} className={styles.kpi}>
-                  <dt>{label}</dt>
-                  <dd>{data[key]}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
+          {(data) => {
+            const demo = Object.values(data.demostracion).reduce((sum, n) => sum + n, 0);
+            return (
+              <>
+                <dl className={styles.kpis}>
+                  {KPIS.map(([key, label, to, rule]) => (
+                    <div key={key} className={styles.kpi}>
+                      <dt>{label}</dt>
+                      <dd>{data[key]}</dd>
+                      <dd className={styles.kpiRule}>
+                        {rule}
+                        {data.demostracion[key]
+                          ? ` No incluye ${data.demostracion[key]} de demostración.`
+                          : ''}{' '}
+                        {to ? renderLink(to, 'Ver registros') : null}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className={styles.kpiNote}>
+                  Los indicadores cuentan solo registros reales del proyecto activo y se actualizan
+                  al guardar, importar o eliminar registros.
+                  {demo
+                    ? ` Hay ${demo} registros de demostración (caso académico sintético) excluidos; se consultan en cada módulo con el filtro «Origen».`
+                    : ''}
+                </p>
+              </>
+            );
+          }}
         </QueryState>
       </Card>
 

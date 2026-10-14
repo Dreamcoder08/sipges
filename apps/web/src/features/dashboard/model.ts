@@ -1,3 +1,4 @@
+import { isDemoRecord } from '@mascli/contracts';
 import {
   DIMENSIONS,
   type DimensionCode,
@@ -17,12 +18,15 @@ const projectOf = (record: ModuleRecord) =>
   typeof record['Proyecto_ID'] === 'string' && record['Proyecto_ID']
     ? record['Proyecto_ID']
     : LEGACY_PROJECT;
+/** Charts follow the counters: real records of the active project, never demo rows. */
+const counted = (record: ModuleRecord, projectId: string) =>
+  projectOf(record) === projectId && !isDemoRecord(record);
 
 /** Open alerts of the active project by severity band (app.js loadDashboard). */
 export const alertsByLevel = (alerts: readonly ModuleRecord[], projectId: string) => {
   const counts = Object.fromEntries(LEVELS.map((l) => [l, 0])) as Record<Level, number>;
   for (const alert of alerts) {
-    if (projectOf(alert) !== projectId || CLOSED.has(foldText(alert['Estado']))) continue;
+    if (!counted(alert, projectId) || CLOSED.has(foldText(alert['Estado']))) continue;
     counts[severityLevel(alert['Nivel_Preliminar'] || alert['Nivel'])] += 1;
   }
   return counts;
@@ -32,7 +36,7 @@ export const alertsByLevel = (alerts: readonly ModuleRecord[], projectId: string
 export const eventsByDimension = (events: readonly ModuleRecord[], projectId: string) => {
   const counts = Object.fromEntries(DIMENSIONS.map((d) => [d, 0])) as Record<DimensionCode, number>;
   for (const event of events) {
-    if (projectOf(event) !== projectId) continue;
+    if (!counted(event, projectId)) continue;
     const code = dimensionOf(event['Dimension_Principal']);
     if (code) counts[code] += 1;
   }
@@ -48,7 +52,7 @@ const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 export const eventsByMonth = (events: readonly ModuleRecord[], projectId: string, span = 6) => {
   const counts = new Map<number, number>();
   for (const event of events) {
-    if (projectOf(event) !== projectId) continue;
+    if (!counted(event, projectId)) continue;
     const match = /^(\d{4})-(\d{2})/.exec(String(event['Fecha'] ?? ''));
     if (!match) continue;
     const index = Number(match[1]) * 12 + Number(match[2]) - 1;

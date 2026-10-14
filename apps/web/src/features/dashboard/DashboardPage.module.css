@@ -53,6 +53,18 @@
   font-weight: 800;
 }
 
+.kpi .kpiRule {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.kpiNote {
+  margin: var(--space-3) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));

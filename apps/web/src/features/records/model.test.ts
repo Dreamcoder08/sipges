@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { presentText, safePublicUrl } from './model.ts';
+import { byOrigin, safePublicUrl } from './model.ts';
 
-describe('presentText', () => {
-  it('hides internal seed prefixes without touching other text', () => {
-    expect(presentText('DEMO-E-01')).toBe('E-01');
-    expect(presentText('Ver DEMO-AL-03 y DEMO-F-10')).toBe('Ver AL-03 y F-10');
-    expect(presentText('demo-fuente-02.pdf')).toBe('fuente-02.pdf');
-    expect(presentText('Demostración pública')).toBe('Demostración pública');
+// Regression (functional audit, errors 01-02): demo rows are separated, never relabelled.
+describe('byOrigin', () => {
+  const rows = [
+    { _id: 'D-1', Descripcion: 'Registrada por el equipo' },
+    { _id: 'DEMO-D-03', Dato_Sintetico: true, Demo_Dataset: 'mascli-academic-v1' },
+    { _id: 'X', Demo_Dataset: 'mascli-academic-v1' },
+  ];
+  it('keeps real and demo records apart by their stored markers', () => {
+    expect(byOrigin(rows, 'real').map((r) => r._id)).toEqual(['D-1']);
+    expect(byOrigin(rows, 'demo').map((r) => r._id)).toEqual(['DEMO-D-03', 'X']);
+    expect(byOrigin(rows, 'todos')).toHaveLength(3);
   });
 });
 

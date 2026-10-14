@@ -1,0 +1,68 @@
+import type { ModuleName, Payload } from '../../contexts/records/application/index.ts';
+import { type BaseMaestraPlan, planBaseMaestra } from './plan.ts';
+
+/** The part of the record store the import needs (contexts/records RecordStore). */
+export type BaseMaestraTarget = {
+  existing(tenantId: string, module: ModuleName, ids: readonly string[]): Promise<Set<string>>;
+  importBatch(
+    tenantId: string,
+    module: ModuleName,
+    items: readonly { id: string; payload: Payload }[],
+    note: { action: string; detail: string },
+    at: Date,
+  ): Promise<{ created: number; updated: number }>;
+};
+
+export type BaseMaestraReport = {
+  readonly applied: boolean;
+  readonly modules: readonly {
+    readonly module: string;
+    readonly en_archivo: number;
+    readonly nuevos: number;
+    readonly ya_existentes: number;
+  }[];
+  readonly problems: readonly string[];
+};
+
+/**
+ * Dry run by default. With `apply`, inserts only the missing records, one audited transaction
+ * per module («IMPORT · Base Maestra»). Any problem in the file blocks the whole apply.
+ */
+export const importBaseMaestra = async (
+  target: BaseMaestraTarget,
+  tenantId: string,
+  seed: unknown,
+  options: { apply: boolean; source: string; now: () => Date },
+): Promise<BaseMaestraReport> => {
+  const plan: BaseMaestraPlan = planBaseMaestra(seed);
+  const modules = [];
+  const apply = options.apply && plan.problems.length === 0;
+  for (const { module, inFile, items } of plan.modules) {
+    const existing = items.length
+      ? await target.existing(
+          tenantId,
+          module,
+          items.map((item) => item.id),
+        )
+      : new Set<string>();
+    const fresh = items.filter((item) => !existing.has(item.id));
+    if (apply && fresh.length)
+      await target.importBatch(
+        tenantId,
+        module,
+        fresh,
+        {
+          action: 'IMPORT',
+          detail: `Base Maestra: ${fresh.length} registros nuevos desde ${options.source}`,
+        },
+        options.now(),
+      );
+    modules.push({
+      module,
+      en_archivo: inFile,
+      nuevos: fresh.length,
+      ya_existentes: items.length - fresh.length,
+    });
+  }
+  return { applied: apply, modules, problems: plan.problems };
+};

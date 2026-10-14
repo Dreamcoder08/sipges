@@ -45,8 +45,8 @@ test('territorial record CRUD with evidence upload and byte-exact download', asy
   expect(download.suggestedFilename()).toBe('acta-e2e.txt');
   expect(Buffer.compare(await readFile((await download.path()) ?? ''), evidence)).toBe(0);
 
-  // Update keeps the evidence link.
-  await page.getByRole('button', { name: `Editar ${id}` }).click();
+  // Update keeps the evidence link. The record panel replaces the list; edit from it.
+  await page.getByRole('button', { name: 'Editar', exact: true }).click();
   await page.getByLabel('Observaciones').fill('Observación editada E2E');
   // Delay the write so the test cannot pass by reading before the save finishes: the button
   // turns into "Guardando…" at once, so only the success notice proves the PUT completed.
@@ -62,6 +62,8 @@ test('territorial record CRUD with evidence upload and byte-exact download', asy
   expect(await stored.json()).toMatchObject({ _id: id, Observaciones: 'Observación editada E2E' });
   await page.getByRole('button', { name: `Ver ${id}` }).click();
   await expect(page.getByRole('button', { name: 'Descargar acta-e2e.txt' })).toBeVisible();
+  await page.getByRole('button', { name: 'Volver a la lista' }).click();
+  await expect(page.getByRole('button', { name: `Ver ${id}` })).toBeFocused();
 
   // Delete: cancel first, then confirm.
   await page.getByRole('button', { name: `Eliminar ${id}` }).click();

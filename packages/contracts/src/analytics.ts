@@ -128,13 +128,21 @@ export const IntegratedAnalysisResponse = z.strictObject({
 export type IntegratedAnalysisResponse = z.infer<typeof IntegratedAnalysisResponse>;
 
 /** GET /api/dashboard (app.py:984): executive counters of the active scope. */
-export const DashboardResponse = z.strictObject({
+const DashboardCounters = {
   eventos: z.number().int(),
   actores: z.number().int(),
   demandas_abiertas: z.number().int(),
   alertas_activas: z.number().int(),
   directorio: z.number().int(),
   priorizados: z.number().int(),
+};
+/**
+ * The top-level counters cover real records only; synthetic demo records (`recordOrigin`) are
+ * counted apart in `demostracion` so the dashboard never mixes them.
+ */
+export const DashboardResponse = z.strictObject({
+  ...DashboardCounters,
   niveles: z.record(z.string(), z.number().int()),
+  demostracion: z.strictObject(DashboardCounters),
 });
 export type DashboardResponse = z.infer<typeof DashboardResponse>;
