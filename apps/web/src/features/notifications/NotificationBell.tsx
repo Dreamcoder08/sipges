@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { z } from 'zod';
+import { DevicePush } from './DevicePush.tsx';
 import styles from './NotificationBell.module.css';
 
 /** How often the inbox is refreshed while the app is open. */
@@ -112,6 +113,7 @@ export const NotificationBell = ({ scope }: { scope: string }) => {
               ))}
             </ul>
           )}
+          <DevicePush scope={scope} />
         </div>
       )}
     </div>

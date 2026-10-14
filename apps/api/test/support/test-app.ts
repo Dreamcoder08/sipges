@@ -8,6 +8,7 @@ import type {
   ChannelConfig,
   ChannelSender,
   OutboundMessage,
+  PushSender,
 } from '../../src/contexts/automation/application/index.ts';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import type { GoogleSignIn } from '../../src/contexts/identity/application/ports.ts';
@@ -102,6 +103,7 @@ export const createTestApp = async (
     googleSignIn?: GoogleSignIn;
     narrator?: Narrator | null;
     channelSender?: ChannelSender;
+    pushSender?: PushSender | null;
   } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
@@ -120,6 +122,7 @@ export const createTestApp = async (
     ...(options.googleSignIn ? { googleSignIn: options.googleSignIn } : {}),
     narrator: options.narrator ?? null,
     channelSender: options.channelSender ?? outbox.sender,
+    pushSender: options.pushSender ?? null,
   });
   const app = createApp(container, options.web ? { web: options.web } : {});
 

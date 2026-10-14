@@ -23,6 +23,9 @@ const SELF_SERVICE_POSTS = new Set([
   '/system/auth/totp/enable',
   // Marking one's own notifications as read (ADR 0014).
   '/system/notifications/read',
+  // Enabling or disabling one's own device notifications.
+  '/system/notifications/push',
+  '/system/notifications/push/unsubscribe',
 ]);
 
 const COORDINATOR_WRITABLE = ['/system/prevention/', '/system/intelligence/territorial-alerts'];

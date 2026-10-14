@@ -5,6 +5,9 @@ import {
   type ChannelOut,
   type NotificationInbox,
   NotificationReadIn,
+  type PushConfig,
+  PushSubscriptionIn,
+  PushUnsubscribeIn,
   RuleIn,
   type RuleOut,
   type RunOut,
@@ -270,5 +273,31 @@ export const automationRoutes = (automation: AutomationService, cronSecret: stri
         c.get('identity').username,
         'all' in body.value ? 'all' : body.value.ids,
       );
+      return c.json({ ok: true });
+    })
+    .get('/system/notifications/push', (c) => {
+      const key = automation.pushKey();
+      return c.json({ enabled: key !== null, public_key: key } satisfies PushConfig);
+    })
+
+    .post('/system/notifications/push', async (c) => {
+      const body = await parseJson(c, PushSubscriptionIn);
+      if (!body.ok) return body.response;
+      const saved = await automation.subscribePush(c.get('identity').username, {
+        endpoint: body.value.endpoint,
+        p256dh: body.value.keys.p256dh,
+        auth: body.value.keys.auth,
+      });
+      if (!saved.ok)
+        return saved.error === 'disabled'
+          ? c.json({ detail: 'Las notificaciones en dispositivos no están configuradas' }, 409)
+          : c.json({ detail: 'Suscripción de notificaciones no válida' }, 422);
+      return c.json({ ok: true });
+    })
+
+    .post('/system/notifications/push/unsubscribe', async (c) => {
+      const body = await parseJson(c, PushUnsubscribeIn);
+      if (!body.ok) return body.response;
+      await automation.unsubscribePush(c.get('identity').username, body.value.endpoint);
       return c.json({ ok: true });
     });

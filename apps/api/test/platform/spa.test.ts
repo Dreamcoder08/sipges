@@ -58,6 +58,28 @@ describe('single-page app delivery', () => {
     expect(login.headers.get('content-type')).toContain('application/json');
   });
 
+  it('serves the installable-app files from the build root, never cached', async () => {
+    const files: Record<string, string> = { 'sw.js': 'self.x=1', 'manifest.webmanifest': '{}' };
+    const web: WebAssets = {
+      ...memoryWeb,
+      rootFile: async (name) => (name in files ? new TextEncoder().encode(files[name]) : null),
+    };
+    const t = await createTestApp({}, { web });
+    const sw = await t.request('/sw.js');
+    expect(sw.status).toBe(200);
+    expect(sw.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
+    expect(sw.headers.get('cache-control')).toBe('no-store');
+    expect(sw.headers.get('content-security-policy')).toBe(SPA_CSP);
+    expect(await sw.text()).toBe('self.x=1');
+    expect((await t.request('/manifest.webmanifest')).headers.get('content-type')).toBe(
+      'application/manifest+json',
+    );
+    expect((await t.request('/icon.svg')).status).toBe(404);
+    expect((await (await createTestApp({}, { web: memoryWeb })).request('/sw.js')).status).toBe(
+      404,
+    );
+  });
+
   it('serves nothing extra when no web build is configured', async () => {
     const t = await createTestApp();
     expect((await t.request('/', { headers: html })).status).toBe(401);
@@ -74,6 +96,11 @@ describe('single-page app delivery', () => {
       'body{}',
     );
     expect(await web.asset('../index.html')).toBeNull();
+    await writeFile(join(dir, 'sw.js'), 'self.x=1');
+    expect(new TextDecoder().decode((await web.rootFile?.('sw.js')) ?? new Uint8Array())).toBe(
+      'self.x=1',
+    );
+    expect(await web.rootFile?.('index.html')).toBeNull();
     expect(await fileWebAssets(join(dir, 'missing')).index()).toBeNull();
   });
 });

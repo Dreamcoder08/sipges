@@ -5,6 +5,7 @@ export {
   type ChannelError,
   type ChannelKind,
   isChannelKind,
+  isPushEndpoint,
   isPrivateHost,
 } from '../domain/channels.ts';
 export {
@@ -23,6 +24,10 @@ export type {
   ChannelSender,
   NotificationView,
   OutboundMessage,
+  PushPayload,
+  PushSender,
+  PushStore,
+  PushSubscription,
   RunView,
   SecretSealer,
   StoredChannel,

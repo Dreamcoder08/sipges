@@ -79,6 +79,30 @@ duplicados: un reintento repite el mismo id. El cuerpo JSON trae `type`
 (`mascli.<módulo>.<acción>`), `module`, `record_id`, `action`, `detail`, `marking` y `record`
 (los campos del registro, o `null` si está restringido).
 
+## Avisos en el dispositivo
+
+La campana muestra los avisos de la bandeja. Además, cada persona puede marcar **Recibir avisos
+en este dispositivo** para que lleguen como notificación del sistema (Chrome, Edge, Firefox y
+Safari, también en el móvil con la app instalada desde el navegador). Al tocar el aviso se abre
+el registro. Si el aviso viene de un registro **restringido**, no llega a los dispositivos del
+rol consulta.
+
+Para activarlo, genera un par de claves VAPID una vez y guárdalo como variables del servidor:
+
+```bash
+pnpm --filter @mascli/api vapid:keys
+```
+
+| Variable | Valor |
+| --- | --- |
+| `MASCLI_VAPID_PUBLIC_KEY` | Clave pública (87 caracteres). |
+| `MASCLI_VAPID_PRIVATE_KEY` | Clave privada (43 caracteres). Secreta. |
+| `MASCLI_VAPID_SUBJECT` | `mailto:` de contacto o URL `https` del responsable. |
+
+Sin estas variables el interruptor no aparece. Cambiar las claves invalida las suscripciones
+existentes: cada persona debe volver a activarlo. Los dispositivos dados de baja por el
+navegador se olvidan solos.
+
 ## Claves de API
 
 Se crean en la misma pantalla. La clave (`mscli_<prefijo>_<secreto>`) se muestra **una sola

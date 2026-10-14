@@ -3,6 +3,7 @@ import {
   type ChannelConfig,
   type ChannelError,
   type ChannelKind,
+  isPushEndpoint,
   validateChannel,
 } from '../domain/channels.ts';
 import {
@@ -23,6 +24,9 @@ import type {
   ClaimedRun,
   Clock,
   NewRun,
+  PushSender,
+  PushStore,
+  PushSubscription,
   SecretSealer,
 } from './ports.ts';
 
@@ -82,12 +86,15 @@ export const createAutomationService = (deps: {
   sender: ChannelSender;
   sealer: SecretSealer;
   clock: Clock;
-  /** Stored names of the records modules, which are event sources too. */
-  recordModules: readonly string[];
+  /** Records modules (stored name and URL slug), which are event sources too. */
+  recordModules: readonly { readonly module: string; readonly slug: string }[];
+  /** Browser push; absent when no VAPID keys are configured. */
+  push?: { readonly store: PushStore; readonly sender: PushSender | null };
 }) => {
   const { store, sender, sealer, clock } = deps;
+  const slugs = new Map(deps.recordModules.map((m) => [m.module, m.slug]));
   const sources: EventSource[] = [
-    ...deps.recordModules.map((module) => ({ module, label: module.replaceAll('_', ' ') })),
+    ...deps.recordModules.map(({ module }) => ({ module, label: module.replaceAll('_', ' ') })),
     ...SYSTEM_EVENT_SOURCES,
   ];
   const knownModules = new Set(sources.map((s) => s.module));
@@ -95,6 +102,26 @@ export const createAutomationService = (deps: {
   const openChannel = async (tenantId: string, id: number): Promise<ChannelConfig | null> => {
     const sealed = await store.sealedChannel(tenantId, id);
     return sealed ? (JSON.parse(sealer.open(sealed)) as ChannelConfig) : null;
+  };
+
+  /** Best effort: a push failure never fails the run; dropped subscriptions are forgotten. */
+  const pushAll = async (tenantId: string, event: AuditEvent, title: string, body: string) => {
+    const push = deps.push;
+    if (!push?.sender) return;
+    const slug = slugs.get(event.module);
+    const url =
+      slug && event.recordId
+        ? `/objeto/${encodeURIComponent(slug)}/${encodeURIComponent(event.recordId)}`
+        : '/';
+    const targets = await push.store.targets(tenantId, event.record?.marking === 'restringido');
+    for (const target of targets) {
+      try {
+        if ((await push.sender.send(target, { title, body, url }, clock.now())) === 'gone')
+          await push.store.forget(target.endpoint);
+      } catch {
+        // Unreachable push service: the in-app notification already exists.
+      }
+    }
   };
 
   const execute = async (tenantId: string, run: ClaimedRun): Promise<void> => {
@@ -115,6 +142,7 @@ export const createAutomationService = (deps: {
         },
         clock.now(),
       );
+      await pushAll(tenantId, event, title, text);
       return;
     }
     const config = await openChannel(tenantId, step.channelId);
@@ -262,6 +290,28 @@ export const createAutomationService = (deps: {
         ticking = null;
       });
       return ticking;
+    },
+
+    /** The VAPID public key browsers subscribe with, or null when push is off. */
+    pushKey: (): string | null => deps.push?.sender?.publicKey ?? null,
+
+    async subscribePush(
+      username: string,
+      subscription: PushSubscription,
+    ): Promise<Result<true, 'disabled' | 'invalid'>> {
+      if (!deps.push?.sender) return err('disabled');
+      if (
+        !isPushEndpoint(subscription.endpoint) ||
+        !/^[A-Za-z0-9_-]{80,100}$/.test(subscription.p256dh) ||
+        !/^[A-Za-z0-9_-]{16,32}$/.test(subscription.auth)
+      )
+        return err('invalid');
+      await deps.push.store.save(username, subscription, clock.now());
+      return ok(true);
+    },
+
+    unsubscribePush: async (username: string, endpoint: string) => {
+      await deps.push?.store.remove(username, endpoint);
     },
 
     notifications: (tenantId: string, username: string, limit: number) =>

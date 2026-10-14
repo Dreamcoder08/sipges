@@ -151,4 +151,27 @@ export type SecretSealer = {
   open(sealed: string): string;
 };
 
+export type PushSubscription = {
+  readonly endpoint: string;
+  readonly p256dh: string;
+  readonly auth: string;
+};
+
+/** What the service worker shows; `url` opens on click. */
+export type PushPayload = { readonly title: string; readonly body: string; readonly url: string };
+
+export type PushSender = {
+  readonly publicKey: string;
+  send(subscription: PushSubscription, payload: PushPayload, now: Date): Promise<'sent' | 'gone'>;
+};
+
+/** Global, per person and device (like sessions). */
+export type PushStore = {
+  save(username: string, subscription: PushSubscription, at: Date): Promise<void>;
+  remove(username: string, endpoint: string): Promise<void>;
+  /** Subscriptions of active people granted the tenant; restricted pushes skip `consulta`. */
+  targets(tenantId: string, restricted: boolean): Promise<PushSubscription[]>;
+  forget(endpoint: string): Promise<void>;
+};
+
 export type Clock = { now(): Date };

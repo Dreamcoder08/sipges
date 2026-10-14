@@ -18,11 +18,14 @@ import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastruct
 import {
   type AutomationService,
   type ChannelSender,
+  type PushSender,
   createAutomationService,
 } from './contexts/automation/application/index.ts';
 import {
   createHttpChannelSender,
   createSqlAutomationStore,
+  createSqlPushStore,
+  createWebPushSender,
 } from './contexts/automation/infrastructure/index.ts';
 import {
   type ApiKeyService,
@@ -150,6 +153,8 @@ export const buildContainer = async (deps: {
   googleSignIn?: GoogleSignIn;
   /** Overrides outbound HTTP for automation channels (tests record messages instead). */
   channelSender?: ChannelSender;
+  /** Overrides browser push delivery (tests record pushes instead). */
+  pushSender?: PushSender | null;
 }): Promise<Container> => {
   const cipher = createSecretCipher(deps.config.dataKey);
   const identity = createIdentityService({
@@ -292,7 +297,16 @@ export const buildContainer = async (deps: {
     sender: deps.channelSender ?? createHttpChannelSender(),
     sealer: cipher,
     clock: deps.clock,
-    recordModules: RECORD_MODULES.map((m) => m.module),
+    recordModules: RECORD_MODULES,
+    push: {
+      store: createSqlPushStore(deps.sql),
+      sender:
+        deps.pushSender !== undefined
+          ? deps.pushSender
+          : deps.config.automation.vapid
+            ? createWebPushSender(deps.config.automation.vapid)
+            : null,
+    },
   });
   return {
     reference: createReferenceService(fileReferenceReader),

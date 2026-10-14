@@ -38,6 +38,10 @@ export type AppConfig = {
   readonly automation: {
     readonly intervalSeconds: number;
     readonly cronSecret: string | undefined;
+    /** Web Push keys (RFC 8292); unset disables device notifications. */
+    readonly vapid:
+      | { readonly publicKey: string; readonly privateKey: string; readonly subject: string }
+      | undefined;
   };
   /** Google OAuth client for "Entrar con Google" (ADR 0010); unset hides the option. */
   readonly google:
@@ -208,7 +212,23 @@ const parseAutomation = (env: Env): AppConfig['automation'] => {
   if (cronSecret !== undefined && cronSecret.length < 24) {
     throw new Error('MASCLI_CRON_SECRET (or CRON_SECRET) must be at least 24 characters');
   }
-  return { intervalSeconds: interval, cronSecret };
+  return { intervalSeconds: interval, cronSecret, vapid: parseVapid(env) };
+};
+
+const parseVapid = (env: Env): AppConfig['automation']['vapid'] => {
+  const publicKey = env.MASCLI_VAPID_PUBLIC_KEY?.trim() ?? '';
+  const privateKey = env.MASCLI_VAPID_PRIVATE_KEY?.trim() ?? '';
+  const subject = env.MASCLI_VAPID_SUBJECT?.trim() ?? '';
+  if (!publicKey && !privateKey) return undefined;
+  if (!/^[A-Za-z0-9_-]{87}$/.test(publicKey) || !/^[A-Za-z0-9_-]{43}$/.test(privateKey)) {
+    throw new Error(
+      'MASCLI_VAPID_PUBLIC_KEY and MASCLI_VAPID_PRIVATE_KEY must be base64url P-256 keys (pnpm --filter @mascli/api vapid:keys)',
+    );
+  }
+  if (!/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/.test(subject)) {
+    throw new Error('MASCLI_VAPID_SUBJECT must be a mailto: address or an https URL');
+  }
+  return { publicKey, privateKey, subject };
 };
 
 /** Validates the whole environment once, before any resource is created. */

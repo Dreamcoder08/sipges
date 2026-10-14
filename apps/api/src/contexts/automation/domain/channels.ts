@@ -138,3 +138,28 @@ const maskList = (addresses: readonly string[]) => {
   const masked = `${user.slice(0, 2)}…@${domain}`;
   return addresses.length > 1 ? `${masked} y ${addresses.length - 1} más` : masked;
 };
+
+/** Push services of the major browsers; any other endpoint is refused (no SSRF via push). */
+const PUSH_HOSTS = [
+  /^fcm\.googleapis\.com$/,
+  /^updates\.push\.services\.mozilla\.com$/,
+  /^[a-z0-9-]+\.push\.apple\.com$/,
+  /^web\.push\.apple\.com$/,
+  /^[a-z0-9-]+\.notify\.windows\.com$/,
+];
+
+export const isPushEndpoint = (endpoint: string): boolean => {
+  let url: URL;
+  try {
+    url = new URL(endpoint);
+  } catch {
+    return false;
+  }
+  return (
+    url.protocol === 'https:' &&
+    !url.username &&
+    !url.password &&
+    endpoint.length <= 1000 &&
+    PUSH_HOSTS.some((host) => host.test(url.hostname))
+  );
+};

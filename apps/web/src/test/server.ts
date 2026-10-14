@@ -110,6 +110,9 @@ export const handlers = [
   http.get('/system/notifications', () =>
     signedIn(() => HttpResponse.json({ unread: 0, items: [] })),
   ),
+  http.get('/system/notifications/push', () =>
+    signedIn(() => HttpResponse.json({ enabled: false, public_key: null })),
+  ),
   http.get('/api/alertas', () => signedIn(() => HttpResponse.json(SYNTHETIC_ALERTS))),
   http.get('/api/eventos', () => signedIn(() => HttpResponse.json(SYNTHETIC_EVENTS))),
   http.get('/system/irsa', () =>

@@ -149,3 +149,16 @@ export const NotificationReadIn = z.union([
   z.object({ all: z.literal(true) }),
 ]);
 export type NotificationReadIn = z.infer<typeof NotificationReadIn>;
+
+/** GET /system/notifications/push: whether device notifications are available. */
+export const PushConfig = z.object({ enabled: z.boolean(), public_key: z.string().nullable() });
+export type PushConfig = z.infer<typeof PushConfig>;
+
+/** The browser's PushSubscription.toJSON(). */
+export const PushSubscriptionIn = z.object({
+  endpoint: z.string().max(1000),
+  keys: z.object({ p256dh: z.string().max(200), auth: z.string().max(100) }),
+});
+export type PushSubscriptionIn = z.infer<typeof PushSubscriptionIn>;
+
+export const PushUnsubscribeIn = z.object({ endpoint: z.string().max(1000) });
