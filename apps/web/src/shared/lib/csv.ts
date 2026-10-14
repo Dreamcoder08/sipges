@@ -4,13 +4,13 @@
  * (semicolons) work as well as comma or tab separated ones. A leading BOM is ignored.
  */
 export const detectDelimiter = (text: string) => {
-  const header = text.replace(/^﻿/, '').split(/\r?\n/, 1)[0] ?? '';
+  const header = text.replace(/^\uFEFF/, '').split(/\r?\n/, 1)[0] ?? '';
   const counts = [',', ';', '\t'].map((d) => [d, header.split(d).length] as const);
   return counts.reduce((best, current) => (current[1] > best[1] ? current : best))[0];
 };
 
 export const parseCsv = (input: string, delimiter = detectDelimiter(input)): string[][] => {
-  const text = input.replace(/^﻿/, '');
+  const text = input.replace(/^\uFEFF/, '');
   const rows: string[][] = [];
   let row: string[] = [];
   let field = '';
