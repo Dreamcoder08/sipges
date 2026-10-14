@@ -7,6 +7,7 @@ import { loadMigrations, migrate } from './platform/database/migrator.ts';
 import { openDatabase } from './platform/database/open.ts';
 import { resolveClientIp } from './platform/http/client-ip.ts';
 import { fileWebAssets } from './platform/http/spa.ts';
+import { log } from './platform/observability/logger.ts';
 
 // Composition root: validate configuration first, then open adapters and build the app.
 const config = loadConfig(process.env);
@@ -35,7 +36,19 @@ const server = serve(
   (info) => console.info(`MASCLI API listening on http://${info.address}:${info.port}`),
 );
 
+// Automations tick in-process on a long-running server (ADR 0014 §4).
+const automationTimer =
+  config.automation.intervalSeconds > 0
+    ? setInterval(() => {
+        container.automation.tick().catch((error: unknown) => {
+          log('error', 'automation_tick_failed', { error });
+        });
+      }, config.automation.intervalSeconds * 1000)
+    : undefined;
+automationTimer?.unref();
+
 const shutdown = () => {
+  if (automationTimer) clearInterval(automationTimer);
   server.close(() => void database.close().finally(() => process.exit(0)));
 };
 process.once('SIGINT', shutdown);

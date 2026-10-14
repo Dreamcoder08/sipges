@@ -61,6 +61,12 @@ export const SCREENS = [
     title: 'Administración del sistema',
     ready: true,
   },
+  {
+    path: '/automatizaciones',
+    label: 'Automatizaciones',
+    title: 'Automatizaciones e integraciones',
+    ready: true,
+  },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología MASCLI', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
 ] as const satisfies readonly {
@@ -89,7 +95,10 @@ export const NAV_GROUPS = [
     label: 'Análisis',
     paths: ['/cronologia', '/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'],
   },
-  { label: 'Sistema', paths: ['/administracion', '/metodologia', '/auditoria'] },
+  {
+    label: 'Sistema',
+    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria'],
+  },
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
 
 export const titleFor = (path: string) =>

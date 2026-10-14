@@ -4,6 +4,7 @@ import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
+import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
 import { auditRoutes } from './contexts/audit/http/audit-routes.ts';
 import { documentLabRoutes } from './contexts/documents/http/document-lab-routes.ts';
 import { intelligenceRoutes } from './contexts/intelligence/http/intelligence-routes.ts';
@@ -73,6 +74,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.route('/', intelligenceRoutes(intelligence));
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
+  app.route('/', automationRoutes(container.automation, config.automation.cronSecret));
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
   app.route(
     '/',

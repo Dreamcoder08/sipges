@@ -10,8 +10,8 @@ describe('navigation', () => {
   });
 
   it('lists every screen once with a title', () => {
-    expect(SCREENS).toHaveLength(20);
-    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(20);
+    expect(SCREENS).toHaveLength(21);
+    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(21);
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
     expect(titleFor('/nope')).toBe('MASCLI');
   });

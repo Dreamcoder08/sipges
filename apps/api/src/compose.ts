@@ -15,6 +15,15 @@ import {
   createAnalyticsService,
 } from './contexts/analytics/application/index.ts';
 import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import {
+  type AutomationService,
+  type ChannelSender,
+  createAutomationService,
+} from './contexts/automation/application/index.ts';
+import {
+  createHttpChannelSender,
+  createSqlAutomationStore,
+} from './contexts/automation/infrastructure/index.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
@@ -79,7 +88,11 @@ import {
   type OntologyService,
 } from './contexts/ontology/application/index.ts';
 import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-ontology-store.ts';
-import { createRecordsService, type RecordsService } from './contexts/records/application/index.ts';
+import {
+  RECORD_MODULES,
+  createRecordsService,
+  type RecordsService,
+} from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
 import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
@@ -106,6 +119,7 @@ export type Container = {
   readonly intelligence: IntelligenceService;
   readonly prevention: PreventionService;
   readonly management: ManagementService;
+  readonly automation: AutomationService;
   readonly clientIp: ClientIp;
 };
 
@@ -128,12 +142,15 @@ export const buildContainer = async (deps: {
   narrator?: Narrator | null;
   /** Overrides the Google client (tests inject a fake identity provider). */
   googleSignIn?: GoogleSignIn;
+  /** Overrides outbound HTTP for automation channels (tests record messages instead). */
+  channelSender?: ChannelSender;
 }): Promise<Container> => {
+  const cipher = createSecretCipher(deps.config.dataKey);
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
     hasher: passwordHasher,
     totp,
-    cipher: createSecretCipher(deps.config.dataKey),
+    cipher,
     tokens: sessionTokens,
     clock: deps.clock,
   });
@@ -264,6 +281,13 @@ export const buildContainer = async (deps: {
     },
     clock: deps.clock,
   });
+  const automation = createAutomationService({
+    store: createSqlAutomationStore(deps.sql),
+    sender: deps.channelSender ?? createHttpChannelSender(),
+    sealer: cipher,
+    clock: deps.clock,
+    recordModules: RECORD_MODULES.map((m) => m.module),
+  });
   return {
     reference: createReferenceService(fileReferenceReader),
     config: deps.config,
@@ -283,6 +307,7 @@ export const buildContainer = async (deps: {
     intelligence,
     prevention,
     management,
+    automation,
     clientIp: deps.clientIp,
   };
 };

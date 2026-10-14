@@ -31,6 +31,14 @@ export type AppConfig = {
   readonly analyst: { readonly provider: 'anthropic'; readonly model: string } | undefined;
   /** Built web app to serve (MASCLI_WEB_DIR, e.g. apps/web/dist); unset serves the API only. */
   readonly webDir: string | undefined;
+  /**
+   * Automation engine (ADR 0014): in-process tick period in seconds (0 disables it) and the
+   * bearer secret serverless cron jobs present to POST /system/automations/cron.
+   */
+  readonly automation: {
+    readonly intervalSeconds: number;
+    readonly cronSecret: string | undefined;
+  };
   /** Google OAuth client for "Entrar con Google" (ADR 0010); unset hides the option. */
   readonly google:
     | {
@@ -189,6 +197,20 @@ const parseGoogle = (env: Env): AppConfig['google'] => {
   return { clientId, clientSecret, adminEmail };
 };
 
+const parseAutomation = (env: Env): AppConfig['automation'] => {
+  const raw = env.MASCLI_AUTOMATION_INTERVAL;
+  const interval = raw === undefined ? 30 : /^\d+$/.test(raw) ? Number(raw) : Number.NaN;
+  if (!Number.isInteger(interval) || (interval !== 0 && (interval < 5 || interval > 3600))) {
+    throw new Error('MASCLI_AUTOMATION_INTERVAL must be 0 (off) or between 5 and 3600 seconds');
+  }
+  // Vercel Cron sends CRON_SECRET as a bearer token; MASCLI_CRON_SECRET takes precedence.
+  const cronSecret = (env.MASCLI_CRON_SECRET || env.CRON_SECRET || '').trim() || undefined;
+  if (cronSecret !== undefined && cronSecret.length < 24) {
+    throw new Error('MASCLI_CRON_SECRET (or CRON_SECRET) must be at least 24 characters');
+  }
+  return { intervalSeconds: interval, cronSecret };
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -212,4 +234,5 @@ export const loadConfig = (env: Env): AppConfig => ({
   accessLog: parseSwitch('MASCLI_ACCESS_LOG', env.MASCLI_ACCESS_LOG, true),
   allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
   google: parseGoogle(env),
+  automation: parseAutomation(env),
 });

@@ -17,6 +17,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0011](0011-ontology-links-and-provenance.md) | Ontology, links and provenance | Accepted |
 | [0012](0012-observability-and-classification.md) | Observability and classification markings | Accepted |
 | [0013](0013-cited-analyst-briefings.md) | Cited analyst briefings | Accepted |
+| [0014](0014-automation-and-integration.md) | Automation and integration | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

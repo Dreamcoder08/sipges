@@ -4,6 +4,11 @@ import { trackTestDatabase } from './test-database.ts';
 import { buildContainer } from '../../src/compose.ts';
 import type { Narrator } from '../../src/contexts/analyst/application/index.ts';
 import type { ObjectStorage } from '../../src/contexts/evidence/application/index.ts';
+import type {
+  ChannelConfig,
+  ChannelSender,
+  OutboundMessage,
+} from '../../src/contexts/automation/application/index.ts';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import type { GoogleSignIn } from '../../src/contexts/identity/application/ports.ts';
 import { createApp } from '../../src/app.ts';
@@ -79,6 +84,15 @@ export const memoryStorage = () => {
   return { objects, storage };
 };
 
+/** Records outbound channel messages instead of calling the network. */
+export const recordingSender = () => {
+  const sent: { config: ChannelConfig; message: OutboundMessage }[] = [];
+  const sender: ChannelSender = {
+    send: async (config, message) => void sent.push({ config, message }),
+  };
+  return { sent, sender };
+};
+
 export const createTestApp = async (
   env: Record<string, string> = {},
   options: {
@@ -87,6 +101,7 @@ export const createTestApp = async (
     web?: WebAssets;
     googleSignIn?: GoogleSignIn;
     narrator?: Narrator | null;
+    channelSender?: ChannelSender;
   } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
@@ -94,6 +109,7 @@ export const createTestApp = async (
   const clock = new TestClock();
   const config = loadConfig({ ...TEST_ENV, ...env });
   const memory = memoryStorage();
+  const outbox = recordingSender();
   const container = await buildContainer({
     config,
     sql,
@@ -103,6 +119,7 @@ export const createTestApp = async (
     embeddings: options.embeddings ?? offlineEmbeddings,
     ...(options.googleSignIn ? { googleSignIn: options.googleSignIn } : {}),
     narrator: options.narrator ?? null,
+    channelSender: options.channelSender ?? outbox.sender,
   });
   const app = createApp(container, options.web ? { web: options.web } : {});
 
@@ -169,6 +186,8 @@ export const createTestApp = async (
     sql,
     clock,
     objects: memory.objects,
+    container,
+    sent: outbox.sent,
     request,
     form,
     login,

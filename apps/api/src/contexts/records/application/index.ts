@@ -2,6 +2,7 @@
 export {
   type ModuleName,
   type Payload,
+  RECORD_MODULES,
   moduleForSlug,
   validatePayload,
 } from '../domain/modules.ts';
