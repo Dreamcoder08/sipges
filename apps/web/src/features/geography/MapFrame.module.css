@@ -1,0 +1,59 @@
+.wrap {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.frame {
+  position: relative;
+  min-width: 0;
+  /* One finger scrolls the page vertically; horizontal drags and two fingers move the map. */
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.frame svg[role='group'] {
+  cursor: grab;
+}
+.frame svg[role='group']:active {
+  cursor: grabbing;
+}
+.frame svg[role='group']:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.controls {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  display: grid;
+  gap: var(--space-2);
+}
+.control {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.25rem;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.18);
+  cursor: pointer;
+}
+.control:disabled {
+  color: var(--color-muted);
+  cursor: default;
+  opacity: 0.6;
+}
+@media (hover: hover) {
+  .control:not(:disabled):hover {
+    background: var(--color-surface-alt);
+  }
+}
+.hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
