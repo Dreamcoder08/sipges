@@ -77,6 +77,18 @@ const expected = (
     digital_alert_reviews: [],
     preventive_actions: [],
     preventive_action_log: [],
+    record_versions: [
+      {
+        id: expect.any(Number),
+        tenant_id: `${company}/${project}`,
+        module: 'Eventos',
+        record_id: id,
+        operation: 'CREATE',
+        payload: { ID_Evento: id, name },
+        actor: 'admin',
+        at: '2026-10-12T12:00:00.000Z',
+      },
+    ],
   },
 });
 
@@ -171,6 +183,7 @@ describe('GET /system/export versioned tenant JSON', () => {
         digital_alert_reviews: [],
         preventive_actions: [],
         preventive_action_log: [],
+        record_versions: [],
       },
     });
   });

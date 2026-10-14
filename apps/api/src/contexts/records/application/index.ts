@@ -6,9 +6,11 @@ export {
   validatePayload,
 } from '../domain/modules.ts';
 export type { StoredRecord } from './ports.ts';
+export { type FieldChange, diffPayloads } from '../domain/history.ts';
 export {
   MAX_LIMIT,
   boundLimit,
   createRecordsService,
+  type RecordVersion,
   type RecordsService,
 } from './records-service.ts';

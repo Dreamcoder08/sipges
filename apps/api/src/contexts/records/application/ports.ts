@@ -1,9 +1,18 @@
+import type { VersionOperation } from '../domain/history.ts';
 import type { ModuleName, Payload } from '../domain/modules.ts';
 
 export type StoredRecord = {
   readonly id: string;
   readonly payload: Payload;
   readonly updatedAt: Date;
+};
+
+/** One stored version of a record, oldest first; `payload` is null for a deletion. */
+export type StoredVersion = {
+  readonly operation: VersionOperation;
+  readonly payload: Payload | null;
+  readonly actor: string;
+  readonly at: Date;
 };
 
 /** Audit text the store writes in the same transaction as each change (app.py parity). */
@@ -20,6 +29,8 @@ export type RecordStore = {
     query: { limit: number; q: string | null },
   ): Promise<StoredRecord[]>;
   get(tenantId: string, module: ModuleName, id: string): Promise<StoredRecord | null>;
+  /** Every version of one record (also after its deletion), oldest first. */
+  history(tenantId: string, module: ModuleName, id: string): Promise<StoredVersion[]>;
   /**
    * Inserts with the first free id among `candidates()` and audits it; returns the id used.
    * `candidates` yields the preferred id first, then collision fallbacks.

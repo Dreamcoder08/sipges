@@ -11,6 +11,7 @@ const TABLES = [
   'digital_alert_reviews',
   'preventive_actions',
   'preventive_action_log',
+  'record_versions',
 ] as const;
 
 export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => ({
@@ -31,6 +32,7 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
           digital_alert_reviews: [],
           preventive_actions: [],
           preventive_action_log: [],
+          record_versions: [],
         };
         for (const table of TABLES) {
           const [relation] = await tenant.query<{ present: string | null; secured: boolean }>(

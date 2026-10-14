@@ -1,4 +1,5 @@
 import { type Result, err, ok } from '@mascli/kernel';
+import { type FieldChange, type VersionOperation, diffPayloads } from '../domain/history.ts';
 import {
   type ModuleName,
   type Payload,
@@ -8,6 +9,15 @@ import {
   withAssignedId,
 } from '../domain/modules.ts';
 import type { Clock, RandomHex, RecordStore, StoredRecord } from './ports.ts';
+
+export type RecordVersion = {
+  readonly version: number;
+  readonly operation: VersionOperation;
+  readonly actor: string;
+  readonly at: Date;
+  readonly payload: Payload | null;
+  readonly changes: FieldChange[];
+};
 
 /** Absolute ceiling for list sizes (docs/adr/0008 #10). */
 export const MAX_LIMIT = 500;
@@ -35,6 +45,22 @@ export const createRecordsService = (deps: {
 
     async get(tenantId: string, module: ModuleName, id: string): Promise<StoredRecord | null> {
       return isLookupableId(id) ? store.get(tenantId, module, id) : null;
+    },
+
+    /** Newest first, numbered from 1, each with its field changes against the previous one. */
+    async history(tenantId: string, module: ModuleName, id: string): Promise<RecordVersion[]> {
+      if (!isLookupableId(id)) return [];
+      const versions = await store.history(tenantId, module, id);
+      return versions
+        .map((version, index) => ({
+          version: index + 1,
+          operation: version.operation,
+          actor: version.actor,
+          at: version.at,
+          payload: version.payload,
+          changes: diffPayloads(versions[index - 1]?.payload ?? null, version.payload),
+        }))
+        .reverse();
     },
 
     async create(

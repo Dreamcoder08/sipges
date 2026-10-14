@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { getCookie } from 'hono/cookie';
 import { SESSION_COOKIE } from '../../../platform/http/cookies.ts';
 import type { AppEnv } from '../../../platform/http/env.ts';
+import { currentRequestContext } from '../../../platform/request-context.ts';
 import { forbiddenOrigin, isWriteMethod, originAllowed } from '../../../platform/http/origin.ts';
 import type { IdentityService } from '../application/index.ts';
 import { GOOGLE_CALLBACK_PATH, GOOGLE_START_PATH } from './google-routes.ts';
@@ -54,6 +55,8 @@ export const sessionMiddleware =
 
     c.set('identity', principal);
     c.set('sessionToken', token);
+    const context = currentRequestContext();
+    if (context) context.actor = principal.username;
     return next();
   };
 

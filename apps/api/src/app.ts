@@ -19,6 +19,7 @@ import { googleRoutes } from './contexts/identity/http/google-routes.ts';
 import { healthRoutes } from './contexts/system/http/health.routes.ts';
 import type { AppEnv } from './platform/http/env.ts';
 import { hostAllowlist } from './platform/http/host.ts';
+import { requestContext } from './platform/http/request-context.ts';
 import { securityHeaders } from './platform/http/security-headers.ts';
 import { type WebAssets, spaMiddleware } from './platform/http/spa.ts';
 
@@ -41,6 +42,7 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   } = container;
   const app = new Hono<AppEnv>();
 
+  app.use('*', requestContext());
   app.use('*', securityHeaders({ hsts: config.cookieSecure }));
   app.use('*', hostAllowlist(config.allowedHosts));
   if (options.web) app.use('*', spaMiddleware(options.web));

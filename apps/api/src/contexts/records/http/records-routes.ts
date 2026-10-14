@@ -1,4 +1,4 @@
-import { type RecordCreated, RecordIn } from '@mascli/contracts';
+import { type RecordCreated, RecordIn, type RecordVersion } from '@mascli/contracts';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
@@ -63,6 +63,23 @@ export const recordsRoutes = (records: RecordsService) =>
       const row = await records.get(tenantOf(c), module, c.req.param('id'));
       if (!row) return c.json(MISSING_RECORD, 404);
       return c.json({ ...row.payload, _id: row.id });
+    })
+
+    .get('/api/:module/:id/history', async (c) => {
+      const module = moduleForSlug(c.req.param('module'));
+      if (!module) return c.json(UNKNOWN_MODULE, 404);
+      const versions = await records.history(tenantOf(c), module, c.req.param('id'));
+      if (versions.length === 0) return c.json(MISSING_RECORD, 404);
+      return c.json(
+        versions.map((version): RecordVersion => ({
+          version: version.version,
+          operation: version.operation,
+          actor: version.actor,
+          at: isoSeconds(version.at),
+          payload: version.payload,
+          changes: version.changes,
+        })),
+      );
     })
 
     .post('/api/:module', async (c) => {

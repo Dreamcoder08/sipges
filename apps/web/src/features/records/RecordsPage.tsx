@@ -11,6 +11,7 @@ import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { deleteRecord, recordQuery, recordsQuery, saveRecord } from './api.ts';
 import { EvidencePanel } from './EvidencePanel.tsx';
+import { HistoryPanel } from './HistoryPanel.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
@@ -327,6 +328,12 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                     scope={scope}
                     writable={writable}
                     onBusyChange={setUploadBusy}
+                  />
+                  <HistoryPanel
+                    key={`history/${scope}/${module}/${record._id}`}
+                    module={module}
+                    id={record._id}
+                    scope={scope}
                   />
                 </>
               )

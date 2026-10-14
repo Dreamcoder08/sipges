@@ -1,4 +1,10 @@
-import { ModuleRecord, OkResponse, RecordCreated, RecordIn } from '@mascli/contracts';
+import {
+  ModuleRecord,
+  OkResponse,
+  RecordCreated,
+  RecordIn,
+  RecordVersion,
+} from '@mascli/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
@@ -21,6 +27,12 @@ export const recordQuery = (module: RecordModule, scope: string, id: string) =>
   queryOptions({
     queryKey: ['records', scope, module, 'detail', id],
     queryFn: ({ signal }) => requestJson(recordPath(module, id), ModuleRecord, { scope, signal }),
+  });
+export const historyQuery = (module: RecordModule, scope: string, id: string) =>
+  queryOptions({
+    queryKey: ['records', scope, module, 'history', id],
+    queryFn: ({ signal }) =>
+      requestJson(`${recordPath(module, id)}/history`, z.array(RecordVersion), { scope, signal }),
   });
 export const saveRecord = async (
   module: RecordModule,

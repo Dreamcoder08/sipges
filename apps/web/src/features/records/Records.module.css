@@ -243,3 +243,34 @@
     flex: 1;
   }
 }
+
+.history {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.history > li {
+  border-left: 3px solid var(--color-border);
+  padding-left: var(--space-3);
+  overflow-wrap: anywhere;
+}
+.history p {
+  margin: 0;
+}
+.history small {
+  color: var(--color-muted);
+}
+.history ul {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  font-size: 0.875rem;
+}
+.history del {
+  color: var(--color-danger-strong);
+}
+.history ins {
+  color: var(--color-success);
+  text-decoration: none;
+}

@@ -2,7 +2,7 @@ import { appendAudit } from '../../../platform/database/audit-trail.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import type { Payload } from '../domain/modules.ts';
-import type { RecordStore, StoredRecord } from '../application/ports.ts';
+import type { RecordStore, StoredRecord, StoredVersion } from '../application/ports.ts';
 
 type Row = { id: string; payload: Payload; updated_at: Date | string };
 
@@ -37,6 +37,22 @@ export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
       );
       return row ? toRecord(row) : null;
     }),
+
+  history: (tenantId, module, id) =>
+    withTenant(sql, tenantId, async (tx) =>
+      (
+        await tx.query<{
+          operation: StoredVersion['operation'];
+          payload: Payload | null;
+          actor: string;
+          at: Date | string;
+        }>(
+          `SELECT operation, payload, actor, at FROM record_versions
+           WHERE module = $1 AND record_id = $2 ORDER BY id`,
+          [module, id],
+        )
+      ).map((row) => ({ ...row, at: new Date(row.at) })),
+    ),
 
   create: (tenantId, module, candidates, payloadFor, note, at) =>
     withTenant(sql, tenantId, async (tx) => {

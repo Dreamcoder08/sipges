@@ -14,6 +14,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0008](0008-behavior-contract-corrections.md) | Corrections to Python behavior defects | Accepted |
 | [0009](0009-internet-exposure-hardening.md) | Internet exposure hardening | Accepted |
 | [0010](0010-google-sign-in.md) | Sign in with Google | Accepted |
+| [0011](0011-ontology-links-and-provenance.md) | Ontology, links and provenance | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 
