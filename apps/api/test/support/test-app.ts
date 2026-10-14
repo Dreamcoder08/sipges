@@ -4,6 +4,7 @@ import { trackTestDatabase } from './test-database.ts';
 import { buildContainer } from '../../src/compose.ts';
 import type { ObjectStorage } from '../../src/contexts/evidence/application/index.ts';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
+import type { GoogleSignIn } from '../../src/contexts/identity/application/ports.ts';
 import { createApp } from '../../src/app.ts';
 import type { WebAssets } from '../../src/platform/http/spa.ts';
 import { loadConfig } from '../../src/platform/config.ts';
@@ -77,7 +78,12 @@ export const memoryStorage = () => {
 
 export const createTestApp = async (
   env: Record<string, string> = {},
-  options: { objectStorage?: ObjectStorage; embeddings?: EmbeddingProvider; web?: WebAssets } = {},
+  options: {
+    objectStorage?: ObjectStorage;
+    embeddings?: EmbeddingProvider;
+    web?: WebAssets;
+    googleSignIn?: GoogleSignIn;
+  } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
   const sql = pgliteClient(db);
@@ -91,6 +97,7 @@ export const createTestApp = async (
     clientIp: (c) => c.req.header('x-test-ip') ?? '203.0.113.1',
     objectStorage: options.objectStorage ?? memory.storage,
     embeddings: options.embeddings ?? offlineEmbeddings,
+    ...(options.googleSignIn ? { googleSignIn: options.googleSignIn } : {}),
   });
   const app = createApp(container, options.web ? { web: options.web } : {});
 

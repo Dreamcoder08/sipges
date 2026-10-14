@@ -7,6 +7,7 @@ export type StoredUser = Identity & {
   readonly totpSecretSealed: string | null;
   readonly totpEnabled: boolean;
   readonly totpLastStep: number | null;
+  readonly googleEmail: string | null;
 };
 
 export type AccountSummary = {
@@ -15,6 +16,7 @@ export type AccountSummary = {
   readonly role: Role;
   readonly active: boolean;
   readonly createdAt: Date;
+  readonly googleEmail: string | null;
 };
 
 /** Persistence for users, sessions and login failures (one adapter keeps multi-row changes atomic). */
@@ -27,6 +29,10 @@ export type IdentityStore = {
     at: Date,
   ): Promise<boolean>;
   listAccounts(): Promise<AccountSummary[]>;
+  /** The account linked to a Google address, active or not (ADR 0010). */
+  findUserByGoogleEmail(email: string): Promise<StoredUser | null>;
+  /** Links (or with null unlinks) a Google address; ends the user's Google sessions on change. */
+  setGoogleEmail(username: string, email: string | null): Promise<'set' | 'missing' | 'taken'>;
   /** Atomically disables the user and deletes sessions; serializes the last-admin guard. */
   deactivateUser(username: string): Promise<'deactivated' | 'missing' | 'last_admin'>;
   updatePasswordHash(username: string, passwordHash: string): Promise<void>;
@@ -39,8 +45,17 @@ export type IdentityStore = {
   /** Records a consumed step only if it is newer than the stored one; false means replay. */
   consumeTotpStep(username: string, step: number): Promise<boolean>;
 
-  /** False when deactivation won the race; holds a user-row lock through session insertion. */
-  createSession(tokenHash: string, username: string, expiresAt: Date, at: Date): Promise<boolean>;
+  /**
+   * False when deactivation won the race; holds a user-row lock through session insertion.
+   * `viaGoogle` marks sessions opened by Google sign-in, which count as MFA (ADR 0010).
+   */
+  createSession(
+    tokenHash: string,
+    username: string,
+    expiresAt: Date,
+    at: Date,
+    options?: { viaGoogle?: boolean },
+  ): Promise<boolean>;
   findSessionIdentity(tokenHash: string, at: Date): Promise<SessionIdentity | null>;
   deleteSession(tokenHash: string): Promise<void>;
   purgeExpiredSessions(at: Date): Promise<void>;
@@ -90,3 +105,23 @@ export type SessionTokens = {
 };
 
 export type Clock = { now(): Date };
+
+/** Claims MASCLI needs from a Google ID token that was already validated (ADR 0010). */
+export type GoogleProfile = { readonly email: string; readonly name: string };
+
+export type GoogleAuthRequest = {
+  readonly redirectUri: string;
+  readonly state: string;
+  readonly nonce: string;
+  readonly codeVerifier: string;
+};
+
+/** OpenID Connect authorization-code flow with Google, with PKCE. */
+export type GoogleSignIn = {
+  authorizationUrl(request: GoogleAuthRequest): string;
+  /**
+   * Exchanges the code and validates the ID token (issuer, audience, expiry, nonce and a
+   * verified address). Null means the sign-in must be refused.
+   */
+  exchange(code: string, request: GoogleAuthRequest, at: Date): Promise<GoogleProfile | null>;
+};

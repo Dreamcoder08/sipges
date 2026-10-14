@@ -24,6 +24,15 @@ export type AppConfig = {
   readonly ollama: { readonly baseUrl: string; readonly model: string };
   /** Built web app to serve (MASCLI_WEB_DIR, e.g. apps/web/dist); unset serves the API only. */
   readonly webDir: string | undefined;
+  /** Google OAuth client for "Entrar con Google" (ADR 0010); unset hides the option. */
+  readonly google:
+    | {
+        readonly clientId: string;
+        readonly clientSecret: string;
+        /** Links the bootstrap admin to this Google address on start (MASCLI_GOOGLE_ADMIN_EMAIL). */
+        readonly adminEmail: string | undefined;
+      }
+    | undefined;
 };
 
 export type StorageConfig =
@@ -145,6 +154,20 @@ export const parseAllowedHosts = (value: string | undefined): readonly string[] 
   return hosts;
 };
 
+const parseGoogle = (env: Env): AppConfig['google'] => {
+  const clientId = env.MASCLI_GOOGLE_CLIENT_ID?.trim() ?? '';
+  const clientSecret = env.MASCLI_GOOGLE_CLIENT_SECRET?.trim() ?? '';
+  const adminEmail = env.MASCLI_GOOGLE_ADMIN_EMAIL?.trim() || undefined;
+  if (!clientId && !clientSecret) {
+    if (adminEmail) throw new Error('MASCLI_GOOGLE_ADMIN_EMAIL requires a Google OAuth client');
+    return undefined;
+  }
+  if (!clientId || !clientSecret) {
+    throw new Error('Set both MASCLI_GOOGLE_CLIENT_ID and MASCLI_GOOGLE_CLIENT_SECRET, or neither');
+  }
+  return { clientId, clientSecret, adminEmail };
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('MASCLI_COOKIE_SECURE', env.MASCLI_COOKIE_SECURE, true),
@@ -165,4 +188,5 @@ export const loadConfig = (env: Env): AppConfig => ({
   webDir: env.MASCLI_WEB_DIR || undefined,
   requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),
   allowedHosts: parseAllowedHosts(env.MASCLI_ALLOWED_HOSTS),
+  google: parseGoogle(env),
 });

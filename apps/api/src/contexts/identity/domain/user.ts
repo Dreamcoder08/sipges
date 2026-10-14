@@ -54,3 +54,15 @@ export const validateNewAccount = (input: {
     role: input.role,
   });
 };
+
+const GOOGLE_EMAIL_MAX = 254;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** A Google address an administrator links to an account; compared in lower case (ADR 0010). */
+export const normalizeGoogleEmail = (raw: string): Result<string, string> => {
+  const email = raw.trim().toLowerCase();
+  // PostgreSQL text cannot hold NUL.
+  if (email.length > GOOGLE_EMAIL_MAX || email.includes('\u0000') || !EMAIL_PATTERN.test(email))
+    return err('Correo de Google inválido');
+  return ok(email);
+};

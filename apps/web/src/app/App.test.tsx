@@ -48,6 +48,36 @@ describe('sign-in', () => {
     ).toBeVisible();
   });
 
+  it('offers Google sign-in only when the server has it configured', async () => {
+    at('/login');
+    const { unmount } = render(<App />);
+    await screen.findByLabelText('Usuario');
+    expect(screen.queryByRole('link', { name: 'Entrar con Google' })).toBeNull();
+    unmount();
+
+    server.use(http.get('/system/auth/providers', () => HttpResponse.json({ google: true })));
+    at('/login');
+    render(<App />);
+    expect(await screen.findByRole('link', { name: 'Entrar con Google' })).toHaveAttribute(
+      'href',
+      '/auth/google',
+    );
+  });
+
+  it('explains why a Google sign-in was refused and ignores unknown reasons', async () => {
+    at('/login?google=not_linked');
+    const { unmount } = render(<App />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Esa cuenta de Google no está autorizada en MASCLI',
+    );
+    unmount();
+
+    at('/login?google=%3Cscript%3E');
+    render(<App />);
+    await screen.findByLabelText('Usuario');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('never redirects outside the app after sign-in', async () => {
     at('/login?redirect=%2F%2Fevil.example%2Fx');
     render(<App />);

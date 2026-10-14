@@ -15,6 +15,7 @@ import { recordsRoutes } from './contexts/records/http/records-routes.ts';
 import { tenancyMiddleware } from './contexts/tenancy/http/tenancy-middleware.ts';
 import { tenancyRoutes } from './contexts/tenancy/http/tenancy-routes.ts';
 import { authRoutes } from './contexts/identity/http/auth-routes.ts';
+import { googleRoutes } from './contexts/identity/http/google-routes.ts';
 import { healthRoutes } from './contexts/system/http/health.routes.ts';
 import type { AppEnv } from './platform/http/env.ts';
 import { hostAllowlist } from './platform/http/host.ts';
@@ -60,6 +61,10 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
+  app.route(
+    '/',
+    googleRoutes({ identity, google: container.googleSignIn, cookieSecure: config.cookieSecure }),
+  );
 
   app.notFound((c) => c.json({ detail: 'Not Found' } satisfies ErrorResponse, 404));
   app.onError((error, c) => {

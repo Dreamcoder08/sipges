@@ -36,7 +36,7 @@ const ASSET_TYPES: Readonly<Record<string, string>> = {
 
 const ASSET_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 /** Paths the API owns; everything else a browser navigates to is a client route. */
-const API_PREFIXES = ['/api/', '/system/'];
+const API_PREFIXES = ['/api/', '/system/', '/auth/'];
 const API_PATHS = new Set(['/health', '/select-project', '/logout']);
 
 const isClientRoute = (path: string) =>

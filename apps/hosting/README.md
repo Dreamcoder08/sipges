@@ -24,6 +24,20 @@ Variables necesarias, con valores exclusivamente en el almacén de secretos:
 | `MASCLI_ALLOWED_HOSTS`                                                     | Hosts públicos explícitos. Si no se configura, el adaptador usa los hosts del despliegue proporcionados por Vercel.             |
 | `MASCLI_OLLAMA_URL`                                                        | Sin servicio de embeddings contratado; el modo automático usa reglas.                                                           |
 
+### Entrar con Google (opcional, ADR 0010)
+
+Solo entran los correos que un administrador vincula a una cuenta existente; un correo desconocido no crea cuentas. La sesión abierta con Google cuenta como segundo factor, así que no hace falta inscribir TOTP.
+
+1. En Google Cloud Console, «APIs y servicios» → «Pantalla de consentimiento de OAuth»: tipo Externo, en modo de prueba, y añadir como usuarios de prueba los correos que vayan a entrar.
+2. «Credenciales» → «Crear credenciales» → «ID de cliente de OAuth», tipo «Aplicación web». En «URI de redireccionamiento autorizados» añadir `https://<host público>/auth/google/callback` por cada host con el que se entre (por ejemplo `https://mascli-demo-academica-agurtofarfanalbert-8641s-projects.vercel.app/auth/google/callback`).
+3. En Vercel → Settings → Environment Variables (Production): `MASCLI_GOOGLE_CLIENT_ID`, `MASCLI_GOOGLE_CLIENT_SECRET` y, para entrar como administrador sin TOTP, `MASCLI_GOOGLE_ADMIN_EMAIL` con el correo de Google del propietario. Volver a desplegar.
+4. Para cada persona invitada: Administración → crear su cuenta (rol `consulta` para solo lectura), «Conceder acceso» al proyecto y «Entrar con Google» → vincular su correo.
+
+| Variable                                                 | Uso                                                                               |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `MASCLI_GOOGLE_CLIENT_ID`, `MASCLI_GOOGLE_CLIENT_SECRET` | Cliente OAuth de Google. Ambas o ninguna; sin ellas el botón no aparece.          |
+| `MASCLI_GOOGLE_ADMIN_EMAIL`                              | Vincula el administrador bootstrap a ese correo al arrancar, si aún no tiene uno. |
+
 No se configura ninguna variable `VITE_*` con secretos. Las credenciales iniciales y la copia de la clave generadas durante esta sesión están fuera del repositorio, con permisos 0600. Inscribir MFA en el primer acceso y retirar la contraseña bootstrap del entorno una vez comprobado el usuario persistido.
 
 El adaptador acepta la conexión de la integración como `DATABASE_URL` o `POSTGRES_URL` cuando `MASCLI_DATABASE_URL` no está definida. Conecta exclusivamente la base sintética nueva. No pegarla en PR, logs o chat. Para migraciones/roles, seguir [readiness](../../docs/deployment/readiness.md), usando una conexión apropiada para el arranque y una base sintética vacía.

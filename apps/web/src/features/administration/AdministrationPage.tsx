@@ -2,6 +2,7 @@ import {
   AccountCreated,
   AccountList,
   AuthorizedScopeList,
+  GoogleLinked,
   OkResponse,
   Role,
   ScopeCreated,
@@ -30,12 +31,14 @@ type Operation =
     }
   | { kind: 'scope'; body: Access & { label: string } }
   | { kind: 'grant'; body: Access }
+  | { kind: 'google'; username: string; email: string }
   | Confirmation
   | { kind: 'setup' }
   | { kind: 'enable'; code: string }
   | { kind: 'export' };
 const emptyAccount = { username: '', full_name: '', password: '', role: 'consulta' };
 const emptyAccess = { username: '', company_id: '', project_id: '' };
+const emptyGoogle = { username: '', email: '' };
 
 /** Identity administration uses account APIs; project grants remain explicitly tenant-bound. */
 export const AdministrationPage = ({ scope, projectLabel, role, username }: FeatureContext) => {
@@ -53,6 +56,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
   const [account, setAccount] = useState(emptyAccount);
   const [tenant, setTenant] = useState({ ...emptyAccess, label: '' });
   const [access, setAccess] = useState(emptyAccess);
+  const [googleLink, setGoogleLink] = useState(emptyGoogle);
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [totp, setTotp] = useState<{
     secret: string;
@@ -95,6 +99,16 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
             body: { json: operation.body },
           });
           return 'Acceso concedido.';
+        case 'google': {
+          const linked = await requestJson(
+            `/system/auth/accounts/${encodeURIComponent(operation.username)}/google`,
+            GoogleLinked,
+            { ...options, body: { json: { email: operation.email } } },
+          );
+          return linked.google_email
+            ? `${linked.username} ya puede entrar con Google (${linked.google_email}).`
+            : `Se quitó el ingreso con Google de ${linked.username}.`;
+        }
         case 'deactivate':
           await requestJson(
             `/system/auth/accounts/${encodeURIComponent(operation.username)}/deactivate`,
@@ -135,6 +149,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
       }
       if (operation.kind === 'account') setAccount(emptyAccount);
       if (operation.kind === 'scope') setTenant({ ...emptyAccess, label: '' });
+      if (operation.kind === 'google') setGoogleLink(emptyGoogle);
       if (operation.kind === 'enable') {
         setTotp(null);
         setCode('');
@@ -188,6 +203,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                           <th>Usuario</th>
                           <th>Nombre</th>
                           <th>Rol</th>
+                          <th>Google</th>
                           <th>Estado</th>
                           <th>Acción</th>
                         </tr>
@@ -198,6 +214,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                             <td>{row.username}</td>
                             <td>{row.full_name}</td>
                             <td>{row.role}</td>
+                            <td>{row.google_email ?? '—'}</td>
                             <td>{row.active ? 'Activa' : 'Inactiva'}</td>
                             <td>
                               {row.active === 1 && (
@@ -267,6 +284,41 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                   </select>
                 </label>
                 <Button type="submit">Crear cuenta</Button>
+              </fieldset>
+            </form>
+          </Card>
+          <Card title="Entrar con Google">
+            <p>
+              Vincula el correo de Google de una cuenta existente para que entre sin contraseña.
+              Solo los correos vinculados aquí pueden ingresar; deja el correo vacío para quitar el
+              vínculo.
+            </p>
+            <form
+              className={styles.form}
+              onSubmit={(event) => {
+                event.preventDefault();
+                run({ kind: 'google', ...googleLink });
+              }}
+            >
+              <fieldset disabled={busy || !!confirmation}>
+                <legend>Vincular cuenta de Google</legend>
+                <Field
+                  label="Usuario a vincular"
+                  required
+                  autoComplete="off"
+                  value={googleLink.username}
+                  onChange={(event) =>
+                    setGoogleLink({ ...googleLink, username: event.target.value })
+                  }
+                />
+                <Field
+                  label="Correo de Google"
+                  type="email"
+                  autoComplete="off"
+                  value={googleLink.email}
+                  onChange={(event) => setGoogleLink({ ...googleLink, email: event.target.value })}
+                />
+                <Button type="submit">Guardar vínculo</Button>
               </fieldset>
             </form>
           </Card>

@@ -1,4 +1,7 @@
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
+
+const USER_COLUMNS =
+  'username, full_name, password_hash, role, active, totp_secret_sealed, totp_enabled, totp_last_step, google_email';
 import type { AccountSummary, IdentityStore, StoredUser } from '../application/ports.ts';
 import type { Role } from '../domain/user.ts';
 
@@ -11,6 +14,7 @@ type UserRow = {
   totp_secret_sealed: string | null;
   totp_enabled: boolean;
   totp_last_step: string | number | null;
+  google_email: string | null;
 };
 
 const toUser = (row: UserRow): StoredUser => ({
@@ -22,6 +26,7 @@ const toUser = (row: UserRow): StoredUser => ({
   totpSecretSealed: row.totp_secret_sealed,
   totpEnabled: row.totp_enabled,
   totpLastStep: row.totp_last_step === null ? null : Number(row.totp_last_step),
+  googleEmail: row.google_email,
 });
 
 export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
@@ -31,11 +36,40 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
 
   async findUser(username) {
     const [row] = await sql.query<UserRow>(
-      `SELECT username, full_name, password_hash, role, active, totp_secret_sealed, totp_enabled, totp_last_step
-         FROM users WHERE username = $1`,
+      `SELECT ${USER_COLUMNS} FROM users WHERE username = $1`,
       [username],
     );
     return row ? toUser(row) : null;
+  },
+
+  async findUserByGoogleEmail(email) {
+    const [row] = await sql.query<UserRow>(
+      `SELECT ${USER_COLUMNS} FROM users WHERE google_email = $1`,
+      [email],
+    );
+    return row ? toUser(row) : null;
+  },
+
+  async setGoogleEmail(username, email) {
+    return sql.transaction(async (tx) => {
+      const [user] = await tx.query<{ google_email: string | null }>(
+        'SELECT google_email FROM users WHERE username = $1 FOR UPDATE',
+        [username],
+      );
+      if (!user) return 'missing';
+      if (email !== null) {
+        const taken = await tx.query(
+          'SELECT 1 FROM users WHERE google_email = $1 AND username <> $2',
+          [email, username],
+        );
+        if (taken.length > 0) return 'taken';
+      }
+      if (user.google_email === email) return 'set';
+      await tx.query('UPDATE users SET google_email = $2 WHERE username = $1', [username, email]);
+      // Sessions opened with the previous address must not outlive the link that allowed them.
+      await tx.query('DELETE FROM sessions WHERE username = $1 AND via_google', [username]);
+      return 'set';
+    });
   },
 
   async createUser(account, at) {
@@ -54,8 +88,9 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
       role: Role;
       active: boolean;
       created_at: Date;
+      google_email: string | null;
     }>(
-      'SELECT username, full_name, role, active, created_at FROM users ORDER BY created_at, username',
+      'SELECT username, full_name, role, active, created_at, google_email FROM users ORDER BY created_at, username',
     );
     return rows.map((r): AccountSummary => ({
       username: r.username,
@@ -63,6 +98,7 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
       role: r.role,
       active: r.active,
       createdAt: new Date(r.created_at),
+      googleEmail: r.google_email,
     }));
   },
 
@@ -139,7 +175,7 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     return rows.length === 1;
   },
 
-  async createSession(tokenHash, username, expiresAt, at) {
+  async createSession(tokenHash, username, expiresAt, at, options = {}) {
     return sql.transaction(async (tx) => {
       const users = await tx.query(
         'SELECT username FROM users WHERE username = $1 AND active FOR SHARE',
@@ -147,8 +183,9 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
       );
       if (users.length === 0) return false;
       await tx.query(
-        'INSERT INTO sessions (token_hash, username, expires_at, created_at) VALUES ($1, $2, $3, $4)',
-        [tokenHash, username, expiresAt, at],
+        `INSERT INTO sessions (token_hash, username, expires_at, created_at, via_google)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [tokenHash, username, expiresAt, at, options.viaGoogle === true],
       );
       return true;
     });
@@ -160,8 +197,9 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
       full_name: string;
       role: Role;
       totp_enabled: boolean;
+      via_google: boolean;
     }>(
-      `SELECT u.username, u.full_name, u.role, u.totp_enabled
+      `SELECT u.username, u.full_name, u.role, u.totp_enabled, s.via_google
          FROM sessions s JOIN users u ON u.username = s.username
         WHERE s.token_hash = $1 AND s.expires_at > $2 AND u.active`,
       [tokenHash, at],
@@ -171,7 +209,8 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
           username: row.username,
           fullName: row.full_name,
           role: row.role,
-          mfaEnabled: row.totp_enabled,
+          // Google sign-in stands in for the app's TOTP factor (ADR 0010).
+          mfaEnabled: row.totp_enabled || row.via_google,
         }
       : null;
   },

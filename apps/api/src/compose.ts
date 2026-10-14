@@ -56,6 +56,8 @@ import { passwordHasher } from './contexts/identity/infrastructure/password-hash
 import { createSecretCipher } from './contexts/identity/infrastructure/secret-cipher.ts';
 import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
 import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
+import { createGoogleSignIn } from './contexts/identity/infrastructure/google-oidc.ts';
+import type { GoogleSignIn } from './contexts/identity/application/ports.ts';
 import { totp } from './contexts/identity/infrastructure/totp.ts';
 import {
   createIndicatorsService,
@@ -79,6 +81,8 @@ export type Container = {
   readonly reference: ReferenceService;
   readonly config: AppConfig;
   readonly identity: IdentityService;
+  /** Present only when a Google OAuth client is configured (ADR 0010). */
+  readonly googleSignIn: GoogleSignIn | undefined;
   readonly tenancy: TenancyService;
   readonly records: RecordsService;
   readonly audit: AuditService;
@@ -107,6 +111,8 @@ export const buildContainer = async (deps: {
   objectStorage?: ObjectStorage;
   /** Overrides the Ollama adapter (tests inject a deterministic or failing provider). */
   embeddings?: EmbeddingProvider;
+  /** Overrides the Google client (tests inject a fake identity provider). */
+  googleSignIn?: GoogleSignIn;
 }): Promise<Container> => {
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
@@ -117,6 +123,9 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   await identity.bootstrapAdmin(deps.config.admin);
+  if (deps.config.google?.adminEmail) {
+    await identity.bootstrapGoogleAdmin(deps.config.admin.username, deps.config.google.adminEmail);
+  }
   const tenancy = createTenancyService({
     store: createSqlTenancyStore(deps.sql),
     dataReader: createSqlTenantDataReader(deps.sql),
@@ -215,6 +224,9 @@ export const buildContainer = async (deps: {
     reference: createReferenceService(fileReferenceReader),
     config: deps.config,
     identity,
+    googleSignIn:
+      deps.googleSignIn ??
+      (deps.config.google ? createGoogleSignIn(deps.config.google) : undefined),
     tenancy,
     records,
     audit,

@@ -49,6 +49,7 @@ const SYNTHETIC_EVENTS = [
 ];
 
 export const handlers = [
+  http.get('/system/auth/providers', () => HttpResponse.json({ google: false })),
   http.get('/system/auth/me', () => HttpResponse.json(api.me ? { ...api.me, active: 1 } : null)),
   http.post('/login', async ({ request }) => {
     const form = new URLSearchParams(await request.text());

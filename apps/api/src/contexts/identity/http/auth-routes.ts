@@ -81,6 +81,7 @@ export const authRoutes = (deps: {
           role: a.role,
           active: a.active ? 1 : 0,
           created_at: isoSeconds(a.createdAt),
+          google_email: a.googleEmail,
         })),
       );
     })

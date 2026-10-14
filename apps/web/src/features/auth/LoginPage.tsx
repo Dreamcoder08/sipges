@@ -1,21 +1,41 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { type FormEvent, useId, useState } from 'react';
+import { z } from 'zod';
 import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
-import { login } from './api.ts';
+import { login, providersQuery } from './api.ts';
 import styles from './LoginPage.module.css';
 
 const OTP_PATTERN = '[0-9]{6}';
 
+/** Reasons the API gives in `/login?google=…` when a Google sign-in is refused (ADR 0010). */
+export const GoogleSignInError = z.enum(['cancelled', 'expired', 'failed', 'not_linked']);
+export type GoogleSignInError = z.infer<typeof GoogleSignInError>;
+
+const GOOGLE_ERRORS: Record<GoogleSignInError, string> = {
+  cancelled: 'Se canceló el ingreso con Google.',
+  expired: 'El ingreso con Google caducó. Inténtelo de nuevo.',
+  failed: 'Google no confirmó la identidad. Inténtelo de nuevo.',
+  not_linked:
+    'Esa cuenta de Google no está autorizada en MASCLI. Pida al administrador que la vincule.',
+};
+
 /** Sign-in form (app.py POST /login). The OTP is asked only after the server requires it. */
-export const LoginPage = ({ onSignedIn }: { onSignedIn: () => void | Promise<void> }) => {
+export const LoginPage = ({
+  onSignedIn,
+  googleError,
+}: {
+  onSignedIn: () => void | Promise<void>;
+  googleError?: GoogleSignInError | undefined;
+}) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [needsOtp, setNeedsOtp] = useState(false);
   const titleId = useId();
+  const providers = useQuery(providersQuery);
   const mutation = useMutation({
     mutationFn: login,
     meta: { public: true },
@@ -48,6 +68,16 @@ export const LoginPage = ({ onSignedIn }: { onSignedIn: () => void | Promise<voi
           Gestión del riesgo socioambiental con evidencia y validación humana.
         </p>
         {message ? <Alert tone="error">{message}</Alert> : null}
+        {googleError && !message ? <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert> : null}
+        {providers.data?.google ? (
+          <>
+            {/* A full navigation: the API redirects to Google and back (ADR 0010). */}
+            <a className={styles.google} href="/auth/google">
+              Entrar con Google
+            </a>
+            <p className={styles.divider}>o con usuario y contraseña</p>
+          </>
+        ) : null}
         <Field
           label="Usuario"
           name="username"
