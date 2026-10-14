@@ -5,6 +5,7 @@ import {
   type Identity,
   type SessionIdentity,
   PASSWORD_MIN,
+  normalizeGoogleEmail,
   normalizeUsername,
   validateNewAccount,
 } from '../domain/user.ts';
@@ -156,6 +157,68 @@ export const createIdentityService = ({
       await store.clearFailures(userKey);
       await store.purgeExpiredSessions(now);
       return ok({ token, identity: { username, fullName: user.fullName, role: user.role } });
+    },
+
+    /**
+     * Links the bootstrap administrator to MASCLI_GOOGLE_ADMIN_EMAIL so a fresh installation can
+     * be reached with Google alone. It never replaces an address an administrator already set.
+     */
+    async bootstrapGoogleAdmin(rawUsername: string, rawEmail: string): Promise<void> {
+      const username = normalizeUsername(rawUsername);
+      const email = normalizeGoogleEmail(rawEmail);
+      if (!email.ok) throw new Error('MASCLI_GOOGLE_ADMIN_EMAIL is not a valid address');
+      const user = await store.findUser(username);
+      if (!user || user.role !== 'admin' || user.googleEmail !== null) return;
+      if ((await store.setGoogleEmail(username, email.value)) === 'taken') {
+        console.error('MASCLI_GOOGLE_ADMIN_EMAIL is already linked to another account');
+      }
+    },
+
+    /**
+     * Opens a session for the active account an administrator linked to this verified Google
+     * address (ADR 0010). Unknown addresses get no account: access stays invitation-only.
+     */
+    async loginWithGoogle(email: string): Promise<Result<LoginSuccess, 'not_linked'>> {
+      const now = clock.now();
+      const normalized = normalizeGoogleEmail(email);
+      const user = normalized.ok ? await store.findUserByGoogleEmail(normalized.value) : null;
+      if (!user || !user.active) return err('not_linked');
+      const token = tokens.newToken();
+      const created = await store.createSession(
+        tokens.hash(token),
+        user.username,
+        new Date(now.getTime() + SESSION_SECONDS * 1000),
+        now,
+        { viaGoogle: true },
+      );
+      if (!created) return err('not_linked');
+      await store.purgeExpiredSessions(now);
+      return ok({
+        token,
+        identity: { username: user.username, fullName: user.fullName, role: user.role },
+      });
+    },
+
+    /** Lets an administrator link (or with an empty address unlink) an account's Google login. */
+    async linkGoogle(
+      actor: Identity,
+      rawUsername: string,
+      rawEmail: string,
+    ): Promise<
+      Result<string | null, 'forbidden' | 'invalid' | 'invalid_email' | 'missing' | 'taken'>
+    > {
+      if (actor.role !== 'admin') return err('forbidden');
+      const username = normalizeUsername(rawUsername);
+      if (!username || username.includes('\u0000') || username.length > MAX_STORED_USERNAME)
+        return err('invalid');
+      let email: string | null = null;
+      if (rawEmail.trim() !== '') {
+        const normalized = normalizeGoogleEmail(rawEmail);
+        if (!normalized.ok) return err('invalid_email');
+        email = normalized.value;
+      }
+      const result = await store.setGoogleEmail(username, email);
+      return result === 'set' ? ok(email) : err(result);
     },
 
     async authenticate(token: string | undefined): Promise<SessionIdentity | null> {

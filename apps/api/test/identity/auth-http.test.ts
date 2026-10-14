@@ -218,6 +218,7 @@ describe('/system/auth/accounts', () => {
         'active',
         'created_at',
         'full_name',
+        'google_email',
         'role',
         'username',
       ]);

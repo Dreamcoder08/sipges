@@ -4,6 +4,7 @@ import { SESSION_COOKIE } from '../../../platform/http/cookies.ts';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { forbiddenOrigin, isWriteMethod, originAllowed } from '../../../platform/http/origin.ts';
 import type { IdentityService } from '../application/index.ts';
+import { GOOGLE_CALLBACK_PATH, GOOGLE_START_PATH } from './google-routes.ts';
 
 /** Routes reachable without a session (app.py enforce_auth exemptions, minus ADR 0008 #4). */
 const PUBLIC_PATHS = new Set([
@@ -12,6 +13,9 @@ const PUBLIC_PATHS = new Set([
   '/logout',
   '/select-project',
   '/system/auth/me',
+  '/system/auth/providers',
+  GOOGLE_START_PATH,
+  GOOGLE_CALLBACK_PATH,
 ]);
 
 /** The only routes a session without an enrolled second factor may use (ADR 0009). */

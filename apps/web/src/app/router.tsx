@@ -15,7 +15,14 @@ import type { FeatureContext } from '../shared/api/feature-context.ts';
 import type { RecordModule } from '../features/records/modules.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
-import { LoginPage, UserMenu, MfaEnrollmentPage, logout, meQuery } from '../features/auth/index.ts';
+import {
+  GoogleSignInError,
+  LoginPage,
+  UserMenu,
+  MfaEnrollmentPage,
+  logout,
+  meQuery,
+} from '../features/auth/index.ts';
 import {
   ProjectSwitcher,
   SelectProjectPage,
@@ -82,13 +89,17 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
-  validateSearch: z.object({ redirect: z.string().optional() }),
+  validateSearch: z.object({
+    redirect: z.string().optional(),
+    google: GoogleSignInError.optional().catch(undefined),
+  }),
   component: function LoginRoute() {
     const { queryClient } = loginRoute.useRouteContext();
     const search = loginRoute.useSearch();
     const router = useRouter();
     return (
       <LoginPage
+        googleError={search.google}
         onSignedIn={async () => {
           queryClient.clear();
           await router.navigate({ href: safeRedirect(search.redirect), replace: true });

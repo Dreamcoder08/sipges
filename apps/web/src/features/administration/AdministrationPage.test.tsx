@@ -20,6 +20,7 @@ const account = {
   role: 'analista',
   active: 1,
   created_at: '2026-10-13T12:00:00Z',
+  google_email: null,
 };
 const renderPage = (role: 'admin' | 'consulta' = 'admin') =>
   render(
@@ -238,4 +239,36 @@ it('does not invalidate a new project after an old page mutation completes', asy
   await gate;
   await new Promise<void>((done) => setTimeout(done, 30));
   expect(catalogCalls).toBe(before);
+});
+it('links and unlinks Google sign-in for an existing account', async () => {
+  const user = userEvent.setup();
+  const sent: { path: string; body: unknown }[] = [];
+  server.use(
+    http.post('*/system/auth/accounts/:username/google', async ({ request, params }) => {
+      const body = (await request.json()) as { email: string };
+      sent.push({ path: String(params.username), body });
+      return HttpResponse.json({
+        ok: true,
+        username: String(params.username),
+        google_email: body.email || null,
+      });
+    }),
+  );
+  renderPage();
+  await screen.findByText('Ana Demo');
+  await user.type(screen.getByLabelText('Usuario a vincular'), 'analyst');
+  await user.type(screen.getByLabelText('Correo de Google'), 'ana.demo@example.com');
+  await user.click(screen.getByRole('button', { name: 'Guardar vínculo' }));
+  expect(
+    await screen.findByText('analyst ya puede entrar con Google (ana.demo@example.com).'),
+  ).toBeInTheDocument();
+  expect(screen.getByLabelText('Usuario a vincular')).toHaveValue('');
+
+  await user.type(screen.getByLabelText('Usuario a vincular'), 'analyst');
+  await user.click(screen.getByRole('button', { name: 'Guardar vínculo' }));
+  expect(await screen.findByText('Se quitó el ingreso con Google de analyst.')).toBeInTheDocument();
+  expect(sent).toEqual([
+    { path: 'analyst', body: { email: 'ana.demo@example.com' } },
+    { path: 'analyst', body: { email: '' } },
+  ]);
 });
