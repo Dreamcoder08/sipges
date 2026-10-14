@@ -109,4 +109,30 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
       withTenant(pool.client, 'ACME/NORTE', (tx) => tx.query('SELECT * FROM api_keys')),
     ).rejects.toThrow(/permission denied/);
   });
+  it('creates, authenticates and revokes API keys with an audited trail', async () => {
+    const container = await buildContainer({
+      config: loadConfig(TEST_ENV),
+      sql: pool.client,
+      clock: new TestClock(),
+      clientIp: () => '203.0.113.73',
+    });
+    const created = await container.apiKeys.create(
+      'MASCLI/PRJ-SECHURA',
+      { name: 'Agente PG', access: 'read', clearance: 'limited' },
+      'admin',
+    );
+    if (!created.ok) throw new Error('key not created');
+    expect(await container.apiKeys.authenticate(created.value.token)).toMatchObject({
+      tenantId: 'MASCLI/PRJ-SECHURA',
+      name: 'Agente PG',
+    });
+    expect(await container.apiKeys.revoke('MASCLI/PRJ-SECHURA', created.value.id)).toBe(true);
+    expect(await container.apiKeys.authenticate(created.value.token)).toBeNull();
+    const audit = await withTenant(pool.client, 'MASCLI/PRJ-SECHURA', (tx) =>
+      tx.query<{ action: string }>(
+        "SELECT action FROM audit WHERE module = 'Integraciones' ORDER BY id",
+      ),
+    );
+    expect(audit.map((a) => a.action)).toEqual(['CREATE', 'DELETE']);
+  });
 });

@@ -80,8 +80,13 @@ const renderPage = (role: 'admin' | 'analista' = 'admin') =>
     </QueryClientProvider>,
   );
 
+const noKeys = () => http.get('*/system/integrations/api-keys', () => HttpResponse.json([]));
+
 it('describes rules, channels and runs in plain language', async () => {
-  server.use(http.get('*/system/automations', () => HttpResponse.json(overview)));
+  server.use(
+    http.get('*/system/automations', () => HttpResponse.json(overview)),
+    noKeys(),
+  );
   renderPage();
   expect(
     await screen.findByText(
@@ -98,6 +103,7 @@ it('creates a channel with write-only settings and a rule that uses it', async (
   const posted: { path: string; body: unknown }[] = [];
   server.use(
     http.get('*/system/automations', () => HttpResponse.json({ ...overview, rules: [], runs: [] })),
+    noKeys(),
     http.post('*/system/automations/:kind', async ({ request, params }) => {
       posted.push({ path: String(params.kind), body: await request.json() });
       return HttpResponse.json({ ok: true, id: 5 });
@@ -152,4 +158,44 @@ it('stays closed to other roles without calling the API', () => {
   renderPage('analista');
   expect(screen.getByText(/solo las configura el rol administrador/)).toBeInTheDocument();
   expect(calls).toBe(0);
+});
+
+it('creates an API key, shows the token once and revokes keys', async () => {
+  const user = userEvent.setup();
+  let keys = [
+    {
+      id: 1,
+      name: 'Claude Desktop',
+      prefix: 'abcdef012345',
+      access: 'read',
+      clearance: 'limited',
+      created_by: 'admin',
+      created_at: '2026-10-14T09:00:00Z',
+      last_used_at: null,
+      revoked_at: null as string | null,
+    },
+  ];
+  let created: unknown = null;
+  server.use(
+    http.get('*/system/automations', () => HttpResponse.json({ ...overview, rules: [], runs: [] })),
+    http.get('*/system/integrations/api-keys', () => HttpResponse.json(keys)),
+    http.post('*/system/integrations/api-keys', async ({ request }) => {
+      created = await request.json();
+      return HttpResponse.json({ ok: true, id: 2, token: 'mscli_0123456789ab_synthetic' });
+    }),
+    http.delete('*/system/integrations/api-keys/1', () => {
+      keys = keys.map((k) => ({ ...k, revoked_at: '2026-10-14T11:00:00Z' }));
+      return HttpResponse.json({ ok: true });
+    }),
+  );
+  renderPage();
+  expect(await screen.findByText(/Solo lectura · sin restringidos/)).toBeInTheDocument();
+  await user.type(screen.getByLabelText(/Nombre de la clave/), 'n8n');
+  await user.selectOptions(screen.getByLabelText('Permisos'), 'write');
+  await user.click(screen.getByRole('button', { name: 'Crear clave' }));
+  expect(await screen.findByText('mscli_0123456789ab_synthetic')).toBeInTheDocument();
+  expect(created).toEqual({ name: 'n8n', access: 'write', clearance: 'limited' });
+  await user.click(screen.getByRole('button', { name: 'Revocar clave Claude Desktop' }));
+  expect(await screen.findByText('Revocada')).toBeInTheDocument();
+  expect(screen.queryByText('mscli_0123456789ab_synthetic')).not.toBeInTheDocument();
 });

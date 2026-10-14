@@ -24,6 +24,11 @@ import {
   createHttpChannelSender,
   createSqlAutomationStore,
 } from './contexts/automation/infrastructure/index.ts';
+import {
+  type ApiKeyService,
+  createApiKeyService,
+} from './contexts/integration/application/index.ts';
+import { createSqlApiKeyStore, keyCrypto } from './contexts/integration/infrastructure/index.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
@@ -120,6 +125,7 @@ export type Container = {
   readonly prevention: PreventionService;
   readonly management: ManagementService;
   readonly automation: AutomationService;
+  readonly apiKeys: ApiKeyService;
   readonly clientIp: ClientIp;
 };
 
@@ -308,6 +314,11 @@ export const buildContainer = async (deps: {
     prevention,
     management,
     automation,
+    apiKeys: createApiKeyService({
+      store: createSqlApiKeyStore(deps.sql),
+      crypto: keyCrypto,
+      clock: deps.clock,
+    }),
     clientIp: deps.clientIp,
   };
 };

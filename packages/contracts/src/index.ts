@@ -13,3 +13,4 @@ export * from './reference.ts';
 export * from './document-lab.ts';
 export * from './ontology.ts';
 export * from './automation.ts';
+export * from './integration.ts';

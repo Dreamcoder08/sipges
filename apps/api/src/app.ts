@@ -5,6 +5,8 @@ import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
 import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
+import { apiKeyRoutes } from './contexts/integration/http/api-key-routes.ts';
+import { mcpRoutes } from './contexts/integration/http/mcp-routes.ts';
 import { auditRoutes } from './contexts/audit/http/audit-routes.ts';
 import { documentLabRoutes } from './contexts/documents/http/document-lab-routes.ts';
 import { intelligenceRoutes } from './contexts/intelligence/http/intelligence-routes.ts';
@@ -75,6 +77,18 @@ export const createApp = (container: Container, options: { web?: WebAssets } = {
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
   app.route('/', automationRoutes(container.automation, config.automation.cronSecret));
+  app.route('/', apiKeyRoutes(container.apiKeys));
+  app.route(
+    '/',
+    mcpRoutes({
+      keys: container.apiKeys,
+      services: {
+        ontology: container.ontology,
+        records: container.records,
+        analyst: container.analyst,
+      },
+    }),
+  );
   app.route('/', authRoutes({ identity, cookieSecure: config.cookieSecure, clientIp }));
   app.route(
     '/',

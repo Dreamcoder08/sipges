@@ -26,6 +26,7 @@ import {
   testChannel,
   tick,
 } from './api.ts';
+import { ApiKeysCard } from './ApiKeysCard.tsx';
 import styles from './AutomationPage.module.css';
 
 type Step = RuleIn['steps'][number];
@@ -494,6 +495,8 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                 </fieldset>
               </form>
             </Card>
+
+            <ApiKeysCard scope={scope} />
 
             <Card title="Últimas ejecuciones">
               {data.runs.length === 0 ? (
