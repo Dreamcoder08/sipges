@@ -8,8 +8,8 @@ Make MASCLI act on its own and connect with external systems and AI agents, on t
 - S3: Keep the existing guarantees: hexagonal contexts, forced RLS per tenant, append-only audit, MFA, classification markings (ADR 0012), existing HTTP contract (ADR 0007) and parity tests stay green. Nothing leaves the server unless an administrator configured the destination.
 
 ## Tasks
-- T1 [ ] S2,S3 — ADR 0014 automation and integration; this ODD; route: inline; commit: pending
-- T2 [ ] S2,S3 — Automation engine: per-tenant rules over the audit event stream (module, action, field conditions), actions (in-app notification, signed webhook), run log with retries, `POST /system/automations/tick` for cron plus an in-process scheduler, Automatizaciones screen; route: inline; commit: pending
+- T1 [x] S2,S3 — ADR 0014 automation and integration; this ODD; route: inline; commit: see L2
+- T2 [x] S2,S3 — Automation engine: per-tenant rules over the audit event stream (module, action, field conditions), actions (in-app notification, signed webhook), run log with retries, `POST /system/automations/tick` for cron plus an in-process scheduler, Automatizaciones screen; route: inline; commit: see L3
 - T3 [ ] S2,S3 — API keys (hashed, tenant-scoped, read or write, revocable) and an MCP server at `POST /mcp` (Streamable HTTP, stateless JSON-RPC) exposing search, record, links, timeline and briefing tools; route: inline + review; commit: pending
 - T4 [ ] S2,S3 — Multichannel notifications: in-app inbox with unread count, channels Slack/Teams/Discord/Google Chat webhooks, Telegram bot and e-mail (Resend) with encrypted secrets, installable PWA manifest; route: inline; commit: pending
 - T5 [ ] S2,S3 — Automatic ingestion: inbound webhook `POST /hooks/ingest/{module}` with an API key (Zapier, n8n, Make, Power Automate, forms) and optional OCR port for scanned PDFs; route: inline; commit: pending
@@ -20,3 +20,5 @@ Make MASCLI act on its own and connect with external systems and AI agents, on t
 
 ## Log
 - L1 (plan, 2026-10-14): Gap review in the project thread found no triggers, queues, schedules or webhooks (no `webhook`, `outbox` or `schedul` in the code, no crons in `apps/hosting/vercel.json`), no MCP server or API keys, no notifications, CSV as the only ingestion path, a read-only narrator, embeddings without storage and no realtime channel. The user accepted the full list ("Si ODD completo").
+- L2 (T1 ODD y ADR): ADR 0014 (auditoría como flujo de eventos, reglas puras, ejecuciones idempotentes con reintentos, cron y tick en proceso, canales con secretos sellados, claves de API y MCP) y este ODD con 9 tareas (d12661f).
+- L3 (T2 motor): Contexto automation: reglas por módulo/acción/condiciones sobre audit tras un cursor por proyecto, ejecuciones únicas por (regla, fila, acción) con arrendamiento y espera 1/4/16/64 min, avisos en bandeja y canales webhook firmado (Standard Webhooks), Slack, Teams, Discord, Google Chat, Telegram y Resend con secretos AES-GCM; destinos https públicos; restringidos solo por referencia. Tick cada MASCLI_AUTOMATION_INTERVAL s y GET/POST /system/automations/cron con MASCLI_CRON_SECRET o CRON_SECRET. Pantalla Automatizaciones y campana. Pruebas: 17 API, 5 web, PostgreSQL 16 real como propietario no superusuario y como superusuario (d12661f).
