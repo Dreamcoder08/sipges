@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SCREENS, safeRedirect, titleFor } from './navigation.ts';
+import { NAV_GROUPS, SCREENS, safeRedirect, titleFor } from './navigation.ts';
 
 describe('navigation', () => {
   it('keeps post-login redirects inside the app', () => {
@@ -14,5 +14,9 @@ describe('navigation', () => {
     expect(new Set(SCREENS.map((s) => s.path)).size).toBe(18);
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
     expect(titleFor('/nope')).toBe('MASCLI');
+  });
+
+  it('groups every screen once, in menu order', () => {
+    expect(NAV_GROUPS.flatMap((group) => group.paths)).toEqual(SCREENS.map((s) => s.path));
   });
 });

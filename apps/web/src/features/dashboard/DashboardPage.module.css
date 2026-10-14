@@ -135,3 +135,12 @@
   display: grid;
   gap: 0.3rem;
 }
+
+@media (max-width: 40rem) {
+  .hero {
+    padding: var(--space-4);
+  }
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

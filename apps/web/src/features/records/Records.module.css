@@ -55,6 +55,11 @@
 }
 .rowActions {
   min-width: 8rem;
+  flex-wrap: nowrap;
+}
+.rowActions > button {
+  padding-inline: 0.6rem;
+  white-space: nowrap;
 }
 .form {
   display: grid;
@@ -114,6 +119,8 @@
 }
 .dialog {
   width: min(100%, 32rem);
+  max-height: calc(100dvh - 2 * var(--space-4));
+  overflow-y: auto;
   background: var(--color-surface);
   padding: var(--space-6);
   border-radius: var(--radius-lg);
@@ -167,5 +174,72 @@
 @media (max-width: 640px) {
   .attachments li {
     flex-direction: column;
+  }
+}
+
+/* Phones: each record becomes a card of label/value rows instead of a wide scrolling table. */
+@media (max-width: 40rem) {
+  .tableWrap {
+    border: 0;
+    overflow: visible;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .table tr {
+    display: grid;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+  .table td {
+    display: grid;
+    grid-template-columns: minmax(6rem, 38%) 1fr;
+    gap: var(--space-3);
+    max-width: none;
+    padding: var(--space-2) var(--space-3);
+  }
+  .table td::before {
+    content: attr(data-label);
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .table tr td:last-child {
+    border-bottom: 0;
+    background: var(--color-surface-alt);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+  }
+  .table td:last-child::before {
+    display: none;
+  }
+  .table td:last-child {
+    grid-template-columns: 1fr;
+  }
+  .rowActions {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+  /* Dialogs open as a bottom sheet within thumb reach. */
+  .backdrop {
+    place-items: end stretch;
+    padding: 0;
+  }
+  .dialog {
+    width: 100%;
+    max-height: 90dvh;
+    padding: var(--space-4);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+  .dialog .actions > * {
+    flex: 1;
   }
 }

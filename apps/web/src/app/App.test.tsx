@@ -212,10 +212,18 @@ describe('dashboard and navigation', () => {
       'aria-expanded',
       'true',
     );
+    // The drawer takes focus to the current section and the content behind it goes inert.
+    const nav = screen.getByRole('navigation', { name: 'Secciones' });
+    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveFocus();
+    expect(document.getElementById('contenido')).toHaveAttribute('inert');
+    expect(document.body.style.overflow).toBe('hidden');
     await user.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveAttribute(
       'aria-expanded',
       'false',
     );
+    expect(toggle).toHaveFocus();
+    expect(document.getElementById('contenido')).not.toHaveAttribute('inert');
+    expect(document.body.style.overflow).toBe('');
   });
 });

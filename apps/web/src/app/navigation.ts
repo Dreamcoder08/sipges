@@ -57,6 +57,20 @@ export const SCREENS = [
 
 export type ScreenPath = (typeof SCREENS)[number]['path'];
 
+/**
+ * Sidebar sections: contiguous runs of SCREENS, so the legacy menu order is unchanged and the
+ * long list is easier to scan (above all in the mobile drawer).
+ */
+export const NAV_GROUPS = [
+  {
+    label: 'Monitoreo',
+    paths: ['/', '/eventos', '/actores', '/directorio', '/demandas', '/narrativas'],
+  },
+  { label: 'Gestión y alertas', paths: ['/gerencia', '/inteligencia-redes', '/alertas', '/mapa'] },
+  { label: 'Análisis', paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'] },
+  { label: 'Sistema', paths: ['/administracion', '/metodologia', '/auditoria'] },
+] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
+
 export const titleFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.title ?? 'MASCLI';
 

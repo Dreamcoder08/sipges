@@ -46,3 +46,40 @@
 .uri {
   overflow-wrap: anywhere;
 }
+
+@media (max-width: 40rem) {
+  .stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .stack,
+  .stack tbody,
+  .stack tr {
+    display: grid;
+  }
+  .stack tbody {
+    gap: var(--space-3);
+  }
+  .stack tr {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+  .scroll .stack td {
+    display: grid;
+    grid-template-columns: minmax(5rem, 35%) 1fr;
+    gap: var(--space-3);
+    overflow-wrap: anywhere;
+  }
+  .scroll .stack td::before {
+    content: attr(data-label);
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .scroll .stack tr td:last-child {
+    border-bottom: 0;
+  }
+}

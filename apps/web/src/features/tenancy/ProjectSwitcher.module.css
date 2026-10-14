@@ -16,3 +16,21 @@
 .error {
   color: var(--color-danger);
 }
+
+@media (max-width: 40rem) {
+  /* The label stays for assistive technology; the top bar has no room for it on phones. */
+  .switcher label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .switcher select {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+  }
+}
