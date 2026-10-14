@@ -37,7 +37,7 @@ export const renderDemoEvidence = async (file: DemoEvidence): Promise<Uint8Array
     await Packer.toBuffer(
       new Document({
         creator: 'MASCLI',
-        title: 'Evidencia sintética académica',
+        title: 'Registro de seguimiento',
         sections: [{ children: file.text.split('\n').map((line) => new Paragraph(line)) }],
       }),
     ),

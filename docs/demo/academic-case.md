@@ -69,3 +69,7 @@ Se cargaron 122 registros y diez evidencias en la demo mediante la API. La segun
 IRSA sobre este caso ficticio: 26.14, Amarillo. Es una salida de las reglas provisionales sobre datos sintéticos, no una medición de riesgo real ni validación científica. Se conservan cuestiones pendientes en el escenario: algunas alertas carecen de responsable efectivo y no hay actores priorizados; esos ceros y avisos son tareas que el evaluador puede trabajar.
 
 La suite local aprobó API 465/7 PostgreSQL opcionales omitidas, web102, kernel3, limpieza3, hosting6 y herramientas4. CI del código `c1bec2a` aprobada con PostgreSQL real y 29 E2E, ejecución38503196268. No se modificaron pesos de indicadores, cuentas o datos reales.
+
+## Presentación de la interfaz
+
+A petición del propietario, la interfaz ya no añade un aviso global de demo ni repite etiquetas de datos sintéticos en los nombres y descripciones del ejercicio. Los marcadores internos `Demo_Dataset`, `Demo_ID` y `Dato_Sintetico` se conservan: el conjunto sigue siendo ficticio. Los límites de carga se muestran en el formulario y en errores de tamaño. Las notas originales de procedencia de las evidencias y del corte inicial se presentan con títulos breves; las notas editadas por el usuario se conservan visibles. Los archivos ya cargados se mantienen intactos, incluidos sus textos originales; los documentos generados por futuras cargas usan títulos neutrales.

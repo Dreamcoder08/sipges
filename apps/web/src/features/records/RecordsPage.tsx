@@ -14,7 +14,7 @@ import { EvidencePanel } from './EvidencePanel.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
-import { canWriteRecords, fieldValue } from './model.ts';
+import { canWriteRecords, fieldValue, presentText } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -198,7 +198,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                             };
                             return (
                               <td key={key} data-label={field.label}>
-                                {fieldValue(row, field) || '—'}
+                                {presentText(fieldValue(row, field)) || '—'}
                               </td>
                             );
                           })}

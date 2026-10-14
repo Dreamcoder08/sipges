@@ -12,8 +12,14 @@ import {
   downloadAttachment,
   uploadAttachment,
 } from './evidence-api.ts';
+import { presentText } from './model.ts';
 import type { RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+
+const isSeedProvenance = (note: string) =>
+  /^(?:DATOS SINTÉTICOS\. Verificación simulada\.|Registro de seguimiento\.) mascli-academic-v1:DEMO-F-\d{2}$/.test(
+    note,
+  );
 
 const errorText = (error: unknown) =>
   isApiError(error)
@@ -64,7 +70,7 @@ export const EvidencePanel = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = attachment.original_name;
+      link.download = presentText(attachment.original_name);
       document.body.append(link);
       link.click();
       link.remove();
@@ -85,13 +91,16 @@ export const EvidencePanel = ({
               {items.map((item) => (
                 <li key={item.id}>
                   <div>
-                    <strong>{item.original_name}</strong>
+                    <strong>{presentText(item.original_name)}</strong>
                     <small>
-                      {(item.size_bytes / 1024).toFixed(1)} KB · {item.document_type} ·{' '}
-                      {item.verification}
+                      {(item.size_bytes / 1024).toFixed(1)} KB ·{' '}
+                      {isSeedProvenance(item.notes)
+                        ? 'Evidencia de seguimiento'
+                        : item.document_type}{' '}
+                      · {item.verification}
                     </small>
                     <small>SHA-256: {item.sha256}</small>
-                    {item.notes ? <p>{item.notes}</p> : null}
+                    {item.notes && !isSeedProvenance(item.notes) ? <p>{item.notes}</p> : null}
                   </div>
                   <Button
                     variant="secondary"
@@ -143,7 +152,7 @@ export const EvidencePanel = ({
                 }}
               />
               <small id={`upload-hint-${id}`}>
-                PDF, Office, CSV, TXT o imagen. El servidor comprueba formato y tamaño.
+                PDF, Office, CSV, TXT o imagen. Hasta 3 MiB por archivo; 4 MiB por envío.
               </small>
             </div>
             <Field

@@ -27,10 +27,7 @@ const app = new Hono()
     bodyLimit({
       maxSize: 4 * 1024 * 1024,
       onError: (c) =>
-        c.json(
-          { detail: 'La demo admite como máximo 4 MiB por petición, incluidos todos los archivos' },
-          413,
-        ),
+        c.json({ detail: 'El envío supera el máximo de 4 MiB, incluidos todos los archivos' }, 413),
     }),
   )
   .route(
