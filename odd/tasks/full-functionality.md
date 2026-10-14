@@ -26,14 +26,22 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - Observations, not changed: deleting an automation rule or channel has no confirmation step; Validación only downloads the expert template by design (no ratings are stored); maps are left to PR #47.
 
 ## Tasks
-- T1 [ ] S1,S2 — This ODD: inventory, method, sweep findings; route: inline; commit: pending
-- T2 [ ] S1,S2 — Record modules: E2E create, search, read, edit and delete for all 14 modules on desktop and phone (`12-module-crud`); route: inline; commit: pending
-- T3 [ ] S1,S2 — Digital signal to completed preventive plan (`13-workflows`); fix F1 with a shared `useReveal` hook; route: inline; commit: pending
-- T4 [ ] S1,S2 — Administración journey (accounts, Google link, project, grant, revoke, deactivate); fix F2; route: inline; commit: pending
-- T5 [ ] S1,S2 — CSV import, links, history and audit trail journey; fix F3; route: inline; commit: pending
-- T6 [ ] S1,S2 — Document review decision, strategic reports, chronology filters and automation rules/channels journeys; fix F4 and F5 (`DemoDataNotice`); route: inline; commit: pending
-- T7 [ ] S1,S3 — Roles and navigation: every screen for analista, coordinador and consulta without errors or refused requests (`14-roles`); every home-screen link opens a real screen; route: inline; commit: pending
-- T8 [ ] S3 — Unit regressions, `pnpm verify` with PostgreSQL, full `pnpm e2e`; route: verify; commit: pending
+- T1 [x] S1,S2 — This ODD: inventory, method, sweep findings; route: inline; commit: see L2
+- T2 [x] S1,S2 — Record modules: E2E create, search, read, edit and delete for all 14 modules on desktop and phone (`12-module-crud`); route: inline; commit: see L3
+- T3 [x] S1,S2 — Digital signal to completed preventive plan (`13-workflows`); fix F1 with a shared `useReveal` hook; route: inline; commit: see L4
+- T4 [x] S1,S2 — Administración journey (accounts, Google link, project, grant, revoke, deactivate); fix F2; route: inline; commit: see L5
+- T5 [x] S1,S2 — CSV import, links, history and audit trail journey; fix F3; route: inline; commit: see L6
+- T6 [x] S1,S2 — Document review decision, strategic reports, chronology filters and automation rules/channels journeys; fix F4 and F5 (`DemoDataNotice`); route: inline; commit: see L7
+- T7 [x] S1,S3 — Roles and navigation: every screen for analista, coordinador and consulta without errors or refused requests (`14-roles`); every home-screen link opens a real screen; route: inline; commit: see L8
+- T8 [x] S3 — Unit regressions, `pnpm verify` with PostgreSQL, full `pnpm e2e`; route: verify; commit: see L9
 
 ## Log
 - L1 (plan, 2026-10-14): Inventoried 21 screens, 14 record modules and 4 roles on `main` 9e4bb3b; ran the M1 sweep on the synthetic academic case; findings F1-F5 above.
+- L2 (T1 ODD): Inventario de 21 pantallas, 14 módulos de registros y 4 roles; barrido exploratorio en Chromium de escritorio sobre la API real con el caso académico sintético (122 registros): cada control visible de <main> pulsado en una carga limpia; hallazgos F1-F5 (ac7a3d2).
+- L3 (T2 módulos de registros): 12-module-crud (escritorio) y 12-module-crud.mobile (Pixel 7): crear, buscar, ver, editar desde la ficha y eliminar con confirmación en los 14 módulos, comprobando el valor guardado y el 404 por API; 28/28 sin defectos (ac7a3d2).
+- L4 (T3 alertas y planes): 13-workflows: texto analizado, alerta registrada, corroborada, plan preventivo creado y avanzado a 40 % y a Completada 100 %. F1 reproducido (el encabezado de la alerta no recibía foco) y corregido con useReveal en IntelligencePage y ManagementPage (ac7a3d2).
+- L5 (T4 administración): Cuenta analista, vínculo de Google, proyecto nuevo, acceso concedido y revocado, cuenta desactivada; cada aviso y confirmación debe quedar en la vista. F2 reproducido (aviso «Cuenta creada.» con ratio de vista 0) y corregido (ac7a3d2).
+- L6 (T5 importación, vínculos e historial): Importación CSV de 2 actores (revisar e importar), vínculo «es aliado de» creado y quitado, historial v1 Creación y entrada IMPORT en Auditoría. F3: el panel de importación recibe foco y se desplaza a la vista (ac7a3d2).
+- L7 (T6 análisis y automatizaciones): Decisión «Corroborado documentalmente» en la bandeja documental y filtro, tres informes estratégicos DOCX, filtro de cronología por tipo; reglas creadas, editadas, pausadas, reactivadas y eliminadas, canal webhook creado y eliminado. F4 reproducido revirtiendo la corrección (aviso «Regla creada.» no encontrado en la vista) y corregido. F5: DemoDataNotice en IRSA, Análisis situacional e Inteligencia estratégica (ac7a3d2).
+- L8 (T7 roles y navegación): 14-roles: analista, coordinador y consulta abren las 21 pantallas sin banners de error ni peticiones rechazadas (4xx/5xx en /api y /system); los enlaces del inicio abren pantallas reales en escritorio y móvil; sin defectos (ac7a3d2).
+- L9 (T8 verificación): pnpm verify con PostgreSQL 16 sintético local (MASCLI_TEST_DATABASE_URL explícito): lint, formato, límites, tipos, API 576 (0 omitidas), web 169, kernel 3, hosting 6, herramientas 4. pnpm e2e 78 pasadas, 1 omitida (capturas opcionales). Pruebas unitarias nuevas: reveal.test y DemoDataNotice.test. Sin datos reales ni despliegue (ac7a3d2).
