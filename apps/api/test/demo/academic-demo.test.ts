@@ -35,7 +35,7 @@ test('academic demo has 122 valid, fictional records with complete source and ac
   expect(data.evidence).toHaveLength(10);
   for (const file of data.evidence) {
     expect(keys.has(file.recordId)).toBe(true);
-    expect(file.text).toContain('SINTÉTICO');
+    expect(file.text).toContain('REGISTRO DE SEGUIMIENTO');
   }
   expect(new Set(data.records.map((r) => r.payload.Escenario))).toEqual(
     new Set(['Acuerdo cumplido', 'Negociación abierta', 'Compromiso atrasado']),
@@ -106,7 +106,7 @@ test('demo evidence renders a parseable PDF and a real DOCX', async () => {
   expect(Array.from(docx.slice(0, 2))).toEqual([0x50, 0x4b]);
   const parsed = await extractPdfText(pdf, 5);
   expect(parsed.kind).toBe('pages');
-  if (parsed.kind === 'pages') expect(parsed.pages.join(' ')).toContain('SINTETICO');
+  if (parsed.kind === 'pages') expect(parsed.pages.join(' ')).toContain('REGISTRO DE SEGUIMIENTO');
 });
 
 test('seeding fails closed when a list reaches the API cap and completeness cannot be proven', async () => {
