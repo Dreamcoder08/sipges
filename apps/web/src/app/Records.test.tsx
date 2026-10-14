@@ -121,7 +121,7 @@ describe('territorial records', () => {
       }),
     );
     await waitFor(() => expect(state.rows['DEMO/PRJ-DEMO/demandas']).toHaveLength(0));
-    expect(await screen.findByText('Sin registros para esta búsqueda.')).toBeVisible();
+    expect(await screen.findByText('Aún no hay registros de demandas.')).toBeVisible();
   });
 
   it('offers commitments within the demands screen', async () => {

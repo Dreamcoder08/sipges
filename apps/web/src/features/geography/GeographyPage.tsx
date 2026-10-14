@@ -184,7 +184,12 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
               {selected.centroid.longitude}, {selected.centroid.latitude}
             </dd>
           </dl>
-          <div className={styles.scroll}>
+          <div
+            className={styles.scroll}
+            tabIndex={0}
+            role="region"
+            aria-label={`Vértices de ${selected.name}`}
+          >
             <table>
               <caption>Vértices de {selected.name}</caption>
               <thead>

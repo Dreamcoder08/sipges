@@ -6,6 +6,7 @@ import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
+import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { deleteRecord, recordQuery, recordsQuery, saveRecord } from './api.ts';
@@ -249,8 +250,29 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                     </tbody>
                   </table>
                 </div>
+              ) : search ? (
+                <EmptyState
+                  title="Sin registros para esta búsqueda."
+                  action={
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSearchInput('');
+                        setSearch('');
+                      }}
+                    >
+                      Limpiar búsqueda
+                    </Button>
+                  }
+                >
+                  Prueba con otras palabras o revisa la ortografía.
+                </EmptyState>
               ) : (
-                <p>Sin registros para esta búsqueda.</p>
+                <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>
+                  {writable
+                    ? 'Usa «Nuevo registro» para crear el primero en el proyecto activo.'
+                    : 'Cuando el equipo registre información aparecerá aquí.'}
+                </EmptyState>
               )}
             </>
           )}
