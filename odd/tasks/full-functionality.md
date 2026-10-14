@@ -39,10 +39,10 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - T7 [x] S1,S3 — Roles and navigation: every screen for analista, coordinador and consulta without errors or refused requests (`14-roles`); every home-screen link opens a real screen; route: inline; commit: see L8
 - T8 [x] S3 — Unit regressions, `pnpm verify` with PostgreSQL, full `pnpm e2e`; route: verify; commit: see L9
 
-- T9 [ ] S4 — Shared `ConfirmDialog` (records' dialog moved to `shared/ui`); confirmation before deleting automation rules and channels (F8); route: inline; commit: pending
-- T10 [ ] S4 — 360° view journey: approve an analyst proposal and restrict a record for read-only accounts, desktop and phone; route: inline; commit: pending
-- T11 [ ] S4 — Evidence upload and viewer in the phone journey; fix F6 (viewer layout) and F7 (readable history values); route: inline; commit: pending
-- T12 [ ] S3,S4 — Verification after merging `main` (PR #47): `pnpm verify` with PostgreSQL and full `pnpm e2e`; route: verify; commit: pending
+- T9 [x] S4 — Shared `ConfirmDialog` (records' dialog moved to `shared/ui`); confirmation before deleting automation rules and channels (F8); route: inline; commit: see L10
+- T10 [x] S4 — 360° view journey: approve an analyst proposal and restrict a record for read-only accounts, desktop and phone; route: inline; commit: see L11
+- T11 [x] S4 — Evidence upload and viewer in the phone journey; fix F6 (viewer layout) and F7 (readable history values); route: inline; commit: see L12
+- T12 [x] S3,S4 — Verification after merging `main` (PR #47): `pnpm verify` with PostgreSQL and full `pnpm e2e`; route: verify; commit: see L13
 ## Log
 - L1 (plan, 2026-10-14): Inventoried 21 screens, 14 record modules and 4 roles on `main` 9e4bb3b; ran the M1 sweep on the synthetic academic case; findings F1-F5 above.
 - L2 (T1 ODD): Inventario de 21 pantallas, 14 módulos de registros y 4 roles; barrido exploratorio en Chromium de escritorio sobre la API real con el caso académico sintético (122 registros): cada control visible de <main> pulsado en una carga limpia; hallazgos F1-F5 (ac7a3d2).
@@ -53,3 +53,7 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - L7 (T6 análisis y automatizaciones): Decisión «Corroborado documentalmente» en la bandeja documental y filtro, tres informes estratégicos DOCX, filtro de cronología por tipo; reglas creadas, editadas, pausadas, reactivadas y eliminadas, canal webhook creado y eliminado. F4 reproducido revirtiendo la corrección (aviso «Regla creada.» no encontrado en la vista) y corregido. F5: DemoDataNotice en IRSA, Análisis situacional e Inteligencia estratégica (ac7a3d2).
 - L8 (T7 roles y navegación): 14-roles: analista, coordinador y consulta abren las 21 pantallas sin banners de error ni peticiones rechazadas (4xx/5xx en /api y /system); los enlaces del inicio abren pantallas reales en escritorio y móvil; sin defectos (ac7a3d2).
 - L9 (T8 verificación): pnpm verify con PostgreSQL 16 sintético local (MASCLI_TEST_DATABASE_URL explícito): lint, formato, límites, tipos, API 576 (0 omitidas), web 169, kernel 3, hosting 6, herramientas 4. pnpm e2e 78 pasadas, 1 omitida (capturas opcionales). Pruebas unitarias nuevas: reveal.test y DemoDataNotice.test. Sin datos reales ni despliegue (ac7a3d2).
+- L10 (confirmación al eliminar): Eliminar reglas y canales de automatización pide confirmación con un ConfirmDialog compartido (el de registros se movió a shared/ui): Cancelar conserva, Escape cierra, el foco queda atrapado y vuelve. F8 corregido (5a4e141).
+- L11 (vista 360°): 13-workflows (escritorio y Pixel 7): evento que menciona un actor, propuesta del analista aprobada desde la vista 360° y vínculo creado; registro marcado restringido deja de ser legible para la cuenta consulta (5a4e141).
+- L12 (evidencias e historial): Evidencia subida y leída en la ficha en escritorio y teléfono. F6: el visor abría una segunda columna de 686 px en un teléfono de 412 px y los toques fallaban; corregido en CSS con comprobación de ancho en E2E. F7: el historial muestra adjuntos y valores estructurados legibles (readable, prueba unitaria) (5a4e141).
+- L13 (verificación): Tras fusionar main (PR #47): pnpm verify con PostgreSQL 16 sintético: API 576 (0 omitidas), web 172, kernel 3, hosting 6, herramientas 4. pnpm e2e 80 pasadas, 1 omitida (capturas opcionales). Sin datos reales ni despliegue (5a4e141).
