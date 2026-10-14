@@ -5,6 +5,7 @@ Turn the signed-in MASCLI web app from a desktop dashboard squeezed into a narro
 ## Specs
 - S1: "Crea ODD, obsesivo y específico." — the owner's diagnosis (2026-10-14, project thread "Rediseño mobile-first", with a phone capture of the open drawer): no mobile-first philosophy; overloaded header (close, title, search, bell, project select, avatar, "Salir"); a long, dark, flat drawer with 11+ destinations of equal weight; weak hierarchy; navy panel that reads as a legacy intranet; navigation as a catalogue instead of a flow; no frequency-based priority.
 - S2: Accepted architecture from the same message: bottom navigation Inicio · Monitoreo · Alertas · Territorio · Más; "Más" holds Actores, Directorio, Demandas, Narrativas, Inteligencia de redes, Centro gerencial and the rest; the active project dominates the header ("Sechura", "Migración") with an elegant switch; avatar opens profile, notifications and sign-out; search as a global command; "Salir" never a top-level action on mobile; soft active states (light tint, accent, semibold, icon); lighter surfaces, one accent colour reserved for selection, alerts and KPIs; controlled spacing.
+- S4: "Continua mejorando el desing responsiva en todos los módulos del proyecto, cuando seleccionó la sección "automatizaciones" todo se desconfigura corrije ese módulo y más" (owner, 2026-10-14, after #45 merged). Screen contents are now in scope for responsive fixes; new PR from `main`.
 - S3: Desktop must not break (coordinator brief). Keep the existing guarantees: WCAG 2.1 AA (axe clean in E2E), keyboard and screen-reader parity, CSP without inline styles from the server, no horizontal page scroll at 360 px, every screen reachable, existing E2E and unit suites green.
 
 ## Design rules (acceptance criteria for every task)
@@ -29,6 +30,10 @@ Measured at 390×844 (iPhone 14/15) and 360×780 (narrowest common Android) unle
 - T7 [x] S2 — Account sheet with profile, notification inbox, device push and sign-out; unread badge on the avatar; desktop account menu without a bare "Salir" (R5, R8); route: inline; commit: see L3
 - T8 [x] S3 — Verification: unit tests, mobile E2E (bottom bar, sheets, axe with each sheet open, every screen at 360 px without horizontal scroll), desktop E2E unchanged, before/after captures through `apps/e2e/tests/screenshots.mobile.spec.ts`; route: verify; commit: see L4
 - T9 [x] S2 — "Hoy" home for phones (project, day summary, 3–5 KPIs, critical alerts, recent events, quick actions); built on top of the audit fixes merged in #44; route: inline; commit: see L10
+
+- T10 [ ] S4 — Automatizaciones on phones: the channel-type option «Webhook firmado (n8n, Zapier, …)» widened the grid and fieldset to 622 px and the phone zoomed the whole page out; `minmax(0, 1fr)` tracks and `fieldset { min-width: 0 }` globally; route: inline
+- T11 [ ] S4 — Audit all 21 screens at 360 and 820 px and fix what reads wrong: donut as wide as the card, IRSA score wrapping, Centro gerencial KPIs in one column, Validación facts as a raw `dl`; route: inline
+- T12 [ ] S4,S3 — The mobile E2E compared `scrollWidth` with `innerWidth`, which grows when a touch device zooms out, so it never saw T10; compare with the layout viewport and add an 820 px pass; route: verify
 
 ## Log
 - L1 (plan, 2026-10-14): Captured the current phone shell at 390×844 with the synthetic E2E instance: two-row header with a hamburger, title, a clipped search button, bell emoji, a native select, avatar and "Salir"; navy drawer of 21 links in four equal groups under the header. The owner's diagnosis (S1) and target architecture (S2) were accepted as the plan; screen contents stay with the parallel audit thread.

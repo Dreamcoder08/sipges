@@ -54,7 +54,7 @@ const ValidationWorkspace = ({ scope, projectLabel }: FeatureContext) => {
       <Card title="Estado declarado del modelo">
         <QueryState query={model} label="estado del modelo">
           {(data) => (
-            <dl>
+            <dl className={styles.facts}>
               <dt>Versión</dt>
               <dd>{data.version}</dd>
               <dt>Validación de contenido</dt>
