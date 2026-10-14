@@ -1,4 +1,9 @@
-import { type QueryClient, useQuery } from '@tanstack/react-query';
+import {
+  type FetchQueryOptions,
+  type QueryClient,
+  type QueryKey,
+  useQuery,
+} from '@tanstack/react-query';
 import {
   Link,
   Outlet,
@@ -10,7 +15,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import type { RecordModule } from '../features/records/modules.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
@@ -96,6 +101,40 @@ const TerritorialMapPage = lazy(() =>
   })),
 );
 
+/** Every lazily loaded screen module, fetched while the browser is idle after sign-in. */
+const SCREEN_MODULES = [
+  () => import('../features/records/index.ts'),
+  () => import('../features/indicators/index.ts'),
+  () => import('../features/analysis/index.ts'),
+  () => import('../features/operations/index.ts'),
+  () => import('../features/administration/index.ts'),
+  () => import('../features/automation/index.ts'),
+  () => import('../features/audit/index.ts'),
+  () => import('../features/geography/index.ts'),
+  () => import('../features/timeline/index.ts'),
+];
+
+/**
+ * Downloads the other screens in the background once the first one is shown, so opening a
+ * screen later does not wait for its code ("Cargando sección…"). Skipped on Save-Data.
+ */
+const usePreloadScreens = () => {
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } })
+      .connection;
+    if (connection?.saveData) return;
+    const run = () => {
+      for (const load of SCREEN_MODULES) load().catch(() => undefined);
+    };
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(run, { timeout: 4000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = setTimeout(run, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+};
+
 type RouterContext = { queryClient: QueryClient };
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
@@ -132,8 +171,22 @@ const loginRoute = createRoute({
   },
 });
 
+/**
+ * The cached answer while it is valid, refreshed in the background once stale; a fresh fetch
+ * only when there is none or it was invalidated (sign-in, project switch). Waiting for two
+ * sequential round trips on every navigation made each screen change feel slow, above all
+ * against a serverless API.
+ */
+const cachedOrFetch = <TData, TKey extends QueryKey>(
+  queryClient: QueryClient,
+  options: FetchQueryOptions<TData, Error, TData, TKey>,
+): Promise<TData> =>
+  queryClient.getQueryState(options.queryKey)?.isInvalidated
+    ? queryClient.fetchQuery(options)
+    : queryClient.ensureQueryData({ ...options, revalidateIfStale: true });
+
 const requireSession = async (queryClient: QueryClient, href: string) => {
-  const me = await queryClient.fetchQuery(meQuery);
+  const me = await cachedOrFetch(queryClient, meQuery);
   if (!me) throw redirect({ to: '/login', search: { redirect: href } });
   return me;
 };
@@ -191,8 +244,8 @@ const appRoute = createRoute({
   beforeLoad: async ({ context, location }) => {
     const me = await requireSession(context.queryClient, location.href);
     try {
-      // fetchQuery refetches once invalidated, e.g. after a project switch.
-      const scope = await context.queryClient.fetchQuery(currentScopeQuery);
+      // Refetched only once invalidated, e.g. after a project switch.
+      const scope = await cachedOrFetch(context.queryClient, currentScopeQuery);
       return { me, scope };
     } catch (error) {
       if (isMfaRequired(error)) throw redirect({ to: '/mfa' });
@@ -209,6 +262,7 @@ const appRoute = createRoute({
     const compact = useMediaQuery(COMPACT_QUERY);
     const unread = useUnreadNotifications(scope.scope);
     const projectLabel = label || scope.project_id;
+    usePreloadScreens();
     return (
       <NavigateProvider value={(href) => void router.navigate({ href })}>
         <AppShell

@@ -7,6 +7,7 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - S2: Method from the coordinator brief: walk every module and every action end to end in the real app (desktop and phone, Playwright E2E), record what fails or is only visual, and fix it with regression tests. Start from an updated `main`; do not touch maps or the shell/navigation (PR #47); demo records stay apart through `recordOrigin`; no invented real data.
 - S4: "Continúe" (owner, 2026-10-14, after T1-T8): keep going on the same PR; `main` now includes PR #47 (maps).
 - S5: "La ubicación geoespacial debe verse bien, realista o en vivo y el mapa territorial está muy lento para moverlo verlo, todo debe ser fluido" (owner, 2026-10-14).
+- S6: "Porque se ve lento has lo que sea necesario todo debe verse fluido y bien" (owner, 2026-10-14).
 - S3: Keep the existing guarantees: hexagonal boundaries, tenant isolation, ADR 0007 HTTP contract, CSP, WCAG 2.1 AA, and every existing unit and E2E test green.
 
 ## Inventory
@@ -30,6 +31,9 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - F8 (Automatizaciones): deleting a rule or a channel happened at once, without the confirmation records have (was an observation in L1).
 - F9 (both maps): dragging or pinching stuttered: with 4× CPU throttling the p95 frame was 267 ms. A trace showed 12 s of rasterising per 120 pointer moves: district outlines kept a CSS dash of 0.01 map units (about 1 m since maps moved to scaled units), millions of dashes per district. Every pointer move also re-rendered the whole page.
 - F10 (Ubicación geoespacial): no basemap at all, only generalised districts; it did not look like a real place.
+- F11 (whole app): every response, hashed JS and CSS included, carried `Cache-Control: no-store` (API middleware and `vercel.json`), so each visit and reload downloaded the whole bundle again (724 KB) through the server function.
+- F12 (navigation): each screen change waited for `/system/auth/me` and then `/system/auth/current-scope` once their one-minute cache aged, and each screen's code was fetched only when first opened.
+- Observations, not changed: production (`main`) does not have these fixes until this PR is merged; serverless cold starts and the database waking up are hosting limits outside the code.
 - Observations, not changed: Validación only downloads the expert template by design (no ratings are stored); maps are left to PR #47.
 
 ## Tasks
@@ -48,6 +52,7 @@ Make every module of MASCLI work end to end, on desktop and on a phone, and prov
 - T12 [x] S3,S4 — Verification after merging `main` (PR #47): `pnpm verify` with PostgreSQL and full `pnpm e2e`; route: verify; commit: see L13
 - T13 [x] S5 — Smooth maps: dashes sized to the view (F9), gestures move a transform and render once at the end, tiles with margin and the previous level kept until the new one loads; route: inline; commit: see L14
 - T14 [x] S5 — Basemap choice (satellite Sentinel-2 cloudless, streets, none) on both maps, satellite by default on the project location (F10); ADR 0006 addendum and CSP; route: inline; commit: see L15
+- T15 [ ] S6 — Fluid app: hashed assets cached for a year by browsers and the CDN (F11), navigation reuses the session and project already known and refreshes them in the background, other screens preloaded while idle (F12); route: inline; commit: pending
 ## Log
 - L1 (plan, 2026-10-14): Inventoried 21 screens, 14 record modules and 4 roles on `main` 9e4bb3b; ran the M1 sweep on the synthetic academic case; findings F1-F5 above.
 - L2 (T1 ODD): Inventario de 21 pantallas, 14 módulos de registros y 4 roles; barrido exploratorio en Chromium de escritorio sobre la API real con el caso académico sintético (122 registros): cada control visible de <main> pulsado en una carga limpia; hallazgos F1-F5 (ac7a3d2).

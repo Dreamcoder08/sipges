@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
+import { ASSET_CACHE } from './spa.ts';
 
 /**
  * The API serves JSON plus the server-rendered /select-project form (inline style attributes,
@@ -19,7 +20,9 @@ export const securityHeaders =
     c.header('X-Content-Type-Options', 'nosniff');
     c.header('X-Frame-Options', 'DENY');
     if (!c.res.headers.has('Referrer-Policy')) c.header('Referrer-Policy', 'no-referrer');
-    c.header('Cache-Control', 'no-store');
+    // Only hashed SPA assets may be cached (ASSET_CACHE); everything else, API data included,
+    // is never stored.
+    if (c.res.headers.get('Cache-Control') !== ASSET_CACHE) c.header('Cache-Control', 'no-store');
     // A trusted SPA middleware supplies its stricter policy for bundled assets.
     if (!c.res.headers.has('Content-Security-Policy')) c.header('Content-Security-Policy', API_CSP);
     c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');

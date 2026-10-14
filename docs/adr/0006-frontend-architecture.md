@@ -74,3 +74,14 @@ The tile layer loads a quarter of the view beyond each edge and keeps the previo
 underneath until the new level loads. Profiling a drag with 4× CPU throttling showed the real
 cost was rasterising district outlines whose CSS dash (0.01 map units, about 1 m) produced
 millions of dashes; dashes are now sized to the view (p95 frame 267 ms → 17 ms).
+
+## Addendum (2026-10-14): caching hashed assets
+
+Vite names every JS and CSS file by its content hash, so `/assets/*` is served with
+`Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable` by the SPA middleware
+and in `vercel.json`. Every other response keeps `no-store`: the HTML shell (so a deploy is seen
+at once), the service worker, API data and errors. The security middleware only lets that exact
+asset value through. Measured on 4G with a 4× slower CPU, a reload went from 1.6 s and 724 KB
+to 0.9 s and 49 KB. Signed-in navigation reuses the cached session and project (refreshed in the
+background, refetched when invalidated) and preloads the other screens' code while idle, except
+under Save-Data.
