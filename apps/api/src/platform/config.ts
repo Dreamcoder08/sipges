@@ -24,6 +24,8 @@ export type AppConfig = {
   readonly storage: StorageConfig;
   /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
   readonly ollama: { readonly baseUrl: string; readonly model: string };
+  /** Hybrid search with stored embeddings from the Ollama model (MASCLI_SEMANTIC_SEARCH=1). */
+  readonly semanticSearch: boolean;
   /**
    * Language model that rewrites extractive briefings (docs/adr/0013). Off unless
    * MASCLI_ANALYST_PROVIDER=anthropic; the key comes from ANTHROPIC_API_KEY at the SDK.
@@ -264,6 +266,7 @@ export const loadConfig = (env: Env): AppConfig => ({
   maxUploadBytes: parseMaxUpload(env.MASCLI_MAX_UPLOAD_BYTES),
   storage: parseStorage(env),
   ollama: parseOllama(env),
+  semanticSearch: parseSwitch('MASCLI_SEMANTIC_SEARCH', env.MASCLI_SEMANTIC_SEARCH, false),
   analyst: parseAnalyst(env),
   webDir: env.MASCLI_WEB_DIR || undefined,
   requireMfa: parseSwitch('MASCLI_REQUIRE_MFA', env.MASCLI_REQUIRE_MFA, true),

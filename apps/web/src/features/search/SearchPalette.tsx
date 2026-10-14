@@ -87,6 +87,8 @@ const Results = ({ scope, onClose }: { scope: string; onClose: () => void }) => 
             <strong>{hit.title}</strong>
             {hit.match && hit.match.excerpt !== hit.title ? (
               <small>{hit.match.excerpt}</small>
+            ) : hit.semantic ? (
+              <small>Relacionado por significado</small>
             ) : null}
           </li>
         ))}

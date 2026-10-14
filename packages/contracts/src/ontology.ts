@@ -100,6 +100,8 @@ export const SearchResults = z.object({
   hits: z.array(
     ObjectSummary.extend({
       match: z.object({ field: z.string(), excerpt: z.string() }).nullable(),
+      /** Found (also) by meaning; absent from servers without hybrid search. */
+      semantic: z.boolean().optional(),
     }),
   ),
 });

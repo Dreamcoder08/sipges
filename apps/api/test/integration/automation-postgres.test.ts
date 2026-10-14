@@ -166,4 +166,25 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
       expect(await tx.query('SELECT * FROM ingest_receipts')).toEqual([]);
     });
   });
+
+  it('stores embeddings as real[] and ranks by meaning on PostgreSQL', async () => {
+    const container = await buildContainer({
+      config: loadConfig({ ...TEST_ENV, MASCLI_SEMANTIC_SEARCH: '1' }),
+      sql: pool.client,
+      clock: new TestClock(),
+      clientIp: () => '203.0.113.75',
+      embeddings: {
+        model: 'toy-pg',
+        embed: async (text) => [/agua|hídric/i.test(text) ? 1 : 0, 0.01, 0, 0, 0, 0, 0, 0],
+      },
+    });
+    const created = await container.records.create('MASCLI/PRJ-SECHURA', 'Eventos', {
+      ID_Evento: 'EV-PG-1',
+      Descripcion_Hecho: 'Conflicto hídrico sintético',
+    });
+    expect(created.ok).toBe(true);
+    const hits = await container.ontology.search('MASCLI/PRJ-SECHURA', 'agua', ['eventos'], 5);
+    expect(hits.map((h) => [h.id, h.semantic])).toContainEqual(['EV-PG-1', true]);
+    expect(await container.ontology.refreshEmbeddings('MASCLI/PRJ-SECHURA')).toBe(0);
+  });
 });

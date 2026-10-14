@@ -89,3 +89,37 @@ export type OntologyStore = {
 };
 
 export type Clock = { now(): Date };
+
+/** A record with its text, ready to embed. */
+export type EmbeddingSource = NodeRef & {
+  readonly payload: Readonly<Record<string, unknown>>;
+  /** Opaque version of the payload, stored with the vector to detect changes. */
+  readonly hash: string;
+};
+
+/** Stored record embeddings (docs/adr/0014 §9); every call runs in one tenant transaction. */
+export type EmbeddingIndex = {
+  /**
+   * Records without an embedding from `model`, or changed since it was computed, oldest
+   * first. Restricted records are never embedded, so their text never reaches the model.
+   */
+  stale(tenantId: string, model: string, limit: number): Promise<EmbeddingSource[]>;
+  save(
+    tenantId: string,
+    rows: readonly (NodeRef & { vector: readonly number[]; hash: string })[],
+    model: string,
+    at: Date,
+  ): Promise<void>;
+  /** Visible records of `modules` with an embedding from `model`. */
+  vectors(
+    tenantId: string,
+    modules: readonly string[],
+    model: string,
+    limit: number,
+  ): Promise<(NodeRef & { vector: number[] })[]>;
+};
+
+export type Embedder = {
+  readonly model: string;
+  embed(text: string): Promise<number[]>;
+};

@@ -107,6 +107,7 @@ import {
   createOntologyService,
   type OntologyService,
 } from './contexts/ontology/application/index.ts';
+import { createSqlEmbeddingIndex } from './contexts/ontology/infrastructure/sql-embedding-index.ts';
 import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-ontology-store.ts';
 import {
   RECORD_MODULES,
@@ -201,9 +202,13 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
   });
+  const embeddings = deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama);
   const ontology = createOntologyService({
     store: createSqlOntologyStore(deps.sql),
     clock: deps.clock,
+    ...(deps.config.semanticSearch
+      ? { semantic: { index: createSqlEmbeddingIndex(deps.sql), embedder: embeddings } }
+      : {}),
   });
   const analyst = createAnalystService({
     source: {
@@ -297,7 +302,7 @@ export const buildContainer = async (deps: {
           (r) => r.payload,
         ),
     },
-    embeddings: deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama),
+    embeddings,
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,

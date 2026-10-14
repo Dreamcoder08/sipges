@@ -155,6 +155,21 @@ Nada cambia hasta que alguien aprueba. Cada decisión queda en la auditoría (m�
 *Analista*, acción revisión) y la propuesta no vuelve a aparecer. Las automatizaciones pueden
 reaccionar a esas decisiones con el origen **Propuestas del analista**.
 
+## Búsqueda semántica
+
+Con `MASCLI_SEMANTIC_SEARCH=1` la búsqueda (Ctrl/⌘+K y la herramienta MCP `search_records`)
+también encuentra registros por significado: "agua" encuentra un "conflicto hídrico" aunque no
+compartan palabras. Usa el modelo de embeddings de Ollama ya configurado
+(`MASCLI_OLLAMA_URL`, `MASCLI_OLLAMA_EMBED_MODEL`).
+
+- Los vectores se guardan en la base de datos y se calculan poco a poco: cada búsqueda
+  procesa hasta 16 registros nuevos o modificados antes de responder.
+- Los resultados por significado se combinan con los de texto (fusión por rango recíproco) y
+  se marcan como "Relacionado por significado" cuando no comparten palabras.
+- Los registros **restringidos** nunca se envían al modelo; siguen apareciendo en la búsqueda
+  de texto para quien puede verlos.
+- Si el modelo no responde, la búsqueda sigue funcionando solo por texto.
+
 ## OCR de PDF escaneados
 
 El laboratorio documental lee el texto de los PDF. Para los escaneados (sin capa de texto)

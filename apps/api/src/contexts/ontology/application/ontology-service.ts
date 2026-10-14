@@ -1,4 +1,5 @@
 import { type Result, err, ok } from '@mascli/kernel';
+import { log } from '../../../platform/observability/logger.ts';
 import {
   INFERENCE_RULES,
   LINK_TYPES,
@@ -14,7 +15,16 @@ import {
 } from '../domain/catalog.ts';
 import { findMention, suggestedLink } from '../domain/mentions.ts';
 import { matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
-import type { Clock, NodeRef, NodeRow, OntologyStore, ResolvedRule } from './ports.ts';
+import { MIN_SIMILARITY, cosine, embeddingText, fuseRankings } from '../domain/semantic.ts';
+import type {
+  Clock,
+  Embedder,
+  EmbeddingIndex,
+  NodeRef,
+  NodeRow,
+  OntologyStore,
+  ResolvedRule,
+} from './ports.ts';
 
 /** Graph bounds (docs/adr/0011 §6). */
 export const MAX_GRAPH_DEPTH = 2;
@@ -36,7 +46,14 @@ export const dayBound = (value: string, end: boolean): string | null => {
 
 export type SearchHit = ObjectSummary & {
   readonly match: { readonly field: string; readonly excerpt: string } | null;
+  /** Found (also) by meaning through stored embeddings. */
+  readonly semantic: boolean;
 };
+
+/** Records embedded per search before ranking, so a new project indexes itself gradually. */
+export const EMBED_BATCH = 16;
+/** Embeddings compared per search; projects hold far fewer records than this. */
+const MAX_VECTORS = 5000;
 
 export type ObjectSummary = {
   readonly slug: string;
@@ -125,8 +142,67 @@ export const summarize = (objectType: ObjectType, row: NodeRow): ObjectSummary =
 
 const isUsableId = (id: string) => id.length > 0 && id.length <= MAX_ID && !id.includes('\u0000');
 
-export const createOntologyService = (deps: { store: OntologyStore; clock: Clock }) => {
+export const createOntologyService = (deps: {
+  store: OntologyStore;
+  clock: Clock;
+  semantic?: { index: EmbeddingIndex; embedder: Embedder };
+}) => {
   const { store, clock } = deps;
+
+  const refreshEmbeddings = async (tenantId: string, limit: number) => {
+    const semantic = deps.semantic;
+    if (!semantic) return 0;
+    const stale = await semantic.index.stale(tenantId, semantic.embedder.model, limit);
+    const rows = [];
+    for (const record of stale) {
+      const objectType = objectTypeForModule(record.module);
+      if (!objectType) continue;
+      const text = embeddingText(
+        objectType.label,
+        titleOf(objectType, record.id, record.payload),
+        record.payload,
+      );
+      rows.push({
+        module: record.module,
+        id: record.id,
+        hash: record.hash,
+        vector: await semantic.embedder.embed(text),
+      });
+    }
+    if (rows.length)
+      await semantic.index.save(tenantId, rows, semantic.embedder.model, clock.now());
+    return rows.length;
+  };
+
+  /** Records closest in meaning to `raw`, best first; empty when the embedder is down. */
+  const semanticRefsFor = async (
+    tenantId: string,
+    raw: string,
+    modules: readonly string[],
+    limit: number,
+  ): Promise<NodeRef[]> => {
+    const semantic = deps.semantic;
+    if (!semantic) return [];
+    try {
+      await refreshEmbeddings(tenantId, EMBED_BATCH);
+      const query = await semantic.embedder.embed(raw.trim());
+      const vectors = await semantic.index.vectors(
+        tenantId,
+        modules,
+        semantic.embedder.model,
+        MAX_VECTORS,
+      );
+      return vectors
+        .map((v) => ({ ref: { module: v.module, id: v.id }, score: cosine(query, v.vector) }))
+        .filter((v) => v.score >= MIN_SIMILARITY)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map((v) => v.ref);
+    } catch (error) {
+      log('warn', 'semantic_search_unavailable', { error });
+      return [];
+    }
+  };
 
   /** Explicit and inferred edges touching `refs`, explicit first, without duplicates. */
   const edgesTouching = async (tenantId: string, refs: readonly NodeRef[]): Promise<Edge[]> => {
@@ -337,7 +413,11 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
       return { root: { slug, id }, nodes: [...nodes.values()], edges: present, truncated };
     },
 
-    /** Ranked full-text search across object types (docs/adr/0011 §5). */
+    /**
+     * Ranked full-text search across object types (docs/adr/0011 §5). With an embedder it is
+     * hybrid (docs/adr/0014 §9): records close in meaning are fused with the lexical ranking;
+     * any embedding failure leaves the lexical result untouched.
+     */
     async search(
       tenantId: string,
       raw: string,
@@ -350,18 +430,38 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
         (slug) => objectTypeForSlug(slug) ?? [],
       );
       const exactId = raw.trim();
-      if ((!query && !isUsableId(exactId)) || types.length === 0) return [];
+      if (types.length === 0) return [];
       const bounded = Math.max(1, Math.min(MAX_SEARCH_RESULTS, Math.trunc(limit) || 1));
-      const rows = await store.search(
-        tenantId,
-        query,
-        exactId,
-        types.map((t) => t.module),
-        bounded,
-      );
-      return rows.flatMap((row) => {
-        const objectType = objectTypeForModule(row.module);
-        if (!objectType) return [];
+      const lexicalRows =
+        query || isUsableId(exactId)
+          ? await store.search(
+              tenantId,
+              query,
+              exactId,
+              types.map((t) => t.module),
+              bounded,
+            )
+          : [];
+      const semanticRefs =
+        deps.semantic && terms.length > 0
+          ? await semanticRefsFor(
+              tenantId,
+              raw,
+              types.map((t) => t.module),
+              bounded,
+            )
+          : [];
+      const rows = new Map(lexicalRows.map((row) => [key(row), row]));
+      const missing = semanticRefs.filter((ref) => !rows.has(key(ref)));
+      for (const row of missing.length ? await store.nodes(tenantId, missing) : []) {
+        rows.set(key(row), row);
+      }
+      const semanticKeys = new Set(semanticRefs.map(key));
+      const ranked = fuseRankings([lexicalRows.map(key), semanticRefs.map(key)], bounded);
+      return ranked.flatMap((k) => {
+        const row = rows.get(k);
+        const objectType = row && objectTypeForModule(row.module);
+        if (!row || !objectType) return [];
         return [
           {
             ...summarize(objectType, row),
@@ -369,10 +469,15 @@ export const createOntologyService = (deps: { store: OntologyStore; clock: Clock
               objectType.titleField,
               ...objectType.summaryFields,
             ]),
+            semantic: semanticKeys.has(k),
           },
         ];
       });
     },
+
+    /** Embeds up to `limit` new or changed records; returns how many were embedded. */
+    refreshEmbeddings: (tenantId: string, limit = EMBED_BATCH) =>
+      refreshEmbeddings(tenantId, limit),
 
     /** Dated records across object types, newest first (docs/adr/0011 §7). */
     async timeline(

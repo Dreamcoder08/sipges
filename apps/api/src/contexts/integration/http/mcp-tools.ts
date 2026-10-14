@@ -92,7 +92,7 @@ export const MCP_TOOLS = [
     name: 'search_records',
     title: 'Buscar registros',
     description:
-      'Búsqueda de texto completo en todos los registros del proyecto (actores, eventos, demandas, compromisos, alertas, fuentes…), ordenada por relevancia.',
+      'Búsqueda de texto completo en todos los registros del proyecto (actores, eventos, demandas, compromisos, alertas, fuentes…), ordenada por relevancia y, si la búsqueda semántica está activa, también por significado.',
     input: z.object({
       query: z.string().min(1).max(200).describe('Palabras o identificador a buscar'),
       modules: z.array(Module).max(20).optional().describe('Limitar a estos tipos de objeto'),
@@ -106,7 +106,9 @@ export const MCP_TOOLS = [
         input.modules ?? null,
         input.limit,
       );
-      return done({ hits: hits.map((h) => ({ ...summary(h), match: h.match })) });
+      return done({
+        hits: hits.map((h) => ({ ...summary(h), match: h.match, semantic: h.semantic })),
+      });
     },
   }),
   tool({
