@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
 import coordinates from '../../../../../data/project_coordinates.json';
 import { server } from '../../test/server.ts';
+import { UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { GeographyPage } from './GeographyPage.tsx';
 const renderPage = () =>
   render(
@@ -70,7 +71,7 @@ it('frames the selected concession and draws it with explicit fills', async () =
   expect(map.getAttribute('viewBox')).not.toBe(province);
   // The view is centred on BAYOVAR N° 6 (lon/−lat space) and smaller than the province.
   const concession = coordinates.concessions.find((c) => c.code === '12000442Y01');
-  const [x = 0, y = 0, w = 0, h = 0] = framed;
+  const [x = 0, y = 0, w = 0, h = 0] = framed.map((v) => v / UNITS_PER_DEGREE);
   expect(concession?.centroid.longitude).toBeGreaterThan(x);
   expect(concession?.centroid.longitude).toBeLessThan(x + w);
   expect(-(concession?.centroid.latitude ?? 0)).toBeGreaterThan(y);

@@ -4,11 +4,25 @@ import styles from './Geography.module.css';
 
 export type Extent = readonly [number, number, number, number];
 
-/** SVG path of lon/lat rings (y is −latitude so north is up). */
+/**
+ * SVG user units per degree (about 1.1 m each). Drawing in raw degrees gave a viewBox
+ * 0.06 wide and font sizes near 0.002 once a concession was framed; mobile browsers clamp
+ * such text to a minimum size, so labels and the north arrow covered the map in dark ink.
+ */
+export const UNITS_PER_DEGREE = 100_000;
+
+/** Longitude to SVG x. */
+export const svgX = (lon: number) => lon * UNITS_PER_DEGREE;
+/** Latitude to SVG y (negated so north is up). */
+export const svgY = (lat: number) => -lat * UNITS_PER_DEGREE;
+
+/** SVG path of lon/lat rings in map units. */
 export const ringsPath = (rings: readonly (readonly LonLat[])[]) =>
   rings
     .map(
-      (points) => points.map(([lon, lat], i) => `${i ? 'L' : 'M'} ${lon} ${-lat}`).join(' ') + ' Z',
+      (points) =>
+        points.map(([lon, lat], i) => `${i ? 'L' : 'M'} ${svgX(lon)} ${svgY(lat)}`).join(' ') +
+        ' Z',
     )
     .join(' ');
 
@@ -29,7 +43,7 @@ const SCALE_STEPS = [0.5, 1, 2, 5, 10, 20, 50, 100];
 /**
  * Province base map in geographic coordinates: sea, generalised districts, reference towns,
  * north arrow and a scale bar sized to the current view. `children` draw on top in the same
- * lon/−lat space (concessions, highlights).
+ * map space (`svgX`, `svgY`, `ringsPath`: concessions, highlights).
  */
 export const BaseMap = ({
   view,
@@ -53,16 +67,15 @@ export const BaseMap = ({
   background?: ReactNode;
   children?: ReactNode;
 }) => {
-  const [minX, minY, maxX, maxY] = view;
+  const [minX, minY, maxX, maxY] = view.map((v) => v * UNITS_PER_DEGREE) as unknown as Extent;
   const width = maxX - minX;
   const height = maxY - minY;
   const unit = height / 100;
+  const widthKm = (view[2] - view[0]) * KM_PER_DEGREE * 0.22;
   const km = SCALE_STEPS.reduce((best, step) =>
-    Math.abs(step - width * KM_PER_DEGREE * 0.22) < Math.abs(best - width * KM_PER_DEGREE * 0.22)
-      ? step
-      : best,
+    Math.abs(step - widthKm) < Math.abs(best - widthKm) ? step : best,
   );
-  const scaleLength = km / KM_PER_DEGREE;
+  const scaleLength = (km / KM_PER_DEGREE) * UNITS_PER_DEGREE;
   const left = minX + width * 0.04;
   const bottom = -minY - unit * 5;
   const arrowX = maxX - width * 0.06;
@@ -118,8 +131,8 @@ export const BaseMap = ({
               <text
                 key={item.text}
                 className={item.kind === 'sea' ? styles.seaLabel : styles.areaLabel}
-                x={item.at[0]}
-                y={-item.at[1]}
+                x={svgX(item.at[0])}
+                y={svgY(item.at[1])}
                 fontSize={unit * 2.8}
                 textAnchor="middle"
               >
@@ -135,15 +148,15 @@ export const BaseMap = ({
           <g key={place.name}>
             <circle
               className={place.kind === 'port' ? styles.port : styles.town}
-              cx={place.at[0]}
-              cy={-place.at[1]}
+              cx={svgX(place.at[0])}
+              cy={svgY(place.at[1])}
               r={unit * 0.9}
               strokeWidth={unit * 0.3}
             />
             <text
               className={styles.placeLabel}
-              x={place.at[0] + unit * 1.4}
-              y={-place.at[1] + unit * 1}
+              x={svgX(place.at[0]) + unit * 1.4}
+              y={svgY(place.at[1]) + unit * 1}
               fontSize={unit * 2.8}
               strokeWidth={unit * 0.5}
             >

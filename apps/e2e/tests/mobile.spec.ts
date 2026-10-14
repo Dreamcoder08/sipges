@@ -9,12 +9,12 @@ import { watchNetwork } from '../support/network.ts';
  * Compares with the layout viewport: on a touch device a too-wide page zooms out, so
  * `innerWidth` grows with it and would hide the overflow (Automatizaciones did at 622px).
  */
-const expectNoHorizontalPageScroll = async (page: Page) => {
+const expectNoHorizontalPageScroll = async (page: Page, where = 'page') => {
   const { scrollWidth, viewport } = await page.evaluate(() => ({
     scrollWidth: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth,
   }));
-  expect(scrollWidth, 'page wider than the viewport').toBeLessThanOrEqual(viewport);
+  expect(scrollWidth, `${where} wider than the viewport`).toBeLessThanOrEqual(viewport);
 };
 
 /** Axe at WCAG 2.1 AA over whatever is on screen (an open sheet included). */
@@ -114,7 +114,7 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
       await page.goto(screen.path);
       await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
       await settled();
-      await expectNoHorizontalPageScroll(page);
+      await expectNoHorizontalPageScroll(page, `${screen.path} at ${width}px`);
     }
   }
 });

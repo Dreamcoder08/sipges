@@ -7,7 +7,7 @@ import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { BaseMap, type Extent, intersects, ringsPath } from './BaseMap.tsx';
+import { BaseMap, type Extent, intersects, ringsPath, UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import { checkConcessions, ringsExtent } from './geometry.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
@@ -201,7 +201,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
                 fill={c.code === selection ? '#e6b54a' : '#669bb5'}
                 stroke="#243b53"
                 fillRule="evenodd"
-                strokeWidth={span / 400}
+                strokeWidth={(span / 400) * UNITS_PER_DEGREE}
               />
             ))}
           </BaseMap>

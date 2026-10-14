@@ -114,18 +114,20 @@ export const ForceGraph = ({
           </span>
         ))}
       </figcaption>
-      <table className="visually-hidden">
-        <caption>Relaciones del grafo</caption>
-        <tbody>
-          {edges.map((edge) => (
-            <tr key={`${edge.source}>${edge.label}>${edge.target}`}>
-              <td>{names.get(edge.source)}</td>
-              <td>{edge.label}</td>
-              <td>{names.get(edge.target)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="visually-hidden">
+        <table>
+          <caption>Relaciones del grafo</caption>
+          <tbody>
+            {edges.map((edge) => (
+              <tr key={`${edge.source}>${edge.label}>${edge.target}`}>
+                <td>{names.get(edge.source)}</td>
+                <td>{edge.label}</td>
+                <td>{names.get(edge.target)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 };
