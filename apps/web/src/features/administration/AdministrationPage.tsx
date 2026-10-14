@@ -198,7 +198,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
               {(rows) =>
                 rows.length ? (
                   <div className={styles.scroll}>
-                    <table>
+                    <table className={styles.stack}>
                       <thead>
                         <tr>
                           <th>Usuario</th>
@@ -212,12 +212,12 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                       <tbody>
                         {rows.map((row) => (
                           <tr key={row.username}>
-                            <td>{row.username}</td>
-                            <td>{accountDisplayName(row.full_name)}</td>
-                            <td>{row.role}</td>
-                            <td>{row.google_email ?? '—'}</td>
-                            <td>{row.active ? 'Activa' : 'Inactiva'}</td>
-                            <td>
+                            <td data-label="Usuario">{row.username}</td>
+                            <td data-label="Nombre">{accountDisplayName(row.full_name)}</td>
+                            <td data-label="Rol">{row.role}</td>
+                            <td data-label="Google">{row.google_email ?? '—'}</td>
+                            <td data-label="Estado">{row.active ? 'Activa' : 'Inactiva'}</td>
+                            <td data-label="Acción">
                               {row.active === 1 && (
                                 <Button
                                   variant="secondary"

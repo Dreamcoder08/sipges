@@ -4,6 +4,9 @@ import { MODULES, type RecordField, type RecordModule } from './modules.ts';
 export const canWriteRecords = (role: Role) => role === 'admin' || role === 'analista';
 export const displayValue = (value: unknown) =>
   value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
+/** Display-only: hides the seed's internal "DEMO-" code prefix and file prefix; stored data is untouched. */
+export const presentText = (text: string) =>
+  text.replace(/\bDEMO-([A-Z]{1,3}-\d{2})\b/g, '$1').replace(/\bdemo-(fuente-\d{2})/g, '$1');
 export const fieldValue = (record: ModuleRecord | undefined, field: RecordField) => {
   if (!record)
     return field.initial ?? (field.type === 'date' ? new Date().toISOString().slice(0, 10) : '');
@@ -19,7 +22,10 @@ export const initialValues = (module: RecordModule, record?: ModuleRecord) =>
 export const safePublicUrl = (value: string) => {
   try {
     const url = new URL(value);
-    return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password
+    return ['http:', 'https:'].includes(url.protocol) &&
+      !url.username &&
+      !url.password &&
+      !url.hostname.endsWith('.invalid')
       ? url.href
       : null;
   } catch {

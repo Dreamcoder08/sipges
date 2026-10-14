@@ -6,6 +6,7 @@ import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
+import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { deleteRecord, recordQuery, recordsQuery, saveRecord } from './api.ts';
@@ -13,7 +14,7 @@ import { EvidencePanel } from './EvidencePanel.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
-import { canWriteRecords, fieldValue } from './model.ts';
+import { canWriteRecords, fieldValue, presentText } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -190,18 +191,18 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                     <tbody>
                       {data.map((row) => (
                         <tr key={row._id}>
-                          {definition.columns.map((key) => (
-                            <td key={key}>
-                              {fieldValue(
-                                row,
-                                definition.fields.find((field) => field.key === key) ?? {
-                                  key,
-                                  label: key,
-                                },
-                              ) || '—'}
-                            </td>
-                          ))}
-                          <td>
+                          {definition.columns.map((key) => {
+                            const field = definition.fields.find((item) => item.key === key) ?? {
+                              key,
+                              label: key,
+                            };
+                            return (
+                              <td key={key} data-label={field.label}>
+                                {presentText(fieldValue(row, field)) || '—'}
+                              </td>
+                            );
+                          })}
+                          <td data-label="Acciones">
                             <div className={styles.rowActions}>
                               <Button
                                 variant="ghost"
@@ -249,8 +250,29 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                     </tbody>
                   </table>
                 </div>
+              ) : search ? (
+                <EmptyState
+                  title="Sin registros para esta búsqueda."
+                  action={
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setSearchInput('');
+                        setSearch('');
+                      }}
+                    >
+                      Limpiar búsqueda
+                    </Button>
+                  }
+                >
+                  Prueba con otras palabras o revisa la ortografía.
+                </EmptyState>
               ) : (
-                <p>Sin registros para esta búsqueda.</p>
+                <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>
+                  {writable
+                    ? 'Usa «Nuevo registro» para crear el primero en el proyecto activo.'
+                    : 'Cuando el equipo registre información aparecerá aquí.'}
+                </EmptyState>
               )}
             </>
           )}

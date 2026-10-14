@@ -9,6 +9,7 @@
     "test": "node --test support/cleanup.test.ts"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.56.1",
     "@types/node": "^24.0.0",
     "postgres": "^3.4.9",

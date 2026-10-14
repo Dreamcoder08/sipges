@@ -1,5 +1,5 @@
 import type { ModuleRecord } from '@mascli/contracts';
-import { displayValue, fieldValue, safePublicUrl } from './model.ts';
+import { displayValue, fieldValue, presentText, safePublicUrl } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -22,8 +22,10 @@ export const RecordDetail = ({
               <a href={url} target="_blank" rel="noopener noreferrer">
                 {url}
               </a>
+            ) : field.type === 'url' && /^https?:\/\/[^/]+\.invalid(?:[/:]|$)/i.test(value) ? (
+              'Sin enlace público'
             ) : (
-              value || 'Sin registrar'
+              presentText(value) || 'Sin registrar'
             )}
           </dd>
         </div>
@@ -31,7 +33,7 @@ export const RecordDetail = ({
     })}
     <div>
       <dt>Código del registro</dt>
-      <dd>{displayValue(record._id)}</dd>
+      <dd>{presentText(displayValue(record._id))}</dd>
     </div>
   </dl>
 );

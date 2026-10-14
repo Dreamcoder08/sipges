@@ -16,15 +16,35 @@ html {
   color: var(--color-text);
   background: var(--color-bg);
   line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Set by AppShell: anchors and focused fields stop below the sticky top bar. */
+  scroll-padding-top: calc(var(--topbar-height, 0px) + var(--space-2));
 }
 
 body {
   margin: 0;
 }
 
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Touch screens: 44px targets for form controls (WCAG 2.5.5). */
+@media (pointer: coarse) {
+  input:not([type='checkbox'], [type='radio'], [type='range']),
+  select {
+    min-height: 2.75rem;
+  }
+}
+
 input,
 select,
 textarea {
+  max-width: 100%;
   font: inherit;
   padding: 0.5rem 0.65rem;
   border: 1px solid var(--color-border);

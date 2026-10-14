@@ -13,6 +13,7 @@ import { downloadFile } from '../../shared/api/download.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
+import { BarList } from '../../shared/ui/BarList.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
@@ -144,28 +145,39 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                   </div>
                 ))}
               </dl>
-              <p>{data.methodology}</p>
-              <ul>
-                {data.limitations.map((s) => (
-                  <li key={s}>{s}</li>
-                ))}
-              </ul>
-              <h4>Prioridad de alertas</h4>
-              <ul>
-                {Object.entries(data.alerts_by_level).map(([name, total]) => (
-                  <li key={name}>
-                    {name}: {total}
-                  </li>
-                ))}
-              </ul>
-              <h4>Estado de acciones</h4>
-              <ul>
-                {Object.entries(data.actions_by_status).map(([name, total]) => (
-                  <li key={name}>
-                    {name}: {total}
-                  </li>
-                ))}
-              </ul>
+              <details className={styles.notes}>
+                <summary>Metodología y limitaciones</summary>
+                <p>{data.methodology}</p>
+                <ul>
+                  {data.limitations.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+              </details>
+              <div className={styles.split}>
+                <section>
+                  <h4>Prioridad de alertas</h4>
+                  <BarList
+                    empty="Sin alertas digitales registradas."
+                    bars={Object.entries(data.alerts_by_level).map(([name, total]) => ({
+                      key: name,
+                      label: name,
+                      value: total,
+                    }))}
+                  />
+                </section>
+                <section>
+                  <h4>Estado de acciones</h4>
+                  <BarList
+                    empty="Sin acciones preventivas registradas."
+                    bars={Object.entries(data.actions_by_status).map(([name, total]) => ({
+                      key: name,
+                      label: name,
+                      value: total,
+                    }))}
+                  />
+                </section>
+              </div>
               <h4>Alertas recientes</h4>
               {data.recent_alerts.length ? (
                 <ul>
@@ -194,13 +206,17 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                 <p>No hay acciones críticas.</p>
               )}
               <h4>Responsables</h4>
-              <ul>
-                {data.actions_by_responsible.map((a) => (
-                  <li key={a.name}>
-                    {a.name || 'Sin responsable'}: {a.total} acciones, {a.overdue} vencidas
-                  </li>
-                ))}
-              </ul>
+              {data.actions_by_responsible.length ? (
+                <ul>
+                  {data.actions_by_responsible.map((a) => (
+                    <li key={a.name}>
+                      {a.name || 'Sin responsable'}: {a.total} acciones, {a.overdue} vencidas
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Sin responsables asignados.</p>
+              )}
               <h4>Compromisos</h4>
               {data.commitments.length ? (
                 <ul>

@@ -43,3 +43,14 @@
   gap: var(--space-3);
   align-items: center;
 }
+.split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--space-4);
+  align-items: center;
+}
+.radar {
+  max-width: 17rem;
+  width: 100%;
+  margin-inline: auto;
+}

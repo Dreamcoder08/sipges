@@ -40,7 +40,7 @@
 }
 
 .brand small {
-  opacity: 0.75;
+  color: rgb(255 255 255 / 0.8);
 }
 
 .mark {
@@ -65,6 +65,21 @@
   text-transform: uppercase;
 }
 
+.sidebar nav {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.groupLabel {
+  margin: 0 0 var(--space-1);
+  padding: 0 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgb(255 255 255 / 0.72);
+}
+
 .sidebar ul {
   list-style: none;
   margin: 0;
@@ -74,8 +89,10 @@
 }
 
 .link {
-  display: block;
-  padding: 0.45rem 0.65rem;
+  display: flex;
+  align-items: center;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.65rem;
   border-radius: var(--radius-md);
   color: inherit;
   text-decoration: none;
@@ -89,6 +106,7 @@
 .active {
   background: rgb(255 255 255 / 0.18);
   font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--color-on-brand);
 }
 
 .sidebar :focus-visible {
@@ -102,6 +120,9 @@
 }
 
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -135,16 +156,71 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-4);
+  min-width: 0;
 }
 
 .menuButton {
   display: none;
-  font-size: 1.3rem;
-  background: none;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  background: var(--color-surface);
+  color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 0.2rem 0.6rem;
   cursor: pointer;
+}
+
+/* Three bars that turn into a cross while the drawer is open. */
+.burger,
+.burger::before,
+.burger::after,
+.burger span {
+  display: block;
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.burger {
+  position: relative;
+  background: none;
+}
+
+.burger::before,
+.burger::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+
+.burger::before {
+  top: -6px;
+}
+
+.burger::after {
+  top: 6px;
+}
+
+.menuButton[aria-expanded='true'] .burger span {
+  opacity: 0;
+}
+
+.menuButton[aria-expanded='true'] .burger::before {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.menuButton[aria-expanded='true'] .burger::after {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.scrim {
+  display: none;
 }
 
 .main {
@@ -157,28 +233,87 @@
     grid-template-columns: 1fr;
   }
 
+  /* The drawer and its backdrop sit under the sticky top bar, so the toggle stays reachable. */
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
+    top: var(--topbar-height, 4.5rem);
+    bottom: 0;
+    left: 0;
+    height: auto;
     width: min(85vw, var(--sidebar-width));
-    z-index: 5;
+    z-index: 16;
+    overscroll-behavior: contain;
     transform: translateX(-100%);
     visibility: hidden;
-    transition: transform 0.2s ease;
+    transition:
+      transform 0.2s ease,
+      visibility 0s linear 0.2s;
   }
 
-  .sidebar[data-open='true'] {
+  .shell[data-menu-open='true'] .sidebar {
     transform: none;
     visibility: visible;
     box-shadow: var(--shadow-lg);
+    transition: transform 0.2s ease;
+  }
+
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: var(--topbar-height, 4.5rem) 0 0;
+    z-index: 15;
+    background: rgb(15 37 65 / 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .shell[data-menu-open='true'] .scrim {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .link {
+    min-height: 2.75rem;
   }
 
   .menuButton {
-    display: inline-block;
+    display: grid;
   }
 
-  .topbar,
-  .main {
+  .eyebrow {
+    display: none;
+  }
+
+  .topbar {
+    gap: var(--space-2) var(--space-3);
     padding: var(--space-3);
+  }
+
+  .main {
+    padding: var(--space-4) var(--space-3);
+  }
+}
+
+@media (max-width: 40rem) {
+  .heading {
+    min-width: 0;
+  }
+
+  .heading h1 {
+    font-size: 1.15rem;
+    line-height: 1.25;
+  }
+
+  /* Project selector and account take the full second row of the top bar. */
+  .tools {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    gap: var(--space-3);
+  }
+
+  .tools > :first-child {
+    flex: 1;
+    min-width: 0;
   }
 }

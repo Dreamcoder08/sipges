@@ -162,7 +162,7 @@ describe('dashboard and navigation', () => {
     const summary = screen.getByText('Actores analíticos').closest('div');
     expect(summary).toHaveTextContent('7');
     expect(await screen.findByText('42.3')).toBeVisible();
-    expect(screen.getByText('Amarillo', { selector: 'span' })).toBeVisible();
+    expect(screen.getByText('Amarillo', { selector: 'p > span' })).toBeVisible();
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
     expect(await screen.findByText('Motor sintético')).toBeVisible();
     const alerts = (
@@ -212,10 +212,18 @@ describe('dashboard and navigation', () => {
       'aria-expanded',
       'true',
     );
+    // The drawer takes focus to the current section and the content behind it goes inert.
+    const nav = screen.getByRole('navigation', { name: 'Secciones' });
+    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveFocus();
+    expect(document.getElementById('contenido')).toHaveAttribute('inert');
+    expect(document.body.style.overflow).toBe('hidden');
     await user.keyboard('{Escape}');
     expect(screen.getByRole('button', { name: 'Abrir menú' })).toHaveAttribute(
       'aria-expanded',
       'false',
     );
+    expect(toggle).toHaveFocus();
+    expect(document.getElementById('contenido')).not.toHaveAttribute('inert');
+    expect(document.body.style.overflow).toBe('');
   });
 });

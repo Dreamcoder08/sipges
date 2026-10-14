@@ -5,6 +5,14 @@
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Touch screens get a 44px minimum target (WCAG 2.5.5). */
+@media (pointer: coarse) {
+  .button {
+    min-height: 2.75rem;
+  }
 }
 
 .button:disabled {

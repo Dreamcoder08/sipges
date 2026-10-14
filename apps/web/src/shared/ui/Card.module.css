@@ -1,5 +1,7 @@
 .card {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   gap: var(--space-3);
   align-content: start;
   padding: var(--space-4);
@@ -11,6 +13,7 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: start;
   gap: var(--space-2);
@@ -28,4 +31,10 @@
 .title {
   margin: 0.15rem 0 0;
   font-size: 1.05rem;
+}
+
+@media (max-width: 40rem) {
+  .card {
+    padding: var(--space-3);
+  }
 }

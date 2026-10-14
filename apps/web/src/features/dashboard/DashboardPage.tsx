@@ -4,9 +4,10 @@ import { DIMENSIONS, DIMENSION_NAMES, LEVELS } from '../../shared/lib/text.ts';
 import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
 import { BarList } from '../../shared/ui/BarList.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
+import { ColumnChart, DonutChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { dashboardQuery, irsaQuery, modelStatusQuery, moduleRecordsQuery } from './api.ts';
-import { alertsByLevel, eventsByDimension } from './model.ts';
+import { alertsByLevel, eventsByDimension, eventsByMonth } from './model.ts';
 import styles from './DashboardPage.module.css';
 
 const KPIS = [
@@ -71,9 +72,11 @@ export const DashboardPage = ({
             {(rows) => {
               const counts = alertsByLevel(rows, projectId);
               return (
-                <BarList
+                <DonutChart
+                  caption="Alertas abiertas por nivel"
+                  totalLabel="abiertas"
                   empty="Sin alertas abiertas."
-                  bars={LEVELS.map((level) => ({
+                  data={LEVELS.map((level) => ({
                     key: level,
                     label: level,
                     value: counts[level],
@@ -108,6 +111,18 @@ export const DashboardPage = ({
         </Card>
       </div>
 
+      <Card eyebrow="Tendencia" title="Eventos registrados por mes">
+        <QueryState query={events} label="la tendencia de eventos">
+          {(rows) => (
+            <ColumnChart
+              caption="Eventos registrados por mes"
+              empty="Aún no hay eventos con fecha para mostrar una tendencia."
+              data={eventsByMonth(rows, projectId)}
+            />
+          )}
+        </QueryState>
+      </Card>
+
       <div className={styles.grid}>
         <Card eyebrow="Índice de riesgo socioambiental" title="IRSA-MASCLI">
           <QueryState query={irsa} label="el IRSA">
@@ -116,6 +131,16 @@ export const DashboardPage = ({
                 <p className={styles.irsa}>
                   <strong>{data.irsa.toFixed(1)}</strong> <LevelPill level={data.level} />
                 </p>
+                <div className={styles.radar}>
+                  <RadarChart
+                    caption="Puntaje IRSA por dimensión (0 a 100)"
+                    data={DIMENSIONS.map((code) => ({
+                      key: code,
+                      label: code,
+                      value: data.scores[code] ?? 0,
+                    }))}
+                  />
+                </div>
                 <ul className={styles.dims} aria-label="Puntaje por dimensión">
                   {DIMENSIONS.map((code) => (
                     <li key={code}>

@@ -18,7 +18,7 @@ export const securityHeaders =
     await next();
     c.header('X-Content-Type-Options', 'nosniff');
     c.header('X-Frame-Options', 'DENY');
-    c.header('Referrer-Policy', 'no-referrer');
+    if (!c.res.headers.has('Referrer-Policy')) c.header('Referrer-Policy', 'no-referrer');
     c.header('Cache-Control', 'no-store');
     // A trusted SPA middleware supplies its stricter policy for bundled assets.
     if (!c.res.headers.has('Content-Security-Policy')) c.header('Content-Security-Policy', API_CSP);

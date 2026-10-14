@@ -12,6 +12,7 @@ import {
   downloadAttachment,
   uploadAttachment,
 } from './evidence-api.ts';
+import { presentText } from './model.ts';
 import type { RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -69,7 +70,7 @@ export const EvidencePanel = ({
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = attachment.original_name;
+      link.download = presentText(attachment.original_name);
       document.body.append(link);
       link.click();
       link.remove();
@@ -90,7 +91,7 @@ export const EvidencePanel = ({
               {items.map((item) => (
                 <li key={item.id}>
                   <div>
-                    <strong>{item.original_name}</strong>
+                    <strong>{presentText(item.original_name)}</strong>
                     <small>
                       {(item.size_bytes / 1024).toFixed(1)} KB ·{' '}
                       {isSeedProvenance(item.notes)

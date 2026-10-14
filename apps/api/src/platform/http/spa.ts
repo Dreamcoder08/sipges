@@ -11,12 +11,13 @@ export type WebAssets = {
 /**
  * Strict policy for the SPA (ADR 0004, ADR 0006): bundled scripts and styles only, no inline
  * code, same-origin API calls. React sets styles through the CSSOM, which `style-src` allows.
+ * The only external origin is the basemap tile host of the territorial map (images only).
  */
 export const SPA_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https://tile.openstreetmap.org",
   "font-src 'self'",
   "connect-src 'self'",
   "object-src 'none'",
@@ -64,6 +65,7 @@ export const spaMiddleware =
     const html = await web.index();
     if (html === null) return next();
     c.header('Content-Security-Policy', SPA_CSP);
+    c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
     return c.html(html);
   };
 

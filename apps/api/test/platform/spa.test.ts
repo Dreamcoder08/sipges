@@ -23,6 +23,7 @@ describe('single-page app delivery', () => {
       expect(await res.text()).toBe(SHELL);
       expect(res.headers.get('content-security-policy')).toBe(SPA_CSP);
       expect(res.headers.get('x-frame-options')).toBe('DENY');
+      expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
     }
     expect(SPA_CSP).not.toContain('unsafe');
   });
@@ -39,7 +40,9 @@ describe('single-page app delivery', () => {
 
   it('leaves API paths, JSON requests and writes to the API', async () => {
     const t = await createTestApp({}, { web: memoryWeb });
-    expect((await t.request('/api/eventos', { headers: html })).status).toBe(401);
+    const api = await t.request('/api/eventos', { headers: html });
+    expect(api.status).toBe(401);
+    expect(api.headers.get('referrer-policy')).toBe('no-referrer');
     expect(
       (await t.request('/system/auth/me', { headers: html })).headers.get('content-type'),
     ).toContain('application/json');

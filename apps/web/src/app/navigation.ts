@@ -30,6 +30,12 @@ export const SCREENS = [
   },
   { path: '/alertas', label: 'Alertas', title: 'Centro de alertas', ready: true },
   { path: '/mapa', label: 'Mapa territorial', title: 'Mapa territorial MASCLI', ready: true },
+  {
+    path: '/ubicacion',
+    label: 'Ubicación geoespacial',
+    title: 'Ubicación geoespacial del proyecto',
+    ready: true,
+  },
   { path: '/situacion', label: 'Análisis situacional', title: 'Análisis situacional', ready: true },
   {
     path: '/estrategia',
@@ -56,6 +62,23 @@ export const SCREENS = [
 }[];
 
 export type ScreenPath = (typeof SCREENS)[number]['path'];
+
+/**
+ * Sidebar sections: contiguous runs of SCREENS, so the legacy menu order is unchanged and the
+ * long list is easier to scan (above all in the mobile drawer).
+ */
+export const NAV_GROUPS = [
+  {
+    label: 'Monitoreo',
+    paths: ['/', '/eventos', '/actores', '/directorio', '/demandas', '/narrativas'],
+  },
+  {
+    label: 'Gestión y alertas',
+    paths: ['/gerencia', '/inteligencia-redes', '/alertas', '/mapa', '/ubicacion'],
+  },
+  { label: 'Análisis', paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'] },
+  { label: 'Sistema', paths: ['/administracion', '/metodologia', '/auditoria'] },
+] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
 
 export const titleFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.title ?? 'MASCLI';

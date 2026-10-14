@@ -7,6 +7,8 @@ import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { BaseMap, type Extent, intersects, ringsPath } from './BaseMap.tsx';
+import { SECHURA_EXTENT } from './sechura-base.ts';
 import styles from './Geography.module.css';
 
 export const GeographyPage = ({ scope }: FeatureContext) => {
@@ -42,9 +44,27 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
   const [minX, minY, maxX, maxY] = data.bbox;
   const width = Math.max(maxX - minX, 0.001);
   const height = Math.max(maxY - minY, 0.001);
-  const viewWidth = (width * 1.1) / zoom;
-  const viewHeight = (height * 1.1) / zoom;
-  const viewBox = `${(minX + maxX - viewWidth) / 2 + pan.x} ${(-minY - maxY - viewHeight) / 2 + pan.y} ${viewWidth} ${viewHeight}`;
+  // Inside the Sechura province the map opens on the whole province around the project.
+  const onBase = intersects(data.bbox, SECHURA_EXTENT);
+  const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const half = onBase
+    ? Math.max(
+        centerX - SECHURA_EXTENT[0],
+        SECHURA_EXTENT[2] - centerX,
+        centerY - SECHURA_EXTENT[1],
+        SECHURA_EXTENT[3] - centerY,
+      ) * 1.05
+    : (Math.max(width, height) * 1.1) / 2;
+  const maxZoom = onBase ? 16 : 4;
+  const span = (half * 2) / zoom;
+  const view: Extent = [
+    centerX + pan.x - span / 2,
+    centerY - pan.y - span / 2,
+    centerX + pan.x + span / 2,
+    centerY - pan.y + span / 2,
+  ];
+  const step = span / 6;
   const exportCoordinates = () => {
     const rows = [['Concesión', 'Código', 'Anillo', 'Vértice', 'Longitud', 'Latitud', 'CRS']];
     for (const c of data.concessions)
@@ -85,10 +105,13 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
           ))}
         </select>
         <div className={styles.actions}>
-          <Button disabled={zoom >= 4} onClick={() => setZoom((z) => Math.min(z * 1.5, 4))}>
+          <Button
+            disabled={zoom >= maxZoom}
+            onClick={() => setZoom((z) => Math.min(z * 2, maxZoom))}
+          >
             Acercar
           </Button>
-          <Button disabled={zoom <= 1} onClick={() => setZoom((z) => Math.max(z / 1.5, 1))}>
+          <Button disabled={zoom <= 1} onClick={() => setZoom((z) => Math.max(z / 2, 1))}>
             Alejar
           </Button>
           <Button
@@ -100,44 +123,32 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
           >
             Restablecer vista
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setPan((p) => ({ ...p, x: p.x - width / 8 / zoom }))}
-          >
+          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, x: p.x - step }))}>
             Oeste
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setPan((p) => ({ ...p, x: p.x + width / 8 / zoom }))}
-          >
+          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, x: p.x + step }))}>
             Este
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setPan((p) => ({ ...p, y: p.y - height / 8 / zoom }))}
-          >
+          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, y: p.y - step }))}>
             Norte
           </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setPan((p) => ({ ...p, y: p.y + height / 8 / zoom }))}
-          >
+          <Button variant="secondary" onClick={() => setPan((p) => ({ ...p, y: p.y + step }))}>
             Sur
           </Button>
           <Button variant="secondary" onClick={exportCoordinates}>
             Exportar coordenadas CSV
           </Button>
         </div>
-        <svg
-          className={styles.map}
-          viewBox={viewBox}
-          aria-label="Geometría de referencia"
-          role="group"
+        <BaseMap
+          view={view}
+          label="Geometría de referencia"
+          title={`Concesiones referenciales en ${data.project_name}`}
+          showBase={onBase}
         >
-          <title>Concesiones referenciales en {data.project_name}</title>
           {data.concessions.map((c) => (
             <path
               key={c.code}
+              className={`${styles.concession} ${c.code === selection ? styles.concessionSelected : ''}`}
               role="button"
               tabIndex={0}
               aria-label={`Seleccionar ${c.name}`}
@@ -149,23 +160,32 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
                   setSelection(c.code);
                 }
               }}
-              d={c.geometry.coordinates
-                .map(
-                  (points) =>
-                    points.map(([lon, lat], i) => `${i ? 'L' : 'M'} ${lon} ${-lat}`).join(' ') +
-                    ' Z',
-                )
-                .join(' ')}
+              d={ringsPath(c.geometry.coordinates)}
               fillRule="evenodd"
-              fill={c.code === selection ? '#e6b54a' : '#669bb5'}
-              stroke="#243b53"
-              strokeWidth={width / 350}
+              strokeWidth={span / 400}
             />
           ))}
-        </svg>
-        <p>
-          Plano referencial en longitud y latitud. Norte hacia arriba; sin base cartográfica ni
-          medición certificada.
+        </BaseMap>
+        <ul className={styles.legend}>
+          <li>
+            <span className={`${styles.swatch} ${styles.swatchConcession}`} aria-hidden="true" />
+            Concesiones del proyecto
+          </li>
+          <li>
+            <span className={`${styles.swatch} ${styles.swatchSelected}`} aria-hidden="true" />
+            Concesión seleccionada
+          </li>
+          {onBase ? (
+            <li>
+              <span className={`${styles.swatch} ${styles.swatchLand}`} aria-hidden="true" />
+              Distritos de la provincia de Sechura
+            </li>
+          ) : null}
+        </ul>
+        <p className={styles.note}>
+          {onBase
+            ? 'Coordenadas WGS 84, norte hacia arriba. Límites distritales generalizados (INEI) solo para orientación; no reemplazan cartografía oficial ni medición certificada.'
+            : 'Plano referencial en longitud y latitud. Norte hacia arriba; sin base cartográfica ni medición certificada.'}
         </p>
       </Card>
       {selected ? (
@@ -184,7 +204,12 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
               {selected.centroid.longitude}, {selected.centroid.latitude}
             </dd>
           </dl>
-          <div className={styles.scroll}>
+          <div
+            className={styles.scroll}
+            tabIndex={0}
+            role="region"
+            aria-label={`Vértices de ${selected.name}`}
+          >
             <table>
               <caption>Vértices de {selected.name}</caption>
               <thead>
