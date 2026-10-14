@@ -1,14 +1,18 @@
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+}
+
+.shell[data-compact='true'] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .skip {
   position: absolute;
   left: var(--space-2);
   top: -3rem;
-  z-index: 10;
+  z-index: 70;
   padding: var(--space-2) var(--space-3);
   background: var(--color-surface);
   border-radius: var(--radius-md);
@@ -18,20 +22,32 @@
   top: var(--space-2);
 }
 
+.icon {
+  flex: none;
+  font-size: 1.125rem;
+}
+
+.text {
+  min-width: 0;
+}
+
+/* ---------- Wide screens: persistent light sidebar ---------- */
+
 .sidebar {
   position: sticky;
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  padding: var(--space-4) var(--space-3);
-  background: var(--color-brand-strong);
-  color: var(--color-on-brand);
+  padding: var(--space-4) var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-hairline);
 }
 
 .brand {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   align-items: center;
+  padding: var(--space-1) var(--space-2) var(--space-5);
 }
 
 .brand span:last-child {
@@ -39,84 +55,101 @@
   line-height: 1.2;
 }
 
+.brand b {
+  font-size: var(--text-md);
+  letter-spacing: 0.02em;
+}
+
 .brand small {
-  color: rgb(255 255 255 / 0.8);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
 }
 
 .mark {
-  width: 2.25rem;
-  height: 2.25rem;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
-  background: var(--color-on-brand);
-  color: var(--color-brand-strong);
+  background: var(--color-brand-strong);
+  color: var(--color-on-brand);
   font-weight: 800;
-}
-
-.project {
-  margin: var(--space-3) 0;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  background: rgb(255 255 255 / 0.12);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--text-sm);
 }
 
 .sidebar nav {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .groupLabel {
   margin: 0 0 var(--space-1);
-  padding: 0 0.65rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  padding: 0 var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgb(255 255 255 / 0.72);
+  color: var(--color-muted);
 }
 
-.sidebar ul {
+.sidebar ul,
+.more ul,
+.tabbar ul {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.sidebar ul {
   display: grid;
-  gap: 2px;
+  gap: 1px;
 }
 
 .link {
+  position: relative;
   display: flex;
   align-items: center;
+  gap: var(--space-3);
   min-height: 2.25rem;
-  padding: 0.4rem 0.65rem;
+  padding: 0.375rem var(--space-3);
   border-radius: var(--radius-md);
-  color: inherit;
+  color: var(--color-muted);
   text-decoration: none;
-  font-size: 0.92rem;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition:
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease;
 }
 
-.link:hover {
-  background: rgb(255 255 255 / 0.1);
+.link[aria-current='page'] {
+  background: var(--color-accent-tint);
+  color: var(--color-accent-text);
+  font-weight: 650;
 }
 
-.active {
-  background: rgb(255 255 255 / 0.18);
-  font-weight: 700;
-  box-shadow: inset 3px 0 0 var(--color-on-brand);
+.link[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
 }
 
-.sidebar :focus-visible {
-  outline-color: #fff;
+.link[aria-current='page'] .icon {
+  color: var(--color-accent);
 }
+
+/* ---------- Content column ---------- */
 
 .body {
   min-width: 0;
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
 }
 
 .topbar {
@@ -124,12 +157,12 @@
   top: 0;
   z-index: 20;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding: var(--space-3) var(--space-6);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-chrome);
+  backdrop-filter: saturate(1.6) blur(14px);
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .heading {
@@ -137,183 +170,277 @@
   min-width: 12rem;
 }
 
-.heading h1 {
+.heading h1,
+.titleRow h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.heading h1:focus,
+.titleRow h1:focus {
+  outline: none;
 }
 
 .eyebrow {
-  margin: 0;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin: 0 0 0.125rem;
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
   color: var(--color-muted);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-3);
   min-width: 0;
 }
 
-.menuButton {
-  display: none;
-  flex: none;
-  width: 2.75rem;
-  height: 2.75rem;
-  place-items: center;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-}
-
-/* Three bars that turn into a cross while the drawer is open. */
-.burger,
-.burger::before,
-.burger::after,
-.burger span {
-  display: block;
-  width: 1.25rem;
-  height: 2px;
-  border-radius: 1px;
-  background: currentColor;
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.burger {
-  position: relative;
-  background: none;
-}
-
-.burger::before,
-.burger::after {
-  content: '';
-  position: absolute;
-  left: 0;
-}
-
-.burger::before {
-  top: -6px;
-}
-
-.burger::after {
-  top: 6px;
-}
-
-.menuButton[aria-expanded='true'] .burger span {
-  opacity: 0;
-}
-
-.menuButton[aria-expanded='true'] .burger::before {
-  transform: translateY(6px) rotate(45deg);
-}
-
-.menuButton[aria-expanded='true'] .burger::after {
-  transform: translateY(-6px) rotate(-45deg);
-}
-
-.scrim {
-  display: none;
-}
-
 .main {
+  flex: 1;
   padding: var(--space-6);
   min-width: 0;
 }
 
+.main:focus {
+  outline: none;
+}
+
+/* ---------- Phones and tablets ---------- */
+
+.context {
+  flex: 0 1 auto;
+  margin-right: auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  padding: 0.125rem var(--space-2) 0.125rem 0.125rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context[aria-expanded='true'] {
+  background: var(--color-fill);
+}
+
+.contextText {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.contextText b,
+.contextText small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contextText b {
+  font-size: var(--text-md);
+  font-weight: 650;
+}
+
+.contextText small {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.contextText small::first-letter {
+  text-transform: uppercase;
+}
+
+.chevron {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 1rem;
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.titleRow {
+  padding: var(--space-5) var(--space-4) 0;
+}
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  padding: 0 var(--space-2) env(safe-area-inset-bottom);
+  background: var(--color-chrome);
+  backdrop-filter: saturate(1.6) blur(14px);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.tabbar ul {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 36rem;
+  margin: 0 auto;
+}
+
+.tab {
+  width: 100%;
+  height: var(--tabbar-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pill {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 1.875rem;
+  border-radius: var(--radius-pill);
+  font-size: 1.375rem;
+  transition: background var(--motion-fast) ease;
+}
+
+.tab[aria-current='page'],
+.tab[data-active='true'] {
+  color: var(--color-accent-text);
+  font-weight: 650;
+}
+
+.tab[aria-current='page'] .pill,
+.tab[data-active='true'] .pill {
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+}
+
+.tab:focus-visible {
+  outline-offset: -3px;
+  border-radius: var(--radius-md);
+}
+
+.more {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.moreGroup h3 {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.moreGroup ul {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.moreGroup li + li {
+  border-top: 1px solid var(--color-hairline);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 3.25rem;
+  padding: 0 var(--space-3) 0 var(--space-4);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.row .icon {
+  font-size: 1.25rem;
+  color: var(--color-muted);
+}
+
+.row .text {
+  flex: 1;
+}
+
+.rowChevron {
+  color: var(--color-hairline-strong);
+}
+
+.row[aria-current='page'] {
+  background: var(--color-accent-tint);
+  color: var(--color-accent-text);
+  font-weight: 650;
+}
+
+.row[aria-current='page'] .icon {
+  color: var(--color-accent);
+}
+
+.row:focus-visible {
+  outline-offset: -3px;
+}
+
 @media (max-width: 60rem) {
-  .shell {
-    grid-template-columns: 1fr;
-  }
-
-  /* The drawer and its backdrop sit under the sticky top bar, so the toggle stays reachable. */
-  .sidebar {
-    position: fixed;
-    top: var(--topbar-height, 4.5rem);
-    bottom: 0;
-    left: 0;
-    height: auto;
-    width: min(85vw, var(--sidebar-width));
-    z-index: 16;
-    overscroll-behavior: contain;
-    transform: translateX(-100%);
-    visibility: hidden;
-    transition:
-      transform 0.2s ease,
-      visibility 0s linear 0.2s;
-  }
-
-  .shell[data-menu-open='true'] .sidebar {
-    transform: none;
-    visibility: visible;
-    box-shadow: var(--shadow-lg);
-    transition: transform 0.2s ease;
-  }
-
-  .scrim {
-    display: block;
-    position: fixed;
-    inset: var(--topbar-height, 4.5rem) 0 0;
-    z-index: 15;
-    background: rgb(15 37 65 / 0.45);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-  }
-
-  .shell[data-menu-open='true'] .scrim {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .link {
-    min-height: 2.75rem;
-  }
-
-  .menuButton {
-    display: grid;
-  }
-
-  .eyebrow {
-    display: none;
-  }
-
   .topbar {
-    gap: var(--space-2) var(--space-3);
-    padding: var(--space-3);
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+    padding-top: max(var(--space-2), env(safe-area-inset-top));
   }
 
   .main {
-    padding: var(--space-4) var(--space-3);
+    padding: var(--space-4) var(--space-4)
+      calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-6));
   }
 }
 
 @media (max-width: 40rem) {
-  .heading {
-    min-width: 0;
+  .titleRow {
+    padding: var(--space-4) var(--space-3) 0;
   }
 
-  .heading h1 {
-    font-size: 1.15rem;
-    line-height: 1.25;
+  .main {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+}
+
+/* Hover feedback only where a pointer can hover; touch keeps a clean resting state. */
+@media (hover: hover) {
+  .link:not([aria-current]):hover {
+    background: var(--color-fill);
+    color: var(--color-text);
   }
 
-  /* Project selector and account take the full second row of the top bar. */
-  .tools {
-    flex: 1 1 100%;
-    flex-wrap: nowrap;
-    gap: var(--space-3);
-  }
-
-  .tools > :first-child {
-    flex: 1;
-    min-width: 0;
+  .context:hover,
+  .row:not([aria-current]):hover {
+    background: var(--color-fill);
   }
 }

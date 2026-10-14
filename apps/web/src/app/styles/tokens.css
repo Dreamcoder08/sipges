@@ -4,10 +4,10 @@
   --color-on-brand: #ffffff;
   --color-text: #17212b;
   --color-muted: #5b6673;
-  --color-bg: #f3f5f8;
+  --color-bg: #f5f6f8;
   --color-surface: #ffffff;
   --color-surface-alt: #f6f8fb;
-  --color-border: #dbe1e8;
+  --color-border: #dde2e9;
   --color-track: #e7ebf0;
   --color-focus: #2b6cb0;
   --color-danger: #c53030;
@@ -38,16 +38,46 @@
   --dim-e: #2f855a;
   --dim-i: #4a5568;
 
+  /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
+  --color-accent: #1d4ed8;
+  --color-accent-tint: #e8eefc;
+  --color-accent-text: #1e3a8a;
+  --color-fill: #eef1f5;
+  --color-fill-hover: #e4e8ee;
+  --color-hairline: #e3e7ed;
+  --color-hairline-strong: #cbd2db;
+  --color-scrim: rgb(15 23 42 / 0.4);
+  --color-chrome: rgb(255 255 255 / 0.92);
+
+  /* 4-pt spacing scale. */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --space-5: 1.25rem;
   --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-md: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+
   --radius-sm: 0.35rem;
   --radius-md: 0.55rem;
   --radius-lg: 0.9rem;
+  --radius-xl: 1.25rem;
+  --radius-pill: 999px;
+
+  --motion-fast: 120ms;
+  --motion-medium: 220ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --tabbar-height: 4rem;
   --shadow-sm: 0 1px 2px rgb(15 37 65 / 0.06);
   --shadow-md: 0 6px 18px rgb(15 37 65 / 0.1);
   --shadow-lg: 0 18px 40px rgb(15 37 65 / 0.25);
+  --shadow-raised: 0 -1px 0 rgb(15 23 42 / 0.04), 0 12px 40px rgb(15 23 42 / 0.18);
   --sidebar-width: 15.5rem;
 }

@@ -19,7 +19,7 @@ import { DashboardPage } from '../features/dashboard/index.ts';
 import {
   GoogleSignInError,
   LoginPage,
-  UserMenu,
+  AccountMenu,
   MfaEnrollmentPage,
   logout,
   meQuery,
@@ -34,7 +34,12 @@ import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
-import { NotificationBell } from '../features/notifications/index.ts';
+import {
+  NotificationBell,
+  NotificationList,
+  useUnreadNotifications,
+} from '../features/notifications/index.ts';
+import { COMPACT_QUERY, useMediaQuery } from '../shared/lib/media.ts';
 import { AppShell } from './layout/AppShell.tsx';
 
 import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
@@ -198,19 +203,19 @@ const appRoute = createRoute({
   component: function AppLayout() {
     const { me, scope, queryClient } = appRoute.useRouteContext();
     const router = useRouter();
-    const scopes = queryClient.getQueryData(scopesQuery.queryKey);
+    // Subscribed, so the header shows the project's name once the list arrives.
+    const scopes = useQuery(scopesQuery).data;
     const label = scopes?.find((s) => `${s.company_id}/${s.project_id}` === scope.scope)?.label;
+    const compact = useMediaQuery(COMPACT_QUERY);
+    const unread = useUnreadNotifications(scope.scope);
+    const projectLabel = label || scope.project_id;
     return (
       <NavigateProvider value={(href) => void router.navigate({ href })}>
         <AppShell
-          projectLabel={label || scope.project_id}
-          search={
-            <>
-              <SearchPalette scope={scope.scope} />
-              <NotificationBell scope={scope.scope} />
-              <LiveUpdates scope={scope.scope} />
-            </>
-          }
+          projectLabel={projectLabel}
+          search={<SearchPalette scope={scope.scope} />}
+          notifications={<NotificationBell scope={scope.scope} />}
+          live={<LiveUpdates scope={scope.scope} />}
           projectSwitcher={
             <ProjectSwitcher
               current={scope}
@@ -220,14 +225,18 @@ const appRoute = createRoute({
               }}
             />
           }
-          userMenu={
-            <UserMenu
+          account={
+            <AccountMenu
               me={me}
+              project={projectLabel}
+              unread={compact ? unread : 0}
               onSignedOut={async () => {
                 queryClient.clear();
                 await router.navigate({ to: '/login', search: {} });
               }}
-            />
+            >
+              {compact ? <NotificationList scope={scope.scope} /> : null}
+            </AccountMenu>
           }
         >
           <Suspense fallback={<p role="status">Cargando sección…</p>}>

@@ -1,5 +1,12 @@
 import type { Page } from '@playwright/test';
-import { DEFAULT_SCOPE, createAccount, expect, signIn, test } from '../support/fixtures.ts';
+import {
+  DEFAULT_SCOPE,
+  createAccount,
+  expect,
+  signIn,
+  signOut,
+  test,
+} from '../support/fixtures.ts';
 import { totpCode } from '../support/totp.ts';
 
 const dashboard = (page: Page) =>
@@ -70,7 +77,7 @@ test.describe('sign-in (S7, ADR 0004)', () => {
     await signIn(page, admin);
     await expect(dashboard(page)).toBeVisible();
     const token = (await page.context().cookies()).find((c) => c.name === 'mascli_session');
-    await page.getByRole('button', { name: 'Salir' }).click();
+    await signOut(page);
     await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI' })).toBeVisible();
 
     // Replaying the old token must not authenticate any more.
@@ -119,7 +126,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     expect(body).not.toContain('otpauth');
     expect(body).not.toContain('secret');
 
-    await page.getByRole('button', { name: 'Salir' }).click();
+    await signOut(page);
     await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI' })).toBeVisible();
 
     // Password alone is no longer enough: the form asks for the second factor.
