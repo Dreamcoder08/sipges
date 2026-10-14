@@ -48,8 +48,16 @@ test('territorial record CRUD with evidence upload and byte-exact download', asy
   // Update keeps the evidence link.
   await page.getByRole('button', { name: `Editar ${id}` }).click();
   await page.getByLabel('Observaciones').fill('Observación editada E2E');
+  // Delay the write so the test cannot pass by reading before the save finishes: the button
+  // turns into "Guardando…" at once, so only the success notice proves the PUT completed.
+  const recordUrl = `**/api/fuentes/${encodeURIComponent(id)}`;
+  await page.route(recordUrl, async (route) => {
+    if (route.request().method() === 'PUT') await new Promise((done) => setTimeout(done, 1500));
+    await route.continue();
+  });
   await page.getByRole('button', { name: 'Guardar registro' }).click();
-  await expect(page.getByRole('button', { name: 'Guardar registro' })).toHaveCount(0);
+  await expect(page.getByText(`Registro ${id} guardado.`, { exact: false })).toBeVisible();
+  await page.unroute(recordUrl);
   const stored = await page.request.get(`/api/fuentes/${encodeURIComponent(id)}`);
   expect(await stored.json()).toMatchObject({ _id: id, Observaciones: 'Observación editada E2E' });
   await page.getByRole('button', { name: `Ver ${id}` }).click();
