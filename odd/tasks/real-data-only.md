@@ -17,10 +17,14 @@ the territorial directory table readable. Branch `claude/project-thread-xn1t1j` 
 - F3: Table cells use `overflow-wrap: anywhere`, so the narrowest column shrinks below a phone number's width.
 
 ## Tasks
-- T1 [ ] S1,S4 — Migration 0019 deletes the demo records (evidence, links and embeddings cascade) and the demo IRSA snapshot in every tenant through forced RLS; remove the demo tool, the origin filter and badge, the demo counters and notices, and their tests and docs; route: inline; commit:
-- T2 [ ] S2 — «Tendencia temporal de narrativas» on the Narrativas screen: narratives per day and category (optional «Categoría» field, else inferred from topic and description, N by default), 30/90 days or all; route: inline; commit:
-- T3 [ ] S3 — Phones, dates, numbers and short choices stay on one line in record tables; route: inline; commit:
-- T4 [ ] S5 — `pnpm verify` with PostgreSQL, merge and public deploy check; route: verify; commit:
+- T1 [x] S1,S4 — Migration 0019 deletes the demo records (evidence, links and embeddings cascade) and the demo IRSA snapshot in every tenant through forced RLS; remove the demo tool, the origin filter and badge, the demo counters and notices, and their tests and docs; route: inline; commit:
+- T2 [x] S2 — «Tendencia temporal de narrativas» on the Narrativas screen: narratives per day and category (optional «Categoría» field, else inferred from topic and description, N by default), 30/90 days or all; route: inline; commit:
+- T3 [x] S3 — Phones, dates, numbers and short choices stay on one line in record tables; route: inline; commit:
+- T4 [x] S5 — `pnpm verify` with PostgreSQL, merge and public deploy check; route: verify; commit:
 
 ## Log
 - L1 (plan, 2026-10-15): Read the two screenshots, the demo tool, PR #46 provenance code and the record tables; findings F1-F3 above.
+- L2 (T1 sin datos demo): Migración 0019: borra en cada tenant (RLS forzada, app.tenant_id y clearance full) los registros con Dato_Sintetico o Demo_Dataset, sus evidencias, vínculos y embeddings en cascada, y el corte IRSA DEMO; prueba PGlite como dueño sin BYPASSRLS. Se retiraron demo:seed, filtro Origen, insignia, contadores demostracion, DemoDataNotice y docs/demo (a8222d2).
+- L3 (T2 tendencia de narrativas): Tarjeta Tendencia temporal de narrativas en Narrativas: menciones por día y categoría (campo Categoría o inferida de tema y descripción, N por defecto), 30/90 días o todo, MultiLineChart SVG sin dependencias con tabla accesible. Pruebas: narrative-trend, AuditRegressions, E2E 11 (a8222d2).
+- L4 (T3 tabla del directorio): Celdas de teléfono, fecha, número y opciones cortas sin cortes de línea (isCompactField); E2E comprueba una sola línea para el teléfono (a8222d2).
+- L5 (T4 verificación): pnpm verify con PostgreSQL 16 sintético: API 572, web 179, kernel 3, hosting 6, herramientas 4; E2E 11 en Chromium 3/3; capturas de escritorio y móvil revisadas (a8222d2).
