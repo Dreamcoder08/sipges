@@ -89,13 +89,6 @@ describe('dashboard model', () => {
           Proyecto_ID: 'P',
         },
         { _id: 'f', Causa: 'Otro proyecto', Nivel_Preliminar: 'Rojo', Proyecto_ID: 'Q' },
-        {
-          _id: 'g',
-          Causa: 'Demo',
-          Nivel_Preliminar: 'Rojo',
-          Proyecto_ID: 'P',
-          Dato_Sintetico: true,
-        },
       ],
       'P',
     );

@@ -75,14 +75,6 @@ describe('analytics HTTP routes', () => {
       directorio: 0,
       priorizados: 0,
       niveles: { Rojo: 1, Verde: 1, 'Sin nivel': 1 },
-      demostracion: {
-        eventos: 0,
-        actores: 0,
-        demandas_abiertas: 0,
-        alertas_activas: 0,
-        directorio: 0,
-        priorizados: 0,
-      },
     });
   });
 

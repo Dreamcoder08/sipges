@@ -1,20 +1,18 @@
-import { type ModuleRecord, type Role, recordOrigin } from '@mascli/contracts';
+import type { ModuleRecord, Role } from '@mascli/contracts';
 import { MODULES, type RecordField, type RecordModule } from './modules.ts';
 
 export const canWriteRecords = (role: Role) => role === 'admin' || role === 'analista';
 export const displayValue = (value: unknown) =>
   value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
-/** Which records a list shows: real ones by default, demo ones only when asked for. */
-export type OriginFilter = 'real' | 'demo' | 'todos';
-export const ORIGIN_LABELS: Record<OriginFilter, string> = {
-  real: 'Registros reales',
-  demo: 'Demostración (sintéticos)',
-  todos: 'Todos',
-};
-export const byOrigin = <T extends Readonly<Record<string, unknown>>>(
-  rows: readonly T[],
-  filter: OriginFilter,
-) => rows.filter((row) => filter === 'todos' || recordOrigin(row) === filter);
+/**
+ * Short values (phones, dates, numbers, short choices such as «Alta») stay on one line in
+ * tables; long text wraps. Without this a phone number was split across two lines.
+ */
+export const isCompactField = (field: RecordField) =>
+  field.type === 'tel' ||
+  field.type === 'date' ||
+  field.type === 'number' ||
+  (!!field.options?.length && field.options.every((option) => option.length <= 14));
 export const fieldValue = (record: ModuleRecord | undefined, field: RecordField) => {
   if (!record)
     return field.initial ?? (field.type === 'date' ? new Date().toISOString().slice(0, 10) : '');
@@ -25,15 +23,12 @@ export const fieldValue = (record: ModuleRecord | undefined, field: RecordField)
   }
   return '';
 };
-/** Bookkeeping keys: shown elsewhere (code, project, origin) or never edited by hand. */
+/** Bookkeeping keys: shown elsewhere (code, project) or never edited by hand. */
 const INTERNAL_KEYS = new Set([
   '_id',
   '_updated_at',
   'Proyecto_ID',
   'Proyecto',
-  'Demo_Dataset',
-  'Demo_ID',
-  'Dato_Sintetico',
   // Evidence links written by uploads; the evidence panel lists them with their files.
   'Adjuntos',
 ]);

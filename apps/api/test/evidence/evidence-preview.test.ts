@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AttachmentPreview } from '@mascli/contracts';
-import { renderDemoEvidence } from '../../src/tools/academic-demo/documents.ts';
+import { renderEvidence } from '../support/evidence-documents.ts';
 import { createTestApp, memoryStorage } from '../support/test-app.ts';
 
 const TEXT = 'INFORME DE PRUEBA\nLinea con datos sinteticos para el visor.\n';
@@ -40,9 +40,7 @@ describe('GET /system/uploads/{id}/preview', () => {
     ['informe.txt', 'txt'],
   ] as const)('returns the text of %s with its metadata', async (name, format) => {
     const { upload, preview } = await setup();
-    const bytes = await renderDemoEvidence({
-      recordId: 'F-T1',
-      filename: name,
+    const bytes = await renderEvidence({
       format,
       text: TEXT,
     });
@@ -72,9 +70,7 @@ describe('GET /system/uploads/{id}/preview', () => {
 
   it('says when a PDF has no text layer instead of showing an empty page', async () => {
     const { upload, preview } = await setup();
-    const blank = await renderDemoEvidence({
-      recordId: 'F-T1',
-      filename: 'escaneado.pdf',
+    const blank = await renderEvidence({
       format: 'pdf',
       text: ' ',
     });

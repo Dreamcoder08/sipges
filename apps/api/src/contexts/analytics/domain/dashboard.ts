@@ -1,4 +1,3 @@
-import { isDemoRecord } from '@mascli/kernel';
 import type { RecordsByModule, StoredRecord } from './records.ts';
 import { pyStr, pyTruthy } from './python.ts';
 
@@ -14,7 +13,7 @@ export const DASHBOARD_MODULES = [
 const status = (payload: Readonly<Record<string, unknown>>) =>
   pyStr(payload['Estado'] ?? '').toLowerCase();
 
-/** Calculation rules shared by both origins; the web shows them next to each counter. */
+/** Calculation rules; the web shows them next to each counter. */
 const counters = (of: (module: string) => readonly StoredRecord[]) => ({
   eventos: of('Eventos').length,
   actores: of('Actores').length,
@@ -26,15 +25,11 @@ const counters = (of: (module: string) => readonly StoredRecord[]) => ({
   priorizados: of('Actores_Priorizados').length,
 });
 
-/**
- * Executive counters of the dashboard (app.py:984 `/api/dashboard`) over real records only.
- * Synthetic demo records are counted apart in `demostracion`, never mixed into the totals.
- */
+/** Executive counters of the dashboard (app.py:984 `/api/dashboard`). */
 export const dashboardSummary = (records: RecordsByModule) => {
-  const real = (module: string) => (records[module] ?? []).filter((r) => !isDemoRecord(r.payload));
-  const demo = (module: string) => (records[module] ?? []).filter((r) => isDemoRecord(r.payload));
+  const of = (module: string) => records[module] ?? [];
   const levels: Record<string, number> = {};
-  for (const alert of real('Alertas').map((r) => r.payload)) {
+  for (const alert of of('Alertas').map((r) => r.payload)) {
     const raw = pyTruthy(alert['Nivel_Preliminar'])
       ? alert['Nivel_Preliminar']
       : pyTruthy(alert['Nivel'])
@@ -43,7 +38,7 @@ export const dashboardSummary = (records: RecordsByModule) => {
     const level = pyStr(raw);
     levels[level] = (levels[level] ?? 0) + 1;
   }
-  return { ...counters(real), niveles: levels, demostracion: counters(demo) };
+  return { ...counters(of), niveles: levels };
 };
 
 export type DashboardSummary = ReturnType<typeof dashboardSummary>;

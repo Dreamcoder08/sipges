@@ -1,7 +1,6 @@
-import { type ModuleRecord, recordOrigin } from '@mascli/contracts';
+import type { ModuleRecord } from '@mascli/contracts';
 import { displayValue, extraFields, fieldValue, safePublicUrl } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
-import { OriginBadge } from './OriginBadge.tsx';
 import styles from './Records.module.css';
 
 export const RecordDetail = ({
@@ -14,13 +13,6 @@ export const RecordDetail = ({
   const extras = extraFields(module, record);
   return (
     <>
-      {recordOrigin(record) === 'demo' ? (
-        <p className={styles.originNote}>
-          <OriginBadge record={record} /> Registro del caso académico sintético
-          {typeof record.Demo_Dataset === 'string' ? ` (${record.Demo_Dataset})` : ''}. No describe
-          hechos, personas ni mediciones reales.
-        </p>
-      ) : null}
       <dl className={styles.details}>
         {MODULES[module].fields.map((field) => {
           const value = fieldValue(record, field);

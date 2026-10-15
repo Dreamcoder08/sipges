@@ -18,5 +18,5 @@ playwright-report/
 test-results/
 .data/
 
-# Generated academic-demo frontend
+# Generated hosting frontend
 apps/hosting/public/

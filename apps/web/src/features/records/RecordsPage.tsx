@@ -1,4 +1,4 @@
-import { type ModuleRecord, type Role, recordOrigin } from '@mascli/contracts';
+import type { ModuleRecord, Role } from '@mascli/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { ZodError } from 'zod';
@@ -16,17 +16,11 @@ import { moduleAttachmentsQuery } from './evidence-api.ts';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
+import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
-import { OriginBadge } from './OriginBadge.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
-import {
-  ORIGIN_LABELS,
-  type OriginFilter,
-  byOrigin,
-  canWriteRecords,
-  fieldValue,
-} from './model.ts';
+import { canWriteRecords, fieldValue, isCompactField } from './model.ts';
 import { FACETS, MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -86,7 +80,6 @@ const facetValue = (row: ModuleRecord, module: RecordModule, key: string) => {
 const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Props) => {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [origin, setOrigin] = useState<OriginFilter>('real');
   const [facets, setFacets] = useState<Record<string, string>>({});
   const [panel, setPanel] = useState<Panel>({ kind: 'list' });
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -278,6 +271,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
         </Alert>
       ) : null}
       {notice ? <Alert tone="success">{notice}</Alert> : null}
+      {module === 'narrativas' ? <NarrativeTrend scope={scope} /> : null}
       <Card
         title={definition.label}
         action={
@@ -323,62 +317,43 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
         </form>
         <QueryState query={rows} label="los registros">
           {(data) => {
-            const demoCount = data.filter((row) => recordOrigin(row) === 'demo').length;
-            const realCount = data.length - demoCount;
-            const inOrigin = byOrigin(data, origin);
-            const visible = inOrigin.filter((row) =>
+            const visible = data.filter((row) =>
               moduleFacets.every(
                 ({ key }) => !facets[key] || facetValue(row, module, key) === facets[key],
               ),
             );
             return (
               <>
-                <div className={styles.filters}>
-                  <div className={styles.field}>
-                    <label htmlFor={`origin-${module}`}>Origen</label>
-                    <select
-                      id={`origin-${module}`}
-                      value={origin}
-                      onChange={(event) => setOrigin(event.target.value as OriginFilter)}
-                    >
-                      {(Object.keys(ORIGIN_LABELS) as OriginFilter[]).map((key) => (
-                        <option key={key} value={key}>
-                          {ORIGIN_LABELS[key]}
-                        </option>
-                      ))}
-                    </select>
+                {moduleFacets.length ? (
+                  <div className={styles.filters}>
+                    {moduleFacets.map(({ key, label }) => {
+                      const options = [...new Set(data.map((row) => facetValue(row, module, key)))]
+                        .filter(Boolean)
+                        .sort((a, b) => a.localeCompare(b, 'es'));
+                      return (
+                        <div className={styles.field} key={key}>
+                          <label htmlFor={`facet-${module}-${key}`}>{label}</label>
+                          <select
+                            id={`facet-${module}-${key}`}
+                            value={facets[key] ?? ''}
+                            onChange={(event) =>
+                              setFacets((current) => ({ ...current, [key]: event.target.value }))
+                            }
+                          >
+                            <option value="">Todos</option>
+                            {options.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
                   </div>
-                  {moduleFacets.map(({ key, label }) => {
-                    const options = [
-                      ...new Set(inOrigin.map((row) => facetValue(row, module, key))),
-                    ]
-                      .filter(Boolean)
-                      .sort((a, b) => a.localeCompare(b, 'es'));
-                    return (
-                      <div className={styles.field} key={key}>
-                        <label htmlFor={`facet-${module}-${key}`}>{label}</label>
-                        <select
-                          id={`facet-${module}-${key}`}
-                          value={facets[key] ?? ''}
-                          onChange={(event) =>
-                            setFacets((current) => ({ ...current, [key]: event.target.value }))
-                          }
-                        >
-                          <option value="">Todos</option>
-                          {options.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    );
-                  })}
-                </div>
+                ) : null}
                 <p className={styles.muted} role="status">
-                  {visible.length} registro(s) mostrados · {realCount} real(es) · {demoCount} de
-                  demostración
-                  {origin === 'real' && demoCount ? ' (ocultos; elija «Origen» para verlos)' : ''}
+                  {visible.length} de {data.length} registro(s) mostrados
                   {data.length >= 500
                     ? ' · Se muestran los primeros 500. Refina la búsqueda para encontrar otros registros.'
                     : ''}
@@ -396,11 +371,20 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                       </caption>
                       <thead>
                         <tr>
-                          {definition.columns.map((key) => (
-                            <th scope="col" key={key}>
-                              {definition.fields.find((field) => field.key === key)?.label ?? key}
-                            </th>
-                          ))}
+                          {definition.columns.map((key) => {
+                            const field = definition.fields.find((item) => item.key === key);
+                            return (
+                              <th
+                                scope="col"
+                                key={key}
+                                className={
+                                  field && isCompactField(field) ? styles.compact : undefined
+                                }
+                              >
+                                {field?.label ?? key}
+                              </th>
+                            );
+                          })}
                           {module === 'fuentes' ? <th scope="col">Archivos</th> : null}
                           <th scope="col">Acciones</th>
                         </tr>
@@ -408,20 +392,18 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                       <tbody>
                         {visible.map((row) => (
                           <tr key={row._id}>
-                            {definition.columns.map((key, index) => {
+                            {definition.columns.map((key) => {
                               const field = definition.fields.find((item) => item.key === key) ?? {
                                 key,
                                 label: key,
                               };
                               return (
-                                <td key={key} data-label={field.label}>
+                                <td
+                                  key={key}
+                                  data-label={field.label}
+                                  className={isCompactField(field) ? styles.compact : undefined}
+                                >
                                   {fieldValue(row, field) || '—'}
-                                  {index === 0 ? (
-                                    <>
-                                      {' '}
-                                      <OriginBadge record={row} />
-                                    </>
-                                  ) : null}
                                 </td>
                               );
                             })}
@@ -502,20 +484,6 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                     }
                   >
                     Prueba con otras palabras, otros filtros o revisa la ortografía.
-                  </EmptyState>
-                ) : origin === 'real' && demoCount ? (
-                  <EmptyState
-                    title={`No hay registros reales de ${definition.label.toLowerCase()}.`}
-                    action={
-                      <Button variant="secondary" onClick={() => setOrigin('demo')}>
-                        Ver {demoCount} de demostración
-                      </Button>
-                    }
-                  >
-                    Este proyecto solo contiene {demoCount} registros del caso académico sintético.
-                    {writable
-                      ? ' Usa «Nuevo registro» o «Importar CSV» para cargar datos reales.'
-                      : ''}
                   </EmptyState>
                 ) : (
                   <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>

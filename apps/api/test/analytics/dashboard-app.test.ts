@@ -22,9 +22,7 @@ describe('GET /api/dashboard in the composed app', () => {
     });
   });
 
-  // Regression (functional audit, errors 01-02): the academic demo (20 events, 8 open
-  // demands) is reported apart; the counters follow real records and their changes.
-  it('counts real records only and reports demo records apart, live', async () => {
+  it('follows record changes live', async () => {
     const t = await createTestApp();
     const { cookie } = await t.login('admin', 'admin-password-123');
     const request = (method: string, path: string, payload?: Record<string, unknown>) =>
@@ -33,29 +31,15 @@ describe('GET /api/dashboard in the composed app', () => {
         headers: { cookie, 'content-type': 'application/json' },
         ...(payload ? { body: JSON.stringify({ payload }) } : {}),
       });
-    const demo = { Dato_Sintetico: true, Demo_Dataset: 'mascli-academic-v1' };
-    for (let n = 1; n <= 3; n++)
-      await request('POST', '/api/demandas', {
-        ...demo,
-        ID_Demanda: `DEMO-D-0${n}`,
-        Estado: 'Nueva',
-      });
-    await request('POST', '/api/eventos', { ...demo, ID_Evento: 'DEMO-EV-01' });
+    await request('POST', '/api/eventos', { ID_Evento: 'EV-01' });
     await request('POST', '/api/demandas', { ID_Demanda: 'D-REAL', Estado: 'En diálogo' });
     const summary = async () =>
       (await (await request('GET', '/api/dashboard')).json()) as {
         eventos: number;
         demandas_abiertas: number;
-        demostracion: { eventos: number; demandas_abiertas: number };
       };
-    expect(await summary()).toMatchObject({
-      eventos: 0,
-      demandas_abiertas: 1,
-      demostracion: { eventos: 1, demandas_abiertas: 3 },
-    });
+    expect(await summary()).toMatchObject({ eventos: 1, demandas_abiertas: 1 });
     await request('PUT', '/api/demandas/D-REAL', { ID_Demanda: 'D-REAL', Estado: 'Cerrada' });
     expect((await summary()).demandas_abiertas).toBe(0);
-    // Demo rows stay stored: separating them never deletes data.
-    expect((await (await request('GET', '/api/demandas')).json()) as unknown[]).toHaveLength(4);
   });
 });
