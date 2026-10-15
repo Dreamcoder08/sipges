@@ -77,6 +77,8 @@ export type Edge = {
   readonly note: string;
   readonly createdBy: string | null;
   readonly createdAt: Date | null;
+  readonly evidence?: ObjectSummary | null;
+  readonly evidenceStatus?: 'available' | 'unavailable' | 'undocumented';
 };
 
 /** A record that names another in its text, with no link between them yet. */
@@ -210,6 +212,16 @@ export const createOntologyService = (deps: {
       store.links(tenantId, refs),
       store.inferred(tenantId, refs, RULES),
     ]);
+    const evidenceType = objectTypeForSlug('fuentes');
+    const evidenceRefs = links.flatMap((link) =>
+      link.evidenceSourceId && evidenceType
+        ? [{ module: evidenceType.module, id: link.evidenceSourceId }]
+        : [],
+    );
+    const evidenceRows = evidenceRefs.length ? await store.nodes(tenantId, evidenceRefs) : [];
+    const evidenceById = new Map(
+      evidenceRows.map((row) => [row.id, evidenceType ? summarize(evidenceType, row) : null]),
+    );
     const edges: Edge[] = [];
     const seen = new Set<string>();
     const add = (edge: Edge, source: NodeRef, target: NodeRef) => {
@@ -233,6 +245,14 @@ export const createOntologyService = (deps: {
           note: link.note,
           createdBy: link.createdBy,
           createdAt: link.createdAt,
+          evidence: link.evidenceSourceId
+            ? (evidenceById.get(link.evidenceSourceId) ?? null)
+            : null,
+          evidenceStatus: link.evidenceSourceId
+            ? evidenceById.has(link.evidenceSourceId)
+              ? 'available'
+              : 'unavailable'
+            : 'undocumented',
         },
         link.source,
         link.target,
@@ -516,6 +536,7 @@ export const createOntologyService = (deps: {
         source: { slug: string; id: string };
         target: { slug: string; id: string };
         note: string;
+        evidence?: { module: 'fuentes'; id: string } | null;
       },
       actor: string,
     ): Promise<Result<number, LinkProblem | 'missing' | 'duplicate'>> {
@@ -532,6 +553,7 @@ export const createOntologyService = (deps: {
           source,
           target,
           note: input.note.trim(),
+          evidenceSourceId: input.evidence?.id ?? null,
           symmetric: linkType.symmetric,
           createdBy: actor,
           auditDetail: `${source.module} ${source.id} ${linkType.label} ${target.module} ${target.id}`,
@@ -549,6 +571,9 @@ export const createOntologyService = (deps: {
         ? ok(marking)
         : err('missing' as const);
     },
+
+    setLinkEvidence: (tenantId: string, id: number, sourceId: string | null) =>
+      store.setLinkEvidence(tenantId, id, sourceId, clock.now()),
 
     unlink: (tenantId: string, id: number) => store.deleteLink(tenantId, id, clock.now()),
   };

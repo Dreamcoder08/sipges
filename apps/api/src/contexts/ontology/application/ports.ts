@@ -15,6 +15,7 @@ export type StoredLink = {
   readonly note: string;
   readonly createdBy: string;
   readonly createdAt: Date;
+  readonly evidenceSourceId?: string | null;
 };
 
 /** An inference rule with stored module names, ready for the adapter. */
@@ -42,6 +43,7 @@ export type NewLink = {
   readonly symmetric: boolean;
   readonly createdBy: string;
   readonly auditDetail: string;
+  readonly evidenceSourceId?: string | null;
 };
 
 /** Every call runs in one tenant transaction (docs/adr/0003). */
@@ -82,6 +84,12 @@ export type OntologyStore = {
     link: NewLink,
     at: Date,
   ): Promise<{ ok: true; id: number } | { ok: false; error: 'missing' | 'duplicate' }>;
+  setLinkEvidence(
+    tenantId: string,
+    id: number,
+    sourceId: string | null,
+    at: Date,
+  ): Promise<boolean>;
   /** Sets a record's marking and audits it; false when the record is not visible. */
   setMarking(tenantId: string, ref: NodeRef, marking: string, at: Date): Promise<boolean>;
   /** Audits the deletion; false when absent. */

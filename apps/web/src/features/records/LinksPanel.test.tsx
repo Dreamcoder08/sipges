@@ -108,6 +108,9 @@ describe('LinksPanel', () => {
         deleted.push(String(params.id));
         return HttpResponse.json({ ok: true });
       }),
+      http.get('/api/fuentes', () =>
+        HttpResponse.json([{ _id: 'F-2', Archivo_Fuente: 'Acta verificable' }]),
+      ),
       http.get('/api/demandas', () =>
         HttpResponse.json([{ _id: 'D-2', Descripcion: 'Empleo local' }]),
       ),
@@ -136,6 +139,7 @@ describe('LinksPanel', () => {
       await within(form).findByRole('option', { name: 'Empleo local (D-2)' }),
     );
     await user.type(within(form).getByLabelText('Nota (opcional)'), 'Taller');
+    await user.selectOptions(within(form).getByLabelText('Fuente de evidencia (opcional)'), 'F-2');
     await user.click(within(form).getByRole('button', { name: 'Vincular' }));
     await waitFor(() =>
       expect(created).toEqual([
@@ -144,8 +148,115 @@ describe('LinksPanel', () => {
           source: { module: 'actores', id: 'A-1' },
           target: { module: 'demandas', id: 'D-2' },
           note: 'Taller',
+          evidence: { module: 'fuentes', id: 'F-2' },
         },
       ]),
     );
+  });
+  it('shows unavailable evidence truthfully and lets writers attach or clear a real source with visible errors', async () => {
+    const changed: unknown[] = [];
+    let fail = true;
+    const edge = {
+      id: 7,
+      link_type: 'plantea',
+      source: { module: 'actores', id: 'A-1' },
+      target: { module: 'demandas', id: 'D-1' },
+      inferred: false,
+      via: null,
+      note: '',
+      created_by: 'admin',
+      created_at: null,
+      evidence: null,
+      evidence_status: 'unavailable',
+    };
+    server.use(
+      http.get('/system/ontology', () => HttpResponse.json(catalog)),
+      http.get('/system/links', () =>
+        HttpResponse.json({
+          record: summary('actores', 'A-1', 'Comunidad', 'Actor'),
+          links: [
+            {
+              edge,
+              direction: 'out',
+              label: 'plantea',
+              other: summary('demandas', 'D-1', 'Agua potable', 'Demanda'),
+            },
+          ],
+        }),
+      ),
+      http.get('/api/fuentes', () =>
+        HttpResponse.json([{ _id: 'F-2', Archivo_Fuente: 'Acta verificable' }]),
+      ),
+      http.get('/api/demandas', () => HttpResponse.json([])),
+      http.put('/system/links/7/evidence', async ({ request }) => {
+        changed.push(await request.json());
+        return fail
+          ? HttpResponse.json({ detail: 'Fuente no disponible' }, { status: 404 })
+          : HttpResponse.json({ ok: true });
+      }),
+    );
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}
+      >
+        <LinksPanel module="actores" id="A-1" scope="A/B" writable />
+      </QueryClientProvider>,
+    );
+    expect(
+      await screen.findByText('Fuente no disponible · vínculo sin verificar'),
+    ).toBeInTheDocument();
+    const form = screen.getByRole('form', { name: 'Evidencia del vínculo con Agua potable' });
+    const user = userEvent.setup();
+    await user.selectOptions(await within(form).findByLabelText('Fuente de evidencia'), 'F-2');
+    await user.click(within(form).getByRole('button', { name: 'Guardar fuente' }));
+    expect(await within(form).findByText('Fuente no disponible')).toBeInTheDocument();
+    fail = false;
+    await user.selectOptions(within(form).getByLabelText('Fuente de evidencia'), '');
+    await user.click(within(form).getByRole('button', { name: 'Guardar fuente' }));
+    await waitFor(() =>
+      expect(changed).toEqual([{ evidence: { module: 'fuentes', id: 'F-2' } }, { evidence: null }]),
+    );
+  });
+
+  it('shows a source link for readers without editing controls', async () => {
+    server.use(
+      http.get('/system/ontology', () => HttpResponse.json(catalog)),
+      http.get('/system/links', () =>
+        HttpResponse.json({
+          record: summary('actores', 'A-1', 'Comunidad', 'Actor'),
+          links: [
+            {
+              edge: {
+                id: 7,
+                link_type: 'plantea',
+                source: { module: 'actores', id: 'A-1' },
+                target: { module: 'demandas', id: 'D-1' },
+                inferred: false,
+                via: null,
+                note: '',
+                created_by: 'admin',
+                created_at: null,
+                evidence: summary('fuentes', 'F-1', 'Acta verificable', 'Fuente'),
+                evidence_status: 'available',
+              },
+              direction: 'out',
+              label: 'plantea',
+              other: summary('demandas', 'D-1', 'Agua potable', 'Demanda'),
+            },
+          ],
+        }),
+      ),
+    );
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <LinksPanel module="actores" id="A-1" scope="A/B" writable={false} />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByRole('link', { name: 'Acta verificable' })).toHaveAttribute(
+      'href',
+      '/objeto/fuentes/F-1',
+    );
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

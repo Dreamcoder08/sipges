@@ -13,6 +13,7 @@ type LinkRow = {
   note: string;
   created_by: string;
   created_at: Date | string;
+  evidence_source_id: string | null;
 };
 
 const toLink = (row: LinkRow): StoredLink => ({
@@ -23,6 +24,7 @@ const toLink = (row: LinkRow): StoredLink => ({
   note: row.note,
   createdBy: row.created_by,
   createdAt: new Date(row.created_at),
+  evidenceSourceId: row.evidence_source_id,
 });
 
 const columns = (refs: readonly NodeRef[]) => [refs.map((r) => r.module), refs.map((r) => r.id)];
@@ -32,6 +34,22 @@ const inRefs = (moduleColumn: string, idColumn: string, first: number) =>
   `(${moduleColumn}, ${idColumn}) IN (SELECT * FROM unnest($${first}::text[], $${first + 1}::text[]))`;
 
 const AUDIT_MODULE = 'Vinculos';
+
+/** Append-only private provenance; never read through the runtime application's role. */
+const appendEvidenceHistory = async (
+  tx: SqlClient,
+  id: number,
+  previous: string | null,
+  next: string | null,
+  at: Date,
+) => {
+  await tx.query(
+    `INSERT INTO link_evidence_history (tenant_id, link_id, previous_source_id, next_source_id, actor, at)
+     VALUES (current_setting('app.tenant_id', true), $1, $2, $3,
+       COALESCE(NULLIF(current_setting('app.actor', true), ''), 'sistema'), $4)`,
+    [id, previous, next, at],
+  );
+};
 
 /** Links and inference read module_records and record_links under forced RLS (ADR 0011). */
 export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
@@ -119,7 +137,7 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
       (
         await tx.query<LinkRow>(
           `SELECT id, link_type, source_module, source_id, target_module, target_id, note,
-                  created_by, created_at
+                  created_by, created_at, evidence_source_id
            FROM record_links
            WHERE ${inRefs('source_module', 'source_id', 1)} OR ${inRefs('target_module', 'target_id', 1)}
            ORDER BY id`,
@@ -176,11 +194,18 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
 
   createLink: (tenantId, link, at) =>
     withTenant(sql, tenantId, async (tx) => {
-      const [present] = await tx.query<{ count: number | string }>(
-        `SELECT count(*) AS count FROM module_records WHERE ${inRefs('module', 'id', 1)}`,
+      const present = await tx.query(
+        `SELECT id FROM module_records WHERE ${inRefs('module', 'id', 1)} FOR SHARE`,
         columns([link.source, link.target]),
       );
-      if (Number(present?.count) !== 2) return { ok: false as const, error: 'missing' as const };
+      if (present.length !== 2) return { ok: false as const, error: 'missing' as const };
+      if (link.evidenceSourceId) {
+        const source = await tx.query(
+          "SELECT id FROM module_records WHERE module = 'Fuentes' AND id = $1 FOR SHARE",
+          [link.evidenceSourceId],
+        );
+        if (!source.length) return { ok: false as const, error: 'missing' as const };
+      }
       if (link.symmetric) {
         const reversed = await tx.query(
           `SELECT 1 FROM record_links WHERE link_type = $1 AND source_module = $2
@@ -191,8 +216,8 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
       }
       const [inserted] = await tx.query<{ id: number }>(
         `INSERT INTO record_links (tenant_id, link_type, source_module, source_id, target_module,
-                                   target_id, note, created_by, created_at)
-         VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8)
+                                   target_id, note, created_by, created_at, evidence_source_id)
+         VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT DO NOTHING RETURNING id`,
         [
           link.linkType,
@@ -203,10 +228,12 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
           link.note,
           link.createdBy,
           at,
+          link.evidenceSourceId ?? null,
         ],
       );
       if (!inserted) return { ok: false as const, error: 'duplicate' as const };
       const id = Number(inserted.id);
+      await appendEvidenceHistory(tx, id, null, link.evidenceSourceId ?? null, at);
       await appendAudit(tx, {
         module: AUDIT_MODULE,
         recordId: String(id),
@@ -215,6 +242,45 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
         at,
       });
       return { ok: true as const, id };
+    }),
+
+  setLinkEvidence: (tenantId, id, sourceId, at) =>
+    withTenant(sql, tenantId, async (tx) => {
+      const [link] = await tx.query<LinkRow>(
+        'SELECT * FROM record_links WHERE id = $1 FOR UPDATE',
+        [id],
+      );
+      if (!link) return false;
+      const endpoints = await tx.query(
+        `SELECT id FROM module_records WHERE ${inRefs('module', 'id', 1)} FOR SHARE`,
+        columns([
+          { module: link.source_module, id: link.source_id },
+          { module: link.target_module, id: link.target_id },
+        ]),
+      );
+      if (endpoints.length !== 2) return false;
+      if (sourceId !== null) {
+        const source = await tx.query(
+          "SELECT id FROM module_records WHERE module = 'Fuentes' AND id = $1 FOR SHARE",
+          [sourceId],
+        );
+        if (!source.length) return false;
+      }
+      if (link.evidence_source_id === sourceId) return true;
+      await tx.query('UPDATE record_links SET evidence_source_id = $2 WHERE id = $1', [
+        id,
+        sourceId,
+      ]);
+      await appendEvidenceHistory(tx, id, link.evidence_source_id, sourceId, at);
+      await appendAudit(tx, {
+        module: AUDIT_MODULE,
+        recordId: String(id),
+        action: 'UPDATE',
+        detail:
+          sourceId === null ? 'Fuente de evidencia retirada' : 'Fuente de evidencia vinculada',
+        at,
+      });
+      return true;
     }),
 
   setMarking: (tenantId, ref, marking, at) =>

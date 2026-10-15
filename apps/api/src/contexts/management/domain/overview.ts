@@ -1,4 +1,10 @@
-import { roundHalfEven } from '@mascli/kernel';
+import {
+  isCompletedStatus,
+  isTerminalStatus,
+  isValidCalendarDate,
+  recordDueDate,
+  roundHalfEven,
+} from '@mascli/kernel';
 
 /** Per-project management center (app.py:2224-2270, RC 2.8). Descriptive counts only. */
 
@@ -30,8 +36,6 @@ export type Commitment = {
   readonly status: string;
   readonly due_date: string;
 };
-
-const CLOSED = ['Completada', 'Cancelada'];
 
 const counter = (values: readonly string[]) => {
   const counts = new Map<string, number>();
@@ -73,7 +77,7 @@ export const commitmentsOf = (
         id,
         responsible: pick('Responsable'),
         status: pick('Estado'),
-        due_date: pick('Fecha_Vencimiento', 'Fecha_Limite'),
+        due_date: recordDueDate(payload) ?? '',
       };
     });
 
@@ -112,14 +116,16 @@ export const managementOverview = (input: {
   commitments: readonly Commitment[];
 }) => {
   const { alerts, actions, commitments, today } = input;
-  const ongoing = actions.filter((r) => !CLOSED.includes(r.status));
-  const late = ongoing.filter((r) => r.dueDate < today);
+  const ongoing = actions.filter((r) => !isTerminalStatus(r.status));
+  const late = ongoing.filter(
+    (r) => isValidCalendarDate(r.dueDate) && isValidCalendarDate(today) && r.dueDate < today,
+  );
   const pending = alerts.filter((r) => r.status === 'Pendiente de verificación');
   const high = alerts.filter((r) => r.level === 'Alta' && r.status !== 'Descartado');
   const critical = [...late]
     .sort((a, b) => (a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0))
     .slice(0, 20);
-  const completed = actions.filter((x) => x.status === 'Completada').length;
+  const completed = actions.filter((x) => isCompletedStatus(x.status)).length;
   const byResponsible = [...counter(actions.map((x) => x.responsible))]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 30);

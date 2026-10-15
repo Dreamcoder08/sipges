@@ -173,7 +173,14 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
       { key: 'Accion', label: 'Acción documentada', type: 'textarea', required: true },
       { key: 'Alerta_Asociada', label: 'Alerta asociada' },
       { key: 'Responsable', label: 'Responsable' },
-      { key: 'Plazo', label: 'Plazo' },
+      { key: 'Plazo', label: 'Plazo documentado' },
+      {
+        key: 'Fecha_Vencimiento',
+        aliases: ['Fecha_Limite'],
+        label: 'Fecha límite',
+        type: 'date',
+        initial: '',
+      },
       {
         key: 'Estado',
         label: 'Estado',
@@ -257,7 +264,11 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
       },
       territory,
       { key: 'Rol/Relacion', label: 'Rol o relación' },
-      { key: 'Influencia', label: 'Influencia', options: priority, initial: 'Media' },
+      {
+        key: 'Influencia',
+        label: 'Influencia',
+        options: ['Alta', 'Media-alta', 'Media', 'Media-baja', 'Baja'],
+      },
       { key: 'Interes', label: 'Interés' },
       {
         key: 'Posicion_Proyecto',
@@ -337,7 +348,14 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
       { key: 'Actor/Entidad', label: 'Actor o entidad' },
       { key: 'Demanda_Asociada', label: 'Demanda asociada' },
       { key: 'Responsable', label: 'Responsable' },
-      { key: 'Plazo', label: 'Plazo' },
+      { key: 'Plazo', label: 'Plazo documentado' },
+      {
+        key: 'Fecha_Vencimiento',
+        aliases: ['Fecha_Limite'],
+        label: 'Fecha límite',
+        type: 'date',
+        initial: '',
+      },
       { key: 'Avance_%', label: 'Avance (%)', type: 'number', initial: '0' },
       {
         key: 'Estado',

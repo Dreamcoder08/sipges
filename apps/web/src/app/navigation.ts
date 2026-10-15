@@ -56,6 +56,12 @@ export const SCREENS = [
   },
   { path: '/irsa', label: 'IRSA-MASCLI', title: 'IRSA-MASCLI', ready: true },
   { path: '/validacion', label: 'Validación', title: 'Validación', ready: true },
+  {
+    path: '/calidad',
+    label: 'Calidad de datos',
+    title: 'Calidad y trazabilidad de datos',
+    ready: true,
+  },
   { path: '/fuentes', label: 'Fuentes', title: 'Fuentes y evidencias', ready: true },
   {
     path: '/administracion',
@@ -95,7 +101,15 @@ export const NAV_GROUPS = [
   },
   {
     label: 'Análisis',
-    paths: ['/cronologia', '/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'],
+    paths: [
+      '/cronologia',
+      '/situacion',
+      '/estrategia',
+      '/irsa',
+      '/validacion',
+      '/calidad',
+      '/fuentes',
+    ],
   },
   {
     label: 'Sistema',
@@ -121,6 +135,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/estrategia': 'target',
   '/irsa': 'chart',
   '/validacion': 'check',
+  '/calidad': 'check',
   '/fuentes': 'file',
   '/administracion': 'sliders',
   '/automatizaciones': 'zap',
@@ -148,7 +163,7 @@ export const MORE_GROUPS = [
   { label: 'Gestionar', paths: ['/gerencia', '/cronologia', '/ubicacion'] },
   {
     label: 'Analizar',
-    paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/fuentes'],
+    paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/calidad', '/fuentes'],
   },
   {
     label: 'Sistema',
