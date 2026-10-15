@@ -151,6 +151,70 @@
   background: var(--level-red);
 }
 
+.seriesLine {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.seriesDot {
+  stroke: var(--color-surface);
+  stroke-width: 1.5;
+}
+
+.seriesLegend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: 0.875rem;
+}
+
+.seriesLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.round {
+  border-radius: 999px;
+}
+
+/* Narrative categories (trend chart). Lines take the stroke, dots and swatches the fill. */
+.trendE {
+  stroke: var(--trend-e);
+  fill: var(--trend-e);
+  background: var(--trend-e);
+}
+.trendG {
+  stroke: var(--trend-g);
+  fill: var(--trend-g);
+  background: var(--trend-g);
+}
+.trendD {
+  stroke: var(--trend-d);
+  fill: var(--trend-d);
+  background: var(--trend-d);
+}
+.trendA {
+  stroke: var(--trend-a);
+  fill: var(--trend-a);
+  background: var(--trend-a);
+}
+.trendN {
+  stroke: var(--trend-n);
+  fill: var(--trend-n);
+  background: var(--trend-n);
+}
+.trendI {
+  stroke: var(--trend-i);
+  fill: var(--trend-i);
+  background: var(--trend-i);
+}
+
 @media (max-width: 28rem) {
   .donutLayout {
     grid-template-columns: 1fr;

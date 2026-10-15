@@ -251,6 +251,126 @@ export const LineChart = ({
   );
 };
 
+export type Series = { key: string; label: string; tone: string; values: readonly number[] };
+
+/**
+ * Several lines over the same labelled x axis (e.g. narratives per day and category), with a
+ * legend under the drawing and every value in a hidden table.
+ */
+export const MultiLineChart = ({
+  labels,
+  series,
+  caption,
+  empty,
+  yTitle,
+}: {
+  labels: readonly string[];
+  series: readonly Series[];
+  caption: string;
+  empty: string;
+  yTitle?: string;
+}) => {
+  const [ref, width] = useWidth(640);
+  const peak = Math.max(0, ...series.flatMap((s) => s.values));
+  if (labels.length < 2 || peak === 0) return <p className={styles.empty}>{empty}</p>;
+  const height = 240;
+  const left = yTitle ? 44 : 30;
+  const right = 12;
+  const bottom = 24;
+  const top = 12;
+  const max = niceMax(peak);
+  const x = (i: number) => left + ((width - left - right) * i) / (labels.length - 1);
+  const y = (v: number) => top + (height - top - bottom) * (1 - v / max);
+  // About one x label per 70px, so dates never overlap on a phone.
+  const every = Math.max(1, Math.ceil(labels.length / Math.max(2, Math.floor(width / 70))));
+  // niceMax gives 1, 2 or a multiple of 5: whole-number gridlines at every step.
+  const steps = max <= 2 ? max : 5;
+  const ticks = Array.from({ length: steps + 1 }, (_, n) => n / steps);
+  const dots = labels.length <= 45;
+  return (
+    <figure className={styles.figure}>
+      <svg ref={ref} className={styles.svg} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        {ticks.map((f) => (
+          <g key={f}>
+            <line
+              className={styles.grid}
+              x1={left}
+              x2={width - right}
+              y1={y(max * f)}
+              y2={y(max * f)}
+            />
+            <text className={styles.tick} x={left - 6} y={y(max * f) + 4} textAnchor="end">
+              {Math.round(max * f)}
+            </text>
+          </g>
+        ))}
+        {yTitle ? (
+          <text
+            className={styles.tick}
+            transform={`translate(11 ${top + (height - top - bottom) / 2}) rotate(-90)`}
+            textAnchor="middle"
+          >
+            {yTitle}
+          </text>
+        ) : null}
+        {labels.map((label, i) =>
+          i % every === 0 ? (
+            <text key={label} className={styles.tick} x={x(i)} y={height - 6} textAnchor="middle">
+              {label}
+            </text>
+          ) : null,
+        )}
+        {series.map((s) => (
+          <g key={s.key} className={tone(s.tone)}>
+            <polyline
+              className={styles.seriesLine}
+              points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(' ')}
+            />
+            {dots
+              ? s.values.map((v, i) => (
+                  <circle key={i} className={styles.seriesDot} cx={x(i)} cy={y(v)} r="3.5" />
+                ))
+              : null}
+          </g>
+        ))}
+      </svg>
+      <ul className={styles.seriesLegend} aria-hidden="true">
+        {series.map((s) => (
+          <li key={s.key}>
+            <span className={`${styles.swatch} ${styles.round} ${tone(s.tone)}`} />
+            {s.label}
+          </li>
+        ))}
+      </ul>
+      <div className="visually-hidden">
+        <table>
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Fecha</th>
+              {series.map((s) => (
+                <th key={s.key} scope="col">
+                  {s.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {labels.map((label, i) => (
+              <tr key={label}>
+                <th scope="row">{label}</th>
+                {series.map((s) => (
+                  <td key={s.key}>{s.values[i] ?? 0}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </figure>
+  );
+};
+
 /** Spider chart over a shared 0–max scale (e.g. the six G-A-D-N-E-I dimensions). */
 export const RadarChart = ({
   data,

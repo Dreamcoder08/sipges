@@ -2,9 +2,9 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
 
 /**
  * Functional audit regressions (odd/tasks/functional-audit-correction.md), end to end on the
- * real API. Records are synthetic; demo ones carry the markers written by `demo:seed`.
+ * real API. Records are synthetic.
  */
-test('demo data stays apart and every record opens, edits and shows its report', async ({
+test('counters follow records and every record opens, edits and shows its report', async ({
   page,
   admin,
 }) => {
@@ -16,24 +16,12 @@ test('demo data stays apart and every record opens, edits and shows its report',
       headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
       data: { payload },
     });
-  const demo = { Dato_Sintetico: true, Demo_Dataset: 'mascli-academic-v1' };
-  const demoId = `DEMO-D-E2E-${stamp}`;
   const realId = `D-E2E-${stamp}`;
-  expect(
-    (
-      await api('POST', '/api/demandas', {
-        ...demo,
-        ID_Demanda: demoId,
-        Estado: 'Nueva',
-        Descripcion: `Solicitud demo ${stamp}`,
-      })
-    ).ok(),
-  ).toBe(true);
 
-  // Error 01: the counter changes with real records only.
+  // Error 01: the counter follows the records.
   await page.goto('/');
   const openDemands = page.locator('dl > div').filter({ hasText: 'Demandas abiertas' });
-  await expect(openDemands).toContainText('No incluye');
+  await expect(openDemands).toContainText('estado distinto');
   const before = Number(await openDemands.locator('dd').first().innerText());
   expect(
     (
@@ -48,14 +36,8 @@ test('demo data stays apart and every record opens, edits and shows its report',
   await page.reload();
   await expect(openDemands.locator('dd').first()).toHaveText(String(before + 1));
 
-  // Error 02: the demo demand is hidden by default and badged on request.
   await page.goto('/demandas');
   await expect(page.getByRole('cell', { name: `Demanda real sintética ${stamp}` })).toBeVisible();
-  await expect(page.getByText(`Solicitud demo ${stamp}`)).toHaveCount(0);
-  await page.getByLabel('Origen').selectOption('demo');
-  const demoRow = page.getByRole('row').filter({ hasText: `Solicitud demo ${stamp}` });
-  await expect(demoRow.getByText('Demostración')).toBeVisible();
-  await page.getByLabel('Origen').selectOption('real');
 
   // Error 03: «Ver» opens the record with its data; the list returns with focus.
   await page.getByRole('button', { name: `Ver ${realId}` }).click();
@@ -141,4 +123,37 @@ test('the geospatial view frames a concession and the directory lists contacts',
   const row = page.getByRole('row').filter({ hasText: `Contacto E2E ${stamp}` });
   await expect(row).toContainText('Teniente gobernador');
   await expect(row).toContainText('900 000 000');
+  // The phone stays on one line next to the other columns.
+  const phone = row.getByRole('cell', { name: '900 000 000' });
+  expect(await phone.evaluate((cell) => getComputedStyle(cell).whiteSpace)).toBe('nowrap');
+  const lines = await phone.evaluate((cell) => {
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+  });
+  expect(lines).toBe(1);
+});
+
+test('narratives show their trend per day and category', async ({ page, admin }) => {
+  const stamp = Date.now();
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  for (const [day, topic] of [
+    ['2026-10-01', `Calidad del agua ${stamp}`],
+    ['2026-10-03', `Demanda de empleo local ${stamp}`],
+  ]) {
+    const created = await page.request.post('/api/narrativas', {
+      headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+      data: { payload: { Fecha_Inicio: day, Tema: topic, Descripcion: `Publicación ${stamp}` } },
+    });
+    expect(created.ok()).toBe(true);
+  }
+  await page.goto('/narrativas');
+  const card = page
+    .getByRole('heading', { name: 'Tendencia temporal de narrativas' })
+    .locator('xpath=ancestor::section[1]');
+  await expect(card.locator('li').filter({ hasText: 'Medio ambiente' })).toBeVisible();
+  await expect(
+    card.locator('li').filter({ hasText: 'Narrativas y señales digitales' }),
+  ).toBeVisible();
+  await expect(card.locator('svg polyline')).toHaveCount(5);
 });

@@ -12,7 +12,6 @@
     "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
     "bench:compare": "node bench/compare.ts",
     "vapid:keys": "node src/tools/vapid-keys.ts",
-    "demo:seed": "node src/tools/academic-demo/cli.ts",
     "import:base-maestra": "node src/tools/base-maestra/cli.ts"
   },
   "dependencies": {

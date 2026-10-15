@@ -12,7 +12,6 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { Counts, Limitations, ReportDownload, TextList } from './ReportParts.tsx';
-import { DemoDataNotice } from '../../shared/ui/DemoDataNotice.tsx';
 import styles from './Analysis.module.css';
 
 export type StrategicRecordModule = 'intereses' | 'dialogos' | 'oportunidades' | 'hechos' | 'aarc';
@@ -58,7 +57,6 @@ export const StrategyPage = (
         Los cruces y planes son candidatos para revisión. Esta pantalla no crea compromisos ni
         ejecuta acciones automáticamente.
       </Alert>
-      <DemoDataNotice scope={context.scope} />
       <div className={styles.actions}>
         <Button
           variant="secondary"

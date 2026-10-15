@@ -51,9 +51,6 @@ export const TodayView = ({
   const events = useQuery(moduleRecordsQuery('eventos', scope));
   const urgent = alerts.data ? criticalAlerts(alerts.data, projectId) : null;
   const latest = events.data ? recentEvents(events.data, projectId) : null;
-  const demo = summary.data
-    ? Object.values(summary.data.demostracion).reduce((sum, n) => sum + n, 0)
-    : 0;
 
   return (
     <div className={styles.today}>
@@ -95,12 +92,6 @@ export const TodayView = ({
             ))}
           </ul>
         )}
-        {demo ? (
-          <p className={styles.note}>
-            Sin contar {demo} registros de demostración; se consultan en cada módulo con el filtro
-            «Origen».
-          </p>
-        ) : null}
       </section>
 
       <section className={styles.block} aria-labelledby="hoy-alertas">

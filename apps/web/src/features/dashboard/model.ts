@@ -1,4 +1,3 @@
-import { isDemoRecord } from '@mascli/contracts';
 import {
   DIMENSIONS,
   type DimensionCode,
@@ -18,9 +17,8 @@ const projectOf = (record: ModuleRecord) =>
   typeof record['Proyecto_ID'] === 'string' && record['Proyecto_ID']
     ? record['Proyecto_ID']
     : LEGACY_PROJECT;
-/** Charts follow the counters: real records of the active project, never demo rows. */
-const counted = (record: ModuleRecord, projectId: string) =>
-  projectOf(record) === projectId && !isDemoRecord(record);
+/** Charts follow the counters: records of the active project. */
+const counted = (record: ModuleRecord, projectId: string) => projectOf(record) === projectId;
 
 /** Open alerts of the active project by severity band (app.js loadDashboard). */
 export const alertsByLevel = (alerts: readonly ModuleRecord[], projectId: string) => {

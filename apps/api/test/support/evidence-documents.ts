@@ -1,5 +1,7 @@
 import { Document, Packer, Paragraph } from 'docx';
-import type { DemoEvidence } from './dataset.ts';
+
+/** A synthetic evidence file for preview tests: PDF, DOCX or plain text. */
+export type EvidenceFixture = { format: 'pdf' | 'docx' | 'txt'; text: string };
 
 /** A complete one-page ASCII PDF, with correct byte offsets and plain text for the reader. */
 const pdf = (text: string): Uint8Array<ArrayBuffer> => {
@@ -30,7 +32,7 @@ const pdf = (text: string): Uint8Array<ArrayBuffer> => {
   return new TextEncoder().encode(body);
 };
 
-export const renderDemoEvidence = async (file: DemoEvidence): Promise<Uint8Array<ArrayBuffer>> => {
+export const renderEvidence = async (file: EvidenceFixture): Promise<Uint8Array<ArrayBuffer>> => {
   if (file.format === 'pdf') return pdf(file.text);
   if (file.format === 'txt') return new TextEncoder().encode(file.text);
   return new Uint8Array(

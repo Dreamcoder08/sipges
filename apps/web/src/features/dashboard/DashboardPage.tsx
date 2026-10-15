@@ -74,7 +74,6 @@ export const DashboardPage = ({
           <Card eyebrow="Resumen operativo" title="Base Maestra del proyecto activo">
             <QueryState query={summary} label="el resumen">
               {(data) => {
-                const demo = Object.values(data.demostracion).reduce((sum, n) => sum + n, 0);
                 return (
                   <>
                     <dl className={styles.kpis}>
@@ -83,21 +82,14 @@ export const DashboardPage = ({
                           <dt>{label}</dt>
                           <dd>{data[key]}</dd>
                           <dd className={styles.kpiRule}>
-                            {rule}
-                            {data.demostracion[key]
-                              ? ` No incluye ${data.demostracion[key]} de demostración.`
-                              : ''}{' '}
-                            {to ? renderLink(to, 'Ver registros') : null}
+                            {rule} {to ? renderLink(to, 'Ver registros') : null}
                           </dd>
                         </div>
                       ))}
                     </dl>
                     <p className={styles.kpiNote}>
-                      Los indicadores cuentan solo registros reales del proyecto activo y se
-                      actualizan al guardar, importar o eliminar registros.
-                      {demo
-                        ? ` Hay ${demo} registros de demostración (caso académico sintético) excluidos; se consultan en cada módulo con el filtro «Origen».`
-                        : ''}
+                      Los indicadores cuentan los registros del proyecto activo y se actualizan al
+                      guardar, importar o eliminar registros.
                     </p>
                   </>
                 );

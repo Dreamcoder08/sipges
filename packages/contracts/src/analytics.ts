@@ -136,13 +136,8 @@ const DashboardCounters = {
   directorio: z.number().int(),
   priorizados: z.number().int(),
 };
-/**
- * The top-level counters cover real records only; synthetic demo records (`recordOrigin`) are
- * counted apart in `demostracion` so the dashboard never mixes them.
- */
 export const DashboardResponse = z.strictObject({
   ...DashboardCounters,
   niveles: z.record(z.string(), z.number().int()),
-  demostracion: z.strictObject(DashboardCounters),
 });
 export type DashboardResponse = z.infer<typeof DashboardResponse>;

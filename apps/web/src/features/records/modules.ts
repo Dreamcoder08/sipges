@@ -355,6 +355,7 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
       { key: 'URL_Publicacion', label: 'Enlace de la publicación', type: 'url' },
       { key: 'Plataforma/Fuente', label: 'Plataforma o fuente' },
       { key: 'Tema', label: 'Tema' },
+      { key: 'Categoria', label: 'Categoría', options: dimension },
       { key: 'Actor_Relacionado', label: 'Actor relacionado' },
       {
         key: 'Interacciones_Observadas',

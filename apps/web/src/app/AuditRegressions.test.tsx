@@ -8,7 +8,7 @@ import { App } from './App.tsx';
 
 /**
  * Regression tests for the functional audit (odd/tasks/functional-audit-correction.md).
- * Every record here is synthetic; demo rows carry the markers of `demo:seed`.
+ * Every record here is synthetic.
  */
 beforeEach(() =>
   resetApi({ me: { username: 'demo', full_name: 'Persona de prueba', role: 'admin' } }),
@@ -17,7 +17,6 @@ const open = (module: string) => {
   window.history.replaceState(null, '', `/${module}`);
   render(<App />);
 };
-const DEMO = { Dato_Sintetico: true, Demo_Dataset: 'mascli-academic-v1' };
 const demand = {
   _id: 'D-1',
   ID_Demanda: 'D-1',
@@ -29,43 +28,6 @@ const demand = {
   Respuesta_Empresa: 'Respuesta registrada en la matriz',
   Seguimiento: { hitos: 2 },
 };
-
-describe('error 02: demo records are separated from real ones', () => {
-  it('hides demo rows by default and shows them, badged, on request', async () => {
-    installRecordsApi({
-      'DEMO/PRJ-DEMO/demandas': [
-        demand,
-        {
-          _id: 'DEMO-D-03',
-          ...DEMO,
-          Descripcion: 'Solicitud 3: Información sobre tránsito y ruido con criterios.',
-        },
-      ],
-    });
-    open('demandas');
-    expect(await screen.findByText(demand.Descripcion)).toBeVisible();
-    expect(screen.queryByText(/tránsito y ruido/)).toBeNull();
-    expect(screen.getByRole('status')).toHaveTextContent('1 real(es) · 1 de demostración');
-    await userEvent.setup().selectOptions(screen.getByLabelText('Origen'), 'demo');
-    const row = (await screen.findByText(/tránsito y ruido/)).closest('tr');
-    expect(row).not.toBeNull();
-    // The stored code is shown verbatim, with an explicit badge.
-    expect(within(row as HTMLElement).getByText('Demostración')).toBeVisible();
-    expect(within(row as HTMLElement).getByRole('button', { name: 'Ver DEMO-D-03' })).toBeVisible();
-  });
-
-  it('explains an empty real list instead of looking empty', async () => {
-    installRecordsApi({
-      'DEMO/PRJ-DEMO/directorio': [{ _id: 'DEMO-DIR-01', ...DEMO, Nombre: 'Vocería 01' }],
-    });
-    open('directorio');
-    expect(
-      await screen.findByText('No hay registros reales de directorio territorial.'),
-    ).toBeVisible();
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Ver 1 de demostración' }));
-    expect(await screen.findByText('Vocería 01')).toBeVisible();
-  });
-});
 
 describe('error 03: «Ver» opens the record and returns to the list', () => {
   it('shows the full record in place of the list and restores focus on return', async () => {
@@ -242,9 +204,36 @@ describe('error 07: the directory shows its contacts and filters', () => {
     expect(within(first).getByText('Alcalde distrital')).toBeVisible();
     expect(within(first).getByText('Vice')).toBeVisible();
     expect(within(first).getByText('900 000 001')).toBeVisible();
+    // Phones and short choices stay on one line instead of splitting in two.
+    expect(within(first).getByText('900 000 001')).toHaveClass(/compact/);
     expect(screen.getByRole('columnheader', { name: 'Territorio / ciudad' })).toBeVisible();
     await userEvent.setup().selectOptions(screen.getByLabelText('Territorio / ciudad'), 'Bernal');
     expect(screen.queryByText('Contacto uno')).toBeNull();
     expect(screen.getByText('Contacto dos')).toBeVisible();
+  });
+});
+
+describe('narratives: trend per day and category', () => {
+  it('draws one line per category from the project narratives', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/narrativas': [
+        { _id: 'N-1', Fecha_Inicio: '2026-10-01', Tema: 'Agua', Descripcion: 'Publicación' },
+        { _id: 'N-2', Fecha_Inicio: '2026-10-03', Descripcion: 'Exigen empleo local' },
+      ],
+    });
+    open('narrativas');
+    expect(
+      await screen.findByRole('heading', { name: 'Tendencia temporal de narrativas' }),
+    ).toBeVisible();
+    expect(await screen.findByRole('columnheader', { name: 'Fecha' })).toBeInTheDocument();
+    for (const label of [
+      'Medio ambiente',
+      'Gobernanza',
+      'Demandas y compromisos',
+      'Actores e influencia',
+      'Narrativas y señales digitales',
+    ])
+      expect(screen.getByRole('columnheader', { name: label })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Origen')).toBeNull();
   });
 });

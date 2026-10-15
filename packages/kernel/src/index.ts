@@ -1,4 +1,3 @@
 export * from './result.ts';
 export * from './report.ts';
 export * from './numbers.ts';
-export * from './provenance.ts';

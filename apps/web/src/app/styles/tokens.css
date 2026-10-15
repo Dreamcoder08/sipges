@@ -38,6 +38,14 @@
   --dim-e: #2f855a;
   --dim-i: #4a5568;
 
+  /* Narrative trend lines: one clearly distinct hue per category. */
+  --trend-e: #2f9e44;
+  --trend-g: #6741d9;
+  --trend-d: #f08c00;
+  --trend-a: #1c7ed6;
+  --trend-n: #d6336c;
+  --trend-i: #495057;
+
   /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
   --color-accent: #1d4ed8;
   --color-accent-tint: #e8eefc;

@@ -39,9 +39,6 @@ export const ModuleRecord = z.looseObject({
 });
 export type ModuleRecord = z.infer<typeof ModuleRecord>;
 
-/** Record provenance shared with the API domain (packages/kernel). */
-export { type RecordOrigin, isDemoRecord, recordOrigin } from '@mascli/kernel';
-
 /** One field difference against the previous version (`before`/`after` absent = no value). */
 export const FieldChange = z.object({
   field: z.string(),

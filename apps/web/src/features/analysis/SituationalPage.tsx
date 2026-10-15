@@ -14,7 +14,6 @@ import {
   TextList,
 } from './ReportParts.tsx';
 import { DocumentLab } from './DocumentLab.tsx';
-import { DemoDataNotice } from '../../shared/ui/DemoDataNotice.tsx';
 import styles from './Analysis.module.css';
 
 export const SituationalPage = (context: FeatureContext) => {
@@ -32,7 +31,6 @@ export const SituationalPage = (context: FeatureContext) => {
         Diagnóstico del proyecto {context.projectLabel} a partir de sus registros. Las
         recomendaciones requieren contraste humano.
       </p>
-      <DemoDataNotice scope={context.scope} />
       <div className={styles.actions}>
         <Button
           variant="secondary"
