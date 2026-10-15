@@ -201,3 +201,8 @@
   stroke: #fffaf0;
   stroke-opacity: 0.85;
 }
+
+.rawCoordinates {
+  max-width: 100%;
+  overflow: auto;
+}

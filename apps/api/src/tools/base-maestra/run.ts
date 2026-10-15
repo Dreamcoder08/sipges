@@ -10,6 +10,7 @@ export type BaseMaestraTarget = {
     items: readonly { id: string; payload: Payload }[],
     note: { action: string; detail: string },
     at: Date,
+    options?: { insertOnly: boolean },
   ): Promise<{ created: number; updated: number }>;
 };
 
@@ -46,8 +47,9 @@ export const importBaseMaestra = async (
         )
       : new Set<string>();
     const fresh = items.filter((item) => !existing.has(item.id));
-    if (apply && fresh.length)
-      await target.importBatch(
+    let created = fresh.length;
+    if (apply && fresh.length) {
+      const result = await target.importBatch(
         tenantId,
         module,
         fresh,
@@ -56,12 +58,15 @@ export const importBaseMaestra = async (
           detail: `Base Maestra: ${fresh.length} registros nuevos desde ${options.source}`,
         },
         options.now(),
+        { insertOnly: true },
       );
+      created = result.created;
+    }
     modules.push({
       module,
       en_archivo: inFile,
-      nuevos: fresh.length,
-      ya_existentes: items.length - fresh.length,
+      nuevos: created,
+      ya_existentes: items.length - created,
     });
   }
   return { applied: apply, modules, problems: plan.problems };

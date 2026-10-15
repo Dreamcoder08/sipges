@@ -49,6 +49,9 @@ export default async function globalSetup() {
         ...database,
         // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
         MASCLI_REQUIRE_MFA: '0',
+        // Explicit opt-in for synthetic browser suites running on intentional local HTTP.
+        // The default suite still tests Secure cookies and leaves this unset.
+        MASCLI_COOKIE_SECURE: process.env.MASCLI_E2E_COOKIE_SECURE,
         MASCLI_DATA_KEY: secrets.dataKey,
         MASCLI_ADMIN_USERNAME: ADMIN_USERNAME,
         MASCLI_ADMIN_PASSWORD: secrets.adminPassword,

@@ -106,3 +106,38 @@ it('reports concessions whose geometry cannot be drawn', async () => {
   expect(await screen.findByText(/No se dibujan 1 concesión/)).toHaveTextContent('anillo abierto');
   expect(screen.queryByRole('button', { name: 'Seleccionar BAYOVAR N° 5' })).toBeNull();
 });
+
+it('reports invalid reference bounds and frames the valid stored geometries', async () => {
+  const broken = structuredClone(coordinates);
+  broken.bbox = [-80, -5, -81, -6];
+  server.use(
+    http.get('/system/project-coordinates', () =>
+      HttpResponse.json({ available: true, data: broken, notice: broken.source.scope }),
+    ),
+  );
+  renderPage();
+  expect(
+    await screen.findByText(/Los límites geográficos del proyecto no son válidos/),
+  ).toBeVisible();
+  expect(screen.getByLabelText('Geometría de referencia')).toBeVisible();
+});
+it('does not replace invalid concessions with a decorative map', async () => {
+  const broken = structuredClone(coordinates);
+  for (const c of broken.concessions)
+    c.geometry.coordinates = [
+      [
+        [-80, -5],
+        [-80, -5],
+        [-80, -5],
+        [-80, -5],
+      ],
+    ];
+  server.use(
+    http.get('/system/project-coordinates', () =>
+      HttpResponse.json({ available: true, data: broken, notice: broken.source.scope }),
+    ),
+  );
+  renderPage();
+  expect(await screen.findByText(/No hay concesiones con geometría válida/)).toBeVisible();
+  expect(screen.queryByLabelText('Geometría de referencia')).toBeNull();
+});

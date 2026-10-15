@@ -43,3 +43,18 @@ describe('GET /api/dashboard in the composed app', () => {
     expect((await summary()).demandas_abiertas).toBe(0);
   });
 });
+
+it('normalizes closed alert states consistently with the charts', async () => {
+  const t = await createTestApp();
+  const { cookie } = await t.login('admin', 'admin-password-123');
+  for (const Estado of [' Cerrada ', 'Cerrado', ' DESCARTADO ']) {
+    const response = await t.request('/api/alertas', {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: { Estado } }),
+    });
+    expect(response.status).toBe(200);
+  }
+  const summary = await t.request('/api/dashboard', { headers: { cookie } });
+  expect(await summary.json()).toMatchObject({ alertas_activas: 0 });
+});

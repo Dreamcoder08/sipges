@@ -11,15 +11,19 @@ export const DASHBOARD_MODULES = [
 ] as const;
 
 const status = (payload: Readonly<Record<string, unknown>>) =>
-  pyStr(payload['Estado'] ?? '').toLowerCase();
+  pyStr(payload['Estado'] ?? '')
+    .trim()
+    .toLowerCase();
 
 /** Calculation rules; the web shows them next to each counter. */
 const counters = (of: (module: string) => readonly StoredRecord[]) => ({
   eventos: of('Eventos').length,
   actores: of('Actores').length,
-  demandas_abiertas: of('Demandas').filter((r) => status(r.payload) !== 'cerrada').length,
+  demandas_abiertas: of('Demandas').filter(
+    (r) => !['cerrada', 'cerrado'].includes(status(r.payload)),
+  ).length,
   alertas_activas: of('Alertas').filter(
-    (a) => !['cerrada', 'descartada'].includes(status(a.payload)),
+    (a) => !['cerrada', 'cerrado', 'descartada', 'descartado'].includes(status(a.payload)),
   ).length,
   directorio: of('Directorio_Territorial').length,
   priorizados: of('Actores_Priorizados').length,
@@ -28,7 +32,7 @@ const counters = (of: (module: string) => readonly StoredRecord[]) => ({
 /** Executive counters of the dashboard (app.py:984 `/api/dashboard`). */
 export const dashboardSummary = (records: RecordsByModule) => {
   const of = (module: string) => records[module] ?? [];
-  const levels: Record<string, number> = {};
+  const levels = new Map<string, number>();
   for (const alert of of('Alertas').map((r) => r.payload)) {
     const raw = pyTruthy(alert['Nivel_Preliminar'])
       ? alert['Nivel_Preliminar']
@@ -36,9 +40,9 @@ export const dashboardSummary = (records: RecordsByModule) => {
         ? alert['Nivel']
         : 'Sin nivel';
     const level = pyStr(raw);
-    levels[level] = (levels[level] ?? 0) + 1;
+    levels.set(level, (levels.get(level) ?? 0) + 1);
   }
-  return { ...counters(of), niveles: levels };
+  return { ...counters(of), niveles: Object.fromEntries(levels) };
 };
 
 export type DashboardSummary = ReturnType<typeof dashboardSummary>;

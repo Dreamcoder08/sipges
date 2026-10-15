@@ -49,3 +49,16 @@ describe('checkConcessions', () => {
     ).toEqual([-80.7, -5.7, -80.6, -5.6]);
   });
 });
+
+it('rejects closed rings with no surface and polygons with no rings', () => {
+  const degenerate = withRing([
+    [-80, -5],
+    [-80, -5],
+    [-80, -5],
+    [-80, -5],
+  ]);
+  const empty = { ...base, geometry: { type: 'Polygon' as const, coordinates: [] } };
+  const checked = checkConcessions([degenerate, empty]);
+  expect(checked.valid).toHaveLength(0);
+  expect(checked.invalid).toHaveLength(2);
+});

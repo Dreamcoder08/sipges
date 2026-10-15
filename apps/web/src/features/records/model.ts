@@ -115,10 +115,14 @@ export const recordPayload = (
     const before = latest?.[key];
     if (INTERNAL_KEYS.has(key) || !isScalar(before) || displayValue(before) === raw) continue;
     const value = raw.trim();
-    payload[key] =
-      typeof before === 'number' && value !== '' && Number.isFinite(Number(value))
-        ? Number(value)
-        : value;
+    if (typeof before === 'boolean') {
+      if (!['true', 'false'].includes(value)) throw new Error(`Revise ${key}: use true o false.`);
+      payload[key] = value === 'true';
+    } else if (typeof before === 'number') {
+      if (!value || !Number.isFinite(Number(value)))
+        throw new Error(`Revise ${key}: use un número.`);
+      payload[key] = Number(value);
+    } else payload[key] = value;
   }
   return payload;
 };

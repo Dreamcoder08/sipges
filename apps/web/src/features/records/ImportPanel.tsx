@@ -72,7 +72,12 @@ export const ImportPanel = ({
       }),
     onSuccess: async (result) => {
       setReport(result);
-      if (result.applied) await client.invalidateQueries({ queryKey: ['records', scope] });
+      if (result.applied)
+        await Promise.all(
+          ['records', 'dashboard', 'indicators', 'analysis', 'operations'].map((key) =>
+            client.invalidateQueries({ queryKey: [key, scope] }),
+          ),
+        );
     },
   });
 

@@ -132,7 +132,19 @@ export const RecordEditor = ({
             ejemplo, columnas de una matriz importada). Se conservan al guardar.
           </p>
           {others.map((field, index) =>
-            field.editable ? (
+            field.editable && typeof field.value === 'string' ? (
+              <div className={styles.field} key={field.key}>
+                <label htmlFor={`${prefix}-extra-${index}`}>{field.key}</label>
+                <textarea
+                  id={`${prefix}-extra-${index}`}
+                  rows={3}
+                  value={extras[field.key] ?? ''}
+                  onChange={(event) =>
+                    setExtras((current) => ({ ...current, [field.key]: event.target.value }))
+                  }
+                />
+              </div>
+            ) : field.editable ? (
               <Field
                 key={field.key}
                 id={`${prefix}-extra-${index}`}

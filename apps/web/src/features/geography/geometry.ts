@@ -4,7 +4,12 @@ import type { Extent } from './BaseMap.tsx';
 type Concession = ProjectCoordinates['concessions'][number];
 
 /** Why a polygon cannot be drawn as stored; each reason is shown to the reader. */
-export type GeometryProblem = 'coordenadas no numéricas' | 'fuera de WGS 84' | 'anillo abierto';
+export type GeometryProblem =
+  | 'coordenadas no numéricas'
+  | 'fuera de WGS 84'
+  | 'anillo abierto'
+  | 'anillo sin superficie'
+  | 'sin anillos';
 
 const ringProblem = (ring: readonly (readonly number[])[]): GeometryProblem | null => {
   if (ring.some((point) => point.length < 2 || !point.every(Number.isFinite)))
@@ -13,6 +18,13 @@ const ringProblem = (ring: readonly (readonly number[])[]): GeometryProblem | nu
     return 'fuera de WGS 84';
   const [first, last] = [ring[0], ring.at(-1)];
   if (!first || !last || first[0] !== last[0] || first[1] !== last[1]) return 'anillo abierto';
+  // Subtract the first vertex before computing area to avoid cancellation in lon/lat.
+  const [originX = 0, originY = 0] = first;
+  const area = ring.slice(1).reduce((sum, [x = 0, y = 0], index) => {
+    const [px = 0, py = 0] = ring[index] ?? [];
+    return sum + (px - originX) * (y - originY) - (x - originX) * (py - originY);
+  }, 0);
+  if (ring.length < 4 || area === 0) return 'anillo sin superficie';
   return null;
 };
 
@@ -24,7 +36,9 @@ export const checkConcessions = (concessions: readonly Concession[]) => {
   const valid: Concession[] = [];
   const invalid: { code: string; name: string; problem: GeometryProblem }[] = [];
   for (const concession of concessions) {
-    const problem = concession.geometry.coordinates.map(ringProblem).find(Boolean) ?? null;
+    const problem = concession.geometry.coordinates.length
+      ? (concession.geometry.coordinates.map(ringProblem).find(Boolean) ?? null)
+      : 'sin anillos';
     if (problem) invalid.push({ code: concession.code, name: concession.name, problem });
     else valid.push(concession);
   }

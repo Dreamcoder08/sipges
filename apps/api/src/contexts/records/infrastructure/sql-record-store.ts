@@ -17,14 +17,14 @@ const toRecord = (row: Row): StoredRecord => ({
  * withTenant transaction, so an audit row exists exactly when the change committed.
  */
 export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
-  list: (tenantId, module, { limit, q }) =>
+  list: (tenantId, module, { limit, q, offset = 0 }) =>
     withTenant(sql, tenantId, async (tx) =>
       (
         await tx.query<Row>(
           `SELECT id, payload, updated_at FROM module_records
            WHERE module = $1 AND ($2::text IS NULL OR strpos(lower(id || ' ' || payload::text), lower($2)) > 0)
-           ORDER BY updated_at DESC, id DESC LIMIT $3`,
-          [module, q, limit],
+           ORDER BY updated_at DESC, id DESC LIMIT $3 OFFSET $4`,
+          [module, q, limit, offset],
         )
       ).map(toRecord),
     ),
@@ -97,7 +97,7 @@ export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
         ),
     ),
 
-  importBatch: (tenantId, module, items, note, at) =>
+  importBatch: (tenantId, module, items, note, at, options) =>
     withTenant(sql, tenantId, async (tx) => {
       let created = 0;
       let updated = 0;
@@ -105,15 +105,31 @@ export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
         const [row] = await tx.query<{ inserted: boolean }>(
           `INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at)
            VALUES (current_setting('app.tenant_id', true), $1, $2, $3::jsonb, $4, $4)
-           ON CONFLICT (tenant_id, module, id) DO UPDATE
-             SET payload = module_records.payload || EXCLUDED.payload, updated_at = EXCLUDED.updated_at
+           ON CONFLICT (tenant_id, module, id) ${
+             options?.insertOnly
+               ? 'DO NOTHING'
+               : 'DO UPDATE SET payload = module_records.payload || EXCLUDED.payload, updated_at = EXCLUDED.updated_at'
+           }
            RETURNING (xmax = 0) AS inserted`,
           [module, item.id, JSON.stringify(item.payload), at],
         );
-        if (row?.inserted) created++;
+        if (!row) continue;
+        if (row.inserted) created++;
         else updated++;
       }
-      await appendAudit(tx, { module, recordId: null, ...note, at });
+      if (created + updated)
+        await appendAudit(tx, {
+          module,
+          recordId: null,
+          ...note,
+          at,
+          detail: options?.insertOnly
+            ? note.detail.replace(
+                /^Base Maestra: \d+ registros nuevos/,
+                `Base Maestra: ${created} registros nuevos`,
+              )
+            : note.detail,
+        });
       return { created, updated };
     }),
 

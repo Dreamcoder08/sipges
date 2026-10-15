@@ -57,7 +57,7 @@ export const EvidencePanel = ({
       setFile(null);
       if (fileInput.current) fileInput.current.value = '';
       await Promise.all([
-        client.invalidateQueries({ queryKey: query.queryKey }),
+        client.invalidateQueries({ queryKey: ['evidence', scope, module] }),
         client.invalidateQueries({ queryKey: ['records', scope] }),
       ]);
     },

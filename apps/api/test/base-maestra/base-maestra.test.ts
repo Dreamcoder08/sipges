@@ -49,7 +49,7 @@ describe('Base Maestra import', () => {
   it('reports unknown modules and malformed rows without record values', () => {
     const plan = planBaseMaestra({ Desconocido: [], Eventos: ['texto', { ID_Evento: {} }] });
     expect(plan.problems).toEqual([
-      'Módulo desconocido: Desconocido',
+      'Módulo desconocido (clave omitida por privacidad)',
       'Eventos[0]: no es un objeto',
       'Eventos[1]: ID_Evento no es un código válido',
     ]);
@@ -118,4 +118,57 @@ describe('Base Maestra import', () => {
     expect(report.applied).toBe(false);
     expect(await sql.query('SELECT 1 FROM module_records')).toHaveLength(0);
   });
+});
+
+it('keeps a concurrent insert intact instead of merging the seed over it', async () => {
+  const { sql, store } = await database();
+  const target = {
+    existing: store.existing,
+    importBatch: async (...args: Parameters<typeof store.importBatch>) => {
+      await store.importBatch(
+        args[0],
+        args[1],
+        [
+          {
+            id: 'D-T1',
+            payload: { ID_Demanda: 'D-T1', Estado: 'Cerrada', Descripcion: 'Registro concurrente' },
+          },
+        ],
+        { action: 'IMPORT', detail: 'Carga concurrente de prueba' },
+        now(),
+      );
+      return store.importBatch(...args);
+    },
+  };
+  const report = await importBaseMaestra(
+    target,
+    'MASCLI/PRJ-T',
+    { Demandas: SEED.Demandas },
+    { apply: true, source: 'seed.json', now },
+  );
+  expect((await store.get('MASCLI/PRJ-T', 'Demandas', 'D-T1'))?.payload.Estado).toBe('Cerrada');
+  expect(report.modules[0]).toMatchObject({ nuevos: 0, ya_existentes: 1 });
+  expect(await sql.query("SELECT 1 FROM audit WHERE detail LIKE 'Base Maestra:%'")).toHaveLength(0);
+});
+it('never echoes unknown keys or duplicate record identifiers in validation output', () => {
+  const secret = 'valor-privado-de-prueba';
+  const plan = planBaseMaestra({
+    [secret]: [],
+    Demandas: [{ ID_Demanda: secret }, { ID_Demanda: secret }],
+  });
+  expect(plan.problems).toHaveLength(2);
+  expect(JSON.stringify(plan.problems)).not.toContain(secret);
+});
+
+it('rejects actual NULs in nested values and keys, but allows a literal escape sequence', () => {
+  for (const payload of [
+    { Descripcion: 'Texto\u0000' },
+    { 'Clave\u0000': 'Texto' },
+    { Detalle: ['Texto\u0000'] },
+  ]) {
+    const plan = planBaseMaestra({ Demandas: [payload] });
+    expect(plan.problems).toEqual(['Demandas[0]: contiene caracteres NUL']);
+    expect(plan.modules[0]?.items).toHaveLength(0);
+  }
+  expect(planBaseMaestra({ Demandas: [{ Descripcion: 'Texto\\u0000' }] }).problems).toEqual([]);
 });

@@ -16,6 +16,9 @@ import { moduleAttachmentsQuery } from './evidence-api.ts';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
+import { ActorMap } from './insights/ActorMap.tsx';
+import { AlertHeatmap } from './insights/AlertHeatmap.tsx';
+import { alertTerritory, MISSING_TERRITORY } from './insights/alert-heatmap.ts';
 import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
@@ -81,6 +84,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [facets, setFacets] = useState<Record<string, string>>({});
+  const [pageIndex, setPageIndex] = useState(0);
   const [panel, setPanel] = useState<Panel>({ kind: 'list' });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
@@ -91,6 +95,17 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
   const heading = useRef<HTMLHeadingElement>(null);
   const client = useQueryClient();
   const rows = useQuery(recordsQuery(module, scope, search));
+  const requiresEvents =
+    module === 'alertas' &&
+    Boolean(
+      rows.data?.some(
+        (row) => row['Evento/Registro_Origen'] && alertTerritory(row) === MISSING_TERRITORY,
+      ),
+    );
+  const referenceEvents = useQuery({
+    ...recordsQuery('eventos', scope, ''),
+    enabled: requiresEvents,
+  });
   const selectedId = panel.kind === 'view' || panel.kind === 'edit' ? panel.id : '';
   const detail = useQuery({ ...recordQuery(module, scope, selectedId), enabled: !!selectedId });
   const definition = MODULES[module];
@@ -105,7 +120,9 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
   useEffect(() => {
     if (panel.kind === 'list') {
       if (returnTo.current)
-        document.querySelector<HTMLElement>(`[data-return="${returnTo.current}"]`)?.focus();
+        [...document.querySelectorAll<HTMLElement>('[data-return]')]
+          .find((element) => element.dataset.return === returnTo.current)
+          ?.focus();
       returnTo.current = null;
       return;
     }
@@ -303,6 +320,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
           onSubmit={(event) => {
             event.preventDefault();
             setSearch(searchInput.trim());
+            setPageIndex(0);
           }}
         >
           <Field
@@ -322,8 +340,24 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                 ({ key }) => !facets[key] || facetValue(row, module, key) === facets[key],
               ),
             );
+            const pageCount = Math.max(1, Math.ceil(visible.length / 50));
+            const currentPage = Math.min(pageIndex, pageCount - 1);
+            const pageRows = visible.slice(currentPage * 50, (currentPage + 1) * 50);
+            const openInsight = (id: string, from?: string) =>
+              openPanel({ kind: 'view', id }, from ?? `insight-${id}`);
             return (
               <>
+                {module === 'actores' ? <ActorMap rows={visible} onOpen={openInsight} /> : null}
+                {module === 'alertas' ? (
+                  <AlertHeatmap
+                    rows={visible}
+                    events={referenceEvents.data ?? []}
+                    loading={requiresEvents && referenceEvents.isPending}
+                    failed={requiresEvents && referenceEvents.isError}
+                    onRetry={() => void referenceEvents.refetch()}
+                    onOpen={openInsight}
+                  />
+                ) : null}
                 {moduleFacets.length ? (
                   <div className={styles.filters}>
                     {moduleFacets.map(({ key, label }) => {
@@ -336,9 +370,10 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                           <select
                             id={`facet-${module}-${key}`}
                             value={facets[key] ?? ''}
-                            onChange={(event) =>
-                              setFacets((current) => ({ ...current, [key]: event.target.value }))
-                            }
+                            onChange={(event) => {
+                              setFacets((current) => ({ ...current, [key]: event.target.value }));
+                              setPageIndex(0);
+                            }}
                           >
                             <option value="">Todos</option>
                             {options.map((option) => (
@@ -353,11 +388,30 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                   </div>
                 ) : null}
                 <p className={styles.muted} role="status">
-                  {visible.length} de {data.length} registro(s) mostrados
-                  {data.length >= 500
-                    ? ' · Se muestran los primeros 500. Refina la búsqueda para encontrar otros registros.'
-                    : ''}
+                  {pageRows.length} de {visible.length} registro(s) mostrados · {data.length} en la
+                  consulta
                 </p>
+                {pageCount > 1 ? (
+                  <nav aria-label="Paginación de registros" className={styles.actions}>
+                    <Button
+                      variant="secondary"
+                      disabled={currentPage === 0}
+                      onClick={() => setPageIndex(currentPage - 1)}
+                    >
+                      Página anterior
+                    </Button>
+                    <p aria-live="polite">
+                      Página {currentPage + 1} de {pageCount}
+                    </p>
+                    <Button
+                      variant="secondary"
+                      disabled={currentPage + 1 >= pageCount}
+                      onClick={() => setPageIndex(currentPage + 1)}
+                    >
+                      Página siguiente
+                    </Button>
+                  </nav>
+                ) : null}
                 {visible.length ? (
                   <div
                     className={styles.tableWrap}
@@ -390,7 +444,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                         </tr>
                       </thead>
                       <tbody>
-                        {visible.map((row) => (
+                        {pageRows.map((row) => (
                           <tr key={row._id}>
                             {definition.columns.map((key) => {
                               const field = definition.fields.find((item) => item.key === key) ?? {
@@ -411,9 +465,11 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                               <td data-label="Archivos">
                                 {files.isPending
                                   ? '…'
-                                  : fileCount(row._id)
-                                    ? `${fileCount(row._id)} archivo(s) · abrir con «Ver»`
-                                    : 'Sin archivo almacenado'}
+                                  : files.isError
+                                    ? 'No se pudieron consultar los archivos'
+                                    : fileCount(row._id)
+                                      ? `${fileCount(row._id)} archivo(s) · abrir con «Ver»`
+                                      : 'Sin archivo almacenado'}
                               </td>
                             ) : null}
                             <td data-label="Acciones">
@@ -477,6 +533,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                           setSearchInput('');
                           setSearch('');
                           setFacets({});
+                          setPageIndex(0);
                         }}
                       >
                         Limpiar búsqueda

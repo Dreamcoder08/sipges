@@ -142,6 +142,11 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
     fields: [
       { key: 'Fecha', label: 'Fecha', type: 'date' },
       { key: 'Causa', label: 'Causa documentada', type: 'textarea', required: true },
+      {
+        ...territory,
+        label: 'Comunidad / territorio',
+        aliases: ['Comunidad', 'Localidad', 'Distrito'],
+      },
       { key: 'Dimension', label: 'Dimensión', options: ['G', 'A', 'D', 'N', 'E', 'I'] },
       {
         key: 'Nivel_Preliminar',
