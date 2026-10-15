@@ -28,13 +28,17 @@ Descarga el HTML y ábrelo en el navegador: GitHub muestra el código del archiv
 
 Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron Turborepo/Biome. Go/Rust solo se incorporaría si un benchmark lo justifica; no forma parte del runtime actual.
 
-## Estado del ODD
+## Estado
 
-T1–T14 están completos en el ODD: API y secciones web en TypeScript, benchmarks, migrador con ensayo sintético y paridad E2E. La integración incorpora los controles de ADR 0009: MFA obligatorio por defecto, comprobación de origen en escrituras y hosts permitidos. El primer acceso permite configurar un autenticador antes de seleccionar proyecto.
+Versión publicada: **v1.0.0** (ver [CHANGELOG](CHANGELOG.md) y las releases de GitHub). La aplicación está desplegada en Vercel desde `main`: <https://mascli-demo-academica-agurtofarfanalbert-8641s-projects.vercel.app>.
 
-Consulta [la verificación de T14](docs/migration/t14-verification.md) y [la consolidación](docs/migration/main-consolidation.md). El runtime usa únicamente TypeScript. La referencia Python congelada está en [`reference/python`](reference/python/README.md) y se conserva para pruebas de paridad y del migrador. La validación científica externa del IRSA sigue siendo un proceso separado.
+- 14 módulos de registros (eventos, actores, directorio, demandas y compromisos, narrativas, fuentes, alertas y acciones, intereses, diálogos, oportunidades, hechos y AARC) con alta, búsqueda, ficha, edición, eliminación, importación CSV, evidencias, vínculos e historial.
+- Dashboard y vista «Hoy», centro gerencial, inteligencia de redes, mapa territorial y ubicación geoespacial con mapa satelital, cronología, análisis situacional, inteligencia estratégica, IRSA, validación, automatizaciones e integración.
+- Tendencia temporal de narrativas por día y categoría.
+- Seguridad: MFA, entrada con Google para cuentas invitadas, comprobación de origen, aislamiento por proyecto con RLS y marcas de clasificación.
+- Solo datos reales del proyecto: el caso académico sintético se retiró de la base y del código (migración 0019).
 
-La primera publicación será una demo académica/personal, con datos sintéticos y una URL gratuita del proveedor. No requiere comprar un dominio de Cloudflare ni migrar datos reales. Estado y configuración en [la guía de despliegue](docs/deployment/readiness.md).
+El trabajo se planifica con ODD en [`odd/tasks`](odd/tasks) y las decisiones en los [ADRs](docs/adr/README.md). El runtime usa únicamente TypeScript; la referencia Python congelada en [`reference/python`](reference/python/README.md) se conserva para pruebas de paridad y del migrador. La validación científica externa del IRSA sigue siendo un proceso separado. Despliegue y configuración en [la guía de despliegue](docs/deployment/readiness.md).
 
 ## Desarrollo local
 
