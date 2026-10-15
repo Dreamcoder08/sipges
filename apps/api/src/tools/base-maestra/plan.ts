@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { RecordIn } from '@mascli/contracts';
 import {
   type ModuleName,
   type Payload,
@@ -78,7 +79,7 @@ export const planBaseMaestra = (seed: unknown): BaseMaestraPlan => {
   for (const [name, rows] of Object.entries(seed)) {
     const module = KNOWN.get(name);
     if (!module) {
-      problems.push(`Módulo desconocido: ${name}`);
+      problems.push('Módulo desconocido (clave omitida por privacidad)');
       continue;
     }
     // Users, roles and projects are administered in the app (app.py seeded demo ones).
@@ -96,7 +97,7 @@ export const planBaseMaestra = (seed: unknown): BaseMaestraPlan => {
         return;
       }
       const payload = row as Payload;
-      if (JSON.stringify(payload).includes('\\u0000')) {
+      if (!RecordIn.safeParse({ payload }).success) {
         problems.push(`${position}: contiene caracteres NUL`);
         return;
       }
@@ -108,7 +109,7 @@ export const planBaseMaestra = (seed: unknown): BaseMaestraPlan => {
       const id = baseMaestraId(module, payload);
       const previous = seen.get(id);
       if (previous !== undefined) {
-        problems.push(`${position}: el código ${id} repite ${name}[${previous}]`);
+        problems.push(`${position}: código duplicado de ${name}[${previous}]`);
         return;
       }
       seen.set(id, index);

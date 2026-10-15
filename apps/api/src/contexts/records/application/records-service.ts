@@ -48,8 +48,16 @@ export const createRecordsService = (deps: {
 }) => {
   const { store, clock, randomHex } = deps;
   return {
-    list: (tenantId: string, module: ModuleName, query: { limit: number; q: string | null }) =>
-      store.list(tenantId, module, { limit: boundLimit(query.limit), q: query.q || null }),
+    list: (
+      tenantId: string,
+      module: ModuleName,
+      query: { limit: number; q: string | null; offset?: number },
+    ) =>
+      store.list(tenantId, module, {
+        limit: boundLimit(query.limit),
+        q: query.q || null,
+        offset: query.offset ?? 0,
+      }),
 
     async get(tenantId: string, module: ModuleName, id: string): Promise<StoredRecord | null> {
       return isLookupableId(id) ? store.get(tenantId, module, id) : null;

@@ -51,8 +51,13 @@ export const recordsRoutes = (records: RecordsService) =>
       if (!module) return c.json(UNKNOWN_MODULE, 404);
       const limit = parseIntQuery(c, 'limit', 200);
       if (!limit.ok) return limit.response;
+      const offset = parseIntQuery(c, 'offset', 0);
+      if (!offset.ok) return offset.response;
+      if (!Number.isSafeInteger(offset.value) || offset.value < 0)
+        return c.json({ detail: 'offset debe ser un entero no negativo' }, 422);
       const rows = await records.list(tenantOf(c), module, {
         limit: limit.value,
+        offset: offset.value,
         q: c.req.query('q') ?? null,
       });
       return c.json(

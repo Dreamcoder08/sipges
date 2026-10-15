@@ -18,12 +18,23 @@ const useWidth = (fallback: number) => {
   const [width, setWidth] = useState(fallback);
   useEffect(() => {
     if (!node || typeof ResizeObserver === 'undefined') return;
+    let frame: number | undefined;
     const observer = new ResizeObserver(([entry]) => {
       const next = Math.round(entry?.contentRect.width ?? 0);
-      if (next > 0) setWidth(next);
+      if (next <= 0) return;
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      // The viewBox changes this observed SVG's auto height. Defer the write until
+      // the next frame so WebKit can finish delivering the current resize batch.
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        setWidth(next);
+      });
     });
     observer.observe(node);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
   }, [node]);
   return [setNode, width] as const;
 };

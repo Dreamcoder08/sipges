@@ -305,3 +305,17 @@ describe('GET /system/audit', () => {
     expect((await call('GET', '/system/audit?limit=x')).status).toBe(422);
   });
 });
+
+it('paginates the tenant list without changing the legacy array contract', async () => {
+  const { create, call } = await setup();
+  for (let n = 0; n < 5; n++) await create('directorio', { Nombre: `Contacto de prueba ${n}` });
+  const first = (await (await call('GET', '/api/directorio?limit=2')).json()) as { _id: string }[];
+  const second = (await (await call('GET', '/api/directorio?limit=2&offset=2')).json()) as {
+    _id: string;
+  }[];
+  expect(first).toHaveLength(2);
+  expect(second).toHaveLength(2);
+  expect(new Set([...first, ...second].map((row) => row._id)).size).toBe(4);
+  expect(await (await call('GET', '/api/directorio?limit=2&offset=4')).json()).toHaveLength(1);
+  expect((await call('GET', '/api/directorio?offset=-1')).status).toBe(422);
+});

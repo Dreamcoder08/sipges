@@ -77,16 +77,6 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
     const size = Math.max(x1 - x0, y1 - y0, 0.001) * 1.4;
     map.focus([(x0 + x1) / 2, (y0 + y1) / 2], homeSpan / size);
   };
-  if (!concessions.length)
-    return (
-      <Card title={data.project_name}>
-        <Alert tone="error">
-          Ninguna concesión tiene una geometría válida para dibujar (
-          {invalid.map((item) => `${item.name}: ${item.problem}`).join('; ')}). Revise el archivo de
-          referencia antes de usar el mapa.
-        </Alert>
-      </Card>
-    );
   const exportCoordinates = () => {
     const rows = [['Concesión', 'Código', 'Anillo', 'Vértice', 'Longitud', 'Latitud', 'CRS']];
     for (const c of data.concessions)
@@ -108,10 +98,47 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
       'coordenadas-referenciales.csv',
     );
   };
+  const [minX, minY, maxX, maxY] = data.bbox;
+  const validBounds =
+    minX < maxX &&
+    minY < maxY &&
+    Math.abs(minX) <= 180 &&
+    Math.abs(maxX) <= 180 &&
+    Math.abs(minY) <= 90 &&
+    Math.abs(maxY) <= 90;
+  if (!concessions.length)
+    return (
+      <Card title={data.project_name}>
+        <Alert tone="error">
+          No hay concesiones con geometría válida para dibujar.{' '}
+          {invalid.map((item) => `${item.name}: ${item.problem}`).join('; ')}.
+        </Alert>
+        <p>{notice}</p>
+        <Button variant="secondary" onClick={exportCoordinates}>
+          Exportar coordenadas CSV
+        </Button>
+        <details>
+          <summary>Coordenadas almacenadas</summary>
+          <pre className={styles.rawCoordinates}>
+            {JSON.stringify(
+              data.concessions.map((c) => ({ code: c.code, geometry: c.geometry })),
+              null,
+              2,
+            )}
+          </pre>
+        </details>
+      </Card>
+    );
   const vertices = selected?.geometry.coordinates.reduce((n, ring) => n + ring.length, 0) ?? 0;
   return (
     <div className={styles.page}>
       <Card title={data.project_name} eyebrow="Concesiones del proyecto">
+        {!validBounds ? (
+          <Alert tone="error">
+            Los límites geográficos del proyecto no son válidos. El encuadre utiliza las geometrías
+            válidas almacenadas.
+          </Alert>
+        ) : null}
         {invalid.length ? (
           <Alert tone="error">
             No se dibujan {invalid.length} concesión(es) con geometría inválida:{' '}

@@ -87,14 +87,14 @@ describe('error 04: «Editar» shows and saves every stored field', () => {
     expect(extra).toHaveValue('Respuesta registrada en la matriz');
     expect(screen.getByText('{"hitos":2}')).toBeVisible();
     await user.clear(extra);
-    await user.type(extra, 'Respuesta actualizada');
+    await user.paste('Respuesta actualizada\nSeguimiento confirmado');
     await user.selectOptions(screen.getByLabelText('Estado'), 'Atendida');
     await user.click(screen.getByRole('button', { name: 'Guardar registro' }));
     expect(await screen.findByText(/Registro D-1 guardado/)).toBeVisible();
     expect(state.payloads[0]).toMatchObject({
       Descripcion: demand.Descripcion,
       Estado: 'Atendida',
-      Respuesta_Empresa: 'Respuesta actualizada',
+      Respuesta_Empresa: 'Respuesta actualizada\nSeguimiento confirmado',
       Seguimiento: { hitos: 2 },
       ID_Demanda: 'D-1',
     });

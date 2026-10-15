@@ -96,12 +96,19 @@ export const AppShell = ({
     const bar = topbar.current;
     if (!bar || typeof ResizeObserver === 'undefined') return;
     const root = document.documentElement.style;
-    const observer = new ResizeObserver(() =>
-      root.setProperty('--topbar-height', `${bar.offsetHeight}px`),
-    );
+    let frame: number | undefined;
+    const observer = new ResizeObserver(() => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      // A root style write can reflow the observed bar and trigger WebKit's resize loop.
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        root.setProperty('--topbar-height', `${bar.offsetHeight}px`);
+      });
+    });
     observer.observe(bar);
     return () => {
       observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
       root.removeProperty('--topbar-height');
     };
   }, [compact]);

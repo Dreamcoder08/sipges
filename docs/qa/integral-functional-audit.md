@@ -1,0 +1,57 @@
+# Auditoría funcional integral de MASCLI
+
+Fecha: 2026-10-15. Base inicial examinada: `5b7b6e3`; revisión integrada con `main` en `f46c816` (PR #46–50). Esta rama corrige defectos adicionales y añade las visualizaciones solicitadas. No ejecuta importaciones, eliminaciones ni migraciones de producción.
+
+## Arquitectura y referencias
+
+React/Vite, TanStack Query/Router y contratos Zod; API Hono con contextos hexagonales y PostgreSQL, RLS por proyecto, versiones y auditoría. Documentos privados en Vercel Blob con asociaciones por proyecto, módulo y registro. Se compararon `reference/python/app.py` y el frontend RC 3.0 del commit `6fa43ca`; el despliegue y los documentos originales no están disponibles.
+
+El mapa de concesiones usa SVG y geometrías WGS 84 de `data/project_coordinates.json`, no WebGL. Se conservan MapFrame, gestos, encuadre, capa satelital y catastro INGEMMET incorporados en main. `/mapa` conserva su cartografía y atribución. Las pruebas aisladas no certifican la disponibilidad de servicios cartográficos externos.
+
+## Diagnóstico, cambios y estado de las siete incidencias
+
+| Incidencia | Causa comprobada / límite | Corrección y archivos | Estado |
+| --- | --- | --- | --- |
+| 01 — Dashboard | Los 20 eventos y 8 demandas abiertas procedían del antiguo generador académico. Main PR #49 retiró ese generador y sus registros. Además existían interpretaciones distintas de estados cerrados, cachés tras CSV y lecturas truncadas a 500. | `analytics/domain/dashboard.ts` normaliza estados cerrados; `ImportPanel.tsx` invalida consultas dependientes; `shared/api/module-records.ts` recorre páginas del endpoint real, compartido por listas y gráficos. El contrato sigue siendo un array con límite por petición. No se restaura el sistema demo retirado por main. | Corregida en los flujos comprobados. |
+| 02 — Demandas desconocidas | La solicitud sobre tránsito y ruido era `DEMO-D-03`, documentada en el historial del generador académico. Su retirada fue realizada por main PR #49, no por esta auditoría. El importador tenía una carrera entre comprobar existencia e insertar con UPSERT. | `records/infrastructure/sql-record-store.ts` admite inserción sin sobrescritura (`ON CONFLICT DO NOTHING`); `tools/base-maestra/run.ts` cuenta y audita inserciones efectivas. `plan.ts` evita publicar valores de registros en errores. No se vuelven a crear solicitudes ni datos demo. | Corregida; no se certifica la veracidad documental de cada registro por su mera presencia en la base. |
+| 03 — Ver | Main ya abre una ficha en lugar del panel situado al final de la tabla. Un identificador con comillas/corchetes aún rompía el selector CSS utilizado para devolver el foco. | `RecordsPage.tsx` compara el valor real de `data-return` sin interpolarlo en CSS. Conserva permisos, carga, error, 404, reintento y navegación de retorno. Las nuevas visualizaciones abren la misma ficha almacenada. | Corregida. |
+| 04 — Editar | Main ya muestra los campos del dominio y columnas adicionales. Los booleanos/números podían convertirse en texto; los campos adicionales de texto usaban input y perdían saltos de línea. | `model.ts` preserva tipos y rechaza conversiones inválidas; `RecordEditor.tsx` usa textarea para texto adicional, conservando contenido multilínea. Objetos y columnas no editadas se preservan. `AuditRegressions.test.tsx` prueba persistencia multilínea. | Corregida para los campos y datos comprobados. |
+| 05 — Informes | El visor y sus asociaciones están implementados. El error de consultar adjuntos podía aparecer como ausencia; una carga no actualizaba el contador. No se localizaron originales del sistema anterior. | `RecordsPage.tsx` muestra el error de consulta; `EvidencePanel.tsx` invalida también adjuntos del módulo. Se mantienen visor, metadatos, descarga, permisos y estados 404/410. No se inventan documentos. | Parcialmente corregida: acceso a archivos disponibles; recuperación de originales bloqueada por su ausencia. |
+| 06 — Pantalla negra GIS | No se reprodujo la causa histórica. Se confirmaron geometrías sin superficie aceptadas y límites inválidos. Las escrituras dentro de ResizeObserver podían generar ciclos en WebKit. | `geometry.ts` rechaza anillos inválidos/degenerados. `GeographyPage.tsx` avisa sobre bbox inválido y encuadra geometrías válidas; si no hay ninguna, muestra error, coordenadas originales y exportación. `Charts.tsx` y `AppShell.tsx` difieren escrituras con requestAnimationFrame cancelable. Se conserva el motor actual y sus capas. | Parcialmente corregida: validación/renderizado cubiertos; causa histórica no confirmada. |
+| 07 — Directorio | La importación autorizada anterior resolvió la falta de Base Maestra. El listado conservaba un límite silencioso de 500 registros sin paginación visible. | API `records-routes.ts`, servicio y almacén admiten offset validado dentro del ámbito RLS. Cliente consulta todas las páginas; `RecordsPage.tsx` muestra 50 filas por página, conservando filtros, búsqueda, columnas, ficha y permisos. | Corregida. |
+
+## Visualizaciones solicitadas el 15 de octubre
+
+Referencias: captura del Centro de alertas, mapa circular de actores y ejemplo de matriz por comunidad suministrados por el usuario. Implementación en `apps/web/src/features/records/insights/` y especificación en `odd/tasks/alert-heatmap-actor-map.md`.
+
+- **Alertas:** matriz de dimensión MASCLI por territorio, conteos y máximo nivel registrado de las alertas activas. Una celda vacía no equivale a riesgo bajo. Los niveles desconocidos y territorios ausentes quedan explícitos. Solo se utiliza territorio propio o un evento enlazado por identificador exacto y sin ambigüedad; nunca se extrae una ubicación de la narrativa. Seleccionar una celda permite abrir sus fichas.
+- **Actores:** sectores según `Tipo_Actor`, cinco anillos ordinales según `Influencia`, color según `Posicion_Proyecto`. Nodos agrupados permiten consultar y abrir todos sus actores; los valores sin clasificación permanecen en la lista. No representa coordenadas, vínculos ni intensidad cuantitativa inexistentes. Se ofrecen controles de teclado y selector alternativo.
+- Ambas vistas usan los registros consultados y filtrados, conservan la tabla, búsqueda, paginación y autorización. No se agregan dependencias ni registros de negocio. El formulario de alertas admite territorio explícito, sin completar registros anteriores automáticamente.
+
+La consulta autenticada de producción del 15 de octubre encontró 9 alertas y 22 actores. Cinco alertas tienen referencia exacta a un evento con territorio; las otras cuatro permanecen sin territorio salvo que se registre uno. Solo se revisaron asociaciones y conteos; no se guardan datos personales en este informe o las capturas de pruebas.
+
+## Informes originales y procedencia histórica
+
+El inventario del 14 de octubre encontró diez evidencias asociadas al caso académico y dos respaldos; no encontró documentos originales adicionales recuperables. Es un resultado histórico anterior a PR #49, no un inventario actual de diez informes reales. No se restauran archivos demo como originales. No aparecieron `mascli.db` ni uploads originales en el espacio de trabajo; las referencias de Fuentes no contienen los binarios requeridos. La recuperación depende de localizar el almacenamiento o respaldo original.
+
+Las antiguas correcciones de filtros demo/real y exclusiones analíticas quedaron sustituidas por la política de main PR #49, que elimina el generador y sus datos. Esta rama conserva esa decisión y no reactiva filtros o seeders retirados.
+
+## Verificación
+
+Regresiones en API, web y navegador cubren los siete errores y ambas visualizaciones. Pruebas de navegador usan datos de prueba aislados, API real y persistencia local; no utilizan llamadas simuladas para certificar los flujos. Los tests de modelos incluyen niveles desconocidos `__proto__`/`constructor`: la regresión falló antes de proteger el diccionario y aprobó después.
+
+- `corepack pnpm verify` con PostgreSQL 17 aislado: aprobado, salida 0. Lint, formato, límites (590 módulos / 1678 dependencias) y tipos aprobados. API: 578 pruebas en 75 archivos, sin omisiones; web: 195 en 46 archivos; kernel: 3; hosting: 6; limpieza de E2E: 3; herramientas: 4. Total del gate: 789 pruebas. La conexión PostgreSQL es explícita y desechable.
+- `pnpm --filter @mascli/web build`: aprobado, con el aviso de Vite sobre el bundle principal superior a 500 kB; no se alteró su umbral.
+- Playwright Chromium, suite completa de escritorio y móvil: 83 aprobadas, una captura opcional omitida por no configurar `MASCLI_E2E_SCREENSHOT_DIR`, dos fallos en selectores de la prueba nueva porque varios IDs de prueba comparten prefijo. Se corrigió a coincidencia exacta; repetición final de los dos flujos aprobada, incluidos axe WCAG 2.1 AA, fichas y foco. Los dos flujos adicionales de caché y paginación posterior a 500 aprobaron dentro de la suite completa. No se describe la primera ejecución como íntegramente verde.
+- Playwright WebKit suplementario: cinco flujos aprobados, incluidos mapas en escritorio/móvil, detalle/edición/visor, concesiones y directorio. Se conservan todas las aserciones de flujo, axe y CSP. Solo Chromium genera capturas: se confirmó en la traza que la operación screenshot de Playwright WebKit inyecta `body {}` para sincronizar animaciones y provoca una violación de la CSP. No se relaja la CSP ni se filtran errores del navegador. La configuración HTTP sin Secure se limita a esa instancia de pruebas; Chromium conserva las pruebas originales de Secure, HttpOnly y SameSite.
+- Referencia Python: 40 pruebas aprobadas, 47 advertencias de deprecación en la referencia congelada. No se modifica el prototipo para cambiar la comparación.
+- Revisión independiente: sin bloqueos pendientes en código, integración, navegación, GIS o preservación de datos; se corrigió el diccionario de niveles heredados antes de cerrar la revisión. No equivale a una certificación de seguridad completa.
+
+Se detectó y corrigió una pérdida real de saltos de línea en campos adicionales, conservando la aserción de contenido completo. Los tests existentes de actores se acotaron a la tabla: el nombre ahora también aparece legítimamente en el mapa. Los intentos paralelos anteriores agotaron presupuestos de pruebas y uno se interrumpió por espacio de contenedores; se conservaron sus logs y solo se retiraron contenedores de esta tarea. La prueba de cabeceras de seguridad aprobó sus 19 casos aislada. `package.json` ejecuta ahora los paquetes de pruebas secuencialmente (`--workspace-concurrency=1`), conservando todas las suites, aserciones y límites: evita competir el arranque de PGlite con 46 entornos jsdom. El presupuesto de la prueba conjunta de accesibilidad es 120 segundos para recorrer todas las pantallas, conservando sus reglas.
+
+## Límites operativos
+
+- No hay escrituras de negocio ni operaciones destructivas en producción durante esta auditoría. La conexión PostgreSQL de pruebas es explícita y desechable, separada de Neon.
+- La paginación no es una exportación con snapshot: identificadores repetidos por cambios concurrentes producen un error visible para reintentar.
+- La prueba de mapa verifica las geometrías existentes y estados de error; no demuestra la causa del incidente histórico ni disponibilidad de proveedores externos.
+- Se conserva el acceso con usuario y contraseña solicitado expresamente. No se alteran roles, permisos, aislamiento de proyectos ni la configuración de MFA.

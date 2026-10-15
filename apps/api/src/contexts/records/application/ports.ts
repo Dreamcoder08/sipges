@@ -26,7 +26,7 @@ export type RecordStore = {
   list(
     tenantId: string,
     module: ModuleName,
-    query: { limit: number; q: string | null },
+    query: { limit: number; q: string | null; offset?: number },
   ): Promise<StoredRecord[]>;
   get(tenantId: string, module: ModuleName, id: string): Promise<StoredRecord | null>;
   /** Every version of one record (also after its deletion), oldest first. */
@@ -64,6 +64,7 @@ export type RecordStore = {
     items: readonly { id: string; payload: Payload }[],
     note: AuditNote,
     at: Date,
+    options?: { insertOnly: boolean },
   ): Promise<{ created: number; updated: number }>;
   /** false when missing (nothing audited). */
   remove(

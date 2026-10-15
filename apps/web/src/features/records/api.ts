@@ -10,6 +10,7 @@ import {
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { isApiError, requestJson } from '../../shared/api/client.ts';
+import { fetchModuleRecords } from '../../shared/api/module-records.ts';
 import { recordPayload } from './model.ts';
 import type { RecordModule } from './modules.ts';
 
@@ -18,12 +19,7 @@ const recordPath = (module: RecordModule, id?: string) =>
 export const recordsQuery = (module: RecordModule, scope: string, search: string) =>
   queryOptions({
     queryKey: ['records', scope, module, 'list', search],
-    queryFn: ({ signal }) =>
-      requestJson(
-        `${recordPath(module)}?${new URLSearchParams({ limit: '-1', q: search })}`,
-        z.array(ModuleRecord),
-        { scope, signal },
-      ),
+    queryFn: ({ signal }) => fetchModuleRecords(module, scope, search, signal),
   });
 export const recordQuery = (module: RecordModule, scope: string, id: string) =>
   queryOptions({

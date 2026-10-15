@@ -9,7 +9,7 @@
   "scripts": {
     "build": "pnpm -r run build",
     "typecheck": "pnpm -r run typecheck",
-    "test": "pnpm -r run test && pnpm test:tooling",
+    "test": "pnpm -r --workspace-concurrency=1 run test && pnpm test:tooling",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "boundaries": "node scripts/check-boundaries.mjs",

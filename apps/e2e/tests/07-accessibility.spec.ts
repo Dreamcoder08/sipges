@@ -16,6 +16,8 @@ const expectNoViolations = async (page: Page, where: string) => {
 };
 
 test('sign-in and every screen pass the automated WCAG 2.1 AA checks', async ({ page, admin }) => {
+  // One case runs axe on every screen; keep the full checks under a bounded two-minute budget.
+  test.setTimeout(120_000);
   await page.goto('/login');
   await expectNoViolations(page, '/login');
   const settled = watchNetwork(page);

@@ -30,7 +30,7 @@ describe('territorial records', () => {
     async (module, field, value) => {
       installRecordsApi({ [`DEMO/PRJ-DEMO/${module}`]: [{ _id: 'R-1', [field]: value }] });
       open(module);
-      expect(await screen.findByText(value)).toBeVisible();
+      expect(within(await screen.findByRole('table')).getByText(value)).toBeVisible();
       await userEvent.setup().click(screen.getByRole('button', { name: 'Nuevo registro' }));
       expect(screen.getByRole('button', { name: 'Guardar registro' })).toBeVisible();
       expect(screen.queryByText('En migración')).toBeNull();
@@ -78,7 +78,7 @@ describe('territorial records', () => {
     await user.clear(screen.getByLabelText('Nombre del actor u organización'));
     await user.type(screen.getByLabelText('Nombre del actor u organización'), 'Actor actualizado');
     await user.click(screen.getByRole('button', { name: 'Guardar registro' }));
-    expect(await screen.findByText('Actor actualizado')).toBeVisible();
+    expect(within(await screen.findByRole('table')).getByText('Actor actualizado')).toBeVisible();
     expect(state.payloads[0]).toMatchObject({
       ID_Actor: 'A-1',
       Extra: { tags: [1, 2] },

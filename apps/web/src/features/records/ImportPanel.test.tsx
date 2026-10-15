@@ -79,3 +79,40 @@ it('shows rejected rows from a refused batch', async () => {
   expect(await screen.findByText('Fila 2: Duplicado')).toBeVisible();
   expect(screen.getByRole('button', { name: 'Importar' })).toBeDisabled();
 });
+
+it('invalidates dashboard and analytical results after applying, but not after a dry run', async () => {
+  server.use(
+    http.post('/system/import/actores', async ({ request }) => {
+      const body = (await request.json()) as { dry_run: boolean };
+      return HttpResponse.json({ applied: !body.dry_run, created: 1, updated: 0, problems: [] });
+    }),
+  );
+  const client = new QueryClient();
+  const keys = [
+    ['dashboard', 'A/B', 'summary'],
+    ['indicators', 'A/B'],
+    ['analysis', 'A/B'],
+    ['operations', 'A/B'],
+  ] as const;
+  for (const key of keys) client.setQueryData(key, { count: 0 });
+  client.setQueryData(['dashboard', 'OTHER', 'summary'], { count: 9 });
+  render(
+    <QueryClientProvider client={client}>
+      <ImportPanel module="actores" scope="A/B" onClose={() => undefined} />
+    </QueryClientProvider>,
+  );
+  const user = userEvent.setup();
+  await user.upload(
+    screen.getByLabelText(/Archivo CSV/),
+    new File(['Tipo_Actor\nComunal\n'], 'a.csv', { type: 'text/csv' }),
+  );
+  await user.click(await screen.findByRole('button', { name: 'Revisar importación' }));
+  await screen.findByText(/Listo para importar/);
+  expect(client.getQueryState(keys[0])?.isInvalidated).toBe(false);
+  await user.click(screen.getByRole('button', { name: 'Importar' }));
+  await screen.findByText(/Importación completada/);
+  await waitFor(() =>
+    expect(keys.every((key) => client.getQueryState(key)?.isInvalidated)).toBe(true),
+  );
+  expect(client.getQueryState(['dashboard', 'OTHER', 'summary'])?.isInvalidated).toBe(false);
+});

@@ -1,11 +1,10 @@
 import { DashboardResponse, IrsaSummary, ModelStatus } from '@mascli/contracts';
 import { queryOptions } from '@tanstack/react-query';
-import { z } from 'zod';
+import { fetchModuleRecords } from '../../shared/api/module-records.ts';
 import { requestJson } from '../../shared/api/client.ts';
 
 /** A module record as `/api/{module}` lists it: free-form payload plus `_id`. */
-const ModuleRecord = z.looseObject({ _id: z.string() });
-export type ModuleRecord = z.infer<typeof ModuleRecord>;
+export type { ModuleRecord } from '@mascli/contracts';
 
 export const dashboardQuery = (scope: string) =>
   queryOptions({
@@ -26,10 +25,9 @@ export const modelStatusQuery = (scope: string) =>
     staleTime: Infinity,
   });
 
-/** Every record of a module the API returns (at most 500, its upper bound). */
+/** Every scoped record, retrieved through bounded API pages. */
 export const moduleRecordsQuery = (slug: 'alertas' | 'eventos', scope: string) =>
   queryOptions({
     queryKey: ['records', scope, slug, 'all'],
-    queryFn: ({ signal }) =>
-      requestJson(`/api/${slug}?limit=-1`, z.array(ModuleRecord), { scope, signal }),
+    queryFn: ({ signal }) => fetchModuleRecords(slug, scope, '', signal),
   });
