@@ -33,7 +33,7 @@ Verificación local del 15 de octubre de 2026:
 | --- | --- |
 | `pnpm verify`, API | 586 pruebas / 77 archivos aprobados, con conexión PostgreSQL de prueba explícita |
 | Web tras corregir la aserción antigua de compromisos | 211 pruebas / 50 archivos aprobados |
-| Kernel / hosting / limpieza E2E / herramientas | 8 / 6 / 3 / 4 aprobadas |
+| Kernel / hosting / soporte E2E / herramientas | 8 / 6 / 9 / 4 aprobadas |
 | Lint, formato, límites y tipos de todos los paquetes | Aprobados; 604 módulos, 1725 dependencias |
 | `pnpm --filter @mascli/hosting build` | Aprobado; incluye el build web |
 | Suite completa Chromium, Playwright 1.56.1 | 87 aprobadas; 1 captura opcional preexistente omitida |
@@ -44,3 +44,5 @@ Verificación local del 15 de octubre de 2026:
 La primera suite web detectó una aserción ambigua porque el compromiso se muestra tanto en el seguimiento como en la tabla. La aserción consulta ahora explícitamente la tabla, conservando la comprobación de su fila; la suite completa se ejecutó de nuevo con 211/211. Después de revisar capturas se completaron las etiquetas de las tablas móviles y se volvieron a comprobar los 10 casos afectados, tipos, lint y build. El build conserva un aviso de tamaño del bundle principal mayor de 500 kB, sin error de compilación.
 
 Las pruebas de archivos emplean documentos de prueba aislados y no sustituyen la recuperación de originales. La suite WebKit anterior (1.56.1) aprobó cinco casos y sufrió dos cierres nativos del renderizador al recargar una ficha; no se encontraron errores JavaScript asociados. Se reprodujo sin subida de archivo y con más memoria compartida. La misma secuencia completa aprueba con Playwright 1.63.0 y su imagen Noble correspondiente. Se actualizó exclusivamente la dependencia de pruebas y se incorporaron esos siete recorridos a CI; no se atribuye el fallo a un defecto de aplicación ni a una incidencia upstream concreta sin evidencia. No se omitieron recargas, permisos, CSP ni comprobaciones del visor.
+
+La primera CI del PR (`362a215`) aprobó las 818 pruebas de paquetes, pero Chromium 1.63.0 dejó tres recorridos pendientes en el monitor de red. Las trazas distinguen precargas abandonadas del documento anterior (sin respuesta terminal) de las respuestas 200 de la página nueva. El monitor descarta solo peticiones anteriores a una navegación principal cuando esta se confirma, conservando la navegación y sus recursos. Se añadieron seis regresiones: reproducción roja del abandono y comprobaciones de recursos actuales, navegación interna, subframes, navegación fallida y SSE. Las nueve pruebas de soporte E2E y los seis recorridos de CSP/pantallas/roles aprobaron tras la corrección; el total de paquetes pasa a 824. Se mantienen los controles independientes de errores del navegador y CSP. La CI definitiva del commit corregido se registra en el PR antes de integrar.
