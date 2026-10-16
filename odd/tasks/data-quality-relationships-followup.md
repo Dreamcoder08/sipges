@@ -18,11 +18,11 @@ Trabajo independiente: trazabilidad de relaciones en contratos/contexto ontológ
 
 ## Tareas
 
-- T1 [ ] — Cola de calidad y corrección persistente desde la ficha. commit: pending
-- T2 [ ] — Fuentes documentales de relaciones, permisos y auditoría. commit: pending
-- T3 [ ] — Seguimiento con fechas válidas y responsables. commit: pending
-- T4 [ ] — Inventario verificable y recorridos de informes existentes. commit: pending
-- T5 [ ] — Pruebas integradas, revisión y PR. commit: pending
+- T1 [x] — Cola de calidad y corrección persistente desde la ficha. commit: see L4
+- T2 [x] — Fuentes documentales de relaciones, permisos y auditoría. commit: see L5
+- T3 [x] — Seguimiento con fechas válidas y responsables. commit: see L6
+- T4 [x] — Inventario verificable y recorridos de informes existentes. commit: see L7
+- T5 [x] — Pruebas integradas, revisión y PR. commit: see L8
 - T6 [ ] — Verificar clasificaciones pendientes con sus fuentes originales, recuperar documentos ausentes y realizar la aceptación con una usuaria real. commit: pending (bloqueo externo; no sustituir por pruebas automatizadas)
 
 ## Registro
@@ -32,5 +32,10 @@ Trabajo independiente: trazabilidad de relaciones en contratos/contexto ontológ
 - L2 (Revisión): revisión independiente corrigió tres interacciones: día UTC frente a America/Lima, fechas nuevas preseleccionadas y resurrección de alias al borrar. Una prueba adicional reproduce una edición de responsable que perdía un plazo ISO; el formulario conserva ahora la fecha efectiva sin interpretar texto libre. El historial privado registra las transiciones de fuente sin exponer sus identificadores mediante la auditoría general.
 
 - L3 (Compatibilidad de navegador): WebKit 1.56.1 cerraba el renderizador nativo en dos recorridos de recarga, incluso sin subir un archivo y con más memoria. La misma secuencia completa aprueba 7/7 con Playwright 1.63.0 y su imagen Noble compatible; se actualiza solo la herramienta de pruebas y CI incorpora estos siete casos, sin omitir acciones ni relajar CSP o permisos.
+- L4 (Calidad y edición): Cola de revisión autorizada con reglas, búsqueda, filtros, paginación y acceso a edición desde ficha 360; guarda conservando campos importados e invalida las consultas. Pruebas web de calidad y ficha, recorrido real Chromium y WebKit de corrección/persistencia y móvil aprobados. No se dedujeron clasificaciones reales. Evidencia y entrega: https://github.com/Dreamcoder08/mascli/pull/52.
+- L5 (Fuente de relaciones): Fuente opcional en contratos, API y editor, validación transaccional del mismo proyecto con RLS, estados disponible/no disponible/sin documentar e historial privado append-only. Pruebas PostgreSQL de lectura restringida y recuperación por operador sin BYPASSRLS aprobadas; recorrido real abre la fuente de la relación. Migración aditiva, sin borrar asociaciones anteriores. Evidencia y entrega: https://github.com/Dreamcoder08/mascli/pull/52.
+- L6 (Seguimiento verificable): Calendario estricto y día America/Lima; fechas opcionales, alias controlados, plazos narrativos conservados y edición sin pérdida. Panel de vencidos/hoy/próximos/sin fecha/sin responsable y filtros reales. Pruebas de regresión de fecha vacía, UTC, borrado y edición de responsable aprobadas, además del recorrido de API y navegador. Evidencia y entrega: https://github.com/Dreamcoder08/mascli/pull/52.
+- L7 (Inventario de informes): Inventario de metadatos accesibles con fuentes y fichas; declara el límite de 500 adjuntos y no equipara metadatos a bytes recuperados. Los recorridos de escritorio/móvil suben y abren un archivo de prueba por API y visor reales. No se localizaron originales recuperables en el workspace; su recuperación permanece en T6, sin sustituciones inventadas. Evidencia y entrega: https://github.com/Dreamcoder08/mascli/pull/52.
+- L8 (Verificación y PR): 818 pruebas de paquetes aprobadas (API 586 con PostgreSQL aislado, web 211, kernel 8, hosting 6, limpieza E2E 3, herramientas 4), lint/formato/límites/tipos y build de hosting aprobados. Suite Chromium completa anterior: 87 aprobadas y una captura opcional preexistente omitida. Playwright 1.63.0: nuevos recorridos Chromium 2/2 y WebKit 7/7; CI incorpora WebKit. Revisión independiente sin hallazgos importantes pendientes. PR publicado; CI remota y comprobación de despliegue se registrarán allí antes de declarar publicación. Aceptación humana pendiente en T6. Evidencia y entrega: https://github.com/Dreamcoder08/mascli/pull/52.
 
 La publicación en producción y su comprobación de lectura se registrarán en el PR de entrega, vinculado desde la evidencia de T5, después de comprobar el commit y el entorno de Vercel. El despliegue no constituye aceptación humana ni recupera por sí solo documentos ausentes.
