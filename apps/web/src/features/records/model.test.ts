@@ -1,5 +1,6 @@
+import { recordDueDate } from '@mascli/kernel';
 import { describe, expect, it } from 'vitest';
-import { isCompactField, safePublicUrl, recordPayload } from './model.ts';
+import { isCompactField, safePublicUrl, recordPayload, initialValues } from './model.ts';
 import { MODULES } from './modules.ts';
 
 describe('isCompactField', () => {
@@ -42,4 +43,26 @@ it('refuses invalid boolean and numeric edits without replacing their stored val
     );
   expect(() => edit(true, 'quizás')).toThrow(/Extra/);
   expect(() => edit(12, 'no numérico')).toThrow(/Extra/);
+});
+
+it('does not invent a deadline or influence for a new record', () => {
+  expect(initialValues('acciones').Fecha_Vencimiento).toBe('');
+  expect(initialValues('compromisos').Fecha_Vencimiento).toBe('');
+  expect(initialValues('actores').Influencia).toBe('');
+});
+
+it('preserves a date-only original deadline when saving a different field', () => {
+  const original = {
+    _id: 'C-DATE',
+    Descripcion: 'Compromiso de prueba',
+    Plazo: '2020-01-02',
+    Responsable: 'Anterior',
+  };
+  const values = {
+    ...initialValues('compromisos', original),
+    Responsable: 'Responsable actualizado',
+  };
+  const saved = recordPayload('compromisos', values, 'PRJ-TEST', 'Proyecto', original);
+  expect(recordDueDate(saved)).toBe('2020-01-02');
+  expect(saved.Plazo).toBe('2020-01-02');
 });

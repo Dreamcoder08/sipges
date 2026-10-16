@@ -1,3 +1,4 @@
+import { limaToday } from '@mascli/kernel';
 import type { Scope } from '../../tenancy/application/index.ts';
 import { commitmentsOf, managementCsv, managementOverview } from '../domain/index.ts';
 import type { Clock, ManagementSources } from './ports.ts';
@@ -15,7 +16,7 @@ export const createManagementService = (deps: { sources: ManagementSources; cloc
     return managementOverview({
       projectId: scope.projectId,
       generatedAt: `${now.toISOString().slice(0, 19)}Z`,
-      today: now.toISOString().slice(0, 10),
+      today: limaToday(now),
       alerts,
       actions,
       commitments: commitmentsOf(records, scope.projectId),

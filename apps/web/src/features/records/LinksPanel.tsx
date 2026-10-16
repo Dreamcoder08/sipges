@@ -9,7 +9,13 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { recordsQuery } from './api.ts';
 
 import { MODULES, type RecordModule } from './modules.ts';
-import { catalogQuery, createLink, deleteLink, linksQuery } from './ontology-api.ts';
+import {
+  catalogQuery,
+  createLink,
+  deleteLink,
+  linksQuery,
+  setLinkEvidence,
+} from './ontology-api.ts';
 import styles from './Records.module.css';
 
 type LinkOption = {
@@ -56,6 +62,73 @@ export const linkOptions = (catalog: OntologyCatalog, module: string): LinkOptio
 const errorText = (error: unknown) =>
   isApiError(error) ? error.detail : 'No se pudo completar la operación.';
 
+const EvidenceSelect = ({
+  value,
+  onChange,
+  scope,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  scope: string;
+  label: string;
+}) => {
+  const fieldId = useId();
+  const sources = useQuery(recordsQuery('fuentes', scope, ''));
+  return (
+    <>
+      {sources.error ? <Alert tone="error">{errorText(sources.error)}</Alert> : null}
+      <label htmlFor={fieldId}>{label}</label>
+      <select
+        id={fieldId}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={sources.isPending || sources.isError}
+      >
+        <option value="">Sin fuente documentada</option>
+        {(sources.data ?? []).map((source) => (
+          <option key={source._id} value={source._id}>
+            {String(source[MODULES.fuentes.titleField] ?? '') || source._id} ({source._id})
+          </option>
+        ))}
+      </select>
+    </>
+  );
+};
+
+const EvidenceEditor = ({ link, scope }: { link: RecordLinks['links'][number]; scope: string }) => {
+  const client = useQueryClient();
+  const [sourceId, setSourceId] = useState(link.edge.evidence?.id ?? '');
+  const save = useMutation({
+    mutationFn: () =>
+      setLinkEvidence(scope, link.edge.id as number, {
+        evidence: sourceId ? { module: 'fuentes', id: sourceId } : null,
+      }),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['records', scope] }),
+  });
+  return (
+    <form
+      aria-label={`Evidencia del vínculo con ${link.other.title}`}
+      onSubmit={(event) => {
+        event.preventDefault();
+        save.mutate();
+      }}
+    >
+      {save.error ? <Alert tone="error">{errorText(save.error)}</Alert> : null}
+      {save.isSuccess ? <Alert tone="success">Fuente de evidencia guardada.</Alert> : null}
+      <EvidenceSelect
+        value={sourceId}
+        onChange={setSourceId}
+        scope={scope}
+        label="Fuente de evidencia"
+      />
+      <Button type="submit" disabled={save.isPending}>
+        Guardar fuente
+      </Button>
+    </form>
+  );
+};
+
 const LinkForm = ({
   module,
   id,
@@ -77,6 +150,7 @@ const LinkForm = ({
     targetModule && option?.modules.includes(targetModule) ? targetModule : option?.modules[0];
   const [targetId, setTargetId] = useState('');
   const [note, setNote] = useState('');
+  const [evidenceId, setEvidenceId] = useState('');
   const candidates = useQuery({
     ...recordsQuery(effectiveModule ?? 'actores', scope, ''),
     enabled: effectiveModule !== undefined,
@@ -91,11 +165,13 @@ const LinkForm = ({
         source: option.direction === 'out' ? self : other,
         target: option.direction === 'out' ? other : self,
         note,
+        ...(evidenceId ? { evidence: { module: 'fuentes' as const, id: evidenceId } } : {}),
       });
     },
     onSuccess: async () => {
       setTargetId('');
       setNote('');
+      setEvidenceId('');
       await client.invalidateQueries({ queryKey: ['records', scope] });
     },
   });
@@ -162,6 +238,13 @@ const LinkForm = ({
         maxLength={500}
         onChange={(event) => setNote(event.target.value)}
       />
+      <EvidenceSelect
+        value={evidenceId}
+        onChange={setEvidenceId}
+        scope={scope}
+        label="Fuente de evidencia (opcional)"
+      />
+      {candidates.error ? <Alert tone="error">{errorText(candidates.error)}</Alert> : null}
       <Button type="submit" disabled={!targetId || save.isPending}>
         Vincular
       </Button>
@@ -173,11 +256,13 @@ const LinkItem = ({
   link,
   writable,
   pending,
+  scope,
   onDelete,
 }: {
   link: RecordLinks['links'][number];
   writable: boolean;
   pending: boolean;
+  scope: string;
   onDelete: (id: number) => void;
 }) => (
   <li>
@@ -192,6 +277,23 @@ const LinkItem = ({
         {link.edge.note ? ` · ${link.edge.note}` : ''}
       </small>
     </div>
+    <p>
+      {link.edge.evidence_status === 'available' && link.edge.evidence ? (
+        <>
+          Fuente de evidencia:{' '}
+          <InternalLink href={objectHref(link.edge.evidence.module, link.edge.evidence.id)}>
+            {link.edge.evidence.title}
+          </InternalLink>
+        </>
+      ) : link.edge.evidence_status === 'unavailable' ? (
+        'Fuente no disponible · vínculo sin verificar'
+      ) : (
+        'Sin fuente documentada · vínculo sin verificar'
+      )}
+    </p>
+    {writable && !link.edge.inferred && link.edge.id !== null ? (
+      <EvidenceEditor link={link} scope={scope} />
+    ) : null}
     {writable && link.edge.id !== null ? (
       <Button
         variant="ghost"
@@ -228,16 +330,18 @@ export const LinksPanel = ({
     <section className={styles.evidence} aria-labelledby={`links-${id}`}>
       <h4 id={`links-${id}`}>Vínculos</h4>
       {remove.error ? <Alert tone="error">{errorText(remove.error)}</Alert> : null}
+      {catalog.error ? <Alert tone="error">{errorText(catalog.error)}</Alert> : null}
       <QueryState query={links} label="los vínculos">
         {(data) =>
           data.links.length ? (
             <ul className={styles.attachments}>
               {data.links.map((link) => (
                 <LinkItem
-                  key={`${link.edge.link_type}/${link.edge.source.module}/${link.edge.source.id}/${link.edge.target.module}/${link.edge.target.id}`}
+                  key={`${scope}/${link.edge.link_type}/${link.edge.source.module}/${link.edge.source.id}/${link.edge.target.module}/${link.edge.target.id}`}
                   link={link}
                   writable={writable}
                   pending={remove.isPending}
+                  scope={scope}
                   onDelete={(linkId) => remove.mutate(linkId)}
                 />
               ))}

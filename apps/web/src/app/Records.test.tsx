@@ -130,7 +130,10 @@ describe('territorial records', () => {
     });
     open('demandas');
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Compromisos' }));
-    expect(await screen.findByText('Compromiso sintético')).toBeVisible();
+    const table = await screen.findByRole('table', {
+      name: 'Registros de compromisos del proyecto activo',
+    });
+    expect(within(table).getByText('Compromiso sintético')).toBeVisible();
   });
 
   it('shows records as text and hides writes for read-only users', async () => {

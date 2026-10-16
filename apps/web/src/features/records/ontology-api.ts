@@ -5,6 +5,7 @@ import {
   type ProposalDecisionIn,
   LinkCreated,
   type LinkIn,
+  type LinkEvidenceIn,
   type MarkingIn,
   OkResponse,
   OntologyCatalog,
@@ -41,6 +42,13 @@ export const graphQuery = (module: string, id: string, scope: string, depth: num
 
 export const createLink = (scope: string, link: LinkIn) =>
   requestJson('/system/links', LinkCreated, { method: 'POST', scope, body: { json: link } });
+
+export const setLinkEvidence = (scope: string, id: number, body: LinkEvidenceIn) =>
+  requestJson(`/system/links/${id}/evidence`, OkResponse, {
+    method: 'PUT',
+    scope,
+    body: { json: body },
+  });
 
 export const deleteLink = (scope: string, id: number) =>
   requestJson(`/system/links/${id}`, OkResponse, { method: 'DELETE', scope });

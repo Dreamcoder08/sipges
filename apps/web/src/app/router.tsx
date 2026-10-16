@@ -52,6 +52,9 @@ import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
 );
+const QualityPage = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.QualityPage })),
+);
 const ObjectPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.ObjectPage })),
 );
@@ -390,6 +393,7 @@ const StrategicPage = (context: FeatureContext) => (
   />
 );
 const featurePages = {
+  '/calidad': QualityPage,
   '/gerencia': ManagementPage,
   '/inteligencia-redes': IntelligencePage,
   '/alertas': AlertsPage,
@@ -423,7 +427,7 @@ const objectRoute = createRoute({
   component: function ObjectRoute() {
     const context = useFeatureContext();
     const { module, id } = objectRoute.useParams();
-    return <ObjectPage module={module} id={id} scope={context.scope} role={context.role} />;
+    return <ObjectPage module={module} id={id} {...context} />;
   },
 });
 

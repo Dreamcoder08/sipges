@@ -2,6 +2,7 @@ import {
   type LinkCreated,
   type LinkEdge,
   LinkIn,
+  LinkEvidenceIn,
   MarkingIn,
   type ObjectSummary as ObjectSummaryOut,
   type OntologyCatalog,
@@ -40,17 +41,20 @@ export const summaryOut = (summary: ObjectSummary): ObjectSummaryOut => ({
   fields: { ...summary.fields },
 });
 
-const edgeOut = (edge: Edge): LinkEdge => ({
-  id: edge.id,
-  link_type: edge.linkType,
-  source: { module: edge.source.slug, id: edge.source.id },
-  target: { module: edge.target.slug, id: edge.target.id },
-  inferred: edge.inferred,
-  via: edge.via,
-  note: edge.note,
-  created_by: edge.createdBy,
-  created_at: edge.createdAt ? isoSeconds(edge.createdAt) : null,
-});
+const edgeOut = (edge: Edge) =>
+  ({
+    id: edge.id,
+    link_type: edge.linkType,
+    source: { module: edge.source.slug, id: edge.source.id },
+    target: { module: edge.target.slug, id: edge.target.id },
+    inferred: edge.inferred,
+    via: edge.via,
+    note: edge.note,
+    created_by: edge.createdBy,
+    created_at: edge.createdAt ? isoSeconds(edge.createdAt) : null,
+    evidence: edge.evidence ? summaryOut(edge.evidence) : null,
+    evidence_status: edge.evidenceStatus ?? 'undocumented',
+  }) satisfies LinkEdge;
 
 const recordQuery = (c: Context<AppEnv>) => ({
   module: c.req.query('module') ?? '',
@@ -147,6 +151,7 @@ export const ontologyRoutes = (ontology: OntologyService) =>
           source: { slug: body.value.source.module, id: body.value.source.id },
           target: { slug: body.value.target.module, id: body.value.target.id },
           note: body.value.note,
+          evidence: body.value.evidence ?? null,
         },
         c.get('identity').username,
       );
@@ -155,6 +160,17 @@ export const ontologyRoutes = (ontology: OntologyService) =>
         return c.json({ detail }, status);
       }
       return c.json({ ok: true, id: created.value } satisfies LinkCreated);
+    })
+
+    .put('/system/links/:id/evidence', async (c) => {
+      const body = await parseJson(c, LinkEvidenceIn);
+      if (!body.ok) return body.response;
+      const raw = c.req.param('id');
+      const id = /^\d{1,9}$/.test(raw) ? Number(raw) : null;
+      const updated =
+        id !== null &&
+        (await ontology.setLinkEvidence(tenantOf(c), id, body.value.evidence?.id ?? null));
+      return updated ? c.json({ ok: true }) : c.json(MISSING_RECORD, 404);
     })
 
     .put('/system/marking', async (c) => {

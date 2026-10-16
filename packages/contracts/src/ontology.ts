@@ -46,6 +46,11 @@ export const ObjectSummary = z.object({
 });
 export type ObjectSummary = z.infer<typeof ObjectSummary>;
 
+const EvidenceRef = RecordRef.extend({ module: z.literal('fuentes') });
+
+export const LinkEvidenceIn = z.object({ evidence: EvidenceRef.nullable() });
+export type LinkEvidenceIn = z.infer<typeof LinkEvidenceIn>;
+
 export const LinkEdge = z.object({
   id: z.number().int().nullable(),
   link_type: z.string(),
@@ -56,8 +61,10 @@ export const LinkEdge = z.object({
   note: z.string(),
   created_by: z.string().nullable(),
   created_at: z.string().nullable(),
+  evidence: ObjectSummary.nullable().default(null),
+  evidence_status: z.enum(['available', 'unavailable', 'undocumented']).default('undocumented'),
 });
-export type LinkEdge = z.infer<typeof LinkEdge>;
+export type LinkEdge = z.input<typeof LinkEdge>;
 
 /** GET /system/links?module=&id= */
 export const RecordLinks = z.object({
@@ -79,6 +86,7 @@ export const LinkIn = z.object({
   source: RecordRef,
   target: RecordRef,
   note: z.string().max(500).default(''),
+  evidence: EvidenceRef.nullable().optional(),
 });
 export type LinkIn = z.infer<typeof LinkIn>;
 

@@ -1,3 +1,4 @@
+import { recordDueDate } from '@mascli/kernel';
 import type { ModuleRecord, Role } from '@mascli/contracts';
 import { MODULES, type RecordField, type RecordModule } from './modules.ts';
 
@@ -16,6 +17,12 @@ export const isCompactField = (field: RecordField) =>
 export const fieldValue = (record: ModuleRecord | undefined, field: RecordField) => {
   if (!record)
     return field.initial ?? (field.type === 'date' ? new Date().toISOString().slice(0, 10) : '');
+  // Imported ISO-only Plazo is already an effective deadline. Preserve it when
+  // editing another field; narrative Plazo never becomes a calendar date.
+  if (field.key === 'Fecha_Vencimiento') {
+    const effective = recordDueDate(record);
+    if (effective) return effective;
+  }
   // An explicitly cleared canonical field must not resurrect an imported alias.
   if (Object.hasOwn(record, field.key)) return displayValue(record[field.key]);
   for (const key of field.aliases ?? []) {

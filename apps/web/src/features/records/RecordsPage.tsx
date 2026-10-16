@@ -1,3 +1,4 @@
+import { FollowupPanel } from './followup/FollowupPanel.tsx';
 import type { ModuleRecord, Role } from '@mascli/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
@@ -347,6 +348,9 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
               openPanel({ kind: 'view', id }, from ?? `insight-${id}`);
             return (
               <>
+                {module === 'acciones' || module === 'compromisos' ? (
+                  <FollowupPanel rows={visible} module={module} onOpen={openInsight} />
+                ) : null}
                 {module === 'actores' ? <ActorMap rows={visible} onOpen={openInsight} /> : null}
                 {module === 'alertas' ? (
                   <AlertHeatmap
