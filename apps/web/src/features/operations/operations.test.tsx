@@ -2,10 +2,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { server } from '../../test/server.ts';
 import { IntelligencePage } from './IntelligencePage.tsx';
 import { ManagementPage } from './ManagementPage.tsx';
+vi.mock('./AuthorizedSourcesCard.tsx', () => ({ AuthorizedSourcesCard: () => null }));
 const context = {
   scope: 'DEMO/PRJ-DEMO',
   projectId: 'PRJ-DEMO',
@@ -341,4 +342,36 @@ it('keeps cancelled plans cancelled and requires a note even for an unchanged ca
   expect(screen.getByRole('option', { name: 'Completada' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Guardar avance' })).toBeDisabled();
   expect(screen.getByText('Justifique el cierre o cancelación.')).toBeVisible();
+});
+
+it('opens notification deep links with documented territory and source provenance', async () => {
+  window.history.replaceState({}, '', '/intelligence?alert=DIG-LINK');
+  const linked = {
+    ...alertFixture('DIG-LINK', 'Corroborado'),
+    territory: 'Territorio documentado',
+    source_record: { module: 'Narrativas', id: 'NAR-SYNTHETIC' },
+  };
+  server.use(
+    http.get('*/system/intelligence/territorial-alerts', () => HttpResponse.json([linked])),
+    http.get('*/system/intelligence/territorial-alerts/DIG-LINK', () => HttpResponse.json(linked)),
+    http.get('*/system/intelligence/territorial-summary', () =>
+      HttpResponse.json({
+        version: '2.6',
+        project_id: 'PRJ-DEMO',
+        total: 1,
+        by_status: {},
+        by_priority: {},
+        themes: [],
+        irsa_integration: 'IRSA independiente',
+        caution: 'Revisión humana',
+      }),
+    ),
+  );
+  mount(<IntelligencePage {...context} role="coordinador" />);
+  expect(await screen.findByRole('heading', { name: 'Alerta DIG-LINK' })).toBeVisible();
+  expect(screen.getByText('Territorio: Territorio documentado')).toBeVisible();
+  expect(screen.getByText(/NAR-SYNTHETIC/)).toBeVisible();
+  expect(screen.getByLabelText('Estado de revisión')).toHaveValue('Corroborado');
+  expect(screen.getByLabelText('Territorio documentado')).toBeVisible();
+  window.history.replaceState({}, '', '/');
 });

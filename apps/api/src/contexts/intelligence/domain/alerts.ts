@@ -30,6 +30,8 @@ export type TerritorialAlert = {
   readonly createdAt: Date;
   readonly sourceUrl: string;
   readonly sourceType: string;
+  readonly territory?: string | null;
+  readonly sourceRecord?: { readonly module: 'Narrativas'; readonly id: string } | null;
   readonly excerpt: string;
   readonly sha256: string;
   readonly level: string;

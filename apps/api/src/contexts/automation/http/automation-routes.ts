@@ -56,9 +56,11 @@ const tenantOf = (c: Context<AppEnv>) => formatScope(c.get('scope'));
 const SLUGS: ReadonlyMap<string, string> = new Map(RECORD_MODULES.map((m) => [m.module, m.slug]));
 
 const stepOut = (step: RuleAction): RuleOut['steps'][number] =>
-  step.kind === 'notify'
-    ? { kind: 'notify', title: step.title }
-    : { kind: 'channel', channel_id: step.channelId, title: step.title };
+  step.kind === 'evaluate'
+    ? { kind: 'evaluate', title: step.title, minimum_level: step.minimumLevel }
+    : step.kind === 'notify'
+      ? { kind: 'notify', title: step.title }
+      : { kind: 'channel', channel_id: step.channelId, title: step.title };
 
 const ruleOut = (rule: StoredRule): RuleOut => ({
   id: rule.id,
@@ -109,9 +111,11 @@ const toInput = (body: RuleIn): RuleInput => ({
   actions: body.actions,
   conditions: body.conditions,
   steps: body.steps.map((step) =>
-    step.kind === 'notify'
-      ? { kind: 'notify', title: step.title }
-      : { kind: 'channel', channelId: step.channel_id, title: step.title },
+    step.kind === 'evaluate'
+      ? { kind: 'evaluate', title: step.title, minimumLevel: step.minimum_level }
+      : step.kind === 'notify'
+        ? { kind: 'notify', title: step.title }
+        : { kind: 'channel', channelId: step.channel_id, title: step.title },
   ),
 });
 
@@ -129,14 +133,18 @@ export const bearerMatches = (header: string | undefined, secret: string | undef
 };
 
 /** Rules, channels and runs for administrators; the inbox for every member (ADR 0014). */
-export const automationRoutes = (automation: AutomationService, cronSecret: string | undefined) =>
+export const automationRoutes = (
+  automation: AutomationService,
+  cronSecret: string | undefined,
+  options?: { runCron?: () => Promise<TickReport> },
+) =>
   new Hono<AppEnv>()
     // Vercel Cron calls with GET; other schedulers usually POST.
     .on(['GET', 'POST'], AUTOMATION_CRON_PATH, async (c) => {
       if (!bearerMatches(c.req.header('authorization'), cronSecret)) {
         return c.json({ detail: 'Credencial de cron no válida' }, 401);
       }
-      return c.json((await automation.tick()) satisfies TickReport);
+      return c.json((await (options?.runCron?.() ?? automation.tick())) satisfies TickReport);
     })
 
     .get('/system/automations', async (c) => {
@@ -255,6 +263,9 @@ export const automationRoutes = (automation: AutomationService, cronSecret: stri
           body: n.body,
           module: n.module,
           record_id: n.recordId,
+          ...(n.module === 'InteligenciaDigital' && n.recordId
+            ? { href: `/inteligencia-redes?alert=${encodeURIComponent(n.recordId)}` }
+            : {}),
           link:
             n.module && n.recordId && SLUGS.has(n.module)
               ? { module: SLUGS.get(n.module) ?? '', id: n.recordId }
@@ -280,6 +291,13 @@ export const automationRoutes = (automation: AutomationService, cronSecret: stri
       return c.json({ enabled: key !== null, public_key: key } satisfies PushConfig);
     })
 
+    .get('/system/notifications/push/state', async (c) =>
+      c.json(await automation.pushState(c.get('identity').username)),
+    )
+    .post('/system/notifications/push/test', async (c) => {
+      const result = await automation.testPush(c.get('identity').username);
+      return c.json(result, result.status === 'failed' ? 502 : 200);
+    })
     .post('/system/notifications/push', async (c) => {
       const body = await parseJson(c, PushSubscriptionIn);
       if (!body.ok) return body.response;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PushSender } from '../../src/contexts/automation/application/index.ts';
+import { withTenant } from '../../src/platform/database/tenant-transaction.ts';
 import { createTestApp } from '../support/test-app.ts';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,5 +102,77 @@ describe('device notifications', () => {
     await t.call('POST', '/api/alertas', { payload: { ID_Alerta: 'AL-3' } });
     await t.call('POST', '/system/automations/tick', {});
     expect(pushed.map((p) => p.endpoint.slice(-8))).toEqual(['device-2']);
+  });
+});
+
+describe('own device tests and durable attempts', () => {
+  it('tests only the authenticated user without claiming receipt', async () => {
+    const endpoints: string[] = [];
+    const t = await setup({
+      publicKey: 'BPUBLIC',
+      send: async (s) => {
+        endpoints.push(s.endpoint);
+        return 'sent';
+      },
+    });
+    const reader = await t.account('lector', 'consulta');
+    await t.call('POST', '/system/notifications/push', subscription(1));
+    await t.call('POST', '/system/notifications/push', subscription(2), reader);
+    const result = await t.call('POST', '/system/notifications/push/test', {}, reader);
+    expect(result.status).toBe(200);
+    expect(result.body).toMatchObject({ status: 'accepted', accepted: 1 });
+    expect(endpoints).toEqual([subscription(2).endpoint]);
+    expect(
+      (await t.call('GET', '/system/notifications/push/state', undefined, reader)).body,
+    ).toEqual({ configured: true, subscriptions: 1, receipt_confirmed: false });
+    await t.call(
+      'POST',
+      '/system/notifications/push/unsubscribe',
+      { endpoint: subscription(2).endpoint },
+      reader,
+    );
+    expect((await t.call('POST', '/system/notifications/push/test', {}, reader)).body.status).toBe(
+      'no_subscription',
+    );
+  });
+  it('retries providers, excludes revoked grants, and preserves one notification after a crash replay', async () => {
+    let fail = true;
+    const endpoints: string[] = [];
+    const t = await setup({
+      publicKey: 'BPUBLIC',
+      send: async (s) => {
+        endpoints.push(s.endpoint);
+        if (fail) throw new Error('synthetic unavailable');
+        return 'sent';
+      },
+    });
+    const reader = await t.account('lector', 'consulta');
+    await t.call('POST', '/system/notifications/push', subscription(1));
+    await t.call('POST', '/system/notifications/push', subscription(2), reader);
+    await t.call('POST', '/system/automations/rules', {
+      name: 'retry test',
+      module: 'Alertas',
+      actions: ['CREATE'],
+      steps: [{ kind: 'notify', title: 'synthetic' }],
+    });
+    await t.call('POST', '/api/alertas', { payload: { ID_Alerta: 'AL-RETRY' } });
+    await t.call('POST', '/system/automations/tick', {});
+    expect(endpoints).toHaveLength(2);
+    expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
+    endpoints.length = 0;
+    await t.sql.query('DELETE FROM grants WHERE username=$1', ['lector']);
+    fail = false;
+    t.clock.advance(61);
+    await t.call('POST', '/system/automations/tick', {});
+    expect(endpoints).toEqual([subscription(1).endpoint]);
+    expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
+    await withTenant(t.sql, 'MASCLI/PRJ-SECHURA', async (tx) => {
+      await tx.query("UPDATE automation_runs SET status='pending',next_attempt_at=$1", [
+        t.clock.now(),
+      ]);
+    });
+    await t.call('POST', '/system/automations/tick', {});
+    expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
+    expect(endpoints).toHaveLength(1);
   });
 });

@@ -82,6 +82,12 @@ const errorText = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).replace(/\s+/g, ' ').slice(0, 300);
 
 export const createAutomationService = (deps: {
+  executionBudgetMs?: number;
+  evaluateNarrative?: (
+    tenantId: string,
+    event: AuditEvent,
+    minimumLevel: 'Media' | 'Alta',
+  ) => Promise<{ outcome: 'created' | 'duplicate' | 'ineligible'; alertId?: string }>;
   store: AutomationStore;
   sender: ChannelSender;
   sealer: SecretSealer;
@@ -104,35 +110,71 @@ export const createAutomationService = (deps: {
     return sealed ? (JSON.parse(sealer.open(sealed)) as ChannelConfig) : null;
   };
 
-  /** Best effort: a push failure never fails the run; dropped subscriptions are forgotten. */
-  const pushAll = async (tenantId: string, event: AuditEvent, title: string, body: string) => {
-    const push = deps.push;
-    if (!push?.sender) return;
+  const eventUrl = (event: AuditEvent) => {
+    if (event.module === 'InteligenciaDigital' && event.recordId)
+      return `/inteligencia-redes?alert=${encodeURIComponent(event.recordId)}`;
     const slug = slugs.get(event.module);
-    const url =
-      slug && event.recordId
-        ? `/objeto/${encodeURIComponent(slug)}/${encodeURIComponent(event.recordId)}`
-        : '/';
-    const targets = await push.store.targets(tenantId, event.record?.marking === 'restringido');
-    for (const target of targets) {
-      try {
-        if ((await push.sender.send(target, { title, body, url }, clock.now())) === 'gone')
-          await push.store.forget(target.endpoint);
-      } catch {
-        // Unreachable push service: the in-app notification already exists.
+    return slug && event.recordId
+      ? `/objeto/${encodeURIComponent(slug)}/${encodeURIComponent(event.recordId)}`
+      : '/';
+  };
+  const deliverPush = async (tenantId: string, deadline: number) => {
+    const push = deps.push;
+    if (!push?.sender || !push.store.claim || !push.store.finish) return;
+    for (let count = 0; count < DELIVERY_BATCH && performance.now() < deadline; count++) {
+      const at = clock.now();
+      const deliveries = await push.store.claim(
+        tenantId,
+        at,
+        new Date(at.getTime() + LEASE_SECONDS * 1000),
+      );
+      if (!deliveries.length) break;
+      for (const d of deliveries) {
+        try {
+          const result = await push.sender.send(d.subscription, d.payload, clock.now());
+          if (result === 'gone') await push.store.forget(d.subscription.endpoint);
+          await push.store.finish(
+            tenantId,
+            d.id,
+            result === 'gone' ? 'failed' : 'accepted',
+            result === 'gone' ? 'Suscripción expirada' : '',
+            clock.now(),
+          );
+        } catch (error) {
+          const delay = retryDelayMinutes(d.attempts);
+          await push.store.finish(
+            tenantId,
+            d.id,
+            delay === null ? 'failed' : 'pending',
+            errorText(error),
+            new Date(clock.now().getTime() + (delay ?? 0) * 60000),
+          );
+        }
       }
     }
   };
-
   const execute = async (tenantId: string, run: ClaimedRun): Promise<void> => {
     const { step, event } = run;
     if (!step) throw new Error('La regla ya no tiene esta acción');
     const title = renderTitle(step.title, event);
     const text = describeEvent(event);
+    if (step.kind === 'evaluate') {
+      if (
+        event.module !== 'Narrativas' ||
+        !['CREATE', 'UPDATE'].includes(event.action) ||
+        !event.record ||
+        event.record.marking === 'restringido'
+      )
+        return;
+      if (!deps.evaluateNarrative) throw new Error('Evaluación de narrativas no configurada');
+      await deps.evaluateNarrative(tenantId, event, step.minimumLevel);
+      return;
+    }
     if (step.kind === 'notify') {
-      await store.notify(
+      const notificationId = await store.notify(
         tenantId,
         {
+          runId: run.id,
           title,
           body: text,
           module: event.module,
@@ -142,7 +184,13 @@ export const createAutomationService = (deps: {
         },
         clock.now(),
       );
-      await pushAll(tenantId, event, title, text);
+      await deps.push?.store.enqueue?.(
+        tenantId,
+        notificationId,
+        event.record?.marking === 'restringido',
+        { title, body: text, url: eventUrl(event) },
+        clock.now(),
+      );
       return;
     }
     const config = await openChannel(tenantId, step.channelId);
@@ -157,59 +205,69 @@ export const createAutomationService = (deps: {
     });
   };
 
-  const deliver = async (tenantId: string) => {
-    const now = clock.now();
-    const claimed = await store.claimDue(
-      tenantId,
-      DELIVERY_BATCH,
-      now,
-      new Date(now.getTime() + LEASE_SECONDS * 1000),
-    );
+  const deliver = async (tenantId: string, deadline: number) => {
     let delivered = 0;
     let retrying = 0;
     let failed = 0;
-    for (const run of claimed) {
-      try {
-        await execute(tenantId, run);
-        await store.finishRun(tenantId, run.id, { status: 'done' }, clock.now());
-        delivered++;
-      } catch (error) {
-        const delay = run.step ? retryDelayMinutes(run.attempts) : null;
-        const at = clock.now();
-        await store.finishRun(
-          tenantId,
-          run.id,
-          delay === null
-            ? { status: 'failed', error: errorText(error), retryAt: at }
-            : {
-                status: 'pending',
-                error: errorText(error),
-                retryAt: new Date(at.getTime() + delay * 60_000),
-              },
-          at,
-        );
-        if (delay === null) failed++;
-        else retrying++;
+    for (let count = 0; count < DELIVERY_BATCH && performance.now() < deadline; count++) {
+      const now = clock.now();
+      const claimed = await store.claimDue(
+        tenantId,
+        1,
+        now,
+        new Date(now.getTime() + LEASE_SECONDS * 1000),
+      );
+      if (!claimed.length) break;
+      for (const run of claimed) {
+        try {
+          await execute(tenantId, run);
+          await store.finishRun(tenantId, run.id, { status: 'done' }, clock.now());
+          delivered++;
+        } catch (error) {
+          const delay = run.step ? retryDelayMinutes(run.attempts) : null;
+          const at = clock.now();
+          await store.finishRun(
+            tenantId,
+            run.id,
+            delay === null
+              ? { status: 'failed', error: errorText(error), retryAt: at }
+              : {
+                  status: 'pending',
+                  error: errorText(error),
+                  retryAt: new Date(at.getTime() + delay * 60_000),
+                },
+            at,
+          );
+          if (delay === null) failed++;
+          else retrying++;
+        }
       }
     }
     return { delivered, retrying, failed };
   };
 
-  let ticking: Promise<TickReport> | null = null;
-
-  const tickAll = async (tenantIds: readonly string[]): Promise<TickReport> => {
-    const report = { tenants: 0, scanned: 0, queued: 0, delivered: 0, retrying: 0, failed: 0 };
-    for (const tenantId of tenantIds) {
-      const scan = await store.scan(tenantId, SCAN_BATCH, planRuns, clock.now());
-      const sent = await deliver(tenantId);
-      report.tenants++;
-      report.scanned += scan.scanned;
-      report.queued += scan.queued;
-      report.delivered += sent.delivered;
-      report.retrying += sent.retrying;
-      report.failed += sent.failed;
-    }
-    return report;
+  const ticking = new Map<string, Promise<TickReport>>();
+  const tickTenant = (tenantId: string): Promise<TickReport> => {
+    const existing = ticking.get(tenantId);
+    if (existing) return existing;
+    const deadline = performance.now() + (deps.executionBudgetMs ?? 20000);
+    const task = (async () => {
+      const report = { tenants: 1, scanned: 0, queued: 0, delivered: 0, retrying: 0, failed: 0 };
+      for (let round = 0; round < 3 && performance.now() < deadline; round++) {
+        const scan = await store.scan(tenantId, SCAN_BATCH, planRuns, clock.now());
+        const sent = await deliver(tenantId, deadline);
+        report.scanned += scan.scanned;
+        report.queued += scan.queued;
+        report.delivered += sent.delivered;
+        report.retrying += sent.retrying;
+        report.failed += sent.failed;
+        if (scan.scanned === 0 && sent.delivered === 0) break;
+      }
+      await deliverPush(tenantId, deadline);
+      return report;
+    })().finally(() => ticking.delete(tenantId));
+    ticking.set(tenantId, task);
+    return task;
   };
 
   return {
@@ -284,17 +342,79 @@ export const createAutomationService = (deps: {
      * rules. Overlapping calls share the tick in progress.
      */
     tick(tenantId?: string): Promise<TickReport> {
-      if (ticking) return ticking;
-      ticking = (async () =>
-        tickAll(tenantId ? [tenantId] : await store.activeTenants()))().finally(() => {
-        ticking = null;
-      });
-      return ticking;
+      if (tenantId) return tickTenant(tenantId);
+      return (async () => {
+        const reports = await Promise.all((await store.activeTenants()).map(tickTenant));
+        return reports.reduce(
+          (a, b) => ({
+            tenants: a.tenants + b.tenants,
+            scanned: a.scanned + b.scanned,
+            queued: a.queued + b.queued,
+            delivered: a.delivered + b.delivered,
+            retrying: a.retrying + b.retrying,
+            failed: a.failed + b.failed,
+          }),
+          { tenants: 0, scanned: 0, queued: 0, delivered: 0, retrying: 0, failed: 0 },
+        );
+      })();
     },
 
     /** The VAPID public key browsers subscribe with, or null when push is off. */
     pushKey: (): string | null => deps.push?.sender?.publicKey ?? null,
 
+    async pushState(username: string) {
+      return {
+        configured: Boolean(deps.push?.sender),
+        subscriptions: ((await deps.push?.store.ownTargets?.(username)) ?? []).length,
+        receipt_confirmed: false as const,
+      };
+    },
+    async testPush(
+      username: string,
+    ): Promise<{
+      status: 'accepted' | 'no_subscription' | 'failed';
+      accepted: number;
+      detail: string;
+    }> {
+      const push = deps.push;
+      if (!push?.sender) return { status: 'failed', accepted: 0, detail: 'Push no configurado' };
+      const targets = (await push.store.ownTargets?.(username)) ?? [];
+      if (!targets.length)
+        return {
+          status: 'no_subscription',
+          accepted: 0,
+          detail: 'No hay dispositivos suscritos para tu usuario',
+        };
+      let accepted = 0;
+      let failed = false;
+      for (const target of targets) {
+        try {
+          if (
+            (await push.sender.send(
+              target,
+              {
+                title: 'Prueba de MASCLI',
+                body: 'Prueba solicitada por tu usuario. Confirma la recepción en este dispositivo.',
+                url: '/',
+              },
+              clock.now(),
+            )) === 'gone'
+          ) {
+            await push.store.forget(target.endpoint);
+            failed = true;
+          } else accepted++;
+        } catch {
+          failed = true;
+        }
+      }
+      return {
+        status: failed ? 'failed' : 'accepted',
+        accepted,
+        detail: failed
+          ? 'Uno o más proveedores rechazaron la prueba; revisa tu suscripción'
+          : 'El proveedor aceptó la prueba. La recepción en el dispositivo aún debe confirmarse.',
+      };
+    },
     async subscribePush(
       username: string,
       subscription: PushSubscription,

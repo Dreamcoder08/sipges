@@ -5,6 +5,7 @@ import {
   AlertReviewed,
   AlertState,
   AnalysisMode,
+  TerritorialAlert,
   TerritorialAlerts,
   TerritorialSummary,
   TextAnalysisResponse,
@@ -18,6 +19,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './Operations.module.css';
+import { AuthorizedSourcesCard } from './AuthorizedSourcesCard.tsx';
 export const IntelligencePage = (context: FeatureContext) => {
   const { scope, projectId, role } = context;
   const writable = role !== 'consulta';
@@ -27,9 +29,12 @@ export const IntelligencePage = (context: FeatureContext) => {
   const [mode, setMode] = useState('automatic');
   const [sourceType, setSourceType] = useState('Publicación digital');
   const [analystNote, setAnalystNote] = useState('');
-  const [selected, setSelected] = useState('');
-  const [status, setStatus] = useState('Corroborado');
-  const [note, setNote] = useState('');
+  const [territory, setTerritory] = useState('');
+  const [selected, setSelected] = useState(
+    () => new URLSearchParams(window.location.search).get('alert') ?? '',
+  );
+  const [status, setStatus] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const alertHeading = useReveal(selected);
   const alerts = useQuery({
     queryKey: ['operations', scope, 'alerts'],
@@ -54,6 +59,7 @@ export const IntelligencePage = (context: FeatureContext) => {
     project_id: projectId,
     source_type: sourceType,
     analyst_note: analystNote,
+    territory: territory.trim() || null,
   });
   const refresh = () => client.invalidateQueries({ queryKey: ['operations', scope] });
   const analysis = useMutation({
@@ -78,13 +84,32 @@ export const IntelligencePage = (context: FeatureContext) => {
       requestJson(
         `/system/intelligence/territorial-alerts/${encodeURIComponent(selected)}`,
         AlertReviewed,
-        { scope, method: 'PATCH', body: { json: { status, reviewer_note: note } } },
+        {
+          scope,
+          method: 'PATCH',
+          body: {
+            json: {
+              status: status ?? selectedAlert?.status ?? 'Corroborado',
+              reviewer_note: note ?? selectedAlert?.reviewer_note ?? '',
+            },
+          },
+        },
       ),
     onSuccess: () => refresh(),
   });
   const busy = analysis.isPending || create.isPending || review.isPending;
   const report = analysis.data ?? create.data?.analysis;
-  const selectedAlert = alerts.data?.find((a) => a.id === selected);
+  const linkedAlert = useQuery({
+    queryKey: ['operations', scope, 'alert', selected],
+    enabled: Boolean(selected) && !alerts.data?.some((a) => a.id === selected),
+    queryFn: ({ signal }) =>
+      requestJson(
+        `/system/intelligence/territorial-alerts/${encodeURIComponent(selected)}`,
+        TerritorialAlert,
+        { scope, signal },
+      ),
+  });
+  const selectedAlert = alerts.data?.find((a) => a.id === selected) ?? linkedAlert.data;
   return (
     <div className={styles.stack}>
       <Alert tone="info">
@@ -166,6 +191,19 @@ export const IntelligencePage = (context: FeatureContext) => {
                 </select>
               </label>
               <label>
+                Territorio documentado
+                <input
+                  maxLength={500}
+                  value={territory}
+                  onChange={(e) => setTerritory(e.target.value)}
+                  placeholder="Solo referencia explícita en la evidencia"
+                  disabled={busy}
+                />
+              </label>
+              <p>
+                No se deducen ubicación ni coordenadas del texto. Deje vacío si no está documentado.
+              </p>
+              <label>
                 Nota del analista
                 <textarea
                   maxLength={2000}
@@ -198,7 +236,14 @@ export const IntelligencePage = (context: FeatureContext) => {
         </form>
         {analysis.error && <Alert tone="error">{errorDetail(analysis.error)}</Alert>}
         {create.error && <Alert tone="error">{errorDetail(create.error)}</Alert>}
-        {create.data && <Alert tone="success">Alerta registrada. {create.data.notice}</Alert>}
+        {create.data && (
+          <Alert tone="success">
+            {create.data.outcome === 'duplicate'
+              ? 'Evidencia ya registrada; se conserva la revisión existente.'
+              : 'Alerta registrada.'}{' '}
+            {create.data.notice}
+          </Alert>
+        )}
       </Card>
       {report && (
         <Card title="Resultado orientativo">
@@ -254,6 +299,7 @@ export const IntelligencePage = (context: FeatureContext) => {
           </ul>
         </Card>
       )}
+      <AuthorizedSourcesCard key={scope} context={context} />
       <Card title="Resumen territorial">
         <QueryState query={summary} label="resumen territorial">
           {(data) => (
@@ -338,6 +384,9 @@ export const IntelligencePage = (context: FeatureContext) => {
             </>
           )}
         </QueryState>
+        {selected && linkedAlert.error && !selectedAlert && (
+          <Alert tone="error">{errorDetail(linkedAlert.error)}</Alert>
+        )}
         {selectedAlert && (
           <div className={styles.form}>
             <h4 ref={alertHeading} tabIndex={-1}>
@@ -346,6 +395,13 @@ export const IntelligencePage = (context: FeatureContext) => {
             <p className={styles.fragment}>{selectedAlert.excerpt}</p>
             <p>
               Fuente: {selectedAlert.source_url || 'Sin enlace'} · {selectedAlert.source_type}
+            </p>
+            <p>Territorio: {selectedAlert.territory || 'Sin territorio documentado'}</p>
+            <p>
+              Procedencia:{' '}
+              {selectedAlert.source_record
+                ? `${selectedAlert.source_record.module} · ${selectedAlert.source_record.id}`
+                : 'Ingreso manual de evidencia'}
             </p>
             <p>Nota del analista: {selectedAlert.analyst_note || 'Sin nota'}</p>
             <p>
@@ -369,7 +425,7 @@ export const IntelligencePage = (context: FeatureContext) => {
                 <label>
                   Estado de revisión
                   <select
-                    value={status}
+                    value={status ?? selectedAlert.status}
                     onChange={(e) => setStatus(e.target.value)}
                     disabled={busy}
                   >
@@ -382,7 +438,7 @@ export const IntelligencePage = (context: FeatureContext) => {
                   Nota de revisión humana
                   <textarea
                     maxLength={2000}
-                    value={note}
+                    value={note ?? selectedAlert.reviewer_note ?? ''}
                     onChange={(e) => setNote(e.target.value)}
                     disabled={busy}
                   />

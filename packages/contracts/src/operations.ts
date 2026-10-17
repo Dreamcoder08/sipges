@@ -50,12 +50,15 @@ export const TextAnalysisResponse = z.object({
   verification_status: z.string().optional(),
   source_retrieved: z.literal(false).optional(),
 });
+const SourceRecord = z.object({ module: z.literal('Narrativas'), id: z.string() });
 export const TerritorialAlert = z.object({
   id: z.string(),
   project_id: z.string(),
   created_at: z.string(),
   source_url: z.string(),
   source_type: z.string(),
+  territory: z.string().nullable().optional(),
+  source_record: SourceRecord.nullable().optional(),
   excerpt: z.string(),
   sha256: z.string(),
   level: z.string(),
@@ -82,6 +85,9 @@ export const TerritorialSummary = z.object({
   caution: z.string(),
 });
 export const AlertCreated = z.object({
+  outcome: z.enum(['created', 'duplicate']).optional(),
+  territory: z.string().nullable().optional(),
+  source_record: SourceRecord.nullable().optional(),
   id: z.string(),
   status: AlertState,
   analysis: TextAnalysisResponse,

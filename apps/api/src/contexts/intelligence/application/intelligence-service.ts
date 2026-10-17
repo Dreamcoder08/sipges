@@ -144,38 +144,103 @@ export const createIntelligenceService = (deps: {
     return ok(report);
   };
 
+  const createAlert = async (
+    scope: Scope,
+    input: SemanticInput & {
+      sourceType: string;
+      analystNote: string;
+      territory?: string | null;
+      sourceRecord?: TerritorialAlert['sourceRecord'];
+    },
+  ): Promise<
+    Result<
+      { alert: TerritorialAlert; analysis: SemanticReport; outcome: 'created' | 'duplicate' },
+      AlertCreateError
+    >
+  > => {
+    if (!(SOURCE_TYPES as readonly string[]).includes(input.sourceType))
+      return err({ kind: 'source_type' });
+    const analysis = await semantic(scope, input);
+    if (!analysis.ok) return analysis;
+    const a = analysis.value;
+    const alert = await alerts.create(formatScope(scope), {
+      id: `DIG-${randomHex(12).toUpperCase()}`,
+      projectId: scope.projectId,
+      createdAt: clock.now(),
+      sourceUrl: input.sourceUrl,
+      sourceType: input.sourceType,
+      territory: input.territory?.trim() || null,
+      sourceRecord: input.sourceRecord ?? null,
+      excerpt: codePointSlice(input.text.trim(), 500),
+      sha256: a.evidence.sha256,
+      level: a.orientation.level,
+      score: a.orientation.score,
+      method: a.method,
+      themes: a.topics,
+      signals: a.signals,
+      suggestions: a.suggested_actions,
+      semanticActive: a.semantic.active,
+      analystNote: codePointSlice(input.analystNote, MAX_NOTE_LENGTH),
+    });
+    return ok({ alert, analysis: a, outcome: alert.duplicate ? 'duplicate' : 'created' });
+  };
+
   return {
     classify: classifyRecord,
     analyzeText: analyze,
     semanticAnalyze: semantic,
 
-    async createAlert(
+    createAlert,
+
+    async evaluateNarrative(
       scope: Scope,
-      input: SemanticInput & { sourceType: string; analystNote: string },
-    ): Promise<Result<{ alert: TerritorialAlert; analysis: SemanticReport }, AlertCreateError>> {
-      if (!(SOURCE_TYPES as readonly string[]).includes(input.sourceType))
-        return err({ kind: 'source_type' });
-      const analysis = await semantic(scope, input);
-      if (!analysis.ok) return analysis;
-      const a = analysis.value;
-      const alert = await alerts.create(formatScope(scope), {
-        id: `DIG-${randomHex(12).toUpperCase()}`,
-        projectId: scope.projectId,
-        createdAt: clock.now(),
-        sourceUrl: input.sourceUrl,
-        sourceType: input.sourceType,
-        excerpt: codePointSlice(input.text.trim(), 500),
-        sha256: a.evidence.sha256,
-        level: a.orientation.level,
-        score: a.orientation.score,
-        method: a.method,
-        themes: a.topics,
-        signals: a.signals,
-        suggestions: a.suggested_actions,
-        semanticActive: a.semantic.active,
-        analystNote: codePointSlice(input.analystNote, MAX_NOTE_LENGTH),
+      input: {
+        id: string;
+        payload: Readonly<Record<string, unknown>>;
+        marking: string;
+        minimumLevel?: 'Media' | 'Alta';
+      },
+    ): Promise<{ outcome: 'created' | 'duplicate' | 'ineligible'; alertId?: string }> {
+      // Fail closed: restricted/unknown markings must never enter the broader digital inbox.
+      if (!['publico', 'interno'].includes(input.marking) || !input.id || input.id.length > 200)
+        return { outcome: 'ineligible' };
+      const sourceType = input.payload.Tipo_Fuente ?? 'Publicación digital';
+      if (
+        typeof sourceType !== 'string' ||
+        !(SOURCE_TYPES as readonly string[]).includes(sourceType)
+      )
+        return { outcome: 'ineligible' };
+      const text = typeof input.payload.Descripcion === 'string' ? input.payload.Descripcion : '';
+      const sourceUrl =
+        typeof input.payload.URL_Publicacion === 'string'
+          ? input.payload.URL_Publicacion.trim()
+          : '';
+      const territory =
+        typeof input.payload.Territorio === 'string' ? input.payload.Territorio.trim() : null;
+      if (territory && territory.length > 500) return { outcome: 'ineligible' };
+      const analysis = await semantic(scope, { text, sourceUrl, mode: 'rules' });
+      if (!analysis.ok) return { outcome: 'ineligible' };
+      const level = analysis.value.orientation.level;
+      if (level !== 'Alta' && (input.minimumLevel === 'Alta' || level !== 'Media'))
+        return { outcome: 'ineligible' };
+      const result = await createAlert(scope, {
+        text,
+        sourceUrl,
+        mode: 'rules',
+        sourceType,
+        analystNote: '',
+        territory,
+        sourceRecord: { module: 'Narrativas', id: input.id },
       });
-      return ok({ alert, analysis: a });
+      return result.ok
+        ? { outcome: result.value.outcome, alertId: result.value.alert.id }
+        : { outcome: 'ineligible' };
+    },
+
+    async getAlert(scope: Scope, id: string) {
+      if (!id || id.length > 80) return null;
+      const alert = await alerts.get(formatScope(scope), id);
+      return alert && alert.projectId === scope.projectId ? alert : null;
     },
 
     listAlerts(scope: Scope, limit: number) {

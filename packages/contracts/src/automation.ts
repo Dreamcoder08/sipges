@@ -16,6 +16,11 @@ export const ConditionIn = z.object({
 export type ConditionIn = z.infer<typeof ConditionIn>;
 
 export const RuleStepIn = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('evaluate'),
+    title: Text(200).min(1),
+    minimum_level: z.enum(['Media', 'Alta']).default('Media'),
+  }),
   z.object({ kind: z.literal('notify'), title: Text(200).min(1) }),
   z.object({
     kind: z.literal('channel'),
@@ -130,6 +135,7 @@ export const NotificationOut = z.object({
   module: z.string().nullable(),
   record_id: z.string().nullable(),
   /** The record's 360° view when the notification names a records module. */
+  href: z.string().optional(),
   link: z.object({ module: z.string(), id: z.string() }).nullable(),
   created_at: z.string(),
   read: z.boolean(),
