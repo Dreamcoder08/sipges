@@ -128,11 +128,9 @@ for (const mobile of [false, true]) {
         'Pendiente de verificación',
       );
       await expect(page.getByText(/Última revisión: Sin revisión · Pendiente/)).toBeVisible();
-      const sourceCard = page
-        .locator('section')
-        .filter({
-          has: page.getByRole('heading', { name: 'Fuentes oficiales autorizadas', exact: true }),
-        });
+      const sourceCard = page.locator('section').filter({
+        has: page.getByRole('heading', { name: 'Fuentes oficiales autorizadas', exact: true }),
+      });
       await expect(
         sourceCard.getByRole('checkbox', { name: 'Activar consulta periódica autorizada' }),
       ).not.toBeChecked();

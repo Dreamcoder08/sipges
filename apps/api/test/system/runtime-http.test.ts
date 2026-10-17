@@ -283,3 +283,44 @@ describe('SQL-backed event automation lifecycle', () => {
     });
   });
 });
+
+it('processes an authenticated structured source through a signal and notification and replays without duplicates', async () => {
+  const t = await setup();
+  await t.rules();
+  const createdKey = await t.call('POST', '/system/integrations/api-keys', {
+    name: 'Synthetic structured source',
+    access: 'write',
+    clearance: 'limited',
+  });
+  expect(createdKey.status).toBe(200);
+  const send = () =>
+    t.app.request('/hooks/signals', {
+      method: 'POST',
+      headers: {
+        host: 'localhost',
+        authorization: `Bearer ${String(createdKey.body.token)}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_name: 'Synthetic authorized field report',
+        source_url: 'https://example.org/synthetic/source-hook',
+        external_id: 'SYN-STRUCTURED-1',
+        text: narrative('SYN-HOOK').payload.Descripcion,
+        observed_at: '2026-10-17T12:00:00Z',
+        territory: 'Territorio documentado sintético',
+      }),
+    });
+  const first = await send();
+  expect(first.status).toBe(201);
+  const receipt = (await first.json()) as { ids: string[] };
+  const alerts = await t.call('GET', '/system/intelligence/territorial-alerts');
+  expect(alerts.body).toHaveLength(1);
+  expect((alerts.body as unknown as { source_record: unknown }[])[0]?.source_record).toEqual({
+    module: 'Narrativas',
+    id: receipt.ids[0],
+  });
+  expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
+  const replay = await send();
+  expect(replay.headers.get('Idempotent-Replayed')).toBe('true');
+  expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
+}, 60_000);

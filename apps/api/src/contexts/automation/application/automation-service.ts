@@ -369,9 +369,7 @@ export const createAutomationService = (deps: {
         receipt_confirmed: false as const,
       };
     },
-    async testPush(
-      username: string,
-    ): Promise<{
+    async testPush(username: string): Promise<{
       status: 'accepted' | 'no_subscription' | 'failed';
       accepted: number;
       detail: string;

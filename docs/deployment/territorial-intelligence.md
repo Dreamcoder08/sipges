@@ -45,7 +45,7 @@ Activarlo requiere nota de autorización y revisar búsqueda/territorio; se pued
 narrativas. El ámbito elegido por el operador no es una coordenada calculada. Intervalo mínimo
 entre consultas: 15 minutos; la frecuencia efectiva depende del ejecutor.
 
-POST /hooks/signals acepta fuente, referencia HTTPS, identificador externo, texto y fecha mediante
+POST /hooks/signals acepta fuente, referencia HTTP/HTTPS, identificador externo, texto y fecha mediante
 una clave de integración con permiso de escritura. La URL se conserva y nunca se descarga.
 Los reintentos idempotentes no duplican registros. /hooks/ingest/:module sigue disponible.
 

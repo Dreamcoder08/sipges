@@ -446,9 +446,7 @@ export const buildContainer = async (deps: {
   const worker = <T>(fn: () => Promise<T>) =>
     runWithRequestContext({ requestId: randomUUID(), actor: 'automation', clearance: 'full' }, fn);
   const runtime = createAutomationRuntime({
-    store: createSqlAutomationRuntimeStore(deps.sql, {
-      sourceTenants: authorizedSources.activeTenants,
-    }),
+    store: createSqlAutomationRuntimeStore(deps.sql),
     clock: deps.clock,
     onError: () => log('error', 'automation_processing_failed', {}),
     beforeTick: async (tenantId, source) => {

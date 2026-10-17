@@ -1,17 +1,8 @@
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import type { RuntimeAttempt, RuntimeSource, RuntimeStore } from '../application/index.ts';
-export const createSqlAutomationRuntimeStore = (
-  sql: SqlClient,
-  options: { sourceTenants?: () => Promise<string[]> } = {},
-): RuntimeStore => ({
+export const createSqlAutomationRuntimeStore = (sql: SqlClient): RuntimeStore => ({
   dueTenants: async (limit) => {
-    for (const tenantId of (await options.sourceTenants?.()) ?? []) {
-      await withTenant(sql, tenantId, async (tx) => {
-        await tx.query(`INSERT INTO automation_cursors(tenant_id,last_audit_id)
-        SELECT current_setting('app.tenant_id',true),COALESCE(max(id),0) FROM audit ON CONFLICT(tenant_id) DO NOTHING`);
-      });
-    }
     return (
       await sql.query<{ tenant_id: string }>(
         `SELECT tenant_id FROM automation_cursors ORDER BY last_tick_finished_at ASC NULLS FIRST,tenant_id LIMIT $1`,
