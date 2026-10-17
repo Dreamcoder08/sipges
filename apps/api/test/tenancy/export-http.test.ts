@@ -71,6 +71,7 @@ const expected = (
         record_id: id,
         action: 'CREATE',
         detail: 'Registro creado desde prototipo V0.2',
+        event_payload: null,
       },
     ],
     attachments: [],
@@ -95,6 +96,7 @@ const expected = (
     automation_rules: [],
     automation_runs: [],
     notifications: [],
+    source_import_settings: [],
   },
 });
 
@@ -120,6 +122,115 @@ describe('GET /system/export versioned tenant JSON', () => {
       expect(text).not.toContain(forbidden);
     }
     expect(await (await exportRequest(t, admin.cookie)).json()).toEqual(expected());
+  });
+
+  it('preserves authorized source configuration and immutable digital audit snapshots only in its tenant export', async () => {
+    const { t, admin } = await setup();
+    await t.grant(admin.cookie, 'admin', 'ACME/NORTE');
+    for (const [scope, label] of [
+      ['MASCLI/PRJ-SECHURA', 'Synthetic source A'],
+      ['ACME/NORTE', 'Synthetic source B'],
+    ] as const) {
+      await t.container.authorizedSources.configure(
+        scope,
+        {
+          enabled: false,
+          query: label,
+          territory: `${label} territory`,
+          authorization_note: `${label} authorization`,
+        },
+        'admin',
+      );
+    }
+    const sourceUrl = 'https://example.test/synthetic-export-evidence';
+    const created = await t.request('/system/intelligence/territorial-alerts', {
+      method: 'POST',
+      headers: {
+        cookie: admin.cookie,
+        'content-type': 'application/json',
+        'x-mascli-scope': 'MASCLI/PRJ-SECHURA',
+      },
+      body: JSON.stringify({
+        text: 'Exigimos agua limpia: habrá paro y bloqueo. Convocatoria a asamblea.',
+        source_url: sourceUrl,
+        source_type: 'Publicación digital',
+        mode: 'rules',
+        territory: 'Synthetic documented export territory',
+        project_id: 'PRJ-SECHURA',
+      }),
+    });
+    expect(created.status).toBe(200);
+    const { id } = (await created.json()) as { id: string };
+    const reviewed = await t.request(`/system/intelligence/territorial-alerts/${id}`, {
+      method: 'PATCH',
+      headers: {
+        cookie: admin.cookie,
+        'content-type': 'application/json',
+        'x-mascli-scope': 'MASCLI/PRJ-SECHURA',
+      },
+      body: JSON.stringify({ status: 'Corroborado', reviewer_note: 'Synthetic human review' }),
+    });
+    expect(reviewed.status).toBe(200);
+    const response = await exportRequest(t, admin.cookie, 'MASCLI/PRJ-SECHURA');
+    expect(response.status).toBe(200);
+    const exported = (await response.json()) as { data: Record<string, Record<string, unknown>[]> };
+    expect(exported.data.source_import_settings).toEqual([
+      expect.objectContaining({
+        tenant_id: 'MASCLI/PRJ-SECHURA',
+        source_id: 'defensoria',
+        enabled: false,
+        query: 'Synthetic source A',
+        territory: 'Synthetic source A territory',
+        authorization_note: 'Synthetic source A authorization',
+        revision: 1,
+        updated_by: 'admin',
+      }),
+    ]);
+    const digitalEvents = exported.data.audit?.filter(
+      (event) => event.module === 'InteligenciaDigital' && event.record_id === id,
+    );
+    expect(digitalEvents).toEqual([
+      expect.objectContaining({
+        action: 'CREATE',
+        event_payload: expect.objectContaining({
+          id,
+          status: 'Pendiente de verificación',
+          source_url: sourceUrl,
+          territory: 'Synthetic documented export territory',
+        }),
+      }),
+      expect.objectContaining({
+        action: 'REVIEW',
+        event_payload: expect.objectContaining({
+          id,
+          status: 'Corroborado',
+          source_url: sourceUrl,
+          territory: 'Synthetic documented export territory',
+        }),
+      }),
+    ]);
+    expect(exported.data.digital_alert_reviews).toEqual([
+      expect.objectContaining({ id, status: 'Corroborado' }),
+    ]);
+    expect(JSON.stringify(exported)).not.toContain('Synthetic source B');
+    for (const operational of [
+      'automation_cursors',
+      'digital_signal_dedup_locks',
+      'push_subscriptions',
+      'integration_channels',
+    ])
+      expect(exported.data).not.toHaveProperty(operational);
+    const northResponse = await exportRequest(t, admin.cookie, 'ACME/NORTE');
+    expect(northResponse.status).toBe(200);
+    const north = (await northResponse.json()) as {
+      data: Record<string, Record<string, unknown>[]>;
+    };
+    expect(north.data.source_import_settings).toEqual([
+      expect.objectContaining({ tenant_id: 'ACME/NORTE', query: 'Synthetic source B' }),
+    ]);
+    expect(north.data.digital_alert_reviews).toEqual([]);
+    expect(JSON.stringify(north)).not.toContain(sourceUrl);
+    expect(JSON.stringify(north)).not.toContain('Synthetic source A');
   });
 
   it('honours selected granted tenant and restores identity access after export', async () => {
@@ -194,6 +305,7 @@ describe('GET /system/export versioned tenant JSON', () => {
         automation_rules: [],
         automation_runs: [],
         notifications: [],
+        source_import_settings: [],
       },
     });
   });
