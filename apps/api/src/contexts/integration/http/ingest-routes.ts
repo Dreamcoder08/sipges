@@ -57,6 +57,9 @@ export const ingestRoutes = (deps: { keys: ApiKeyService; ingest: IngestService 
         idempotencyKey: key,
       });
       if (outcome.replayed) c.header('Idempotent-Replayed', 'true');
+      if (!outcome.replayed && (outcome.status === 201 || outcome.status === 207)) {
+        c.set('automationTenant', auth.principal.tenantId);
+      }
       return c.json(outcome.body, outcome.status as 201);
     },
   );

@@ -1,0 +1,29 @@
+.panel,
+.form {
+  display: grid;
+  gap: var(--space-3, 12px);
+  overflow-wrap: anywhere;
+}
+.panel label,
+.form label {
+  display: grid;
+  gap: 6px;
+}
+.panel input:not([type='checkbox']),
+.form textarea {
+  max-width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 6px;
+  font: inherit;
+}
+.form {
+  padding-block: 12px;
+  border-top: 1px solid var(--border, #cbd5e1);
+}
+.post {
+  display: grid;
+  gap: 8px;
+  padding-block: 12px;
+  border-top: 1px solid var(--border, #cbd5e1);
+}
