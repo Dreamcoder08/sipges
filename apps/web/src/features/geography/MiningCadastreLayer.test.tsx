@@ -20,3 +20,20 @@ it('asks GEOCATMIN for one transparent cadastre image of the view, without crede
   );
   expect(container.querySelector('image')?.getAttribute('href')).toBe(url.href);
 });
+it('aligns a verified official layer in WGS84 and applies bounded opacity', () => {
+  const { container } = render(
+    <svg>
+      <MiningCadastreLayer
+        view={SECHURA_EXTENT}
+        layerId={3}
+        serviceId="SERV_MAPAS_GEOLOGICOS"
+        opacity={0.4}
+      />
+    </svg>,
+  );
+  const image = container.querySelector('image');
+  expect(image?.getAttribute('opacity')).toBe('0.4');
+  expect(
+    new URL(image?.getAttribute('href') ?? 'https://invalid.test').searchParams.get('layers'),
+  ).toBe('show:3');
+});

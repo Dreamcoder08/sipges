@@ -18,6 +18,7 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { BasemapCredit, BasemapPicker } from './BasemapPicker.tsx';
 import { type Basemap, TileLayer } from './TileLayer.tsx';
 import styles from './Geography.module.css';
+import { GeocatminControls, type OfficialSelection } from './GeocatminControls.tsx';
 
 export const GeographyPage = ({ scope }: FeatureContext) => {
   const query = useQuery({
@@ -29,7 +30,7 @@ export const GeographyPage = ({ scope }: FeatureContext) => {
     <QueryState query={query} label="geometría territorial">
       {({ data, notice }) =>
         data ? (
-          <MapReference data={data} notice={notice} />
+          <MapReference data={data} notice={notice} scope={scope} />
         ) : (
           <Card title="Referencia territorial">
             <p>{notice}</p>
@@ -44,10 +45,21 @@ const csvCell = (value: unknown) =>
   `"${String(value)
     .replace(/^[=+@-]/, "'$&")
     .replaceAll('"', '""')}"`;
-const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: string }) => {
+const MapReference = ({
+  data,
+  notice,
+  scope,
+}: {
+  data: ProjectCoordinates;
+  notice: string;
+  scope: string;
+}) => {
   const { valid: concessions, invalid } = checkConcessions(data.concessions);
   const [selection, setSelection] = useState(concessions[0]?.code ?? '');
   const [cadastre, setCadastre] = useState(true);
+  const [officialLayers, setOfficialLayers] = useState<OfficialSelection[]>([]);
+  const [officialStatus, setOfficialStatus] = useState<Record<string, string>>({});
+  const [cadastreStatus, setCadastreStatus] = useState('loading');
   const [basemap, setBasemap] = useState<Basemap>('satelite');
   const selected = concessions.find((c) => c.code === selection);
   // The map opens on the project: every drawable concession with a margin. Inside the Sechura
@@ -189,7 +201,22 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
                 imagery={basemap === 'satelite'}
                 describedBy={hint}
               >
-                {cadastre ? <MiningCadastreLayer view={map.view} /> : null}
+                {cadastre ? (
+                  <MiningCadastreLayer view={map.view} onStatus={setCadastreStatus} />
+                ) : null}
+                {officialLayers.map((layer) => (
+                  <MiningCadastreLayer
+                    key={`${layer.serviceId}:${layer.layerId}`}
+                    view={map.view}
+                    {...layer}
+                    onStatus={(status) =>
+                      setOfficialStatus((old) => ({
+                        ...old,
+                        [`${layer.serviceId}:${layer.layerId}`]: status,
+                      }))
+                    }
+                  />
+                ))}
                 {concessions.map((c) => (
                   <path
                     key={c.code}
@@ -218,6 +245,22 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
           </MapFrame>
         </MapErrorBoundary>
         <BasemapPicker value={basemap} onChange={setBasemap} />
+        {cadastre ? (
+          <p role={cadastreStatus === 'error' ? 'alert' : 'status'}>
+            {cadastreStatus === 'loaded'
+              ? 'Catastro minero: imagen cargada'
+              : cadastreStatus === 'error'
+                ? 'Catastro minero no disponible. Puede consultar el visor oficial.'
+                : 'Cargando catastro minero…'}
+          </p>
+        ) : null}
+        <GeocatminControls
+          scope={scope}
+          selection={officialLayers}
+          onChange={setOfficialLayers}
+          status={officialStatus}
+          {...(selected ? { polygon: selected.geometry, concessionCode: selected.code } : {})}
+        />
         <label className={styles.toggle}>
           <input
             type="checkbox"
@@ -260,7 +303,7 @@ const MapReference = ({ data, notice }: { data: ProjectCoordinates; notice: stri
               <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer">
                 INGEMMET – GEOCATMIN
               </a>
-              , referencial y de actualización diaria.
+              , referencial; consulte la vigencia en los metadatos oficiales.
             </>
           ) : null}
         </p>
