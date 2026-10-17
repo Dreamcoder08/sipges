@@ -39,6 +39,16 @@ export const createSqlSourceSettings = (sql: SqlClient): SourceSettingsStore => 
           at,
         ],
       );
+      if (input.enabled) {
+        // Register source-only tenants in the same transaction as their authorization.
+        // Match rule creation: start at the tenant's current audit head, never replay history,
+        // and preserve any cursor already owned by existing rules or a previous activation.
+        await tx.query(
+          `INSERT INTO automation_cursors (tenant_id, last_audit_id)
+           SELECT current_setting('app.tenant_id', true), COALESCE(max(id), 0) FROM audit
+           ON CONFLICT (tenant_id) DO NOTHING`,
+        );
+      }
       return mapped(row);
     }),
   claimPoll: (tenantId, revision, at) =>
@@ -60,11 +70,27 @@ export const createSqlSourceSettings = (sql: SqlClient): SourceSettingsStore => 
         [tenantId, at, outcome.error, outcome.imported, outcome.duplicates],
       );
     }),
-  // Trusted owner enumeration, matching the automation cursor scheduler; never request scoped.
-  activeTenants: async () =>
-    (
-      await sql.query<{ tenant_id: string }>(
-        'SELECT tenant_id FROM source_import_settings WHERE enabled ORDER BY last_poll_at ASC NULLS FIRST,tenant_id LIMIT 200',
-      )
-    ).map((row) => row.tenant_id),
+  // Only the non-forced cursor table permits trusted ordinary-owner enumeration.
+  // Source settings retain forced RLS, and are inspected under each candidate's tenant role.
+  activeTenants: async () => {
+    const candidates = await sql.query<{ tenant_id: string }>(
+      'SELECT tenant_id FROM automation_cursors ORDER BY tenant_id',
+    );
+    const enabled: string[] = [];
+    for (const { tenant_id: tenantId } of candidates) {
+      const active = await withTenant(
+        sql,
+        tenantId,
+        async (tx) =>
+          (
+            await tx.query(
+              "SELECT 1 FROM source_import_settings WHERE tenant_id=$1 AND source_id='defensoria' AND enabled",
+              [tenantId],
+            )
+          ).length > 0,
+      );
+      if (active) enabled.push(tenantId);
+    }
+    return enabled;
+  },
 });
