@@ -324,3 +324,44 @@ it('processes an authenticated structured source through a signal and notificati
   expect(replay.headers.get('Idempotent-Replayed')).toBe('true');
   expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
 }, 60_000);
+
+it('starts the first rule after pre-rule backlog even when earlier workers failed', async () => {
+  const t = await setup();
+  const spy = vi
+    .spyOn(t.container.automation, 'tick')
+    .mockRejectedValueOnce(new Error('synthetic pre-rule failure A'))
+    .mockRejectedValueOnce(new Error('synthetic pre-rule failure B'));
+  try {
+    expect((await t.call('POST', '/api/narrativas', narrative('NAR-OLD-A'))).status).toBe(200);
+    expect((await t.call('POST', '/api/narrativas', narrative('NAR-OLD-B'))).status).toBe(200);
+  } finally {
+    spy.mockRestore();
+  }
+  await t.rules();
+  expect((await t.call('GET', '/system/intelligence/territorial-alerts')).body).toEqual([]);
+  expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(0);
+  expect((await t.call('POST', '/api/narrativas', narrative('NAR-FUTURE'))).status).toBe(200);
+  expect((await t.call('GET', '/system/intelligence/territorial-alerts')).body).toHaveLength(1);
+  expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
+  // Adding a later rule must not jump over valid backlog belonging to existing rules.
+  const laterFailure = vi
+    .spyOn(t.container.automation, 'tick')
+    .mockRejectedValueOnce(new Error('synthetic existing-rule backlog failure'));
+  try {
+    expect((await t.call('POST', '/api/narrativas', narrative('NAR-PENDING'))).status).toBe(200);
+  } finally {
+    laterFailure.mockRestore();
+  }
+  expect(
+    (
+      await t.call('POST', '/system/automations/rules', {
+        name: 'Unrelated later rule',
+        module: 'Alertas',
+        actions: ['CREATE'],
+        steps: [{ kind: 'notify', title: 'Unrelated synthetic notification' }],
+      })
+    ).status,
+  ).toBe(200);
+  expect((await t.call('GET', '/system/intelligence/territorial-alerts')).body).toHaveLength(2);
+  expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(2);
+}, 60_000);

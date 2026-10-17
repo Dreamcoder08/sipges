@@ -101,11 +101,14 @@ export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
           [...values, actor],
         );
         savedId = Number(row?.id);
-        // The first rule starts matching from now, never from history.
+        // Runtime/source activation may already have registered a stale cursor. The first
+        // current rule still starts now; later rules must preserve pending event processing.
         await tx.query(
           `INSERT INTO automation_cursors (tenant_id, last_audit_id)
            SELECT current_setting('app.tenant_id', true), COALESCE(max(id), 0) FROM audit
-           ON CONFLICT (tenant_id) DO NOTHING`,
+           ON CONFLICT (tenant_id) DO UPDATE
+             SET last_audit_id = GREATEST(automation_cursors.last_audit_id, EXCLUDED.last_audit_id)
+             WHERE (SELECT count(*) FROM automation_rules) = 1`,
         );
       } else {
         const updated = await tx.query<{ id: number }>(
