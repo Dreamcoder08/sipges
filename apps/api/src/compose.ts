@@ -1,4 +1,27 @@
-import { randomBytes } from 'node:crypto';
+import {
+  createGeographyService,
+  type GeographyGateway,
+  type GeographyService,
+} from './contexts/geography/application/index.ts';
+import { createIngemmetGateway } from './contexts/geography/infrastructure/index.ts';
+import {
+  createAuthorizedSourcesService,
+  type AuthorizedSourcesService,
+  type OfficialSourceGateway,
+} from './contexts/integration/application/index.ts';
+import {
+  createOfficialSourceGateway,
+  createSqlSourceSettings,
+} from './contexts/integration/infrastructure/index.ts';
+import {
+  createAutomationRuntime,
+  type AutomationRuntime,
+} from './contexts/system/application/index.ts';
+import { createSqlAutomationRuntimeStore } from './contexts/system/infrastructure/index.ts';
+import { parseScope } from './contexts/tenancy/application/index.ts';
+import { runWithRequestContext } from './platform/request-context.ts';
+import { log } from './platform/observability/logger.ts';
+import { randomBytes, randomUUID } from 'node:crypto';
 import {
   createReferenceService,
   type ReferenceService,
@@ -124,6 +147,9 @@ import type { SqlClient } from './platform/database/sql-client.ts';
 import type { ClientIp } from './platform/http/env.ts';
 
 export type Container = {
+  readonly geography: GeographyService;
+  readonly authorizedSources: AuthorizedSourcesService;
+  readonly runtime: AutomationRuntime;
   readonly reference: ReferenceService;
   readonly config: AppConfig;
   readonly identity: IdentityService;
@@ -154,6 +180,8 @@ const randomHex = (length: number) =>
 
 /** Wires adapters into use cases (manual constructor injection, docs/adr/0002). */
 export const buildContainer = async (deps: {
+  geographyGateway?: GeographyGateway;
+  sourceGateway?: OfficialSourceGateway;
   config: AppConfig;
   sql: SqlClient;
   clock: Clock;
@@ -197,8 +225,9 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   await tenancy.bootstrap();
+  const recordStore = createSqlRecordStore(deps.sql);
   const records = createRecordsService({
-    store: createSqlRecordStore(deps.sql),
+    store: recordStore,
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
   });
@@ -358,7 +387,47 @@ export const buildContainer = async (deps: {
     },
     clock: deps.clock,
   });
+  const geography = createGeographyService({
+    reader: recordReader,
+    gateway: deps.geographyGateway ?? createIngemmetGateway(),
+  });
+  const authorizedSources = createAuthorizedSourcesService({
+    gateway: deps.sourceGateway ?? createOfficialSourceGateway(),
+    settings: createSqlSourceSettings(deps.sql),
+    clock: deps.clock.now,
+    importer: {
+      async createOnce(tenantId, id, payload) {
+        const created = await recordStore.create(
+          tenantId,
+          'Narrativas',
+          [id],
+          () => payload,
+          { action: 'CREATE', detail: 'Importación de fuente pública autorizada' },
+          deps.clock.now(),
+        );
+        if (created) return { id: created, created: true };
+        const existing = await recordStore.get(tenantId, 'Narrativas', id);
+        if (
+          existing?.payload.Fuente_Integracion !== payload.Fuente_Integracion ||
+          existing?.payload.Fuente_Huella_SHA256 !== payload.Fuente_Huella_SHA256
+        )
+          throw new Error('source_identity_collision');
+        return { id, created: false };
+      },
+    },
+  });
   const automation = createAutomationService({
+    executionBudgetMs: 8000,
+    evaluateNarrative: async (tenantId, event, minimumLevel) => {
+      const scope = parseScope(tenantId);
+      if (!scope || !event.recordId || !event.record) return { outcome: 'ineligible' };
+      return intelligence.evaluateNarrative(scope, {
+        id: event.recordId,
+        payload: event.record.payload,
+        marking: event.record.marking,
+        minimumLevel,
+      });
+    },
     store: createSqlAutomationStore(deps.sql),
     sender: deps.channelSender ?? createHttpChannelSender(),
     sealer: cipher,
@@ -374,7 +443,23 @@ export const buildContainer = async (deps: {
             : null,
     },
   });
+  const worker = <T>(fn: () => Promise<T>) =>
+    runWithRequestContext({ requestId: randomUUID(), actor: 'automation', clearance: 'full' }, fn);
+  const runtime = createAutomationRuntime({
+    store: createSqlAutomationRuntimeStore(deps.sql, {
+      sourceTenants: authorizedSources.activeTenants,
+    }),
+    clock: deps.clock,
+    onError: () => log('error', 'automation_processing_failed', {}),
+    beforeTick: async (tenantId, source) => {
+      if (source === 'cron') await worker(() => authorizedSources.poll(tenantId));
+    },
+    tick: (tenantId) => worker(() => automation.tick(tenantId)),
+  });
   return {
+    geography,
+    authorizedSources,
+    runtime,
     reference: createReferenceService(fileReferenceReader),
     config: deps.config,
     identity,

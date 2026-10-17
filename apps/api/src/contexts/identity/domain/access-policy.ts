@@ -15,6 +15,7 @@ const READ_ONLY_POSTS = new Set([
   '/system/document-lab/compare',
   '/system/document-lab/report.docx',
   '/system/intelligence/semantic-analyze',
+  '/system/geography/query',
 ]);
 
 /** Personal account security every role must be able to complete (ADR 0009). */
@@ -26,6 +27,7 @@ const SELF_SERVICE_POSTS = new Set([
   // Enabling or disabling one's own device notifications.
   '/system/notifications/push',
   '/system/notifications/push/unsubscribe',
+  '/system/notifications/push/test',
 ]);
 
 const COORDINATOR_WRITABLE = ['/system/prevention/', '/system/intelligence/territorial-alerts'];

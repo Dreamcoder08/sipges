@@ -14,3 +14,6 @@ export * from './document-lab.ts';
 export * from './ontology.ts';
 export * from './automation.ts';
 export * from './integration.ts';
+export * from './geography.ts';
+export * from './authorized-sources.ts';
+export * from './runtime.ts';

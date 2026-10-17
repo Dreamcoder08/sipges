@@ -12,6 +12,7 @@ import {
   createRouter,
   redirect,
   useNavigate,
+  useLocation,
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
@@ -257,6 +258,7 @@ const appRoute = createRoute({
     }
   },
   component: function AppLayout() {
+    const locationHref = useLocation({ select: (location) => location.href });
     const { me, scope, queryClient } = appRoute.useRouteContext();
     const router = useRouter();
     // Subscribed, so the header shows the project's name once the list arrives.
@@ -284,6 +286,7 @@ const appRoute = createRoute({
           }
           account={
             <AccountMenu
+              key={locationHref}
               me={me}
               project={projectLabel}
               unread={compact ? unread : 0}
@@ -415,8 +418,11 @@ const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePa
     path,
     component: function FeatureRoute() {
       const context = useFeatureContext();
+      const search = useLocation({
+        select: (location) => (path === '/inteligencia-redes' ? location.searchStr : ''),
+      });
       const Page = featurePages[path];
-      return <Page key={`${context.scope}/${path}`} {...context} />;
+      return <Page key={`${context.scope}/${path}/${search}`} {...context} />;
     },
   }),
 );

@@ -1,3 +1,4 @@
+import { waitUntil } from '@vercel/functions';
 import { Hono } from 'hono';
 import { fileURLToPath } from 'node:url';
 import { securityHeaders } from '../../api/src/platform/http/security-headers.ts';
@@ -46,6 +47,7 @@ const app = new Hono()
         MASCLI_WEB_DIR: `${process.cwd()}/public`,
         MASCLI_UPLOAD_DIR: '/tmp/mascli-demo-uploads',
         MASCLI_MAX_UPLOAD_BYTES: '3145728',
+        MASCLI_AUTOMATION_INTERVAL: '0',
       });
       const database = await openDatabase(config);
       try {
@@ -59,7 +61,12 @@ const app = new Hono()
           clientIp: (c) => c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
         });
         // Streams end before the 60 s function limit; the browser reconnects with Last-Event-ID.
-        return createApp(container, { activity: { maxMs: 50_000 } });
+        return createApp(container, {
+          activity: { maxMs: 50_000 },
+          eventAutomation: true,
+          defer: waitUntil,
+          cronSchedule: '15 4 * * *',
+        });
       } catch (error) {
         await database.close();
         throw error;

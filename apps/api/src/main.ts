@@ -29,7 +29,10 @@ const container = await buildContainer({
 
 const server = serve(
   {
-    fetch: createApp(container, config.webDir ? { web: fileWebAssets(config.webDir) } : {}).fetch,
+    fetch: createApp(container, {
+      eventAutomation: true,
+      ...(config.webDir ? { web: fileWebAssets(config.webDir) } : {}),
+    }).fetch,
     hostname: config.host,
     port: config.port,
   },
@@ -40,7 +43,7 @@ const server = serve(
 const automationTimer =
   config.automation.intervalSeconds > 0
     ? setInterval(() => {
-        container.automation.tick().catch((error: unknown) => {
+        container.runtime.scheduled().catch((error: unknown) => {
           log('error', 'automation_tick_failed', { error });
         });
       }, config.automation.intervalSeconds * 1000)
