@@ -18,7 +18,6 @@ import {
 import { z } from 'zod';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
-import type { RecordModule } from '../features/records/modules.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
 import { Button } from '../shared/ui/Button.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
@@ -52,6 +51,9 @@ import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
 
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
+);
+const AlertOverview = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.AlertOverview })),
 );
 const QualityPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.QualityPage })),
@@ -361,31 +363,40 @@ const recordRoutes = recordModules.map((module) =>
     },
   }),
 );
+const ALERT_TABS = [
+  ['resumen', 'Vista general'],
+  ['alertas', 'Alertas territoriales'],
+  ['acciones', 'Acciones territoriales'],
+] as const;
 const AlertsPage = (context: FeatureContext) => {
-  const [module, setModule] = useState<RecordModule>('alertas');
+  const [tab, setTab] = useState<(typeof ALERT_TABS)[number][0]>('resumen');
   return (
     <>
       <div aria-label="Alertas y acciones">
-        <Button
-          variant={module === 'alertas' ? 'primary' : 'secondary'}
-          aria-pressed={module === 'alertas'}
-          onClick={() => setModule('alertas')}
-        >
-          Alertas territoriales
-        </Button>
-        <Button
-          variant={module === 'acciones' ? 'primary' : 'secondary'}
-          aria-pressed={module === 'acciones'}
-          onClick={() => setModule('acciones')}
-        >
-          Acciones territoriales
-        </Button>
+        {ALERT_TABS.map(([value, label]) => (
+          <Button
+            key={value}
+            variant={tab === value ? 'primary' : 'secondary'}
+            aria-pressed={tab === value}
+            onClick={() => setTab(value)}
+          >
+            {label}
+          </Button>
+        ))}
       </div>
       <p>
         Registros territoriales documentados. Las señales digitales y sus planes preventivos se
         revisan en Inteligencia de redes.
       </p>
-      <RecordsPage key={`${context.scope}/${module}`} module={module} {...context} />
+      {tab === 'resumen' ? (
+        <AlertOverview
+          key={context.scope}
+          scope={context.scope}
+          onShowList={() => setTab('alertas')}
+        />
+      ) : (
+        <RecordsPage key={`${context.scope}/${tab}`} module={tab} {...context} />
+      )}
     </>
   );
 };

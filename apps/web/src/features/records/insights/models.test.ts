@@ -81,3 +81,77 @@ it('keeps inherited object keys unclassified', () => {
     expect(recordedLevel({ _id: value, Nivel_Preliminar: value })).toBeNull();
   }
 });
+
+it('summarises the overview from stored alerts only, per period and month', async () => {
+  const { alertOverview } = await import('./alert-overview.ts');
+  const rows = [
+    {
+      _id: 'AL-1',
+      Fecha: '2026-10-01',
+      Dimension: 'G',
+      Territorio: 'Comunidad B',
+      Nivel_Preliminar: 'Rojo',
+    },
+    {
+      _id: 'AL-2',
+      Fecha: '2026-09-19',
+      Dimension: 'E',
+      Territorio: 'Comunidad A',
+      Nivel_Preliminar: 'Amarillo',
+    },
+    {
+      _id: 'AL-3',
+      Fecha: '19/09/2026',
+      Dimension: 'E',
+      Territorio: 'Comunidad A',
+      Nivel_Preliminar: 'Naranja',
+    },
+    { _id: 'AL-4', Fecha: '2026-08-20', Dimension: 'I', Nivel_Preliminar: 'Amarillo' },
+    {
+      _id: 'AL-5',
+      Fecha: '2026-03-02',
+      Dimension: 'D',
+      Territorio: 'Comunidad C',
+      Nivel_Preliminar: 'Verde',
+    },
+    {
+      _id: 'AL-6',
+      Fecha: '2026-09-01',
+      Territorio: 'Comunidad C',
+      Estado: 'Cerrada',
+      Nivel_Preliminar: 'Rojo',
+    },
+    { _id: 'AL-7', Causa: 'Sin fecha', Nivel_Preliminar: 'Rojo' },
+  ];
+  const six = alertOverview(rows, [], 6, '2026-10-18');
+  expect(six.monthly.map((m) => m.month)).toEqual([
+    '2026-05',
+    '2026-06',
+    '2026-07',
+    '2026-08',
+    '2026-09',
+    '2026-10',
+  ]);
+  expect(six.total).toBe(5);
+  expect(six.previous).toBe(1);
+  expect(six.critical).toBe(1);
+  expect(six.ranking).toEqual([
+    { territory: 'Comunidad B', level: 'Rojo', count: 1 },
+    { territory: 'Comunidad A', level: 'Naranja', count: 2 },
+  ]);
+  expect(six.sensitive).toBe(2);
+  expect(six.missingTerritory).toBe(1);
+  expect(six.monthly.find((m) => m.month === '2026-09')?.counts).toMatchObject({
+    Amarillo: 1,
+    Naranja: 1,
+    Rojo: 1,
+  });
+  expect(six.trend).toEqual({ current: 1, before: 3, change: -67 });
+  expect(six.recent.map((r) => r._id)).toEqual(['AL-1', 'AL-3', 'AL-2', 'AL-6', 'AL-4']);
+  const all = alertOverview(rows, [], 'todo', '2026-10-18');
+  expect(all.total).toBe(7);
+  expect(all.previous).toBeNull();
+  expect(all.undated).toBe(1);
+  expect(all.critical).toBe(2);
+  expect(alertOverview([], [], 6, '2026-10-18')).toMatchObject({ total: 0, ranking: [] });
+});

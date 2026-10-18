@@ -28,6 +28,7 @@ for (const mobile of [false, true]) {
     });
     await post('alertas', {
       ID_Alerta: alertId,
+      Fecha: new Date().toISOString().slice(0, 10),
       Causa: 'Alerta de prueba para la clasificación',
       Dimension: 'E',
       Nivel_Preliminar: 'Naranja',
@@ -51,6 +52,7 @@ for (const mobile of [false, true]) {
       });
       await post('alertas', {
         ID_Alerta: `${alertId}-${index}`,
+        Fecha: new Date().toISOString().slice(0, 10),
         Dimension: ['G', 'A', 'D'][index],
         Territorio: `Zona de prueba ${index + 1}`,
         Nivel_Preliminar: ['Amarillo', 'Rojo', 'Verde'][index],
@@ -59,12 +61,22 @@ for (const mobile of [false, true]) {
       });
     }
     await page.goto('/alertas');
-    const cell = page.getByRole('button', { name: `E · ${territory}: 1 alerta(s), Naranja` });
+    await expect(page.getByRole('button', { name: 'Vista general' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    const cell = page.getByRole('button', {
+      name: `E · ${territory}: 1 alerta(s), Medio-alto (Naranja)`,
+    });
     await cell.click();
     await page.getByRole('button', { name: `Ficha de alerta ${alertId}`, exact: true }).click();
-    await expect(page.getByRole('heading', { name: `Ficha ${alertId}` })).toBeFocused();
-    await page.getByRole('button', { name: 'Volver a la lista' }).click();
-    await expect(cell).toBeFocused();
+    await expect(page).toHaveURL(new RegExp(`/objeto/alertas/${alertId}$`));
+    await page.goBack();
+    await expect(cell).toBeVisible();
+    if (mobile)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        391,
+      );
     expect(
       (
         await new AxeBuilder({ page })
@@ -77,7 +89,7 @@ for (const mobile of [false, true]) {
     // Keep all WebKit flow, axe and CSP assertions; capture artifacts with Chromium.
     if (browserName === 'chromium')
       await page
-        .getByRole('region', { name: 'Mapa de calor de alertas', exact: true })
+        .getByRole('region', { name: 'Mapa de calor de relacionamiento comunitario', exact: true })
         .screenshot({ path: test.info().outputPath('alert-heatmap.png') });
     await page.goto('/actores');
     await expect(

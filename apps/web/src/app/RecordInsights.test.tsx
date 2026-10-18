@@ -9,15 +9,24 @@ beforeEach(() =>
   resetApi({ me: { username: 'reader', full_name: 'Persona de prueba', role: 'consulta' } }),
 );
 
-it('opens an actual alert from the heatmap, resolves its event territory and restores cell focus', async () => {
+it('starts the alert centre on an overview whose heatmap opens the actual alert', async () => {
   installRecordsApi({
     'DEMO/PRJ-DEMO/alertas': [
       {
         _id: 'AL-1',
+        Fecha: new Date().toISOString().slice(0, 10),
         Causa: 'Alerta de prueba',
         Dimension: 'G',
         Nivel_Preliminar: 'Naranja',
+        Accion_Sugerida: 'Acción de prueba',
         'Evento/Registro_Origen': 'EV-1',
+      },
+      {
+        _id: 'AL-2',
+        Fecha: new Date().toISOString().slice(0, 10),
+        Causa: 'Alerta sin ubicar',
+        Dimension: 'E',
+        Nivel_Preliminar: 'Rojo',
       },
     ],
     'DEMO/PRJ-DEMO/eventos': [{ _id: 'EV-1', Territorio: 'Territorio de prueba' }],
@@ -25,16 +34,41 @@ it('opens an actual alert from the heatmap, resolves its event territory and res
   window.history.replaceState(null, '', '/alertas');
   render(<App />);
   const user = userEvent.setup();
+  expect(await screen.findByRole('button', { name: 'Vista general' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   const cell = await screen.findByRole('button', {
-    name: 'G · Territorio de prueba: 1 alerta(s), Naranja',
+    name: 'G · Territorio de prueba: 1 alerta(s), Medio-alto (Naranja)',
   });
+  expect(
+    screen.getByRole('button', {
+      name: 'E · Sin territorio registrado: 1 alerta(s), Crítico (Rojo)',
+    }),
+  ).toBeVisible();
+  const ranking = screen.getByRole('region', { name: 'Comunidades prioritarias' });
+  expect(ranking).toHaveTextContent('Territorio de prueba');
+  expect(ranking).toHaveTextContent('1 alerta(s) activa(s) sin comunidad registrada');
+  expect(screen.getByRole('region', { name: 'Alertas recientes' })).toHaveTextContent(
+    'Acción de prueba',
+  );
   await user.click(cell);
   await user.click(screen.getByRole('button', { name: 'Ficha de alerta AL-1' }));
-  expect(await screen.findByRole('heading', { name: 'Ficha AL-1' })).toHaveFocus();
-  await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));
-  expect(
-    await screen.findByRole('button', { name: 'G · Territorio de prueba: 1 alerta(s), Naranja' }),
-  ).toHaveFocus();
+  expect(window.location.pathname).toBe('/objeto/alertas/AL-1');
+});
+
+it('keeps the alert list one tab away, with its territory column', async () => {
+  installRecordsApi({
+    'DEMO/PRJ-DEMO/alertas': [
+      { _id: 'AL-1', Causa: 'Alerta de prueba', Territorio: 'Comunidad de prueba' },
+    ],
+  });
+  window.history.replaceState(null, '', '/alertas');
+  render(<App />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Ver todas las alertas' }));
+  expect(await screen.findByRole('columnheader', { name: 'Comunidad / territorio' })).toBeVisible();
+  expect(screen.getByRole('cell', { name: 'Comunidad de prueba' })).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Nuevo registro' })).toBeNull();
 });
 
