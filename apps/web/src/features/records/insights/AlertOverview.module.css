@@ -1,0 +1,298 @@
+.overview {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+.toolbarLabel {
+  align-self: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+.kpis {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.kpis > div {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  min-width: 0;
+}
+.kpis dt {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.kpis dd {
+  margin: 0.3rem 0 0;
+}
+.kpiValue {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #173958;
+  line-height: 1.1;
+}
+.critical .kpiValue {
+  color: var(--level-red);
+}
+.kpiNote {
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(17rem, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.main,
+.side {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+/* The heat map brings its own panel; drop its outer margin inside the grid. */
+.main > section {
+  margin: 0;
+}
+.panel {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  min-width: 0;
+}
+.panel h4 {
+  margin: 0 0 var(--space-3);
+  font-size: 1.05rem;
+}
+.panelHeading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+.panelHeading h4 {
+  margin: 0;
+}
+.note {
+  margin: var(--space-3) 0 0;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+.ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ranking li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.88rem;
+}
+.ranking li:last-child {
+  border-bottom: 0;
+}
+.ranking strong {
+  overflow-wrap: anywhere;
+}
+.rank {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #e8eef7;
+  color: #173958;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.ranking li:first-child .rank {
+  background: var(--level-red);
+  color: #fff;
+}
+.count {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.pill {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--color-track);
+  white-space: nowrap;
+}
+.softVerde {
+  background: var(--level-green-soft);
+  color: var(--level-green-text);
+}
+.softAmarillo {
+  background: var(--level-yellow-soft);
+  color: var(--level-yellow-text);
+}
+.softNaranja {
+  background: var(--level-orange-soft);
+  color: var(--level-orange-text);
+}
+.softRojo {
+  background: var(--level-red-soft);
+  color: var(--level-red-text);
+}
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.table th,
+.table td {
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+.table thead th {
+  background: var(--color-surface-alt);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.table td:first-child {
+  white-space: nowrap;
+}
+.cause {
+  min-width: 14rem;
+}
+.levelTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+.dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--color-muted);
+}
+.Verde {
+  background: var(--level-green);
+}
+.Amarillo {
+  background: var(--level-yellow);
+}
+.Naranja {
+  background: var(--level-orange);
+}
+.Rojo {
+  background: var(--level-red);
+}
+.none {
+  background: #cfd5de;
+}
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .side {
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
+}
+@media (max-width: 900px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* Phones: the period buttons share a row, and each recent alert becomes a card. */
+@media (max-width: 40rem) {
+  .toolbar {
+    justify-content: stretch;
+  }
+  .toolbarLabel {
+    display: none;
+  }
+  .toolbar > button {
+    flex: 1 1 0;
+    padding-inline: 0.5rem;
+  }
+  .kpis {
+    gap: var(--space-2);
+  }
+  .kpis > div {
+    padding: 0.7rem;
+  }
+  .kpiValue {
+    font-size: 1.5rem;
+  }
+  .side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel {
+    padding: 0.8rem;
+  }
+  .tableWrap {
+    border: 0;
+    overflow: visible;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .table tbody {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .table tr {
+    display: grid;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.75rem;
+  }
+  .table td {
+    display: grid;
+    grid-template-columns: 8.5rem minmax(0, 1fr);
+    gap: var(--space-2);
+    padding: 0.35rem 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--color-muted);
+    font-size: 0.78rem;
+  }
+  .table td:last-child {
+    border-bottom: 0;
+  }
+  .cause {
+    min-width: 0;
+  }
+}

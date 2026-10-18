@@ -228,3 +228,10 @@
     max-width: 10rem;
   }
 }
+
+/* Records without a recorded level (stacked alert chart). */
+.sinNivel {
+  fill: var(--color-muted);
+  stroke: var(--color-muted);
+  background: var(--color-muted);
+}

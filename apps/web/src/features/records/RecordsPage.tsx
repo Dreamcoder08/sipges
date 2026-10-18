@@ -18,8 +18,6 @@ import { HistoryPanel } from './HistoryPanel.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
 import { ActorMap } from './insights/ActorMap.tsx';
-import { AlertHeatmap } from './insights/AlertHeatmap.tsx';
-import { alertTerritory, MISSING_TERRITORY } from './insights/alert-heatmap.ts';
 import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
@@ -96,17 +94,6 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
   const heading = useRef<HTMLHeadingElement>(null);
   const client = useQueryClient();
   const rows = useQuery(recordsQuery(module, scope, search));
-  const requiresEvents =
-    module === 'alertas' &&
-    Boolean(
-      rows.data?.some(
-        (row) => row['Evento/Registro_Origen'] && alertTerritory(row) === MISSING_TERRITORY,
-      ),
-    );
-  const referenceEvents = useQuery({
-    ...recordsQuery('eventos', scope, ''),
-    enabled: requiresEvents,
-  });
   const selectedId = panel.kind === 'view' || panel.kind === 'edit' ? panel.id : '';
   const detail = useQuery({ ...recordQuery(module, scope, selectedId), enabled: !!selectedId });
   const definition = MODULES[module];
@@ -352,16 +339,6 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                   <FollowupPanel rows={visible} module={module} onOpen={openInsight} />
                 ) : null}
                 {module === 'actores' ? <ActorMap rows={visible} onOpen={openInsight} /> : null}
-                {module === 'alertas' ? (
-                  <AlertHeatmap
-                    rows={visible}
-                    events={referenceEvents.data ?? []}
-                    loading={requiresEvents && referenceEvents.isPending}
-                    failed={requiresEvents && referenceEvents.isError}
-                    onRetry={() => void referenceEvents.refetch()}
-                    onOpen={openInsight}
-                  />
-                ) : null}
                 {moduleFacets.length ? (
                   <div className={styles.filters}>
                     {moduleFacets.map(({ key, label }) => {
