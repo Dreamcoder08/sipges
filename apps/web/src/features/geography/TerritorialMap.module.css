@@ -293,3 +293,250 @@
   align-items: center;
   gap: var(--space-1);
 }
+
+/* Territorial intelligence (ODD geospatial-timeline). */
+.layerToggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.checks legend {
+  float: left;
+  margin-right: var(--space-2);
+  padding: 0;
+  font-weight: 600;
+}
+.checks label,
+.inlineCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.75rem;
+}
+.checks input,
+.inlineCheck input {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.evidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.evidenceMark {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-brand);
+}
+.ev_observado .evidenceMark {
+  background: var(--color-brand);
+}
+.ev_estimado .evidenceMark {
+  background: color-mix(in srgb, var(--color-brand) 45%, transparent);
+}
+.ev_escenario .evidenceMark {
+  background: transparent;
+  border-style: dashed;
+}
+.marker.ev_estimado circle {
+  fill-opacity: 0.55;
+}
+.marker.ev_escenario circle {
+  fill-opacity: 0;
+  stroke: currentColor;
+  stroke-dasharray: 2 1.5;
+}
+.marker.ev_escenario text {
+  fill: var(--color-text);
+}
+.marker[data-emphasis='dim'] {
+  opacity: 0.45;
+}
+
+.concession {
+  fill: rgb(23 54 93 / 0.08);
+  cursor: pointer;
+}
+.concession[data-active='true'] {
+  fill: rgb(23 54 93 / 0.28);
+}
+.concession:focus-visible {
+  outline: none;
+  fill: rgb(43 108 176 / 0.3);
+}
+.swatch {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 3px solid var(--color-muted);
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.sheetBody {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.kicker {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  font-weight: 600;
+}
+.sheetTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+.subhead {
+  margin: var(--space-2) 0 0;
+  font-size: 0.95rem;
+}
+.sheetActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+.relatedList,
+.history {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  font-size: 0.9rem;
+}
+.relatedList li {
+  display: grid;
+  gap: 0.1rem;
+}
+.relatedList small {
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-brand);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  min-height: 1.75rem;
+}
+.linkButton[aria-pressed='true'] {
+  font-weight: 700;
+}
+
+.evolution {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.playback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+.playback input[type='range'] {
+  flex: 1 1 10rem;
+  min-height: 2.75rem;
+}
+.cursorLabel {
+  font-weight: 600;
+  min-width: 8rem;
+}
+.evolution .timeline {
+  max-height: 26rem;
+  overflow-y: auto;
+}
+.timeline li[data-selected='true'] {
+  background: var(--color-info-soft);
+  border-radius: var(--radius-md);
+}
+.timeline li[data-current='true'] small:first-of-type {
+  color: var(--color-brand);
+  font-weight: 700;
+}
+
+/* Phone sheet: above the tab bar, never covering the whole map. */
+.mapSheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: 48vh;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: 0 -6px 24px rgb(15 23 42 / 0.18);
+  transition: max-height 180ms ease;
+}
+.mapSheet[data-open='false'] {
+  max-height: 6.5rem;
+}
+.mapSheetBar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+.handle {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  border: 0;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+}
+.handle span {
+  width: 2.5rem;
+  height: 0.3rem;
+  border-radius: 999px;
+  background: var(--color-border);
+}
+.sheetClose {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.mapSheetContent {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--space-4) var(--space-4);
+}
+.mapSheet[data-open='false'] .mapSheetContent {
+  overflow: hidden;
+}

@@ -1,9 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { useId, useMemo, useState } from 'react';
+import { GeographyCatalogue, GeographyResult } from '@mascli/contracts';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
 import { saveBlob } from '../../shared/api/download.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
+import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import {
   DIMENSIONS,
   DIMENSION_NAMES,
@@ -11,35 +13,66 @@ import {
   foldText,
   monthLabel,
 } from '../../shared/lib/text.ts';
-import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
+import { DimensionBadge } from '../../shared/ui/Badges.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
-import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { TimeHistogram } from '../../shared/ui/time/TimeHistogram.tsx';
-import { BaseMap, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
-import { MapFrame } from './MapFrame.tsx';
-import { useMapView } from './useMapView.ts';
-import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
+import { BaseMap, type Extent, ringsPath, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
+import { BasemapCredit, BasemapPicker } from './BasemapPicker.tsx';
+import { ConcessionCard, type Relation } from './ConcessionCard.tsx';
+import {
+  type Concession,
+  concessionsOf,
+  LEGEND,
+  legendOf,
+  queryExtent,
+  relationPolygon,
+} from './concessions.ts';
+import type { CanvasPoint, Focus } from './engine/types.ts';
+import { supportsWebGl2 } from './engine/webgl.ts';
+import { EVIDENCE, EVIDENCE_LABELS, type Evidence } from './evidence.ts';
+import { EvidenceTag } from './EvidenceTag.tsx';
 import { LOCALITIES } from './localities.ts';
+import { MapErrorBoundary } from './MapErrorBoundary.tsx';
+import { MapFrame } from './MapFrame.tsx';
+import { MapSheet } from './MapSheet.tsx';
+import { PointCard } from './PointCard.tsx';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import {
+  atCursor,
+  filterPlace,
+  inPeriod,
   LAYERS,
   type Layer,
   type MapPoint,
-  type TerritorialRecord,
-  filterPlace,
-  inPeriod,
   mapPoints,
   monthlyCounts,
   monthsOf,
+  type TerritorialRecord,
 } from './territorial-model.ts';
+import { TerritorialTimeline } from './TerritorialTimeline.tsx';
 import { type Basemap, TileLayer } from './TileLayer.tsx';
-import { BasemapCredit, BasemapPicker } from './BasemapPicker.tsx';
+import { useMapView } from './useMapView.ts';
 import styles from './TerritorialMap.module.css';
+
+// The WebGL engine (MapLibre GL JS + deck.gl) is a separate chunk, loaded only for this map.
+const GeoCanvas = lazy(() => import('./engine/GeoCanvas.tsx'));
 
 const Records = z.array(z.looseObject({ _id: z.string() }));
 const CLOSED = new Set(['cerrada', 'cerrado', 'descartada', 'descartado']);
+/** Widest view (degrees) for which the cadastre is requested; wider views ask to zoom in. */
+export const MAX_CONCESSION_SPAN = 2.5;
+const CADASTRE = { serviceId: 'SERV_CATASTRO_MINERO', layerId: 0 } as const;
+
+/** Dimension colours of the design tokens (--dim-*), as RGB for the WebGL layers. */
+const DIMENSION_RGB: Readonly<Record<DimensionCode, readonly [number, number, number]>> = {
+  G: [43, 108, 176],
+  A: [107, 70, 193],
+  D: [183, 121, 31],
+  N: [192, 86, 33],
+  E: [47, 133, 90],
+  I: [74, 85, 104],
+};
 
 const useLayer = (slug: string, scope: string) =>
   useQuery({
@@ -52,9 +85,15 @@ const csvCell = (value: unknown) =>
     .replace(/^[=+@-]/, "'$&")
     .replaceAll('"', '""')}"`;
 
+const round = ([a, b, c, d]: Extent): Extent => {
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  return [r(a), r(b), r(c), r(d)];
+};
+
 /**
- * Territorial map: the project's events, demands and actors placed on an OpenStreetMap basemap
- * of the Sechura province, with filters, indicators, a detail panel and a timeline.
+ * Territorial intelligence map (ODD geospatial-timeline): the project's events, demands and
+ * actors with INGEMMET's mining concessions as selectable polygons, a contextual sheet and an
+ * evolution timeline synchronised with the map.
  */
 export const TerritorialMapPage = ({ scope, projectId }: FeatureContext) => {
   const events = useLayer('eventos', scope);
@@ -78,45 +117,54 @@ export const TerritorialMapPage = ({ scope, projectId }: FeatureContext) => {
   return (
     <QueryState query={all} label="el mapa territorial">
       {(layers) => (
-        <TerritorialWorkspace layers={layers} projectId={projectId} openAlerts={openAlerts} />
+        <TerritorialWorkspace
+          layers={layers}
+          projectId={projectId}
+          openAlerts={openAlerts}
+          scope={scope}
+        />
       )}
     </QueryState>
   );
 };
 
 /**
- * Places markers in map units. Records of the same locality share its coordinates, so they
- * are set around it on a small ring (in screen-sized units) instead of hiding each other.
+ * Places markers in map units for the SVG renderer. Records of the same locality share its
+ * coordinates, so they are set around it on a small ring instead of hiding each other.
  */
-const spread = (points: readonly MapPoint[], unit: number) => {
-  const groups = new Map<string, MapPoint[]>();
+const spread = <T extends { point: MapPoint }>(points: readonly T[], unit: number) => {
+  const groups = new Map<string, T[]>();
   for (const p of points) {
-    const key = `${p.at[0]},${p.at[1]}`;
+    const key = `${p.point.at[0]},${p.point.at[1]}`;
     groups.set(key, [...(groups.get(key) ?? []), p]);
   }
   return [...groups.values()].flatMap((group) =>
-    group.map((point, i) => {
+    group.map((entry, i) => {
       const radius = group.length > 1 ? unit * (2.4 + group.length * 0.5) : 0;
       const angle = (2 * Math.PI * i) / group.length - Math.PI / 2;
       return {
-        point,
+        ...entry,
         at: [
-          svgX(point.at[0]) + radius * Math.cos(angle),
-          svgY(point.at[1]) + radius * Math.sin(angle),
+          svgX(entry.point.at[0]) + radius * Math.cos(angle),
+          svgY(entry.point.at[1]) + radius * Math.sin(angle),
         ] as const,
       };
     }),
   );
 };
 
+type Selection = { kind: 'point'; id: string } | { kind: 'concession'; concession: Concession };
+
 const TerritorialWorkspace = ({
   layers,
   projectId,
   openAlerts,
+  scope,
 }: {
   layers: Record<Layer, readonly TerritorialRecord[]>;
   projectId: string;
   openAlerts: number;
+  scope: string;
 }) => {
   const id = useId();
   const [filters, setFilters] = useState({
@@ -126,17 +174,54 @@ const TerritorialWorkspace = ({
     from: '',
     to: '',
   });
-  const [selectedId, setSelectedId] = useState('');
+  const [evidence, setEvidence] = useState<readonly Evidence[]>(EVIDENCE);
+  const [selection, setSelection] = useState<Selection | null>(null);
   const [basemap, setBasemap] = useState<Basemap>('calles');
+  const [engine, setEngine] = useState<'webgl' | 'svg'>(() => (supportsWebGl2() ? 'webgl' : 'svg'));
+  const [showConcessions, setShowConcessions] = useState(true);
+  const [relatedOnly, setRelatedOnly] = useState(false);
+  const [cursor, setCursor] = useState('');
+  const [playing, setPlaying] = useState(false);
+  const [focus, setFocus] = useState<Focus | null>(null);
+  const [canvasView, setCanvasView] = useState<Extent | null>(null);
   const compact = useMediaQuery(COMPACT_QUERY);
+  const mapSection = useRef<HTMLElement>(null);
+
   const { points, unlocated } = useMemo(() => mapPoints(layers, projectId), [layers, projectId]);
-  const placed = filterPlace(points, filters);
+  const selectedConcession = selection?.kind === 'concession' ? selection.concession : null;
+
+  const polygon = selectedConcession ? relationPolygon(selectedConcession) : null;
+  const relationQuery = useQuery({
+    queryKey: ['geocatmin-relation', scope, selectedConcession?.code],
+    enabled: Boolean(polygon),
+    retry: false,
+    staleTime: 300_000,
+    queryFn: ({ signal }) =>
+      requestJson('/system/geography/query', GeographyResult, {
+        scope,
+        signal,
+        method: 'POST',
+        body: {
+          json: { ...CADASTRE, polygon, concessionCode: selectedConcession?.code },
+        },
+      }),
+  });
+  const relatedKeys =
+    relatedOnly && relationQuery.data
+      ? new Set(relationQuery.data.related.map((r) => `${foldText(r.module)}:${r.id}`))
+      : null;
+  const related = (p: MapPoint) => !relatedKeys || relatedKeys.has(`${foldText(p.layer)}:${p.id}`);
+
+  const placed = filterPlace(points, { ...filters, evidence }).filter(related);
   const visible = placed.filter((p) => inPeriod(p, filters.from, filters.to));
+  const drawn = atCursor(visible, cursor);
   const months = monthsOf(points);
   const activity = monthlyCounts(placed);
-  const selected = visible.find((p) => p.id === selectedId) ?? null;
+  const selectedPoint =
+    selection?.kind === 'point' ? (points.find((p) => p.id === selection.id) ?? null) : null;
   const localities = new Set(visible.map((p) => p.locality));
-  const recent = [...visible].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const activeFilters =
+    Object.values(filters).filter(Boolean).length + (evidence.length < EVIDENCE.length ? 1 : 0);
 
   // Home view frames the visible points (or the whole province when there are none).
   const [minLon, minLat, maxLon, maxLat] = visible.length
@@ -151,27 +236,114 @@ const TerritorialWorkspace = ({
   const homeSpan = visible.length
     ? Math.max(maxLon - minLon, maxLat - minLat, 0.2) * 1.4
     : Math.max(maxLon - minLon, maxLat - minLat) * 1.05;
+  const homeExtent: Extent = [
+    home[0] - homeSpan / 2,
+    home[1] - homeSpan / 2,
+    home[0] + homeSpan / 2,
+    home[1] + homeSpan / 2,
+  ];
   const map = useMapView({ home, homeSpan, maxZoom: 32 });
-  const view = map.view;
   const unit = (map.span / 100) * UNITS_PER_DEGREE;
-  const markers = spread(visible, unit);
-  const activeFilters = Object.values(filters).filter(Boolean).length;
+
+  // The cadastre follows the settled view of whichever renderer is drawing.
+  const view = engine === 'webgl' ? canvasView : map.view;
+  const span = view ? Math.max(view[2] - view[0], view[3] - view[1]) : Infinity;
+  const bbox = view && span <= MAX_CONCESSION_SPAN ? round(queryExtent(view)) : null;
+  // The official catalogue answers even when INGEMMET is down; the cadastre is only queried
+  // once it confirms the layer, so an outage reads as a notice instead of failed requests.
+  const catalogue = useQuery({
+    queryKey: ['geocatmin-catalogue', scope],
+    enabled: showConcessions,
+    staleTime: 300_000,
+    retry: false,
+    queryFn: ({ signal }) =>
+      requestJson('/system/geography/catalogue', GeographyCatalogue, { scope, signal }),
+  });
+  const cadastreReady = Boolean(
+    catalogue.data?.layers.some(
+      (l) =>
+        l.serviceId === CADASTRE.serviceId &&
+        l.id === CADASTRE.layerId &&
+        l.capabilities.includes('Query'),
+    ),
+  );
+  const cadastreDown = Boolean(catalogue.error) || (catalogue.isSuccess && !cadastreReady);
+  const cadastre = useQuery({
+    queryKey: ['geocatmin-concessions', scope, bbox?.join(',')],
+    enabled: showConcessions && cadastreReady && Boolean(bbox),
+    retry: false,
+    staleTime: 300_000,
+    placeholderData: keepPreviousData,
+    queryFn: ({ signal }) =>
+      requestJson('/system/geography/query', GeographyResult, {
+        scope,
+        signal,
+        method: 'POST',
+        body: { json: { ...CADASTRE, bbox } },
+      }),
+  });
+  const concessions = useMemo(
+    () => (cadastre.data ? concessionsOf(cadastre.data.features) : []),
+    [cadastre.data],
+  );
+  // The selected concession stays drawn after the view moves away from the last query.
+  const shownConcessions = !showConcessions
+    ? []
+    : selectedConcession && !concessions.some((c) => c.code === selectedConcession.code)
+      ? [...concessions, selectedConcession]
+      : concessions;
 
   const set = (key: keyof typeof filters) => (value: string) => {
     setFilters((f) => ({ ...f, [key]: value }));
-    setSelectedId('');
+    setSelection(null);
+    setCursor('');
+    setPlaying(false);
     if (key === 'locality') {
       const place = LOCALITIES.find((l) => l.name === value);
       map.focus(place ? place.at : null, 1);
+      setFocus(place ? { at: place.at, zoom: 12 } : { extent: SECHURA_EXTENT });
     }
   };
-  const focus = (point: MapPoint) => {
-    setSelectedId(point.id);
+  const focusPoint = (point: MapPoint) => {
+    setSelection({ kind: 'point', id: point.id });
+    // On phones the list sits below the map: bring the map back above the sheet.
+    if (compact) mapSection.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
     map.focus(point.at, Math.max(map.zoom, 4));
+    setFocus({ at: point.at, zoom: 13 });
   };
+  const selectPoint = (pointId: string) => setSelection({ kind: 'point', id: pointId });
+  const selectConcession = (code: string) => {
+    const concession = shownConcessions.find((c) => c.code === code);
+    if (!concession) return;
+    setSelection({ kind: 'concession', concession });
+    setRelatedOnly(false);
+  };
+  const closeSheet = () => {
+    setSelection(null);
+    setRelatedOnly(false);
+  };
+  const toggleEvidence = (state: Evidence) =>
+    setEvidence((current) =>
+      current.includes(state) ? current.filter((s) => s !== state) : [...current, state],
+    );
+
   const exportCsv = () => {
     const rows = [
-      ['Capa', 'ID', 'Fecha', 'Localidad', 'Territorio', 'Dimensión', 'Descripción', 'Lon', 'Lat'],
+      [
+        'Capa',
+        'ID',
+        'Fecha',
+        'Localidad',
+        'Territorio',
+        'Dimensión',
+        'Descripción',
+        'Estado de la información',
+        'Sustento',
+        'Fuente',
+        'Precisión',
+        'Lon',
+        'Lat',
+      ],
       ...visible.map((p) => [
         p.layer,
         p.id,
@@ -180,6 +352,10 @@ const TerritorialWorkspace = ({
         p.territory,
         p.dimension,
         p.title,
+        EVIDENCE_LABELS[p.evidence],
+        p.evidenceBasis,
+        p.source,
+        p.precision === 'exacta' ? 'Coordenadas del registro' : 'Centro de la localidad',
         p.at[0].toFixed(5),
         p.at[1].toFixed(5),
       ]),
@@ -209,12 +385,139 @@ const TerritorialWorkspace = ({
     </div>
   );
 
+  const canvasPoints: CanvasPoint[] = drawn.map(({ point, emphasis }) => ({
+    id: point.id,
+    at: point.at,
+    color: DIMENSION_RGB[point.dimension],
+    evidence: point.evidence,
+    emphasis,
+  }));
+  const mapLabel = 'Mapa territorial de la provincia de Sechura';
+
+  const svgMap = (
+    <MapFrame map={map} homeLabel="Ver toda la provincia">
+      {(hint) => (
+        <BaseMap
+          view={map.view}
+          label={mapLabel}
+          title="Registros georreferenciados y concesiones en la provincia de Sechura"
+          background={
+            basemap === 'ninguno' ? undefined : <TileLayer view={map.view} basemap={basemap} />
+          }
+          imagery={basemap === 'satelite'}
+          describedBy={hint}
+        >
+          {shownConcessions.map((c) => {
+            const active = c.code === selectedConcession?.code;
+            const rings =
+              c.geometry.type === 'Polygon'
+                ? c.geometry.coordinates
+                : c.geometry.coordinates.flat();
+            return (
+              <path
+                key={c.code}
+                d={ringsPath(rings)}
+                className={styles.concession}
+                data-active={active}
+                fillRule="evenodd"
+                style={{ stroke: `rgb(${legendOf(c.legend).color.join(' ')})` }}
+                strokeWidth={unit * (active ? 0.8 : 0.4)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Concesión ${c.name} (${c.code})`}
+                aria-pressed={active}
+                onClick={() => selectConcession(c.code)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectConcession(c.code);
+                  }
+                }}
+              />
+            );
+          })}
+          {spread(drawn, unit).map(({ point: p, emphasis, at }) => {
+            const active = p.id === selectedPoint?.id;
+            const r = unit * (active ? 3.4 : emphasis === 'current' ? 3.2 : 2.6);
+            return (
+              <g
+                key={`${p.layer}-${p.id}`}
+                className={`${styles.marker} ${styles[p.dimension] ?? ''} ${styles[`ev_${p.evidence}`] ?? ''}`}
+                data-emphasis={emphasis}
+                role="button"
+                tabIndex={0}
+                aria-label={`${p.layer}: ${p.title} (${p.locality})`}
+                aria-pressed={active}
+                onClick={() => selectPoint(p.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectPoint(p.id);
+                  }
+                }}
+              >
+                <circle cx={at[0]} cy={at[1]} r={r} strokeWidth={unit * 0.4} />
+                <text x={at[0]} y={at[1] + r * 0.38} fontSize={r * 1.1} textAnchor="middle">
+                  {p.dimension}
+                </text>
+              </g>
+            );
+          })}
+        </BaseMap>
+      )}
+    </MapFrame>
+  );
+
+  const relation: Relation = {
+    status: !polygon
+      ? 'unsupported'
+      : relationQuery.error
+        ? 'error'
+        : relationQuery.data
+          ? 'ready'
+          : 'pending',
+    ...(relationQuery.data ? { data: relationQuery.data } : {}),
+    retry: () => void relationQuery.refetch(),
+  };
+  const sheet = selectedConcession ? (
+    <ConcessionCard
+      concession={selectedConcession}
+      source={cadastre.data?.source ?? relationQuery.data?.source ?? ''}
+      relation={relation}
+      points={points}
+      relatedOnly={relatedOnly}
+      onRelatedOnly={setRelatedOnly}
+      onFocusPoint={focusPoint}
+      onFrame={() => setFocus({ extent: selectedConcession.extent })}
+      onClose={closeSheet}
+    />
+  ) : selectedPoint ? (
+    <PointCard point={selectedPoint} onClose={closeSheet} />
+  ) : null;
+  const sheetTitle = selectedConcession
+    ? `Ficha de la concesión ${selectedConcession.name}`
+    : 'Ficha del registro';
+
+  const cadastreStatus = !showConcessions
+    ? null
+    : catalogue.isPending
+      ? 'Verificando el catastro minero de INGEMMET…'
+      : cadastreDown
+        ? 'El catastro minero de INGEMMET no está disponible ahora; los registros del proyecto siguen visibles.'
+        : !bbox
+          ? 'Acerque el mapa para consultar las concesiones del catastro minero.'
+          : cadastre.isFetching
+            ? 'Consultando el catastro minero de INGEMMET…'
+            : cadastre.error
+              ? null
+              : `${concessions.length} concesión(es) de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
+
   return (
     <div className={styles.page}>
       <details className={styles.filters} key={String(compact)} open={!compact || undefined}>
         <summary>
-          Filtros{activeFilters ? ` (${activeFilters} activos)` : ''} · {visible.length} registro(s)
-          en el mapa
+          Capas y filtros{activeFilters ? ` (${activeFilters} activos)` : ''} · {visible.length}{' '}
+          registro(s) en el mapa
         </summary>
         <div className={styles.toolbar}>
           {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}
@@ -238,51 +541,59 @@ const TerritorialWorkspace = ({
             Exportar CSV
           </Button>
         </div>
+        <div className={styles.layerToggles}>
+          <fieldset className={styles.checks}>
+            <legend>Estado de la información</legend>
+            {EVIDENCE.map((state) => (
+              <label key={state}>
+                <input
+                  type="checkbox"
+                  checked={evidence.includes(state)}
+                  onChange={() => toggleEvidence(state)}
+                />
+                {EVIDENCE_LABELS[state]}
+              </label>
+            ))}
+          </fieldset>
+          <fieldset className={styles.checks}>
+            <legend>Capas oficiales</legend>
+            <label>
+              <input
+                type="checkbox"
+                checked={showConcessions}
+                onChange={(event) => setShowConcessions(event.target.checked)}
+              />
+              Concesiones mineras (INGEMMET)
+            </label>
+          </fieldset>
+        </div>
       </details>
 
       <div className={styles.layout}>
-        <section className={styles.mapCard} aria-label="Mapa">
-          <MapFrame map={map} homeLabel="Ver toda la provincia">
-            {(hint) => (
-              <BaseMap
-                view={view}
-                label="Mapa territorial de la provincia de Sechura"
-                title="Registros georreferenciados en la provincia de Sechura"
-                background={
-                  basemap === 'ninguno' ? undefined : <TileLayer view={view} basemap={basemap} />
-                }
-                imagery={basemap === 'satelite'}
-                describedBy={hint}
-              >
-                {markers.map(({ point: p, at }) => {
-                  const active = p.id === selectedId;
-                  const r = unit * (active ? 3.4 : 2.6);
-                  return (
-                    <g
-                      key={`${p.layer}-${p.id}`}
-                      className={`${styles.marker} ${styles[p.dimension] ?? ''}`}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`${p.layer}: ${p.title} (${p.locality})`}
-                      aria-pressed={active}
-                      onClick={() => setSelectedId(p.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          setSelectedId(p.id);
-                        }
-                      }}
-                    >
-                      <circle cx={at[0]} cy={at[1]} r={r} strokeWidth={unit * 0.4} />
-                      <text x={at[0]} y={at[1] + r * 0.38} fontSize={r * 1.1} textAnchor="middle">
-                        {p.dimension}
-                      </text>
-                    </g>
-                  );
-                })}
-              </BaseMap>
-            )}
-          </MapFrame>
+        <section ref={mapSection} className={styles.mapCard} aria-label="Mapa">
+          {engine === 'webgl' ? (
+            <MapErrorBoundary fallback={svgMap} onError={() => setEngine('svg')}>
+              <Suspense fallback={<p role="status">Cargando el motor cartográfico…</p>}>
+                <GeoCanvas
+                  basemap={basemap}
+                  home={homeExtent}
+                  homeLabel="Ver toda la provincia"
+                  label={mapLabel}
+                  points={canvasPoints}
+                  concessions={shownConcessions}
+                  selectedPoint={selectedPoint?.id ?? ''}
+                  selectedConcession={selectedConcession?.code ?? ''}
+                  focus={focus}
+                  onSelectPoint={selectPoint}
+                  onSelectConcession={selectConcession}
+                  onView={setCanvasView}
+                  onFailure={() => setEngine('svg')}
+                />
+              </Suspense>
+            </MapErrorBoundary>
+          ) : (
+            svgMap
+          )}
           <BasemapPicker value={basemap} onChange={setBasemap} />
           <ul className={styles.legendInline} aria-label="Dimensiones MASCLI">
             {DIMENSIONS.map((d) => (
@@ -291,73 +602,88 @@ const TerritorialWorkspace = ({
               </li>
             ))}
           </ul>
+          <ul className={styles.legendInline} aria-label="Estado de la información">
+            {EVIDENCE.map((state) => (
+              <li key={state}>
+                <EvidenceTag state={state} />
+              </li>
+            ))}
+          </ul>
+          {showConcessions ? (
+            <>
+              <ul className={styles.legendInline} aria-label="Catastro minero">
+                {['TITULADO', 'TRAMITE', 'EXTINGUIDO', 'OTROS'].map((key) => (
+                  <li key={key}>
+                    <span
+                      className={styles.swatch}
+                      style={{ borderColor: `rgb(${legendOf(key).color.join(' ')})` }}
+                      aria-hidden="true"
+                    />
+                    {LEGEND[key]?.label}
+                  </li>
+                ))}
+              </ul>
+              {cadastreStatus ? (
+                <p className={styles.note} role="status">
+                  {cadastreStatus}
+                </p>
+              ) : null}
+              {cadastre.error && !cadastre.isFetching ? (
+                <p role="alert" className={styles.note}>
+                  No fue posible consultar el catastro de INGEMMET; los registros del proyecto
+                  siguen disponibles.{' '}
+                  <Button variant="ghost" onClick={() => void cadastre.refetch()}>
+                    Reintentar
+                  </Button>
+                </p>
+              ) : null}
+            </>
+          ) : null}
           <p className={styles.attribution}>
-            <BasemapCredit basemap={basemap} /> Ubicaciones aproximadas por localidad; los registros
-            de una misma localidad se separan alrededor de ella.
+            <BasemapCredit basemap={basemap} /> Concesiones: catastro minero GEOCATMIN de INGEMMET.
+            Los registros sin coordenadas se ubican aproximadamente en su localidad.
             {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
           </p>
         </section>
 
-        <Card title="Detalle del punto seleccionado">
-          {selected ? (
-            <dl className={styles.detail}>
-              <dt>Localidad</dt>
-              <dd>{selected.locality}</dd>
-              <dt>Capa</dt>
-              <dd>{selected.layer}</dd>
-              <dt>Dimensión</dt>
-              <dd>
-                <DimensionBadge code={selected.dimension} /> {DIMENSION_NAMES[selected.dimension]}
-              </dd>
-              <dt>Descripción</dt>
-              <dd>{selected.title}</dd>
-              {selected.actor ? (
-                <>
-                  <dt>Actor</dt>
-                  <dd>{selected.actor}</dd>
-                </>
-              ) : null}
-              <dt>Fecha</dt>
-              <dd>{selected.date || 'Sin fecha'}</dd>
-              <dt>Prioridad</dt>
-              <dd>
-                <LevelPill level={selected.level} />
-              </dd>
-              {selected.status ? (
-                <>
-                  <dt>Estado</dt>
-                  <dd>{selected.status}</dd>
-                </>
-              ) : null}
-              <dt>Código</dt>
-              <dd>{selected.id}</dd>
-            </dl>
-          ) : (
-            <p className={styles.note}>
-              Seleccione un punto en el mapa o una fila de la tabla para ver su detalle.
-            </p>
-          )}
-        </Card>
+        {compact ? null : (
+          <Card title="Ficha territorial">
+            {sheet ?? (
+              <p className={styles.note}>
+                Seleccione una concesión o un registro en el mapa, o un registro de la evolución
+                temporal, para ver sus fuentes, verificación y registros vinculados.
+              </p>
+            )}
+          </Card>
+        )}
       </div>
 
-      {activity.length > 1 ? (
-        <Card title="Actividad por mes" eyebrow="Filtro temporal">
-          <TimeHistogram
-            series={activity}
-            from={filters.from}
-            to={filters.to}
-            label="Registros georreferenciados por mes"
-            onChange={(from, to) => {
-              setFilters((f) => ({ ...f, from, to }));
-              setSelectedId('');
-            }}
-          />
-          <p className={styles.note}>
-            Pulse un mes para ver solo ese periodo; con Mayús amplía el rango. Pulse de nuevo el mes
-            seleccionado para ver todo el periodo.
-          </p>
-        </Card>
+      {compact && sheet ? (
+        <MapSheet title={sheetTitle} onClose={closeSheet}>
+          {sheet}
+        </MapSheet>
       ) : null}
+
+      <Card title="Evolución temporal" eyebrow="Sincronizada con el mapa">
+        <TerritorialTimeline
+          series={activity}
+          points={drawn.map((d) => d.point)}
+          from={filters.from}
+          to={filters.to}
+          cursor={cursor}
+          playing={playing}
+          selectedId={selectedPoint?.id ?? ''}
+          onPeriod={(from, to) => {
+            setFilters((f) => ({ ...f, from, to }));
+            setSelection((s) => (s?.kind === 'point' ? null : s));
+            setCursor('');
+            setPlaying(false);
+          }}
+          onCursor={setCursor}
+          onPlaying={setPlaying}
+          onSelect={focusPoint}
+        />
+      </Card>
 
       <dl className={styles.kpis}>
         <div>
@@ -369,89 +695,14 @@ const TerritorialWorkspace = ({
           <dd>{visible.filter((p) => p.layer === 'Eventos').length}</dd>
         </div>
         <div>
-          <dt>Actores georreferenciados</dt>
-          <dd>{visible.filter((p) => p.layer === 'Actores').length}</dd>
+          <dt>Registros observados</dt>
+          <dd>{visible.filter((p) => p.evidence === 'observado').length}</dd>
         </div>
         <div className={openAlerts ? styles.alertKpi : undefined}>
           <dt>Alertas abiertas</dt>
           <dd>{openAlerts}</dd>
         </div>
       </dl>
-
-      <div className={styles.bottom}>
-        <Card title="Ubicaciones recientes">
-          {recent.length ? (
-            <div
-              className={styles.tableWrap}
-              tabIndex={0}
-              role="region"
-              aria-label="Ubicaciones recientes"
-            >
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Localidad</th>
-                    <th scope="col">Dimensión</th>
-                    <th scope="col">Descripción</th>
-                    <th scope="col">
-                      <span className="visually-hidden">Acción</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recent.map((p) => (
-                    <tr key={`${p.layer}-${p.id}`} data-selected={p.id === selectedId}>
-                      <td>{p.date || '—'}</td>
-                      <td>{p.locality}</td>
-                      <td>
-                        <DimensionBadge code={p.dimension} />
-                      </td>
-                      <td>{p.title}</td>
-                      <td>
-                        <Button
-                          variant="ghost"
-                          aria-label={`Ubicar ${p.id} en el mapa`}
-                          onClick={() => focus(p)}
-                        >
-                          Ubicar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <EmptyState title="Sin registros georreferenciados para estos filtros.">
-              Indique la localidad (por ejemplo Sechura, Vice o Bayóvar) en el campo Territorio de
-              eventos, demandas o actores.
-            </EmptyState>
-          )}
-        </Card>
-        <Card title="Línea de tiempo territorial">
-          {recent.length ? (
-            <ol className={styles.timeline}>
-              {[...recent].reverse().map((p) => (
-                <li key={`${p.layer}-${p.id}`}>
-                  <span
-                    className={`${styles.dot} ${styles[p.dimension] ?? ''}`}
-                    aria-hidden="true"
-                  />
-                  <small>
-                    {p.date || 'Sin fecha'} · {p.locality}
-                  </small>
-                  <span>
-                    <DimensionBadge code={p.dimension as DimensionCode} /> {p.title}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className={styles.note}>Sin hitos para estos filtros.</p>
-          )}
-        </Card>
-      </div>
     </div>
   );
 };

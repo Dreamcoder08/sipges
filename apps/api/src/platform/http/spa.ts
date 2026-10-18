@@ -20,15 +20,16 @@ const ROOT_FILES: Readonly<Record<string, string>> = {
 /**
  * Strict policy for the SPA (ADR 0004, ADR 0006): bundled scripts and styles only, no inline
  * code, same-origin API calls. React sets styles through the CSSOM, which `style-src` allows.
- * The only external origin is the basemap tile host of the territorial map (images only).
+ * External origins are the basemap tile hosts and INGEMMET's cadastre images. MapLibre fetches
+ * raster tiles (connect-src) and may decode them through blob: images (ADR 0017).
  */
 export const SPA_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: https://tile.openstreetmap.org https://tiles.maps.eox.at https://geocatmin.ingemmet.gob.pe",
+  "img-src 'self' data: blob: https://tile.openstreetmap.org https://tiles.maps.eox.at https://geocatmin.ingemmet.gob.pe",
   "font-src 'self'",
-  "connect-src 'self'",
+  "connect-src 'self' https://tile.openstreetmap.org https://tiles.maps.eox.at",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'self'",
