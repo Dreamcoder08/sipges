@@ -76,3 +76,39 @@ it('requires an explicit confirmation and authorization note before enabling', a
   );
   expect(screen.getByRole('button', { name: 'Guardar configuración' })).toBeEnabled();
 });
+
+it('shows provider failures and clears stale previews without offering an import', async () => {
+  handlers();
+  let unavailable = false;
+  let previews = 0;
+  server.use(
+    http.get('*/system/intelligence/sources/defensoria/preview', () => {
+      previews++;
+      return unavailable
+        ? HttpResponse.json({ detail: 'Fuente temporalmente no disponible.' }, { status: 502 })
+        : HttpResponse.json([
+            {
+              id: 123,
+              title: 'Publicación de prueba',
+              excerpt: 'Extracto controlado.',
+              url: 'https://www.defensoria.gob.pe/publicacion-de-prueba/',
+              published_at: '2026-10-17T10:00:00.000Z',
+            },
+          ]);
+    }),
+  );
+  renderCard('analista');
+  const user = userEvent.setup();
+  const preview = await screen.findByRole('button', { name: 'Previsualizar publicaciones' });
+  await user.click(preview);
+  expect(await screen.findByRole('link', { name: 'Publicación de prueba' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Importar publicación' })).toBeInTheDocument();
+  unavailable = true;
+  await user.click(preview);
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Fuente temporalmente no disponible.',
+  );
+  expect(screen.queryByRole('link', { name: 'Publicación de prueba' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Importar publicación' })).not.toBeInTheDocument();
+  expect(previews).toBe(2);
+});

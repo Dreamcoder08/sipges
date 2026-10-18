@@ -139,23 +139,8 @@ for (const mobile of [false, true]) {
         sourceCard.getByRole('checkbox', { name: 'Activar consulta periódica autorizada' }),
       ).not.toBeChecked();
       await expect(sourceCard.getByText(/Consulta periódica: desactivada/)).toBeVisible();
-      // Explicit UI failure fixture: no external official request or claimed provider availability.
-      await page.route('**/system/intelligence/sources/defensoria/preview*', (route) =>
-        route.fulfill({
-          status: 502,
-          contentType: 'application/json',
-          body: JSON.stringify({ detail: 'Fuente sintética temporalmente no disponible.' }),
-        }),
-      );
-      await sourceCard
-        .getByRole('button', { name: 'Previsualizar publicaciones', exact: true })
-        .click();
-      await expect(sourceCard.getByRole('status')).toHaveText(
-        'Fuente sintética temporalmente no disponible.',
-      );
-      await expect(
-        sourceCard.getByRole('button', { name: 'Importar publicación', exact: true }),
-      ).toHaveCount(0);
+      // External outage/cleared-results coverage lives in AuthorizedSourcesCard.test.tsx.
+      // Keep this persisted E2E independent of external availability and browser interception.
       if (browserName === 'chromium')
         await page.screenshot({
           path: test
@@ -175,7 +160,11 @@ for (const mobile of [false, true]) {
           exact: true,
         }),
       ).toBeVisible();
-      await expect(page.getByText(/Último intento: .* · registro · completado\./)).toBeVisible();
+      // main.ts also runs its 30-second scheduler; it may legitimately be the latest attempt.
+      // The event attempt was asserted immediately after the committed mutation above.
+      await expect(
+        page.getByText(/Último intento: .* · (?:registro|programador) · completado\./),
+      ).toBeVisible();
     } finally {
       for (const id of rules) {
         const response = await page.request.delete(`/system/automations/rules/${id}`, { headers });
