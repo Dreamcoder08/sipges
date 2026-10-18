@@ -18,7 +18,7 @@ export const RECORD_SCREENS: ReadonlyArray<{
   { module: 'compromisos', path: '/demandas', toggle: 'Compromisos' },
   { module: 'narrativas', path: '/narrativas' },
   { module: 'fuentes', path: '/fuentes' },
-  { module: 'alertas', path: '/alertas' },
+  { module: 'alertas', path: '/alertas', toggle: 'Alertas territoriales' },
   { module: 'acciones', path: '/alertas', toggle: 'Acciones territoriales' },
   { module: 'intereses', path: '/estrategia', toggle: 'Intereses' },
   { module: 'dialogos', path: '/estrategia', toggle: 'Diálogos' },
