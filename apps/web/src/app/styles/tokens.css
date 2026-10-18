@@ -1,15 +1,42 @@
+/*
+ * Design tokens (docs/adr/0018). Two layers:
+ * - Primitive scales (space, type, radius, motion, z-index, control sizes) never change by theme.
+ * - Semantic colours describe a role (surface, text, tone), never a hue, and are redefined for
+ *   the dark theme below. Modules use semantic tokens only; a unit test rejects raw colours.
+ */
 :root {
+  color-scheme: light;
+
+  /* ---------- Brand and text ---------- */
   --color-brand: #17365d;
   --color-brand-strong: #0f2541;
+  --color-brand-text: #17365d;
   --color-on-brand: #ffffff;
   --color-text: #17212b;
   --color-muted: #5b6673;
+  --color-subtle: #6b7684;
+
+  /* ---------- Surfaces ---------- */
   --color-bg: #f5f6f8;
   --color-surface: #ffffff;
   --color-surface-alt: #f6f8fb;
+  --color-surface-raised: #ffffff;
   --color-border: #dde2e9;
   --color-track: #e7ebf0;
   --color-focus: #2b6cb0;
+
+  /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
+  --color-accent: #1d4ed8;
+  --color-accent-tint: #e8eefc;
+  --color-accent-text: #1e3a8a;
+  --color-fill: #eef1f5;
+  --color-fill-hover: #e4e8ee;
+  --color-hairline: #e3e7ed;
+  --color-hairline-strong: #cbd2db;
+  --color-scrim: rgb(15 23 42 / 0.4);
+  --color-chrome: rgb(255 255 255 / 0.92);
+
+  /* ---------- Tones: soft background, readable text, solid mark ---------- */
   --color-danger: #c53030;
   --color-danger-strong: #8a1f1f;
   --color-danger-soft: #fdecec;
@@ -18,6 +45,26 @@
   --color-success: #2f855a;
   --color-success-soft: #e6f5ec;
 
+  --tone-positive-bg: #d7ebdf;
+  --tone-positive-fg: #195238;
+  --tone-positive-solid: #247b55;
+  --tone-negative-bg: #f7dde0;
+  --tone-negative-fg: #832434;
+  --tone-negative-solid: #b03546;
+  --tone-info-bg: #dce7f6;
+  --tone-info-fg: #244e86;
+  --tone-info-solid: #3567aa;
+  --tone-warning-bg: #f8ebc6;
+  --tone-warning-fg: #6d4c0b;
+  --tone-warning-solid: #8a6115;
+  --tone-neutral-bg: #e9edf3;
+  --tone-neutral-fg: #485265;
+  --tone-neutral-solid: #68758b;
+  --tone-on-solid: #ffffff;
+  /* White on strong fills that keep their hue in both themes (risk red, dimension badges). */
+  --color-on-strong: #ffffff;
+
+  /* ---------- Risk levels (semáforo) ---------- */
   --level-green: #2f855a;
   --level-yellow: #d69e2e;
   --level-orange: #dd6b20;
@@ -30,7 +77,17 @@
   --level-yellow-text: #7a5410;
   --level-orange-text: #8a3f0d;
   --level-red-text: #8a1f1f;
+  /* Heat-map cells: a strong fill with the text colour that passes AA on it. */
+  --heat-green: #6fc28f;
+  --heat-green-on: #0d3520;
+  --heat-yellow: #f6d55c;
+  --heat-yellow-on: #3d2e05;
+  --heat-orange: #f4a259;
+  --heat-orange-on: #3d1a05;
+  --heat-red: #c4343d;
+  --heat-red-on: #ffffff;
 
+  /* ---------- Data visualisation ---------- */
   --dim-g: #2b6cb0;
   --dim-a: #6b46c1;
   --dim-d: #b7791f;
@@ -46,18 +103,26 @@
   --trend-n: #d6336c;
   --trend-i: #495057;
 
-  /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
-  --color-accent: #1d4ed8;
-  --color-accent-tint: #e8eefc;
-  --color-accent-text: #1e3a8a;
-  --color-fill: #eef1f5;
-  --color-fill-hover: #e4e8ee;
-  --color-hairline: #e3e7ed;
-  --color-hairline-strong: #cbd2db;
-  --color-scrim: rgb(15 23 42 / 0.4);
-  --color-chrome: rgb(255 255 255 / 0.92);
+  /* Categorical series for graphs (entity kinds). */
+  --viz-1: #2b6cb0;
+  --viz-2: #2f855a;
+  --viz-3: #dd6b20;
+  --viz-4: #805ad5;
+  --viz-5: #c53030;
+  --viz-6: #d69e2e;
+  --viz-7: #319795;
+  --viz-8: #5b6673;
+  /* Diagram ink: strokes, labels and node fills drawn on a light canvas. */
+  --ink-strong: #14243a;
+  --ink: #1d2b3f;
+  --ink-soft: #5b6b84;
+  --ink-faint: #68758b;
+  --canvas: #fbfcfe;
+  --canvas-node: #eef1f5;
+  --canvas-halo: #ffffff;
 
-  /* 4-pt spacing scale. */
+  /* ---------- Spacing: 4-pt scale ---------- */
+  --space-0: 0.125rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -65,27 +130,241 @@
   --space-5: 1.25rem;
   --space-6: 1.5rem;
   --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
 
+  /* ---------- Type: system faces (SF Pro on Apple, Segoe on Windows, Roboto on Android) ---------- */
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  --text-2xs: 0.625rem;
   --text-xs: 0.6875rem;
   --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
   --text-md: 0.9375rem;
+  --text-body: 1rem;
   --text-lg: 1.125rem;
   --text-xl: 1.375rem;
+  /* Display sizes scale with the viewport between phone and desktop. */
+  --text-2xl: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.625rem);
 
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+  --tracking-caps: 0.06em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  /* ---------- Shape ---------- */
+  --radius-xs: 0.1875rem;
   --radius-sm: 0.35rem;
   --radius-md: 0.55rem;
   --radius-lg: 0.9rem;
   --radius-xl: 1.25rem;
   --radius-pill: 999px;
 
-  --motion-fast: 120ms;
-  --motion-medium: 220ms;
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-
-  --tabbar-height: 4rem;
+  /* ---------- Elevation ---------- */
   --shadow-sm: 0 1px 2px rgb(15 37 65 / 0.06);
   --shadow-md: 0 6px 18px rgb(15 37 65 / 0.1);
   --shadow-lg: 0 18px 40px rgb(15 37 65 / 0.25);
   --shadow-raised: 0 -1px 0 rgb(15 23 42 / 0.04), 0 12px 40px rgb(15 23 42 / 0.18);
+  --shadow-chip: 0 1px 3px rgb(15 23 42 / 0.18);
+
+  /* ---------- Motion: short, eased, and off under prefers-reduced-motion ---------- */
+  --motion-fast: 120ms;
+  --motion-medium: 220ms;
+  --motion-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The curve iOS uses for sheets: fast start, long soft landing, no overshoot. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ---------- Controls and layers ---------- */
+  --control-sm: 2rem;
+  --control-md: 2.5rem;
+  --touch-target: 2.75rem;
+  --focus-ring: 3px solid var(--color-focus);
+  --z-sticky: 20;
+  --z-tabbar: 25;
+  --z-popover: 40;
+  --z-modal: 60;
+  --z-skip: 70;
+
+  --tabbar-height: 4rem;
   --sidebar-width: 15.5rem;
+}
+
+/*
+ * Dark theme. It follows the device unless the person picks a theme in Cuenta
+ * (shared/lib/theme.ts sets data-theme on <html>). Both selectors carry the same values.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --color-brand: #2f6bd6;
+    --color-brand-strong: #2559b8;
+    --color-brand-text: #9cc0ff;
+    --color-on-brand: #ffffff;
+    --color-text: #e6eaf0;
+    --color-muted: #a3adbb;
+    --color-subtle: #8c97a6;
+
+    --color-bg: #0b0f14;
+    --color-surface: #12171e;
+    --color-surface-alt: #161c24;
+    --color-surface-raised: #1a212a;
+    --color-border: #2c3542;
+    --color-track: #252d38;
+    --color-focus: #7fb0ff;
+
+    --color-accent: #7fb0ff;
+    --color-accent-tint: rgb(127 176 255 / 0.14);
+    --color-accent-text: #b8d2ff;
+    --color-fill: #1b222b;
+    --color-fill-hover: #232b36;
+    --color-hairline: #222a34;
+    --color-hairline-strong: #36404e;
+    --color-scrim: rgb(0 0 0 / 0.6);
+    --color-chrome: rgb(18 23 30 / 0.88);
+
+    --color-danger: #f07178;
+    --color-danger-strong: #ffb4b8;
+    --color-danger-soft: rgb(240 113 120 / 0.14);
+    --color-info: #7fb0ff;
+    --color-info-soft: rgb(127 176 255 / 0.14);
+    --color-success: #5fd39a;
+    --color-success-soft: rgb(95 211 154 / 0.14);
+
+    --tone-positive-bg: rgb(95 211 154 / 0.16);
+    --tone-positive-fg: #9ee6c0;
+    --tone-positive-solid: #3fae7a;
+    --tone-negative-bg: rgb(240 113 120 / 0.16);
+    --tone-negative-fg: #ffb4b8;
+    --tone-negative-solid: #e0606a;
+    --tone-info-bg: rgb(127 176 255 / 0.16);
+    --tone-info-fg: #b8d2ff;
+    --tone-info-solid: #5f93e6;
+    --tone-warning-bg: rgb(240 190 90 / 0.16);
+    --tone-warning-fg: #f3d58f;
+    --tone-warning-solid: #c99a3a;
+    --tone-neutral-bg: rgb(163 173 187 / 0.14);
+    --tone-neutral-fg: #c9d0da;
+    --tone-neutral-solid: #8a96a8;
+    --tone-on-solid: #0b0f14;
+
+    --level-green-soft: rgb(95 211 154 / 0.16);
+    --level-yellow-soft: rgb(240 190 90 / 0.16);
+    --level-orange-soft: rgb(240 150 90 / 0.16);
+    --level-red-soft: rgb(240 113 120 / 0.16);
+    --level-green-text: #9ee6c0;
+    --level-yellow-text: #f3d58f;
+    --level-orange-text: #f8c29a;
+    --level-red-text: #ffb4b8;
+
+    --viz-8: #8c97a6;
+    --trend-i: #a3adbb;
+
+    --ink-strong: #e6eaf0;
+    --ink: #c9d0da;
+    --ink-soft: #8c97a6;
+    --ink-faint: #7b8696;
+    --canvas: #0f141a;
+    --canvas-node: #1b222b;
+    --canvas-halo: #0f141a;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 6px 18px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 18px 40px rgb(0 0 0 / 0.6);
+    --shadow-raised: 0 -1px 0 rgb(255 255 255 / 0.04), 0 12px 40px rgb(0 0 0 / 0.6);
+    --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-brand: #2f6bd6;
+  --color-brand-strong: #2559b8;
+  --color-brand-text: #9cc0ff;
+  --color-on-brand: #ffffff;
+  --color-text: #e6eaf0;
+  --color-muted: #a3adbb;
+  --color-subtle: #8c97a6;
+
+  --color-bg: #0b0f14;
+  --color-surface: #12171e;
+  --color-surface-alt: #161c24;
+  --color-surface-raised: #1a212a;
+  --color-border: #2c3542;
+  --color-track: #252d38;
+  --color-focus: #7fb0ff;
+
+  --color-accent: #7fb0ff;
+  --color-accent-tint: rgb(127 176 255 / 0.14);
+  --color-accent-text: #b8d2ff;
+  --color-fill: #1b222b;
+  --color-fill-hover: #232b36;
+  --color-hairline: #222a34;
+  --color-hairline-strong: #36404e;
+  --color-scrim: rgb(0 0 0 / 0.6);
+  --color-chrome: rgb(18 23 30 / 0.88);
+
+  --color-danger: #f07178;
+  --color-danger-strong: #ffb4b8;
+  --color-danger-soft: rgb(240 113 120 / 0.14);
+  --color-info: #7fb0ff;
+  --color-info-soft: rgb(127 176 255 / 0.14);
+  --color-success: #5fd39a;
+  --color-success-soft: rgb(95 211 154 / 0.14);
+
+  --tone-positive-bg: rgb(95 211 154 / 0.16);
+  --tone-positive-fg: #9ee6c0;
+  --tone-positive-solid: #3fae7a;
+  --tone-negative-bg: rgb(240 113 120 / 0.16);
+  --tone-negative-fg: #ffb4b8;
+  --tone-negative-solid: #e0606a;
+  --tone-info-bg: rgb(127 176 255 / 0.16);
+  --tone-info-fg: #b8d2ff;
+  --tone-info-solid: #5f93e6;
+  --tone-warning-bg: rgb(240 190 90 / 0.16);
+  --tone-warning-fg: #f3d58f;
+  --tone-warning-solid: #c99a3a;
+  --tone-neutral-bg: rgb(163 173 187 / 0.14);
+  --tone-neutral-fg: #c9d0da;
+  --tone-neutral-solid: #8a96a8;
+  --tone-on-solid: #0b0f14;
+
+  --level-green-soft: rgb(95 211 154 / 0.16);
+  --level-yellow-soft: rgb(240 190 90 / 0.16);
+  --level-orange-soft: rgb(240 150 90 / 0.16);
+  --level-red-soft: rgb(240 113 120 / 0.16);
+  --level-green-text: #9ee6c0;
+  --level-yellow-text: #f3d58f;
+  --level-orange-text: #f8c29a;
+  --level-red-text: #ffb4b8;
+
+  --viz-8: #8c97a6;
+  --trend-i: #a3adbb;
+
+  --ink-strong: #e6eaf0;
+  --ink: #c9d0da;
+  --ink-soft: #8c97a6;
+  --ink-faint: #7b8696;
+  --canvas: #0f141a;
+  --canvas-node: #1b222b;
+  --canvas-halo: #0f141a;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 6px 18px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 18px 40px rgb(0 0 0 / 0.6);
+  --shadow-raised: 0 -1px 0 rgb(255 255 255 / 0.04), 0 12px 40px rgb(0 0 0 / 0.6);
+  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.5);
 }

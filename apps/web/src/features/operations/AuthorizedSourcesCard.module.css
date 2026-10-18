@@ -13,17 +13,17 @@
 .form textarea {
   max-width: 100%;
   padding: 8px;
-  border: 1px solid var(--border, #cbd5e1);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font: inherit;
 }
 .form {
   padding-block: 12px;
-  border-top: 1px solid var(--border, #cbd5e1);
+  border-top: 1px solid var(--color-border);
 }
 .post {
   display: grid;
   gap: 8px;
   padding-block: 12px;
-  border-top: 1px solid var(--border, #cbd5e1);
+  border-top: 1px solid var(--color-border);
 }

@@ -15,28 +15,28 @@
 }
 .heading h4 {
   margin: 0.25rem 0;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
   color: var(--color-text);
 }
 .eyebrow {
   margin: 0;
   text-transform: uppercase;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.08em;
   color: var(--color-muted);
   font-weight: 700;
 }
 .count {
   padding: 0.4rem 0.8rem;
-  background: #e8eef7;
-  color: #173958;
+  background: var(--color-accent-tint);
+  color: var(--color-brand-text);
   border-radius: 999px;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   font-weight: 700;
 }
 .explanation {
   color: var(--color-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   line-height: 1.6;
 }
 .metrics {
@@ -51,14 +51,14 @@
   border-radius: var(--radius-md);
 }
 .metrics dt {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 .metrics dd {
   margin: 0.4rem 0 0;
-  font-size: 1.7rem;
+  font-size: var(--text-2xl);
   font-weight: 800;
-  color: #173958;
+  color: var(--color-brand-text);
 }
 .scroller {
   position: relative;
@@ -75,7 +75,7 @@
 .matrix th {
   padding: 0.6rem;
   text-align: left;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   min-width: 5.5rem;
 }
 .matrix thead th {
@@ -93,15 +93,15 @@
   display: inline-block;
   margin-right: 0.5rem;
   font-weight: 800;
-  color: #173958;
+  color: var(--color-brand-text);
 }
 .matrix td {
   padding: 0;
   min-width: 5.5rem;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
-  background: #f1f3f7;
+  background: var(--color-fill);
   border-radius: 0.45rem;
 }
 .heatCell {
@@ -114,43 +114,43 @@
   gap: 0.15rem;
   cursor: pointer;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 .heatCell strong {
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 .heatCell:disabled {
   opacity: 1;
   cursor: default;
 }
 .heatCell[aria-pressed='true'] {
-  border-color: #173958;
-  box-shadow: inset 0 0 0 1px white;
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-surface);
 }
 /* Heat colours: saturated enough to read as a heat map, with text above 4.5:1 contrast. */
 .Verde {
-  background: #6fc28f;
-  color: #0d3520;
+  background: var(--heat-green);
+  color: var(--heat-green-on);
 }
 .Amarillo {
-  background: #f6d55c;
-  color: #3d2e05;
+  background: var(--heat-yellow);
+  color: var(--heat-yellow-on);
 }
 .Naranja {
-  background: #f4a259;
-  color: #3d1a05;
+  background: var(--heat-orange);
+  color: var(--heat-orange-on);
 }
 .Rojo {
-  background: #c4343d;
-  color: #fff;
+  background: var(--heat-red);
+  color: var(--heat-red-on);
 }
 .unknown {
-  background: #e9edf3;
-  color: #485265;
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-fg);
 }
 .heatCell span,
 .heatCell small {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   opacity: 0.9;
 }
 .dimG {
@@ -180,7 +180,7 @@
   width: 1.5rem;
   height: 1.5rem;
   border-radius: var(--radius-sm);
-  color: #fff;
+  color: var(--color-on-strong);
   text-align: center;
   line-height: 1.5rem;
 }
@@ -193,7 +193,7 @@
   gap: 0.7rem 1rem;
   list-style: none;
   padding: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
 }
 .legend li {
   display: flex;
@@ -207,19 +207,19 @@
   border-radius: 50%;
 }
 .legend .favor {
-  background: #247b55;
+  background: var(--tone-positive-solid);
 }
 .legend .contra {
-  background: #b03546;
+  background: var(--tone-negative-solid);
 }
 .legend .neutral {
-  background: #3567aa;
+  background: var(--tone-info-solid);
 }
 .legend .expectante {
-  background: #8a6115;
+  background: var(--tone-warning-solid);
 }
 .legend .unknown {
-  background: #cfd5de;
+  background: var(--color-hairline-strong);
 }
 .selection {
   padding: 1rem;
@@ -228,7 +228,7 @@
 }
 .selection h5 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 .recordList,
 .actorList {
@@ -263,12 +263,12 @@
 }
 .sectorLabel {
   font-size: 13px;
-  fill: #294765;
+  fill: var(--ink);
   font-weight: 700;
 }
 .ringLabel {
   font-size: 11px;
-  fill: #576b86;
+  fill: var(--ink-soft);
 }
 .centerLabel {
   font-size: 13px;
@@ -278,25 +278,25 @@
   cursor: pointer;
 }
 .node:focus-visible {
-  outline: 3px solid #173958;
+  outline: 3px solid var(--color-focus);
   outline-offset: 4px;
 }
 .marker {
-  stroke: white;
+  stroke: var(--canvas-halo);
   stroke-width: 2;
-  fill: #68758b;
+  fill: var(--ink-faint);
 }
 .marker.favor {
-  fill: #247b55;
+  fill: var(--tone-positive-solid);
 }
 .marker.contra {
-  fill: #b03546;
+  fill: var(--tone-negative-solid);
 }
 .marker.neutral {
-  fill: #3567aa;
+  fill: var(--tone-info-solid);
 }
 .marker.expectante {
-  fill: #8a6115;
+  fill: var(--tone-warning-solid);
 }
 .nodeCount {
   font-size: 13px;
@@ -305,9 +305,9 @@
 }
 .nodeLabel {
   font-size: 11px;
-  fill: #173958;
+  fill: var(--color-brand-text);
   paint-order: stroke;
-  stroke: white;
+  stroke: var(--canvas-halo);
   stroke-width: 3px;
   stroke-linejoin: round;
 }
@@ -316,7 +316,7 @@
 }
 .actorAside label {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   font-weight: 700;
   margin-bottom: 0.4rem;
 }
@@ -338,7 +338,7 @@
 }
 .actorList li > span,
 .actorList small {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 .actorList button {
   justify-self: start;
@@ -349,20 +349,20 @@
   padding: 0.25rem 0.65rem;
 }
 .favor {
-  background: #d7ebdf;
-  color: #195238;
+  background: var(--tone-positive-bg);
+  color: var(--tone-positive-fg);
 }
 .contra {
-  background: #f7dde0;
-  color: #832434;
+  background: var(--tone-negative-bg);
+  color: var(--tone-negative-fg);
 }
 .neutral {
-  background: #dce7f6;
-  color: #244e86;
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
 }
 .expectante {
-  background: #f8ebc6;
-  color: #6d4c0b;
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
 }
 @media (max-width: 900px) {
   .actorLayout {
@@ -379,7 +379,7 @@
   .matrix th[scope='row'] {
     min-width: 8.5rem;
     padding: 0.4rem;
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
   }
   .metrics {
     gap: 0.4rem;
@@ -388,10 +388,10 @@
     padding: 0.6rem;
   }
   .metrics dt {
-    font-size: 0.72rem;
+    font-size: var(--text-xs);
   }
   .metrics dd {
-    font-size: 1.4rem;
+    font-size: var(--text-xl);
   }
   .recordList li {
     align-items: start;

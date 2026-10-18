@@ -15,11 +15,11 @@
 }
 .heading h4 {
   margin: 0.25rem 0;
-  font-size: 1.15rem;
+  font-size: var(--text-lg);
 }
 .eyebrow {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-muted);
@@ -27,7 +27,7 @@
 }
 .explanation {
   color: var(--color-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   line-height: 1.6;
 }
 .filters {
@@ -46,11 +46,11 @@
   cursor: pointer;
 }
 .filters button[aria-pressed='true'] {
-  background: #173958;
-  color: white;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
 }
 .filters button:focus-visible {
-  outline: 3px solid #3567aa;
+  outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
 .list {
@@ -74,7 +74,7 @@
 }
 .details > span,
 .details small {
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 .badge {
   justify-self: start;
@@ -82,24 +82,24 @@
   padding: 0.2rem 0.65rem;
 }
 .overdue {
-  background: #f7dde0;
-  color: #832434;
+  background: var(--tone-negative-bg);
+  color: var(--tone-negative-fg);
 }
 .today {
-  background: #f8ebc6;
-  color: #6d4c0b;
+  background: var(--tone-warning-bg);
+  color: var(--tone-warning-fg);
 }
 .upcoming {
-  background: #dce7f6;
-  color: #244e86;
+  background: var(--tone-info-bg);
+  color: var(--tone-info-fg);
 }
 .undated {
-  background: #e9edf3;
-  color: #485265;
+  background: var(--tone-neutral-bg);
+  color: var(--tone-neutral-fg);
 }
 .closed {
-  background: #d7ebdf;
-  color: #195238;
+  background: var(--tone-positive-bg);
+  color: var(--tone-positive-fg);
 }
 @media (max-width: 600px) {
   .panel {

@@ -15,17 +15,24 @@ const expectNoViolations = async (page: Page, where: string) => {
   expect(summary, `accessibility violations on ${where}`).toEqual([]);
 };
 
-test('sign-in and every screen pass the automated WCAG 2.1 AA checks', async ({ page, admin }) => {
-  // One case runs axe on every screen; keep the full checks under a bounded two-minute budget.
-  test.setTimeout(120_000);
-  await page.goto('/login');
-  await expectNoViolations(page, '/login');
-  const settled = watchNetwork(page);
-  await signInToProject(page, admin, DEFAULT_SCOPE);
-  for (const screen of SCREENS) {
-    await page.goto(screen.path);
-    await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
-    await settled();
-    await expectNoViolations(page, screen.path);
-  }
-});
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`sign-in and every screen pass the automated WCAG 2.1 AA checks (${colorScheme})`, async ({
+    page,
+    admin,
+  }) => {
+    // One case runs axe on every screen; keep the full checks under a bounded two-minute budget.
+    test.setTimeout(120_000);
+    // The dark theme follows the device (docs/adr/0018), so emulating it covers both themes.
+    await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+    await page.goto('/login');
+    await expectNoViolations(page, `/login (${colorScheme})`);
+    const settled = watchNetwork(page);
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    for (const screen of SCREENS) {
+      await page.goto(screen.path);
+      await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
+      await settled();
+      await expectNoViolations(page, `${screen.path} (${colorScheme})`);
+    }
+  });
+}

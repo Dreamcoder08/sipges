@@ -1,0 +1,28 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+@media (max-width: 40rem) {
+  .row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    /* Bleed to the screen edges so the last chip visibly continues off-screen. */
+    margin-inline: calc(-1 * var(--space-3));
+    padding: var(--space-0) var(--space-3);
+  }
+
+  .row::-webkit-scrollbar {
+    display: none;
+  }
+
+  .row > * {
+    flex: none;
+    scroll-snap-align: start;
+  }
+}
