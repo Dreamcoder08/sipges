@@ -1,5 +1,6 @@
 .overview {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   min-width: 0;
 }
@@ -156,7 +157,9 @@
   background: var(--level-red-soft);
   color: var(--level-red-text);
 }
+/* Positioned, so the visually hidden header text stays inside the scroll box. */
 .tableWrap {
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -186,6 +189,7 @@
 }
 .cause {
   min-width: 14rem;
+  overflow-wrap: anywhere;
 }
 .levelTag {
   display: inline-flex;
