@@ -88,11 +88,13 @@ it('draws an actor classification, keeps unknown influences accessible and opens
   window.history.replaceState(null, '', '/actores');
   render(<App />);
   const user = userEvent.setup();
-  const group = await screen.findByRole('button', {
-    name: 'Comunal, influencia Alta: 1 actor(es)',
+  const node = await screen.findByRole('button', {
+    name: 'Actor de prueba. Sociedad civil (inferido), anillo Control, posición Favorable. Abrir ficha',
   });
   expect(screen.getByRole('button', { name: 'Ficha de actor A-2' })).toBeVisible();
-  await user.click(group);
+  await user.click(node);
+  expect(await screen.findByRole('heading', { name: 'Ficha A-1' })).toHaveFocus();
+  await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));
   await user.click(screen.getByRole('button', { name: 'Ficha de actor A-1' }));
   expect(await screen.findByRole('heading', { name: 'Ficha A-1' })).toHaveFocus();
   await user.click(screen.getByRole('button', { name: 'Volver a la lista' }));

@@ -263,6 +263,11 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
         ],
       },
       territory,
+      {
+        key: 'Sector',
+        label: 'Sector en el mapa de actores',
+        options: ['Gobierno', 'Privado', 'Academia', 'Sociedad civil'],
+      },
       { key: 'Rol/Relacion', label: 'Rol o relación' },
       {
         key: 'Influencia',
@@ -275,6 +280,12 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
         label: 'Posición frente al proyecto',
         options: ['A favor', 'Neutral', 'En contra', 'Por evaluar'],
         initial: 'Por evaluar',
+      },
+      { key: 'Tipo_Relacion', label: 'Tipo de relación', options: ['Fuerte', 'Débil'] },
+      {
+        key: 'Sentido_Relacion',
+        label: 'Sentido de la relación',
+        options: ['Del proyecto al actor', 'Del actor al proyecto', 'De ambos'],
       },
       source,
       notes,
