@@ -62,6 +62,7 @@ export type NotificationView = {
 };
 
 export type NewNotification = {
+  readonly runId?: number;
   readonly title: string;
   readonly body: string;
   readonly module: string | null;
@@ -172,6 +173,28 @@ export type PushStore = {
   /** Subscriptions of active people granted the tenant; restricted pushes skip `consulta`. */
   targets(tenantId: string, restricted: boolean): Promise<PushSubscription[]>;
   forget(endpoint: string): Promise<void>;
+  ownTargets?(username: string): Promise<PushSubscription[]>;
+  enqueue?(
+    tenantId: string,
+    notificationId: number,
+    restricted: boolean,
+    payload: PushPayload,
+    at: Date,
+  ): Promise<void>;
+  claim?(
+    tenantId: string,
+    at: Date,
+    leaseUntil: Date,
+  ): Promise<
+    { id: number; subscription: PushSubscription; payload: PushPayload; attempts: number }[]
+  >;
+  finish?(
+    tenantId: string,
+    id: number,
+    status: 'accepted' | 'failed' | 'pending',
+    error: string,
+    retryAt: Date,
+  ): Promise<void>;
 };
 
 export type Clock = { now(): Date };

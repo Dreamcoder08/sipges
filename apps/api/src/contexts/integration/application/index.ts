@@ -30,3 +30,5 @@ export {
   type IngestService,
   createIngestService,
 } from './ingest-service.ts';
+
+export * from './authorized-sources.ts';

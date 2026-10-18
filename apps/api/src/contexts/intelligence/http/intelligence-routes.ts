@@ -39,6 +39,7 @@ const SemanticBody = TextBody.extend({ mode: z.string().default('automatic') });
 const AlertBody = SemanticBody.extend({
   source_type: z.string().default('Publicación digital'),
   analyst_note: z.string().default(''),
+  territory: z.string().max(500).nullable().optional(),
 });
 const DecisionBody = z.object({ status: z.string(), reviewer_note: z.string().default('') });
 const RecordBody = z.object({ payload: z.record(z.string(), z.unknown()) });
@@ -49,6 +50,8 @@ const alertJson = (a: TerritorialAlert) => ({
   created_at: isoSeconds(a.createdAt),
   source_url: a.sourceUrl,
   source_type: a.sourceType,
+  territory: a.territory ?? null,
+  source_record: a.sourceRecord ?? null,
   excerpt: a.excerpt,
   sha256: a.sha256,
   level: a.level,
@@ -111,6 +114,7 @@ export const intelligenceRoutes = (intelligence: IntelligenceService) =>
         mode: body.value.mode,
         sourceType: body.value.source_type,
         analystNote: body.value.analyst_note,
+        territory: body.value.territory ?? null,
       });
       if (!result.ok) {
         const [status, detail] = ERRORS[result.error.kind];
@@ -119,6 +123,9 @@ export const intelligenceRoutes = (intelligence: IntelligenceService) =>
       return c.json({
         id: result.value.alert.id,
         status: result.value.alert.status,
+        outcome: result.value.outcome,
+        territory: result.value.alert.territory ?? null,
+        source_record: result.value.alert.sourceRecord ?? null,
         analysis: result.value.analysis,
         irsa_modified: false,
         notice: 'La puntuación es prioridad de revisión, no riesgo social cuantificado.',
@@ -130,6 +137,11 @@ export const intelligenceRoutes = (intelligence: IntelligenceService) =>
       if (!limit.ok) return limit.response;
       const items = await intelligence.listAlerts(c.get('scope'), limit.value);
       return c.json(items.map(alertJson));
+    })
+
+    .get('/system/intelligence/territorial-alerts/:id', async (c) => {
+      const alert = await intelligence.getAlert(c.get('scope'), c.req.param('id'));
+      return alert ? c.json(alertJson(alert)) : c.json({ detail: 'Evaluación no encontrada' }, 404);
     })
 
     .patch('/system/intelligence/territorial-alerts/:id', async (c) => {

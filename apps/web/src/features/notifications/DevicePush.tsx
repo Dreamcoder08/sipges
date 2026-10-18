@@ -43,7 +43,33 @@ export const DevicePush = ({ scope }: { scope: string }) => {
     queryFn: currentSubscription,
     enabled: supported() && config.data?.enabled === true,
   });
-  if (!config.data?.enabled || !config.data.public_key || subscription.isPending) return null;
+  const guidance = (
+    <p>
+      En iPhone o iPad (iOS 16.4 o posterior), añade MASCLI a la pantalla de inicio desde Compartir
+      y ábrelo desde allí. En Android, permite las notificaciones del sitio.{' '}
+      <a
+        href="https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Guía de WebKit
+      </a>
+    </p>
+  );
+  if (!supported())
+    return (
+      <div className={styles.device}>
+        <p>Este navegador no ofrece notificaciones push.</p>
+        {guidance}
+      </div>
+    );
+  if (config.isError) return <p role="alert">No se pudo consultar la configuración de avisos.</p>;
+  if (config.data && !config.data.enabled)
+    return <p>Los avisos push no están configurados. La bandeja sigue disponible.</p>;
+  if (!config.data?.public_key || subscription.isPending)
+    return <p>Consultando suscripción del dispositivo…</p>;
+  if (subscription.isError)
+    return <p role="alert">No se pudo consultar la suscripción de este dispositivo.</p>;
   const publicKey = config.data.public_key;
   const active = subscription.data !== null;
 
@@ -75,7 +101,9 @@ export const DevicePush = ({ scope }: { scope: string }) => {
           method: 'POST',
           body: { json: created.toJSON() },
         });
-        setMessage('Listo: los avisos llegarán a este dispositivo.');
+        setMessage(
+          'Suscripción guardada. Usa la prueba y confirma la recepción en este dispositivo.',
+        );
       }
     } catch {
       setMessage('No se pudo cambiar la suscripción de este dispositivo.');
@@ -91,6 +119,29 @@ export const DevicePush = ({ scope }: { scope: string }) => {
         <input type="checkbox" checked={active} disabled={busy} onChange={() => void toggle()} />{' '}
         Recibir avisos en este dispositivo
       </label>
+      {active && (
+        <button
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const result = await requestJson(
+                '/system/notifications/push/test',
+                z.object({ status: z.string(), accepted: z.number(), detail: z.string() }),
+                { scope, method: 'POST' },
+              );
+              setMessage(result.detail);
+            } catch {
+              setMessage('La prueba falló. Revisa tu conexión y suscripción.');
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Probar solo mis dispositivos
+        </button>
+      )}
+      {guidance}
       {message && <p role="status">{message}</p>}
     </div>
   );

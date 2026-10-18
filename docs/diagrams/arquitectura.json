@@ -2,13 +2,13 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MASCLI TypeScript · Arquitectura hexagonal / ODD",
+    "title": "MASCLI TypeScript · Inteligencia territorial / ODD",
     "locale": "es",
     "output": "docs/diagrams/arquitectura.html",
     "quality_profile": "showcase",
     "repository": {
       "url": "https://github.com/Dreamcoder08/mascli.git",
-      "revision": "4673f4bd842cc960192ba1450349ea49e89288e0"
+      "revision": "1fdad42f65f977a7fad85e2e26ee65f7b26c48d1"
     }
   },
   "components": [
@@ -129,22 +129,22 @@
       ],
       "sources": [
         {
-          "path": "apps/api/src/contexts/ontology/application/ontology-service.ts",
-          "line": 323,
-          "end_line": 530,
-          "label": "Grafo, búsqueda y cronología"
-        },
-        {
           "path": "apps/api/src/contexts/automation/application/automation-service.ts",
           "line": 84,
-          "end_line": 325,
-          "label": "Reglas, ejecuciones y reintentos"
+          "end_line": 260,
+          "label": "Reglas evaluate y notificaciones"
         },
         {
-          "path": "apps/api/src/contexts/integration/application/ingest-service.ts",
-          "line": 32,
-          "end_line": 98,
-          "label": "Ingesta con idempotencia"
+          "path": "apps/api/src/contexts/intelligence/application/intelligence-service.ts",
+          "line": 1,
+          "end_line": 160,
+          "label": "Señales verificables y evaluación por reglas"
+        },
+        {
+          "path": "apps/api/src/contexts/integration/application/authorized-sources.ts",
+          "line": 48,
+          "end_line": 122,
+          "label": "Fuentes autorizadas e idempotencia"
         }
       ]
     },
@@ -198,9 +198,9 @@
       "sources": [
         {
           "path": "apps/api/src/compose.ts",
-          "line": 156,
-          "end_line": 394,
-          "label": "Composición manual"
+          "line": 380,
+          "end_line": 460,
+          "label": "Composición de geografía, fuentes y runtime"
         },
         {
           "path": "apps/api/src/contexts/ontology/infrastructure/sql-ontology-store.ts",
@@ -352,7 +352,7 @@
       "id": "agents",
       "type": "external",
       "label": "Agentes e integraciones",
-      "sublabel": "MCP · webhooks de entrada",
+      "sublabel": "MCP · ingesta trazable",
       "pos": [
         40,
         450
@@ -404,7 +404,139 @@
           "label": "Web Push RFC 8291/8292"
         }
       ],
-      "tag": "SEGÚN CONFIGURACIÓN"
+      "tag": "OPT-IN / CONFIGURACIÓN"
+    },
+    {
+      "id": "geography",
+      "type": "backend",
+      "label": "Geografía verificable",
+      "sublabel": "Consulta acotada · RLS",
+      "pos": [
+        355,
+        660
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/geography/application/index.ts",
+          "line": 1,
+          "end_line": 32,
+          "label": "Relaciones y lector autorizado"
+        },
+        {
+          "path": "apps/api/src/contexts/geography/infrastructure/index.ts",
+          "line": 1,
+          "end_line": 187,
+          "label": "Destinos oficiales fijos y límites"
+        },
+        {
+          "path": "apps/web/src/features/geography/GeocatminControls.tsx",
+          "line": 1,
+          "end_line": 199,
+          "label": "Capas, estados y consulta de concesión"
+        }
+      ]
+    },
+    {
+      "id": "ingemmet",
+      "type": "external",
+      "label": "INGEMMET · GEOCATMIN",
+      "sublabel": "Catálogo y geometría oficiales",
+      "pos": [
+        40,
+        660
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/geography/infrastructure/index.ts",
+          "line": 1,
+          "end_line": 187,
+          "label": "Metadatos y consultas WGS84"
+        },
+        {
+          "path": "packages/contracts/src/geography.ts",
+          "line": 1,
+          "end_line": 179,
+          "label": "Área, polígonos y servicios permitidos"
+        }
+      ],
+      "tag": "DISPONIBILIDAD PENDIENTE"
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Ejecución por eventos",
+      "sublabel": "waitUntil · respaldo diario",
+      "pos": [
+        670,
+        660
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/system/application/automation-runtime.ts",
+          "line": 1,
+          "end_line": 115,
+          "label": "Colas por tenant y presupuesto"
+        },
+        {
+          "path": "apps/api/src/platform/http/automation-wakeup.ts",
+          "line": 1,
+          "end_line": 30,
+          "label": "Mutaciones correctas despiertan el motor"
+        },
+        {
+          "path": "apps/hosting/src/index.ts",
+          "line": 60,
+          "end_line": 70,
+          "label": "Ciclo de vida Vercel con waitUntil"
+        }
+      ]
+    },
+    {
+      "id": "defensoria",
+      "type": "external",
+      "label": "Defensoría del Pueblo",
+      "sublabel": "Publicaciones · título y extracto",
+      "pos": [
+        985,
+        660
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "apps/api/src/contexts/integration/infrastructure/official-source.ts",
+          "line": 1,
+          "end_line": 121,
+          "label": "Host y API oficiales fijos"
+        },
+        {
+          "path": "apps/api/src/contexts/integration/application/authorized-sources.ts",
+          "line": 48,
+          "end_line": 122,
+          "label": "Autorización por proyecto y deduplicación"
+        },
+        {
+          "path": "apps/hosting/vercel.json",
+          "line": 77,
+          "end_line": 82,
+          "label": "Cron diario de respaldo"
+        }
+      ],
+      "tag": "OPT-IN / DISPONIBILIDAD"
     }
   ],
   "connections": [
@@ -491,6 +623,34 @@
       "to": "channels",
       "label": "Automatizaciones",
       "variant": "default"
+    },
+    {
+      "id": "territorial-query",
+      "from": "api",
+      "to": "geography",
+      "label": "Mismo origen / scope",
+      "variant": "security"
+    },
+    {
+      "id": "official-map",
+      "from": "geography",
+      "to": "ingemmet",
+      "label": "Catálogo fijo / WGS84",
+      "variant": "default"
+    },
+    {
+      "id": "wake",
+      "from": "application",
+      "to": "runtime",
+      "label": "Mutación correcta",
+      "variant": "emphasis"
+    },
+    {
+      "id": "source-poll",
+      "from": "runtime",
+      "to": "defensoria",
+      "label": "Sondeo autorizado",
+      "variant": "default"
     }
   ],
   "cards": [
@@ -500,7 +660,7 @@
       "items": [
         "SPA TypeScript: React 19, Vite, TanStack Router/Query. Registros con historial, vínculos e importación CSV; vista 360° con grafo e informe citado; búsqueda global Ctrl+K y cronología transversal. Campana de avisos, avisos en el dispositivo (PWA) y actualización en vivo por SSE.",
         "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-MASCLI-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
-        "MFA obligatorio por defecto: el primer acceso permite inscribir el autenticador antes del proyecto. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
+        "MFA obligatorio por defecto; la demo sintética del propietario permite MASCLI_REQUIRE_MFA=0 y conserva TOTP voluntario. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
       ]
     },
     {
@@ -508,7 +668,7 @@
       "title": "Hexágono y datos",
       "items": [
         "http → application → domain; la aplicación invoca interfaces de puertos. compose.ts conecta implementaciones concretas por inyección manual. Las flechas representan llamadas o uso de contratos, no servicios separados.",
-        "Contextos: identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management, reference, automation e integration. La ontología tipa objetos y vínculos (ADR 0011). La auditoría es el flujo de eventos de las automatizaciones (ADR 0014).",
+        "Contextos: identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management, reference, automation, integration, geography y system. Geografía consume el lector con RLS; las señales conservan procedencia, deduplicación e instantáneas auditables.",
         "SQL explícito y migraciones versionadas. withTenant fija tenant, actor y habilitación; RLS aísla tenants y oculta registros restringidos al rol consulta (ADR 0012). Un trigger guarda el historial append-only."
       ]
     },
@@ -519,16 +679,18 @@
         "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por MASCLI.",
         "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
         "Ollama para inteligencia y, con MASCLI_SEMANTIC_SEARCH=1, búsqueda híbrida con vectores real[] sin restringidos. Claude es opcional (ADR 0013) y nunca ve registros restringidos. OCR local opcional con ocrmypdf.",
-        "Canales salientes (webhook firmado, Slack, Teams, Discord, Google Chat, Telegram, Resend) con secretos sellados y destinos https públicos; Web Push propio; traceparent hacia webhooks, Ollama y S3."
+        "Canales salientes (webhook firmado, Slack, Teams, Discord, Google Chat, Telegram, Resend) con secretos sellados y destinos https públicos; Web Push propio; traceparent hacia webhooks, Ollama y S3.",
+        "Geografía consulta siete servicios INGEMMET fijos con timeout, límites de bytes/área y truncamiento. Relaciona registros solo por geometría WGS84 válida o referencia explícita documentada; no geocodifica nombres. Defensoría usa un host/API fijo y solo importa publicaciones autorizadas, con huella e idempotencia. Fallos externos visibles; no se ha confirmado disponibilidad en vivo."
       ]
     },
     {
       "dot": "amber",
-      "title": "ODD · migración, ontología y automatización",
+      "title": "ODD · inteligencia territorial y ejecución",
       "items": [
-        "Fuente: revisión 4673f4b de la rama de automatización e integración. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
-        "Migración T1–T14 completa. ODD de ontología e inteligencia T1–T11: historial, vínculos, búsqueda, grafo, observabilidad, clasificación, importación, analista con citas, cronología y E2E. Demo pública sin redesplegar. ODD de automatización e integración T1–T8: motor de reglas, MCP y claves, avisos y Web Push, ingesta, propuestas del analista, búsqueda semántica y tiempo real.",
-        "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime."
+        "Fuente publicada: revisión 1fdad42. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
+        "El nuevo ODD territorial añade catálogo/intersecciones, evaluación de narrativas por reglas existentes y señales pendientes de verificación humana. evaluate no requiere IA de pago ni modifica IRSA. La entrega Web Push requiere consentimiento; aceptación del proveedor no prueba recepción humana.",
+        "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime.",
+        "En Vercel, las mutaciones correctas despachan el motor mediante waitUntil; un cron autenticado diario (04:15 UTC) ofrece respaldo compatible con Hobby. Presupuesto y estado se registran por tenant; no hay SLA de latencia ni ejecutor frecuente contratado. Fuentes y recepción real en teléfono pendientes cuando faltan disponibilidad o suscripción verificable."
       ]
     }
   ]

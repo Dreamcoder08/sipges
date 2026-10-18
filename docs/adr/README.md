@@ -19,6 +19,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0013](0013-cited-analyst-briefings.md) | Cited analyst briefings | Accepted |
 | [0014](0014-automation-and-integration.md) | Automation and integration | Accepted |
 | [0015](0015-mobile-first-shell.md) | Mobile-first shell | Accepted |
+| [0016](0016-territorial-intelligence-runtime.md) | Territorial intelligence runtime | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

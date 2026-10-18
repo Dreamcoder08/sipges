@@ -101,11 +101,14 @@ export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
           [...values, actor],
         );
         savedId = Number(row?.id);
-        // The first rule starts matching from now, never from history.
+        // Runtime/source activation may already have registered a stale cursor. The first
+        // current rule still starts now; later rules must preserve pending event processing.
         await tx.query(
           `INSERT INTO automation_cursors (tenant_id, last_audit_id)
            SELECT current_setting('app.tenant_id', true), COALESCE(max(id), 0) FROM audit
-           ON CONFLICT (tenant_id) DO NOTHING`,
+           ON CONFLICT (tenant_id) DO UPDATE
+             SET last_audit_id = GREATEST(automation_cursors.last_audit_id, EXCLUDED.last_audit_id)
+             WHERE (SELECT count(*) FROM automation_rules) = 1`,
         );
       } else {
         const updated = await tx.query<{ id: number }>(
@@ -225,7 +228,7 @@ export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
         payload: Record<string, unknown> | null;
         marking: string | null;
       }>(
-        `SELECT a.id, a.ts, a.module, a.record_id, a.action, a.detail, r.payload, r.marking
+        `SELECT a.id, a.ts, a.module, a.record_id, a.action, a.detail, CASE WHEN a.module = 'InteligenciaDigital' THEN a.event_payload ELSE r.payload END AS payload, r.marking
          FROM audit a
          LEFT JOIN module_records r ON r.module = a.module AND r.id = a.record_id
          WHERE a.id > $1 ORDER BY a.id LIMIT $2`,
@@ -364,10 +367,11 @@ export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
     withTenant(sql, tenantId, async (tx) => {
       const [row] = await tx.query<{ id: number }>(
         `INSERT INTO notifications
-           (tenant_id, title, body, module, record_id, marking, rule_id, created_at)
-         VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7)
+           (tenant_id, title, body, module, record_id, marking, rule_id, created_at, run_id)
+         VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (tenant_id, run_id) DO UPDATE SET run_id = EXCLUDED.run_id
          RETURNING id`,
-        [n.title, n.body, n.module, n.recordId, n.marking, n.ruleId, at],
+        [n.title, n.body, n.module, n.recordId, n.marking, n.ruleId, at, n.runId ?? null],
       );
       return Number(row?.id);
     }),

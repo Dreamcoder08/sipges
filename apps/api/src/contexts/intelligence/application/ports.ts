@@ -22,7 +22,7 @@ export type NewAlert = Omit<TerritorialAlert, 'reviewerNote' | 'reviewedAt' | 's
 
 export type AlertStore = {
   /** Inserts the alert and its CREATE audit row in one tenant transaction. */
-  create(tenantId: string, alert: NewAlert): Promise<TerritorialAlert>;
+  create(tenantId: string, alert: NewAlert): Promise<TerritorialAlert & { duplicate?: boolean }>;
   list(tenantId: string, query: { projectId: string; limit: number }): Promise<TerritorialAlert[]>;
   get(tenantId: string, id: string): Promise<TerritorialAlert | null>;
   /** Updates the status and writes the REVIEW audit row; false when the alert is missing. */

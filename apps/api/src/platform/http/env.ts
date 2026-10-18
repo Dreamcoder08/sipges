@@ -8,6 +8,7 @@ export type AppEnv = {
     identity: Identity;
     sessionToken: string;
     scope: Scope;
+    automationTenant: string | undefined;
   };
 };
 

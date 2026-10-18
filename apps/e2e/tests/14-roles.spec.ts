@@ -31,7 +31,17 @@ for (const role of ['analista', 'coordinador', 'consulta'] as const) {
       await page.goto(screen.path);
       await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
       await settled();
-      await expect(page.getByRole('alert'), `${role} on ${screen.path}`).toHaveCount(0);
+      const alerts = page.getByRole('alert');
+      if (screen.path === '/ubicacion') {
+        // The browser fixture deliberately blocks the official cadastre host. Its visible
+        // availability warning is expected; permission errors and other alerts still fail.
+        const unavailable = 'Catastro minero no disponible. Puede consultar el visor oficial.';
+        await expect(alerts.filter({ hasText: unavailable })).toHaveCount(1);
+        await expect(
+          alerts.filter({ hasNotText: unavailable }),
+          `${role} on ${screen.path}`,
+        ).toHaveCount(0);
+      } else await expect(alerts, `${role} on ${screen.path}`).toHaveCount(0);
     }
     // A screen must not ask the server for what the role cannot have.
     expect(refused, `${role}: refused requests`).toEqual([]);

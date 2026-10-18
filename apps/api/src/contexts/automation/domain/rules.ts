@@ -11,6 +11,7 @@ export type Condition = {
 };
 
 export type RuleAction =
+  | { readonly kind: 'evaluate'; readonly title: string; readonly minimumLevel: 'Media' | 'Alta' }
   | { readonly kind: 'notify'; readonly title: string }
   | { readonly kind: 'channel'; readonly channelId: number; readonly title: string };
 
@@ -200,7 +201,12 @@ export const validateRule = (
       (s) =>
         s.title.trim().length > 0 &&
         s.title.length <= RULE_LIMITS.text &&
-        (s.kind === 'notify' || channels.has(s.channelId)),
+        (s.kind === 'notify' ||
+          (s.kind === 'evaluate' &&
+            input.module === 'Narrativas' &&
+            input.actions.every((a) => a === 'CREATE' || a === 'UPDATE') &&
+            (s.minimumLevel === 'Media' || s.minimumLevel === 'Alta')) ||
+          (s.kind === 'channel' && channels.has(s.channelId))),
     )
   )
     return 'invalid_step';

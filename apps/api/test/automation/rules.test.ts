@@ -160,3 +160,20 @@ describe('automation channels', () => {
     );
   });
 });
+
+describe('narrative evaluation guards', () => {
+  it('requires an explicit narrative CREATE/UPDATE source', () => {
+    const input = rule({
+      module: 'Narrativas',
+      conditions: [],
+      steps: [{ kind: 'evaluate', title: 'Evaluar', minimumLevel: 'Media' }],
+    });
+    const modules = new Set(['Narrativas', 'InteligenciaDigital']);
+    expect(validateRule(input, modules, new Set())).toBeNull();
+    for (const module of ['*', 'InteligenciaDigital'])
+      expect(validateRule({ ...input, module }, modules, new Set())).toBe('invalid_step');
+    expect(validateRule({ ...input, actions: ['REVIEW'] }, modules, new Set())).toBe(
+      'invalid_step',
+    );
+  });
+});

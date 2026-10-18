@@ -397,3 +397,79 @@ describe('Ollama embeddings adapter', () => {
     await expect(failing.embed('x')).rejects.toThrow();
   });
 });
+
+describe('documented digital provenance and retry safety', () => {
+  it('deduplicates concurrent evidence, preserves reviewed status and immutable audit snapshots', async () => {
+    const { t, call, json } = await setup();
+    const body = {
+      text: ALERT_TEXT,
+      mode: 'rules',
+      source_url: 'https://example.org/synthetic-evidence',
+      territory: 'Synthetic documented territory',
+    };
+    const responses = await Promise.all(
+      Array.from({ length: 4 }, () =>
+        call('POST', '/system/intelligence/territorial-alerts', body),
+      ),
+    );
+    const results = await Promise.all(responses.map(json));
+    expect(new Set(results.map((r) => r.id)).size).toBe(1);
+    expect(results.filter((r) => r.outcome === 'created')).toHaveLength(1);
+    expect(results.filter((r) => r.outcome === 'duplicate')).toHaveLength(3);
+    const id = results[0]?.id;
+    expect(
+      (
+        await call('PATCH', `/system/intelligence/territorial-alerts/${id}`, {
+          status: 'Corroborado',
+          reviewer_note: 'Synthetic review',
+        })
+      ).status,
+    ).toBe(200);
+    const retry = await (
+      await call('POST', '/system/intelligence/territorial-alerts', body)
+    ).json();
+    expect(retry).toMatchObject({ id, status: 'Corroborado', outcome: 'duplicate' });
+    const snapshots = await t.sql.query<{ action: string; event_payload: Record<string, unknown> }>(
+      "SELECT action, event_payload FROM audit WHERE module = 'InteligenciaDigital' ORDER BY id",
+    );
+    expect(snapshots).toHaveLength(2);
+    expect(snapshots[0]).toMatchObject({
+      action: 'CREATE',
+      event_payload: {
+        id,
+        status: 'Pendiente de verificación',
+        territory: body.territory,
+        source_url: body.source_url,
+        project_id: 'PRJ-SECHURA',
+        source_record: null,
+      },
+    });
+    expect(snapshots[1]).toMatchObject({
+      action: 'REVIEW',
+      event_payload: { id, status: 'Corroborado', territory: body.territory },
+    });
+    const list = (await (
+      await call('GET', '/system/intelligence/territorial-alerts')
+    ).json()) as Record<string, unknown>[];
+    expect(list).toHaveLength(1);
+    expect(list[0]).toMatchObject({
+      territory: body.territory,
+      source_record: null,
+      reviewer_note: 'Synthetic review',
+    });
+    const other = await json(
+      await call('POST', '/system/intelligence/territorial-alerts', {
+        ...body,
+        territory: 'Different documented territory',
+      }),
+    );
+    expect(other.id).not.toBe(id);
+    t.clock.advance(24 * 60 * 60 + 1);
+    const fresh = await t.login('admin', 'admin-password-123');
+    const nextDay = await json(
+      await call('POST', '/system/intelligence/territorial-alerts', body, { cookie: fresh.cookie }),
+    );
+    expect(nextDay.outcome).toBe('created');
+    expect(nextDay.id).not.toBe(id);
+  });
+});

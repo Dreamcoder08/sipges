@@ -1,3 +1,8 @@
+import { runtimeRoutes } from './contexts/system/http/runtime-routes.ts';
+import { geographyRequestLimit, geographyRoutes } from './contexts/geography/http/index.ts';
+import { sourceRequestLimit, sourceRoutes } from './contexts/integration/http/source-routes.ts';
+import { signalRoutes } from './contexts/integration/http/signal-routes.ts';
+import { automationWakeup } from './platform/http/automation-wakeup.ts';
 import type { ErrorResponse } from '@mascli/contracts';
 import { Hono } from 'hono';
 import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
@@ -37,7 +42,13 @@ import { type WebAssets, spaMiddleware } from './platform/http/spa.ts';
 /** Builds the HTTP application from an already-wired container (no I/O here). */
 export const createApp = (
   container: Container,
-  options: { web?: WebAssets; activity?: Partial<ActivityOptions> } = {},
+  options: {
+    web?: WebAssets;
+    activity?: Partial<ActivityOptions>;
+    eventAutomation?: boolean;
+    cronSchedule?: string;
+    defer?: (task: Promise<unknown>) => void;
+  } = {},
 ) => {
   const {
     config,
@@ -63,10 +74,25 @@ export const createApp = (
   app.use('*', hostAllowlist(config.allowedHosts));
   if (options.web) app.use('*', spaMiddleware(options.web));
   app.use('*', sessionMiddleware(identity, { requireMfa: config.requireMfa }));
+  app.use('/system/geography/query', geographyRequestLimit());
+  app.use('/system/intelligence/sources/*', sourceRequestLimit());
   app.use('*', tenancyMiddleware(tenancy));
   app.use('*', roleGate(identity));
+  if (options.eventAutomation) app.use('*', automationWakeup(container.runtime, options.defer));
 
   app.route('/', healthRoutes());
+  app.route(
+    '/',
+    runtimeRoutes(container.runtime, {
+      eventProcessing: options.eventAutomation ?? false,
+      cronConfigured: Boolean(config.automation.cronSecret),
+      cronSchedule: options.cronSchedule,
+      intervalMs: config.automation.intervalSeconds * 1000,
+    }),
+  );
+  app.route('/', geographyRoutes({ geography: container.geography }));
+  app.route('/', sourceRoutes({ sources: container.authorizedSources }));
+  app.route('/', signalRoutes({ keys: container.apiKeys, ingest: container.ingest }));
   app.route('/', metricsRoutes(metrics));
   app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
@@ -82,7 +108,12 @@ export const createApp = (
   app.route('/', intelligenceRoutes(intelligence));
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
-  app.route('/', automationRoutes(container.automation, config.automation.cronSecret));
+  app.route(
+    '/',
+    automationRoutes(container.automation, config.automation.cronSecret, {
+      runCron: () => container.runtime.scheduled(),
+    }),
+  );
   app.route('/', apiKeyRoutes(container.apiKeys));
   app.route(
     '/',

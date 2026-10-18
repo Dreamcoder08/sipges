@@ -73,5 +73,11 @@
       "includeFiles": "{public/**,../api/src/platform/database/migrations/*.sql,../api/src/contexts/documents/infrastructure/pdf-worker.ts,../api/src/contexts/documents/infrastructure/pdf-text.ts,../../data/project_coordinates.json,../../data/canonical_entities.json}",
       "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/system/automations/cron",
+      "schedule": "15 4 * * *"
+    }
+  ]
 }

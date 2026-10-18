@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la rama de la plataforma de ontología, commit `49290423d4ea2de329b0b09924916cd2e9a588ac`. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Recorrido y reglas de dependencia
 
@@ -27,9 +27,17 @@ El backend organiza cada contexto en `http`, `application`, `domain` e `infrastr
 | Analista | Informe extractivo con citas; Narrator opcional con Claude (`@anthropic-ai/sdk`) | [ADR 0013](adr/0013-cited-analyst-briefings.md) |
 | Herramientas | pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser | Enmienda del [ADR 0001](adr/0001-monorepo-and-toolchain.md): sin Turborepo/Biome |
 
-El adaptador de demo en `apps/hosting` reutiliza Hono y añade Blob privado al puerto ObjectStorage. La demo académica está publicada en Vercel con la integración PostgreSQL Neon del propietario. Se comprobaron salud, login, sesión y el bloqueo previo a MFA en la URL pública. El propietario debe inscribir su autenticador antes del smoke público de CRUD, evidencias y documentos; esos flujos ya se verificaron en CI contra PostgreSQL sintético.
+El adaptador de demo en `apps/hosting` reutiliza Hono y añade Blob privado al puerto ObjectStorage. La demo académica está publicada en Vercel con PostgreSQL Neon del propietario. Por su petición, esta demo sintética configura `MASCLI_REQUIRE_MFA=0`: admite contraseña sin inscripción obligatoria y conserva TOTP para cuentas que lo activen voluntariamente. El valor predeterminado de MASCLI sigue exigiendo MFA. La evidencia pública vigente y la configuración figuran en [hosting](../apps/hosting/README.md); los recibos históricos que exigían inscripción describen aquella revisión, no la demo actual.
 
-El mapa agrupa los contextos identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention management y reference. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
+El mapa agrupa los contextos identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management, reference, automation, integration, geography y system. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
+
+## Inteligencia territorial y ejecución
+
+El contexto `geography` consulta siete categorías de servicios INGEMMET fijos. Descubre sus subcapas consultables y conserva atribución, fecha de comprobación, escalas desconocidas y errores por servicio. La SPA mantiene su mapa SVG y geometría de concesiones; las imágenes oficiales se alinean en WGS84. Las consultas de atributos e intersecciones pasan por MASCLI con scope autorizado, límites de área/bytes, timeout y truncamiento. Los registros propios se relacionan por coordenadas/GeoJSON válidos o referencia de concesión explícita con fuente; los nombres territoriales no producen geometría. La disponibilidad en vivo de GEOCATMIN sigue pendiente por respuestas TLS/503; no se presentan siete capas renderizadas como comprobadas.
+
+La evaluación de narrativas usa reglas existentes y crea señales pendientes de verificación humana con procedencia y deduplicación concurrente de 24 horas. La auditoría conserva instantáneas para evaluar reglas reproducibles; no se invoca IA de pago ni se modifica IRSA. Una regla posterior puede notificar según prioridad/estado. La suscripción Web Push es voluntaria; aceptar una entrega en el proveedor no confirma recepción en un teléfono.
+
+`system` coordina ejecuciones acotadas por tenant y conserva estado/error. Después de una mutación correcta, el middleware despierta el motor; el hosting Vercel registra la promesa mediante `waitUntil`. El cron autenticado diario a las 04:15 UTC ofrece respaldo compatible con Hobby, sin garantía de latencia. El sondeo de Defensoría requiere habilitación y nota de autorización del proyecto; importa títulos/extractos desde un host/API oficial fijo con procedencia e idempotencia. Sus errores de disponibilidad quedan visibles. No hay scraping arbitrario ni ejecutor frecuente contratado; la entrega real a dispositivos y fuentes externas no disponibles permanece pendiente.
 
 ## Persistencia y aislamiento
 
@@ -50,6 +58,8 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | Ontología T1–T11 | Historial, vínculos tipados e inferidos, búsqueda, grafo, observabilidad, clasificación, importación CSV, analista con citas, cronología y E2E |
 
 La implementación nueva es TypeScript; Python permanece en `reference/python` como referencia de comportamiento y fixtures de paridad, sin ser dependencia de ejecución. El estado de tareas proviene del ODD; T1–T14 están completos; la publicación de la demo se comprueba por separado. La validación científica externa del IRSA sigue siendo un proceso separado.
+
+La revisión territorial añade catálogo/intersecciones, señales verificables, ejecución por eventos y sondeo autorizado. La evidencia del gate y del despliegue corresponde al cierre de su ODD; este diagrama documenta el código fijado y no certifica recepción móvil ni disponibilidad de proveedores externos.
 
 ## Fuente editable y regeneración
 
@@ -75,4 +85,4 @@ ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs fin
 
 En PowerShell, establece `$env:ARCHIFY_UPDATE_CHECK_DISABLED="1"` antes del comando `node`. Usa una carpeta de revisión nueva al modificar el candidato y conserva los recibos anteriores. Para actualizarlo, inspecciona el código TypeScript y el ODD, ajusta responsabilidades, conexiones y referencias, y fija `meta.repository.revision` a la revisión que contiene los archivos citados. Las referencias se comprueban contra bytes comprometidos en Git.
 
-Las etapas de validación, generación y comprobación estricta pasaron. `browser-check` de Archify falla en este entorno por el bloqueo de URLs `file://` de Chromium; la prueba HTTP adicional es independiente. Los resultados completos y sus límites figuran en [VERIFICACION.md](VERIFICACION.md).
+Los resultados de la regeneración territorial, los gates de Archify y sus límites se registran en [VERIFICACION.md](VERIFICACION.md). Los recibos históricos conservan su propia revisión y no constituyen evidencia del HTML actual.

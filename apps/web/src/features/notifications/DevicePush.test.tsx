@@ -74,7 +74,9 @@ it('subscribes this device with the server key and unsubscribes it again', async
 
   await user.click(toggle);
   expect(
-    await screen.findByText('Listo: los avisos llegarán a este dispositivo.'),
+    await screen.findByText(
+      'Suscripción guardada. Usa la prueba y confirma la recepción en este dispositivo.',
+    ),
   ).toBeInTheDocument();
   expect(subscribe).toHaveBeenCalledWith({
     userVisibleOnly: true,
@@ -120,5 +122,5 @@ it('stays hidden when the server has no push keys or the browser lacks push', as
   stubBrowser('granted');
   const { container } = renderSwitch();
   await vi.waitFor(() => expect(calls).toBe(1));
-  expect(container).toBeEmptyDOMElement();
+  expect(container).toHaveTextContent(/Los avisos push no están configurados/);
 });

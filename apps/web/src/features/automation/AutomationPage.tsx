@@ -26,6 +26,7 @@ import {
   testChannel,
   tick,
 } from './api.ts';
+import { RuntimeCard } from './RuntimeCard.tsx';
 import { ApiKeysCard } from './ApiKeysCard.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import { ConfirmDialog } from '../../shared/ui/ConfirmDialog.tsx';
@@ -51,7 +52,7 @@ const ruleInput = (rule: RuleOut): RuleIn => ({
   steps: rule.steps,
 });
 
-const STATUS_LABELS = { pending: 'Pendiente', done: 'Entregada', failed: 'Fallida' } as const;
+const STATUS_LABELS = { pending: 'Pendiente', done: 'Completada', failed: 'Fallida' } as const;
 
 const describeRule = (rule: RuleOut, overview: AutomationOverview) => {
   const source =
@@ -70,9 +71,11 @@ const describeRule = (rule: RuleOut, overview: AutomationOverview) => {
     .join(' y ');
   const steps = rule.steps
     .map((s) =>
-      s.kind === 'notify'
-        ? 'aviso en la bandeja'
-        : `mensaje a ${overview.channels.find((c) => c.id === s.channel_id)?.name ?? 'canal eliminado'}`,
+      s.kind === 'evaluate'
+        ? `evaluar narrativa (mínimo ${s.minimum_level})`
+        : s.kind === 'notify'
+          ? 'aviso en la bandeja'
+          : `mensaje a ${overview.channels.find((c) => c.id === s.channel_id)?.name ?? 'canal eliminado'}`,
     )
     .join(' + ');
   return `Cuando hay ${when} en ${source}${conditions ? ` y ${conditions}` : ''}: ${steps}.`;
@@ -150,6 +153,51 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
       <QueryState query={overview} label="las automatizaciones">
         {(data) => (
           <>
+            <Card title="Plantilla: narrativa → señal → aviso">
+              <p>
+                Dos reglas independientes. Carga cada paso, revisa las condiciones y guárdalo. La
+                plantilla empieza en pausa.
+              </p>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setEditing(null);
+                  setRule({
+                    name: 'Evaluar narrativas registradas',
+                    enabled: false,
+                    module: 'Narrativas',
+                    actions: ['CREATE', 'UPDATE'],
+                    conditions: [],
+                    steps: [{ kind: 'evaluate', title: 'Evaluar {id}', minimum_level: 'Media' }],
+                  });
+                }}
+              >
+                1. Preparar evaluación
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setEditing(null);
+                  setRule({
+                    name: 'Avisar señales de prioridad alta',
+                    enabled: false,
+                    module: 'InteligenciaDigital',
+                    actions: ['CREATE'],
+                    conditions: [
+                      { field: 'level', op: 'eq', value: 'Alta' },
+                      { field: 'status', op: 'eq', value: 'Pendiente de verificación' },
+                    ],
+                    steps: [{ kind: 'notify', title: 'Señal {level}: {territory}' }],
+                  });
+                }}
+              >
+                2. Preparar aviso
+              </Button>
+              <p>
+                El segundo paso permite elegir bandeja o canal autorizado. Una señal pendiente
+                requiere revisión humana.
+              </p>
+            </Card>
             <Card
               title="Reglas"
               action={
@@ -159,7 +207,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                   onClick={() =>
                     mutation.mutate(async () => {
                       const report = await tick(scope);
-                      return `Revisión completada: ${report.scanned} eventos, ${report.delivered} entregas, ${report.retrying} reintentos, ${report.failed} fallidas.`;
+                      return `Revisión completada: ${report.scanned} eventos, ${report.delivered} acciones completadas, ${report.retrying} reintentos, ${report.failed} fallidas.`;
                     })
                   }
                 >
@@ -287,7 +335,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                         label="Campo"
                         required
                         value={condition.field}
-                        hint="Campo del registro, o $marking / $detail."
+                        hint="Campo del registro o $marking / $detail. Señales: level, status, score, territory, source_url."
                         onChange={(e) => updateCondition(index, { field: e.target.value })}
                       />
                       <label>
@@ -347,21 +395,26 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                       <label>
                         Acción
                         <select
-                          value={step.kind === 'notify' ? 'notify' : String(step.channel_id)}
+                          value={step.kind === 'channel' ? String(step.channel_id) : step.kind}
                           onChange={(e) =>
                             updateStep(
                               index,
-                              e.target.value === 'notify'
-                                ? { kind: 'notify', title: step.title }
-                                : {
-                                    kind: 'channel',
-                                    channel_id: Number(e.target.value),
-                                    title: step.title,
-                                  },
+                              e.target.value === 'evaluate'
+                                ? { kind: 'evaluate', title: step.title, minimum_level: 'Media' }
+                                : e.target.value === 'notify'
+                                  ? { kind: 'notify', title: step.title }
+                                  : {
+                                      kind: 'channel',
+                                      channel_id: Number(e.target.value),
+                                      title: step.title,
+                                    },
                             )
                           }
                         >
                           <option value="notify">Aviso en la bandeja de MASCLI</option>
+                          {rule.module === 'Narrativas' && (
+                            <option value="evaluate">Evaluar narrativa registrada</option>
+                          )}
                           {data.channels.map((c) => (
                             <option key={c.id} value={c.id}>
                               Enviar a {c.name}
@@ -369,6 +422,23 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                           ))}
                         </select>
                       </label>
+                      {step.kind === 'evaluate' && (
+                        <label>
+                          Prioridad mínima
+                          <select
+                            value={step.minimum_level}
+                            onChange={(e) =>
+                              updateStep(index, {
+                                ...step,
+                                minimum_level: e.target.value as 'Media' | 'Alta',
+                              })
+                            }
+                          >
+                            <option>Media</option>
+                            <option>Alta</option>
+                          </select>
+                        </label>
+                      )}
                       <Field
                         label="Título del mensaje"
                         required
@@ -518,6 +588,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
               </form>
             </Card>
 
+            <RuntimeCard scope={scope} />
             <ApiKeysCard scope={scope} />
 
             <Card title="Últimas ejecuciones">
@@ -543,7 +614,13 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                             {ACTION_LABELS[run.event.action] ?? run.event.action} ·{' '}
                             {run.event.module} {run.event.record_id ?? ''}
                           </td>
-                          <td data-label="Acción">{run.kind === 'notify' ? 'Aviso' : 'Canal'}</td>
+                          <td data-label="Acción">
+                            {run.kind === 'evaluate'
+                              ? 'Evaluación'
+                              : run.kind === 'notify'
+                                ? 'Aviso'
+                                : 'Canal'}
+                          </td>
                           <td data-label="Estado">
                             {STATUS_LABELS[run.status]}
                             {run.attempts > 1 ? ` (${run.attempts} intentos)` : ''}

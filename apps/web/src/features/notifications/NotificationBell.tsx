@@ -67,8 +67,10 @@ export const NotificationList = ({ scope }: { scope: string }) => {
         <ul className={styles.list}>
           {inbox.data.items.map((item) => (
             <li key={item.id} className={item.read ? styles.read : styles.unread}>
-              {item.link ? (
-                <InternalLink href={objectHref(item.link.module, item.link.id)}>
+              {item.href || item.link ? (
+                <InternalLink
+                  href={item.href ?? (item.link ? objectHref(item.link.module, item.link.id) : '/')}
+                >
                   {item.title}
                 </InternalLink>
               ) : (
