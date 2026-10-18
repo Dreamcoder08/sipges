@@ -66,3 +66,24 @@ Fuentes oficiales consultadas el 17 de octubre de 2026:
 - <https://www.defensoria.gob.pe/wp-json/wp/v2/posts>
 - <https://vercel.com/docs/cron-jobs/usage-and-pricing>
 - <https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package>
+
+## Verificación del despliegue del 18 de octubre de 2026
+
+El [PR #53](https://github.com/Dreamcoder08/mascli/pull/53) se integró como `6754923`.
+La [CI del código](https://github.com/Dreamcoder08/mascli/actions/runs/39087996497) aprobó
+651 pruebas API, 218 UI, 6 hosting, contratos/herramientas, tipos, lint, build y referencia Python.
+Chromium aprobó 89 pruebas (una omisión existente) y WebKit las 9 de su suite complementaria.
+El flujo persistido se comprobó en PostgreSQL aislado; las pruebas con adaptadores no demuestran
+la disponibilidad de servicios externos.
+
+Vercel publicó ese merge en producción, despliegue `dpl_6VaDEJuve5PjVU7C9S4a6kS6bd84`, estado READY.
+La comprobación pública obtuvo 200 en /health, /login con Accept text/html y sus archivos JS/CSS;
+los endpoints runtime, push/state y cron rechazaron las peticiones sin credenciales con 401.
+La consulta agrupada de errores/fatales de ese despliegue durante la comprobación no devolvió entradas.
+Esto verifica arranque, publicación y acceso anónimo; no sustituye un flujo autenticado en Vercel/Blob.
+
+Pendientes explícitos en el ODD: T1/T2 requieren comprobar las capas reales cuando INGEMMET responda
+(desde este entorno devolvió 503); T8 requiere suscripción y confirmación del teléfono, además de
+configurar/autorizar los canales y fuentes deseados. La vista previa de esta rama carece de variables
+de base de datos y acceso; su backend devuelve 503 aunque el build esté READY. No se reutilizaron
+secretos ni datos de producción para resolver esa vista previa.
