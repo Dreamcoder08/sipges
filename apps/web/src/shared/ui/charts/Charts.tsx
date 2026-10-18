@@ -382,6 +382,120 @@ export const MultiLineChart = ({
   );
 };
 
+/**
+ * Columns split into stacked segments (e.g. alerts per month by level), with a legend under the
+ * drawing and every value in a hidden table.
+ */
+export const StackedColumnChart = ({
+  labels,
+  series,
+  caption,
+  empty,
+}: {
+  labels: readonly string[];
+  series: readonly Series[];
+  caption: string;
+  empty: string;
+}) => {
+  const [ref, width] = useWidth(360);
+  const totals = labels.map((_, i) => series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0));
+  if (!labels.length || totals.every((t) => t === 0))
+    return <p className={styles.empty}>{empty}</p>;
+  const height = 200;
+  const left = 26;
+  const bottom = 22;
+  const top = 16;
+  const max = niceMax(Math.max(...totals));
+  const steps = max <= 2 ? max : 5;
+  const slot = (width - left) / labels.length;
+  const bar = Math.min(40, slot * 0.6);
+  const y = (v: number) => top + (height - top - bottom) * (1 - v / max);
+  // About one label per 36px, so month names never overlap on a phone.
+  const every = Math.max(1, Math.ceil(labels.length / Math.max(2, Math.floor(width / 36))));
+  return (
+    <figure className={styles.figure}>
+      <svg ref={ref} className={styles.svg} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        {Array.from({ length: steps + 1 }, (_, n) => n / steps).map((f) => (
+          <g key={f}>
+            <line className={styles.grid} x1={left} x2={width} y1={y(max * f)} y2={y(max * f)} />
+            <text className={styles.tick} x={left - 6} y={y(max * f) + 4} textAnchor="end">
+              {Math.round(max * f)}
+            </text>
+          </g>
+        ))}
+        {labels.map((label, i) => {
+          const x = left + slot * i + (slot - bar) / 2;
+          let base = 0;
+          return (
+            <g key={label}>
+              {series.map((s) => {
+                const value = s.values[i] ?? 0;
+                if (!value) return null;
+                const from = base;
+                base += value;
+                return (
+                  <rect
+                    key={s.key}
+                    className={tone(s.tone)}
+                    x={x}
+                    y={y(base)}
+                    width={bar}
+                    height={Math.max(0, y(from) - y(base) - 1)}
+                    rx="2"
+                  />
+                );
+              })}
+              {totals[i] ? (
+                <text className={styles.value} x={x + bar / 2} y={y(base) - 4} textAnchor="middle">
+                  {totals[i]}
+                </text>
+              ) : null}
+              {i % every === 0 ? (
+                <text className={styles.tick} x={x + bar / 2} y={height - 6} textAnchor="middle">
+                  {label}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+      <ul className={styles.seriesLegend} aria-hidden="true">
+        {series.map((s) => (
+          <li key={s.key}>
+            <span className={`${styles.swatch} ${styles.round} ${tone(s.tone)}`} />
+            {s.label}
+          </li>
+        ))}
+      </ul>
+      <div className="visually-hidden">
+        <table>
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Periodo</th>
+              {series.map((s) => (
+                <th key={s.key} scope="col">
+                  {s.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {labels.map((label, i) => (
+              <tr key={label}>
+                <th scope="row">{label}</th>
+                {series.map((s) => (
+                  <td key={s.key}>{s.values[i] ?? 0}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </figure>
+  );
+};
+
 /** Spider chart over a shared 0–max scale (e.g. the six G-A-D-N-E-I dimensions). */
 export const RadarChart = ({
   data,

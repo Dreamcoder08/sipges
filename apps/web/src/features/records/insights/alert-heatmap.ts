@@ -60,8 +60,10 @@ export const alertHeatmap = (
     territory: alertTerritory(row, events),
     dimension: recordedDimension(row.Dimension),
   }));
-  const territories = [...new Set(located.map((item) => item.territory))].sort((a, b) =>
-    a.localeCompare(b, 'es'),
+  // Alphabetical, with the alerts still missing a territory as the last column.
+  const territories = [...new Set(located.map((item) => item.territory))].sort(
+    (a, b) =>
+      Number(a === MISSING_TERRITORY) - Number(b === MISSING_TERRITORY) || a.localeCompare(b, 'es'),
   );
   const dimensions: string[] = [...DIMENSIONS];
   if (located.some((item) => item.dimension === '?')) dimensions.push('?');

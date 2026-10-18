@@ -138,7 +138,7 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
   alertas: {
     label: 'Alertas territoriales',
     titleField: 'Causa',
-    columns: ['Fecha', 'Dimension', 'Causa', 'Nivel_Preliminar', 'Estado'],
+    columns: ['Fecha', 'Dimension', 'Territorio', 'Causa', 'Nivel_Preliminar', 'Estado'],
     fields: [
       { key: 'Fecha', label: 'Fecha', type: 'date' },
       { key: 'Causa', label: 'Causa documentada', type: 'textarea', required: true },

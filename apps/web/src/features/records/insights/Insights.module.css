@@ -72,14 +72,21 @@
   border-spacing: 4px;
 }
 .matrix th {
-  padding: 0.7rem;
+  padding: 0.6rem;
   text-align: left;
   font-size: 0.8rem;
-  min-width: 8rem;
+  min-width: 5.5rem;
+}
+.matrix thead th {
+  text-align: center;
+  vertical-align: bottom;
 }
 .matrix th[scope='row'] {
-  min-width: 12rem;
+  min-width: 10rem;
   background: var(--color-surface-alt);
+  position: sticky;
+  left: 0;
+  z-index: 1;
 }
 .dimension {
   display: inline-block;
@@ -89,11 +96,16 @@
 }
 .matrix td {
   padding: 0;
-  min-width: 8rem;
+  min-width: 5.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  background: #f1f3f7;
+  border-radius: 0.45rem;
 }
 .heatCell {
   width: 100%;
-  min-height: 4rem;
+  min-height: 3.25rem;
   border: 2px solid transparent;
   border-radius: 0.45rem;
   display: grid;
@@ -104,7 +116,7 @@
   font-size: 0.8rem;
 }
 .heatCell strong {
-  font-size: 1.1rem;
+  font-size: 0.85rem;
 }
 .heatCell:disabled {
   opacity: 1;
@@ -114,25 +126,65 @@
   border-color: #173958;
   box-shadow: inset 0 0 0 1px white;
 }
+/* Heat colours: saturated enough to read as a heat map, with text above 4.5:1 contrast. */
 .Verde {
-  background: #bee6d0;
-  color: #163f2a;
+  background: #6fc28f;
+  color: #0d3520;
 }
 .Amarillo {
-  background: #ffe594;
-  color: #4a3810;
+  background: #f6d55c;
+  color: #3d2e05;
 }
 .Naranja {
-  background: #ffd0ad;
-  color: #5b2912;
+  background: #f4a259;
+  color: #3d1a05;
 }
 .Rojo {
-  background: #f2b5b9;
-  color: #5c1821;
+  background: #c4343d;
+  color: #fff;
 }
 .unknown {
   background: #e9edf3;
   color: #485265;
+}
+.heatCell span,
+.heatCell small {
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+.dimG {
+  background: var(--dim-g);
+}
+.dimA {
+  background: var(--dim-a);
+}
+.dimD {
+  background: var(--dim-d);
+}
+.dimN {
+  background: var(--dim-n);
+}
+.dimE {
+  background: var(--dim-e);
+}
+.dimI {
+  background: var(--dim-i);
+}
+.dimG,
+.dimA,
+.dimD,
+.dimN,
+.dimE,
+.dimI {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  text-align: center;
+  line-height: 1.5rem;
+}
+.legendTitle {
+  font-weight: 700;
 }
 .legend {
   display: flex;
@@ -166,7 +218,7 @@
   background: #8a6115;
 }
 .legend .unknown {
-  background: #68758b;
+  background: #cfd5de;
 }
 .selection {
   padding: 1rem;
@@ -322,6 +374,11 @@
 @media (max-width: 600px) {
   .panel {
     padding: 0.8rem;
+  }
+  .matrix th[scope='row'] {
+    min-width: 8.5rem;
+    padding: 0.4rem;
+    font-size: 0.75rem;
   }
   .metrics {
     gap: 0.4rem;
