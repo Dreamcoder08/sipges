@@ -81,9 +81,15 @@ for (const mobile of [false, true]) {
         .screenshot({ path: test.info().outputPath('alert-heatmap.png') });
     await page.goto('/actores');
     await expect(
-      page.getByRole('group', { name: 'Mapa de actores por tipo e influencia' }),
+      page.getByRole('group', { name: 'Mapa de actores por sector e influencia' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: /^Comunidad, influencia Alta:/ }).click();
+    // Other specs share this database, so open the actor from the keyboard, not by position.
+    await page
+      .getByRole('button', { name: new RegExp(`^Actor de prueba ${stamp}\\. Sociedad civil`) })
+      .focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('heading', { name: `Ficha ${actorId}` })).toBeFocused();
+    await page.getByRole('button', { name: 'Volver a la lista' }).click();
     await page.getByRole('button', { name: `Ficha de actor ${actorId}`, exact: true }).click();
     await expect(page.getByRole('heading', { name: `Ficha ${actorId}` })).toBeFocused();
     await page.getByRole('button', { name: 'Volver a la lista' }).click();

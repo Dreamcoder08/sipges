@@ -1,0 +1,221 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-block: 0.75rem;
+}
+.zoom {
+  display: flex;
+  gap: 0.4rem;
+}
+.zoom button {
+  min-width: 44px;
+}
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+.stage {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #fbfcfe;
+  overflow: hidden;
+}
+.canvas {
+  position: relative;
+}
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: grab;
+  user-select: none;
+  /* One finger scrolls the page until the map is zoomed in; two fingers zoom the map. */
+  touch-action: pan-y;
+}
+.svg:active {
+  cursor: grabbing;
+}
+.zoomed {
+  touch-action: none;
+}
+.axis {
+  stroke: #1d2b3f;
+  stroke-width: 2;
+}
+.ringLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  fill: #1d2b3f;
+}
+.sectorLabel {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  fill: #173958;
+}
+.centerLabel {
+  font-size: 15px;
+  font-weight: 800;
+  fill: #173958;
+}
+.strong,
+.weak,
+.unrecorded {
+  fill: none;
+  stroke: #1d2b3f;
+}
+.strong {
+  stroke-width: 1.6;
+}
+.weak {
+  stroke-width: 1.6;
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}
+.unrecorded {
+  stroke-width: 1;
+  stroke: #5b6b84;
+  opacity: 0.45;
+}
+.actor {
+  cursor: pointer;
+  outline: none;
+}
+.actor rect {
+  fill: #eef1f5;
+  stroke: #68758b;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 1px 1px rgb(23 57 88 / 0.25));
+}
+.actor text {
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: #14243a;
+  pointer-events: none;
+}
+.actor:hover rect,
+.current rect {
+  stroke-width: 3;
+}
+.actor:focus-visible rect {
+  stroke: #173958;
+  stroke-width: 4;
+}
+.favor rect {
+  fill: #d7ebdf;
+  stroke: #247b55;
+}
+.contra rect {
+  fill: #f7dde0;
+  stroke: #b03546;
+}
+.neutral rect {
+  fill: #dce7f6;
+  stroke: #3567aa;
+}
+.expectante rect {
+  fill: #f8ebc6;
+  stroke: #8a6115;
+}
+.unknown rect {
+  fill: #f4f5f8;
+  stroke: #68758b;
+}
+.tooltip {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, 0.5rem);
+  display: grid;
+  gap: 0.3rem;
+  width: max-content;
+  max-width: min(18rem, 90%);
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: 0 6px 18px rgb(23 57 88 / 0.18);
+  font-size: 0.8rem;
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+.tooltip small {
+  color: var(--color-muted);
+}
+.pinned {
+  pointer-events: auto;
+}
+.tooltipActions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.legends {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem 1.25rem;
+  margin-top: 0.75rem;
+}
+.legends h5 {
+  margin: 0;
+  font-size: 0.8rem;
+}
+.lineLegend {
+  display: grid;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.7rem 0;
+  font-size: 0.78rem;
+}
+.lineLegend li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.lineLegend svg {
+  width: 2.5rem;
+  height: 0.7rem;
+  overflow: visible;
+}
+.listHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+.listHeader label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.listHeader select {
+  min-height: 44px;
+}
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  column-gap: 1.25rem;
+  max-height: 26rem;
+}
+@media (max-width: 700px) {
+  .legends {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Phones scroll a wider canvas natively, so actor names stay readable without zooming. */
+  .stage {
+    margin-inline: -0.4rem;
+    overflow: auto;
+    overscroll-behavior-x: contain;
+  }
+  .canvas {
+    width: 900px;
+  }
+  .svg:not(.zoomed) {
+    touch-action: pan-x pan-y;
+  }
+}
