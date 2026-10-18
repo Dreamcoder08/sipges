@@ -231,6 +231,13 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
         options: ['Preliminar', 'En revisión', 'Validado'],
         initial: 'Preliminar',
       },
+      {
+        // Empty: derived from verification and source on the territorial map. A scenario is
+        // only ever declared here, never inferred.
+        key: 'Estado_Informacion',
+        label: 'Estado de la información',
+        options: ['Observado', 'Estimado', 'Escenario hipotético'],
+      },
       source,
       notes,
     ],

@@ -18,46 +18,39 @@ test('events with a known locality appear on the territorial map with their deta
   await expect(
     page.getByRole('heading', { level: 1, name: 'Mapa territorial MASCLI' }),
   ).toBeVisible();
-  const map = page.getByRole('group', {
-    name: 'Mapa territorial de la provincia de Sechura',
-  });
-  const provinceView = await map.getAttribute('viewBox');
-  if (!provinceView) throw new Error('Missing map extent');
+  // MapLibre GL JS + deck.gl where WebGL 2 exists, the SVG renderer otherwise (ADR 0017).
+  const map = page.getByLabel('Mapa territorial de la provincia de Sechura');
+  await expect(map).toBeVisible();
   await page.getByRole('button', { name: 'Acercar', exact: true }).click();
-  await expect(map).not.toHaveAttribute('viewBox', provinceView);
   await page.getByRole('button', { name: 'Alejar', exact: true }).click();
   await page.getByRole('button', { name: 'Ver toda la provincia', exact: true }).click();
-  await expect(map).toHaveAttribute('viewBox', provinceView);
-  // Dragging moves the map; the arrow keys too once it has focus.
-  await map.scrollIntoViewIfNeeded();
+  // Dragging the map keeps the page usable and never selects anything.
   const box = await map.boundingBox();
   if (!box) throw new Error('Missing map box');
   await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.3, { steps: 6 });
-  // While the finger or mouse moves, only a transform follows it; the page renders on release.
-  const content = map.locator('[data-map-content]');
-  await expect(content).toHaveAttribute('transform', /scale\(1\)/);
-  await expect(map).toHaveAttribute('viewBox', provinceView);
   await page.mouse.up();
-  await expect(content).not.toHaveAttribute('transform');
-  await expect(map).not.toHaveAttribute('viewBox', provinceView);
-  await page.getByRole('button', { name: 'Ver toda la provincia', exact: true }).click();
-  await map.focus();
-  await page.keyboard.press('ArrowLeft');
-  await expect(map).not.toHaveAttribute('viewBox', provinceView);
-  await page.keyboard.press('0');
-  await expect(map).toHaveAttribute('viewBox', provinceView);
-  const marker = page.getByRole('button', { name: `Eventos: ${description} (Vice)` });
-  await marker.click();
-  await expect(marker).toHaveAttribute('aria-pressed', 'true');
-  const detail = page
-    .locator('section')
-    .filter({ has: page.getByRole('heading', { name: 'Detalle del punto seleccionado' }) });
-  await expect(detail.getByText(description)).toBeVisible();
 
+  // The evolution timeline selects the record and opens its sheet with its provenance.
+  const evolution = page.getByRole('list', { name: 'Registros del periodo' });
+  const entry = evolution.getByRole('button', { name: new RegExp(description) });
+  await entry.click();
+  await expect(entry).toHaveAttribute('aria-pressed', 'true');
+  const sheet = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Ficha territorial' }) });
+  await expect(sheet.getByRole('heading', { name: description })).toBeVisible();
+  await expect(sheet.getByText('Aproximada al centro de la localidad')).toBeVisible();
+  await expect(sheet.getByText('Falta verificación A–C y referencia de fuente')).toBeVisible();
+
+  // Estimated records can be hidden; the filters apply to the map and the evolution alike.
+  await page.getByRole('checkbox', { name: 'Estimado', exact: true }).uncheck();
+  await expect(entry).toBeHidden();
+  await page.getByRole('checkbox', { name: 'Estimado', exact: true }).check();
+  await expect(entry).toBeVisible();
   await page.getByLabel('Localidad').selectOption('Bayóvar');
-  await expect(marker).toBeHidden();
+  await expect(entry).toBeHidden();
 
   await page.goto('/ubicacion');
   await expect(

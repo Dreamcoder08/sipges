@@ -1,0 +1,18 @@
+.frame {
+  touch-action: none;
+}
+.canvas {
+  height: min(70vh, 36rem);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: #e9eef3;
+}
+.canvas :global(.maplibregl-canvas):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: -3px;
+}
+@media (max-width: 48rem) {
+  .canvas {
+    height: 58vh;
+  }
+}
