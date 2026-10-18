@@ -55,6 +55,27 @@ const serve = () =>
     http.get('/api/demandas', records([])),
     http.get('/api/actores', records([])),
     http.get('/api/alertas', records([])),
+    http.get('/system/geography/catalogue', () =>
+      HttpResponse.json({
+        status: 'verified',
+        checkedAt: '2026-10-18T00:00:00Z',
+        serviceUrl: 'https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/',
+        attribution: 'INGEMMET – GEOCATMIN',
+        layers: [
+          {
+            serviceId: 'SERV_CATASTRO_MINERO',
+            id: 0,
+            name: 'Catastro Minero',
+            minScale: 0,
+            maxScale: 0,
+            capabilities: 'Query,Map,Data',
+            attribution: 'INGEMMET',
+            exportUrl: 'x',
+            metadataUrl: 'y',
+          },
+        ],
+      }),
+    ),
     http.post('/system/geography/query', async ({ request }) => {
       const body = (await request.json()) as { polygon?: unknown };
       bodies.push(body);
@@ -184,4 +205,25 @@ it('shows the sheet as a swipeable panel on phones', async () => {
   fireEvent.pointerDown(handle, { clientY: 300, pointerId: 1 });
   fireEvent.pointerUp(handle, { clientY: 380, pointerId: 1 });
   expect(screen.queryByRole('region', { name: 'Ficha del registro' })).toBeNull();
+});
+
+it('reports an unavailable cadastre without querying it', async () => {
+  serve();
+  server.use(
+    http.get('/system/geography/catalogue', () =>
+      HttpResponse.json({
+        status: 'unavailable',
+        checkedAt: '2026-10-18T00:00:00Z',
+        serviceUrl: 'x',
+        attribution: 'INGEMMET',
+        layers: [],
+      }),
+    ),
+  );
+  renderPage();
+  expect(
+    await screen.findByText(/El catastro minero de INGEMMET no está disponible ahora/),
+  ).toBeVisible();
+  expect(bodies).toHaveLength(0);
+  expect(screen.queryByRole('alert')).toBeNull();
 });

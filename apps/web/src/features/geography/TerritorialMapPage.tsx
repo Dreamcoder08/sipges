@@ -1,4 +1,4 @@
-import { GeographyResult } from '@mascli/contracts';
+import { GeographyCatalogue, GeographyResult } from '@mascli/contracts';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -249,9 +249,28 @@ const TerritorialWorkspace = ({
   const view = engine === 'webgl' ? canvasView : map.view;
   const span = view ? Math.max(view[2] - view[0], view[3] - view[1]) : Infinity;
   const bbox = view && span <= MAX_CONCESSION_SPAN ? round(queryExtent(view)) : null;
+  // The official catalogue answers even when INGEMMET is down; the cadastre is only queried
+  // once it confirms the layer, so an outage reads as a notice instead of failed requests.
+  const catalogue = useQuery({
+    queryKey: ['geocatmin-catalogue', scope],
+    enabled: showConcessions,
+    staleTime: 300_000,
+    retry: false,
+    queryFn: ({ signal }) =>
+      requestJson('/system/geography/catalogue', GeographyCatalogue, { scope, signal }),
+  });
+  const cadastreReady = Boolean(
+    catalogue.data?.layers.some(
+      (l) =>
+        l.serviceId === CADASTRE.serviceId &&
+        l.id === CADASTRE.layerId &&
+        l.capabilities.includes('Query'),
+    ),
+  );
+  const cadastreDown = Boolean(catalogue.error) || (catalogue.isSuccess && !cadastreReady);
   const cadastre = useQuery({
     queryKey: ['geocatmin-concessions', scope, bbox?.join(',')],
-    enabled: showConcessions && Boolean(bbox),
+    enabled: showConcessions && cadastreReady && Boolean(bbox),
     retry: false,
     staleTime: 300_000,
     placeholderData: keepPreviousData,
@@ -481,13 +500,17 @@ const TerritorialWorkspace = ({
 
   const cadastreStatus = !showConcessions
     ? null
-    : !bbox
-      ? 'Acerque el mapa para consultar las concesiones del catastro minero.'
-      : cadastre.isFetching
-        ? 'Consultando el catastro minero de INGEMMET…'
-        : cadastre.error
-          ? null
-          : `${concessions.length} concesión(es) de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
+    : catalogue.isPending
+      ? 'Verificando el catastro minero de INGEMMET…'
+      : cadastreDown
+        ? 'El catastro minero de INGEMMET no está disponible ahora; los registros del proyecto siguen visibles.'
+        : !bbox
+          ? 'Acerque el mapa para consultar las concesiones del catastro minero.'
+          : cadastre.isFetching
+            ? 'Consultando el catastro minero de INGEMMET…'
+            : cadastre.error
+              ? null
+              : `${concessions.length} concesión(es) de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
 
   return (
     <div className={styles.page}>
