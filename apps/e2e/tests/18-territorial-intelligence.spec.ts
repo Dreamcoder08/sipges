@@ -114,6 +114,10 @@ for (const mobile of [false, true]) {
       );
       if (mobile)
         await expect(page.getByRole('dialog', { name: 'Cuenta', exact: true })).toBeHidden();
+      else
+        await expect(
+          page.getByRole('region', { name: 'Notificaciones', exact: true }),
+        ).toBeHidden();
       await expect(
         page.getByRole('heading', { name: `Alerta ${signal.id}`, exact: true }),
       ).toBeVisible();
@@ -124,9 +128,9 @@ for (const mobile of [false, true]) {
       await expect(
         page.getByText(`Fuente: ${sourceUrl} · Publicación digital`, { exact: true }),
       ).toBeVisible();
-      await expect(page.getByLabel('Estado de revisión', { exact: true })).toHaveValue(
-        'Pendiente de verificación',
-      );
+      await expect(
+        page.getByRole('combobox', { name: 'Estado de revisión', exact: true }),
+      ).toHaveValue('Pendiente de verificación');
       await expect(page.getByText(/Última revisión: Sin revisión · Pendiente/)).toBeVisible();
       const sourceCard = page.locator('section').filter({
         has: page.getByRole('heading', { name: 'Fuentes oficiales autorizadas', exact: true }),

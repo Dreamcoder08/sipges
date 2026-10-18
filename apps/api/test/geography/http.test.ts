@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { expect, it } from 'vitest';
 import type { AppEnv } from '../../src/platform/http/env.ts';
-import { geographyRoutes } from '../../src/contexts/geography/http/index.ts';
+import { geographyRequestLimit, geographyRoutes } from '../../src/contexts/geography/http/index.ts';
 import { createGeographyService } from '../../src/contexts/geography/application/index.ts';
 import type { GeographyCatalogue } from '@mascli/contracts';
 const catalogue: GeographyCatalogue = {
@@ -31,6 +31,7 @@ it('rejects supplied URLs before provider calls and carries resolved scope into 
     },
   });
   const app = new Hono<AppEnv>()
+    .use('*', geographyRequestLimit())
     .use('*', async (c, next) => {
       c.set('scope', { companyId: 'ACME', projectId: 'P2' });
       await next();
@@ -74,7 +75,9 @@ it('reports upstream failures and rejects oversized bodies', async () => {
     },
     reader: { read: async () => ({}) },
   });
-  const app = new Hono<AppEnv>().route('/', geographyRoutes({ geography }));
+  const app = new Hono<AppEnv>()
+    .use('*', geographyRequestLimit())
+    .route('/', geographyRoutes({ geography }));
   expect(
     (
       await app.request('/system/geography/query', {
@@ -97,7 +100,9 @@ it('stops consuming an oversized streaming query early', async () => {
     },
     reader: { read: async () => ({}) },
   });
-  const app = new Hono<AppEnv>().route('/', geographyRoutes({ geography }));
+  const app = new Hono<AppEnv>()
+    .use('*', geographyRequestLimit())
+    .route('/', geographyRoutes({ geography }));
   const stream = new ReadableStream<Uint8Array>({
     pull(controller) {
       consumed++;

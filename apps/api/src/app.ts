@@ -1,6 +1,6 @@
 import { runtimeRoutes } from './contexts/system/http/runtime-routes.ts';
-import { geographyRoutes } from './contexts/geography/http/index.ts';
-import { sourceRoutes } from './contexts/integration/http/source-routes.ts';
+import { geographyRequestLimit, geographyRoutes } from './contexts/geography/http/index.ts';
+import { sourceRequestLimit, sourceRoutes } from './contexts/integration/http/source-routes.ts';
 import { signalRoutes } from './contexts/integration/http/signal-routes.ts';
 import { automationWakeup } from './platform/http/automation-wakeup.ts';
 import type { ErrorResponse } from '@mascli/contracts';
@@ -74,6 +74,8 @@ export const createApp = (
   app.use('*', hostAllowlist(config.allowedHosts));
   if (options.web) app.use('*', spaMiddleware(options.web));
   app.use('*', sessionMiddleware(identity, { requireMfa: config.requireMfa }));
+  app.use('/system/geography/query', geographyRequestLimit());
+  app.use('/system/intelligence/sources/*', sourceRequestLimit());
   app.use('*', tenancyMiddleware(tenancy));
   app.use('*', roleGate(identity));
   if (options.eventAutomation) app.use('*', automationWakeup(container.runtime, options.defer));

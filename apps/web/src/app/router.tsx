@@ -273,7 +273,9 @@ const appRoute = createRoute({
         <AppShell
           projectLabel={projectLabel}
           search={<SearchPalette scope={scope.scope} />}
-          notifications={<NotificationBell scope={scope.scope} />}
+          notifications={
+            <NotificationBell key={`notifications/${locationHref}`} scope={scope.scope} />
+          }
           live={<LiveUpdates scope={scope.scope} />}
           projectSwitcher={
             <ProjectSwitcher
@@ -286,7 +288,7 @@ const appRoute = createRoute({
           }
           account={
             <AccountMenu
-              key={locationHref}
+              key={`account/${locationHref}`}
               me={me}
               project={projectLabel}
               unread={compact ? unread : 0}

@@ -1,32 +1,21 @@
 import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
 import { GeographyQuery } from '@mascli/contracts';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import type { GeographyService } from '../application/index.ts';
+/** Install before tenancy consumes/caches JSON, also for requests without Content-Length. */
+export const geographyRequestLimit = () =>
+  bodyLimit({
+    maxSize: 100_000,
+    onError: (c) => c.json({ detail: 'Consulta demasiado extensa' }, 413),
+  });
 export const geographyRoutes = ({ geography }: { geography: GeographyService }) =>
   new Hono<AppEnv>()
     .get('/system/geography/catalogue', async (c) => c.json(await geography.catalogue()))
     .post('/system/geography/query', async (c) => {
-      if (Number(c.req.header('content-length') ?? 0) > 100_000)
-        return c.json({ detail: 'Consulta demasiado extensa' }, 413);
-      const stream = c.req.raw.body?.getReader(),
-        decoder = new TextDecoder();
-      let raw = '',
-        size = 0;
-      if (stream)
-        while (true) {
-          const { done, value } = await stream.read();
-          if (done) break;
-          size += value.byteLength;
-          if (size > 100_000) {
-            await stream.cancel();
-            return c.json({ detail: 'Consulta demasiado extensa' }, 413);
-          }
-          raw += decoder.decode(value, { stream: true });
-        }
-      raw += decoder.decode();
       let body: unknown;
       try {
-        body = JSON.parse(raw);
+        body = await c.req.json();
       } catch {
         return c.json({ detail: 'JSON inválido' }, 422);
       }

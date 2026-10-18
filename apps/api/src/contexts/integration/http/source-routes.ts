@@ -6,15 +6,11 @@ import { parseJson } from '../../../platform/http/validation.ts';
 import { formatScope } from '../../tenancy/application/index.ts';
 import type { AuthorizedSourcesService } from '../application/authorized-sources.ts';
 const BASE = '/system/intelligence/sources';
+/** Install before tenancy consumes/caches JSON; the route parser reuses that cache. */
+export const sourceRequestLimit = () =>
+  bodyLimit({ maxSize: 8192, onError: (c) => c.json({ detail: 'Cuerpo demasiado grande' }, 413) });
 export const sourceRoutes = ({ sources }: { sources: AuthorizedSourcesService }) =>
   new Hono<AppEnv>()
-    .use(
-      `${BASE}/*`,
-      bodyLimit({
-        maxSize: 8192,
-        onError: (c) => c.json({ detail: 'Cuerpo demasiado grande' }, 413),
-      }),
-    )
     .get(BASE, async (c) => c.json(await sources.catalog(formatScope(c.get('scope')))))
     .get(`${BASE}/defensoria/preview`, async (c) => {
       try {
