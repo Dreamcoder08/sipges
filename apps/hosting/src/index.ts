@@ -16,7 +16,13 @@ import { createHostedApp } from './lazy-app.ts';
 /** Vercel entrypoint; the normal API remains the only source of business behavior. */
 const allowedHosts = parseAllowedHosts(
   process.env.MASCLI_ALLOWED_HOSTS ??
-    [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL].filter(Boolean).join(','),
+    [
+      process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      process.env.VERCEL_URL,
+      process.env.VERCEL_BRANCH_URL,
+    ]
+      .filter(Boolean)
+      .join(','),
 );
 const web = fileWebAssets(fileURLToPath(new URL('../public/', import.meta.url)));
 const app = new Hono()
