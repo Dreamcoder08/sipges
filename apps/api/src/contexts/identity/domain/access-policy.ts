@@ -16,6 +16,7 @@ const READ_ONLY_POSTS = new Set([
   '/system/document-lab/report.docx',
   '/system/intelligence/semantic-analyze',
   '/system/geography/query',
+  '/system/graph/neighbourhood',
 ]);
 
 /** Personal account security every role must be able to complete (ADR 0009). */
