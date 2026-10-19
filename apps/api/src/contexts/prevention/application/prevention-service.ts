@@ -4,11 +4,19 @@ import {
   type ActionUpdate,
   type PreventiveAction,
   type UpdateRejection,
+  checkReceipt,
   checkTransition,
   checkUpdate,
   preventionSummary,
 } from '../domain/index.ts';
-import type { ActionStore, AlertLookup, Clock, RandomHex } from './ports.ts';
+import type {
+  ActionStore,
+  AlertLookup,
+  Clock,
+  EvidenceLookup,
+  RandomHex,
+  Version4Lookup,
+} from './ports.ts';
 
 /** Alerts a plan may follow: verified by a person first (app.py:2163-2167). */
 const ACTIONABLE = new Set(['Corroborado', 'En seguimiento']);
@@ -28,10 +36,12 @@ export type NewPlan = {
 export const createPreventionService = (deps: {
   store: ActionStore;
   alerts: AlertLookup;
+  evidence: EvidenceLookup;
+  version4: Version4Lookup;
   clock: Clock;
   randomHex: RandomHex;
 }) => {
-  const { store, alerts, clock, randomHex } = deps;
+  const { store, alerts, evidence, version4, clock, randomHex } = deps;
   const today = () => clock.now().toISOString().slice(0, 10);
   const list = (scope: Scope) => store.list(formatScope(scope), scope.projectId);
 
@@ -65,10 +75,17 @@ export const createPreventionService = (deps: {
       scope: Scope,
       id: string,
       update: ActionUpdate,
+      actor: string,
     ): Promise<Result<PreventiveAction, UpdateError>> {
       const checked = checkUpdate(update);
       if (!checked.ok) return err(checked.error);
       if (id.length > 80) return err({ kind: 'missing' });
+      const v4 = await version4.enabled(scope);
+      const attachmentId = v4 ? update.evidenceAttachmentId.trim() : '';
+      const required = checkReceipt(checked.status, attachmentId, v4);
+      if (required) return err(required);
+      const receipt = attachmentId ? await evidence.find(scope, attachmentId) : null;
+      if (attachmentId && !receipt) return err({ kind: 'evidence_missing' });
       const result = await store.update(
         formatScope(scope),
         id,
@@ -80,6 +97,8 @@ export const createPreventionService = (deps: {
           progress: update.progress,
           note: update.note,
           evidenceUrl: update.evidenceUrl,
+          decidedBy: actor,
+          receipt,
         },
       );
       if (result === null) return err({ kind: 'missing' });

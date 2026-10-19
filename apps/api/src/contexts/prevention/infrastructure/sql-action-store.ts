@@ -1,7 +1,12 @@
 import { appendAudit } from '../../../platform/database/audit-trail.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';
-import type { ActionStatus, ActionStore, PreventiveAction } from '../application/index.ts';
+import type {
+  ActionStatus,
+  ActionStore,
+  DecisionReceipt,
+  PreventiveAction,
+} from '../application/index.ts';
 
 type ActionRow = {
   id: string;
@@ -25,6 +30,10 @@ type LogRow = {
   progress: number;
   note: string;
   evidence_url: string | null;
+  decided_by: string | null;
+  evidence_attachment_id: string | null;
+  evidence_file_name: string | null;
+  evidence_sha256: string | null;
 };
 
 const ACTION_COLUMNS = `id, project_id, alert_id, title, responsible, due_date, description, status,
@@ -36,7 +45,8 @@ const AUDIT_MODULE = 'PrevencionTerritorial';
 const withHistory = async (tx: SqlClient, rows: ActionRow[]): Promise<PreventiveAction[]> => {
   if (rows.length === 0) return [];
   const logs = await tx.query<LogRow>(
-    `SELECT id, action_id, created_at, status, progress, note, evidence_url
+    `SELECT id, action_id, created_at, status, progress, note, evidence_url, decided_by,
+            evidence_attachment_id, evidence_file_name, evidence_sha256
        FROM preventive_action_log WHERE action_id = ANY($1::text[])
       ORDER BY created_at DESC, id DESC`,
     [rows.map((r) => r.id)],
@@ -63,6 +73,15 @@ const withHistory = async (tx: SqlClient, rows: ActionRow[]): Promise<Preventive
         progress: Number(log.progress),
         note: log.note,
         evidenceUrl: log.evidence_url,
+        decidedBy: log.decided_by,
+        receipt:
+          log.evidence_attachment_id && log.evidence_sha256
+            ? {
+                attachmentId: log.evidence_attachment_id,
+                fileName: log.evidence_file_name ?? '',
+                sha256: log.evidence_sha256,
+              }
+            : null,
       })),
   }));
 };
@@ -77,12 +96,14 @@ const insertLog = (
     progress: number;
     note: string;
     evidenceUrl: string | null;
+    decidedBy: string | null;
+    receipt: DecisionReceipt | null;
   },
 ) =>
   tx.query(
     `INSERT INTO preventive_action_log (tenant_id, id, action_id, created_at, status, progress,
-       note, evidence_url)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7)`,
+       note, evidence_url, decided_by, evidence_attachment_id, evidence_file_name, evidence_sha256)
+     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
     [
       entry.id,
       entry.actionId,
@@ -91,6 +112,10 @@ const insertLog = (
       entry.progress,
       entry.note,
       entry.evidenceUrl,
+      entry.decidedBy,
+      entry.receipt?.attachmentId ?? null,
+      entry.receipt?.fileName ?? null,
+      entry.receipt?.sha256 ?? null,
     ],
   );
 
@@ -122,6 +147,8 @@ export const createSqlActionStore = (sql: SqlClient): ActionStore => ({
         progress: 0,
         note: 'Plan creado',
         evidenceUrl: null,
+        decidedBy: null,
+        receipt: null,
       });
       await appendAudit(tx, {
         module: AUDIT_MODULE,
@@ -180,12 +207,15 @@ export const createSqlActionStore = (sql: SqlClient): ActionStore => ({
         progress: change.progress,
         note: change.note,
         evidenceUrl: change.evidenceUrl,
+        decidedBy: change.decidedBy,
+        receipt: change.receipt,
       });
+      const receipt = change.receipt ? ` · sha256 ${change.receipt.sha256.slice(0, 12)}` : '';
       await appendAudit(tx, {
         module: AUDIT_MODULE,
         recordId: id,
         action: 'UPDATE',
-        detail: `${change.status}: ${Array.from(change.note).slice(0, 200).join('')}`,
+        detail: `${change.status}: ${Array.from(change.note).slice(0, 200).join('')}${receipt}`,
         at: change.createdAt,
       });
       const [action] = await withHistory(tx, rows);
