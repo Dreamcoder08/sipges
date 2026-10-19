@@ -47,13 +47,13 @@ export const plainText = (value: string) =>
 /** Text content of an element: CDATA as is, otherwise XML-decoded (it may hold escaped HTML). */
 const content = (raw: string) => {
   const cdata = /^\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*$/.exec(raw);
-  return plainText(cdata ? cdata[1]! : decodeEntities(raw));
+  return plainText(cdata ? (cdata[1] ?? '') : decodeEntities(raw));
 };
 
 const element = (block: string, names: readonly string[]) => {
   for (const name of names) {
     const match = new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`, 'i').exec(block);
-    if (match) return content(match[1]!);
+    if (match) return content(match[1] ?? '');
   }
   return '';
 };

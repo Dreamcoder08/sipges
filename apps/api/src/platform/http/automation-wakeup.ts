@@ -21,6 +21,7 @@ export const automationWakeup =
       path.startsWith('/api/') ||
       path.startsWith('/system/intelligence/territorial-alerts') ||
       path.startsWith('/system/intelligence/sources/') ||
+      path === '/system/v4/media/poll' ||
       path.startsWith('/system/prevention/') ||
       path.startsWith('/system/automations/rules');
     if (!machine && !business) return;

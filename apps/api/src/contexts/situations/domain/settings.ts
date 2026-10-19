@@ -112,14 +112,13 @@ export const applySettingsPatch = (
   at: Date,
 ): ProjectSettings => {
   const { phaseWeights, ...rest } = patch;
-  const merged = { ...current.phaseWeights } as Partial<Record<Phase, PhaseWeights>>;
-  for (const [phase, weights] of Object.entries(phaseWeights ?? {}) as [
-    Phase,
-    PhaseWeights | null,
-  ][]) {
-    if (weights) merged[phase] = weights;
-    else delete merged[phase];
-  }
+  const changes = (phaseWeights ?? {}) as Partial<Record<Phase, PhaseWeights | null>>;
+  const merged = Object.fromEntries(
+    PHASES.flatMap((phase) => {
+      const weights = phase in changes ? changes[phase] : current.phaseWeights[phase];
+      return weights ? [[phase, weights]] : [];
+    }),
+  ) as Partial<Record<Phase, PhaseWeights>>;
   return {
     ...current,
     ...Object.fromEntries(Object.entries(rest).filter(([, value]) => value !== undefined)),

@@ -60,6 +60,8 @@ export const createSituationsService = (deps: {
   const load = async (scope: Scope) => withDefaults(await settings.load(formatScope(scope)));
   return {
     settings: load,
+    /** Whether the project has MASCLI 4.0 on, for features that only run with it. */
+    version4: async (tenantId: string) => withDefaults(await settings.load(tenantId)).version4,
     /** Phase weights IRSA uses instead of the general ones, only with MASCLI 4.0 on. */
     phaseWeights: async (tenantId: string) =>
       activePhaseWeights(withDefaults(await settings.load(tenantId))),
@@ -97,11 +99,11 @@ export const createSituationsService = (deps: {
       const fields = changedFields(before, after);
       if (fields.length) {
         const phase = fields.includes('phase')
-          ? `fase ${after.phase ? PHASE_LABELS[after.phase] : 'sin definir'}; `
+          ? `ase ${after.phase ? PHASE_LABELS[after.phase] : 'sin definir'}; `
           : '';
         const detail = fields.includes('version4')
-          ? `MASCLI 4.0 ${after.version4 ? 'activado' : 'desactivado'}; ${phase}campos: ${fields.join(', ')}`
-          : `${phase ? phase[0]!.toUpperCase() + phase.slice(1) : ''}Campos: ${fields.join(', ')}`;
+          ? `MASCLI 4.0 ${after.version4 ? 'activado' : 'desactivado'}; ${phase && `f${phase}`}campos: ${fields.join(', ')}`
+          : `${phase && `F${phase}`}Campos: ${fields.join(', ')}`;
         await settings.save(formatScope(scope), after, detail);
         return after;
       }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type FeedItem,
   feedUrlProblem,
   isPrivateAddress,
   matchedKeywords,
@@ -78,12 +79,11 @@ describe('feed reader (ADR 0021 §1)', () => {
 
   it('matches whole keywords without case or accents', () => {
     const [dialogue, festival] = parseFeed(RSS);
-    expect(matchedKeywords(dialogue!, ['Contaminación', 'empleo local', 'agua'])).toEqual([
-      'Contaminación',
-      'empleo local',
-    ]);
-    expect(matchedKeywords(festival!, ['contaminación', 'fest'])).toEqual([]);
-    expect(matchedKeywords(festival!, [])).toEqual([]);
+    expect(
+      matchedKeywords(dialogue as FeedItem, ['Contaminación', 'empleo local', 'agua']),
+    ).toEqual(['Contaminación', 'empleo local']);
+    expect(matchedKeywords(festival as FeedItem, ['contaminación', 'fest'])).toEqual([]);
+    expect(matchedKeywords(festival as FeedItem, [])).toEqual([]);
   });
 
   it('accepts only https URLs on public host names', () => {

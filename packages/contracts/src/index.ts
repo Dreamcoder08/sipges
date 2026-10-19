@@ -18,3 +18,4 @@ export * from './geography.ts';
 export * from './authorized-sources.ts';
 export * from './runtime.ts';
 export * from './situations.ts';
+export * from './media-monitor.ts';
