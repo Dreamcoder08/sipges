@@ -12,7 +12,8 @@ export type RecordModule =
   | 'dialogos'
   | 'oportunidades'
   | 'hechos'
-  | 'aarc';
+  | 'aarc'
+  | 'buzon';
 export type RecordField = {
   key: string;
   label: string;
@@ -57,6 +58,44 @@ const source: RecordField = { key: 'Fuente_ID', label: 'Referencia de fuente' };
 const territory: RecordField = { key: 'Territorio', label: 'Territorio' };
 
 export const MODULES: Record<RecordModule, ModuleDefinition> = {
+  buzon: {
+    label: 'Buzón de quejas, denuncias, consultas y sugerencias',
+    titleField: 'Asunto',
+    columns: ['Fecha', 'Tipo', 'Asunto', 'Territorio', 'Responsable', 'Estado'],
+    fields: [
+      { key: 'Fecha', label: 'Fecha de recepción', type: 'date', required: true },
+      {
+        key: 'Tipo',
+        label: 'Tipo de caso',
+        options: ['Queja', 'Denuncia', 'Consulta', 'Sugerencia'],
+        required: true,
+      },
+      {
+        key: 'Canal',
+        label: 'Canal de ingreso',
+        options: ['Presencial', 'Teléfono', 'Correo', 'Formulario', 'Redes sociales', 'Otro'],
+      },
+      { key: 'Remitente', label: 'Remitente (o «Anónimo»)' },
+      { key: 'Contacto', label: 'Contacto para responder' },
+      { ...territory, label: 'Comunidad / territorio' },
+      { key: 'Actor_Relacionado', label: 'Actor relacionado' },
+      { key: 'Tema', label: 'Tema' },
+      { key: 'Asunto', label: 'Asunto', required: true },
+      { key: 'Descripcion', label: 'Descripción', type: 'textarea', required: true },
+      { key: 'Prioridad', label: 'Prioridad', options: priority, initial: 'Media' },
+      { key: 'Responsable', label: 'Responsable del seguimiento' },
+      { key: 'Fecha_Limite', label: 'Fecha límite de respuesta', type: 'date' },
+      {
+        key: 'Estado',
+        label: 'Estado',
+        options: ['Recibido', 'En revisión', 'Derivado', 'Respondido', 'Cerrado'],
+        initial: 'Recibido',
+      },
+      { key: 'Respuesta', label: 'Respuesta o acción tomada', type: 'textarea' },
+      { key: 'Fecha_Respuesta', label: 'Fecha de respuesta', type: 'date' },
+      notes,
+    ],
+  },
   intereses: {
     label: 'Actores e intereses',
     titleField: 'Actor',
