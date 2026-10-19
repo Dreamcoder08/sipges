@@ -1,0 +1,8 @@
+/* Raster tiles follow the theme: streets invert for dark, imagery only dims (docs/adr/0019). */
+.tiles[data-basemap='calles'] {
+  filter: var(--map-filter-streets);
+}
+
+.tiles[data-basemap='satelite'] {
+  filter: var(--map-filter-satellite);
+}

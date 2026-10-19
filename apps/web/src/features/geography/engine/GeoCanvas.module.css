@@ -5,7 +5,7 @@
   height: min(70vh, 36rem);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: #e9eef3;
+  background: var(--map-bg);
 }
 .canvas :global(.maplibregl-canvas):focus-visible {
   outline: 3px solid var(--color-focus);

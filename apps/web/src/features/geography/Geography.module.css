@@ -19,9 +19,6 @@
   background: var(--map-sea);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  --map-sea: #d6e8f3;
-  --map-land: #f6f3ea;
-  --map-line: #9aa8b4;
 }
 .sea {
   fill: var(--map-sea);
@@ -32,42 +29,42 @@
   stroke-linejoin: round;
 }
 .seaLabel {
-  fill: #4f7a96;
+  fill: var(--map-label-sea);
   font-style: italic;
   letter-spacing: 0.05em;
 }
 .areaLabel {
-  fill: #8a7d5c;
+  fill: var(--map-label-area);
   font-style: italic;
 }
 .town,
 .port {
-  fill: #fff;
-  stroke: #243b53;
+  fill: var(--map-point);
+  stroke: var(--map-ink);
 }
 .port {
-  fill: #243b53;
+  fill: var(--map-ink);
 }
 .placeLabel {
-  fill: #17212b;
+  fill: var(--map-text);
   font-weight: 600;
   paint-order: stroke;
-  stroke: rgb(255 255 255 / 0.85);
+  stroke: var(--map-halo);
 }
 .furniture {
-  fill: #243b53;
+  fill: var(--map-ink);
 }
 .scale {
-  fill: #243b53;
-  stroke: #fff;
+  fill: var(--map-ink);
+  stroke: var(--map-point);
 }
 .concession {
-  fill: #669bb5;
+  fill: var(--map-concession);
   fill-opacity: 0.85;
-  stroke: #243b53;
+  stroke: var(--map-ink);
 }
 .concessionSelected {
-  fill: #e6b54a;
+  fill: var(--map-selected);
 }
 .legend {
   display: flex;
@@ -88,41 +85,41 @@
   width: 0.9rem;
   height: 0.9rem;
   border-radius: 3px;
-  border: 1px solid #243b53;
+  border: 1px solid var(--map-ink);
 }
 .swatchConcession {
-  background: #669bb5;
+  background: var(--map-concession);
 }
 .swatchSelected {
-  background: #e6b54a;
+  background: var(--map-selected);
 }
 .swatchLand {
-  background: #f6f3ea;
+  background: var(--map-land);
 }
 .heat0 {
   fill: var(--map-land);
 }
 .heat1 {
-  fill: #fde7c4;
+  fill: var(--map-heat-1);
 }
 .heat2 {
-  fill: #f8c27a;
+  fill: var(--map-heat-2);
 }
 .heat3 {
-  fill: #ee8f44;
+  fill: var(--map-heat-3);
 }
 .heat4 {
-  fill: #cf5a2a;
+  fill: var(--map-heat-4);
 }
 .selectedDistrict {
-  stroke: #17212b;
+  stroke: var(--map-text);
 }
 .district[role='button'] {
   cursor: pointer;
 }
 .district[role='button']:focus-visible,
 .district[role='button']:hover {
-  stroke: #17212b;
+  stroke: var(--map-text);
   outline: none;
 }
 
@@ -131,7 +128,7 @@
 }
 .concession:focus-visible {
   outline: none;
-  stroke: #c34040;
+  stroke: var(--map-alert);
 }
 .note {
   margin: 0;
@@ -158,12 +155,12 @@
 .scroll td {
   padding: 0.5rem;
   text-align: left;
-  border-bottom: 1px solid #cad5de;
+  border-bottom: 1px solid var(--color-hairline-strong);
 }
 
 .outline {
   fill: none;
-  stroke: #5b6673;
+  stroke: var(--map-ink);
   stroke-opacity: 0.7;
 }
 .toggle {

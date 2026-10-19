@@ -5,19 +5,27 @@
 
 .hero {
   padding: var(--space-6);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--color-brand-strong), var(--color-brand));
-  color: var(--color-on-brand);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xl);
+  /* Calm hero: text on the page colour with a soft accent glow, not a solid brand slab. */
+  background:
+    radial-gradient(40rem 18rem at 0% 0%, var(--color-accent-tint), transparent 70%),
+    var(--color-surface);
+  color: var(--color-text);
 }
 
 .hero h2 {
   margin: 0.3rem 0;
-  font-size: clamp(1.3rem, 2.5vw, 1.8rem);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.025em;
+  line-height: var(--leading-tight);
   max-width: 40rem;
 }
 
 .hero p {
   margin: 0;
+  color: var(--color-muted);
   max-width: 48rem;
 }
 
@@ -26,7 +34,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
-  opacity: 0.85;
+  color: var(--color-accent-text);
 }
 
 .kpis {

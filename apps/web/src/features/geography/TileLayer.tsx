@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { type Extent, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
+import styles from './TileLayer.module.css';
 
 export type Basemap = 'satelite' | 'calles' | 'ninguno';
 
@@ -126,7 +127,7 @@ export const TileLayer = ({ view, basemap = 'calles' }: { view: Extent; basemap?
     />
   );
   return (
-    <g aria-hidden="true">
+    <g aria-hidden="true" className={styles.tiles} data-basemap={basemap}>
       {backdrop.length ? <g>{backdrop.map((t) => image(t))}</g> : null}
       {tiles.map((t) => image(t, () => settle(t.href)))}
     </g>

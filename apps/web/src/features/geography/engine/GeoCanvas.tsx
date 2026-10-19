@@ -9,6 +9,7 @@ import {
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
+import { useResolvedTheme } from '../../../shared/lib/theme.ts';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import type { Extent } from '../BaseMap.tsx';
 // Not from concessions.ts: that module pulls in the contracts, and sharing them with this
@@ -29,8 +30,40 @@ const TEMPLATES: Readonly<Record<Exclude<Basemap, 'ninguno'>, string>> = {
   calles: BASEMAPS.calles.url(0, 0, 0).replace('/0/0/0.', '/{z}/{x}/{y}.'),
 };
 
+type Theme = 'light' | 'dark';
+
+/**
+ * Paint WebGL cannot read from CSS tokens (docs/adr/0019). In the dark theme street tiles are
+ * inverted (brightness min/max swapped, hues turned back) and imagery is dimmed, matching the
+ * SVG renderer's --map-filter-* tokens.
+ */
+const PAINT = {
+  light: {
+    background: '#e9eef3',
+    calles: {},
+    satelite: {},
+    district: [23, 54, 93, 150],
+    selected: [15, 37, 65, 255],
+    halo: [255, 255, 255],
+  },
+  dark: {
+    background: '#0b0d10',
+    calles: {
+      'raster-brightness-min': 0.92,
+      'raster-brightness-max': 0.04,
+      'raster-hue-rotate': 180,
+      'raster-saturation': -0.4,
+      'raster-contrast': -0.1,
+    },
+    satelite: { 'raster-brightness-max': 0.8, 'raster-saturation': -0.1 },
+    district: [201, 212, 223, 150],
+    selected: [255, 255, 255, 255],
+    halo: [0, 0, 0],
+  },
+} as const;
+
 /** Raster basemap only; everything MASCLI draws lives in deck.gl layers above it. */
-export const styleFor = (basemap: Basemap): StyleSpecification => ({
+export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecification => ({
   version: 8,
   sources:
     basemap === 'ninguno'
@@ -44,10 +77,10 @@ export const styleFor = (basemap: Basemap): StyleSpecification => ({
           },
         },
   layers: [
-    { id: 'fondo', type: 'background', paint: { 'background-color': '#e9eef3' } },
+    { id: 'fondo', type: 'background', paint: { 'background-color': PAINT[theme].background } },
     ...(basemap === 'ninguno'
       ? []
-      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: {} }]),
+      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: PAINT[theme][basemap] }]),
   ],
 });
 
@@ -110,7 +143,9 @@ const GeoCanvas = ({
     [extent[0], extent[1]],
     [extent[2], extent[3]],
   ];
-  const initial = useRef({ home, basemap });
+  const theme = useResolvedTheme();
+  const paint = PAINT[theme];
+  const initial = useRef({ home, basemap, theme });
 
   useEffect(() => {
     const node = container.current;
@@ -119,7 +154,7 @@ const GeoCanvas = ({
     try {
       instance = new MapLibreMap({
         container: node,
-        style: styleFor(initial.current.basemap),
+        style: styleFor(initial.current.basemap, initial.current.theme),
         bounds: bounds(initial.current.home),
         fitBoundsOptions: { padding: 24 },
         attributionControl: false,
@@ -159,8 +194,8 @@ const GeoCanvas = ({
   }, [hint]);
 
   useEffect(() => {
-    map.current?.setStyle(styleFor(basemap));
-  }, [basemap]);
+    map.current?.setStyle(styleFor(basemap, theme));
+  }, [basemap, theme]);
 
   const homeKey = home.join(',');
   useEffect(() => {
@@ -192,7 +227,7 @@ const GeoCanvas = ({
           data: DISTRICTS,
           stroked: true,
           filled: false,
-          getLineColor: [23, 54, 93, 150],
+          getLineColor: [...paint.district],
           lineWidthMinPixels: 1,
         }),
         new GeoJsonLayer<{ code: string; legend: string }>({
@@ -214,13 +249,13 @@ const GeoCanvas = ({
           ],
           getLineColor: (f) =>
             f.properties.code === selectedConcession
-              ? [15, 37, 65, 255]
+              ? [...paint.selected]
               : [...legendOf(f.properties.legend).color, 255],
           getLineWidth: (f) => (f.properties.code === selectedConcession ? 3 : 1.5),
           lineWidthUnits: 'pixels',
           updateTriggers: {
             getFillColor: selectedConcession,
-            getLineColor: selectedConcession,
+            getLineColor: [selectedConcession, theme],
             getLineWidth: selectedConcession,
           },
           onClick: ({ object }) => {
@@ -240,14 +275,14 @@ const GeoCanvas = ({
           getFillColor: (p) => [...p.color, p.emphasis === 'dim' ? 70 : ALPHA[p.evidence]],
           getLineColor: (p) =>
             p.id === selectedPoint
-              ? [23, 33, 43, 255]
+              ? [...paint.selected]
               : p.evidence === 'escenario'
                 ? [...p.color, 255]
-                : [255, 255, 255, p.emphasis === 'dim' ? 120 : 255],
+                : [...paint.halo, p.emphasis === 'dim' ? 120 : 255],
           getLineWidth: (p) => (p.id === selectedPoint || p.evidence === 'escenario' ? 3 : 2),
           updateTriggers: {
             getRadius: selectedPoint,
-            getLineColor: selectedPoint,
+            getLineColor: [selectedPoint, theme],
             getLineWidth: selectedPoint,
           },
           onClick: ({ object }) => {
@@ -256,7 +291,7 @@ const GeoCanvas = ({
         }),
       ],
     });
-  }, [points, concessions, selectedPoint, selectedConcession]);
+  }, [points, concessions, selectedPoint, selectedConcession, paint, theme]);
 
   const act = (action: 'in' | 'out' | 'home') => {
     const current = map.current;

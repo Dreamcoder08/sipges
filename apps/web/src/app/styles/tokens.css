@@ -3,6 +3,7 @@
  * - Primitive scales (space, type, radius, motion, z-index, control sizes) never change by theme.
  * - Semantic colours describe a role (surface, text, tone), never a hue, and are redefined for
  *   the dark theme below. Modules use semantic tokens only; a unit test rejects raw colours.
+ * Light is neutral paper; dark is true OLED black with neutral greys (docs/adr/0019).
  */
 :root {
   color-scheme: light;
@@ -12,29 +13,34 @@
   --color-brand-strong: #0f2541;
   --color-brand-text: #17365d;
   --color-on-brand: #ffffff;
-  --color-text: #17212b;
-  --color-muted: #5b6673;
-  --color-subtle: #6b7684;
+  /* Primary actions are monochrome (ChatGPT, Claude): ink on paper, inverted in the dark. */
+  --color-primary: #0d0d0d;
+  --color-primary-hover: #333333;
+  --color-on-primary: #ffffff;
+  --color-text: #0d0d0d;
+  --color-muted: #5d5d5d;
+  --color-subtle: #6b6b6b;
 
   /* ---------- Surfaces ---------- */
-  --color-bg: #f5f6f8;
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-alt: #f6f8fb;
+  --color-surface-alt: #f9f9f9;
   --color-surface-raised: #ffffff;
-  --color-border: #dde2e9;
-  --color-track: #e7ebf0;
-  --color-focus: #2b6cb0;
+  --color-sidebar: #f9f9f9;
+  --color-border: #e3e3e3;
+  --color-track: #ececec;
+  --color-focus: #0b62d6;
 
   /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
-  --color-accent: #1d4ed8;
-  --color-accent-tint: #e8eefc;
-  --color-accent-text: #1e3a8a;
-  --color-fill: #eef1f5;
-  --color-fill-hover: #e4e8ee;
-  --color-hairline: #e3e7ed;
-  --color-hairline-strong: #cbd2db;
-  --color-scrim: rgb(15 23 42 / 0.4);
-  --color-chrome: rgb(255 255 255 / 0.92);
+  --color-accent: #0b62d6;
+  --color-accent-tint: #e8f0fd;
+  --color-accent-text: #0a4aa3;
+  --color-fill: #f4f4f4;
+  --color-fill-hover: #ececec;
+  --color-hairline: #ececec;
+  --color-hairline-strong: #d9d9d9;
+  --color-scrim: rgb(0 0 0 / 0.35);
+  --color-chrome: rgb(255 255 255 / 0.85);
 
   /* ---------- Tones: soft background, readable text, solid mark ---------- */
   --color-danger: #c53030;
@@ -117,9 +123,31 @@
   --ink: #1d2b3f;
   --ink-soft: #5b6b84;
   --ink-faint: #68758b;
-  --canvas: #fbfcfe;
-  --canvas-node: #eef1f5;
+  --canvas: #fcfcfc;
+  --canvas-node: #f4f4f4;
   --canvas-halo: #ffffff;
+
+  /* ---------- Cartography: map paint for both renderers ---------- */
+  --map-bg: #e9eef3;
+  --map-sea: #d6e8f3;
+  --map-land: #f6f3ea;
+  --map-line: #9aa8b4;
+  --map-label-sea: #335a73;
+  --map-label-area: #8a7d5c;
+  --map-ink: #243b53;
+  --map-text: #17212b;
+  --map-halo: rgb(255 255 255 / 0.85);
+  --map-point: #ffffff;
+  --map-concession: #669bb5;
+  --map-selected: #e6b54a;
+  --map-alert: #c34040;
+  --map-heat-1: #fde7c4;
+  --map-heat-2: #f8c27a;
+  --map-heat-3: #ee8f44;
+  --map-heat-4: #cf5a2a;
+  /* Raster tiles: streets are inverted for the dark theme, imagery only dimmed. */
+  --map-filter-streets: none;
+  --map-filter-satellite: none;
 
   /* ---------- Spacing: 4-pt scale ---------- */
   --space-0: 0.125rem;
@@ -165,17 +193,19 @@
   /* ---------- Shape ---------- */
   --radius-xs: 0.1875rem;
   --radius-sm: 0.35rem;
-  --radius-md: 0.55rem;
-  --radius-lg: 0.9rem;
-  --radius-xl: 1.25rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
   --radius-pill: 999px;
 
   /* ---------- Elevation ---------- */
-  --shadow-sm: 0 1px 2px rgb(15 37 65 / 0.06);
-  --shadow-md: 0 6px 18px rgb(15 37 65 / 0.1);
-  --shadow-lg: 0 18px 40px rgb(15 37 65 / 0.25);
-  --shadow-raised: 0 -1px 0 rgb(15 23 42 / 0.04), 0 12px 40px rgb(15 23 42 / 0.18);
-  --shadow-chip: 0 1px 3px rgb(15 23 42 / 0.18);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.18);
+  --shadow-raised: 0 -1px 0 rgb(0 0 0 / 0.03), 0 16px 48px rgb(0 0 0 / 0.16);
+  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.12);
+  /* The search field reads as a composer: a soft lift instead of a border. */
+  --shadow-composer: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 12px rgb(0 0 0 / 0.06);
 
   /* ---------- Motion: short, eased, and off under prefers-reduced-motion ---------- */
   --motion-fast: 120ms;
@@ -202,8 +232,10 @@
 }
 
 /*
- * Dark theme. It follows the device unless the person picks a theme in Cuenta
- * (shared/lib/theme.ts sets data-theme on <html>). Both selectors carry the same values.
+ * Dark theme: OLED black. Pure #000 behind everything lets OLED screens switch pixels off;
+ * surfaces step up in neutral greys and separate by hairlines instead of shadows. It follows the
+ * device unless the person picks a theme in Cuenta (shared/lib/theme.ts sets data-theme on
+ * <html>). Both selectors carry the same values.
  */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
@@ -213,33 +245,37 @@
     --color-brand-strong: #2559b8;
     --color-brand-text: #9cc0ff;
     --color-on-brand: #ffffff;
-    --color-text: #e6eaf0;
-    --color-muted: #a3adbb;
-    --color-subtle: #8c97a6;
+    --color-primary: #f4f4f5;
+    --color-primary-hover: #d4d4d8;
+    --color-on-primary: #0d0d0d;
+    --color-text: #ececec;
+    --color-muted: #a3a3a3;
+    --color-subtle: #8f8f8f;
 
-    --color-bg: #0b0f14;
-    --color-surface: #12171e;
-    --color-surface-alt: #161c24;
-    --color-surface-raised: #1a212a;
-    --color-border: #2c3542;
-    --color-track: #252d38;
-    --color-focus: #7fb0ff;
+    --color-bg: #000000;
+    --color-surface: #0c0c0d;
+    --color-surface-alt: #111113;
+    --color-surface-raised: #161618;
+    --color-sidebar: #000000;
+    --color-border: #2a2a2d;
+    --color-track: #232326;
+    --color-focus: #7cacf8;
 
-    --color-accent: #7fb0ff;
-    --color-accent-tint: rgb(127 176 255 / 0.14);
-    --color-accent-text: #b8d2ff;
-    --color-fill: #1b222b;
-    --color-fill-hover: #232b36;
-    --color-hairline: #222a34;
-    --color-hairline-strong: #36404e;
-    --color-scrim: rgb(0 0 0 / 0.6);
-    --color-chrome: rgb(18 23 30 / 0.88);
+    --color-accent: #7cacf8;
+    --color-accent-tint: rgb(124 172 248 / 0.16);
+    --color-accent-text: #b5d0ff;
+    --color-fill: #161618;
+    --color-fill-hover: #1f1f22;
+    --color-hairline: #1c1c1f;
+    --color-hairline-strong: #323236;
+    --color-scrim: rgb(0 0 0 / 0.7);
+    --color-chrome: rgb(0 0 0 / 0.78);
 
     --color-danger: #f07178;
     --color-danger-strong: #ffb4b8;
     --color-danger-soft: rgb(240 113 120 / 0.14);
-    --color-info: #7fb0ff;
-    --color-info-soft: rgb(127 176 255 / 0.14);
+    --color-info: #7cacf8;
+    --color-info-soft: rgb(124 172 248 / 0.14);
     --color-success: #5fd39a;
     --color-success-soft: rgb(95 211 154 / 0.14);
 
@@ -249,16 +285,16 @@
     --tone-negative-bg: rgb(240 113 120 / 0.16);
     --tone-negative-fg: #ffb4b8;
     --tone-negative-solid: #e0606a;
-    --tone-info-bg: rgb(127 176 255 / 0.16);
-    --tone-info-fg: #b8d2ff;
+    --tone-info-bg: rgb(124 172 248 / 0.16);
+    --tone-info-fg: #b5d0ff;
     --tone-info-solid: #5f93e6;
     --tone-warning-bg: rgb(240 190 90 / 0.16);
     --tone-warning-fg: #f3d58f;
     --tone-warning-solid: #c99a3a;
-    --tone-neutral-bg: rgb(163 173 187 / 0.14);
-    --tone-neutral-fg: #c9d0da;
-    --tone-neutral-solid: #8a96a8;
-    --tone-on-solid: #0b0f14;
+    --tone-neutral-bg: rgb(163 163 163 / 0.14);
+    --tone-neutral-fg: #d4d4d4;
+    --tone-neutral-solid: #8f8f8f;
+    --tone-on-solid: #000000;
 
     --level-green-soft: rgb(95 211 154 / 0.16);
     --level-yellow-soft: rgb(240 190 90 / 0.16);
@@ -269,22 +305,43 @@
     --level-orange-text: #f8c29a;
     --level-red-text: #ffb4b8;
 
-    --viz-8: #8c97a6;
-    --trend-i: #a3adbb;
+    --viz-8: #8f8f8f;
+    --trend-i: #a3a3a3;
 
-    --ink-strong: #e6eaf0;
-    --ink: #c9d0da;
-    --ink-soft: #8c97a6;
-    --ink-faint: #7b8696;
-    --canvas: #0f141a;
-    --canvas-node: #1b222b;
-    --canvas-halo: #0f141a;
+    --ink-strong: #ececec;
+    --ink: #d4d4d4;
+    --ink-soft: #8f8f8f;
+    --ink-faint: #7a7a7a;
+    --canvas: #050505;
+    --canvas-node: #161618;
+    --canvas-halo: #000000;
 
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-md: 0 6px 18px rgb(0 0 0 / 0.45);
-    --shadow-lg: 0 18px 40px rgb(0 0 0 / 0.6);
-    --shadow-raised: 0 -1px 0 rgb(255 255 255 / 0.04), 0 12px 40px rgb(0 0 0 / 0.6);
-    --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.5);
+    --map-bg: #0b0d10;
+    --map-sea: #0d1822;
+    --map-land: #16181b;
+    --map-line: #3d4652;
+    --map-label-sea: #7fa3bd;
+    --map-label-area: #ab9f80;
+    --map-ink: #c9d4df;
+    --map-text: #ececec;
+    --map-halo: rgb(0 0 0 / 0.8);
+    --map-point: #16181b;
+    --map-concession: #4f8db0;
+    --map-selected: #e6b54a;
+    --map-alert: #f07178;
+    --map-heat-1: #3a2a14;
+    --map-heat-2: #6b4518;
+    --map-heat-3: #a35a22;
+    --map-heat-4: #d0612c;
+    --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+    --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+    --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+    --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+    --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+    --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
   }
 }
 
@@ -295,33 +352,37 @@
   --color-brand-strong: #2559b8;
   --color-brand-text: #9cc0ff;
   --color-on-brand: #ffffff;
-  --color-text: #e6eaf0;
-  --color-muted: #a3adbb;
-  --color-subtle: #8c97a6;
+  --color-primary: #f4f4f5;
+  --color-primary-hover: #d4d4d8;
+  --color-on-primary: #0d0d0d;
+  --color-text: #ececec;
+  --color-muted: #a3a3a3;
+  --color-subtle: #8f8f8f;
 
-  --color-bg: #0b0f14;
-  --color-surface: #12171e;
-  --color-surface-alt: #161c24;
-  --color-surface-raised: #1a212a;
-  --color-border: #2c3542;
-  --color-track: #252d38;
-  --color-focus: #7fb0ff;
+  --color-bg: #000000;
+  --color-surface: #0c0c0d;
+  --color-surface-alt: #111113;
+  --color-surface-raised: #161618;
+  --color-sidebar: #000000;
+  --color-border: #2a2a2d;
+  --color-track: #232326;
+  --color-focus: #7cacf8;
 
-  --color-accent: #7fb0ff;
-  --color-accent-tint: rgb(127 176 255 / 0.14);
-  --color-accent-text: #b8d2ff;
-  --color-fill: #1b222b;
-  --color-fill-hover: #232b36;
-  --color-hairline: #222a34;
-  --color-hairline-strong: #36404e;
-  --color-scrim: rgb(0 0 0 / 0.6);
-  --color-chrome: rgb(18 23 30 / 0.88);
+  --color-accent: #7cacf8;
+  --color-accent-tint: rgb(124 172 248 / 0.16);
+  --color-accent-text: #b5d0ff;
+  --color-fill: #161618;
+  --color-fill-hover: #1f1f22;
+  --color-hairline: #1c1c1f;
+  --color-hairline-strong: #323236;
+  --color-scrim: rgb(0 0 0 / 0.7);
+  --color-chrome: rgb(0 0 0 / 0.78);
 
   --color-danger: #f07178;
   --color-danger-strong: #ffb4b8;
   --color-danger-soft: rgb(240 113 120 / 0.14);
-  --color-info: #7fb0ff;
-  --color-info-soft: rgb(127 176 255 / 0.14);
+  --color-info: #7cacf8;
+  --color-info-soft: rgb(124 172 248 / 0.14);
   --color-success: #5fd39a;
   --color-success-soft: rgb(95 211 154 / 0.14);
 
@@ -331,16 +392,16 @@
   --tone-negative-bg: rgb(240 113 120 / 0.16);
   --tone-negative-fg: #ffb4b8;
   --tone-negative-solid: #e0606a;
-  --tone-info-bg: rgb(127 176 255 / 0.16);
-  --tone-info-fg: #b8d2ff;
+  --tone-info-bg: rgb(124 172 248 / 0.16);
+  --tone-info-fg: #b5d0ff;
   --tone-info-solid: #5f93e6;
   --tone-warning-bg: rgb(240 190 90 / 0.16);
   --tone-warning-fg: #f3d58f;
   --tone-warning-solid: #c99a3a;
-  --tone-neutral-bg: rgb(163 173 187 / 0.14);
-  --tone-neutral-fg: #c9d0da;
-  --tone-neutral-solid: #8a96a8;
-  --tone-on-solid: #0b0f14;
+  --tone-neutral-bg: rgb(163 163 163 / 0.14);
+  --tone-neutral-fg: #d4d4d4;
+  --tone-neutral-solid: #8f8f8f;
+  --tone-on-solid: #000000;
 
   --level-green-soft: rgb(95 211 154 / 0.16);
   --level-yellow-soft: rgb(240 190 90 / 0.16);
@@ -351,20 +412,41 @@
   --level-orange-text: #f8c29a;
   --level-red-text: #ffb4b8;
 
-  --viz-8: #8c97a6;
-  --trend-i: #a3adbb;
+  --viz-8: #8f8f8f;
+  --trend-i: #a3a3a3;
 
-  --ink-strong: #e6eaf0;
-  --ink: #c9d0da;
-  --ink-soft: #8c97a6;
-  --ink-faint: #7b8696;
-  --canvas: #0f141a;
-  --canvas-node: #1b222b;
-  --canvas-halo: #0f141a;
+  --ink-strong: #ececec;
+  --ink: #d4d4d4;
+  --ink-soft: #8f8f8f;
+  --ink-faint: #7a7a7a;
+  --canvas: #050505;
+  --canvas-node: #161618;
+  --canvas-halo: #000000;
 
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 6px 18px rgb(0 0 0 / 0.45);
-  --shadow-lg: 0 18px 40px rgb(0 0 0 / 0.6);
-  --shadow-raised: 0 -1px 0 rgb(255 255 255 / 0.04), 0 12px 40px rgb(0 0 0 / 0.6);
-  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.5);
+  --map-bg: #0b0d10;
+  --map-sea: #0d1822;
+  --map-land: #16181b;
+  --map-line: #3d4652;
+  --map-label-sea: #7fa3bd;
+  --map-label-area: #ab9f80;
+  --map-ink: #c9d4df;
+  --map-text: #ececec;
+  --map-halo: rgb(0 0 0 / 0.8);
+  --map-point: #16181b;
+  --map-concession: #4f8db0;
+  --map-selected: #e6b54a;
+  --map-alert: #f07178;
+  --map-heat-1: #3a2a14;
+  --map-heat-2: #6b4518;
+  --map-heat-3: #a35a22;
+  --map-heat-4: #d0612c;
+  --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+  --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+  --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+  --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
 }

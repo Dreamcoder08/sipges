@@ -27,12 +27,12 @@ describe('theme preference', () => {
     setTheme('dark');
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(readTheme()).toBe('dark');
-    expect([light.content, dark.content]).toEqual(['#12171e', '#12171e']);
+    expect([light.content, dark.content]).toEqual(['#000000', '#000000']);
 
     setTheme('system');
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
     expect(window.localStorage.getItem('mascli.theme')).toBeNull();
-    expect([light.content, dark.content]).toEqual(['#ffffff', '#12171e']);
+    expect([light.content, dark.content]).toEqual(['#ffffff', '#000000']);
   });
 
   it('ignores an unknown stored value', () => {

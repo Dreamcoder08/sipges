@@ -83,6 +83,10 @@ test('capture the mobile shell', async ({ page, admin, adminApi }) => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await page.waitForTimeout(800);
     await shot(page, `movil-alertas${suffix}`);
+    await page.goto('/mapa');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.waitForTimeout(1500);
+    await shot(page, `movil-mapa${suffix}`);
     await page.setViewportSize({ width: 820, height: 1180 });
     await page.goto('/eventos');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
