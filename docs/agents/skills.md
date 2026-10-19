@@ -13,6 +13,8 @@ El usuario solicitó explícitamente instalar `neon` y `neon-postgres` con `npx 
 | `mascli-task-pr` | Publicación de PR apilados #18, #19, #20 y #21 |
 | `mascli-archify` | Commits de actualización `354b324`, `c6bb70b` y `2de7d97` |
 
+El usuario pidió también adoptar Gentle AI (2026-10-19). Las skills `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript` y `zod-4` son instrucciones de proveedor de [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) v4.2.0 y [Gentleman-Skills](https://github.com/Gentleman-Programming/Gentleman-Skills), sin modificar; `computedHash` es el sha256 de su `SKILL.md`. Ver [gentle-ai.md](gentle-ai.md).
+
 Benchmarks conserva su [procedimiento](../benchmarks/README.md) y comparador existentes. Solo se archivan dos ejecuciones independientes (baseline/after); no se crea una skill de benchmark hasta demostrar una tercera necesidad independiente. Tampoco se crean skills específicas de migración o despliegue por una sola fase T13/T14.
 
 Invocación explícita: `$mascli-verify`, `$mascli-odd-task`, `$mascli-task-pr` o `$mascli-archify`. La descripción determina cuándo aplica cada skill; `AGENTS.md` resume convenciones del repositorio sin cargar todas las instrucciones en cada tarea.

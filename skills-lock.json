@@ -12,6 +12,62 @@
       "sourceType": "github",
       "skillPath": "skills/neon-postgres/SKILL.md",
       "computedHash": "b9763d379a3c5039e5555540a1333b1c529e2365d4f0b8fe2998ba41509814c5"
+    },
+    "chained-pr": {
+      "source": "Gentleman-Programming/gentle-ai",
+      "sourceType": "github",
+      "ref": "v4.2.0",
+      "skillPath": "rendered by gentle-ai install --scope workspace (chained-pr/SKILL.md)",
+      "computedHash": "8aba3c6ec9411851f5687aa9e42ebf9618f7dd8566acc9a64eb025f54db2244f"
+    },
+    "work-unit-commits": {
+      "source": "Gentleman-Programming/gentle-ai",
+      "sourceType": "github",
+      "ref": "v4.2.0",
+      "skillPath": "rendered by gentle-ai install --scope workspace (work-unit-commits/SKILL.md)",
+      "computedHash": "d1f25b154dc0a2e55f1bfbe9b46bd10bf3dd57c3e9e54ae671b5d131623eaead"
+    },
+    "cognitive-doc-design": {
+      "source": "Gentleman-Programming/gentle-ai",
+      "sourceType": "github",
+      "ref": "v4.2.0",
+      "skillPath": "rendered by gentle-ai install --scope workspace (cognitive-doc-design/SKILL.md)",
+      "computedHash": "80dcaeca45c35e830939ef5440ca270b147f6370e4afcb47cdab762097f8cde0"
+    },
+    "judgment-day": {
+      "source": "Gentleman-Programming/gentle-ai",
+      "sourceType": "github",
+      "ref": "v4.2.0",
+      "skillPath": "rendered by gentle-ai install --scope workspace (judgment-day/SKILL.md)",
+      "computedHash": "ac2a4fcfd762d8e3a873742f05a71287f96294f5063d740957f81b41ff8b8486"
+    },
+    "skill-creator": {
+      "source": "Gentleman-Programming/gentle-ai",
+      "sourceType": "github",
+      "ref": "v4.2.0",
+      "skillPath": "rendered by gentle-ai install --scope workspace (skill-creator/SKILL.md)",
+      "computedHash": "2e560aec25d3e6f880626b894333c141c7dd98e6a0f3c35af9693b6e8538f357"
+    },
+    "skill-improver": {
+      "source": "Gentleman-Programming/gentle-ai",
+      "sourceType": "github",
+      "ref": "v4.2.0",
+      "skillPath": "rendered by gentle-ai install --scope workspace (skill-improver/SKILL.md)",
+      "computedHash": "4b71aa7f242259a3e4ef8f5c87c591e154b2fe1ef5277c9d7428ba2fa678a151"
+    },
+    "typescript": {
+      "source": "Gentleman-Programming/Gentleman-Skills",
+      "sourceType": "github",
+      "ref": "c8036a37893679dc5e942484975405d39689c63b",
+      "skillPath": "curated/typescript/SKILL.md",
+      "computedHash": "c7a38bd149ec94743bf7207e9689c5fb101730861b61d613da3a2f16e671869f"
+    },
+    "zod-4": {
+      "source": "Gentleman-Programming/Gentleman-Skills",
+      "sourceType": "github",
+      "ref": "c8036a37893679dc5e942484975405d39689c63b",
+      "skillPath": "curated/zod-4/SKILL.md",
+      "computedHash": "37fde7ec2fe9df1054cebde97052587e77966283c7400fabf63846fe2817e271"
     }
   }
 }

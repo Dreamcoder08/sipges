@@ -1,0 +1,17 @@
+{
+  "enabledMcpjsonServers": ["engram"],
+  "permissions": {
+    "allow": ["mcp__engram"],
+    "deny": [
+      "Read(./data/seed.json)",
+      "Read(./data/*.db)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(~/.ssh/**)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)"
+    ]
+  }
+}
