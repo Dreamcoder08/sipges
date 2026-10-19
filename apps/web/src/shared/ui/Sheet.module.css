@@ -1,7 +1,7 @@
 .layer {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  z-index: var(--z-modal);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -21,11 +21,25 @@
   max-height: 85dvh;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
+  background: var(--color-surface-raised);
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   box-shadow: var(--shadow-raised);
   padding-bottom: env(safe-area-inset-bottom);
-  animation: rise var(--motion-medium) var(--ease-out);
+  animation: rise var(--motion-slow) var(--ease-sheet);
+  transition: transform var(--motion-medium) var(--ease-sheet);
+}
+
+/* While a finger drags the grabber the sheet follows it 1:1. */
+.panel[data-dragging='true'] {
+  transition: none;
+}
+
+/* The grabber and header are the drag zone; vertical pans belong to the sheet, not the page. */
+.grip {
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+  cursor: grab;
 }
 
 .handle {
@@ -48,21 +62,21 @@
 .header h2 {
   margin: 0;
   font-size: var(--text-lg);
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
 }
 
 .close {
   flex: none;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--touch-target);
+  height: var(--touch-target);
   display: grid;
   place-items: center;
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-fill);
   color: var(--color-muted);
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
   cursor: pointer;
 }
 
@@ -98,6 +112,11 @@
 
   .handle {
     display: none;
+  }
+
+  .grip {
+    touch-action: auto;
+    cursor: auto;
   }
 
   .header {

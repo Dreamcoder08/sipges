@@ -9,6 +9,7 @@ import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
+import { ChipRow } from '../../shared/ui/ChipRow.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { Counts, Limitations, ReportDownload, TextList } from './ReportParts.tsx';
@@ -201,7 +202,7 @@ export const StrategyPage = (
         )}
       </QueryState>
       <Card title="Registros estratégicos">
-        <div className={styles.tabs} role="group" aria-label="Elegir módulo estratégico">
+        <ChipRow label="Elegir módulo estratégico">
           {modules.map(([id, label]) => (
             <Button
               key={id}
@@ -212,7 +213,7 @@ export const StrategyPage = (
               {label}
             </Button>
           ))}
-        </div>
+        </ChipRow>
       </Card>
       <div key={module}>{context.renderRecords(module)}</div>
     </div>

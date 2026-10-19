@@ -76,7 +76,7 @@
   .scroll .stack td::before {
     content: attr(data-label);
     color: var(--color-muted);
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     font-weight: 600;
   }
   .scroll .stack tr td:last-child {
@@ -105,7 +105,7 @@
 }
 .on,
 .off {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 .on {

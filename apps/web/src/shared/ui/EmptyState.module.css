@@ -2,21 +2,34 @@
   display: grid;
   justify-items: center;
   gap: var(--space-2);
-  padding: var(--space-6) var(--space-4);
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-md);
+  padding: var(--space-8) var(--space-4);
+  border: 1px dashed var(--color-hairline-strong);
+  border-radius: var(--radius-lg);
   background: var(--color-surface-alt);
   text-align: center;
 }
 
+.icon {
+  display: grid;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  margin-bottom: var(--space-1);
+  border-radius: 50%;
+  background: var(--color-accent-tint);
+  color: var(--color-accent);
+  font-size: var(--text-xl);
+}
+
 .title {
   margin: 0;
-  font-weight: 700;
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
 }
 
 .text {
   margin: 0;
   max-width: 32rem;
   color: var(--color-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }

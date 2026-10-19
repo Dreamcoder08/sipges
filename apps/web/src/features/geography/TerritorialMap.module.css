@@ -22,7 +22,7 @@
 }
 
 .filter label {
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   font-weight: 700;
 }
 
@@ -47,7 +47,7 @@
 
 .kpis dt {
   color: var(--color-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   font-weight: 600;
 }
 
@@ -86,7 +86,7 @@
 
 .attribution {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 
@@ -151,7 +151,7 @@
   padding: 0;
   display: grid;
   gap: var(--space-2);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .legend li {
@@ -163,7 +163,7 @@
 .note {
   margin: 0;
   color: var(--color-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 
 .detail {
@@ -171,7 +171,7 @@
   display: grid;
   grid-template-columns: minmax(5rem, 35%) 1fr;
   gap: var(--space-2) var(--space-3);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .detail dt {
@@ -198,7 +198,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: var(--text-base);
 }
 
 .table th,
@@ -235,7 +235,7 @@
   position: relative;
   display: grid;
   gap: 0.15rem;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .timeline small {
@@ -406,12 +406,12 @@
 }
 .sheetTitle {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
   overflow-wrap: anywhere;
 }
 .subhead {
   margin: var(--space-2) 0 0;
-  font-size: 0.95rem;
+  font-size: var(--text-md);
 }
 .sheetActions {
   display: flex;
@@ -425,7 +425,7 @@
   padding-left: var(--space-4);
   display: grid;
   gap: var(--space-2);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 .relatedList li {
   display: grid;
@@ -496,8 +496,8 @@
   background: var(--color-surface);
   border-top: 1px solid var(--color-border);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: 0 -6px 24px rgb(15 23 42 / 0.18);
-  transition: max-height 180ms ease;
+  box-shadow: var(--shadow-raised);
+  transition: max-height var(--motion-medium) var(--ease-sheet);
 }
 .mapSheet[data-open='false'] {
   max-height: 6.5rem;

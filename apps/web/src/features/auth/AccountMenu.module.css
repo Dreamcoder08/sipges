@@ -109,7 +109,7 @@
 }
 
 .signOut :global(svg) {
-  font-size: 1.125rem;
+  font-size: var(--text-lg);
 }
 
 .signOut:hover {

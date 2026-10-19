@@ -51,30 +51,30 @@
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
   margin-top: var(--space-2);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 .t0 {
-  fill: #2b6cb0;
+  fill: var(--viz-1);
 }
 .t1 {
-  fill: #2f855a;
+  fill: var(--viz-2);
 }
 .t2 {
-  fill: #dd6b20;
+  fill: var(--viz-3);
 }
 .t3 {
-  fill: #805ad5;
+  fill: var(--viz-4);
 }
 .t4 {
-  fill: #c53030;
+  fill: var(--viz-5);
 }
 .t5 {
-  fill: #d69e2e;
+  fill: var(--viz-6);
 }
 .t6 {
-  fill: #319795;
+  fill: var(--viz-7);
 }
 .t7 {
-  fill: #5b6673;
+  fill: var(--viz-8);
 }

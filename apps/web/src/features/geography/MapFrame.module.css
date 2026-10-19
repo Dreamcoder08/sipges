@@ -38,8 +38,8 @@
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 1.25rem;
-  box-shadow: 0 1px 3px rgb(15 23 42 / 0.18);
+  font-size: var(--text-xl);
+  box-shadow: var(--shadow-chip);
   cursor: pointer;
 }
 .control:disabled {

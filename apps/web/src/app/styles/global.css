@@ -7,15 +7,13 @@
 }
 
 html {
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--font-sans);
   color: var(--color-text);
   background: var(--color-bg);
-  line-height: 1.5;
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   /* Set by AppShell: anchors and focused fields stop below the sticky top bar. */
@@ -24,6 +22,38 @@ html {
 
 body {
   margin: 0;
+  background: var(--color-bg);
+}
+
+/* Headings balance their lines; paragraphs avoid a lonely last word. */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+/* Figures line up in tables, counters and charts. */
+table,
+time,
+data {
+  font-variant-numeric: tabular-nums;
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+}
+
+::selection {
+  background: var(--color-accent-tint);
+  color: var(--color-accent-text);
 }
 
 img,
@@ -37,7 +67,7 @@ canvas {
 @media (pointer: coarse) {
   input:not([type='checkbox'], [type='radio'], [type='range']),
   select {
-    min-height: 2.75rem;
+    min-height: var(--touch-target);
   }
 }
 
@@ -57,15 +87,52 @@ textarea {
   border-radius: var(--radius-md);
   background: var(--color-surface);
   color: inherit;
+  transition: border-color var(--motion-fast) ease;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-subtle);
+}
+
+/* iOS zooms into any field under 16px; phones get body-size text in forms. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: max(1rem, 1em);
+  }
+}
+
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background: var(--color-fill);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'],
+progress {
+  accent-color: var(--color-accent);
 }
 
 :focus-visible {
-  outline: 3px solid var(--color-focus);
+  outline: var(--focus-ring);
   outline-offset: 2px;
 }
 
 a {
-  color: var(--color-brand);
+  color: var(--color-brand-text);
+  text-underline-offset: 0.18em;
 }
 
 .visually-hidden {
@@ -78,8 +145,11 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     animation: none !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -18,7 +18,7 @@
 
 .card h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
 }
 
 .brand {
@@ -30,7 +30,7 @@
   background: var(--color-brand);
   color: var(--color-on-brand);
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
 }
 
 .lead {
@@ -57,6 +57,6 @@
 .divider {
   margin: 0;
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   text-align: center;
 }

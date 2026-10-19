@@ -20,6 +20,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
 import { Button } from '../shared/ui/Button.tsx';
+import { ChipRow } from '../shared/ui/ChipRow.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
 import {
   GoogleSignInError,
@@ -372,7 +373,7 @@ const AlertsPage = (context: FeatureContext) => {
   const [tab, setTab] = useState<(typeof ALERT_TABS)[number][0]>('resumen');
   return (
     <>
-      <div aria-label="Alertas y acciones">
+      <ChipRow label="Alertas y acciones">
         {ALERT_TABS.map(([value, label]) => (
           <Button
             key={value}
@@ -383,7 +384,7 @@ const AlertsPage = (context: FeatureContext) => {
             {label}
           </Button>
         ))}
-      </div>
+      </ChipRow>
       <p>
         Registros territoriales documentados. Las señales digitales y sus planes preventivos se
         revisan en Inteligencia de redes.

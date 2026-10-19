@@ -13,7 +13,7 @@
 .toolbarLabel {
   align-self: center;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   color: var(--color-muted);
 }
 .kpis {
@@ -30,7 +30,7 @@
   min-width: 0;
 }
 .kpis dt {
-  font-size: 0.85rem;
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--color-text);
 }
@@ -38,16 +38,16 @@
   margin: 0.3rem 0 0;
 }
 .kpiValue {
-  font-size: 1.9rem;
+  font-size: var(--text-2xl);
   font-weight: 800;
-  color: #173958;
+  color: var(--color-brand-text);
   line-height: 1.1;
 }
 .critical .kpiValue {
-  color: var(--level-red);
+  color: var(--color-danger);
 }
 .kpiNote {
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 .grid {
@@ -75,7 +75,7 @@
 }
 .panel h4 {
   margin: 0 0 var(--space-3);
-  font-size: 1.05rem;
+  font-size: var(--text-lg);
 }
 .panelHeading {
   display: flex;
@@ -90,7 +90,7 @@
 }
 .note {
   margin: var(--space-3) 0 0;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 .ranking {
@@ -105,7 +105,7 @@
   gap: var(--space-2) var(--space-3);
   padding: 0.6rem 0;
   border-bottom: 1px solid var(--color-border);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
 }
 .ranking li:last-child {
   border-bottom: 0;
@@ -119,24 +119,24 @@
   width: 1.6rem;
   height: 1.6rem;
   border-radius: 50%;
-  background: #e8eef7;
-  color: #173958;
+  background: var(--color-accent-tint);
+  color: var(--color-brand-text);
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 .ranking li:first-child .rank {
   background: var(--level-red);
-  color: #fff;
+  color: var(--color-on-strong);
 }
 .count {
   color: var(--color-muted);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   white-space: nowrap;
 }
 .pill {
   padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   background: var(--color-track);
   white-space: nowrap;
@@ -167,7 +167,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 .table th,
 .table td {
@@ -178,7 +178,7 @@
 }
 .table thead th {
   background: var(--color-surface-alt);
-  font-size: 0.78rem;
+  font-size: var(--text-sm);
   white-space: nowrap;
 }
 .table tbody tr:last-child td {
@@ -216,7 +216,7 @@
   background: var(--level-red);
 }
 .none {
-  background: #cfd5de;
+  background: var(--color-hairline-strong);
 }
 @media (max-width: 1100px) {
   .grid {
@@ -250,7 +250,7 @@
     padding: 0.7rem;
   }
   .kpiValue {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
   .side {
     grid-template-columns: minmax(0, 1fr);
@@ -291,7 +291,7 @@
     content: attr(data-label);
     font-weight: 700;
     color: var(--color-muted);
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
   }
   .table td:last-child {
     border-bottom: 0;

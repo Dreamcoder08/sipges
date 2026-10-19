@@ -3,9 +3,13 @@ import './shared/config/zod.ts';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App.tsx';
+import { applyTheme } from './shared/lib/theme.ts';
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');
+
+// Before the first paint, so a pinned theme never flashes the other one.
+applyTheme();
 
 createRoot(container).render(
   <StrictMode>

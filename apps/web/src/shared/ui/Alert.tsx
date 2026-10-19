@@ -6,7 +6,7 @@ export const Alert = ({
   tone,
   children,
 }: {
-  tone: 'error' | 'info' | 'success';
+  tone: 'error' | 'warning' | 'info' | 'success';
   children: ReactNode;
 }) => (
   <div className={`${styles.alert} ${styles[tone]}`} role={tone === 'error' ? 'alert' : 'status'}>

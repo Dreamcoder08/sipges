@@ -7,7 +7,7 @@
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-hairline);
   box-shadow: var(--shadow-sm);
 }
 
@@ -21,16 +21,19 @@
 
 .eyebrow {
   margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
   color: var(--color-muted);
-  font-weight: 700;
+  font-weight: var(--weight-semibold);
 }
 
 .title {
-  margin: 0.15rem 0 0;
-  font-size: 1.05rem;
+  margin: var(--space-0) 0 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
 }
 
 @media (max-width: 40rem) {

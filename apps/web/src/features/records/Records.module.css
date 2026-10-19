@@ -16,7 +16,7 @@
 }
 .muted {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 .tableWrap {
   max-width: 100%;
@@ -27,7 +27,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 .table th {
   text-align: left;
@@ -87,7 +87,7 @@
 }
 .field label {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 .field select,
 .field textarea {
@@ -105,7 +105,7 @@
 }
 .details dt {
   color: var(--color-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-base);
 }
 .details dd {
   margin: var(--space-1) 0 0;
@@ -128,7 +128,7 @@
   border-top: 1px solid var(--color-border);
 }
 .evidence h4 {
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin: 0 0 var(--space-4);
 }
 .attachments {
@@ -201,7 +201,7 @@
   .table td::before {
     content: attr(data-label);
     color: var(--color-muted);
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
     font-weight: 600;
   }
   .table tr td:last-child {
@@ -242,7 +242,7 @@
 .history ul {
   margin: var(--space-2) 0 0;
   padding-left: var(--space-4);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 .history del {
   color: var(--color-danger-strong);
@@ -254,7 +254,7 @@
 
 .linkLabel {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 .linkForm {
   display: grid;
@@ -297,7 +297,7 @@
   color: var(--color-muted);
 }
 .markingBadge {
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -328,7 +328,7 @@
 
 .briefing h5 {
   margin: var(--space-4) 0 var(--space-2);
-  font-size: 0.95rem;
+  font-size: var(--text-md);
 }
 .briefing ul,
 .sources {
@@ -345,7 +345,7 @@
 }
 .cites a {
   margin-left: 0.1rem;
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
 }
 .proposals {
   list-style: none;
@@ -406,11 +406,11 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font-family: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 .viewer h5 {
   margin: 0 0 var(--space-2);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--color-muted);
 }
 .image {

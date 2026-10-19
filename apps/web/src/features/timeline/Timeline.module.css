@@ -17,7 +17,7 @@
 }
 .muted {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 .period {
   display: flex;
@@ -27,7 +27,7 @@
   margin-top: var(--space-3);
 }
 .month {
-  font-size: 1rem;
+  font-size: var(--text-body);
   margin: var(--space-4) 0 var(--space-2);
 }
 .month small {
@@ -53,17 +53,17 @@
 .entries time {
   font-variant-numeric: tabular-nums;
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
 }
 .type {
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-info);
 }
 .restricted {
-  font-size: 0.75rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-danger-strong);
 }

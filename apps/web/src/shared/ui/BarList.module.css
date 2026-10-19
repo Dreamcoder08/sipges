@@ -12,7 +12,7 @@
 }
 
 .row dt {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
 }
 
 .row dd {
