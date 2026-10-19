@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -17,7 +18,17 @@ test('Codex discovers four recurring MASCLI skills and the explicitly requested 
   const dir = path.join(root, '.agents/skills');
   const expected = ['mascli-archify', 'mascli-odd-task', 'mascli-task-pr', 'mascli-verify'];
   const vendor = ['neon', 'neon-postgres'];
-  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor].sort());
+  const gentle = [
+    'chained-pr',
+    'cognitive-doc-design',
+    'judgment-day',
+    'skill-creator',
+    'skill-improver',
+    'typescript',
+    'work-unit-commits',
+    'zod-4',
+  ];
+  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor, ...gentle].sort());
   for (const name of expected) {
     const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
     assert.match(text, new RegExp(`^---\\nname: ${name}\\n`));
@@ -37,6 +48,13 @@ test('Codex discovers four recurring MASCLI skills and the explicitly requested 
     assert.equal(lock.skills[name].source, 'neondatabase/agent-skills');
     assert.equal(lock.skills[name].skillPath, `skills/${name}/SKILL.md`);
     assert.match(lock.skills[name].computedHash, /^[a-f0-9]{64}$/);
+  }
+  for (const name of gentle) {
+    const text = readFileSync(path.join(dir, name, 'SKILL.md'));
+    assert.match(text.toString('utf8'), new RegExp(`^---\\nname: ${name}\\n`));
+    assert.match(lock.skills[name].source, /^Gentleman-Programming\/(gentle-ai|Gentleman-Skills)$/);
+    assert.equal(lock.skills[name].computedHash, createHash('sha256').update(text).digest('hex'));
+    assert.ok(evidence.includes(name));
   }
 });
 test('verification never starts a service or guesses a database connection and propagates failures', () =>

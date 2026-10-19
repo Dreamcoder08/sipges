@@ -12,6 +12,7 @@ explícita del dueño del repositorio.
 | Memoria compartida | `.engram/manifest.json`, `.engram/chunks/` | Fragmentos comprimidos que solo se añaden; viajan en git entre máquinas y sesiones en la nube. |
 | Engram en la nube | `scripts/agents/engram.mjs` | Solo si `CLAUDE_CODE_REMOTE=true` descarga la versión fijada, comprueba su sha256 y la deja en `~/.local/bin`. En una máquina personal nunca instala nada: indica los pasos. |
 | Guardarraíles de permisos | `.claude/settings.json` | Equivalente al componente `permissions` de Gentle AI: se niega leer `data/seed.json`, `data/*.db`, `.env*`, claves y `~/.ssh`. |
+| Skills de Gentle AI | `.agents/skills/` | `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver` (gentle-ai v4.2.0, copia renderizada por `install --scope workspace`) y `typescript`, `zod-4` (Gentleman-Skills `curated/`). Procedencia y sha256 de cada `SKILL.md` en `skills-lock.json`. |
 | ODD | `odd/tasks/`, skill `mascli-odd-task` | El ODD del repo ya sigue *Organic Driven Development*: trabajo pequeño en línea, trabajo grande con un documento recuperable. |
 
 Comandos (`pnpm engram <comando>`, equivalente a `node scripts/agents/engram.mjs <comando>`):
@@ -34,7 +35,7 @@ datos personales, credenciales ni URLs privadas: los fragmentos se commitean.
 | --- | --- |
 | `.claude/CLAUDE.md` del orquestador (87 KB) | Se cargaría en cada sesión, duplica `AGENTS.md` y choca con el arnés de Claude Projects. Se resume en la sección *Gentle AI* de `AGENTS.md`. |
 | Hooks RDD, telemetría y `skill-registry` | Ejecutan el binario `gentle-ai`, que no existe en las sesiones en la nube; fallarían en cada turno. |
-| Skills de Gentle AI y Gentleman-Skills | Se instalan por máquina con `gentle-ai install`. Copiarlas al repo es una decisión aparte (ver abajo). `react-19` asume React Compiler (no activo aquí) y `playwright` exige Page Objects que `apps/e2e` no usa. |
+| `react-19`, `playwright`, `go-testing`, `skill-registry` | `react-19` asume React Compiler (no activo aquí), `playwright` exige Page Objects que `apps/e2e` no usa, no hay Go, y `skill-registry` depende del binario `gentle-ai`. |
 | Context7 | Las sesiones en la nube ya tienen el conector; en local lo instala `gentle-ai`. |
 | GGA (revisión con IA en pre-commit) | Requiere claves de proveedor en la máquina; opcional y local (`gga init && gga install`). |
 

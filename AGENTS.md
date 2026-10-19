@@ -20,6 +20,21 @@ with provenance in `skills-lock.json`. They are vendor instructions, not newly a
 MASCLI workflows. Use them for Neon setup and PostgreSQL connections; installing skills
 does not authenticate the CLI or authorize additional services.
 
+Gentle AI skills, vendored at the user's explicit request (provenance in `skills-lock.json`,
+details in [docs/agents/gentle-ai.md](docs/agents/gentle-ai.md)):
+
+| Skill | Use it to |
+| --- | --- |
+| `chained-pr` | Split changes over ~400 lines into stacked, reviewable PRs. |
+| `work-unit-commits` | Plan commits as reviewable work units with their tests and docs. |
+| `cognitive-doc-design` | Write docs, ADRs and guides that are quick to review. |
+| `judgment-day` | Run a blind dual adversarial review, only when explicitly asked. |
+| `skill-creator` / `skill-improver` | Create or audit skills (still subject to the 3-use rule). |
+| `typescript` / `zod-4` | TypeScript strict patterns and Zod 4 API changes. |
+
+Commands in these skills that call the `gentle-ai` binary (review capture, skill-registry) apply only where
+it is installed locally; the repo does not require it.
+
 ## Scripts
 
 | Command | What it does |
