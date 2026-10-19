@@ -1,0 +1,51 @@
+.page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 40rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.summary {
+  font-weight: 600;
+}
+
+.reasons li + li {
+  margin-top: var(--space-1);
+}
+
+.citations {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-left: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.method {
+  color: var(--color-muted);
+}
