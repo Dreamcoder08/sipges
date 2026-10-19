@@ -32,6 +32,22 @@ test('a committed main document releases abandoned requests from the previous do
   await f.settled(0, 20);
 });
 
+test('requests the previous document starts while the navigation awaits its response are released', async () => {
+  const f = fixture();
+  const document = f.request('/new', true);
+  f.events.emit('request', document);
+  // requestIdleCallback in the old document fires while the navigation is still in flight.
+  f.events.emit('request', f.request('/assets/idle-preload.js'));
+  f.events.emit('response', { request: () => document });
+  const asset = f.request('/assets/current.js');
+  f.events.emit('request', asset);
+  f.events.emit('framenavigated', f.mainFrame);
+  f.events.emit('requestfinished', document);
+  await assert.rejects(f.settled(0, 10), /Network still busy: [^,]*current\.js$/);
+  f.events.emit('requestfinished', asset);
+  await f.settled(0, 20);
+});
+
 test('navigation keeps its document and assets started before the commit under observation', async () => {
   const f = fixture();
   const document = f.request('/new', true);
