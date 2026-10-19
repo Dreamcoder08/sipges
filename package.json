@@ -17,6 +17,7 @@
     "e2e": "pnpm --filter @mascli/web build && pnpm --filter @mascli/e2e run e2e",
     "verify": "bash scripts/verify.sh",
     "odd:close": "node scripts/odd-close-task.mjs",
+    "engram": "node scripts/agents/engram.mjs",
     "test:tooling": "node --test scripts/tooling.test.mjs"
   },
   "devDependencies": {

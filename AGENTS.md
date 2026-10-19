@@ -29,6 +29,21 @@ does not authenticate the CLI or authorize additional services.
 | `pnpm --filter @mascli/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @mascli/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
 | `pnpm --filter @mascli/api import:base-maestra -- --seed <file>` | Insert-only load of the prototype's Base Maestra (dry-run by default). |
+| `pnpm engram sync` / `import` / `status` | Export, import or compare Engram memory chunks in `.engram/`. |
+
+## Gentle AI and Engram memory
+
+The repo adopts [Gentle AI](https://github.com/Gentleman-Programming/gentle-ai) practices; details and local setup
+in [docs/agents/gentle-ai.md](docs/agents/gentle-ai.md).
+
+- Engram (`mem_*` tools, MCP server `engram` from `.mcp.json`) is the persistent project memory. Search it
+  (`mem_context`, `mem_search`) before asking the user about past work, and `mem_save` decisions, bugfixes,
+  conventions and gotchas as they happen (What / Why / Where / Learned, in Spanish, `scope: project`).
+- Before the final commit of a task: `mem_session_summary`, then `pnpm engram sync` and commit `.engram/`.
+  Chunks are committed, so never save real data, personal data, credentials or private URLs.
+- Keep small, understood work inline; delegate to a subagent only for a named reason (wide exploration,
+  independent parallel writers, an independent verifier for high-risk changes).
+- Test first when a runnable test exists: one failing test per requested rule, then make it pass.
 
 ## Rules
 

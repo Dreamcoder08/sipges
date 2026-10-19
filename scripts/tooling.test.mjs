@@ -112,3 +112,49 @@ test('ODD rejects blank evidence and multiline labels without changing the task'
       assert.equal(readFileSync(file, 'utf8'), initial);
     }
   }));
+test('Engram wrapper never installs outside the cloud and keeps MCP stdout clean', () =>
+  fixture((dir) => {
+    const bin = path.join(dir, 'bin');
+    mkdirSync(bin);
+    const calls = path.join(dir, 'calls');
+    for (const name of ['curl', 'tar'])
+      writeFileSync(path.join(bin, name), `#!/bin/sh\necho ${name} >> '${calls}'\n`, {
+        mode: 0o755,
+      });
+    const script = path.join(root, 'scripts/agents/engram.mjs');
+    const base = { PATH: bin, HOME: dir };
+    const local = spawnSync(process.execPath, [script, 'install'], { env: base, encoding: 'utf8' });
+    assert.equal(local.status, 1);
+    assert.match(local.stderr, /Engram is not installed/);
+    assert.throws(() => readFileSync(calls));
+    const engram = path.join(bin, 'engram');
+    writeFileSync(
+      engram,
+      `#!/bin/sh\necho "$ENGRAM_PROJECT $*" >> '${calls}'\n[ "$1" = sync ] && echo imported\nexit 0\n`,
+      { mode: 0o755 },
+    );
+    const mcp = spawnSync(process.execPath, [script, 'mcp'], {
+      env: { ...base, MASCLI_ENGRAM_BIN: engram },
+      encoding: 'utf8',
+    });
+    assert.equal(mcp.status, 0);
+    assert.equal(mcp.stdout, '');
+    assert.equal(readFileSync(calls, 'utf8'), 'mascli sync --import\nmascli mcp --tools=agent\n');
+  }));
+test('Claude Code and Codex start Engram through the wrapper and deny real data reads', () => {
+  const mcp = JSON.parse(readFileSync(path.join(root, '.mcp.json'), 'utf8'));
+  assert.deepEqual(mcp.mcpServers.engram, {
+    command: 'node',
+    args: ['scripts/agents/engram.mjs', 'mcp'],
+  });
+  const codex = readFileSync(path.join(root, '.codex/config.toml'), 'utf8');
+  assert.match(
+    codex,
+    /\[mcp_servers\.engram\]\ncommand = "node"\nargs = \["scripts\/agents\/engram\.mjs", "mcp"\]/,
+  );
+  const settings = JSON.parse(readFileSync(path.join(root, '.claude/settings.json'), 'utf8'));
+  assert.ok(settings.permissions.deny.includes('Read(./data/seed.json)'));
+  assert.ok(settings.permissions.deny.includes('Read(./data/*.db)'));
+  const manifest = JSON.parse(readFileSync(path.join(root, '.engram/manifest.json'), 'utf8'));
+  assert.ok(manifest.chunks.length > 0);
+});
