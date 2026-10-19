@@ -94,6 +94,14 @@ const TEXT_PAIRS: [string, string][] = [
   ['--color-subtle', '--color-surface'],
   ['--color-brand-text', '--color-surface'],
   ['--color-on-brand', '--color-brand'],
+  ['--color-on-primary', '--color-primary'],
+  ['--color-on-primary', '--color-primary-hover'],
+  ['--color-text', '--color-sidebar'],
+  ['--color-muted', '--color-sidebar'],
+  ['--color-text', '--color-surface-raised'],
+  ['--color-muted', '--color-fill'],
+  ['--map-text', '--map-land'],
+  ['--map-label-sea', '--map-sea'],
   ['--color-accent-text', '--color-accent-tint'],
   ['--color-danger', '--color-surface'],
   ['--color-danger-strong', '--color-danger-soft'],
@@ -121,6 +129,8 @@ const UI_PAIRS: [string, string][] = [
   ['--color-focus', '--color-surface'],
   ['--color-accent', '--color-surface'],
   ['--color-brand', '--color-surface'],
+  ['--color-primary', '--color-bg'],
+  ['--map-ink', '--map-land'],
 ];
 
 describe('design tokens', () => {

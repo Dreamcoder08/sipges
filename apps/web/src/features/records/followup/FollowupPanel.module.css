@@ -46,8 +46,8 @@
   cursor: pointer;
 }
 .filters button[aria-pressed='true'] {
-  background: var(--color-brand);
-  color: var(--color-on-brand);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
 .filters button:focus-visible {
   outline: 3px solid var(--color-focus);

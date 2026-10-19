@@ -3,7 +3,10 @@
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: linear-gradient(160deg, var(--color-brand-strong), var(--color-brand));
+  /* A quiet stage: one soft accent glow on neutral ground, like the ChatGPT and Claude welcome. */
+  background:
+    radial-gradient(60rem 30rem at 50% -10%, var(--color-accent-tint), transparent 70%),
+    var(--color-bg);
 }
 
 .card {
@@ -11,9 +14,10 @@
   display: grid;
   gap: var(--space-3);
   padding: var(--space-6);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xl);
   background: var(--color-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
 }
 
 .card h1 {
@@ -27,8 +31,8 @@
   display: grid;
   place-items: center;
   border-radius: var(--radius-md);
-  background: var(--color-brand);
-  color: var(--color-on-brand);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   font-weight: 800;
   font-size: var(--text-2xl);
 }
@@ -41,7 +45,7 @@
   display: block;
   padding: 0.55rem 1rem;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
   color: var(--color-text);
   font-weight: 600;
@@ -51,7 +55,8 @@
 
 .google:hover,
 .google:focus-visible {
-  border-color: var(--color-brand);
+  border-color: var(--color-hairline-strong);
+  background: var(--color-fill);
 }
 
 .divider {

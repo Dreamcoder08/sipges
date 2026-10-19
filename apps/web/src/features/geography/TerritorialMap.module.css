@@ -439,7 +439,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-brand);
+  color: var(--color-brand-text);
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -479,7 +479,7 @@
   border-radius: var(--radius-md);
 }
 .timeline li[data-current='true'] small:first-of-type {
-  color: var(--color-brand);
+  color: var(--color-brand-text);
   font-weight: 700;
 }
 

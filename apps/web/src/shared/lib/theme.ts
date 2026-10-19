@@ -14,7 +14,7 @@ export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[]
 ];
 
 const KEY = 'mascli.theme';
-const CHROME = { light: '#ffffff', dark: '#12171e' } as const;
+const CHROME = { light: '#ffffff', dark: '#000000' } as const;
 const listeners = new Set<() => void>();
 
 const isPreference = (value: unknown): value is ThemePreference =>
@@ -60,3 +60,28 @@ const subscribe = (listener: () => void) => {
 };
 
 export const useThemePreference = () => useSyncExternalStore(subscribe, readTheme, readTheme);
+
+const DARK_QUERY = '(prefers-color-scheme: dark)';
+
+/** The theme on screen now: the picked one, else the device's. */
+export const resolvedTheme = (): 'light' | 'dark' => {
+  const picked = readTheme();
+  if (picked !== 'system') return picked;
+  return typeof window.matchMedia === 'function' && window.matchMedia(DARK_QUERY).matches
+    ? 'dark'
+    : 'light';
+};
+
+const subscribeResolved = (listener: () => void) => {
+  const media = typeof window.matchMedia === 'function' ? window.matchMedia(DARK_QUERY) : null;
+  media?.addEventListener('change', listener);
+  const stop = subscribe(listener);
+  return () => {
+    media?.removeEventListener('change', listener);
+    stop();
+  };
+};
+
+/** For paint that CSS cannot reach (WebGL maps): re-renders when the theme on screen changes. */
+export const useResolvedTheme = () =>
+  useSyncExternalStore(subscribeResolved, resolvedTheme, () => 'light' as const);
