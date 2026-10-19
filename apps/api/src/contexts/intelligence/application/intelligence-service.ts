@@ -16,10 +16,18 @@ import {
   analyzeText,
   classifyRecord,
   cosine,
+  fourEyes,
   isAlertState,
   isPublicHttpUrl,
 } from '../domain/index.ts';
-import type { AlertStore, Clock, EmbeddingProvider, NarrativeReader, RandomHex } from './ports.ts';
+import type {
+  AlertStore,
+  Clock,
+  EmbeddingProvider,
+  NarrativeReader,
+  RandomHex,
+  Version4Lookup,
+} from './ports.ts';
 
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
 
@@ -37,7 +45,10 @@ export type SemanticError =
 export type AlertCreateError = SemanticError | { readonly kind: 'source_type' };
 
 export type AlertDecisionError =
-  { readonly kind: 'status' } | { readonly kind: 'note_too_long' } | { readonly kind: 'missing' };
+  | { readonly kind: 'status' }
+  | { readonly kind: 'note_too_long' }
+  | { readonly kind: 'missing' }
+  | { readonly kind: 'same_person' };
 
 type SemanticMatch = { theme: string; similarity: number; reference: string };
 
@@ -60,8 +71,11 @@ export const createIntelligenceService = (deps: {
   alerts: AlertStore;
   clock: Clock;
   randomHex: RandomHex;
+  /** Absent: every project behaves as MASCLI 3.0. */
+  version4?: Version4Lookup;
 }) => {
   const { narratives, embeddings, alerts, clock, randomHex } = deps;
+  const version4 = deps.version4 ?? { enabled: async () => false };
   // Reference concepts never change for a model, so their vectors are computed once.
   const conceptVectors = new Map<string, Promise<number[]>>();
   const conceptVector = (description: string) => {
@@ -250,20 +264,44 @@ export const createIntelligenceService = (deps: {
       });
     },
 
+    /** The resulting status, and whether a second person still has to validate. */
     async decideAlert(
       scope: Scope,
       input: { id: string; status: string; note: string },
-    ): Promise<Result<AlertState, AlertDecisionError>> {
+      actor: string,
+    ): Promise<Result<{ status: AlertState; pendingSecond: boolean }, AlertDecisionError>> {
       if (!isAlertState(input.status)) return err({ kind: 'status' });
       if (Array.from(input.note).length > MAX_NOTE_LENGTH) return err({ kind: 'note_too_long' });
       if (input.id.length > 64) return err({ kind: 'missing' });
+      const current = await alerts.get(formatScope(scope), input.id);
+      if (!current || current.projectId !== scope.projectId) return err({ kind: 'missing' });
+      const outcome = fourEyes({
+        version4: await version4.enabled(scope),
+        level: current.level,
+        current: current.status,
+        next: input.status,
+        firstValidator: current.firstValidator ?? null,
+        actor,
+      });
+      if (outcome === 'same_person') return err({ kind: 'same_person' });
+      if (outcome === 'first') {
+        const recorded = await alerts.recordFirstValidation(formatScope(scope), {
+          id: input.id,
+          actor,
+          note: input.note,
+          at: clock.now(),
+        });
+        return recorded
+          ? ok({ status: current.status, pendingSecond: true })
+          : err({ kind: 'missing' });
+      }
       const found = await alerts.decide(formatScope(scope), {
         id: input.id,
         status: input.status,
         note: input.note,
         at: clock.now(),
       });
-      return found ? ok(input.status) : err({ kind: 'missing' });
+      return found ? ok({ status: input.status, pendingSecond: false }) : err({ kind: 'missing' });
     },
 
     async summary(scope: Scope) {

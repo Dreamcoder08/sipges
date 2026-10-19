@@ -25,6 +25,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0019](0019-oled-dark-and-conversational-ui.md) | OLED dark theme and a conversational-app visual language | Accepted |
 | [0020](0020-mascli-4-situations.md) | MASCLI 4.0: related situations, explained alerts and mailbox | Accepted |
 | [0023](0023-decision-receipts.md) | MASCLI 4.0: decision receipts on preventive actions | Accepted |
+| [0024](0024-proportional-territorial-practices.md) | MASCLI 4.0: proportional practices for territorial risk work | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

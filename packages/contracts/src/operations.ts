@@ -69,6 +69,8 @@ export const TerritorialAlert = z.object({
   analyst_note: z.string(),
   reviewer_note: z.string().nullable(),
   reviewed_at: z.string().nullable(),
+  /** MASCLI 4.0: first of two validations of a high-priority alert (ADR 0024). */
+  first_validator: z.string().nullable().optional(),
   themes: z.array(z.object({ tema: z.string() })),
   signals: z.array(z.unknown()),
   suggestions: z.array(z.string()),
@@ -97,6 +99,7 @@ export const AlertCreated = z.object({
 export const AlertReviewed = z.object({
   ok: z.literal(true),
   status: AlertState,
+  second_validation_required: z.boolean().optional(),
   irsa_modified: z.literal(false),
   notice: z.string(),
 });
