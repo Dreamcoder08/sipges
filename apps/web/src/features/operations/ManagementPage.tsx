@@ -66,7 +66,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
     queryFn: ({ signal }) =>
       requestJson('/system/prevention/summary', PreventionSummary, { scope, signal }),
   });
-  // MASCLI 4.0 decision receipts (ADR 0021): a closing names an evidence file of the project.
+  // MASCLI 4.0 decision receipts (ADR 0023): a closing names an evidence file of the project.
   const attachments = useQuery({
     queryKey: ['operations', scope, 'attachments'],
     enabled: version4 && writable,

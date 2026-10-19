@@ -1,4 +1,4 @@
--- MASCLI 4.0 decision receipts (docs/adr/0021): an action log entry can name the evidence
+-- MASCLI 4.0 decision receipts (docs/adr/0023): an action log entry can name the evidence
 -- file behind the decision, frozen with its sha256, and who decided. Nullable: 3.0 entries
 -- and migrated history carry no receipt.
 ALTER TABLE preventive_action_log

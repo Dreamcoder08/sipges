@@ -20,7 +20,7 @@ export type ActionLogEntry = {
   readonly receipt: DecisionReceipt | null;
 };
 
-/** MASCLI 4.0 (docs/adr/0021): the evidence file behind a decision, frozen with its hash. */
+/** MASCLI 4.0 (docs/adr/0023): the evidence file behind a decision, frozen with its hash. */
 export type DecisionReceipt = {
   readonly attachmentId: string;
   readonly fileName: string;

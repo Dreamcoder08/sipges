@@ -1,4 +1,4 @@
-# ADR 0021 — MASCLI 4.0: decision receipts on preventive actions
+# ADR 0023 — MASCLI 4.0: decision receipts on preventive actions
 
 - Status: Accepted
 - Date: 2026-10-19
@@ -16,7 +16,7 @@ exact candidate with a receipt; the same idea fits a decision in the field.
 
 1. **A receipt is optional data on a progress entry**: the attachment id, its file name and its
    `sha256` frozen at decision time, plus the username that recorded the entry
-   (`preventive_action_log.decided_by`, migration 0026). The audit detail carries the first 12
+   (`preventive_action_log.decided_by`, migration 0027). The audit detail carries the first 12
    hex characters of the hash.
 2. **Only completion needs one, and only with MASCLI 4.0 on.** Progress updates and
    cancellations stay as light as before. With the switch off the field is ignored, so 3.0
