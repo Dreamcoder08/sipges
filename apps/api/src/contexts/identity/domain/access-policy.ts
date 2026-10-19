@@ -47,7 +47,9 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
     path.startsWith('/system/automations') ||
     path.startsWith('/system/integrations') ||
     // Python gates every method except GET here (app.py:244), unlike the read set used elsewhere.
-    (path.startsWith('/system/irsa/config') && method !== 'GET');
+    (path.startsWith('/system/irsa/config') && method !== 'GET') ||
+    // Switching MASCLI 4.0 and its colour meanings is a project decision (ADR 0020).
+    (path.startsWith('/system/v4/settings') && !isRead);
   if (adminOnly && !isAdmin) return deny('Requiere rol administrador');
   if ((path.startsWith('/api/usuarios') || path.startsWith('/api/roles')) && !isAdmin) {
     return deny('Acceso administrativo requerido');

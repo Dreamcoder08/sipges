@@ -20,6 +20,8 @@ const TABLES = {
   notifications: 'id',
   // Authorization and query configuration has no provider credentials and no numeric id.
   source_import_settings: 'source_id',
+  // MASCLI 4.0 switch, colour meanings and thresholds (ADR 0020); one row per tenant.
+  project_settings: 'tenant_id',
 } as const;
 
 export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => ({
@@ -50,6 +52,7 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
           automation_runs: [],
           notifications: [],
           source_import_settings: [],
+          project_settings: [],
         };
         for (const table of Object.keys(TABLES) as (keyof typeof TABLES)[]) {
           const [relation] = await tenant.query<{ present: string | null; secured: boolean }>(

@@ -42,6 +42,12 @@ import {
 } from './contexts/analytics/application/index.ts';
 import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
 import {
+  type SituationsService,
+  createSituationsService,
+} from './contexts/situations/application/index.ts';
+import { createSqlProjectSettingsStore } from './contexts/situations/infrastructure/sql-project-settings-store.ts';
+import { createSqlSituationRecordReader } from './contexts/situations/infrastructure/sql-situation-record-reader.ts';
+import {
   type AutomationService,
   type ChannelSender,
   type PushSender,
@@ -162,6 +168,7 @@ export type Container = {
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
+  readonly situations: SituationsService;
   readonly evidence: EvidenceService;
   readonly documents: DocumentLabService;
   readonly intelligence: IntelligenceService;
@@ -306,6 +313,11 @@ export const buildContainer = async (deps: {
     reader: recordReader,
     clock: deps.clock,
     renderer: docxRenderer,
+  });
+  const situations = createSituationsService({
+    settings: createSqlProjectSettingsStore(deps.sql),
+    records: createSqlSituationRecordReader(deps.sql),
+    clock: deps.clock,
   });
   const reader = deps.config.ocr
     ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
@@ -471,6 +483,7 @@ export const buildContainer = async (deps: {
     audit,
     indicators,
     analytics,
+    situations,
     evidence,
     documents,
     intelligence,
