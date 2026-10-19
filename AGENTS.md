@@ -2,7 +2,8 @@
 
 MASCLI is a pnpm TypeScript monorepo (`apps/api` Hono + PostgreSQL, `apps/web` React/Vite,
 `packages/*`). The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
-in `odd/tasks/typescript-hexagonal-migration.md`; decisions live in `docs/adr/`.
+in one feature document per feature under `odd/tasks/` (`pnpm odd:status` lists the open tasks; superseded plans
+move to `odd/archive/`); decisions live in `docs/adr/`.
 
 ## Skills de Codex (`.agents/skills/`)
 
@@ -40,6 +41,7 @@ it is installed locally; the repo does not require it.
 | Command | What it does |
 | --- | --- |
 | `pnpm verify` | Lint, format, boundaries, typecheck, all tests; PostgreSQL integration only with an explicitly supplied synthetic connection. |
+| `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
 | `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
 | `pnpm --filter @mascli/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @mascli/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
@@ -59,6 +61,25 @@ in [docs/agents/gentle-ai.md](docs/agents/gentle-ai.md).
 - Keep small, understood work inline; delegate to a subagent only for a named reason (wide exploration,
   independent parallel writers, an independent verifier for high-risk changes).
 - Test first when a runnable test exists: one failing test per requested rule, then make it pass.
+
+## Proportional work (ODD, TDD, review)
+
+Ceremony scales with risk, not with size. Small, understood work that could be resumed from the request plus
+`git diff` runs inline: no feature document, no subagent, no extra review. Only work that fails that resume test
+gets an `odd/tasks/<feature>.md`, quoting the user's words as specs.
+
+High-risk items in MASCLI, the only ones that earn an independent verifier (a fresh subagent or `judgment-day`
+when the user asks for it) and their own work-unit commit:
+
+- tenant isolation (RLS, `projectId` scoping, exports) and cross-tenant reads;
+- identity: sessions, MFA, Google sign-in, API keys, roles and grants;
+- database migrations and anything that deletes or rewrites stored records;
+- real-data import or migration tools (`import:base-maestra`, `migrate:legacy`) and public exposure (CSP, cookies,
+  headers, ingest webhooks).
+
+Pick the review lens by what the change touched, not all of them: readability (naming, structure), reliability
+(behaviour, state, tests), resilience (external services, partial failures, degraded providers) and risk
+(security, permissions, data exposure or loss).
 
 ## Rules
 

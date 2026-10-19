@@ -24,6 +24,14 @@
       "sessions": 1,
       "memories": 2,
       "prompts": 0
+    },
+    {
+      "id": "a84e81e0",
+      "created_by": "vm",
+      "created_at": "2026-10-19T22:02:24.740521607Z",
+      "sessions": 1,
+      "memories": 2,
+      "prompts": 0
     }
   ]
 }

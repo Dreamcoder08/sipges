@@ -44,4 +44,4 @@ Names, eight-hour Max-Age, `/` path, HttpOnly, SameSite=Strict and host-only beh
 - MFA policy/recovery, login throttling and further CSRF/host/request hardening remain separate security work.
 - Provider accounts, private-storage permissions, HTTPS/live authorization and restart-persistence validation remain unverified.
 
-Keep source private and do not upload operational seeds, personal records or credentials. See [the preparation task](../odd/tasks/python-free-hosting-preparation.md) for the broader plan; this change does not authorize a public rollout or real-data migration.
+Keep source private and do not upload operational seeds, personal records or credentials. See [the preparation task](../odd/archive/python-free-hosting-preparation.md) for the broader plan; this change does not authorize a public rollout or real-data migration.
