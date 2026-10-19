@@ -19,6 +19,7 @@ import type {
   IrsaSnapshot,
   IrsaSnapshotStore,
   ModuleRecordReader,
+  PhaseWeightsSource,
 } from './ports.ts';
 
 export type ValidationTemplate = {
@@ -51,14 +52,30 @@ export const createIndicatorsService = (deps: {
   configs: IrsaConfigStore;
   snapshots: IrsaSnapshotStore;
   clock: Clock;
+  phaseWeights?: PhaseWeightsSource;
 }) => {
   const config = async (tenantId: string): Promise<IrsaConfig> =>
     (await deps.configs.load(tenantId)) ?? DEFAULT_IRSA_CONFIG;
   const indicators = async (tenantId: string): Promise<IndicatorsReport> =>
     computeIndicators(await deps.records.read(tenantId));
-  const irsa = async (tenantId: string): Promise<IrsaResult> => {
-    const [cfg, report] = await Promise.all([config(tenantId), indicators(tenantId)]);
-    return computeIrsa(cfg, report);
+  const irsa = async (
+    tenantId: string,
+  ): Promise<IrsaResult & { phase?: { id: string; label: string } }> => {
+    const [cfg, report, phase] = await Promise.all([
+      config(tenantId),
+      indicators(tenantId),
+      deps.phaseWeights?.forTenant(tenantId) ?? null,
+    ]);
+    if (!phase) return computeIrsa(cfg, report);
+    const result = computeIrsa({ ...cfg, weights: { ...phase.weights } }, report);
+    return {
+      ...result,
+      phase: { id: phase.phase, label: phase.label },
+      notes: [
+        ...result.notes,
+        `Pesos de la fase ${phase.label} del proyecto (MASCLI 4.0), preliminares hasta su validación.`,
+      ],
+    };
   };
 
   return {

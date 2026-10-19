@@ -65,6 +65,15 @@ describe('MASCLI 4.0 project settings', () => {
           custom: false,
         },
       ]),
+      phase: null,
+      phases: expect.arrayContaining([
+        {
+          id: 'operacion',
+          label: 'Operación',
+          weights: null,
+          suggestion: { G: 0.15, A: 0.15, D: 0.2, N: 0.15, E: 0.25, I: 0.1 },
+        },
+      ]),
       updated_by: '',
       updated_at: null,
     });

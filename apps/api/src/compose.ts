@@ -302,12 +302,7 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
-  const indicators = createIndicatorsService({
-    records: createSqlModuleRecordReader(deps.sql),
-    configs: createSqlIrsaConfigStore(deps.sql),
-    snapshots: createSqlIrsaSnapshotStore(deps.sql),
-    clock: deps.clock,
-  });
+
   const recordReader = createSqlAnalyticsRecordReader(deps.sql);
   const analytics = createAnalyticsService({
     reader: recordReader,
@@ -318,6 +313,13 @@ export const buildContainer = async (deps: {
     settings: createSqlProjectSettingsStore(deps.sql),
     records: createSqlSituationRecordReader(deps.sql),
     clock: deps.clock,
+  });
+  const indicators = createIndicatorsService({
+    records: createSqlModuleRecordReader(deps.sql),
+    configs: createSqlIrsaConfigStore(deps.sql),
+    snapshots: createSqlIrsaSnapshotStore(deps.sql),
+    clock: deps.clock,
+    phaseWeights: { forTenant: situations.phaseWeights },
   });
   const reader = deps.config.ocr
     ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))

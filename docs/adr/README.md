@@ -24,6 +24,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0018](0018-design-system-tokens-and-themes.md) | Design system: semantic tokens, themes and primitives | Accepted |
 | [0019](0019-oled-dark-and-conversational-ui.md) | OLED dark theme and a conversational-app visual language | Accepted |
 | [0020](0020-mascli-4-situations.md) | MASCLI 4.0: related situations, explained alerts and mailbox | Accepted |
+| [0021](0021-media-monitoring-and-project-phase.md) | Media monitoring by RSS and project phase weights | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 
