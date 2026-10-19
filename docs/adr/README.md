@@ -23,7 +23,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0017](0017-maplibre-deckgl-territorial-engine.md) | MapLibre + deck.gl territorial engine | Accepted |
 | [0018](0018-design-system-tokens-and-themes.md) | Design system: semantic tokens, themes and primitives | Accepted |
 | [0019](0019-oled-dark-and-conversational-ui.md) | OLED dark theme and a conversational-app visual language | Accepted |
-| [0021](0021-territorial-operations-dossier.md) | Territorial operations dossier: signals, alerts, actions and commitments by typed links | Accepted |
+| [0022](0022-territorial-operations-dossier.md) | Territorial operations dossier: signals, alerts, actions and commitments by typed links | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

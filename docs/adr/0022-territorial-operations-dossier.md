@@ -1,10 +1,10 @@
-# ADR 0021: expediente operacional del territorio
+# ADR 0022: expediente operacional del territorio
 
 - Estado: aceptada
 - Fecha: 2026-10-19
 - ODD: `odd/tasks/territorial-operations.md`
 - Amplía ADR 0011 (ontología y vínculos) y ADR 0017 (motor cartográfico); conserva ADR 0012.
-- Numeración: 0020 está reservada por el PR de MASCLI 4.0 (situaciones), aún abierto.
+- Numeración: 0020 es de MASCLI 4.0 (PR #63), 0021 y 0023 de otros PR abiertos (#65, #67).
 
 ## Contexto
 
