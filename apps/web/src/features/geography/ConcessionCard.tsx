@@ -12,6 +12,25 @@ import styles from './TerritorialMap.module.css';
 const LINKABLE = new Set(['eventos', 'demandas', 'actores', 'narrativas']);
 
 const hectares = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 2 });
+const kilometres = new Intl.NumberFormat('es-PE', { maximumFractionDigits: 1 });
+
+/** Areas of influence offered around a concession, metres (docs/adr/0025). */
+export const INFLUENCE_OPTIONS: readonly [number, string][] = [
+  [0, 'Solo dentro del polígono'],
+  [1000, '1 km alrededor'],
+  [3000, '3 km alrededor'],
+  [5000, '5 km alrededor'],
+  [10000, '10 km alrededor'],
+];
+
+const distanceLabel = (meters: number) =>
+  meters < 1000 ? `${Math.round(meters)} m` : `${kilometres.format(meters / 1000)} km`;
+
+const RELATIONSHIP: Readonly<Record<string, string>> = {
+  geometry: 'Dentro del polígono oficial',
+  'explicit-reference': 'Referencia documentada al código',
+  proximity: 'En el área de influencia',
+};
 
 export type Relation = {
   readonly status: 'pending' | 'error' | 'unsupported' | 'ready';
@@ -31,6 +50,8 @@ export const ConcessionCard = ({
   points,
   relatedOnly,
   onRelatedOnly,
+  influence,
+  onInfluence,
   onFocusPoint,
   onFrame,
   onClose,
@@ -41,6 +62,9 @@ export const ConcessionCard = ({
   points: readonly MapPoint[];
   relatedOnly: boolean;
   onRelatedOnly: (value: boolean) => void;
+  /** Area of influence in metres; 0 keeps the strict relation. */
+  influence: number;
+  onInfluence: (meters: number) => void;
   onFocusPoint: (point: MapPoint) => void;
   onFrame: () => void;
   onClose: () => void;
@@ -109,6 +133,20 @@ export const ConcessionCard = ({
       </div>
 
       <h5 className={styles.subhead}>Registros MASCLI vinculados</h5>
+      <div className={styles.filter}>
+        <label htmlFor={`influence-${concession.code}`}>Área de influencia</label>
+        <select
+          id={`influence-${concession.code}`}
+          value={influence}
+          onChange={(event) => onInfluence(Number(event.target.value))}
+        >
+          {INFLUENCE_OPTIONS.map(([meters, label]) => (
+            <option key={meters} value={meters}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
       {relation.status === 'pending' ? <p role="status">Relacionando registros…</p> : null}
       {relation.status === 'unsupported' ? (
         <p className={styles.note}>
@@ -140,9 +178,11 @@ export const ConcessionCard = ({
                       <span>{name}</span>
                     )}
                     <small>
-                      {r.relationship === 'geometry'
-                        ? 'Dentro del polígono oficial'
-                        : 'Referencia documentada al código'}{' '}
+                      {`${RELATIONSHIP[r.relationship]}${
+                        r.relationship === 'proximity' && r.distanceMeters !== undefined
+                          ? ` a ${distanceLabel(r.distanceMeters)} del límite`
+                          : ''
+                      }`}{' '}
                       · {r.evidence}
                       {point ? ` · ${EVIDENCE_LABELS[point.evidence]}` : ''}
                     </small>
@@ -190,10 +230,15 @@ export const ConcessionCard = ({
           ) : null}
         </>
       ) : null}
-      <p className={styles.note}>
-        Las áreas de influencia y la proximidad entre registros y concesiones se calcularán con
-        PostGIS en una fase posterior.
-      </p>
+      {relation.data?.influence ? (
+        <p className={styles.note}>
+          {relation.data.influence.engine === 'postgis'
+            ? 'Distancias medidas con PostGIS sobre el elipsoide WGS84.'
+            : 'Distancias aproximadas: PostGIS aún no está habilitado en la base de datos.'}{' '}
+          Solo cuentan los registros con coordenadas propias; un área de influencia indica cercanía,
+          no impacto ni causalidad.
+        </p>
+      ) : null}
     </div>
   );
 };
