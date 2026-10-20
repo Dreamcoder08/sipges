@@ -24,11 +24,12 @@ type Row = {
   analyst_note: string;
   reviewer_note: string | null;
   reviewed_at: Date | string | null;
+  first_validator: string | null;
 };
 
 const COLUMNS = `id, project_id, created_at, source_url, source_type, excerpt, sha256, level, score,
   method, themes, signals, suggestions, semantic_active, status, analyst_note, reviewer_note,
-  reviewed_at, territory, source_record`;
+  reviewed_at, territory, source_record, first_validator`;
 
 const toAlert = (row: Row): TerritorialAlert => ({
   id: row.id,
@@ -51,6 +52,7 @@ const toAlert = (row: Row): TerritorialAlert => ({
   analystNote: row.analyst_note,
   reviewerNote: row.reviewer_note,
   reviewedAt: row.reviewed_at === null ? null : new Date(row.reviewed_at),
+  firstValidator: row.first_validator,
 });
 
 /** Audit module name used by app.py for the alert inbox. */
@@ -174,12 +176,30 @@ export const createSqlAlertStore = (sql: SqlClient): AlertStore => ({
   decide: (tenantId, { id, status, note, at }) =>
     withTenant(sql, tenantId, async (tx) => {
       const [updated] = await tx.query<Row>(
-        `UPDATE digital_alert_reviews SET status = $2, reviewer_note = $3, reviewed_at = $4
+        `UPDATE digital_alert_reviews SET status = $2, reviewer_note = $3, reviewed_at = $4,
+           first_validator = CASE WHEN $2 IN ('Corroborado', 'En seguimiento')
+             THEN first_validator END
           WHERE id = $1 RETURNING ${COLUMNS}`,
         [id, status, note, at],
       );
       if (!updated) return false;
-      await auditSnapshot(tx, updated, 'REVIEW', status, at);
+      const detail = updated.first_validator
+        ? `${status} (primera validación: ${updated.first_validator})`
+        : status;
+      await auditSnapshot(tx, updated, 'REVIEW', detail, at);
+      return true;
+    }),
+
+  recordFirstValidation: (tenantId, { id, actor, note, at }) =>
+    withTenant(sql, tenantId, async (tx) => {
+      const [updated] = await tx.query<Row>(
+        `UPDATE digital_alert_reviews SET first_validator = $2, first_validated_at = $3,
+           reviewer_note = $4
+          WHERE id = $1 RETURNING ${COLUMNS}`,
+        [id, actor, at, note],
+      );
+      if (!updated) return false;
+      await auditSnapshot(tx, updated, 'REVIEW', `Primera validación: ${actor}`, at);
       return true;
     }),
 });

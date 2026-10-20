@@ -130,6 +130,37 @@ test('ODD rejects blank evidence and multiline labels without changing the task'
       assert.equal(readFileSync(file, 'utf8'), initial);
     }
   }));
+test('ODD status lists open tasks in either checkbox style and hides finished features', () =>
+  fixture((dir) => {
+    writeFileSync(
+      path.join(dir, 'done.md'),
+      '# Done feature\n## Tasks\n- T1 [x] S1 — shipped; commit: see L1\n',
+    );
+    writeFileSync(
+      path.join(dir, 'open.md'),
+      '# Open feature\n- T1 [x] S1 — first\n- T2 [ ] S1 — second step\n- [ ] P3 (not started): third\n',
+    );
+    const script = path.join(root, 'scripts/odd-status.mjs');
+    const run = (...args) =>
+      spawnSync(process.execPath, [script, '--dir', dir, ...args], { encoding: 'utf8' });
+    const open = run();
+    assert.equal(open.status, 0);
+    assert.match(open.stdout, /Open feature \(open\.md\): 1\/3/);
+    assert.match(open.stdout, /T2 — S1 — second step/);
+    assert.match(open.stdout, /P3 — \(not started\): third/);
+    assert.doesNotMatch(open.stdout, /Done feature/);
+    assert.match(open.stdout, /1 ODD cerrado/);
+    const all = run('--all');
+    assert.match(all.stdout, /Done feature \(done\.md\): 1\/1/);
+    const json = JSON.parse(run('--json').stdout);
+    assert.deepEqual(
+      json.map((f) => [f.file, f.done, f.total, f.open.map((t) => t.id)]),
+      [
+        ['done.md', 1, 1, []],
+        ['open.md', 1, 3, ['T2', 'P3']],
+      ],
+    );
+  }));
 test('Engram wrapper never installs outside the cloud and keeps MCP stdout clean', () =>
   fixture((dir) => {
     const bin = path.join(dir, 'bin');

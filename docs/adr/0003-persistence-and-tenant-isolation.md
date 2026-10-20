@@ -1,7 +1,7 @@
 # 0003 — Persistence and tenant isolation
 
 ## Context
-Python uses one SQLite file per tenant plus a global auth database, JSON settings files and a local upload directory. Free hosts have ephemeral disks (see `odd/tasks/python-free-hosting-preparation.md`), and file-per-tenant does not scale horizontally.
+Python uses one SQLite file per tenant plus a global auth database, JSON settings files and a local upload directory. Free hosts have ephemeral disks (see `odd/archive/python-free-hosting-preparation.md`), and file-per-tenant does not scale horizontally.
 
 ## Decision
 - **PostgreSQL** is the single system of record. **Drizzle ORM** for typed schema and SQL-first queries; versioned migrations committed to the repo.

@@ -24,6 +24,9 @@ const UPDATE_ERRORS = {
   missing: [404, 'Acción no encontrada'],
   reactivate: [409, 'No puede reactivar una acción cancelada'],
   note_required: [422, 'Justifique el cierre o cancelación'],
+  evidence_required: [422, 'Adjunte la evidencia que respalda el cierre de la acción'],
+  evidence_missing: [404, 'Evidencia no encontrada en el proyecto'],
+  blocker: [422, 'Bloqueo no válido'],
 } as const satisfies Record<UpdateError['kind'], readonly [number, string]>;
 
 /** Field limits of app.py `PreventiveActionIn` / `ActionUpdateIn`. */
@@ -41,6 +44,11 @@ const UpdateBody = z.object({
   progress: z.number().int().min(0).max(100),
   note: z.string().max(2000).default(''),
   evidence_url: z.string().max(2000).default(''),
+  /** MASCLI 4.0 decision receipt; ignored while the project keeps 3.0. */
+  evidence_attachment_id: z.string().max(120).default(''),
+  /** MASCLI 4.0 situation room: who the plan waits on ('' clears); ignored on 3.0. */
+  blocked_by: z.string().max(40).optional(),
+  blocked_reason: z.string().max(500).optional(),
 });
 
 const actionJson = (a: PreventiveAction) => ({
@@ -55,6 +63,9 @@ const actionJson = (a: PreventiveAction) => ({
   progress: a.progress,
   created_at: isoSeconds(a.createdAt),
   updated_at: isoSeconds(a.updatedAt),
+  blocked: a.block
+    ? { by: a.block.by, reason: a.block.reason, since: isoSeconds(a.block.since) }
+    : null,
   history: a.history.map((h) => ({
     id: h.id,
     action_id: h.actionId,
@@ -63,6 +74,14 @@ const actionJson = (a: PreventiveAction) => ({
     progress: h.progress,
     note: h.note,
     evidence_url: h.evidenceUrl,
+    receipt: h.receipt
+      ? {
+          attachment_id: h.receipt.attachmentId,
+          file_name: h.receipt.fileName,
+          sha256: h.receipt.sha256,
+          decided_by: h.decidedBy ?? '',
+        }
+      : null,
   })),
 });
 
@@ -93,17 +112,46 @@ export const preventionRoutes = (prevention: PreventionService) =>
     .patch('/system/prevention/actions/:id', async (c) => {
       const body = await parseJson(c, UpdateBody);
       if (!body.ok) return body.response;
-      const result = await prevention.update(c.get('scope'), c.req.param('id'), {
-        status: body.value.status,
-        progress: body.value.progress,
-        note: body.value.note,
-        evidenceUrl: body.value.evidence_url,
-      });
+      const result = await prevention.update(
+        c.get('scope'),
+        c.req.param('id'),
+        {
+          status: body.value.status,
+          progress: body.value.progress,
+          note: body.value.note,
+          evidenceUrl: body.value.evidence_url,
+          evidenceAttachmentId: body.value.evidence_attachment_id,
+          blockedBy: body.value.blocked_by,
+          blockedReason: body.value.blocked_reason,
+        },
+        c.get('identity').username,
+      );
       if (!result.ok) {
         const [status, detail] = UPDATE_ERRORS[result.error.kind];
         return c.json({ detail }, status);
       }
       return c.json({ action: actionJson(result.value), irsa_modified: false });
+    })
+
+    .get('/system/prevention/situation-room', async (c) => {
+      const room = await prevention.situationRoom(c.get('scope'));
+      const item = (a: PreventiveAction) => ({
+        id: a.id,
+        title: a.title,
+        responsible: a.responsible,
+        due_date: a.dueDate,
+        status: a.status,
+        progress: a.progress,
+        blocked_by: a.block?.by ?? null,
+        blocked_reason: a.block?.reason ?? null,
+        blocked_since: a.block ? isoSeconds(a.block.since) : null,
+      });
+      return c.json({
+        blocked: room.blocked.map(item),
+        overdue: room.overdue.map(item),
+        moving: room.moving,
+        blocked_by_count: room.blockedByCount,
+      });
     })
 
     .get('/system/prevention/summary', async (c) =>
