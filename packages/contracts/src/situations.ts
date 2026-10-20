@@ -48,6 +48,19 @@ const recommendation = z
   .max(300)
   .refine((value) => !value.includes('\0'));
 
+/** Project life-cycle phase (docs/adr/0021 §4). */
+export const ProjectPhase = z.enum(['exploracion', 'construccion', 'operacion', 'cierre']);
+export type ProjectPhase = z.infer<typeof ProjectPhase>;
+
+const weight = z.number().min(0).max(1);
+/** IRSA weights for the six dimensions; like the general ones they sum to 1 ± 0.02. */
+export const PhaseWeights = z
+  .object({ G: weight, A: weight, D: weight, N: weight, E: weight, I: weight })
+  .refine((w) => Math.abs(Object.values(w).reduce((a, b) => a + b, 0) - 1) <= 0.02, {
+    message: 'Los pesos de una fase deben sumar 1',
+  });
+export type PhaseWeights = z.infer<typeof PhaseWeights>;
+
 export const ProjectSettingsIn = z.object({
   version4: z.boolean().optional(),
   level_meanings: LevelMeanings.optional(),
@@ -55,6 +68,10 @@ export const ProjectSettingsIn = z.object({
   half_life_days: z.number().int().min(1).max(180).optional(),
   thresholds: SituationThresholds.optional(),
   recommendations: z.partialRecord(RecommendationId, recommendation).optional(),
+  /** null clears the phase. */
+  phase: ProjectPhase.nullable().optional(),
+  /** Per phase: weights to save, or null to go back to the general IRSA weights. */
+  phase_weights: z.partialRecord(ProjectPhase, PhaseWeights.nullable()).optional(),
 });
 export type ProjectSettingsIn = z.infer<typeof ProjectSettingsIn>;
 
@@ -71,6 +88,16 @@ export const ProjectSettings = z.object({
       condition: z.string(),
       text: z.string(),
       custom: z.boolean(),
+    }),
+  ),
+  phase: ProjectPhase.nullable(),
+  /** Every phase with its label, saved weights (if any) and the preliminary suggestion. */
+  phases: z.array(
+    z.object({
+      id: ProjectPhase,
+      label: z.string(),
+      weights: z.record(z.string(), z.number()).nullable(),
+      suggestion: z.record(z.string(), z.number()),
     }),
   ),
   updated_by: z.string(),

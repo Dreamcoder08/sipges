@@ -1,3 +1,4 @@
+import type { FeedGateway } from '../../src/contexts/integration/application/media-monitor.ts';
 import type { ActivityOptions } from '../../src/contexts/audit/http/activity-routes.ts';
 import { PGlite } from '@electric-sql/pglite';
 import { afterAll } from 'vitest';
@@ -106,6 +107,7 @@ export const createTestApp = async (
     channelSender?: ChannelSender;
     pushSender?: PushSender | null;
     activity?: Partial<ActivityOptions>;
+    feedGateway?: FeedGateway;
   } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
@@ -125,6 +127,10 @@ export const createTestApp = async (
     narrator: options.narrator ?? null,
     channelSender: options.channelSender ?? outbox.sender,
     pushSender: options.pushSender ?? null,
+    // No test reaches the network: feeds come from the test or fail as unreachable.
+    feedGateway: options.feedGateway ?? {
+      read: () => Promise.reject(new Error('feed_unresolved')),
+    },
   });
   const app = createApp(container, {
     ...(options.web ? { web: options.web } : {}),
