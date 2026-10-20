@@ -1,5 +1,5 @@
 // Public API of the Prevention context (docs/adr/0002).
-export type { ActionStatus, PreventiveAction } from '../domain/index.ts';
+export type { ActionStatus, DecisionReceipt, PreventiveAction } from '../domain/index.ts';
 export {
   averageProgress,
   completionPercent,
@@ -7,7 +7,7 @@ export {
   isCalendarDate,
   isOverdue,
 } from '../domain/index.ts';
-export type { ActionStore, AlertLookup } from './ports.ts';
+export type { ActionStore, AlertLookup, EvidenceLookup, Version4Lookup } from './ports.ts';
 export {
   createPreventionService,
   type CreateError,

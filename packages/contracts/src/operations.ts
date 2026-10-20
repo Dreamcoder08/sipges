@@ -121,6 +121,16 @@ export const PreventiveAction = z.object({
       progress: z.number(),
       note: z.string(),
       evidence_url: z.string().nullable(),
+      /** MASCLI 4.0 decision receipt: the evidence file behind the decision (ADR 0023). */
+      receipt: z
+        .object({
+          attachment_id: z.string(),
+          file_name: z.string(),
+          sha256: z.string(),
+          decided_by: z.string(),
+        })
+        .nullable()
+        .optional(),
     }),
   ),
 });

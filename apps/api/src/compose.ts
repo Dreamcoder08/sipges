@@ -26,7 +26,7 @@ import {
   type AutomationRuntime,
 } from './contexts/system/application/index.ts';
 import { createSqlAutomationRuntimeStore } from './contexts/system/infrastructure/index.ts';
-import { parseScope } from './contexts/tenancy/application/index.ts';
+import { formatScope, parseScope } from './contexts/tenancy/application/index.ts';
 import { runWithRequestContext } from './platform/request-context.ts';
 import { log } from './platform/observability/logger.ts';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -378,6 +378,15 @@ export const buildContainer = async (deps: {
   const prevention = createPreventionService({
     store: createSqlActionStore(deps.sql),
     alerts: { status: (scope, id) => intelligence.alertStatus(scope, id) },
+    evidence: {
+      find: async (scope, attachmentId) => {
+        const file = await evidence.get(formatScope(scope), attachmentId);
+        return file
+          ? { attachmentId: file.id, fileName: file.originalName, sha256: file.sha256 }
+          : null;
+      },
+    },
+    version4: { enabled: async (scope) => (await situations.settings(scope)).version4 },
     clock: deps.clock,
     randomHex,
   });

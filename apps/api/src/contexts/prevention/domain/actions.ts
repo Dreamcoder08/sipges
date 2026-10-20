@@ -15,6 +15,16 @@ export type ActionLogEntry = {
   readonly progress: number;
   readonly note: string;
   readonly evidenceUrl: string | null;
+  /** Who recorded the entry; null on entries written before receipts existed. */
+  readonly decidedBy: string | null;
+  readonly receipt: DecisionReceipt | null;
+};
+
+/** MASCLI 4.0 (docs/adr/0023): the evidence file behind a decision, frozen with its hash. */
+export type DecisionReceipt = {
+  readonly attachmentId: string;
+  readonly fileName: string;
+  readonly sha256: string;
 };
 
 export type PreventiveAction = {
@@ -38,6 +48,8 @@ export type ActionUpdate = {
   readonly progress: number;
   readonly note: string;
   readonly evidenceUrl: string;
+  /** Attached evidence file id; '' when none. Only read with MASCLI 4.0 on. */
+  readonly evidenceAttachmentId: string;
 };
 
 export type UpdateRejection =
@@ -46,7 +58,9 @@ export type UpdateRejection =
   | { readonly kind: 'pending_progress' }
   | { readonly kind: 'evidence_url' }
   | { readonly kind: 'reactivate' }
-  | { readonly kind: 'note_required' };
+  | { readonly kind: 'note_required' }
+  | { readonly kind: 'evidence_required' }
+  | { readonly kind: 'evidence_missing' };
 
 const isStatus = (value: string): value is ActionStatus =>
   (ACTION_STATUSES as readonly string[]).includes(value);
@@ -75,6 +89,17 @@ export const checkTransition = (
   if (CLOSED.includes(next) && !note.trim()) return { kind: 'note_required' };
   return null;
 };
+
+/**
+ * MASCLI 4.0: completing a plan claims the risk was addressed, so it needs a receipt (an
+ * attached evidence file). Progress, cancellation and MASCLI 3.0 stay as they were.
+ */
+export const checkReceipt = (
+  status: ActionStatus,
+  attachmentId: string,
+  version4: boolean,
+): UpdateRejection | null =>
+  version4 && status === 'Completada' && !attachmentId ? { kind: 'evidence_required' } : null;
 
 export const isActive = (action: Pick<PreventiveAction, 'status'>) =>
   !CLOSED.includes(action.status);

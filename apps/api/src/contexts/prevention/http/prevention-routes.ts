@@ -24,6 +24,8 @@ const UPDATE_ERRORS = {
   missing: [404, 'Acción no encontrada'],
   reactivate: [409, 'No puede reactivar una acción cancelada'],
   note_required: [422, 'Justifique el cierre o cancelación'],
+  evidence_required: [422, 'Adjunte la evidencia que respalda el cierre de la acción'],
+  evidence_missing: [404, 'Evidencia no encontrada en el proyecto'],
 } as const satisfies Record<UpdateError['kind'], readonly [number, string]>;
 
 /** Field limits of app.py `PreventiveActionIn` / `ActionUpdateIn`. */
@@ -41,6 +43,8 @@ const UpdateBody = z.object({
   progress: z.number().int().min(0).max(100),
   note: z.string().max(2000).default(''),
   evidence_url: z.string().max(2000).default(''),
+  /** MASCLI 4.0 decision receipt; ignored while the project keeps 3.0. */
+  evidence_attachment_id: z.string().max(120).default(''),
 });
 
 const actionJson = (a: PreventiveAction) => ({
@@ -63,6 +67,14 @@ const actionJson = (a: PreventiveAction) => ({
     progress: h.progress,
     note: h.note,
     evidence_url: h.evidenceUrl,
+    receipt: h.receipt
+      ? {
+          attachment_id: h.receipt.attachmentId,
+          file_name: h.receipt.fileName,
+          sha256: h.receipt.sha256,
+          decided_by: h.decidedBy ?? '',
+        }
+      : null,
   })),
 });
 
@@ -93,12 +105,18 @@ export const preventionRoutes = (prevention: PreventionService) =>
     .patch('/system/prevention/actions/:id', async (c) => {
       const body = await parseJson(c, UpdateBody);
       if (!body.ok) return body.response;
-      const result = await prevention.update(c.get('scope'), c.req.param('id'), {
-        status: body.value.status,
-        progress: body.value.progress,
-        note: body.value.note,
-        evidenceUrl: body.value.evidence_url,
-      });
+      const result = await prevention.update(
+        c.get('scope'),
+        c.req.param('id'),
+        {
+          status: body.value.status,
+          progress: body.value.progress,
+          note: body.value.note,
+          evidenceUrl: body.value.evidence_url,
+          evidenceAttachmentId: body.value.evidence_attachment_id,
+        },
+        c.get('identity').username,
+      );
       if (!result.ok) {
         const [status, detail] = UPDATE_ERRORS[result.error.kind];
         return c.json({ detail }, status);
