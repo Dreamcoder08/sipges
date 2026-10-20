@@ -29,6 +29,7 @@ import {
   relationPolygon,
 } from './concessions.ts';
 import type { CanvasPoint, Focus } from './engine/types.ts';
+import { RELIEF } from './engine/style.ts';
 import { supportsWebGl2 } from './engine/webgl.ts';
 import { EVIDENCE, EVIDENCE_LABELS, type Evidence } from './evidence.ts';
 import { EvidenceTag } from './EvidenceTag.tsx';
@@ -662,7 +663,8 @@ const TerritorialWorkspace = ({
             <p className={styles.note}>
               Vista 3D: cada columna reúne los registros documentados de una celda de unos 1,1 km y
               su altura es proporcional a cuántos son. Es sólida si todos tienen coordenadas
-              explícitas. Los escenarios no suman altura: nada aquí es una proyección.
+              explícitas. Los escenarios no suman altura: nada aquí es una proyección. El relieve es
+              solo sombreado; el suelo no se eleva y cada registro conserva su posición.
             </p>
           ) : null}
           {showConcessions ? (
@@ -696,8 +698,19 @@ const TerritorialWorkspace = ({
             </>
           ) : null}
           <p className={styles.attribution}>
-            <BasemapCredit basemap={basemap} /> Concesiones: catastro minero GEOCATMIN de INGEMMET.
-            Los registros sin coordenadas se ubican aproximadamente en su localidad.
+            <BasemapCredit basemap={basemap} />
+            {engine === 'webgl' && view3d ? (
+              <>
+                {' '}
+                Sombreado de{' '}
+                <a href={RELIEF.attribution.href} target="_blank" rel="noreferrer">
+                  {RELIEF.attribution.text}
+                </a>
+                .
+              </>
+            ) : null}{' '}
+            Concesiones: catastro minero GEOCATMIN de INGEMMET. Los registros sin coordenadas se
+            ubican aproximadamente en su localidad.
             {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
           </p>
         </section>

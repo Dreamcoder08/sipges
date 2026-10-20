@@ -29,7 +29,7 @@ export const SPA_CSP = [
   "style-src 'self'",
   "img-src 'self' data: blob: https://tile.openstreetmap.org https://tiles.maps.eox.at https://geocatmin.ingemmet.gob.pe",
   "font-src 'self'",
-  "connect-src 'self' https://tile.openstreetmap.org https://tiles.maps.eox.at",
+  "connect-src 'self' https://tile.openstreetmap.org https://tiles.maps.eox.at https://s3.amazonaws.com",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'self'",

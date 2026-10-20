@@ -26,12 +26,16 @@ que un punto quedaría desplazado de su lugar real en las lomas.
   todos tienen coordenadas explícitas y más clara si alguno está ubicado en su localidad.
 - Los escenarios no suman altura. Los puntos siguen dibujados encima de las columnas, sin
   prueba de profundidad, para que todo registro siga visible y seleccionable.
-- No se añade relieve ni otra fuente de teselas, así que no cambian la CSP ni las dependencias.
-  El mapa SVG de respaldo sigue en 2D.
+- El relieve se dibuja como sombreado (`hillshade`) con las teselas abiertas Terrain Tiles de
+  Mapzen en AWS Open Data (codificación Terrarium, sin clave), con su crédito en el pie del
+  mapa. El suelo no se eleva, así que cada registro conserva su posición real. La CSP de la
+  aplicación y de Vercel añade `https://s3.amazonaws.com` a `connect-src`; las pruebas de
+  extremo a extremo resuelven ese host a nada, como las demás teselas.
+- No hay dependencias nuevas. El mapa SVG de respaldo sigue en 2D.
 
 ## Consecuencias
 
 La vista 3D muestra concentración documentada, no impacto, propagación ni pronóstico, y respeta
-los filtros, la reproducción temporal y los estados Observado y Estimado. CesiumJS y el relieve
-quedan para cuando haga falta terreno real, por ejemplo cuencas o pendientes, con una fuente
-de elevación abierta, verificable y declarada en la CSP.
+los filtros, la reproducción temporal y los estados Observado y Estimado. Al activarla, el
+navegador pide teselas de elevación a AWS para la zona visible. CesiumJS y el terreno elevado
+quedan para cuando haga falta medir sobre el relieve, por ejemplo cuencas o pendientes.

@@ -1,11 +1,6 @@
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import { ColumnLayer, GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
-import {
-  type LngLatBoundsLike,
-  Map as MapLibreMap,
-  type StyleSpecification,
-  setWorkerUrl,
-} from 'maplibre-gl';
+import { type LngLatBoundsLike, Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
@@ -17,74 +12,15 @@ import type { Extent } from '../BaseMap.tsx';
 // chunk would move zod out of the entry chunk, ahead of its jitless (CSP) configuration.
 import { legendOf } from '../legend.ts';
 import { SECHURA_DISTRICTS } from '../sechura-base.ts';
-import { BASEMAPS, type Basemap } from '../TileLayer.tsx';
+import type { Basemap } from '../TileLayer.tsx';
 import frame from '../MapFrame.module.css';
 import { type CanvasColumn, columnsOf, metresPerRecord } from './columns.ts';
+import { PAINT, styleFor } from './style.ts';
 import type { CanvasConcession, CanvasPoint, Focus } from './types.ts';
 import styles from './GeoCanvas.module.css';
 
 // The worker is a same-origin module, so the strict CSP needs no blob: workers.
 setWorkerUrl(workerUrl);
-
-/** The same tile services as the SVG map (TileLayer), as MapLibre URL templates. */
-const TEMPLATES: Readonly<Record<Exclude<Basemap, 'ninguno'>, string>> = {
-  satelite: BASEMAPS.satelite.url(0, 0, 0).replace('/0/0/0.', '/{z}/{y}/{x}.'),
-  calles: BASEMAPS.calles.url(0, 0, 0).replace('/0/0/0.', '/{z}/{x}/{y}.'),
-};
-
-type Theme = 'light' | 'dark';
-
-/**
- * Paint WebGL cannot read from CSS tokens (docs/adr/0019). In the dark theme street tiles are
- * inverted (brightness min/max swapped, hues turned back) and imagery is dimmed, matching the
- * SVG renderer's --map-filter-* tokens.
- */
-const PAINT = {
-  light: {
-    background: '#e9eef3',
-    calles: {},
-    satelite: {},
-    district: [23, 54, 93, 150],
-    selected: [15, 37, 65, 255],
-    halo: [255, 255, 255],
-  },
-  dark: {
-    background: '#0b0d10',
-    calles: {
-      'raster-brightness-min': 0.92,
-      'raster-brightness-max': 0.04,
-      'raster-hue-rotate': 180,
-      'raster-saturation': -0.4,
-      'raster-contrast': -0.1,
-    },
-    satelite: { 'raster-brightness-max': 0.8, 'raster-saturation': -0.1 },
-    district: [201, 212, 223, 150],
-    selected: [255, 255, 255, 255],
-    halo: [0, 0, 0],
-  },
-} as const;
-
-/** Raster basemap only; everything MASCLI draws lives in deck.gl layers above it. */
-export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecification => ({
-  version: 8,
-  sources:
-    basemap === 'ninguno'
-      ? {}
-      : {
-          base: {
-            type: 'raster',
-            tiles: [TEMPLATES[basemap]],
-            tileSize: 256,
-            maxzoom: BASEMAPS[basemap].maxZoom,
-          },
-        },
-  layers: [
-    { id: 'fondo', type: 'background', paint: { 'background-color': PAINT[theme].background } },
-    ...(basemap === 'ninguno'
-      ? []
-      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: PAINT[theme][basemap] }]),
-  ],
-});
 
 const DISTRICTS = {
   type: 'FeatureCollection' as const,
@@ -156,6 +92,7 @@ const GeoCanvas = ({
   const theme = useResolvedTheme();
   const paint = PAINT[theme];
   const initial = useRef({ home, basemap, theme });
+  const [scale, setScale] = useState(() => metresPerRecord(10, -5.5));
 
   useEffect(() => {
     const node = container.current;
@@ -206,7 +143,6 @@ const GeoCanvas = ({
     };
   }, [hint]);
 
-  const [scale, setScale] = useState(() => metresPerRecord(10, -5.5));
   const tilted = useRef(false);
   useEffect(() => {
     const current = map.current;
@@ -223,8 +159,8 @@ const GeoCanvas = ({
   const columns = useMemo(() => (view3d ? columnsOf(points) : []), [points, view3d]);
 
   useEffect(() => {
-    map.current?.setStyle(styleFor(basemap, theme));
-  }, [basemap, theme]);
+    map.current?.setStyle(styleFor(basemap, theme, view3d));
+  }, [basemap, theme, view3d]);
 
   const homeKey = home.join(',');
   useEffect(() => {
