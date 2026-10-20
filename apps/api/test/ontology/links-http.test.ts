@@ -446,6 +446,106 @@ describe('ontology catalog and typed links', () => {
     expect((await s.call('GET', '/system/graph?module=fuentes&id=F-1&depth=x')).status).toBe(422);
   });
 
+  it('explores the joint neighbourhood of several records along typed hops', async () => {
+    const s = await setup();
+    await seed(s);
+    await s.create('alertas', { ID_Alerta: 'AL-1', Causa: 'Bloqueo de vía', Estado: 'Abierta' });
+    await s.create('acciones', {
+      ID_Accion: 'AC-1',
+      Accion: 'Mesa de diálogo',
+      Alerta_Asociada: 'AL-1',
+      Resultado: 'Acta firmada',
+    });
+    await s.create('compromisos', {
+      ID_Compromiso: 'C-1',
+      Descripcion: 'Cisterna semanal',
+      Demanda_Asociada: 'D-1',
+    });
+    // An unrelated event of the same actor must not be reached through the actor.
+    await s.create('eventos', {
+      ID_Evento: 'EV-9',
+      Descripcion_Hecho: 'Otro lugar',
+      Actor_Principal: 'Comunidad Norte',
+    });
+    expect((await s.link('origina', ['eventos', 'EV-1'], ['alertas', 'AL-1'])).status).toBe(200);
+    const res = await s.call('POST', '/system/graph/neighbourhood', {
+      seeds: [
+        { module: 'eventos', id: 'EV-1' },
+        { module: 'demandas', id: 'D-1' },
+        { module: 'eventos', id: 'NOPE' },
+      ],
+      hops: [['origina', 'responde_a', 'participa_en', 'sustenta'], ['atiende']],
+      fields: ['Resultado', 'Fecha'],
+    });
+    expect(res.status).toBe(200);
+    expect(res.body['seeds']).toEqual([
+      { module: 'eventos', id: 'EV-1' },
+      { module: 'demandas', id: 'D-1' },
+    ]);
+    const nodes = res.body['nodes'] as Json[];
+    expect(nodes.map((n) => n['id']).sort()).toEqual([
+      'A-1',
+      'AC-1',
+      'AL-1',
+      'C-1',
+      'D-1',
+      'EV-1',
+      'F-1',
+    ]);
+    expect(nodes.find((n) => n['id'] === 'AC-1')?.['fields']).toMatchObject({
+      Resultado: 'Acta firmada',
+    });
+    expect(nodes.find((n) => n['id'] === 'EV-1')?.['fields']).toMatchObject({
+      Fecha: '2026-10-01',
+    });
+    const edges = (res.body['edges'] as Json[]).map((e) => `${e['link_type']}:${e['inferred']}`);
+    expect(edges.sort()).toEqual([
+      'atiende:true',
+      'origina:false',
+      'participa_en:true',
+      'responde_a:true',
+      'sustenta:true',
+    ]);
+
+    const bad = await s.call('POST', '/system/graph/neighbourhood', {
+      seeds: [{ module: 'eventos', id: 'EV-1' }],
+      hops: [['inventado']],
+    });
+    expect(bad.status).toBe(422);
+    const tooDeep = await s.call('POST', '/system/graph/neighbourhood', {
+      seeds: [{ module: 'eventos', id: 'EV-1' }],
+      hops: [['origina'], ['atiende'], ['sustenta']],
+    });
+    expect(tooDeep.status).toBe(422);
+  });
+
+  it('lets read-only roles compute a neighbourhood without seeing restricted records', async () => {
+    const s = await setup();
+    await seed(s);
+    await s.t.createAccount(s.admin.cookie, {
+      username: 'lector',
+      full_name: 'Lector',
+      password: 'lector-password-123',
+      role: 'consulta',
+    });
+    await s.t.grant(s.admin.cookie, 'lector');
+    const reader = (await s.t.login('lector', 'lector-password-123')).cookie;
+    await s.call('PUT', '/system/marking', {
+      module: 'fuentes',
+      id: 'F-1',
+      marking: 'restringido',
+    });
+    const res = await s.call(
+      'POST',
+      '/system/graph/neighbourhood',
+      { seeds: [{ module: 'eventos', id: 'EV-1' }], hops: [['sustenta', 'participa_en']] },
+      reader,
+    );
+    expect(res.status).toBe(200);
+    expect((res.body['nodes'] as Json[]).map((n) => n['id']).sort()).toEqual(['A-1', 'EV-1']);
+    expect(res.body['edges']).toHaveLength(1);
+  });
+
   it('keeps read-only roles from writing and tenants apart', async () => {
     const s = await setup();
     await seed(s);
