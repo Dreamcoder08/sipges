@@ -97,6 +97,7 @@ const expected = (
     automation_runs: [],
     notifications: [],
     source_import_settings: [],
+    project_settings: [],
   },
 });
 
@@ -306,6 +307,7 @@ describe('GET /system/export versioned tenant JSON', () => {
         automation_runs: [],
         notifications: [],
         source_import_settings: [],
+        project_settings: [],
       },
     });
   });

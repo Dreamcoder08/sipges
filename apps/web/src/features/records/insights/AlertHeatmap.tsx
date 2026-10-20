@@ -1,5 +1,6 @@
 import type { ModuleRecord } from '@mascli/contracts';
 import { useId, useState } from 'react';
+import { useLevelLabel } from '../../../shared/lib/project-settings.tsx';
 import { DIMENSION_NAMES, type DimensionCode } from '../../../shared/lib/text.ts';
 import { Alert } from '../../../shared/ui/Alert.tsx';
 import { Button } from '../../../shared/ui/Button.tsx';
@@ -23,6 +24,7 @@ export const AlertHeatmap = ({
   onOpen: (id: string, from?: string) => void;
 }) => {
   const id = useId();
+  const levelName = useLevelLabel();
   const [selected, setSelected] = useState('');
   const data = alertHeatmap(rows, events);
   const cellKey = (dimension: string, territory: string) => JSON.stringify([dimension, territory]);
@@ -130,7 +132,7 @@ export const AlertHeatmap = ({
                 {LEVEL_ORDER.map((level) => (
                   <li key={level}>
                     <i className={styles[level]} aria-hidden="true" />
-                    {LEVEL_LABEL[level]}
+                    {levelName(level, LEVEL_LABEL[level])}
                   </li>
                 ))}
                 <li>

@@ -19,6 +19,8 @@ const MODULES = {
   oportunidades: 'Oportunidades',
   hechos: 'Hechos_Compartidos',
   aarc: 'Evaluaciones_AARC',
+  // MASCLI 4.0 complaints, reports, questions and suggestions (docs/adr/0020).
+  buzon: 'Buzon',
 } as const;
 
 export type ModuleName = (typeof MODULES)[keyof typeof MODULES];
@@ -37,6 +39,7 @@ const ID_KEYS: Partial<Record<ModuleName, string>> = {
   Usuarios: 'ID_Usuario',
   Roles: 'ID_Rol',
   Proyectos: 'Proyecto_ID',
+  Buzon: 'ID_Caso',
 };
 
 const PREFIXES: Partial<Record<ModuleName, string>> = {
@@ -48,6 +51,7 @@ const PREFIXES: Partial<Record<ModuleName, string>> = {
   Usuarios: 'USR',
   Roles: 'ROL',
   Proyectos: 'PRJ',
+  Buzon: 'BZ',
 };
 
 export const MAX_RECORD_ID = 200;

@@ -16,7 +16,13 @@ import { createHostedApp } from './lazy-app.ts';
 /** Vercel entrypoint; the normal API remains the only source of business behavior. */
 const allowedHosts = parseAllowedHosts(
   process.env.MASCLI_ALLOWED_HOSTS ??
-    [process.env.VERCEL_PROJECT_PRODUCTION_URL, process.env.VERCEL_URL].filter(Boolean).join(','),
+    [
+      process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      process.env.VERCEL_URL,
+      process.env.VERCEL_BRANCH_URL,
+    ]
+      .filter(Boolean)
+      .join(','),
 );
 const web = fileWebAssets(fileURLToPath(new URL('../public/', import.meta.url)));
 const app = new Hono()
@@ -34,41 +40,52 @@ const app = new Hono()
   .route(
     '/',
     createHostedApp(async () => {
-      if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
-        throw new Error('Private Blob storage is required for the demo');
-      }
-      if (allowedHosts.length === 0) throw new Error('An explicit demo host is required');
-      const config = loadConfig({
-        ...process.env,
-        NODE_ENV: 'production',
-        MASCLI_DATABASE_URL:
-          process.env.MASCLI_DATABASE_URL ?? process.env.DATABASE_URL ?? process.env.POSTGRES_URL,
-        MASCLI_ALLOWED_HOSTS: allowedHosts.join(','),
-        MASCLI_WEB_DIR: `${process.cwd()}/public`,
-        MASCLI_UPLOAD_DIR: '/tmp/mascli-demo-uploads',
-        MASCLI_MAX_UPLOAD_BYTES: '3145728',
-        MASCLI_AUTOMATION_INTERVAL: '0',
-      });
-      const database = await openDatabase(config);
+      let stage = 'preflight';
       try {
-        await migrate(database.sql, await loadMigrations());
-        const container = await buildContainer({
-          config,
-          sql: database.sql,
-          objectStorage: privateBlobStorage(),
-          clock: { now: () => new Date() },
-          // This adapter is exclusively for Vercel, which sets the trusted proxy header.
-          clientIp: (c) => c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
+        if (!process.env.BLOB_READ_WRITE_TOKEN && !process.env.BLOB_STORE_ID) {
+          throw new Error('Private Blob storage is required for the demo');
+        }
+        if (allowedHosts.length === 0) throw new Error('An explicit demo host is required');
+        stage = 'configuration';
+        const config = loadConfig({
+          ...process.env,
+          NODE_ENV: 'production',
+          MASCLI_DATABASE_URL:
+            process.env.MASCLI_DATABASE_URL ?? process.env.DATABASE_URL ?? process.env.POSTGRES_URL,
+          MASCLI_ALLOWED_HOSTS: allowedHosts.join(','),
+          MASCLI_WEB_DIR: `${process.cwd()}/public`,
+          MASCLI_UPLOAD_DIR: '/tmp/mascli-demo-uploads',
+          MASCLI_MAX_UPLOAD_BYTES: '3145728',
+          MASCLI_AUTOMATION_INTERVAL: '0',
         });
-        // Streams end before the 60 s function limit; the browser reconnects with Last-Event-ID.
-        return createApp(container, {
-          activity: { maxMs: 50_000 },
-          eventAutomation: true,
-          defer: waitUntil,
-          cronSchedule: '15 4 * * *',
-        });
+        stage = 'database';
+        const database = await openDatabase(config);
+        try {
+          stage = 'migrations';
+          await migrate(database.sql, await loadMigrations());
+          stage = 'bootstrap';
+          const container = await buildContainer({
+            config,
+            sql: database.sql,
+            objectStorage: privateBlobStorage(),
+            clock: { now: () => new Date() },
+            // This adapter is exclusively for Vercel, which sets the trusted proxy header.
+            clientIp: (c) => c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown',
+          });
+          // Streams end before the 60 s function limit; the browser reconnects with Last-Event-ID.
+          return createApp(container, {
+            activity: { maxMs: 50_000 },
+            eventAutomation: true,
+            defer: waitUntil,
+            cronSchedule: '15 4 * * *',
+          });
+        } catch (error) {
+          await database.close();
+          throw error;
+        }
       } catch (error) {
-        await database.close();
+        // Only log the stage; error details may contain credentials or private data.
+        console.error('MASCLI demo initialization stage', { stage });
         throw error;
       }
     }),

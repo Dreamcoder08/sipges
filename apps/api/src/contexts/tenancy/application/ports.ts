@@ -35,6 +35,7 @@ export type TenantExportData = {
   readonly automation_runs: Record<string, unknown>[];
   readonly notifications: Record<string, unknown>[];
   readonly source_import_settings: Record<string, unknown>[];
+  readonly project_settings: Record<string, unknown>[];
 };
 
 /** Only tenant-owned business data, never a physical database/global directory dump. */

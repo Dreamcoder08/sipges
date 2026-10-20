@@ -9,9 +9,17 @@ import {
   createAuthorizedSourcesService,
   type AuthorizedSourcesService,
   type OfficialSourceGateway,
+  type SourceImporter,
 } from './contexts/integration/application/index.ts';
 import {
+  createMediaMonitorService,
+  type FeedGateway,
+  type MediaMonitorService,
+} from './contexts/integration/application/media-monitor.ts';
+import {
   createOfficialSourceGateway,
+  createRssFeedGateway,
+  createSqlMediaFeeds,
   createSqlSourceSettings,
 } from './contexts/integration/infrastructure/index.ts';
 import {
@@ -42,6 +50,12 @@ import {
   createAnalyticsService,
 } from './contexts/analytics/application/index.ts';
 import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import {
+  type SituationsService,
+  createSituationsService,
+} from './contexts/situations/application/index.ts';
+import { createSqlProjectSettingsStore } from './contexts/situations/infrastructure/sql-project-settings-store.ts';
+import { createSqlSituationRecordReader } from './contexts/situations/infrastructure/sql-situation-record-reader.ts';
 import {
   type AutomationService,
   type ChannelSender,
@@ -150,6 +164,7 @@ import type { ClientIp } from './platform/http/env.ts';
 export type Container = {
   readonly geography: GeographyService;
   readonly authorizedSources: AuthorizedSourcesService;
+  readonly media: MediaMonitorService;
   readonly runtime: AutomationRuntime;
   readonly reference: ReferenceService;
   readonly config: AppConfig;
@@ -163,6 +178,7 @@ export type Container = {
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
+  readonly situations: SituationsService;
   readonly evidence: EvidenceService;
   readonly documents: DocumentLabService;
   readonly intelligence: IntelligenceService;
@@ -183,6 +199,7 @@ const randomHex = (length: number) =>
 export const buildContainer = async (deps: {
   geographyGateway?: GeographyGateway;
   sourceGateway?: OfficialSourceGateway;
+  feedGateway?: FeedGateway;
   config: AppConfig;
   sql: SqlClient;
   clock: Clock;
@@ -296,17 +313,24 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
-  const indicators = createIndicatorsService({
-    records: createSqlModuleRecordReader(deps.sql),
-    configs: createSqlIrsaConfigStore(deps.sql),
-    snapshots: createSqlIrsaSnapshotStore(deps.sql),
-    clock: deps.clock,
-  });
+
   const recordReader = createSqlAnalyticsRecordReader(deps.sql);
   const analytics = createAnalyticsService({
     reader: recordReader,
     clock: deps.clock,
     renderer: docxRenderer,
+  });
+  const situations = createSituationsService({
+    settings: createSqlProjectSettingsStore(deps.sql),
+    records: createSqlSituationRecordReader(deps.sql),
+    clock: deps.clock,
+  });
+  const indicators = createIndicatorsService({
+    records: createSqlModuleRecordReader(deps.sql),
+    configs: createSqlIrsaConfigStore(deps.sql),
+    snapshots: createSqlIrsaSnapshotStore(deps.sql),
+    clock: deps.clock,
+    phaseWeights: { forTenant: situations.phaseWeights },
   });
   const reader = deps.config.ocr
     ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
@@ -393,30 +417,39 @@ export const buildContainer = async (deps: {
     gateway: deps.geographyGateway ?? createIngemmetGateway(),
     spatial: createPostgisSpatialEngine(deps.sql),
   });
+  /** Narratives from authorized public sources, created once per canonical id. */
+  const sourceImporter: SourceImporter = {
+    async createOnce(tenantId, id, payload) {
+      const created = await recordStore.create(
+        tenantId,
+        'Narrativas',
+        [id],
+        () => payload,
+        { action: 'CREATE', detail: 'Importación de fuente pública autorizada' },
+        deps.clock.now(),
+      );
+      if (created) return { id: created, created: true };
+      const existing = await recordStore.get(tenantId, 'Narrativas', id);
+      if (
+        existing?.payload.Fuente_Integracion !== payload.Fuente_Integracion ||
+        existing?.payload.Fuente_Huella_SHA256 !== payload.Fuente_Huella_SHA256
+      )
+        throw new Error('source_identity_collision');
+      return { id, created: false };
+    },
+  };
   const authorizedSources = createAuthorizedSourcesService({
     gateway: deps.sourceGateway ?? createOfficialSourceGateway(),
     settings: createSqlSourceSettings(deps.sql),
     clock: deps.clock.now,
-    importer: {
-      async createOnce(tenantId, id, payload) {
-        const created = await recordStore.create(
-          tenantId,
-          'Narrativas',
-          [id],
-          () => payload,
-          { action: 'CREATE', detail: 'Importación de fuente pública autorizada' },
-          deps.clock.now(),
-        );
-        if (created) return { id: created, created: true };
-        const existing = await recordStore.get(tenantId, 'Narrativas', id);
-        if (
-          existing?.payload.Fuente_Integracion !== payload.Fuente_Integracion ||
-          existing?.payload.Fuente_Huella_SHA256 !== payload.Fuente_Huella_SHA256
-        )
-          throw new Error('source_identity_collision');
-        return { id, created: false };
-      },
-    },
+    importer: sourceImporter,
+  });
+  const media = createMediaMonitorService({
+    feeds: createSqlMediaFeeds(deps.sql),
+    gateway: deps.feedGateway ?? createRssFeedGateway(),
+    importer: sourceImporter,
+    active: situations.version4,
+    clock: deps.clock.now,
   });
   const automation = createAutomationService({
     executionBudgetMs: 8000,
@@ -452,13 +485,21 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     onError: () => log('error', 'automation_processing_failed', {}),
     beforeTick: async (tenantId, source) => {
-      if (source === 'cron') await worker(() => authorizedSources.poll(tenantId));
+      if (source !== 'cron') return;
+      // Media feeds are polled even when the Defensoría connector fails, and vice versa.
+      const [official, feeds] = await Promise.allSettled([
+        worker(() => authorizedSources.poll(tenantId)),
+        worker(() => media.poll(tenantId)),
+      ]);
+      for (const outcome of [official, feeds])
+        if (outcome.status === 'rejected') throw outcome.reason;
     },
     tick: (tenantId) => worker(() => automation.tick(tenantId)),
   });
   return {
     geography,
     authorizedSources,
+    media,
     runtime,
     reference: createReferenceService(fileReferenceReader),
     config: deps.config,
@@ -473,6 +514,7 @@ export const buildContainer = async (deps: {
     audit,
     indicators,
     analytics,
+    situations,
     evidence,
     documents,
     intelligence,

@@ -108,6 +108,7 @@ export const OBJECT_TYPES: readonly ObjectType[] = [
     ['Accion_Mejora', 'Estado'],
     'Fecha',
   ),
+  type('buzon', 'Buzon', 'Caso del buzón', 'Asunto', ['Tipo', 'Territorio', 'Estado'], 'Fecha'),
 ];
 
 const BY_SLUG = new Map(OBJECT_TYPES.map((t) => [t.slug, t]));

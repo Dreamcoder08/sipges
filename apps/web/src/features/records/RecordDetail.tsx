@@ -1,4 +1,5 @@
 import type { ModuleRecord } from '@mascli/contracts';
+import { AlertExplanation, EXPLANATION_KEYS, isExplainedAlert } from './AlertExplanation.tsx';
 import { displayValue, extraFields, fieldValue, safePublicUrl } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
@@ -10,7 +11,10 @@ export const RecordDetail = ({
   module: RecordModule;
   record: ModuleRecord;
 }) => {
-  const extras = extraFields(module, record);
+  const explained = module === 'alertas' && isExplainedAlert(record);
+  const extras = extraFields(module, record).filter(
+    (field) => !(explained && EXPLANATION_KEYS.includes(field.key)),
+  );
   return (
     <>
       <dl className={styles.details}>
@@ -39,6 +43,7 @@ export const RecordDetail = ({
           <dd>{displayValue(record._id)}</dd>
         </div>
       </dl>
+      {explained ? <AlertExplanation record={record} /> : null}
       {extras.length ? (
         <section aria-labelledby={`extras-${record._id}`}>
           <h4 id={`extras-${record._id}`}>Otros datos del registro</h4>
