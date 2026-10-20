@@ -5,7 +5,7 @@ description: "Use when an implemented MASCLI ODD task must be closed, its eviden
 
 # Actualizar una tarea ODD
 
-Lee `odd/tasks/typescript-hexagonal-migration.md` y los ADRs de la tarea. Preserva las especificaciones del usuario y los logs existentes. Comprueba que se completó lo pedido, que la verificación correspondiente pasó y que el PR existe; el script solo edita Markdown y no prueba esos requisitos.
+Ejecuta `pnpm odd:status` para ver qué ODD tiene tareas abiertas y lee solo ese documento y los ADRs de la tarea. Preserva las especificaciones del usuario y los logs existentes. Comprueba que se completó lo pedido, que la verificación correspondiente pasó y que el PR existe; el script solo edita Markdown y no prueba esos requisitos.
 
 Redacta evidencia breve en un archivo: cambio, comandos/resultados, revisión, límites y pendientes. No incluyas credenciales ni datos reales.
 
@@ -16,6 +16,8 @@ corepack pnpm odd:close -- --task T14 --label "T14 E2E" --text @/tmp/evidence.tx
 ```
 
 Revisa que solo cambien la casilla de la tarea, `commit: see L<n>` y una entrada `L<max+1>`. Sustituye T14 por la tarea efectivamente completada. Ejecuta el mismo comando sin `--dry-run` y compromete el cambio con su verificación. Usa `--file` para otro ODD.
+
+Trabajo pequeño y entendido no necesita ODD (ver *Proportional work* en `AGENTS.md`); no crees un documento solo para registrarlo.
 
 Una tarea ya cerrada no se vuelve a cerrar: el script rechaza la operación sin modificar el archivo. Añade correcciones de evidencia como cambios de documentación revisados, preservando el log original. Si falta una decisión necesaria para completar la tarea, registra el pendiente; no marques trabajo incompleto como terminado.
 

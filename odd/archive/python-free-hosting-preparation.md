@@ -1,5 +1,7 @@
 # Python Free Hosting Preparation
 
+> Archivado el 2026-10-19: superado por el monorepo TypeScript en `main` (la app Python es solo referencia de comportamiento). Las tareas abiertas no se retoman.
+
 ## Intent and constraints
 User explicitly resumed the existing full Python application deployment to a free provider URL, selecting minimal corrections rather than the cousin's migrated version or a synthetic demo. Preserve original runtime and business behavior; do not overwrite or merge the cousin's migration. Keep GitHub source private, real records behind authenticated access, and credentials out of source/logs. Do not buy a domain or activate paid plans. No hosting provider authentication/persistent datastore currently configured.
 
