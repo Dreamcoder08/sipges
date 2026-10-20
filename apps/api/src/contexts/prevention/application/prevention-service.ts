@@ -7,7 +7,9 @@ import {
   checkReceipt,
   checkTransition,
   checkUpdate,
+  isBlocker,
   preventionSummary,
+  situationRoom,
 } from '../domain/index.ts';
 import type {
   ActionStore,
@@ -86,23 +88,40 @@ export const createPreventionService = (deps: {
       if (required) return err(required);
       const receipt = attachmentId ? await evidence.find(scope, attachmentId) : null;
       if (attachmentId && !receipt) return err({ kind: 'evidence_missing' });
+      const blockedBy = v4 ? update.blockedBy?.trim() : undefined;
+      if (blockedBy && !isBlocker(blockedBy)) return err({ kind: 'blocker' });
+      const now = clock.now();
+      // A closed plan waits on nobody; '' clears the blocker; absent leaves it as it was.
+      const closing = checked.status === 'Completada' || checked.status === 'Cancelada';
+      const block = closing
+        ? null
+        : blockedBy === undefined
+          ? undefined
+          : blockedBy && isBlocker(blockedBy)
+            ? { by: blockedBy, reason: update.blockedReason?.trim() ?? '', since: now }
+            : null;
       const result = await store.update(
         formatScope(scope),
         id,
         (current) => checkTransition(current.status, checked.status, update.note),
         {
           id: randomHex(32).toLowerCase(),
-          createdAt: clock.now(),
+          createdAt: now,
           status: checked.status,
           progress: update.progress,
           note: update.note,
           evidenceUrl: update.evidenceUrl,
           decidedBy: actor,
           receipt,
+          block,
         },
       );
       if (result === null) return err({ kind: 'missing' });
       return result.ok ? ok(result.action) : err(result.error);
+    },
+
+    async situationRoom(scope: Scope) {
+      return situationRoom(await list(scope), today());
     },
 
     async summary(scope: Scope) {

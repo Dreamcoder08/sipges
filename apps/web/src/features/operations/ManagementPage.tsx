@@ -4,9 +4,11 @@ import {
   ActionSaved,
   ActionStatus,
   Attachment,
+  BLOCKERS,
   ManagementOverview,
   PreventionSummary,
   PreventiveActions,
+  SituationRoom,
   TerritorialAlerts,
 } from '@mascli/contracts';
 import { requestJson } from '../../shared/api/client.ts';
@@ -49,6 +51,8 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
   const [note, setNote] = useState('');
   const [evidence, setEvidence] = useState('');
   const [attachmentId, setAttachmentId] = useState('');
+  const [blockedBy, setBlockedBy] = useState('');
+  const [blockedReason, setBlockedReason] = useState('');
   const version4 = useVersion4();
   const planHeading = useReveal(selected);
   const overview = useQuery({
@@ -72,6 +76,12 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
     enabled: version4 && writable,
     queryFn: ({ signal }) =>
       requestJson('/system/uploads?limit=500', z.array(Attachment), { scope, signal }),
+  });
+  const room = useQuery({
+    queryKey: ['operations', scope, 'situation-room'],
+    enabled: version4,
+    queryFn: ({ signal }) =>
+      requestJson('/system/prevention/situation-room', SituationRoom, { scope, signal }),
   });
   const alerts = useQuery({
     queryKey: ['operations', scope, 'alerts'],
@@ -115,7 +125,13 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
             progress,
             note,
             evidence_url: evidence,
-            ...(version4 ? { evidence_attachment_id: attachmentId } : {}),
+            ...(version4
+              ? {
+                  evidence_attachment_id: attachmentId,
+                  blocked_by: blockedBy,
+                  blocked_reason: blockedReason,
+                }
+              : {}),
           },
         },
       }),
@@ -359,6 +375,42 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
           </>
         )}
       </Card>
+      {version4 && (
+        <Card title="Sala de situación">
+          <QueryState query={room} label="sala de situación">
+            {(data) => (
+              <>
+                <p>En curso sin bloqueos: {data.moving}</p>
+                <h4>Bloqueadas</h4>
+                {data.blocked.length ? (
+                  <ul>
+                    {data.blocked.map((a) => (
+                      <li key={a.id}>
+                        {a.title} · espera a {a.blocked_by}
+                        {a.blocked_reason ? `: ${a.blocked_reason}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>Ningún plan espera a nadie.</p>
+                )}
+                <h4>Vencidas</h4>
+                {data.overdue.length ? (
+                  <ul>
+                    {data.overdue.map((a) => (
+                      <li key={a.id}>
+                        {a.title} · {a.responsible} · vencía {a.due_date}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No hay planes vencidos.</p>
+                )}
+              </>
+            )}
+          </QueryState>
+        </Card>
+      )}
       <Card title="Acciones y seguimiento">
         <QueryState query={actions} label="acciones preventivas">
           {(items) =>
@@ -393,6 +445,9 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                               setProgress(a.progress);
                               setNote('');
                               setEvidence('');
+                              setAttachmentId('');
+                              setBlockedBy(a.blocked?.by ?? '');
+                              setBlockedReason(a.blocked?.reason ?? '');
                               update.reset();
                             }}
                           >
@@ -492,6 +547,34 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                     disabled={busy}
                   />
                 </label>
+                {version4 && (
+                  <>
+                    <label>
+                      Bloqueado por
+                      <select
+                        value={blockedBy}
+                        onChange={(e) => setBlockedBy(e.target.value)}
+                        disabled={busy}
+                      >
+                        <option value="">Sin bloqueo</option>
+                        {BLOCKERS.map((b) => (
+                          <option key={b}>{b}</option>
+                        ))}
+                      </select>
+                    </label>
+                    {blockedBy && (
+                      <label>
+                        Motivo del bloqueo
+                        <input
+                          maxLength={500}
+                          value={blockedReason}
+                          onChange={(e) => setBlockedReason(e.target.value)}
+                          disabled={busy}
+                        />
+                      </label>
+                    )}
+                  </>
+                )}
                 {version4 && (
                   <label>
                     Evidencia adjunta (recibo)

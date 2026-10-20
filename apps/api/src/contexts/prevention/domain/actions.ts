@@ -27,6 +27,18 @@ export type DecisionReceipt = {
   readonly sha256: string;
 };
 
+/** MASCLI 4.0 situation room: who an action is waiting on (docs/adr/0024 §2). */
+export const BLOCKERS = ['Comunidad', 'Autoridad', 'Área interna', 'Contratista', 'Otro'] as const;
+export type Blocker = (typeof BLOCKERS)[number];
+export const isBlocker = (value: string): value is Blocker =>
+  (BLOCKERS as readonly string[]).includes(value);
+
+export type ActionBlock = {
+  readonly by: Blocker;
+  readonly reason: string;
+  readonly since: Date;
+};
+
 export type PreventiveAction = {
   readonly id: string;
   readonly projectId: string;
@@ -41,6 +53,7 @@ export type PreventiveAction = {
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly history: readonly ActionLogEntry[];
+  readonly block?: ActionBlock | null;
 };
 
 export type ActionUpdate = {
@@ -50,6 +63,9 @@ export type ActionUpdate = {
   readonly evidenceUrl: string;
   /** Attached evidence file id; '' when none. Only read with MASCLI 4.0 on. */
   readonly evidenceAttachmentId: string;
+  /** Who the action waits on; '' clears it, undefined leaves it. Only read with MASCLI 4.0 on. */
+  readonly blockedBy?: string | undefined;
+  readonly blockedReason?: string | undefined;
 };
 
 export type UpdateRejection =
@@ -60,7 +76,8 @@ export type UpdateRejection =
   | { readonly kind: 'reactivate' }
   | { readonly kind: 'note_required' }
   | { readonly kind: 'evidence_required' }
-  | { readonly kind: 'evidence_missing' };
+  | { readonly kind: 'evidence_missing' }
+  | { readonly kind: 'blocker' };
 
 const isStatus = (value: string): value is ActionStatus =>
   (ACTION_STATUSES as readonly string[]).includes(value);
@@ -143,4 +160,22 @@ export const isCalendarDate = (value: string) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+/**
+ * MASCLI 4.0 situation room: active plans that wait on someone, overdue ones and the count of
+ * those moving normally, so nobody has to ask for a status report.
+ */
+export const situationRoom = (actions: readonly PreventiveAction[], today: string) => {
+  const active = actions.filter(isActive);
+  const blocked = active.filter((a) => a.block);
+  const overdue = active.filter((a) => !a.block && isOverdue(a, today));
+  const count: Partial<Record<Blocker, number>> = {};
+  for (const a of blocked) if (a.block) count[a.block.by] = (count[a.block.by] ?? 0) + 1;
+  return {
+    blocked,
+    overdue,
+    moving: active.length - blocked.length - overdue.length,
+    blockedByCount: count,
+  };
 };

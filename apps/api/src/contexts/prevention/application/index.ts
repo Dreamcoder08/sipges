@@ -1,6 +1,7 @@
 // Public API of the Prevention context (docs/adr/0002).
-export type { ActionStatus, DecisionReceipt, PreventiveAction } from '../domain/index.ts';
+export type { ActionStatus, Blocker, DecisionReceipt, PreventiveAction } from '../domain/index.ts';
 export {
+  BLOCKERS,
   averageProgress,
   completionPercent,
   isActive,
