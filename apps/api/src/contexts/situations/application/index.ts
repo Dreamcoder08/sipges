@@ -11,6 +11,8 @@ import {
   DEFAULT_RECOMMENDATIONS,
   RECOMMENDATION_CONDITIONS,
   RECOMMENDATION_IDS,
+  LESSONS_MODULE,
+  attachLessons,
   findSituations,
 } from '../domain/situations.ts';
 
@@ -62,14 +64,22 @@ export const createSituationsService = (deps: {
       const current = await load(scope);
       const now = clock.now();
       const today = LIMA_DAY.format(now);
+      const read = await records.read(formatScope(scope), [
+        ...Object.keys(MODULE_SPECS),
+        LESSONS_MODULE,
+      ]);
       const report = findSituations(
-        await records.read(formatScope(scope), Object.keys(MODULE_SPECS)),
+        read.filter((r) => r.module !== LESSONS_MODULE),
         current,
         today,
         { ...DEFAULT_RECOMMENDATIONS, ...current.recommendations },
       );
       return {
         ...report,
+        situations: attachLessons(
+          report.situations,
+          read.filter((r) => r.module === LESSONS_MODULE),
+        ),
         generatedAt: now,
         today,
         windowDays: current.windowDays,
