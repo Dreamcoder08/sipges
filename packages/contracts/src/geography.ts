@@ -105,6 +105,8 @@ export const GeographyQuery = z
       .optional(),
     polygon: GeographyPolygon.optional(),
     concessionCode: z.string().trim().min(1).max(100).optional(),
+    /** Area of influence around the polygon, metres (docs/adr/0025). */
+    influenceMeters: z.number().int().min(0).max(20_000).optional(),
   })
   .strict()
   .superRefine((q, ctx) => {
@@ -126,7 +128,7 @@ export const GeographyQuery = z
         code: 'custom',
         message: 'Área inválida o demasiado extensa (máximo 5° por eje)',
       });
-    if (q.concessionCode && !q.polygon)
+    if ((q.concessionCode || q.influenceMeters) && !q.polygon)
       ctx.addIssue({ code: 'custom', message: 'La relación requiere el polígono de la concesión' });
   });
 export type GeographyQuery = z.infer<typeof GeographyQuery>;
@@ -170,10 +172,14 @@ export const GeographyResult = z.object({
     z.object({
       id: z.string(),
       module: z.string(),
-      relationship: z.enum(['geometry', 'explicit-reference']),
+      relationship: z.enum(['geometry', 'explicit-reference', 'proximity']),
       evidence: z.string(),
+      /** Metres from the record's coordinates to the polygon; 0 inside. */
+      distanceMeters: z.number().nonnegative().optional(),
     }),
   ),
   unlocated: z.array(z.object({ id: z.string(), module: z.string(), reason: z.string() })),
+  /** Present when an area of influence was requested: its width and the engine that measured it. */
+  influence: z.object({ meters: z.number(), engine: z.enum(['postgis', 'geodesic']) }).optional(),
 });
 export type GeographyResult = z.infer<typeof GeographyResult>;

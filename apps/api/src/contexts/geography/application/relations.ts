@@ -20,7 +20,9 @@ export const relateRecords = (
   code?: string,
 ) => {
   const related: GeographyResult['related'] = [],
-    unlocated: GeographyResult['unlocated'] = [];
+    unlocated: GeographyResult['unlocated'] = [],
+    /** Records located by a point outside the polygon: candidates for an area of influence. */
+    outside: { module: string; id: string; at: Point }[] = [];
   for (const [module, items] of Object.entries(records))
     for (const record of items) {
       const p = record.payload,
@@ -59,6 +61,7 @@ export const relateRecords = (
           module,
           relationship: 'geometry',
           evidence: parsed.success ? 'GeoJSON Polygon WGS84' : 'Coordenadas explícitas WGS84',
+          ...(parsed.success ? {} : { distanceMeters: 0 }),
         });
       else if (
         code &&
@@ -72,6 +75,8 @@ export const relateRecords = (
           relationship: 'explicit-reference',
           evidence: p['Concesion_Fuente'].slice(0, 1000),
         });
+      else if (!parsed.success && locatedPoint)
+        outside.push({ module, id: record.id, at: locatedPoint });
       if (!located)
         unlocated.push({
           id: record.id,
@@ -79,5 +84,5 @@ export const relateRecords = (
           reason: 'Sin geometría WGS84 válida; Territorio no se geocodifica',
         });
     }
-  return { related, unlocated };
+  return { related, unlocated, outside };
 };

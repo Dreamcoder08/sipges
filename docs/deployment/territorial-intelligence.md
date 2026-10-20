@@ -87,3 +87,26 @@ Pendientes explícitos en el ODD: T1/T2 requieren comprobar las capas reales cua
 configurar/autorizar los canales y fuentes deseados. La vista previa de esta rama carece de variables
 de base de datos y acceso; su backend devuelve 503 aunque el build esté READY. No se reutilizaron
 secretos ni datos de producción para resolver esa vista previa.
+
+## Áreas de influencia y PostGIS
+
+La ficha de una concesión en `/mapa` ofrece un área de influencia de 1, 3, 5 o 10 km. Solo entran
+los registros con coordenadas propias, ordenados por distancia al límite oficial. Una localidad
+escrita no ubica un registro. Estar en el área indica cercanía, no impacto ni causalidad.
+
+MASCLI mide con PostGIS (elipsoide WGS84) si la extensión está instalada en la base de datos y,
+mientras no lo esté, con una aproximación geodésica interna que la ficha declara. La aplicación
+nunca crea la extensión ni añade columnas; la consulta no lee ni escribe tablas.
+
+Para habilitar PostGIS en Neon (una sola vez, por la persona responsable de la base):
+
+1. En la consola de Neon, abrir el proyecto de MASCLI, la rama de producción y el SQL Editor,
+   con el rol propietario de la base (no el rol de la aplicación).
+2. Ejecutar `CREATE EXTENSION IF NOT EXISTS postgis;`.
+3. Comprobar con `SELECT postgis_full_version();`.
+4. En `/mapa`, abrir una concesión, elegir un área de influencia y verificar que la nota diga
+   «Distancias medidas con PostGIS». La aplicación vuelve a comprobar la extensión cada diez
+   minutos, sin reiniciar.
+
+Revertir: `DROP EXTENSION postgis;` devuelve la aproximación geodésica; no se pierde ningún dato
+de MASCLI porque ninguna tabla depende de la extensión.

@@ -186,6 +186,7 @@ const TerritorialWorkspace = ({
   const [engine, setEngine] = useState<'webgl' | 'svg'>(() => (supportsWebGl2() ? 'webgl' : 'svg'));
   const [showConcessions, setShowConcessions] = useState(true);
   const [relatedOnly, setRelatedOnly] = useState(false);
+  const [influence, setInfluence] = useState(0);
   const [cursor, setCursor] = useState('');
   const [playing, setPlaying] = useState(false);
   const [focus, setFocus] = useState<Focus | null>(null);
@@ -198,7 +199,7 @@ const TerritorialWorkspace = ({
 
   const polygon = selectedConcession ? relationPolygon(selectedConcession) : null;
   const relationQuery = useQuery({
-    queryKey: ['geocatmin-relation', scope, selectedConcession?.code],
+    queryKey: ['geocatmin-relation', scope, selectedConcession?.code, influence],
     enabled: Boolean(polygon),
     retry: false,
     staleTime: 300_000,
@@ -208,7 +209,12 @@ const TerritorialWorkspace = ({
         signal,
         method: 'POST',
         body: {
-          json: { ...CADASTRE, polygon, concessionCode: selectedConcession?.code },
+          json: {
+            ...CADASTRE,
+            polygon,
+            concessionCode: selectedConcession?.code,
+            ...(influence ? { influenceMeters: influence } : {}),
+          },
         },
       }),
   });
@@ -493,6 +499,8 @@ const TerritorialWorkspace = ({
       points={points}
       relatedOnly={relatedOnly}
       onRelatedOnly={setRelatedOnly}
+      influence={influence}
+      onInfluence={setInfluence}
       onFocusPoint={focusPoint}
       onFrame={() => setFocus({ extent: selectedConcession.extent })}
       onClose={closeSheet}
@@ -513,7 +521,7 @@ const TerritorialWorkspace = ({
             .map((r) => ({ module: foldText(r.module), id: r.id }))
             .filter((r) => DOSSIER_MODULES.has(r.module))
             .slice(0, MAX_DOSSIER_SEEDS),
-          context: `Concesión ${selectedConcession.name}`,
+          context: `Concesión ${selectedConcession.name}${influence ? ` y ${influence / 1000} km alrededor` : ''}`,
           capped: relation.data.related.length > MAX_DOSSIER_SEEDS,
         }
       : null

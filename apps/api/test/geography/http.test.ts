@@ -3,6 +3,7 @@ import { expect, it } from 'vitest';
 import type { AppEnv } from '../../src/platform/http/env.ts';
 import { geographyRequestLimit, geographyRoutes } from '../../src/contexts/geography/http/index.ts';
 import { createGeographyService } from '../../src/contexts/geography/application/index.ts';
+import { geodesicSpatialEngine } from '../../src/contexts/geography/infrastructure/spatial-engine.ts';
 import type { GeographyCatalogue } from '@mascli/contracts';
 const catalogue: GeographyCatalogue = {
   status: 'verified',
@@ -16,6 +17,7 @@ it('rejects supplied URLs before provider calls and carries resolved scope into 
   const seen: unknown[] = [];
   let calls = 0;
   const geography = createGeographyService({
+    spatial: geodesicSpatialEngine,
     gateway: {
       catalogue: async () => catalogue,
       query: async () => {
@@ -67,6 +69,7 @@ it('rejects supplied URLs before provider calls and carries resolved scope into 
 });
 it('reports upstream failures and rejects oversized bodies', async () => {
   const geography = createGeographyService({
+    spatial: geodesicSpatialEngine,
     gateway: {
       catalogue: async () => catalogue,
       query: async () => {
@@ -94,6 +97,7 @@ it('reports upstream failures and rejects oversized bodies', async () => {
 it('stops consuming an oversized streaming query early', async () => {
   let consumed = 0;
   const geography = createGeographyService({
+    spatial: geodesicSpatialEngine,
     gateway: {
       catalogue: async () => catalogue,
       query: async () => ({ features: [], truncated: false, source: 'INGEMMET' }),

@@ -119,7 +119,7 @@ const serve = () =>
       }),
     ),
     http.post('/system/geography/query', async ({ request }) => {
-      const body = (await request.json()) as { polygon?: unknown };
+      const body = (await request.json()) as { polygon?: unknown; influenceMeters?: number };
       bodies.push(body);
       return HttpResponse.json({
         features: [CONCESSION],
@@ -134,9 +134,25 @@ const serve = () =>
                 relationship: 'geometry',
                 evidence: 'Coordenadas explícitas WGS84',
               },
+              ...(body.influenceMeters
+                ? [
+                    {
+                      id: 'EV-9',
+                      module: 'Eventos',
+                      relationship: 'proximity',
+                      evidence: 'Coordenadas explícitas a 1234 m del límite oficial',
+                      distanceMeters: 1234,
+                    },
+                  ]
+                : []),
             ]
           : [],
         unlocated: body.polygon ? [{ id: 'EV-2', module: 'Eventos', reason: 'Sin geometría' }] : [],
+        ...(body.influenceMeters
+          ? {
+              influence: { meters: body.influenceMeters, engine: 'geodesic' },
+            }
+          : {}),
       });
     }),
   );
@@ -300,3 +316,25 @@ it('relates the territory to its alerts, their basis and what still needs action
   await within(panel).findByText(/Concesión CONCESION SINTETICA: 1 señal/);
   expect(dossiers.at(-1)?.seeds).toEqual([{ module: 'eventos', id: 'EV-1' }]);
 });
+
+it(
+  'widens a concession to its area of influence and says how distances were measured',
+  { timeout: 20000 },
+  async () => {
+    serve();
+    renderPage();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Concesión CONCESION SINTETICA (SINT-0001)' }),
+    );
+    const sheet = screen.getByRole('heading', { name: 'CONCESION SINTETICA' }).closest('div');
+    if (!sheet) throw new Error('sheet expected');
+    await within(sheet).findByRole('link', { name: /Asamblea comunal sintética/ });
+    await userEvent.selectOptions(within(sheet).getByLabelText('Área de influencia'), '3000');
+    expect(
+      await within(sheet).findByText(/En el área de influencia a 1.2 km del límite/),
+    ).toBeVisible();
+    expect(bodies.at(-1)).toMatchObject({ concessionCode: 'SINT-0001', influenceMeters: 3000 });
+    expect(within(sheet).getByText(/PostGIS aún no está habilitado/)).toBeVisible();
+    expect(await screen.findByText('Concesión CONCESION SINTETICA y 3 km alrededor')).toBeVisible();
+  },
+);
