@@ -32,6 +32,14 @@
       "sessions": 1,
       "memories": 2,
       "prompts": 0
+    },
+    {
+      "id": "d52d88eb",
+      "created_by": "vm",
+      "created_at": "2026-10-20T00:04:54.855161781Z",
+      "sessions": 1,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }
