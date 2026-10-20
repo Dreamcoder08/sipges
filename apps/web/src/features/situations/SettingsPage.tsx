@@ -12,6 +12,8 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { MediaMonitorCard } from './MediaMonitorCard.tsx';
+import { PhaseCard } from './PhaseCard.tsx';
 import styles from './Situations.module.css';
 
 const FEATURES = [
@@ -19,6 +21,7 @@ const FEATURES = [
   'Peso del tiempo: lo reciente pesa más y se indica cuando un tema va en aumento.',
   'Alertas explicadas, con los registros que las originan y acciones sugeridas.',
   'Colores con su significado y buzón de quejas, denuncias, consultas y sugerencias.',
+  'Fase del proyecto con pesos IRSA propios y monitoreo de medios regionales por RSS.',
 ];
 
 /** MASCLI 4.0 switch and colour meanings of the active project (docs/adr/0020). */
@@ -70,13 +73,17 @@ const SettingsForm = ({
     onMutate: () => onSaved(''),
     onSuccess: async (saved, body) => {
       onSaved(
-        body.recommendations
-          ? 'Acciones sugeridas guardadas.'
-          : body.version4 === undefined
-            ? 'Significados guardados.'
-            : saved.version4
-              ? 'MASCLI 4.0 activado en este proyecto.'
-              : 'El proyecto volvió a MASCLI 3.0.',
+        body.phase !== undefined
+          ? 'Fase del proyecto guardada.'
+          : body.phase_weights
+            ? 'Pesos de la fase guardados.'
+            : body.recommendations
+              ? 'Acciones sugeridas guardadas.'
+              : body.version4 === undefined
+                ? 'Significados guardados.'
+                : saved.version4
+                  ? 'MASCLI 4.0 activado en este proyecto.'
+                  : 'El proyecto volvió a MASCLI 3.0.',
       );
       await cache.invalidateQueries({ queryKey: ['project-settings', scope] });
     },
@@ -180,6 +187,12 @@ const SettingsForm = ({
           ) : null}
         </form>
       </Card>
+      {data.version4 ? (
+        <>
+          <PhaseCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
+          <MediaMonitorCard scope={scope} admin={admin} />
+        </>
+      ) : null}
       {save.isError ? <Alert tone="error">{errorDetail(save.error)}</Alert> : null}
     </>
   );

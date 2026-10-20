@@ -2,7 +2,13 @@ import { ProjectSettingsIn } from '@mascli/contracts';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { parseJson } from '../../../platform/http/validation.ts';
-import type { ProjectSettings, SituationsService } from '../application/index.ts';
+import {
+  PHASES,
+  PHASE_LABELS,
+  PHASE_WEIGHT_SUGGESTIONS,
+  type ProjectSettings,
+  type SituationsService,
+} from '../application/index.ts';
 
 /** MASCLI 4.0 endpoints (docs/adr/0020). Writing settings is admin-only (Identity). */
 export const situationsRoutes = (situations: SituationsService) => {
@@ -13,6 +19,13 @@ export const situationsRoutes = (situations: SituationsService) => {
     half_life_days: s.halfLifeDays,
     thresholds: s.thresholds,
     recommendations: situations.recommendationCatalogue(s),
+    phase: s.phase,
+    phases: PHASES.map((id) => ({
+      id,
+      label: PHASE_LABELS[id],
+      weights: s.phaseWeights[id] ?? null,
+      suggestion: PHASE_WEIGHT_SUGGESTIONS[id],
+    })),
     updated_by: s.updatedBy,
     updated_at: s.updatedAt?.toISOString() ?? null,
   });
@@ -23,8 +36,16 @@ export const situationsRoutes = (situations: SituationsService) => {
     .put('/system/v4/settings', async (c) => {
       const body = await parseJson(c, ProjectSettingsIn);
       if (!body.ok) return body.response;
-      const { version4, level_meanings, window_days, half_life_days, thresholds, recommendations } =
-        body.value;
+      const {
+        version4,
+        level_meanings,
+        window_days,
+        half_life_days,
+        thresholds,
+        recommendations,
+        phase,
+        phase_weights,
+      } = body.value;
       const saved = await situations.updateSettings(
         c.get('scope'),
         {
@@ -34,6 +55,8 @@ export const situationsRoutes = (situations: SituationsService) => {
           halfLifeDays: half_life_days,
           thresholds,
           recommendations,
+          phase,
+          phaseWeights: phase_weights,
         },
         c.get('identity').username,
       );

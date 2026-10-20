@@ -169,9 +169,16 @@ export const handlers = [
         half_life_days: 14,
         thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
         recommendations: [],
+        phase: null,
+        phases: [],
         updated_by: '',
         updated_at: null,
       }),
+    ),
+  ),
+  http.get('/system/v4/media', () =>
+    signedIn(() =>
+      HttpResponse.json({ active: false, poll_minutes: 30, max_feeds: 20, feeds: [] }),
     ),
   ),
 ];

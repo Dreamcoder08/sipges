@@ -226,6 +226,8 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
         options: ['Pendiente', 'En proceso', 'Cumplida', 'Cancelada'],
         initial: 'Pendiente',
       },
+      // What the action achieved; the territorial map flags fulfilled actions without it.
+      { key: 'Resultado', label: 'Resultado obtenido', type: 'textarea' },
       { key: 'Fuente_ID', label: 'Referencia de fuente' },
       { key: 'Observaciones', label: 'Observaciones', type: 'textarea' },
     ],

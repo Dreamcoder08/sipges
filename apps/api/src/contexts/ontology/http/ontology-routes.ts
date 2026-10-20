@@ -4,9 +4,11 @@ import {
   LinkIn,
   LinkEvidenceIn,
   MarkingIn,
+  NeighbourhoodIn,
   type ObjectSummary as ObjectSummaryOut,
   type OntologyCatalog,
   type RecordGraph,
+  type RecordNeighbourhood,
   type RecordLinks,
   type SearchResults,
   type Timeline,
@@ -17,7 +19,12 @@ import type { AppEnv } from '../../../platform/http/env.ts';
 import { isoSeconds } from '../../../platform/http/time.ts';
 import { parseIntQuery, parseJson } from '../../../platform/http/validation.ts';
 import { formatScope } from '../../tenancy/application/index.ts';
-import type { Edge, ObjectSummary, OntologyService } from '../application/index.ts';
+import {
+  type Edge,
+  linkTypeById,
+  type ObjectSummary,
+  type OntologyService,
+} from '../application/index.ts';
 
 const MISSING_RECORD = { detail: 'Registro no encontrado' };
 const LINK_ERRORS = {
@@ -204,4 +211,24 @@ export const ontologyRoutes = (ontology: OntologyService) =>
         edges: graph.edges.map(edgeOut),
         truncated: graph.truncated,
       } satisfies RecordGraph);
+    })
+
+    .post('/system/graph/neighbourhood', async (c) => {
+      const body = await parseJson(c, NeighbourhoodIn);
+      if (!body.ok) return body.response;
+      const unknown = body.value.hops.flat().find((id) => !linkTypeById(id));
+      if (unknown !== undefined)
+        return c.json({ detail: `Tipo de vínculo no válido: ${unknown}` }, 422);
+      const found = await ontology.neighbourhood(
+        tenantOf(c),
+        body.value.seeds.map((seed) => ({ slug: seed.module, id: seed.id })),
+        body.value.hops,
+        body.value.fields,
+      );
+      return c.json({
+        seeds: found.seeds.map((seed) => ({ module: seed.slug, id: seed.id })),
+        nodes: found.nodes.map(summaryOut),
+        edges: found.edges.map(edgeOut),
+        truncated: found.truncated,
+      } satisfies RecordNeighbourhood);
     });
