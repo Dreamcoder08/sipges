@@ -13,7 +13,8 @@ export type RecordModule =
   | 'oportunidades'
   | 'hechos'
   | 'aarc'
-  | 'buzon';
+  | 'buzon'
+  | 'lecciones';
 export type RecordField = {
   key: string;
   label: string;
@@ -94,6 +95,21 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
       { key: 'Respuesta', label: 'Respuesta o acción tomada', type: 'textarea' },
       { key: 'Fecha_Respuesta', label: 'Fecha de respuesta', type: 'date' },
       notes,
+    ],
+  },
+  lecciones: {
+    label: 'Lecciones territoriales',
+    titleField: 'Aprendido',
+    columns: ['Fecha', 'Territorio', 'Tema', 'Actor', 'Aprendido'],
+    fields: [
+      { key: 'Fecha', label: 'Fecha', type: 'date', required: true },
+      { ...territory, label: 'Comunidad / territorio' },
+      { key: 'Tema', label: 'Tema' },
+      { key: 'Actor', label: 'Actor' },
+      { key: 'Que_Paso', label: 'Qué pasó', type: 'textarea', required: true },
+      { key: 'Por_Que', label: 'Por qué pasó', type: 'textarea' },
+      { key: 'Aprendido', label: 'Qué aprendimos', type: 'textarea', required: true },
+      { key: 'Registro_Relacionado', label: 'Registro relacionado (cita)' },
     ],
   },
   intereses: {

@@ -148,3 +148,34 @@ it('does not offer a second alert for a situation that already has one', async (
   expect(await screen.findByRole('link', { name: 'AL-3' })).toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Crear alerta/ })).not.toBeInTheDocument();
 });
+it('shows lessons the team recorded earlier about the same situation', async () => {
+  server.use(
+    http.get('*/system/v4/situations', () =>
+      HttpResponse.json({
+        ...report,
+        situations: [
+          {
+            ...situation,
+            lessons: [
+              {
+                id: 'LEC-1',
+                date: '2026-03-02',
+                learned: 'Convocar a la junta de regantes antes de cualquier obra',
+              },
+            ],
+          },
+        ],
+      }),
+    ),
+    http.get('*/api/alertas', () => HttpResponse.json([])),
+  );
+  renderPage('consulta');
+  expect(await screen.findByText('Lecciones previas')).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'LEC-1' })).toHaveAttribute(
+    'href',
+    '/objeto/lecciones/LEC-1',
+  );
+  expect(
+    screen.getByText(/Convocar a la junta de regantes antes de cualquier obra/),
+  ).toBeInTheDocument();
+});

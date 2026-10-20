@@ -188,6 +188,19 @@ const SituationCard = ({
         </ul>
         <p className={styles.muted}>Solo orientan: la decisión final es suya.</p>
       </section>
+      {situation.lessons && situation.lessons.length > 0 && (
+        <section>
+          <h4>Lecciones previas</h4>
+          <ul>
+            {situation.lessons.map((lesson) => (
+              <li key={lesson.id}>
+                <InternalLink href={objectHref('lecciones', lesson.id)}>{lesson.id}</InternalLink> ·{' '}
+                {lesson.date} · {lesson.learned}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       <details>
         <summary>Registros relacionados ({situation.records.length})</summary>
         <ul>
