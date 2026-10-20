@@ -187,6 +187,7 @@ const TerritorialWorkspace = ({
   const [showConcessions, setShowConcessions] = useState(true);
   const [relatedOnly, setRelatedOnly] = useState(false);
   const [influence, setInfluence] = useState(0);
+  const [view3d, setView3d] = useState(false);
   const [cursor, setCursor] = useState('');
   const [playing, setPlaying] = useState(false);
   const [focus, setFocus] = useState<Focus | null>(null);
@@ -630,6 +631,8 @@ const TerritorialWorkspace = ({
                   selectedPoint={selectedPoint?.id ?? ''}
                   selectedConcession={selectedConcession?.code ?? ''}
                   focus={focus}
+                  view3d={view3d}
+                  onView3d={setView3d}
                   onSelectPoint={selectPoint}
                   onSelectConcession={selectConcession}
                   onView={setCanvasView}
@@ -655,6 +658,13 @@ const TerritorialWorkspace = ({
               </li>
             ))}
           </ul>
+          {engine === 'webgl' && view3d ? (
+            <p className={styles.note}>
+              Vista 3D: cada columna reúne los registros documentados de una celda de unos 1,1 km y
+              su altura es proporcional a cuántos son. Es sólida si todos tienen coordenadas
+              explícitas. Los escenarios no suman altura: nada aquí es una proyección.
+            </p>
+          ) : null}
           {showConcessions ? (
             <>
               <ul className={styles.legendInline} aria-label="Catastro minero">
