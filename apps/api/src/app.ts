@@ -1,6 +1,7 @@
 import { runtimeRoutes } from './contexts/system/http/runtime-routes.ts';
 import { geographyRequestLimit, geographyRoutes } from './contexts/geography/http/index.ts';
 import { sourceRequestLimit, sourceRoutes } from './contexts/integration/http/source-routes.ts';
+import { mediaRoutes } from './contexts/integration/http/media-routes.ts';
 import { signalRoutes } from './contexts/integration/http/signal-routes.ts';
 import { automationWakeup } from './platform/http/automation-wakeup.ts';
 import type { ErrorResponse } from '@mascli/contracts';
@@ -9,6 +10,7 @@ import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
+import { situationsRoutes } from './contexts/situations/http/situations-routes.ts';
 import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
 import { apiKeyRoutes } from './contexts/integration/http/api-key-routes.ts';
 import { ingestRoutes } from './contexts/integration/http/ingest-routes.ts';
@@ -76,6 +78,7 @@ export const createApp = (
   app.use('*', sessionMiddleware(identity, { requireMfa: config.requireMfa }));
   app.use('/system/geography/query', geographyRequestLimit());
   app.use('/system/intelligence/sources/*', sourceRequestLimit());
+  app.use('/system/v4/media/*', sourceRequestLimit());
   app.use('*', tenancyMiddleware(tenancy));
   app.use('*', roleGate(identity));
   if (options.eventAutomation) app.use('*', automationWakeup(container.runtime, options.defer));
@@ -97,6 +100,8 @@ export const createApp = (
   app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
   app.route('/', analyticsRoutes({ analytics }));
+  app.route('/', situationsRoutes(container.situations));
+  app.route('/', mediaRoutes({ media: container.media }));
   app.route('/', recordsRoutes(records));
   app.route('/', ontologyRoutes(container.ontology));
   app.route('/', analystRoutes(container.analyst));

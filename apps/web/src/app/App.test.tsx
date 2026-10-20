@@ -207,6 +207,23 @@ describe('dashboard and navigation', () => {
     expect(document.title).toBe('Auditoría | MASCLI');
   });
 
+  it('keeps the MASCLI 3.0 menu until the project switches MASCLI 4.0 on', async () => {
+    signIn();
+    at('/');
+    const { unmount } = render(<App />);
+    const nav = await screen.findByRole('navigation', { name: 'Secciones' });
+    expect(within(nav).getByRole('link', { name: 'MASCLI 4.0' })).toBeInTheDocument();
+    expect(within(nav).queryByRole('link', { name: 'Situaciones' })).toBeNull();
+    expect(within(nav).queryByRole('link', { name: 'Buzón' })).toBeNull();
+    unmount();
+    resetApi({ version4: true });
+    signIn();
+    render(<App />);
+    const shown = await screen.findByRole('navigation', { name: 'Secciones' });
+    expect(await within(shown).findByRole('link', { name: 'Situaciones' })).toBeInTheDocument();
+    expect(within(shown).getByRole('link', { name: 'Buzón' })).toBeInTheDocument();
+  });
+
   it('offers a skip link and keeps sign-out out of the desktop top bar', async () => {
     signIn();
     at('/');

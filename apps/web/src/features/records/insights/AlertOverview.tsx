@@ -2,6 +2,7 @@ import type { ModuleRecord } from '@mascli/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { InternalLink, objectHref, useInternalNavigate } from '../../../shared/lib/navigation.tsx';
+import { useLevelLabel } from '../../../shared/lib/project-settings.tsx';
 import { DIMENSION_NAMES, dimensionOf, type Level } from '../../../shared/lib/text.ts';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { StackedColumnChart } from '../../../shared/ui/charts/Charts.tsx';
@@ -26,18 +27,22 @@ const monthName = (month: string) => {
 
 const signed = (n: number) => (n > 0 ? `+${n}` : String(n));
 
-const LevelDot = ({ level }: { level: Level | null }) => (
-  <span className={styles.levelTag}>
-    <i className={`${styles.dot} ${level ? styles[level] : styles.none}`} aria-hidden="true" />
-    {level ? LEVEL_LABEL[level] : 'Sin nivel'}
-  </span>
-);
+const LevelDot = ({ level }: { level: Level | null }) => {
+  const levelName = useLevelLabel();
+  return (
+    <span className={styles.levelTag}>
+      <i className={`${styles.dot} ${level ? styles[level] : styles.none}`} aria-hidden="true" />
+      {level ? levelName(level, LEVEL_LABEL[level]) : 'Sin nivel'}
+    </span>
+  );
+};
 
 /**
  * The alert centre's first view: figures, community heat map, monthly evolution, priority
  * communities and latest alerts, all read from the active project's stored alerts.
  */
 export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList: () => void }) => {
+  const levelName = useLevelLabel();
   const [period, setPeriod] = useState<OverviewPeriod>(6);
   const [allCommunities, setAllCommunities] = useState(false);
   const navigate = useInternalNavigate();
@@ -144,7 +149,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                       series={[
                         ...LEVEL_ORDER.map((level) => ({
                           key: level,
-                          label: LEVEL_LABEL[level],
+                          label: levelName(level, LEVEL_LABEL[level]),
                           tone: level,
                           values: data.monthly.map((m) => m.counts[level]),
                         })),
@@ -188,7 +193,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                             <span
                               className={`${styles.pill} ${c.level ? styles[`soft${c.level}`] : ''}`}
                             >
-                              {c.level ? LEVEL_LABEL[c.level] : 'Sin nivel'}
+                              {c.level ? levelName(c.level, LEVEL_LABEL[c.level]) : 'Sin nivel'}
                             </span>
                             <span className={styles.count}>{c.count} alerta(s)</span>
                           </li>
