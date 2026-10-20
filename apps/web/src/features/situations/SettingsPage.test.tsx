@@ -28,9 +28,39 @@ const settings = (version4: boolean) => ({
       custom: false,
     },
   ],
+  phase: null as 'exploracion' | 'construccion' | 'operacion' | 'cierre' | null,
+  phases: [
+    {
+      id: 'exploracion' as const,
+      label: 'Exploración',
+      weights: null as Record<string, number> | null,
+      suggestion: { G: 0.2, A: 0.25, D: 0.15, N: 0.2, E: 0.1, I: 0.1 },
+    },
+    {
+      id: 'operacion' as const,
+      label: 'Operación',
+      weights: null as Record<string, number> | null,
+      suggestion: { G: 0.15, A: 0.15, D: 0.2, N: 0.15, E: 0.25, I: 0.1 },
+    },
+  ],
   updated_by: version4 ? 'admin' : '',
   updated_at: version4 ? '2026-10-19T12:00:00Z' : null,
 });
+const feed = {
+  id: 1,
+  name: 'Radio sintética',
+  url: 'https://radio.example.pe/feed',
+  keywords: ['agua'],
+  territory: '',
+  authorization_note: 'Aprobada (sintético).',
+  enabled: true,
+  updated_by: 'admin',
+  updated_at: '2026-10-19T12:00:00Z',
+  last_poll_at: '2026-10-19T12:30:00Z',
+  last_poll_error: '',
+  last_imported: 2,
+  last_matched: 3,
+};
 const context = {
   scope: 'ACME/P1',
   projectId: 'P1',
@@ -140,4 +170,126 @@ it('shows the settings read-only to other roles', async () => {
   expect(
     within(screen.getByLabelText('Vista previa de niveles')).getAllByRole('listitem'),
   ).toHaveLength(4);
+});
+
+it('hides phase and media monitoring while MASCLI 4.0 is off', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings(false))));
+  renderPage('admin');
+  expect(await screen.findByText('MASCLI 3.0 (4.0 desactivado)')).toBeInTheDocument();
+  expect(screen.queryByText('Fase del proyecto')).not.toBeInTheDocument();
+  expect(screen.queryByText('Fuentes RSS regionales')).not.toBeInTheDocument();
+});
+
+it('sets the project phase and saves its IRSA weights from the suggestion', async () => {
+  const user = userEvent.setup();
+  const sent: unknown[] = [];
+  let current = settings(true);
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(current)),
+    http.put('*/system/v4/settings', async ({ request }) => {
+      const body = (await request.json()) as { phase?: 'operacion' };
+      sent.push(body);
+      current = {
+        ...current,
+        ...(body.phase ? { phase: body.phase } : {}),
+        updated_at: `2026-10-19T12:0${sent.length}:00Z`,
+      };
+      return HttpResponse.json(current);
+    }),
+  );
+  renderPage('admin');
+  expect(await screen.findByText('Fase sin definir')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Operación' }));
+  expect(await screen.findByText('Fase del proyecto guardada.')).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      'La fase Operación no tiene pesos guardados: el IRSA usa los pesos generales.',
+    ),
+  ).toBeInTheDocument();
+  await user.selectOptions(screen.getByLabelText('Pesos de la fase'), 'operacion');
+  expect(screen.getByLabelText('E · Ambiental-territorial')).toHaveValue(0.25);
+  const e = screen.getByLabelText('E · Ambiental-territorial');
+  await user.clear(e);
+  await user.type(e, '0.5');
+  expect(screen.getByRole('button', { name: 'Guardar pesos de la fase' })).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'Usar sugerencia preliminar' }));
+  await user.click(screen.getByRole('button', { name: 'Guardar pesos de la fase' }));
+  expect(await screen.findByText('Pesos de la fase guardados.')).toBeInTheDocument();
+  expect(sent).toEqual([
+    { phase: 'operacion' },
+    { phase_weights: { operacion: { G: 0.15, A: 0.15, D: 0.2, N: 0.15, E: 0.25, I: 0.1 } } },
+  ]);
+});
+
+it('lists media sources, previews a new one and adds it', async () => {
+  const user = userEvent.setup();
+  let added: unknown;
+  let previewed: unknown;
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))),
+    http.get('*/system/v4/media', () =>
+      HttpResponse.json({ active: true, poll_minutes: 30, max_feeds: 20, feeds: [feed] }),
+    ),
+    http.post('*/system/v4/media/preview', async ({ request }) => {
+      previewed = await request.json();
+      return HttpResponse.json({
+        total: 2,
+        items: [
+          {
+            title: 'Paro por el agua',
+            link: 'https://diario.example.pe/1',
+            summary: '',
+            published_at: null,
+            matched: ['agua'],
+          },
+          {
+            title: 'Festival',
+            link: 'https://diario.example.pe/2',
+            summary: '',
+            published_at: null,
+            matched: [],
+          },
+        ],
+      });
+    }),
+    http.post('*/system/v4/media/feeds', async ({ request }) => {
+      added = await request.json();
+      return HttpResponse.json({ ...feed, id: 2 }, { status: 201 });
+    }),
+  );
+  renderPage('admin');
+  expect(await screen.findByText('Radio sintética')).toBeInTheDocument();
+  expect(screen.getByText('Palabras clave: agua')).toBeInTheDocument();
+  expect(screen.getByText(/3 coincidencias, 2 nuevas/)).toBeInTheDocument();
+  await user.type(screen.getByLabelText('Nombre de la fuente'), 'Diario sintético');
+  await user.type(screen.getByLabelText('URL del RSS o Atom'), 'https://diario.example.pe/rss');
+  await user.type(screen.getByLabelText('Palabras clave (separadas por comas)'), 'agua, paro');
+  await user.type(screen.getByLabelText('Nota de autorización'), 'Aprobada por el titular.');
+  await user.click(screen.getByRole('button', { name: 'Probar fuente' }));
+  expect(await screen.findByText(/2 noticias leídas; 1 coinciden/)).toBeInTheDocument();
+  expect(previewed).toEqual({ url: 'https://diario.example.pe/rss', keywords: ['agua', 'paro'] });
+  await user.click(screen.getByRole('button', { name: 'Agregar fuente' }));
+  expect(await screen.findByText('Fuente agregada.')).toBeInTheDocument();
+  expect(added).toEqual({
+    name: 'Diario sintético',
+    url: 'https://diario.example.pe/rss',
+    keywords: ['agua', 'paro'],
+    territory: '',
+    authorization_note: 'Aprobada por el titular.',
+    enabled: true,
+  });
+});
+
+it('shows media sources read-only to other roles', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))),
+    http.get('*/system/v4/media', () =>
+      HttpResponse.json({ active: true, poll_minutes: 30, max_feeds: 20, feeds: [feed] }),
+    ),
+  );
+  renderPage('consulta');
+  expect(await screen.findByText('Radio sintética')).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Consultar ahora' })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Agregar fuente')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Operación' })).not.toBeInTheDocument();
 });
