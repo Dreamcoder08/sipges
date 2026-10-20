@@ -388,6 +388,8 @@ const version4Settings = {
   window_days: 90,
   half_life_days: 14,
   thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
+  phase: null,
+  phases: [],
   recommendations: [],
   updated_by: 'admin',
   updated_at: '2026-10-19T12:00:00Z',
