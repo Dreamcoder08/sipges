@@ -16,9 +16,11 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
+import { ProjectSettingsProvider, useVersion4 } from '../shared/lib/project-settings.tsx';
+import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
@@ -102,6 +104,12 @@ const GeographyPage = lazy(() =>
 const TimelinePage = lazy(() =>
   import('../features/timeline/index.ts').then((module) => ({ default: module.TimelinePage })),
 );
+const SettingsPage = lazy(() =>
+  import('../features/situations/index.ts').then((module) => ({ default: module.SettingsPage })),
+);
+const SituationsPage = lazy(() =>
+  import('../features/situations/index.ts').then((module) => ({ default: module.SituationsPage })),
+);
 const TerritorialMapPage = lazy(() =>
   import('../features/geography/index.ts').then((module) => ({
     default: module.TerritorialMapPage,
@@ -119,6 +127,7 @@ const SCREEN_MODULES = [
   () => import('../features/audit/index.ts'),
   () => import('../features/geography/index.ts'),
   () => import('../features/timeline/index.ts'),
+  () => import('../features/situations/index.ts'),
 ];
 
 /**
@@ -270,45 +279,49 @@ const appRoute = createRoute({
     const compact = useMediaQuery(COMPACT_QUERY);
     const unread = useUnreadNotifications(scope.scope);
     const projectLabel = label || scope.project_id;
+    // MASCLI 4.0 switch and colour meanings; until known every screen behaves as 3.0.
+    const settings = useQuery(projectSettingsQuery(scope.scope)).data ?? null;
     usePreloadScreens();
     return (
-      <NavigateProvider value={(href) => void router.navigate({ href })}>
-        <AppShell
-          projectLabel={projectLabel}
-          search={<SearchPalette scope={scope.scope} />}
-          notifications={
-            <NotificationBell key={`notifications/${locationHref}`} scope={scope.scope} />
-          }
-          live={<LiveUpdates scope={scope.scope} />}
-          projectSwitcher={
-            <ProjectSwitcher
-              current={scope}
-              onSwitched={async () => {
-                await queryClient.invalidateQueries();
-                await router.invalidate();
-              }}
-            />
-          }
-          account={
-            <AccountMenu
-              key={`account/${locationHref}`}
-              me={me}
-              project={projectLabel}
-              unread={compact ? unread : 0}
-              onSignedOut={async () => {
-                queryClient.clear();
-                await router.navigate({ to: '/login', search: {} });
-              }}
-            >
-              {compact ? <NotificationList scope={scope.scope} /> : null}
-            </AccountMenu>
-          }
-        >
-          <Suspense fallback={<p role="status">Cargando sección…</p>}>
-            <Outlet />
-          </Suspense>
-        </AppShell>
-      </NavigateProvider>
+      <ProjectSettingsProvider value={settings}>
+        <NavigateProvider value={(href) => void router.navigate({ href })}>
+          <AppShell
+            projectLabel={projectLabel}
+            search={<SearchPalette scope={scope.scope} />}
+            notifications={
+              <NotificationBell key={`notifications/${locationHref}`} scope={scope.scope} />
+            }
+            live={<LiveUpdates scope={scope.scope} />}
+            projectSwitcher={
+              <ProjectSwitcher
+                current={scope}
+                onSwitched={async () => {
+                  await queryClient.invalidateQueries();
+                  await router.invalidate();
+                }}
+              />
+            }
+            account={
+              <AccountMenu
+                key={`account/${locationHref}`}
+                me={me}
+                project={projectLabel}
+                unread={compact ? unread : 0}
+                onSignedOut={async () => {
+                  queryClient.clear();
+                  await router.navigate({ to: '/login', search: {} });
+                }}
+              >
+                {compact ? <NotificationList scope={scope.scope} /> : null}
+              </AccountMenu>
+            }
+          >
+            <Suspense fallback={<p role="status">Cargando sección…</p>}>
+              <Outlet />
+            </Suspense>
+          </AppShell>
+        </NavigateProvider>
+      </ProjectSettingsProvider>
     );
   },
 });
@@ -409,7 +422,31 @@ const StrategicPage = (context: FeatureContext) => (
     )}
   />
 );
+/** A MASCLI 4.0 screen opened while the project keeps 3.0 explains how to switch it on. */
+const Version4Only = ({ children }: { children: ReactNode }) =>
+  useVersion4() ? (
+    children
+  ) : (
+    <Card title="Disponible en MASCLI 4.0">
+      <p>
+        Esta sección es parte de MASCLI 4.0, que este proyecto aún no activó.{' '}
+        <Link to="/version-4">Ver MASCLI 4.0</Link>
+      </p>
+    </Card>
+  );
+const SituationsScreen = (context: FeatureContext) => (
+  <Version4Only>
+    <SituationsPage {...context} />
+  </Version4Only>
+);
+const MailboxScreen = (context: FeatureContext) => (
+  <Version4Only>
+    <RecordsPage key={`${context.scope}/buzon`} module="buzon" {...context} />
+  </Version4Only>
+);
 const featurePages = {
+  '/situaciones': SituationsScreen,
+  '/buzon': MailboxScreen,
   '/calidad': QualityPage,
   '/gerencia': ManagementPage,
   '/inteligencia-redes': IntelligencePage,
@@ -425,6 +462,7 @@ const featurePages = {
   '/metodologia': MethodologyPage,
   '/auditoria': AuditPage,
   '/automatizaciones': AutomationPage,
+  '/version-4': SettingsPage,
 } as const;
 const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePages>).map((path) =>
   createRoute({

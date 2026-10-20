@@ -8,6 +8,8 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
+import { useLevelLabel } from '../../shared/lib/project-settings.tsx';
+import { LEVELS } from '../../shared/lib/text.ts';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { LineChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { configQuery, historyQuery, irsaQuery } from './api.ts';
@@ -25,6 +27,11 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
   const client = useQueryClient();
   const [note, setNote] = useState('');
   const [notice, setNotice] = useState('');
+  const levelName = useLevelLabel();
+  const withMeaning = (level: string) =>
+    (LEVELS as readonly string[]).includes(level)
+      ? levelName(level as (typeof LEVELS)[number], level)
+      : level;
   const snapshot = useMutation({
     mutationFn: (value: string) =>
       requestJson('/system/irsa/snapshot', IrsaSnapshotResponse, {
@@ -46,7 +53,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
           {(data) => (
             <>
               <p className={styles.score}>
-                {data.irsa.toFixed(2)} / 100 · {data.level}
+                {data.irsa.toFixed(2)} / 100 · {withMeaning(data.level)}
               </p>
               <Alert tone="info">{data.status}</Alert>
               <p>Versión de configuración: {data.config_version}</p>
