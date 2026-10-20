@@ -1,7 +1,9 @@
 import { type Scope, formatScope } from '../../tenancy/application/index.ts';
 import {
+  PHASE_LABELS,
   type ProjectSettings,
   type ProjectSettingsPatch,
+  activePhaseWeights,
   applySettingsPatch,
   changedFields,
   withDefaults,
@@ -15,6 +17,14 @@ import {
 } from '../domain/situations.ts';
 
 export type { ProjectSettings, ProjectSettingsPatch } from '../domain/settings.ts';
+export {
+  DIMENSION_KEYS,
+  PHASES,
+  PHASE_LABELS,
+  PHASE_WEIGHT_SUGGESTIONS,
+  type Phase,
+  type PhaseWeights,
+} from '../domain/settings.ts';
 export type { Situation, SituationsReport } from '../domain/situations.ts';
 
 /** Read-only: the tenant's records of the given modules (row-level security applies). */
@@ -50,6 +60,11 @@ export const createSituationsService = (deps: {
   const load = async (scope: Scope) => withDefaults(await settings.load(formatScope(scope)));
   return {
     settings: load,
+    /** Whether the project has MASCLI 4.0 on, for features that only run with it. */
+    version4: async (tenantId: string) => withDefaults(await settings.load(tenantId)).version4,
+    /** Phase weights IRSA uses instead of the general ones, only with MASCLI 4.0 on. */
+    phaseWeights: async (tenantId: string) =>
+      activePhaseWeights(withDefaults(await settings.load(tenantId))),
     /** Every condition of the catalogue with the project's wording or the default. */
     recommendationCatalogue: (current: ProjectSettings) =>
       RECOMMENDATION_IDS.map((id) => ({
@@ -83,9 +98,12 @@ export const createSituationsService = (deps: {
       const after = applySettingsPatch(before, patch, actor, clock.now());
       const fields = changedFields(before, after);
       if (fields.length) {
+        const phase = fields.includes('phase')
+          ? `ase ${after.phase ? PHASE_LABELS[after.phase] : 'sin definir'}; `
+          : '';
         const detail = fields.includes('version4')
-          ? `MASCLI 4.0 ${after.version4 ? 'activado' : 'desactivado'}; campos: ${fields.join(', ')}`
-          : `Campos: ${fields.join(', ')}`;
+          ? `MASCLI 4.0 ${after.version4 ? 'activado' : 'desactivado'}; ${phase && `f${phase}`}campos: ${fields.join(', ')}`
+          : `${phase && `F${phase}`}Campos: ${fields.join(', ')}`;
         await settings.save(formatScope(scope), after, detail);
         return after;
       }

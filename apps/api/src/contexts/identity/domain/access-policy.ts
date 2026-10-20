@@ -16,6 +16,7 @@ const READ_ONLY_POSTS = new Set([
   '/system/document-lab/report.docx',
   '/system/intelligence/semantic-analyze',
   '/system/geography/query',
+  '/system/graph/neighbourhood',
 ]);
 
 /** Personal account security every role must be able to complete (ADR 0009). */
@@ -49,7 +50,9 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
     // Python gates every method except GET here (app.py:244), unlike the read set used elsewhere.
     (path.startsWith('/system/irsa/config') && method !== 'GET') ||
     // Switching MASCLI 4.0 and its colour meanings is a project decision (ADR 0020).
-    (path.startsWith('/system/v4/settings') && !isRead);
+    (path.startsWith('/system/v4/settings') && !isRead) ||
+    // Which media sources the project reads is a project decision too (ADR 0021).
+    (path.startsWith('/system/v4/media') && !isRead);
   if (adminOnly && !isAdmin) return deny('Requiere rol administrador');
   if ((path.startsWith('/api/usuarios') || path.startsWith('/api/roles')) && !isAdmin) {
     return deny('Acceso administrativo requerido');
