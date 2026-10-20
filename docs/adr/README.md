@@ -25,6 +25,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0019](0019-oled-dark-and-conversational-ui.md) | OLED dark theme and a conversational-app visual language | Accepted |
 | [0022](0022-territorial-operations-dossier.md) | Territorial operations dossier: signals, alerts, actions and commitments by typed links | Accepted |
 | [0025](0025-postgis-areas-of-influence.md) | Areas of influence around concessions with PostGIS and a geodesic fallback | Accepted |
+| [0026](0026-territorial-3d-view.md) | 3D territorial view with record columns on MapLibre + deck.gl | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 
