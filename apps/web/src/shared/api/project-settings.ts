@@ -1,0 +1,11 @@
+import { ProjectSettings } from '@mascli/contracts';
+import { queryOptions } from '@tanstack/react-query';
+import { requestJson } from './client.ts';
+
+/** MASCLI 4.0 switch and colour meanings of the active project (docs/adr/0020). */
+export const projectSettingsQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['project-settings', scope],
+    queryFn: ({ signal }) => requestJson('/system/v4/settings', ProjectSettings, { scope, signal }),
+    staleTime: 60_000,
+  });

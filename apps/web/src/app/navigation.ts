@@ -34,6 +34,8 @@ export const SCREENS = [
     ready: true,
   },
   { path: '/alertas', label: 'Alertas', title: 'Centro de alertas', ready: true },
+  { path: '/situaciones', label: 'Situaciones', title: 'Situaciones relacionadas', ready: true },
+  { path: '/buzon', label: 'Buzón', title: 'Buzón de quejas y sugerencias', ready: true },
   { path: '/mapa', label: 'Mapa territorial', title: 'Mapa territorial MASCLI', ready: true },
   {
     path: '/ubicacion',
@@ -77,6 +79,7 @@ export const SCREENS = [
   },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología MASCLI', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
+  { path: '/version-4', label: 'MASCLI 4.0', title: 'MASCLI 4.0', ready: true },
 ] as const satisfies readonly {
   path: string;
   label: string;
@@ -97,7 +100,15 @@ export const NAV_GROUPS = [
   },
   {
     label: 'Gestión y alertas',
-    paths: ['/gerencia', '/inteligencia-redes', '/alertas', '/mapa', '/ubicacion'],
+    paths: [
+      '/gerencia',
+      '/inteligencia-redes',
+      '/alertas',
+      '/situaciones',
+      '/buzon',
+      '/mapa',
+      '/ubicacion',
+    ],
   },
   {
     label: 'Análisis',
@@ -113,7 +124,7 @@ export const NAV_GROUPS = [
   },
   {
     label: 'Sistema',
-    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria'],
+    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria', '/version-4'],
   },
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
 
@@ -128,6 +139,8 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/gerencia': 'gauge',
   '/inteligencia-redes': 'network',
   '/alertas': 'bell',
+  '/situaciones': 'layers',
+  '/buzon': 'message',
   '/mapa': 'map',
   '/ubicacion': 'pin',
   '/cronologia': 'clock',
@@ -141,6 +154,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/automatizaciones': 'zap',
   '/metodologia': 'bookOpen',
   '/auditoria': 'shield',
+  '/version-4': 'layers',
 };
 
 /**
@@ -160,16 +174,22 @@ export const MORE_GROUPS = [
     label: 'Investigar',
     paths: ['/actores', '/directorio', '/demandas', '/narrativas', '/inteligencia-redes'],
   },
-  { label: 'Gestionar', paths: ['/gerencia', '/cronologia', '/ubicacion'] },
+  {
+    label: 'Gestionar',
+    paths: ['/gerencia', '/situaciones', '/buzon', '/cronologia', '/ubicacion'],
+  },
   {
     label: 'Analizar',
     paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/calidad', '/fuentes'],
   },
   {
     label: 'Sistema',
-    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria'],
+    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria', '/version-4'],
   },
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
+
+/** Screens of MASCLI 4.0, hidden while the project keeps 3.0 (docs/adr/0020). */
+export const VERSION4_PATHS: ReadonlySet<string> = new Set<ScreenPath>(['/situaciones', '/buzon']);
 
 export const labelFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.label ?? path;

@@ -93,6 +93,30 @@ export type LinkIn = z.infer<typeof LinkIn>;
 export const LinkCreated = z.object({ ok: z.literal(true), id: z.number().int() });
 export type LinkCreated = z.infer<typeof LinkCreated>;
 
+/**
+ * POST /system/graph/neighbourhood (ODD territorial-operations): the joint neighbourhood of
+ * several records. `hops` lists the link types each hop follows (at most two hops); `fields`
+ * adds payload fields to each node's summary.
+ */
+export const NeighbourhoodIn = z.object({
+  seeds: z.array(RecordRef).min(1).max(100),
+  hops: z
+    .array(z.array(z.string().min(1).max(40)).min(1).max(20))
+    .min(1)
+    .max(2),
+  fields: z.array(z.string().min(1).max(60)).max(24).default([]),
+});
+export type NeighbourhoodIn = z.input<typeof NeighbourhoodIn>;
+
+export const RecordNeighbourhood = z.object({
+  /** Seeds that exist and are visible to the caller. */
+  seeds: z.array(RecordRef),
+  nodes: z.array(ObjectSummary),
+  edges: z.array(LinkEdge),
+  truncated: z.boolean(),
+});
+export type RecordNeighbourhood = z.infer<typeof RecordNeighbourhood>;
+
 /** GET /system/graph?module=&id=&depth= */
 export const RecordGraph = z.object({
   root: RecordRef,

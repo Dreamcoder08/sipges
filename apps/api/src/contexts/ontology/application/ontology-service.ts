@@ -29,6 +29,9 @@ import type {
 /** Graph bounds (docs/adr/0011 §6). */
 export const MAX_GRAPH_DEPTH = 2;
 export const MAX_GRAPH_NODES = 150;
+/** Neighbourhood bounds (ODD territorial-operations): records on the map or in a concession. */
+export const MAX_NEIGHBOURHOOD_SEEDS = 100;
+export const MAX_NEIGHBOURHOOD_NODES = 400;
 
 const MAX_ID = 200;
 export const MAX_SEARCH_RESULTS = 50;
@@ -128,7 +131,11 @@ const text = (value: unknown) =>
     ? String(value).trim()
     : '';
 
-export const summarize = (objectType: ObjectType, row: NodeRow): ObjectSummary => ({
+export const summarize = (
+  objectType: ObjectType,
+  row: NodeRow,
+  extraFields: readonly string[] = [],
+): ObjectSummary => ({
   slug: objectType.slug,
   id: row.id,
   typeLabel: objectType.label,
@@ -136,7 +143,7 @@ export const summarize = (objectType: ObjectType, row: NodeRow): ObjectSummary =
   date: objectType.dateField ? text(row.payload[objectType.dateField]) || null : null,
   marking: row.marking,
   fields: Object.fromEntries(
-    objectType.summaryFields
+    [...new Set([...objectType.summaryFields, ...extraFields])]
       .map((field) => [field, text(row.payload[field])] as const)
       .filter(([, value]) => value !== ''),
   ),
@@ -286,12 +293,17 @@ export const createOntologyService = (deps: {
     return edges;
   };
 
-  const summaries = async (tenantId: string, refs: readonly NodeRef[]) => {
+  const summaries = async (
+    tenantId: string,
+    refs: readonly NodeRef[],
+    extraFields: readonly string[] = [],
+  ) => {
     const rows = refs.length ? await store.nodes(tenantId, refs) : [];
     const result = new Map<string, ObjectSummary>();
     for (const row of rows) {
       const objectType = objectTypeForModule(row.module);
-      if (objectType) result.set(`${objectType.slug}\u0000${row.id}`, summarize(objectType, row));
+      if (objectType)
+        result.set(`${objectType.slug}\u0000${row.id}`, summarize(objectType, row, extraFields));
     }
     return result;
   };
@@ -299,6 +311,53 @@ export const createOntologyService = (deps: {
   const refFor = (slug: string, id: string): NodeRef | null => {
     const objectType = objectTypeForSlug(slug);
     return objectType && isUsableId(id) ? { module: objectType.module, id } : null;
+  };
+
+  /**
+   * Breadth-first exploration from `roots`, one entry of `hops` per hop: the link types that
+   * hop follows, or null for every type. Bounded by `maxNodes`.
+   */
+  const explore = async (
+    tenantId: string,
+    roots: readonly NodeRef[],
+    hops: readonly (readonly string[] | null)[],
+    maxNodes: number,
+    extraFields: readonly string[],
+  ) => {
+    const visited = new Map<string, NodeRef>(roots.map((root) => [key(root), root]));
+    const edges = new Map<string, Edge>();
+    let frontier: NodeRef[] = [...roots];
+    let truncated = false;
+    for (const follow of hops.slice(0, MAX_GRAPH_DEPTH)) {
+      if (frontier.length === 0) break;
+      const next: NodeRef[] = [];
+      for (const edge of await edgesTouching(tenantId, frontier)) {
+        if (follow && !follow.includes(edge.linkType)) continue;
+        const ends = [edge.source, edge.target].map((end) => refFor(end.slug, end.id));
+        if (ends.some((end) => end === null)) continue;
+        const missing = (ends as NodeRef[]).filter((end) => !visited.has(key(end)));
+        if (visited.size + missing.length > maxNodes) {
+          truncated = true;
+          continue;
+        }
+        for (const end of missing) {
+          visited.set(key(end), end);
+          next.push(end);
+        }
+        edges.set(
+          `${edge.linkType}\u0001${edge.source.slug}\u0000${edge.source.id}\u0001${edge.target.slug}\u0000${edge.target.id}`,
+          edge,
+        );
+      }
+      frontier = next;
+    }
+    const nodes = await summaries(tenantId, [...visited.values()], extraFields);
+    const present = [...edges.values()].filter(
+      (edge) =>
+        nodes.has(`${edge.source.slug}\u0000${edge.source.id}`) &&
+        nodes.has(`${edge.target.slug}\u0000${edge.target.id}`),
+    );
+    return { nodes: [...nodes.values()], edges: present, truncated };
   };
 
   return {
@@ -398,39 +457,52 @@ export const createOntologyService = (deps: {
       const root = refFor(slug, id);
       if (!root) return null;
       const hops = Math.max(1, Math.min(MAX_GRAPH_DEPTH, Math.trunc(depth) || 1));
-      const visited = new Map<string, NodeRef>([[key(root), root]]);
-      const edges = new Map<string, Edge>();
-      let frontier: NodeRef[] = [root];
-      let truncated = false;
-      for (let hop = 0; hop < hops && frontier.length > 0; hop++) {
-        const next: NodeRef[] = [];
-        for (const edge of await edgesTouching(tenantId, frontier)) {
-          const ends = [edge.source, edge.target].map((end) => refFor(end.slug, end.id));
-          if (ends.some((end) => end === null)) continue;
-          const missing = (ends as NodeRef[]).filter((end) => !visited.has(key(end)));
-          if (visited.size + missing.length > MAX_GRAPH_NODES) {
-            truncated = true;
-            continue;
-          }
-          for (const end of missing) {
-            visited.set(key(end), end);
-            next.push(end);
-          }
-          edges.set(
-            `${edge.linkType}\u0001${edge.source.slug}\u0000${edge.source.id}\u0001${edge.target.slug}\u0000${edge.target.id}`,
-            edge,
-          );
-        }
-        frontier = next;
-      }
-      const nodes = await summaries(tenantId, [...visited.values()]);
-      if (!nodes.has(`${slug}\u0000${id}`)) return null;
-      const present = [...edges.values()].filter(
-        (edge) =>
-          nodes.has(`${edge.source.slug}\u0000${edge.source.id}`) &&
-          nodes.has(`${edge.target.slug}\u0000${edge.target.id}`),
+      const found = await explore(
+        tenantId,
+        [root],
+        Array.from({ length: hops }, () => null),
+        MAX_GRAPH_NODES,
+        [],
       );
-      return { root: { slug, id }, nodes: [...nodes.values()], edges: present, truncated };
+      if (!found.nodes.some((n) => n.slug === slug && n.id === id)) return null;
+      return {
+        root: { slug, id },
+        nodes: found.nodes,
+        edges: found.edges,
+        truncated: found.truncated,
+      };
+    },
+
+    /**
+     * Joint neighbourhood of several records (ODD territorial-operations): the territorial
+     * dossier of a concession or of the records on the map. `hops` lists the link types each
+     * hop follows, so a path such as signal → alert → action does not wander through every
+     * record of a linked actor. Seeds that do not exist or are not visible are left out;
+     * `fields` adds payload fields to every node's summary.
+     */
+    async neighbourhood(
+      tenantId: string,
+      seeds: readonly { slug: string; id: string }[],
+      hops: readonly (readonly string[])[],
+      fields: readonly string[],
+    ) {
+      const roots = new Map<string, NodeRef>();
+      for (const seed of seeds.slice(0, MAX_NEIGHBOURHOOD_SEEDS)) {
+        const ref = refFor(seed.slug, seed.id);
+        if (ref) roots.set(key(ref), ref);
+      }
+      const found = await explore(
+        tenantId,
+        [...roots.values()],
+        hops,
+        MAX_NEIGHBOURHOOD_NODES,
+        fields,
+      );
+      const present = new Set(found.nodes.map((n) => `${n.slug}\u0000${n.id}`));
+      return {
+        seeds: seeds.filter((s) => present.has(`${s.slug}\u0000${s.id}`)),
+        ...found,
+      };
     },
 
     /**

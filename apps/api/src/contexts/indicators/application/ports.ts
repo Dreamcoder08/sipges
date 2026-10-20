@@ -42,3 +42,12 @@ export type IrsaSnapshotStore = {
 };
 
 export type Clock = { now(): Date };
+
+/** Weights of the project's current phase (MASCLI 4.0, docs/adr/0021 §4); null keeps the general ones. */
+export type PhaseWeightsSource = {
+  forTenant(tenantId: string): Promise<{
+    readonly phase: string;
+    readonly label: string;
+    readonly weights: Readonly<Record<string, number>>;
+  } | null>;
+};

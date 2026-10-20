@@ -12,6 +12,8 @@ export type ApiState = {
   scopes: { company_id: string; project_id: string; label: string }[];
   otpRequired: boolean;
   requests: string[];
+  /** MASCLI 4.0 switch of the active project; off like a project that never changed it. */
+  version4: boolean;
 };
 
 export const api: ApiState = {
@@ -20,6 +22,7 @@ export const api: ApiState = {
   scopes: [],
   otpRequired: false,
   requests: [],
+  version4: false,
 };
 
 export const resetApi = (overrides: Partial<ApiState> = {}) => {
@@ -29,6 +32,7 @@ export const resetApi = (overrides: Partial<ApiState> = {}) => {
     scopes: [{ company_id: 'DEMO', project_id: 'PRJ-DEMO', label: 'Proyecto Demo' }],
     otpRequired: false,
     requests: [],
+    version4: false,
     ...overrides,
   });
 };
@@ -149,6 +153,32 @@ export const handlers = [
         content_validation: 'Pendiente',
         release_rule: 'Regla sintética',
       }),
+    ),
+  ),
+  http.get('/system/v4/settings', () =>
+    signedIn(() =>
+      HttpResponse.json({
+        version4: api.version4,
+        level_meanings: {
+          Verde: 'Situación estable / riesgo bajo',
+          Amarillo: 'Requiere atención y seguimiento',
+          Naranja: 'Requiere intervención preventiva',
+          Rojo: 'Situación crítica / atención inmediata',
+        },
+        window_days: 90,
+        half_life_days: 14,
+        thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
+        recommendations: [],
+        phase: null,
+        phases: [],
+        updated_by: '',
+        updated_at: null,
+      }),
+    ),
+  ),
+  http.get('/system/v4/media', () =>
+    signedIn(() =>
+      HttpResponse.json({ active: false, poll_minutes: 30, max_feeds: 20, feeds: [] }),
     ),
   ),
 ];
