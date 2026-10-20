@@ -7,6 +7,7 @@ export {
   OBJECT_TYPES,
   type LinkType,
   type ObjectType,
+  linkTypeById,
   objectTypeForModule,
   objectTypeForSlug,
   titleOf,

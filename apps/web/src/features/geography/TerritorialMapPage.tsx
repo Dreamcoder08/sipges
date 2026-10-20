@@ -36,12 +36,15 @@ import { LOCALITIES } from './localities.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
 import { MapFrame } from './MapFrame.tsx';
 import { MapSheet } from './MapSheet.tsx';
+import { SIGNAL_MODULES } from './operations.ts';
+import { OperationsPanel } from './OperationsPanel.tsx';
 import { PointCard } from './PointCard.tsx';
 import { SECHURA_EXTENT } from './sechura-base.ts';
 import {
   atCursor,
   filterPlace,
   inPeriod,
+  LAYER_SLUGS,
   LAYERS,
   type Layer,
   type MapPoint,
@@ -63,6 +66,9 @@ const CLOSED = new Set(['cerrada', 'cerrado', 'descartada', 'descartado']);
 /** Widest view (degrees) for which the cadastre is requested; wider views ask to zoom in. */
 export const MAX_CONCESSION_SPAN = 2.5;
 const CADASTRE = { serviceId: 'SERV_CATASTRO_MINERO', layerId: 0 } as const;
+/** Records the operational dossier starts from (ODD territorial-operations). */
+const MAX_DOSSIER_SEEDS = 100;
+const DOSSIER_MODULES = new Set<string>([...SIGNAL_MODULES, 'actores']);
 
 /** Dimension colours of the design tokens (--dim-*), as RGB for the WebGL layers. */
 const DIMENSION_RGB: Readonly<Record<DimensionCode, readonly [number, number, number]>> = {
@@ -494,6 +500,38 @@ const TerritorialWorkspace = ({
   ) : selectedPoint ? (
     <PointCard point={selectedPoint} onClose={closeSheet} />
   ) : null;
+  // The operational dossier follows the selection: a concession's related records, one
+  // record, or the most recent records visible on the map.
+  const dossierScope: {
+    seeds: { module: string; id: string }[];
+    context: string;
+    capped: boolean;
+  } | null = selectedConcession
+    ? relation.data
+      ? {
+          seeds: relation.data.related
+            .map((r) => ({ module: foldText(r.module), id: r.id }))
+            .filter((r) => DOSSIER_MODULES.has(r.module))
+            .slice(0, MAX_DOSSIER_SEEDS),
+          context: `Concesión ${selectedConcession.name}`,
+          capped: relation.data.related.length > MAX_DOSSIER_SEEDS,
+        }
+      : null
+    : selectedPoint
+      ? {
+          seeds: [{ module: LAYER_SLUGS[selectedPoint.layer], id: selectedPoint.id }],
+          context: `Registro ${selectedPoint.title}`,
+          capped: false,
+        }
+      : {
+          seeds: [...visible]
+            .sort((a, b) => b.date.localeCompare(a.date))
+            .slice(0, MAX_DOSSIER_SEEDS)
+            .map((p) => ({ module: LAYER_SLUGS[p.layer], id: p.id })),
+          context: 'Registros visibles en el mapa',
+          capped: visible.length > MAX_DOSSIER_SEEDS,
+        };
+
   const sheetTitle = selectedConcession
     ? `Ficha de la concesión ${selectedConcession.name}`
     : 'Ficha del registro';
@@ -683,6 +721,16 @@ const TerritorialWorkspace = ({
           onPlaying={setPlaying}
           onSelect={focusPoint}
         />
+      </Card>
+
+      <Card title="Inteligencia operacional" eyebrow={dossierScope?.context ?? 'Concesión'}>
+        {dossierScope ? (
+          <OperationsPanel scope={scope} {...dossierScope} />
+        ) : (
+          <p className={styles.note} role="status">
+            Esperando los registros vinculados a la concesión…
+          </p>
+        )}
       </Card>
 
       <dl className={styles.kpis}>

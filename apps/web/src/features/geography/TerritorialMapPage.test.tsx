@@ -49,12 +49,54 @@ const CONCESSION = {
 
 const records = (rows: unknown[]) => () => HttpResponse.json(rows);
 const bodies: unknown[] = [];
+const dossiers: { seeds: { module: string; id: string }[] }[] = [];
+const summary = (module: string, id: string, title: string, fields: Record<string, string>) => ({
+  module,
+  id,
+  type_label: module,
+  title,
+  date: null,
+  marking: 'interno',
+  fields,
+});
 const serve = () =>
   server.use(
     http.get('/api/eventos', records(EVENTS)),
     http.get('/api/demandas', records([])),
     http.get('/api/actores', records([])),
     http.get('/api/alertas', records([])),
+    http.post('/system/graph/neighbourhood', async ({ request }) => {
+      const body = (await request.json()) as (typeof dossiers)[number];
+      dossiers.push(body);
+      return HttpResponse.json({
+        seeds: body.seeds,
+        nodes: [
+          summary('eventos', 'EV-1', 'Asamblea comunal sintética', {
+            Nivel_Verificacion: 'A - Confirmada',
+            Fuente_ID: 'FUE-1',
+          }),
+          summary('alertas', 'AL-1', 'Alerta sintética de bloqueo', {
+            Estado: 'Abierta',
+            Nivel_Preliminar: 'Naranja',
+            Accion_Sugerida: 'Convocar mesa sintética',
+          }),
+        ],
+        edges: [
+          {
+            id: 1,
+            link_type: 'origina',
+            source: { module: 'eventos', id: 'EV-1' },
+            target: { module: 'alertas', id: 'AL-1' },
+            inferred: false,
+            via: null,
+            note: '',
+            created_by: 'admin',
+            created_at: null,
+          },
+        ],
+        truncated: false,
+      });
+    }),
     http.get('/system/geography/catalogue', () =>
       HttpResponse.json({
         status: 'verified',
@@ -117,6 +159,7 @@ const renderPage = () =>
 
 afterEach(() => {
   bodies.length = 0;
+  dossiers.length = 0;
   vi.unstubAllGlobals();
 });
 
@@ -226,4 +269,34 @@ it('reports an unavailable cadastre without querying it', async () => {
   ).toBeVisible();
   expect(bodies).toHaveLength(0);
   expect(screen.queryByRole('alert')).toBeNull();
+});
+
+it('relates the territory to its alerts, their basis and what still needs action', async () => {
+  serve();
+  renderPage();
+  const panel = (await screen.findByRole('heading', { name: 'Inteligencia operacional' })).closest(
+    'section',
+  );
+  if (!panel) throw new Error('operations card expected');
+  expect(
+    await within(panel).findByText('Alerta abierta sin una acción vinculada que la atienda.'),
+  ).toBeVisible();
+  expect(
+    within(panel).getAllByRole('link', { name: 'Alerta sintética de bloqueo' })[0],
+  ).toHaveAttribute('href', '/objeto/alertas/AL-1');
+  expect(
+    within(panel).getByText(/Acción sugerida en la alerta: Convocar mesa sintética/),
+  ).toBeVisible();
+  // The visible records seed the dossier, newest first.
+  expect(dossiers[0]?.seeds).toEqual([
+    { module: 'eventos', id: 'EV-2' },
+    { module: 'eventos', id: 'EV-1' },
+  ]);
+  // Selecting a concession narrows the dossier to the records related to it.
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Concesión CONCESION SINTETICA (SINT-0001)' }),
+  );
+  expect(await within(panel).findByText('Concesión CONCESION SINTETICA')).toBeVisible();
+  await within(panel).findByText(/Concesión CONCESION SINTETICA: 1 señal/);
+  expect(dossiers.at(-1)?.seeds).toEqual([{ module: 'eventos', id: 'EV-1' }]);
 });
