@@ -478,3 +478,42 @@ it('MASCLI 3.0 keeps the evidence URL form without receipts', async () => {
   expect(screen.getByLabelText('URL de evidencia')).toBeVisible();
   expect(screen.queryByLabelText('Evidencia adjunta (recibo)')).toBeNull();
 });
+it('MASCLI 4.0 shows that a high-priority alert waits for a second person', async () => {
+  server.use(
+    http.get('*/system/intelligence/territorial-alerts', () =>
+      HttpResponse.json([
+        { ...alertFixture('alta-1', 'Pendiente de verificación'), first_validator: 'ana' },
+      ]),
+    ),
+    http.get('*/system/intelligence/territorial-summary', () =>
+      HttpResponse.json({
+        version: '2.6',
+        project_id: 'PRJ-DEMO',
+        total: 1,
+        by_status: { 'Pendiente de verificación': 1 },
+        by_priority: { Alta: 1 },
+        themes: [],
+        irsa_integration: 'Sin modificación automática',
+        caution: 'Revisión humana',
+      }),
+    ),
+    http.patch('*/system/intelligence/territorial-alerts/alta-1', () =>
+      HttpResponse.json({
+        ok: true,
+        status: 'Pendiente de verificación',
+        second_validation_required: true,
+        irsa_modified: false,
+        notice: 'La validación NO cambia el IRSA.',
+      }),
+    ),
+  );
+  mount(<IntelligencePage {...context} role="analista" />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Ver alerta alta-1' }));
+  expect(screen.getByText(/Primera validación: ana\./)).toBeVisible();
+  await user.selectOptions(screen.getByLabelText('Estado de revisión'), 'Corroborado');
+  await user.click(screen.getByRole('button', { name: 'Guardar revisión' }));
+  expect(
+    await screen.findByText('Primera validación registrada; otra persona debe confirmarla.'),
+  ).toBeVisible();
+});

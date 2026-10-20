@@ -26,6 +26,7 @@ const DECISION_ERRORS = {
   status: [422, 'Estado inválido'],
   note_too_long: [422, 'Nota demasiado extensa'],
   missing: [404, 'Evaluación no encontrada'],
+  same_person: [409, 'Otra persona debe confirmar la validación de una alerta de prioridad Alta'],
 } as const satisfies Record<AlertDecisionError['kind'], readonly [number, string]>;
 
 // `project_id` is accepted for compatibility; the tenancy middleware already refused any value
@@ -62,6 +63,7 @@ const alertJson = (a: TerritorialAlert) => ({
   analyst_note: a.analystNote,
   reviewer_note: a.reviewerNote,
   reviewed_at: a.reviewedAt ? isoSeconds(a.reviewedAt) : null,
+  first_validator: a.firstValidator ?? null,
   themes: a.themes,
   signals: a.signals,
   suggestions: a.suggestions,
@@ -147,18 +149,19 @@ export const intelligenceRoutes = (intelligence: IntelligenceService) =>
     .patch('/system/intelligence/territorial-alerts/:id', async (c) => {
       const body = await parseJson(c, DecisionBody);
       if (!body.ok) return body.response;
-      const result = await intelligence.decideAlert(c.get('scope'), {
-        id: c.req.param('id'),
-        status: body.value.status,
-        note: body.value.reviewer_note,
-      });
+      const result = await intelligence.decideAlert(
+        c.get('scope'),
+        { id: c.req.param('id'), status: body.value.status, note: body.value.reviewer_note },
+        c.get('identity').username,
+      );
       if (!result.ok) {
         const [status, detail] = DECISION_ERRORS[result.error.kind];
         return c.json({ detail }, status);
       }
       return c.json({
         ok: true,
-        status: result.value,
+        status: result.value.status,
+        second_validation_required: result.value.pendingSecond,
         irsa_modified: false,
         notice:
           'La validación NO cambia el IRSA. Registrar cambios de indicadores requiere metodología aprobada.',

@@ -27,6 +27,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0021](0021-media-monitoring-and-project-phase.md) | Media monitoring by RSS and project phase weights | Accepted |
 | [0022](0022-territorial-operations-dossier.md) | Territorial operations dossier: signals, alerts, actions and commitments by typed links | Accepted |
 | [0023](0023-decision-receipts.md) | MASCLI 4.0: decision receipts on preventive actions | Accepted |
+| [0024](0024-proportional-territorial-practices.md) | MASCLI 4.0: proportional practices for territorial risk work | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

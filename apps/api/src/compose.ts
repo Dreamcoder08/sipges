@@ -374,6 +374,7 @@ export const buildContainer = async (deps: {
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
+    version4: { enabled: async (scope) => (await situations.settings(scope)).version4 },
   });
   const prevention = createPreventionService({
     store: createSqlActionStore(deps.sql),
