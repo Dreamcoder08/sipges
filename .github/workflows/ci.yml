@@ -19,7 +19,8 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:17
+        # PostGIS ships with the image so the opt-in distance test runs (docs/adr/0025).
+        image: postgis/postgis:17-3.5
         env:
           POSTGRES_PASSWORD: ci-only-password
         ports: ['55432:5432']

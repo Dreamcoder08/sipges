@@ -4,6 +4,7 @@ import {
   type GeographyService,
 } from './contexts/geography/application/index.ts';
 import { createIngemmetGateway } from './contexts/geography/infrastructure/index.ts';
+import { createPostgisSpatialEngine } from './contexts/geography/infrastructure/spatial-engine.ts';
 import {
   createAuthorizedSourcesService,
   type AuthorizedSourcesService,
@@ -390,6 +391,7 @@ export const buildContainer = async (deps: {
   const geography = createGeographyService({
     reader: recordReader,
     gateway: deps.geographyGateway ?? createIngemmetGateway(),
+    spatial: createPostgisSpatialEngine(deps.sql),
   });
   const authorizedSources = createAuthorizedSourcesService({
     gateway: deps.sourceGateway ?? createOfficialSourceGateway(),
