@@ -29,7 +29,7 @@ import {
   relationPolygon,
 } from './concessions.ts';
 import type { CanvasPoint, Focus } from './engine/types.ts';
-import { RELIEF } from './engine/style.ts';
+import { RELIEF } from './engine/terrarium.ts';
 import { supportsWebGl2 } from './engine/webgl.ts';
 import { EVIDENCE, EVIDENCE_LABELS, type Evidence } from './evidence.ts';
 import { EvidenceTag } from './EvidenceTag.tsx';
@@ -61,6 +61,7 @@ import styles from './TerritorialMap.module.css';
 
 // The WebGL engine (MapLibre GL JS + deck.gl) is a separate chunk, loaded only for this map.
 const GeoCanvas = lazy(() => import('./engine/GeoCanvas.tsx'));
+const CesiumCanvas = lazy(() => import('./engine/CesiumCanvas.tsx'));
 
 const Records = z.array(z.looseObject({ _id: z.string() }));
 const CLOSED = new Set(['cerrada', 'cerrado', 'descartada', 'descartado']);
@@ -189,6 +190,14 @@ const TerritorialWorkspace = ({
   const [relatedOnly, setRelatedOnly] = useState(false);
   const [influence, setInfluence] = useState(0);
   const [view3d, setView3d] = useState(false);
+  /** Why the 3D view closed or is incomplete, shown under the map. */
+  const [terrainNote, setTerrainNote] = useState('');
+  const leave3d = (note: string) => {
+    setView3d(false);
+    setTerrainNote(note);
+  };
+  const terrainFailed = () =>
+    leave3d('La vista 3D no pudo iniciarse en este navegador; se muestra el mapa en 2D.');
   const [cursor, setCursor] = useState('');
   const [playing, setPlaying] = useState(false);
   const [focus, setFocus] = useState<Focus | null>(null);
@@ -619,7 +628,32 @@ const TerritorialWorkspace = ({
 
       <div className={styles.layout}>
         <section ref={mapSection} className={styles.mapCard} aria-label="Mapa">
-          {engine === 'webgl' ? (
+          {engine === 'webgl' && view3d ? (
+            <MapErrorBoundary fallback={svgMap} onError={terrainFailed}>
+              <Suspense fallback={<p role="status">Cargando el terreno 3D…</p>}>
+                <CesiumCanvas
+                  basemap={basemap}
+                  home={homeExtent}
+                  homeLabel="Ver toda la provincia"
+                  label={`${mapLabel} En 3D, con relieve.`}
+                  points={canvasPoints}
+                  concessions={shownConcessions}
+                  selectedPoint={selectedPoint?.id ?? ''}
+                  selectedConcession={selectedConcession?.code ?? ''}
+                  focus={focus}
+                  onExit={() => leave3d('')}
+                  onSelectPoint={selectPoint}
+                  onSelectConcession={selectConcession}
+                  onReliefMissing={() =>
+                    setTerrainNote(
+                      'Parte del relieve no pudo descargarse; esa zona se muestra plana.',
+                    )
+                  }
+                  onFailure={terrainFailed}
+                />
+              </Suspense>
+            </MapErrorBoundary>
+          ) : engine === 'webgl' ? (
             <MapErrorBoundary fallback={svgMap} onError={() => setEngine('svg')}>
               <Suspense fallback={<p role="status">Cargando el motor cartográfico…</p>}>
                 <GeoCanvas
@@ -632,8 +666,10 @@ const TerritorialWorkspace = ({
                   selectedPoint={selectedPoint?.id ?? ''}
                   selectedConcession={selectedConcession?.code ?? ''}
                   focus={focus}
-                  view3d={view3d}
-                  onView3d={setView3d}
+                  onView3d={() => {
+                    setTerrainNote('');
+                    setView3d(true);
+                  }}
                   onSelectPoint={selectPoint}
                   onSelectConcession={selectConcession}
                   onView={setCanvasView}
@@ -661,10 +697,18 @@ const TerritorialWorkspace = ({
           </ul>
           {engine === 'webgl' && view3d ? (
             <p className={styles.note}>
-              Vista 3D: cada columna reúne los registros documentados de una celda de unos 1,1 km y
-              su altura es proporcional a cuántos son. Es sólida si todos tienen coordenadas
-              explícitas. Los escenarios no suman altura: nada aquí es una proyección. El relieve es
-              solo sombreado; el suelo no se eleva y cada registro conserva su posición.
+              Vista 3D: relieve real de datos abiertos de elevación, exagerado 1,5 veces para
+              leerlo. Cada columna reúne los registros documentados de una celda de unos 1,1 km y su
+              altura es cuántos son (400 m por registro); es sólida si todos tienen coordenadas
+              explícitas. Los escenarios no suman altura: nada aquí es una proyección.
+              {basemap === 'ninguno'
+                ? ' Sin mapa base, el terreno se colorea por altura: claro en la costa, marrón desde unos 600 m.'
+                : ''}
+            </p>
+          ) : null}
+          {terrainNote ? (
+            <p className={styles.note} role="status">
+              {terrainNote}
             </p>
           ) : null}
           {showConcessions ? (
@@ -702,7 +746,7 @@ const TerritorialWorkspace = ({
             {engine === 'webgl' && view3d ? (
               <>
                 {' '}
-                Sombreado de{' '}
+                Relieve:{' '}
                 <a href={RELIEF.attribution.href} target="_blank" rel="noreferrer">
                   {RELIEF.attribution.text}
                 </a>

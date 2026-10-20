@@ -3,15 +3,10 @@ import type { CanvasPoint } from './types.ts';
 
 /** Side of a column cell in degrees (about 1.1 km in Sechura). */
 export const CELL_DEGREES = 0.01;
-/** Column height per record on screen: a count drawn as height, not a distance. */
-export const PIXELS_PER_RECORD = 8;
-
-/**
- * Metres that one record rises at this zoom and latitude, so columns keep a readable height
- * whether the view shows the province or one concession.
- */
-export const metresPerRecord = (zoom: number, latitude: number) =>
-  (PIXELS_PER_RECORD * 156_543.03 * Math.cos((latitude * Math.PI) / 180)) / 2 ** zoom;
+/** Column height per record, in metres above the ground: a count drawn as height. */
+export const METRES_PER_RECORD = 400;
+/** Column radius in metres, well inside a cell. */
+export const COLUMN_RADIUS = 380;
 
 /** Records of one cell of the 3D view, drawn as a column whose height is their count. */
 export type CanvasColumn = {

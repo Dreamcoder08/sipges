@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { columnsOf, metresPerRecord } from './columns.ts';
+import { columnsOf } from './columns.ts';
 import type { CanvasPoint } from './types.ts';
 
 const point = (
@@ -49,13 +49,5 @@ describe('columnsOf', () => {
         point('b', [-80.8202, -5.5602], 'observado', blue),
       ])[0]?.color,
     ).toEqual(red);
-  });
-});
-
-describe('metresPerRecord', () => {
-  it('keeps the on-screen height of a record as the map zooms', () => {
-    expect(metresPerRecord(10, 0)).toBeCloseTo(1222.99, 1);
-    expect(metresPerRecord(11, 0)).toBeCloseTo(metresPerRecord(10, 0) / 2, 6);
-    expect(metresPerRecord(10, 60)).toBeCloseTo(metresPerRecord(10, 0) / 2, 6);
   });
 });

@@ -1,9 +1,14 @@
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { ColumnLayer, GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
-import { type LngLatBoundsLike, Map as MapLibreMap, setWorkerUrl } from 'maplibre-gl';
+import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
+import {
+  type LngLatBoundsLike,
+  Map as MapLibreMap,
+  type StyleSpecification,
+  setWorkerUrl,
+} from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { useResolvedTheme } from '../../../shared/lib/theme.ts';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import type { IconName } from '../../../shared/ui/icons.ts';
@@ -12,15 +17,73 @@ import type { Extent } from '../BaseMap.tsx';
 // chunk would move zod out of the entry chunk, ahead of its jitless (CSP) configuration.
 import { legendOf } from '../legend.ts';
 import { SECHURA_DISTRICTS } from '../sechura-base.ts';
-import type { Basemap } from '../TileLayer.tsx';
+import { BASEMAPS, type Basemap } from '../TileLayer.tsx';
 import frame from '../MapFrame.module.css';
-import { type CanvasColumn, columnsOf, metresPerRecord } from './columns.ts';
-import { PAINT, styleFor } from './style.ts';
 import type { CanvasConcession, CanvasPoint, Focus } from './types.ts';
 import styles from './GeoCanvas.module.css';
 
 // The worker is a same-origin module, so the strict CSP needs no blob: workers.
 setWorkerUrl(workerUrl);
+
+/** The same tile services as the SVG map (TileLayer), as MapLibre URL templates. */
+const TEMPLATES: Readonly<Record<Exclude<Basemap, 'ninguno'>, string>> = {
+  satelite: BASEMAPS.satelite.url(0, 0, 0).replace('/0/0/0.', '/{z}/{y}/{x}.'),
+  calles: BASEMAPS.calles.url(0, 0, 0).replace('/0/0/0.', '/{z}/{x}/{y}.'),
+};
+
+type Theme = 'light' | 'dark';
+
+/**
+ * Paint WebGL cannot read from CSS tokens (docs/adr/0019). In the dark theme street tiles are
+ * inverted (brightness min/max swapped, hues turned back) and imagery is dimmed, matching the
+ * SVG renderer's --map-filter-* tokens.
+ */
+const PAINT = {
+  light: {
+    background: '#e9eef3',
+    calles: {},
+    satelite: {},
+    district: [23, 54, 93, 150],
+    selected: [15, 37, 65, 255],
+    halo: [255, 255, 255],
+  },
+  dark: {
+    background: '#0b0d10',
+    calles: {
+      'raster-brightness-min': 0.92,
+      'raster-brightness-max': 0.04,
+      'raster-hue-rotate': 180,
+      'raster-saturation': -0.4,
+      'raster-contrast': -0.1,
+    },
+    satelite: { 'raster-brightness-max': 0.8, 'raster-saturation': -0.1 },
+    district: [201, 212, 223, 150],
+    selected: [255, 255, 255, 255],
+    halo: [0, 0, 0],
+  },
+} as const;
+
+/** Raster basemap only; everything MASCLI draws lives in deck.gl layers above it. */
+export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecification => ({
+  version: 8,
+  sources:
+    basemap === 'ninguno'
+      ? {}
+      : {
+          base: {
+            type: 'raster',
+            tiles: [TEMPLATES[basemap]],
+            tileSize: 256,
+            maxzoom: BASEMAPS[basemap].maxZoom,
+          },
+        },
+  layers: [
+    { id: 'fondo', type: 'background', paint: { 'background-color': PAINT[theme].background } },
+    ...(basemap === 'ninguno'
+      ? []
+      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: PAINT[theme][basemap] }]),
+  ],
+});
 
 const DISTRICTS = {
   type: 'FeatureCollection' as const,
@@ -33,15 +96,13 @@ const DISTRICTS = {
 
 const ALPHA = { observado: 235, estimado: 120, escenario: 0 } as const;
 const RADIUS = { current: 10, normal: 7, dim: 5 } as const;
-/** Camera of the 3D view: tilted enough to read heights, still showing the ground. */
-const TILT = { pitch: 55, bearing: -20 } as const;
 
 /**
  * MapLibre GL JS basemap with a deck.gl overlay (ODD geospatial-timeline T2, ADR 0017): smooth
  * pan and pinch on the GPU, concessions as selectable polygons, records as points styled by
  * dimension and information state. The component owns no data: it draws what it is given and
- * reports clicks and the settled view. In the 3D view (ODD territorial-3d) the map tilts and
- * rotates, and the documented records of each cell rise as a column as tall as their count.
+ * reports clicks and the settled view. «Vista 3D» hands the view to the CesiumJS terrain engine
+ * (ODD territorial-3d), which the page loads in its place.
  */
 const GeoCanvas = ({
   basemap,
@@ -53,7 +114,6 @@ const GeoCanvas = ({
   selectedPoint,
   selectedConcession,
   focus,
-  view3d = false,
   onView3d,
   onSelectPoint,
   onSelectConcession,
@@ -69,9 +129,8 @@ const GeoCanvas = ({
   selectedPoint: string;
   selectedConcession: string;
   focus: Focus | null;
-  /** Tilted view with record columns; rotation and tilt gestures only work here. */
-  view3d?: boolean;
-  onView3d?: (on: boolean) => void;
+  /** Switches to the 3D terrain view; the button only shows when this is given. */
+  onView3d?: () => void;
   onSelectPoint: (id: string) => void;
   onSelectConcession: (code: string) => void;
   onView: (extent: Extent) => void;
@@ -92,7 +151,6 @@ const GeoCanvas = ({
   const theme = useResolvedTheme();
   const paint = PAINT[theme];
   const initial = useRef({ home, basemap, theme });
-  const [scale, setScale] = useState(() => metresPerRecord(10, -5.5));
 
   useEffect(() => {
     const node = container.current;
@@ -107,8 +165,8 @@ const GeoCanvas = ({
         attributionControl: false,
         maxZoom: 18,
         dragRotate: false,
+        pitchWithRotate: false,
         touchPitch: false,
-        maxPitch: 70,
         renderWorldCopies: false,
       });
     } catch {
@@ -127,9 +185,6 @@ const GeoCanvas = ({
     instance.on('error', () => undefined);
     instance.on('load', report);
     instance.on('moveend', report);
-    const zoomed = () => setScale(metresPerRecord(instance.getZoom(), instance.getCenter().lat));
-    instance.on('load', zoomed);
-    instance.on('zoomend', zoomed);
     // A lost GPU context leaves a blank canvas; the SVG map takes over instead.
     instance.on('webglcontextlost', () => handlers.current.onFailure());
     const deck = new MapboxOverlay({ interleaved: false, layers: [] });
@@ -143,24 +198,9 @@ const GeoCanvas = ({
     };
   }, [hint]);
 
-  const tilted = useRef(false);
   useEffect(() => {
-    const current = map.current;
-    if (!current || tilted.current === view3d) return;
-    tilted.current = view3d;
-    const gestures = view3d ? 'enable' : 'disable';
-    current.dragRotate[gestures]();
-    current.touchPitch[gestures]();
-    current.touchZoomRotate[view3d ? 'enableRotation' : 'disableRotation']();
-    current.keyboard[view3d ? 'enableRotation' : 'disableRotation']();
-    current.easeTo({ ...(view3d ? TILT : { pitch: 0, bearing: 0 }), duration: 700 });
-  }, [view3d]);
-
-  const columns = useMemo(() => (view3d ? columnsOf(points) : []), [points, view3d]);
-
-  useEffect(() => {
-    map.current?.setStyle(styleFor(basemap, theme, view3d));
-  }, [basemap, theme, view3d]);
+    map.current?.setStyle(styleFor(basemap, theme));
+  }, [basemap, theme]);
 
   const homeKey = home.join(',');
   useEffect(() => {
@@ -227,27 +267,8 @@ const GeoCanvas = ({
             if (object) handlers.current.onSelectConcession(object.properties.code);
           },
         }),
-        new ColumnLayer<CanvasColumn>({
-          id: 'columnas',
-          data: columns,
-          visible: view3d,
-          extruded: true,
-          diskResolution: 16,
-          radius: 9,
-          radiusUnits: 'pixels',
-          getPosition: (c) => [c.at[0], c.at[1]],
-          getElevation: (c) => c.count,
-          elevationScale: scale,
-          // Solid when every record of the cell has explicit coordinates, lighter otherwise.
-          getFillColor: (c) => [
-            ...c.color,
-            c.observed === c.count ? ALPHA.observado : ALPHA.estimado,
-          ],
-        }),
         new ScatterplotLayer<CanvasPoint>({
           id: 'registros',
-          // Drawn over the columns, so every record stays visible and selectable in 3D.
-          parameters: { depthCompare: 'always' },
           data: points,
           pickable: true,
           stroked: true,
@@ -275,24 +296,13 @@ const GeoCanvas = ({
         }),
       ],
     });
-  }, [
-    points,
-    columns,
-    scale,
-    view3d,
-    concessions,
-    selectedPoint,
-    selectedConcession,
-    paint,
-    theme,
-  ]);
+  }, [points, concessions, selectedPoint, selectedConcession, paint, theme]);
 
-  type Action = 'in' | 'out' | 'home' | 'tilt' | 'north';
+  type Action = 'in' | 'out' | 'home' | '3d';
   const act = (action: Action) => {
     const current = map.current;
     if (!current) return;
-    if (action === 'tilt') onView3d?.(!view3d);
-    else if (action === 'north') current.easeTo({ bearing: 0, duration: 500 });
+    if (action === '3d') onView3d?.();
     else if (action === 'home') current.fitBounds(bounds(home), { padding: 24, duration: 600 });
     else current.zoomTo(current.getZoom() + (action === 'in' ? 1 : -1));
   };
@@ -301,10 +311,7 @@ const GeoCanvas = ({
     { label: 'Alejar', icon: 'minus', action: 'out' },
     { label: homeLabel, icon: 'home', action: 'home' },
   ];
-  if (onView3d) {
-    controls.push({ label: 'Vista 3D', icon: 'cube', action: 'tilt' });
-    if (view3d) controls.push({ label: 'Norte arriba', icon: 'compass', action: 'north' });
-  }
+  if (onView3d) controls.push({ label: 'Vista 3D', icon: 'cube', action: '3d' });
   return (
     <div className={frame.wrap}>
       <div className={`${frame.frame} ${styles.frame}`}>
@@ -314,7 +321,6 @@ const GeoCanvas = ({
           role="region"
           aria-label={label}
           data-map-engine="maplibre"
-          data-map-view={view3d ? '3d' : '2d'}
         />
         <div className={frame.controls}>
           {controls.map((c) => (
@@ -324,7 +330,7 @@ const GeoCanvas = ({
               className={frame.control}
               aria-label={c.label}
               title={c.label}
-              aria-pressed={c.action === 'tilt' ? view3d : undefined}
+              aria-pressed={c.action === '3d' ? false : undefined}
               onClick={() => act(c.action)}
             >
               <Icon name={c.icon} />
@@ -336,9 +342,6 @@ const GeoCanvas = ({
         Arrastre o use dos dedos para mover el mapa y pellizque para acercar. Con el mapa
         seleccionado: flechas para mover y + / − para acercar. Los registros también se eligen desde
         la evolución temporal.
-        {view3d
-          ? ' En 3D: arrastre con el botón derecho o con dos dedos para girar e inclinar; Mayús + flechas con el mapa seleccionado.'
-          : ''}
       </p>
     </div>
   );
