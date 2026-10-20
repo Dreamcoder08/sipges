@@ -29,11 +29,18 @@ here is behind the per-project MASCLI 4.0 switch (ADR 0020); with it off, 3.0 is
    row in `pnpm verify`, so changing a classifier rule, an IRSA weight or a threshold starts by
    writing the row it must satisfy. It only checks existing behaviour; it changes none, so it
    needs no switch.
+4. **Lessons stay with the territory.** What the team learns about a territory, topic or actor is
+   a records module, `Lecciones_Territoriales` (prefix `LEC`, screen Lecciones with MASCLI 4.0 on):
+   what happened, why, what was learned and the record it cites. A situation shows the lessons
+   whose territory, topic or actor matches its key, newest first. Lessons never change a score.
+   They live in PostgreSQL under the project's row-level security, never in Engram, which is
+   repository memory and must not hold real data. No migration: records modules share one table.
 
 ## Consequences
 
 - A single person can no longer trigger the response to the most serious alerts alone.
 - Management sees what is stuck and on whom without asking for a weekly status report.
 - Specialists can see and challenge what the rules promise without reading code.
+- The next person working a conflict sees what was learned last time before acting.
 - The rule reads the first validation and then writes; two people confirming at the same
   instant may both pass the check, which still leaves two distinct validators.

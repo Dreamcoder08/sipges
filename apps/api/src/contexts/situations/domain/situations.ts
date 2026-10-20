@@ -1,5 +1,12 @@
 import { LEVELS, type Level, type ProjectSettings } from './settings.ts';
-import { type Signal, type SourceRecord, fold, toSignal } from './signals.ts';
+import {
+  type Signal,
+  type SourceRecord,
+  TERRITORY_FIELDS,
+  first,
+  fold,
+  toSignal,
+} from './signals.ts';
 
 /**
  * Situations: records that share a topic, an actor or a recorded territory within the
@@ -34,6 +41,43 @@ export type Situation = {
   readonly territories: readonly string[];
   readonly topics: readonly string[];
   readonly lastDate: string;
+  /** Lessons the team recorded earlier about the same territory, topic or actor. */
+  readonly lessons?: readonly Lesson[];
+};
+
+export type Lesson = { readonly id: string; readonly date: string; readonly learned: string };
+
+/** Stored module of territorial lessons (docs/adr/0024 §4). */
+export const LESSONS_MODULE = 'Lecciones_Territoriales';
+
+/**
+ * Past lessons that share the situation's key. Lessons inform the person; they never weigh in
+ * the score or the colour, and a lesson without what was learned is not shown.
+ */
+export const attachLessons = (
+  situations: readonly Situation[],
+  lessons: readonly SourceRecord[],
+): Situation[] => {
+  const keyed = lessons.flatMap((r) => {
+    const learned = first(r.payload, ['Aprendido']);
+    if (!learned) return [];
+    const lesson: Lesson = { id: r.id, date: first(r.payload, ['Fecha']), learned };
+    const keys = [
+      ['territorio', first(r.payload, TERRITORY_FIELDS)],
+      ['tema', first(r.payload, ['Tema'])],
+      ['actor', first(r.payload, ['Actor'])],
+    ]
+      .filter(([, label]) => label)
+      .map(([kind, label]) => `${kind}:${fold(label ?? '')}`);
+    return [{ lesson, keys }];
+  });
+  return situations.map((s) => ({
+    ...s,
+    lessons: keyed
+      .filter((k) => k.keys.includes(s.key))
+      .map((k) => k.lesson)
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+  }));
 };
 
 const KIND_LABEL: Readonly<Record<KeyKind, string>> = {

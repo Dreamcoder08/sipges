@@ -36,6 +36,7 @@ export const SCREENS = [
   { path: '/alertas', label: 'Alertas', title: 'Centro de alertas', ready: true },
   { path: '/situaciones', label: 'Situaciones', title: 'Situaciones relacionadas', ready: true },
   { path: '/buzon', label: 'Buzón', title: 'Buzón de quejas y sugerencias', ready: true },
+  { path: '/lecciones', label: 'Lecciones', title: 'Lecciones territoriales', ready: true },
   { path: '/mapa', label: 'Mapa territorial', title: 'Mapa territorial MASCLI', ready: true },
   {
     path: '/ubicacion',
@@ -106,6 +107,7 @@ export const NAV_GROUPS = [
       '/alertas',
       '/situaciones',
       '/buzon',
+      '/lecciones',
       '/mapa',
       '/ubicacion',
     ],
@@ -141,6 +143,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/alertas': 'bell',
   '/situaciones': 'layers',
   '/buzon': 'message',
+  '/lecciones': 'layers',
   '/mapa': 'map',
   '/ubicacion': 'pin',
   '/cronologia': 'clock',
@@ -176,7 +179,7 @@ export const MORE_GROUPS = [
   },
   {
     label: 'Gestionar',
-    paths: ['/gerencia', '/situaciones', '/buzon', '/cronologia', '/ubicacion'],
+    paths: ['/gerencia', '/situaciones', '/buzon', '/lecciones', '/cronologia', '/ubicacion'],
   },
   {
     label: 'Analizar',
@@ -189,7 +192,11 @@ export const MORE_GROUPS = [
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
 
 /** Screens of MASCLI 4.0, hidden while the project keeps 3.0 (docs/adr/0020). */
-export const VERSION4_PATHS: ReadonlySet<string> = new Set<ScreenPath>(['/situaciones', '/buzon']);
+export const VERSION4_PATHS: ReadonlySet<string> = new Set<ScreenPath>([
+  '/situaciones',
+  '/buzon',
+  '/lecciones',
+]);
 
 export const labelFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.label ?? path;
