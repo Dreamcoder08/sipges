@@ -26,6 +26,7 @@ const UPDATE_ERRORS = {
   note_required: [422, 'Justifique el cierre o cancelación'],
   evidence_required: [422, 'Adjunte la evidencia que respalda el cierre de la acción'],
   evidence_missing: [404, 'Evidencia no encontrada en el proyecto'],
+  blocker: [422, 'Bloqueo no válido'],
 } as const satisfies Record<UpdateError['kind'], readonly [number, string]>;
 
 /** Field limits of app.py `PreventiveActionIn` / `ActionUpdateIn`. */
@@ -45,6 +46,9 @@ const UpdateBody = z.object({
   evidence_url: z.string().max(2000).default(''),
   /** MASCLI 4.0 decision receipt; ignored while the project keeps 3.0. */
   evidence_attachment_id: z.string().max(120).default(''),
+  /** MASCLI 4.0 situation room: who the plan waits on ('' clears); ignored on 3.0. */
+  blocked_by: z.string().max(40).optional(),
+  blocked_reason: z.string().max(500).optional(),
 });
 
 const actionJson = (a: PreventiveAction) => ({
@@ -59,6 +63,9 @@ const actionJson = (a: PreventiveAction) => ({
   progress: a.progress,
   created_at: isoSeconds(a.createdAt),
   updated_at: isoSeconds(a.updatedAt),
+  blocked: a.block
+    ? { by: a.block.by, reason: a.block.reason, since: isoSeconds(a.block.since) }
+    : null,
   history: a.history.map((h) => ({
     id: h.id,
     action_id: h.actionId,
@@ -114,6 +121,8 @@ export const preventionRoutes = (prevention: PreventionService) =>
           note: body.value.note,
           evidenceUrl: body.value.evidence_url,
           evidenceAttachmentId: body.value.evidence_attachment_id,
+          blockedBy: body.value.blocked_by,
+          blockedReason: body.value.blocked_reason,
         },
         c.get('identity').username,
       );
@@ -122,6 +131,27 @@ export const preventionRoutes = (prevention: PreventionService) =>
         return c.json({ detail }, status);
       }
       return c.json({ action: actionJson(result.value), irsa_modified: false });
+    })
+
+    .get('/system/prevention/situation-room', async (c) => {
+      const room = await prevention.situationRoom(c.get('scope'));
+      const item = (a: PreventiveAction) => ({
+        id: a.id,
+        title: a.title,
+        responsible: a.responsible,
+        due_date: a.dueDate,
+        status: a.status,
+        progress: a.progress,
+        blocked_by: a.block?.by ?? null,
+        blocked_reason: a.block?.reason ?? null,
+        blocked_since: a.block ? isoSeconds(a.block.since) : null,
+      });
+      return c.json({
+        blocked: room.blocked.map(item),
+        overdue: room.overdue.map(item),
+        moving: room.moving,
+        blocked_by_count: room.blockedByCount,
+      });
     })
 
     .get('/system/prevention/summary', async (c) =>

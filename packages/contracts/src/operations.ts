@@ -115,6 +115,11 @@ export const PreventiveAction = z.object({
   progress: z.number(),
   created_at: z.string(),
   updated_at: z.string(),
+  /** MASCLI 4.0 situation room: who the plan waits on (ADR 0024 §2). */
+  blocked: z
+    .object({ by: z.string(), reason: z.string(), since: z.string() })
+    .nullable()
+    .optional(),
   history: z.array(
     z.object({
       id: z.string(),
@@ -138,6 +143,24 @@ export const PreventiveAction = z.object({
   ),
 });
 export const PreventiveActions = z.array(PreventiveAction);
+const RoomItem = z.object({
+  id: z.string(),
+  title: z.string(),
+  responsible: z.string(),
+  due_date: z.string(),
+  status: ActionStatus,
+  progress: z.number(),
+  blocked_by: z.string().nullable(),
+  blocked_reason: z.string().nullable(),
+  blocked_since: z.string().nullable(),
+});
+export const SituationRoom = z.object({
+  blocked: z.array(RoomItem),
+  overdue: z.array(RoomItem),
+  moving: z.number(),
+  blocked_by_count: z.record(z.string(), z.number()),
+});
+export const BLOCKERS = ['Comunidad', 'Autoridad', 'Área interna', 'Contratista', 'Otro'] as const;
 export const ActionSaved = z.object({ action: PreventiveAction, irsa_modified: z.literal(false) });
 export const PreventionSummary = z.object({
   project_id: z.string(),

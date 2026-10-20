@@ -4,6 +4,7 @@ import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import type {
   ActionStatus,
   ActionStore,
+  Blocker,
   DecisionReceipt,
   PreventiveAction,
 } from '../application/index.ts';
@@ -20,6 +21,9 @@ type ActionRow = {
   progress: number;
   created_at: Date | string;
   updated_at: Date | string;
+  blocked_by: Blocker | null;
+  blocked_reason: string | null;
+  blocked_since: Date | string | null;
 };
 
 type LogRow = {
@@ -37,7 +41,7 @@ type LogRow = {
 };
 
 const ACTION_COLUMNS = `id, project_id, alert_id, title, responsible, due_date, description, status,
-  progress, created_at, updated_at`;
+  progress, created_at, updated_at, blocked_by, blocked_reason, blocked_since`;
 
 /** Audit module name used by app.py for action plans. */
 const AUDIT_MODULE = 'PrevencionTerritorial';
@@ -63,6 +67,14 @@ const withHistory = async (tx: SqlClient, rows: ActionRow[]): Promise<Preventive
     progress: Number(row.progress),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
+    block:
+      row.blocked_by && row.blocked_since
+        ? {
+            by: row.blocked_by,
+            reason: row.blocked_reason ?? '',
+            since: new Date(row.blocked_since),
+          }
+        : null,
     history: logs
       .filter((log) => log.action_id === row.id)
       .map((log) => ({
@@ -199,6 +211,16 @@ export const createSqlActionStore = (sql: SqlClient): ActionStore => ({
          RETURNING ${ACTION_COLUMNS}`,
         [id, change.status, change.progress, change.createdAt],
       );
+      if (change.block !== undefined) {
+        // The waiting time keeps counting while the plan waits on the same party.
+        await tx.query(
+          `UPDATE preventive_actions SET blocked_by = $2, blocked_reason = $3,
+             blocked_since = CASE WHEN blocked_by IS NOT DISTINCT FROM $2 AND $2 IS NOT NULL
+               THEN blocked_since ELSE $4 END
+           WHERE id = $1`,
+          [id, change.block?.by ?? null, change.block?.reason ?? null, change.block?.since ?? null],
+        );
+      }
       await insertLog(tx, {
         id: change.id,
         actionId: id,
@@ -218,7 +240,14 @@ export const createSqlActionStore = (sql: SqlClient): ActionStore => ({
         detail: `${change.status}: ${Array.from(change.note).slice(0, 200).join('')}${receipt}`,
         at: change.createdAt,
       });
-      const [action] = await withHistory(tx, rows);
+      const fresh =
+        change.block === undefined
+          ? rows
+          : await tx.query<ActionRow>(
+              `SELECT ${ACTION_COLUMNS} FROM preventive_actions WHERE id = $1`,
+              [id],
+            );
+      const [action] = await withHistory(tx, fresh);
       if (!action) throw new Error('Action update returned no row');
       return { ok: true as const, action };
     }),

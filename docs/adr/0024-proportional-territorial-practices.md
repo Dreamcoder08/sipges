@@ -18,9 +18,15 @@ here is behind the per-project MASCLI 4.0 switch (ADR 0020); with it off, 3.0 is
    status; the same person cannot confirm it (409). Medium and low alerts, discarding, and
    moves between actionable states stay with one person. Preventive plans already require an
    actionable alert, so a high-priority plan now always follows two validations.
+2. **A situation room instead of status meetings.** A preventive action can say who it waits
+   on (`Comunidad`, `Autoridad`, `Área interna`, `Contratista`, `Otro`) and why (migration
+   0029). The waiting time keeps counting while it waits on the same party; closing a plan
+   clears it. `GET /system/prevention/situation-room` lists blocked plans by party, overdue
+   ones and how many move normally; the Centro gerencial shows it with MASCLI 4.0 on.
 
 ## Consequences
 
 - A single person can no longer trigger the response to the most serious alerts alone.
+- Management sees what is stuck and on whom without asking for a weekly status report.
 - The rule reads the first validation and then writes; two people confirming at the same
   instant may both pass the check, which still leaves two distinct validators.

@@ -1,5 +1,10 @@
 import type { Scope } from '../../tenancy/application/index.ts';
-import type { ActionLogEntry, DecisionReceipt, PreventiveAction } from '../domain/index.ts';
+import type {
+  ActionBlock,
+  ActionLogEntry,
+  DecisionReceipt,
+  PreventiveAction,
+} from '../domain/index.ts';
 
 export type Clock = { now(): Date };
 export type RandomHex = (length: number) => string;
@@ -33,6 +38,8 @@ export type ActionStore = {
     change: Omit<ActionLogEntry, 'actionId' | 'evidenceUrl' | 'decidedBy'> & {
       evidenceUrl: string;
       decidedBy: string;
+      /** null clears the blocker; undefined leaves it unchanged. */
+      block?: ActionBlock | null | undefined;
     },
   ): Promise<{ ok: true; action: PreventiveAction } | { ok: false; error: E } | null>;
 };

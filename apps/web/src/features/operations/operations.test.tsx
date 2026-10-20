@@ -517,3 +517,54 @@ it('MASCLI 4.0 shows that a high-priority alert waits for a second person', asyn
     await screen.findByText('Primera validación registrada; otra persona debe confirmarla.'),
   ).toBeVisible();
 });
+it('MASCLI 4.0 situation room shows who each plan waits on and records a blocker', async () => {
+  installManagement();
+  let updated: unknown;
+  server.use(
+    http.get('*/system/uploads', () => HttpResponse.json([])),
+    http.get('*/system/prevention/situation-room', () =>
+      HttpResponse.json({
+        blocked: [
+          {
+            id: 'action-9',
+            title: 'Mesa técnica sintética',
+            responsible: 'Equipo social',
+            due_date: '2026-12-01',
+            status: 'En ejecución',
+            progress: 10,
+            blocked_by: 'Autoridad',
+            blocked_reason: 'Espera de permiso municipal',
+            blocked_since: '2026-10-19T12:00:00Z',
+          },
+        ],
+        overdue: [],
+        moving: 3,
+        blocked_by_count: { Autoridad: 1 },
+      }),
+    ),
+    http.patch('*/system/prevention/actions/action-1', async ({ request }) => {
+      updated = await request.json();
+      return HttpResponse.json({ action: actionFixture, irsa_modified: false });
+    }),
+  );
+  mount(
+    <ProjectSettingsProvider value={version4Settings}>
+      <ManagementPage {...context} role="coordinador" />
+    </ProjectSettingsProvider>,
+  );
+  expect(await screen.findByText('Sala de situación')).toBeVisible();
+  expect(
+    await screen.findByText(
+      'Mesa técnica sintética · espera a Autoridad: Espera de permiso municipal',
+    ),
+  ).toBeVisible();
+  expect(screen.getByText('En curso sin bloqueos: 3')).toBeVisible();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'Ver plan action-1' }));
+  await user.selectOptions(screen.getByLabelText('Estado del plan'), 'En ejecución');
+  await user.selectOptions(screen.getByLabelText('Bloqueado por'), 'Comunidad');
+  await user.type(screen.getByLabelText('Motivo del bloqueo'), 'Asamblea pendiente');
+  await user.click(screen.getByRole('button', { name: 'Guardar avance' }));
+  await screen.findByText('Avance registrado; no modifica el IRSA.');
+  expect(updated).toMatchObject({ blocked_by: 'Comunidad', blocked_reason: 'Asamblea pendiente' });
+});
