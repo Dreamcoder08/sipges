@@ -19,12 +19,12 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     locale: 'es-PE',
     timezoneId: 'America/Lima',
-    // Tests never download public OSM tiles or the GEOCATMIN cadastre. Resolving the hosts to
+    // Tests never download public OSM tiles, elevation tiles or the GEOCATMIN cadastre. Resolving the hosts to
     // nothing keeps request interception off, which would report the SPA's manual 303 fetches
     // as aborted.
     launchOptions: {
       args: [
-        '--host-resolver-rules=MAP tile.openstreetmap.org ~NOTFOUND, MAP tiles.maps.eox.at ~NOTFOUND, MAP geocatmin.ingemmet.gob.pe ~NOTFOUND',
+        '--host-resolver-rules=MAP tile.openstreetmap.org ~NOTFOUND, MAP tiles.maps.eox.at ~NOTFOUND, MAP geocatmin.ingemmet.gob.pe ~NOTFOUND, MAP s3.amazonaws.com ~NOTFOUND',
       ],
     },
   },

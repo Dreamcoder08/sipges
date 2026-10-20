@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   ASSET_CACHE,
+  CESIUM_CACHE,
   SPA_CSP,
   type WebAssets,
   fileWebAssets,
@@ -47,6 +48,35 @@ describe('single-page app delivery', () => {
     for (const path of ['/assets/missing.js', '/assets/index.exe', '/assets/..%2Fsecret.js']) {
       expect((await t.request(path)).status, path).toBe(404);
     }
+  });
+
+  it('serves the CesiumJS workers and assets under the SPA policy, refusing anything else', async () => {
+    const read: string[] = [];
+    const web: WebAssets = {
+      ...memoryWeb,
+      cesium: async (path) => {
+        read.push(path);
+        return path === 'Workers/createVerticesFromHeightmap.js'
+          ? new TextEncoder().encode('w()')
+          : null;
+      },
+    };
+    const t = await createTestApp({}, { web });
+    const worker = await t.request('/cesium/Workers/createVerticesFromHeightmap.js');
+    expect(worker.status).toBe(200);
+    expect(worker.headers.get('content-type')).toBe('text/javascript; charset=utf-8');
+    expect(worker.headers.get('cache-control')).toBe(CESIUM_CACHE);
+    // A module worker runs under its own response's CSP.
+    expect(worker.headers.get('content-security-policy')).toBe(SPA_CSP);
+    expect(SPA_CSP).toContain('https://s3.amazonaws.com');
+    for (const path of [
+      '/cesium/Workers/missing.js',
+      '/cesium/Source/Core/x.js',
+      '/cesium/Assets/%2e%2e/secret.json',
+      '/cesium/Assets/x.exe',
+    ])
+      expect((await t.request(path)).status, path).toBe(404);
+    expect(read).toEqual(['Workers/createVerticesFromHeightmap.js', 'Workers/missing.js']);
   });
 
   it('leaves API paths, JSON requests and writes to the API', async () => {
@@ -112,6 +142,12 @@ describe('single-page app delivery', () => {
       'self.x=1',
     );
     expect(await web.rootFile?.('index.html')).toBeNull();
+    await mkdir(join(dir, 'cesium', 'Assets'), { recursive: true });
+    await writeFile(join(dir, 'cesium', 'Assets', 'heights.json'), '{}');
+    expect(
+      new TextDecoder().decode((await web.cesium?.('Assets/heights.json')) ?? new Uint8Array()),
+    ).toBe('{}');
+    expect(await web.cesium?.('../index.html')).toBeNull();
     expect(await fileWebAssets(join(dir, 'missing')).index()).toBeNull();
   });
 });

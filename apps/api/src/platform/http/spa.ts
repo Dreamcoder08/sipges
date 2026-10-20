@@ -8,6 +8,8 @@ export type WebAssets = {
   asset(name: string): Promise<Uint8Array | null>;
   /** One of ROOT_FILES from the build root (Vite's `public/` directory). */
   rootFile?(name: string): Promise<Uint8Array | null>;
+  /** A CesiumJS worker or asset under `cesium/` (ADR 0026); `path` is already validated. */
+  cesium?(path: string): Promise<Uint8Array | null>;
 };
 
 /** Installable-app files that must live at the site root (docs/adr/0014). */
@@ -21,7 +23,8 @@ const ROOT_FILES: Readonly<Record<string, string>> = {
  * Strict policy for the SPA (ADR 0004, ADR 0006): bundled scripts and styles only, no inline
  * code, same-origin API calls. React sets styles through the CSSOM, which `style-src` allows.
  * External origins are the basemap tile hosts and INGEMMET's cadastre images. MapLibre fetches
- * raster tiles (connect-src) and may decode them through blob: images (ADR 0017).
+ * raster tiles (connect-src) and may decode them through blob: images (ADR 0017). The 3D view
+ * reads open elevation tiles from AWS (connect-src) and runs CesiumJS workers from /cesium/.
  */
 export const SPA_CSP = [
   "default-src 'self'",
@@ -29,7 +32,7 @@ export const SPA_CSP = [
   "style-src 'self'",
   "img-src 'self' data: blob: https://tile.openstreetmap.org https://tiles.maps.eox.at https://geocatmin.ingemmet.gob.pe",
   "font-src 'self'",
-  "connect-src 'self' https://tile.openstreetmap.org https://tiles.maps.eox.at",
+  "connect-src 'self' https://tile.openstreetmap.org https://tiles.maps.eox.at https://s3.amazonaws.com",
   "object-src 'none'",
   "base-uri 'none'",
   "form-action 'self'",
@@ -53,6 +56,16 @@ const ASSET_TYPES: Readonly<Record<string, string>> = {
 export const ASSET_CACHE = 'public, max-age=31536000, s-maxage=31536000, immutable';
 
 const ASSET_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+/** CesiumJS files copied by the web build: workers, third-party code and engine assets. */
+const CESIUM_PATH = /^(Workers|ThirdParty|Assets)(\/[A-Za-z0-9_][A-Za-z0-9._-]{0,127}){1,4}$/;
+const CESIUM_TYPES: Readonly<Record<string, string>> = {
+  ...ASSET_TYPES,
+  '.jpg': 'image/jpeg',
+  '.xml': 'application/xml',
+};
+/** Cesium file names carry no hash, so they are kept for a day rather than a year. */
+export const CESIUM_CACHE = 'public, max-age=86400';
 /** Paths the API owns; everything else a browser navigates to is a client route. */
 const API_PREFIXES = ['/api/', '/system/', '/auth/'];
 const API_PATHS = new Set(['/health', '/select-project', '/logout']);
@@ -89,6 +102,18 @@ export const spaMiddleware =
         'Cache-Control': ASSET_CACHE,
       });
     }
+    if (path.startsWith('/cesium/')) {
+      const file = path.slice('/cesium/'.length);
+      const type = CESIUM_TYPES[extname(file)];
+      const bytes = type && CESIUM_PATH.test(file) && web.cesium ? await web.cesium(file) : null;
+      if (!type || !bytes) return c.json({ detail: 'Not Found' }, 404);
+      return c.body(new Uint8Array(bytes), 200, {
+        'Content-Type': type,
+        'Cache-Control': CESIUM_CACHE,
+        // Workers run under their own response's policy: the SPA one, not the API's.
+        'Content-Security-Policy': SPA_CSP,
+      });
+    }
     if (!isClientRoute(path) || !(c.req.header('accept') ?? '').includes('text/html')) {
       return next();
     }
@@ -112,6 +137,14 @@ export const fileWebAssets = (dir: string): WebAssets => ({
     if (!Object.hasOwn(ROOT_FILES, `/${name}`)) return null;
     try {
       return await readFile(join(dir, name));
+    } catch {
+      return null;
+    }
+  },
+  async cesium(path) {
+    if (!CESIUM_PATH.test(path)) return null;
+    try {
+      return await readFile(join(dir, 'cesium', path));
     } catch {
       return null;
     }

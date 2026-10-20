@@ -29,6 +29,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0023](0023-decision-receipts.md) | MASCLI 4.0: decision receipts on preventive actions | Accepted |
 | [0024](0024-proportional-territorial-practices.md) | MASCLI 4.0: proportional practices for territorial risk work | Accepted |
 | [0025](0025-postgis-areas-of-influence.md) | Areas of influence around concessions with PostGIS and a geodesic fallback | Accepted |
+| [0026](0026-territorial-3d-view.md) | 3D terrain with CesiumJS and open elevation, under the strict CSP | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

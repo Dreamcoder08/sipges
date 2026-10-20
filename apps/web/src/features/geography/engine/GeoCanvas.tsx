@@ -11,6 +11,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { useResolvedTheme } from '../../../shared/lib/theme.ts';
 import { Icon } from '../../../shared/ui/Icon.tsx';
+import type { IconName } from '../../../shared/ui/icons.ts';
 import type { Extent } from '../BaseMap.tsx';
 // Not from concessions.ts: that module pulls in the contracts, and sharing them with this
 // chunk would move zod out of the entry chunk, ahead of its jitless (CSP) configuration.
@@ -100,7 +101,8 @@ const RADIUS = { current: 10, normal: 7, dim: 5 } as const;
  * MapLibre GL JS basemap with a deck.gl overlay (ODD geospatial-timeline T2, ADR 0017): smooth
  * pan and pinch on the GPU, concessions as selectable polygons, records as points styled by
  * dimension and information state. The component owns no data: it draws what it is given and
- * reports clicks and the settled view.
+ * reports clicks and the settled view. «Vista 3D» hands the view to the CesiumJS terrain engine
+ * (ODD territorial-3d), which the page loads in its place.
  */
 const GeoCanvas = ({
   basemap,
@@ -112,6 +114,7 @@ const GeoCanvas = ({
   selectedPoint,
   selectedConcession,
   focus,
+  onView3d,
   onSelectPoint,
   onSelectConcession,
   onView,
@@ -126,6 +129,8 @@ const GeoCanvas = ({
   selectedPoint: string;
   selectedConcession: string;
   focus: Focus | null;
+  /** Switches to the 3D terrain view; the button only shows when this is given. */
+  onView3d?: () => void;
   onSelectPoint: (id: string) => void;
   onSelectConcession: (code: string) => void;
   onView: (extent: Extent) => void;
@@ -293,17 +298,20 @@ const GeoCanvas = ({
     });
   }, [points, concessions, selectedPoint, selectedConcession, paint, theme]);
 
-  const act = (action: 'in' | 'out' | 'home') => {
+  type Action = 'in' | 'out' | 'home' | '3d';
+  const act = (action: Action) => {
     const current = map.current;
     if (!current) return;
-    if (action === 'home') current.fitBounds(bounds(home), { padding: 24, duration: 600 });
+    if (action === '3d') onView3d?.();
+    else if (action === 'home') current.fitBounds(bounds(home), { padding: 24, duration: 600 });
     else current.zoomTo(current.getZoom() + (action === 'in' ? 1 : -1));
   };
-  const controls = [
+  const controls: { label: string; icon: IconName; action: Action }[] = [
     { label: 'Acercar', icon: 'plus', action: 'in' },
     { label: 'Alejar', icon: 'minus', action: 'out' },
     { label: homeLabel, icon: 'home', action: 'home' },
-  ] as const;
+  ];
+  if (onView3d) controls.push({ label: 'Vista 3D', icon: 'cube', action: '3d' });
   return (
     <div className={frame.wrap}>
       <div className={`${frame.frame} ${styles.frame}`}>
@@ -322,6 +330,7 @@ const GeoCanvas = ({
               className={frame.control}
               aria-label={c.label}
               title={c.label}
+              aria-pressed={c.action === '3d' ? false : undefined}
               onClick={() => act(c.action)}
             >
               <Icon name={c.icon} />
