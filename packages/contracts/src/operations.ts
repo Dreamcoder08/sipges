@@ -69,6 +69,8 @@ export const TerritorialAlert = z.object({
   analyst_note: z.string(),
   reviewer_note: z.string().nullable(),
   reviewed_at: z.string().nullable(),
+  /** MASCLI 4.0: first of two validations of a high-priority alert (ADR 0024). */
+  first_validator: z.string().nullable().optional(),
   themes: z.array(z.object({ tema: z.string() })),
   signals: z.array(z.unknown()),
   suggestions: z.array(z.string()),
@@ -97,6 +99,7 @@ export const AlertCreated = z.object({
 export const AlertReviewed = z.object({
   ok: z.literal(true),
   status: AlertState,
+  second_validation_required: z.boolean().optional(),
   irsa_modified: z.literal(false),
   notice: z.string(),
 });
@@ -112,6 +115,11 @@ export const PreventiveAction = z.object({
   progress: z.number(),
   created_at: z.string(),
   updated_at: z.string(),
+  /** MASCLI 4.0 situation room: who the plan waits on (ADR 0024 §2). */
+  blocked: z
+    .object({ by: z.string(), reason: z.string(), since: z.string() })
+    .nullable()
+    .optional(),
   history: z.array(
     z.object({
       id: z.string(),
@@ -121,10 +129,38 @@ export const PreventiveAction = z.object({
       progress: z.number(),
       note: z.string(),
       evidence_url: z.string().nullable(),
+      /** MASCLI 4.0 decision receipt: the evidence file behind the decision (ADR 0023). */
+      receipt: z
+        .object({
+          attachment_id: z.string(),
+          file_name: z.string(),
+          sha256: z.string(),
+          decided_by: z.string(),
+        })
+        .nullable()
+        .optional(),
     }),
   ),
 });
 export const PreventiveActions = z.array(PreventiveAction);
+const RoomItem = z.object({
+  id: z.string(),
+  title: z.string(),
+  responsible: z.string(),
+  due_date: z.string(),
+  status: ActionStatus,
+  progress: z.number(),
+  blocked_by: z.string().nullable(),
+  blocked_reason: z.string().nullable(),
+  blocked_since: z.string().nullable(),
+});
+export const SituationRoom = z.object({
+  blocked: z.array(RoomItem),
+  overdue: z.array(RoomItem),
+  moving: z.number(),
+  blocked_by_count: z.record(z.string(), z.number()),
+});
+export const BLOCKERS = ['Comunidad', 'Autoridad', 'Área interna', 'Contratista', 'Otro'] as const;
 export const ActionSaved = z.object({ action: PreventiveAction, irsa_modified: z.literal(false) });
 export const PreventionSummary = z.object({
   project_id: z.string(),

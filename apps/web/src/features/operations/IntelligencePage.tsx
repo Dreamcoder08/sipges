@@ -408,6 +408,12 @@ export const IntelligencePage = (context: FeatureContext) => {
               Última revisión: {selectedAlert.reviewer_note || 'Sin revisión'} ·{' '}
               {selectedAlert.reviewed_at ?? 'Pendiente'}
             </p>
+            {selectedAlert.first_validator && (
+              <Alert tone="info">
+                Primera validación: {selectedAlert.first_validator}. Una alerta de prioridad Alta
+                necesita que otra persona confirme la validación.
+              </Alert>
+            )}
             <p className={styles.hash}>SHA-256: {selectedAlert.sha256}</p>
             <ul>
               {selectedAlert.suggestions.map((s) => (
@@ -449,7 +455,14 @@ export const IntelligencePage = (context: FeatureContext) => {
               </form>
             )}
             {review.error && <Alert tone="error">{errorDetail(review.error)}</Alert>}
-            {review.data && <Alert tone="success">{review.data.notice}</Alert>}
+            {review.data &&
+              (review.data.second_validation_required ? (
+                <Alert tone="success">
+                  Primera validación registrada; otra persona debe confirmarla.
+                </Alert>
+              ) : (
+                <Alert tone="success">{review.data.notice}</Alert>
+              ))}
           </div>
         )}
       </Card>

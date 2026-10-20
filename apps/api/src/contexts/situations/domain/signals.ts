@@ -126,7 +126,7 @@ export const fold = (value: unknown) =>
 const text = (value: unknown) =>
   typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
 
-const first = (payload: SourceRecord['payload'], keys: readonly string[]) => {
+export const first = (payload: SourceRecord['payload'], keys: readonly string[]) => {
   for (const key of keys) {
     const value = text(payload[key]);
     if (value) return value;

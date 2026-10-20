@@ -444,9 +444,15 @@ const MailboxScreen = (context: FeatureContext) => (
     <RecordsPage key={`${context.scope}/buzon`} module="buzon" {...context} />
   </Version4Only>
 );
+const LessonsScreen = (context: FeatureContext) => (
+  <Version4Only>
+    <RecordsPage key={`${context.scope}/lecciones`} module="lecciones" {...context} />
+  </Version4Only>
+);
 const featurePages = {
   '/situaciones': SituationsScreen,
   '/buzon': MailboxScreen,
+  '/lecciones': LessonsScreen,
   '/calidad': QualityPage,
   '/gerencia': ManagementPage,
   '/inteligencia-redes': IntelligencePage,

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
+import { ProjectSettingsProvider } from '../../shared/lib/project-settings.tsx';
 import { server } from '../../test/server.ts';
 import { IntelligencePage } from './IntelligencePage.tsx';
 import { ManagementPage } from './ManagementPage.tsx';
@@ -374,4 +375,196 @@ it('opens notification deep links with documented territory and source provenanc
   expect(screen.getByLabelText('Estado de revisión')).toHaveValue('Corroborado');
   expect(screen.getByLabelText('Territorio documentado')).toBeVisible();
   window.history.replaceState({}, '', '/');
+});
+
+const version4Settings = {
+  version4: true,
+  level_meanings: {
+    Verde: 'Situación estable / riesgo bajo',
+    Amarillo: 'Requiere atención y seguimiento',
+    Naranja: 'Requiere intervención preventiva',
+    Rojo: 'Situación crítica / atención inmediata',
+  },
+  window_days: 90,
+  half_life_days: 14,
+  thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
+  phase: null,
+  phases: [],
+  recommendations: [],
+  updated_by: 'admin',
+  updated_at: '2026-10-19T12:00:00Z',
+};
+const SHA = '7a0610ad8ab6ac06e61aa4e05ea56a8bf5d85a6b6d419cd756c56d5321a78aee';
+it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its receipt', async () => {
+  installManagement();
+  let updated: unknown;
+  let stored: unknown = actionFixture;
+  server.use(
+    http.get('*/system/prevention/actions', () => HttpResponse.json([stored])),
+    http.get('*/system/uploads', () =>
+      HttpResponse.json([
+        {
+          id: 'ADJ-1',
+          original_name: 'acta-cierre.pdf',
+          content_type: 'application/pdf',
+          size_bytes: 10,
+          sha256: SHA,
+          linked_module: 'eventos',
+          linked_record_id: 'EV-1',
+          document_type: 'Acta',
+          author: '',
+          verification: 'A',
+          notes: '',
+          project_id: 'PRJ-DEMO',
+          project_name: 'Demo',
+          created_at: '2026-10-19T12:00:00Z',
+        },
+      ]),
+    ),
+    http.patch('*/system/prevention/actions/action-1', async ({ request }) => {
+      updated = await request.json();
+      const closing = {
+        id: 'log-2',
+        action_id: 'action-1',
+        created_at: '2026-10-19T12:00:00Z',
+        status: 'Completada',
+        progress: 100,
+        note: 'Acuerdo firmado',
+        evidence_url: null,
+        receipt: {
+          attachment_id: 'ADJ-1',
+          file_name: 'acta-cierre.pdf',
+          sha256: SHA,
+          decided_by: 'coord',
+        },
+      };
+      stored = {
+        ...actionFixture,
+        status: 'Completada',
+        progress: 100,
+        history: [closing, ...actionFixture.history],
+      };
+      return HttpResponse.json({ action: stored, irsa_modified: false });
+    }),
+  );
+  mount(
+    <ProjectSettingsProvider value={version4Settings}>
+      <ManagementPage {...context} role="coordinador" />
+    </ProjectSettingsProvider>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Ver plan action-1' }));
+  await user.selectOptions(screen.getByLabelText('Estado del plan'), 'Completada');
+  await user.type(screen.getByLabelText('Nota de avance'), 'Acuerdo firmado');
+  expect(
+    screen.getByText('Adjunte la evidencia que respalda el cierre de la acción.'),
+  ).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Guardar avance' })).toBeDisabled();
+  await user.selectOptions(await screen.findByLabelText('Evidencia adjunta (recibo)'), 'ADJ-1');
+  await user.click(screen.getByRole('button', { name: 'Guardar avance' }));
+  expect(await screen.findByText('Avance registrado; no modifica el IRSA.')).toBeVisible();
+  expect(updated).toMatchObject({ status: 'Completada', evidence_attachment_id: 'ADJ-1' });
+  expect(
+    await screen.findByText(
+      `Recibo: acta-cierre.pdf · sha256 ${SHA.slice(0, 12)}… · decidió coord`,
+    ),
+  ).toBeVisible();
+});
+it('MASCLI 3.0 keeps the evidence URL form without receipts', async () => {
+  installManagement();
+  mount(<ManagementPage {...context} role="coordinador" />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Ver plan action-1' }));
+  expect(screen.getByLabelText('URL de evidencia')).toBeVisible();
+  expect(screen.queryByLabelText('Evidencia adjunta (recibo)')).toBeNull();
+});
+it('MASCLI 4.0 shows that a high-priority alert waits for a second person', async () => {
+  server.use(
+    http.get('*/system/intelligence/territorial-alerts', () =>
+      HttpResponse.json([
+        { ...alertFixture('alta-1', 'Pendiente de verificación'), first_validator: 'ana' },
+      ]),
+    ),
+    http.get('*/system/intelligence/territorial-summary', () =>
+      HttpResponse.json({
+        version: '2.6',
+        project_id: 'PRJ-DEMO',
+        total: 1,
+        by_status: { 'Pendiente de verificación': 1 },
+        by_priority: { Alta: 1 },
+        themes: [],
+        irsa_integration: 'Sin modificación automática',
+        caution: 'Revisión humana',
+      }),
+    ),
+    http.patch('*/system/intelligence/territorial-alerts/alta-1', () =>
+      HttpResponse.json({
+        ok: true,
+        status: 'Pendiente de verificación',
+        second_validation_required: true,
+        irsa_modified: false,
+        notice: 'La validación NO cambia el IRSA.',
+      }),
+    ),
+  );
+  mount(<IntelligencePage {...context} role="analista" />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: 'Ver alerta alta-1' }));
+  expect(screen.getByText(/Primera validación: ana\./)).toBeVisible();
+  await user.selectOptions(screen.getByLabelText('Estado de revisión'), 'Corroborado');
+  await user.click(screen.getByRole('button', { name: 'Guardar revisión' }));
+  expect(
+    await screen.findByText('Primera validación registrada; otra persona debe confirmarla.'),
+  ).toBeVisible();
+});
+it('MASCLI 4.0 situation room shows who each plan waits on and records a blocker', async () => {
+  installManagement();
+  let updated: unknown;
+  server.use(
+    http.get('*/system/uploads', () => HttpResponse.json([])),
+    http.get('*/system/prevention/situation-room', () =>
+      HttpResponse.json({
+        blocked: [
+          {
+            id: 'action-9',
+            title: 'Mesa técnica sintética',
+            responsible: 'Equipo social',
+            due_date: '2026-12-01',
+            status: 'En ejecución',
+            progress: 10,
+            blocked_by: 'Autoridad',
+            blocked_reason: 'Espera de permiso municipal',
+            blocked_since: '2026-10-19T12:00:00Z',
+          },
+        ],
+        overdue: [],
+        moving: 3,
+        blocked_by_count: { Autoridad: 1 },
+      }),
+    ),
+    http.patch('*/system/prevention/actions/action-1', async ({ request }) => {
+      updated = await request.json();
+      return HttpResponse.json({ action: actionFixture, irsa_modified: false });
+    }),
+  );
+  mount(
+    <ProjectSettingsProvider value={version4Settings}>
+      <ManagementPage {...context} role="coordinador" />
+    </ProjectSettingsProvider>,
+  );
+  expect(await screen.findByText('Sala de situación')).toBeVisible();
+  expect(
+    await screen.findByText(
+      'Mesa técnica sintética · espera a Autoridad: Espera de permiso municipal',
+    ),
+  ).toBeVisible();
+  expect(screen.getByText('En curso sin bloqueos: 3')).toBeVisible();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'Ver plan action-1' }));
+  await user.selectOptions(screen.getByLabelText('Estado del plan'), 'En ejecución');
+  await user.selectOptions(screen.getByLabelText('Bloqueado por'), 'Comunidad');
+  await user.type(screen.getByLabelText('Motivo del bloqueo'), 'Asamblea pendiente');
+  await user.click(screen.getByRole('button', { name: 'Guardar avance' }));
+  await screen.findByText('Avance registrado; no modifica el IRSA.');
+  expect(updated).toMatchObject({ blocked_by: 'Comunidad', blocked_reason: 'Asamblea pendiente' });
 });
