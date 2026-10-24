@@ -96,6 +96,14 @@
       "sessions": 1,
       "memories": 1,
       "prompts": 0
+    },
+    {
+      "id": "e900d588",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-10-24T10:09:02.430039591Z",
+      "sessions": 16,
+      "memories": 83,
+      "prompts": 0
     }
   ]
 }
