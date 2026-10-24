@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -109,9 +109,14 @@ it('explains a blocked permission without subscribing', async () => {
 
 it('stays hidden when the server has no push keys or the browser lacks push', async () => {
   let calls = 0;
+  let respond: () => void = () => undefined;
+  const responseReady = new Promise<void>((resolve) => {
+    respond = resolve;
+  });
   server.use(
-    http.get('*/system/notifications/push', () => {
+    http.get('*/system/notifications/push', async () => {
       calls++;
+      await responseReady;
       return HttpResponse.json({ enabled: false, public_key: null });
     }),
   );
@@ -122,5 +127,8 @@ it('stays hidden when the server has no push keys or the browser lacks push', as
   stubBrowser('granted');
   const { container } = renderSwitch();
   await vi.waitFor(() => expect(calls).toBe(1));
-  expect(container).toHaveTextContent(/Los avisos push no están configurados/);
+  respond();
+  await waitFor(() => expect(container).toHaveTextContent(/Los avisos push no están configurados/));
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  expect(calls).toBe(1);
 });

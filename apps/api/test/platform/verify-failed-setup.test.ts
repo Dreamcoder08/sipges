@@ -1,8 +1,12 @@
 import { PGlite, type PGliteInterface } from '@electric-sql/pglite';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { createTestApp } from '../support/test-app.ts';
 
 let previous: PGliteInterface | undefined;
+
+afterAll(() => {
+  expect(previous?.closed).toBe(true);
+});
 const captureRejectedClone = async (env: Record<string, string>, error: string) => {
   const original = PGlite.prototype.clone;
   const clones: PGliteInterface[] = [];
@@ -36,5 +40,6 @@ describe('S3 T5d rejected setup ownership', { concurrent: false }, () => {
     expect(previous?.closed).toBe(true);
     const t = await createTestApp();
     expect((await t.login('admin', 'admin-password-123')).res.status).toBe(200);
+    previous = t.db;
   });
 });
