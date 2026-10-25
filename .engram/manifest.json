@@ -120,6 +120,14 @@
       "sessions": 1,
       "memories": 2,
       "prompts": 0
+    },
+    {
+      "id": "cd10a5a5",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-10-25T19:25:50.544231936Z",
+      "sessions": 8,
+      "memories": 13,
+      "prompts": 0
     }
   ]
 }

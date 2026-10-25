@@ -1,0 +1,79 @@
+{
+  "verdict": "PASS",
+  "equality": "status, exact content-type, response byte count and SHA256 of unnormalized response bytes on all seven public GET endpoints plus both guards; full dashboard and guard JSON also compared",
+  "checkCount": 16,
+  "checks": [
+    "exact HTTP tuple: /api/dashboard",
+    "exact HTTP tuple: /system/irsa",
+    "exact HTTP tuple: /system/situational-analysis",
+    "exact HTTP tuple: /system/integrated-analysis",
+    "exact HTTP tuple: /system/consensus-engine",
+    "exact HTTP tuple: /system/strategic-assessment",
+    "exact HTTP tuple: /api/eventos?limit=-1",
+    "exact HTTP tuple: anonymous",
+    "exact HTTP tuple: denied",
+    "public state after rejection: dashboardUnchanged",
+    "public state after rejection: eventsUnchanged",
+    "identical deterministic workload",
+    "base: materialized rows 3580",
+    "current: materialized rows 3580",
+    "dashboard summary 191 bytes",
+    "strict materialized JSON byte reduction"
+  ],
+  "baseMaterialized": {
+    "queries": 1,
+    "rows": 3580,
+    "jsonBytes": 1792483
+  },
+  "currentMaterialized": {
+    "queries": 1,
+    "rows": 3580,
+    "jsonBytes": 277200
+  },
+  "reductionBytes": 1515283,
+  "reductionPercent": 84.53541818806649,
+  "latency": {
+    "base": {
+      "warmups": 3,
+      "samplesMs": [
+        50.93585499999972,
+        51.09899199999927,
+        58.83985699999994,
+        47.785211000000345,
+        59.860726000000795,
+        48.23872399999982,
+        49.61434899999949,
+        56.4305260000001,
+        42.138804000000164,
+        45.779609000000164
+      ],
+      "p50Ms": 49.61434899999949,
+      "p95Ms": 59.860726000000795
+    },
+    "current": {
+      "warmups": 3,
+      "samplesMs": [
+        32.362301000000116,
+        43.18409900000006,
+        34.20879299999979,
+        31.279335000000174,
+        31.66497000000072,
+        31.20328100000006,
+        51.09115699999984,
+        31.153989000000365,
+        30.990420999999515,
+        34.179306999999426
+      ],
+      "p50Ms": 31.66497000000072,
+      "p95Ms": 51.09115699999984
+    }
+  },
+  "limitations": [
+    "In-process app.request with full composition, not TCP transport",
+    "Embedded PGlite, not PostgreSQL-server, load or capacity proof",
+    "10 serial dashboard samples per version are diagnostic only; base ran first",
+    "Request IDs, durations, PIDs and log timestamps differ; CLI logs are not byte-identical",
+    "Transient harness had two corrected errors before successful runs; all failure streams retained",
+    "Scratch archive/programs remain for parent cleanup because writer may not delete files"
+  ]
+}

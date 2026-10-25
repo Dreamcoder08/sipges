@@ -1,0 +1,127 @@
+{
+  "node": "v26.7.0",
+  "clock": "2026-10-13T12:00:00Z",
+  "database": "isolated in-memory PGlite",
+  "scale": 10,
+  "seed": 42,
+  "records": 4840,
+  "endpoints": [
+    {
+      "path": "/api/dashboard",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 191,
+      "sha256": "cefb2be5751e0e1991646008c81c451c521d2a70b64cacbd239e0bf31c5e8ad0",
+      "body": {
+        "eventos": 250,
+        "actores": 220,
+        "demandas_abiertas": 99,
+        "alertas_activas": 56,
+        "directorio": 1590,
+        "priorizados": 1310,
+        "niveles": {
+          "Amarillo": 12,
+          "Alta": 19,
+          "Baja": 18,
+          "Media": 16,
+          "Crítica": 12,
+          "Rojo": 13
+        }
+      }
+    },
+    {
+      "path": "/system/irsa",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 36212,
+      "sha256": "36c6fe2ec865468c6b2a4207cbd39cdb7b502efa10ddfd7de288ab14fb7130cb"
+    },
+    {
+      "path": "/system/situational-analysis",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 11979,
+      "sha256": "5cb24fdd493ab72b69df565909cf94395d4cf59677d9caf522e3d8da5dca14ad"
+    },
+    {
+      "path": "/system/integrated-analysis",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 488439,
+      "sha256": "8e6a18cd2da355b106edc7f1e78ba2bca59754f75c54a04dcec3c80b1d7bc35a"
+    },
+    {
+      "path": "/system/consensus-engine",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 512292,
+      "sha256": "3d4271f66aa7c9db0ca69ccb4903f64fe701b55dad22ae350c7c2e7a86b72d2c"
+    },
+    {
+      "path": "/system/strategic-assessment",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 814,
+      "sha256": "dd5f3038a2822d9db05c371fc3e4015bbffe98e867a64c8f015e8fa7c5b6cba7"
+    },
+    {
+      "path": "/api/eventos?limit=-1",
+      "status": 200,
+      "contentType": "application/json",
+      "bytes": 191738,
+      "sha256": "fb809771046da21ed27406af404c78069503036eb7e8138131edbd900165be2f"
+    }
+  ],
+  "anonymous": {
+    "path": "/api/dashboard",
+    "status": 401,
+    "contentType": "application/json",
+    "bytes": 49,
+    "sha256": "50074adeea2dcb8a95f03cae6548dcb9f4a6eb9c10e030891f59e4c211da6827",
+    "body": {
+      "detail": "Inicie sesión para acceder a MASCLI"
+    }
+  },
+  "denied": {
+    "path": "/api/dashboard?project_id=NORTE",
+    "status": 403,
+    "contentType": "application/json",
+    "bytes": 38,
+    "sha256": "9366e22d061e7987d65bff76c127969493a3949887d3ef330399ba98b8bd1327",
+    "body": {
+      "detail": "Proyecto fuera de alcance"
+    }
+  },
+  "dashboardUnchanged": true,
+  "eventsUnchanged": true,
+  "materialized": {
+    "queries": 1,
+    "rows": 3580,
+    "jsonBytes": 1792483
+  },
+  "latency": {
+    "warmups": 3,
+    "samplesMs": [
+      50.93585499999972,
+      51.09899199999927,
+      58.83985699999994,
+      47.785211000000345,
+      59.860726000000795,
+      48.23872399999982,
+      49.61434899999949,
+      56.4305260000001,
+      42.138804000000164,
+      45.779609000000164
+    ],
+    "p50Ms": 49.61434899999949,
+    "p95Ms": 59.860726000000795
+  },
+  "checks": {
+    "bootstrap": 5,
+    "publicSnapshots": 12,
+    "guardBodies": 2,
+    "unchanged": 2,
+    "timedSuccessful": 13,
+    "materialization": 1
+  }
+}

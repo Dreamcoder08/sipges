@@ -19,6 +19,48 @@ p95 values were 86.43 / 63.84 ms, below 500 ms. This is not a comparable Postgre
 regression or justification for a native adapter. See [T6 evidence and limits](../../odd/evidence/t6-benchmark/README.md)
 and [the 36-scenario result JSON](../../odd/evidence/t6-benchmark/full.json).
 
+## Dashboard projection candidate (local, not a production gate)
+
+The first [production-candidate slice](../../odd/tasks/production-candidate.md) keeps the
+summary engine and generic analytics reader unchanged. Only dashboard uses a dedicated SQL
+projection: row IDs and module names, raw JSON `Estado` for Demandas/Alertas and raw JSON
+`Nivel_Preliminar`/`Nivel` for Alertas. Count-only modules return empty payloads. Ordering,
+`withTenant`, the non-owner role, forced-RLS catalog check and clearance policy remain in
+place; classification is evaluated on the stored row, not the projected payload. Missing
+keys become JSON null, equivalent for this engine's status and truthiness fallbacks.
+
+A transient in-memory PGlite comparison seeded `syntheticRecords(10)` (seed 42), all 4,840
+records, through the migrated schema with one synthetic tenant. Both readers ran on the
+same database: three warm-ups each, then ten interleaved samples, reversing reader order
+every sample. Timing covers `reader.read`, including tenant transaction and catalog check;
+JSON byte counting and summary calculation are outside timing. No files or external database
+were used. Results below serialize the returned `RecordsByModule`, **not wire bytes**:
+
+| Observation | Generic reader | Dashboard projection |
+| --- | --- | --- |
+| Returned rows | 3,580 | 3,580 |
+| Returned records JSON bytes (UTF-8) | 1,684,873 | 169,590 |
+| Reader p50 (5th sorted sample of 10) | 49.24 ms | 29.59 ms |
+| Reader p95 (10th sorted sample of 10) | 58.68 ms | 34.53 ms |
+
+Both summaries were byte-identical (191 bytes). Returned records JSON fell by 89.93%; row
+count did not change. These local timing samples show no reader latency regression in this
+run, but do not isolate SQL CPU cost or establish PostgreSQL-server/load performance. The
+historical baselines below are unchanged. A base-commit HTTP differential and the broader
+candidate gates remain separate evidence owned by T4.
+
+Focused regression (app-local runner, no persisted transform cache):
+
+```bash
+cd apps/api && env -i PATH="$PATH" HOME="$HOME" LANG=C.UTF-8 ./node_modules/.bin/vitest run test/analytics/dashboard-projection.test.ts test/analytics/dashboard-app.test.ts --no-fs-module-cache
+```
+
+Projection tests pin raw JSON types, row order, irrelevant-field removal and forced-RLS
+refusal. Composed HTTP tests pin all counters, falsy level fallback, Python-style coercion,
+closed states, a full-payload sibling analysis, tenant rejection without state changes, and
+the existing clearance distinction (`consulta` limited; `analista`/`coordinador` full).
+These tests establish behavior, not latency.
+
 ## Method
 
 - Harness: `apps/api/bench/run.ts`. Each scenario runs after a warm-up (30 runs; 10 for PDF
