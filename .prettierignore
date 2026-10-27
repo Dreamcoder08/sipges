@@ -18,3 +18,4 @@
 **/playwright-report/
 
 apps/hosting/public/
+**/.wrangler/
