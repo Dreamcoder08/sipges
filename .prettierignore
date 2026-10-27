@@ -18,4 +18,5 @@
 **/playwright-report/
 
 apps/hosting/public/
+apps/hosting-cloudflare/public/
 **/.wrangler/

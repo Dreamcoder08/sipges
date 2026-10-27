@@ -312,6 +312,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vitest:
+        specifier: ^5.0.4
+        version: 5.0.4(@types/node@24.19.2)(jsdom@26.1.0(supports-color@7.2.0))(msw@3.0.3(@types/node@24.19.2)(supports-color@7.2.0)(typescript@7.0.2)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)))(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2))
       wrangler:
         specifier: 4.151.2
         version: 4.151.2(@types/node@24.19.2)

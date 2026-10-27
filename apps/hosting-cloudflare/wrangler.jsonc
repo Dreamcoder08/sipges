@@ -3,4 +3,21 @@
   "name": "mascli",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-20",
+  // workerd cannot load the native Argon2 addon; the adapter injects the WebAssembly hasher.
+  "alias": { "@node-rs/argon2": "./src/native-argon2-unavailable.ts" },
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": false }],
+  // Every request reaches the Worker first, so MASCLI applies its own CSP, security headers
+  // and host allowlist to the SPA too; the binding only reads the built files.
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none",
+  },
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "REPLACE_WITH_HYPERDRIVE_CONFIG_ID" }],
+  "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "mascli-evidence" }],
+  "triggers": { "crons": ["*/15 * * * *"] },
+  "limits": { "cpu_ms": 30000 },
+  "observability": { "enabled": true },
 }
