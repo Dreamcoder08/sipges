@@ -19,7 +19,8 @@ redundancia».
 
 1. **No switch.** Every project runs MASCLI 4.0. The `version4` setting leaves the domain, the
    settings contract and the web app. A `version4` key already stored in
-   `project_settings.settings` is ignored; it is not migrated or deleted.
+   `project_settings.settings` is ignored; it is not migrated or deleted. The settings API never
+   returns it; the raw tenant export (`mascli-tenant.json`) still carries stored rows as they are.
 2. **4.0 rules are unconditional.** Closing a preventive action as `Completada` needs an attached
    evidence file (ADR 0023); an `Alta` alert needs a second person; IRSA uses the phase weights
    saved for the current phase (ADR 0021); colour labels always carry their meaning; the media

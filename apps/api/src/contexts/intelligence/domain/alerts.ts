@@ -54,10 +54,9 @@ export type FourEyesOutcome = 'apply' | 'first' | 'same_person';
 /**
  * MASCLI 4.0 (docs/adr/0024): moving a high-priority alert into an actionable state needs two
  * different people; the first validation is only recorded. Medium and low alerts, discarding,
- * changes between actionable states and MASCLI 3.0 stay with one person.
+ * changes between actionable states stay with one person.
  */
 export const fourEyes = (input: {
-  readonly version4: boolean;
   readonly level: string;
   readonly current: AlertState;
   readonly next: AlertState;
@@ -65,7 +64,7 @@ export const fourEyes = (input: {
   readonly actor: string;
 }): FourEyesOutcome => {
   const actionable = (state: AlertState) => ACTIONABLE_STATES.includes(state);
-  if (!input.version4 || input.level !== 'Alta') return 'apply';
+  if (input.level !== 'Alta') return 'apply';
   if (!actionable(input.next) || actionable(input.current)) return 'apply';
   if (!input.firstValidator) return 'first';
   return input.firstValidator === input.actor ? 'same_person' : 'apply';

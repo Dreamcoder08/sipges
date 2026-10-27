@@ -42,12 +42,11 @@ const setup = async () => {
 };
 
 describe('MASCLI 4.0 project settings', () => {
-  it('starts switched off with the preliminary colour meanings', async () => {
+  it('starts with the preliminary colour meanings and no version switch', async () => {
     const { request } = await setup();
     const res = await request('/system/v4/settings');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
-      version4: false,
       level_meanings: {
         Verde: 'Situación estable / riesgo bajo',
         Amarillo: 'Requiere atención y seguimiento',
@@ -85,18 +84,18 @@ describe('MASCLI 4.0 project settings', () => {
   it('saves a change for one project only and audits it', async () => {
     const { t, request, put } = await setup();
     const res = await put({
-      version4: true,
       level_meanings: { ...DEFAULT_SETTINGS.levelMeanings, Rojo: 'Atención inmediata' },
     });
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
-      version4: true,
       level_meanings: { Rojo: 'Atención inmediata', Verde: 'Situación estable / riesgo bajo' },
       updated_by: 'admin',
     });
-    expect(await (await request('/system/v4/settings')).json()).toMatchObject({ version4: true });
+    expect(await (await request('/system/v4/settings')).json()).toMatchObject({
+      level_meanings: { Rojo: 'Atención inmediata' },
+    });
     expect(await (await request('/system/v4/settings', NORTE)).json()).toMatchObject({
-      version4: false,
+      level_meanings: { Rojo: 'Situación crítica / atención inmediata' },
     });
     expect(
       await t.sql.query(
@@ -107,9 +106,25 @@ describe('MASCLI 4.0 project settings', () => {
         tenant_id: SECHURA,
         module: 'MASCLI 4.0',
         action: 'CONFIG_UPDATE',
-        detail: 'MASCLI 4.0 activado; campos: version4, levelMeanings',
+        detail: 'Campos: levelMeanings',
       },
     ]);
+  });
+
+  it('ignores a version4 key stored by earlier releases and does not echo it', async () => {
+    const { t, request, put } = await setup();
+    await t.sql.exec(
+      `INSERT INTO project_settings (tenant_id, settings, updated_by, updated_at)
+       VALUES ('${SECHURA}', '{"version4": false, "windowDays": 30}'::jsonb, 'legacy', now())`,
+    );
+    const read = await (await request('/system/v4/settings')).json();
+    expect(read).toMatchObject({ window_days: 30, updated_by: 'legacy' });
+    expect(read).not.toHaveProperty('version4');
+    const saved = await (await put({ half_life_days: 10 })).json();
+    expect(saved).toMatchObject({ window_days: 30, half_life_days: 10 });
+    expect(saved).not.toHaveProperty('version4');
+    expect((await put({ version4: true })).status).toBe(200);
+    expect(await (await request('/system/v4/settings')).json()).not.toHaveProperty('version4');
   });
 
   it('keeps the project wording of a recommendation and uses it in situations', async () => {
@@ -157,7 +172,7 @@ describe('MASCLI 4.0 project settings', () => {
 
   it('writes nothing when nothing changes', async () => {
     const { t, put } = await setup();
-    expect((await put({ version4: false })).status).toBe(200);
+    expect((await put({})).status).toBe(200);
     expect(await t.sql.query('SELECT tenant_id FROM project_settings')).toEqual([]);
   });
 

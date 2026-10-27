@@ -13,7 +13,6 @@ import {
 /** MASCLI 4.0 endpoints (docs/adr/0020). Writing settings is admin-only (Identity). */
 export const situationsRoutes = (situations: SituationsService) => {
   const settingsJson = (s: ProjectSettings) => ({
-    version4: s.version4,
     level_meanings: s.levelMeanings,
     window_days: s.windowDays,
     half_life_days: s.halfLifeDays,
@@ -37,7 +36,6 @@ export const situationsRoutes = (situations: SituationsService) => {
       const body = await parseJson(c, ProjectSettingsIn);
       if (!body.ok) return body.response;
       const {
-        version4,
         level_meanings,
         window_days,
         half_life_days,
@@ -49,7 +47,6 @@ export const situationsRoutes = (situations: SituationsService) => {
       const saved = await situations.updateSettings(
         c.get('scope'),
         {
-          version4,
           levelMeanings: level_meanings,
           windowDays: window_days,
           halfLifeDays: half_life_days,

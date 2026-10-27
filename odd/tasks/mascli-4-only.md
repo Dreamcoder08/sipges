@@ -29,15 +29,16 @@ stacked on `feat/production-candidate-dashboard` (`f512d8d`).
 ## Tasks
 
 - T1 [x] S2,S3 — ADR 0027 superseding ADR 0020 §1; update ADR index, mascli-4-situations S10/T8 and media-monitoring S5 with verbatim log entries; route: inline docs; commit: pending
-- T2 [ ] S2,S3 — API + contracts: remove the switch from settings, ports, compose and routes; make 4.0 rules unconditional; update API tests (one RED per rule first); route: worker; commit: pending
-- T3 [ ] S1,S2,S3 — Web + E2E: remove `useVersion4`, `Version4Only`, `VERSION4_PATHS`, the toggle and 3.0-only paths; MASCLI 4.0 branding; update web and E2E tests; route: worker after T2; commit: pending
-- T4 [ ] S2 — Verify: full API/web, lint/types/boundaries, E2E, differential against `f512d8d`; independent verifier (risk item 3: consumed contract; item 2: two-person rule); route: serial checks + verifier; commit: with T2/T3 evidence
+- T2 [x] S2,S3 — API + contracts: switch removed from settings, ports, compose and routes; 4.0 rules unconditional; API tests updated; route: worker (cancelled mid-run) + parent readback; commit: same as T3 (contracts and web compile together)
+- T3 [x] S1,S2,S3 — Web + E2E: 3.0 branches and toggle removed; MASCLI 4.0 in title, document title, sidebar brand and login heading; web and E2E tests updated; route: worker + parent branding edits; commit: with T2
+- T4 [x] S2 — Verified: types/lint/boundaries 0, API 694/14 skipped, web 282, E2E 93 passed/1 skipped, independent static review; no HTTP differential against `f512d8d` (the contract change is intended, covered by tests); route: serial checks + verifier; commit: with T2/T3
 - T5 [ ] S1,S2 — Close: evidence, ODD log, draft PR stacked on #80; route: inline; commit: final
 
 ## Risk
 
 Item 3 (contract): plan closing without a file now fails with `evidence_required`; GET/PUT
-settings drop `version4`; tenant export no longer reflects the switch. Item 2 (guards): the
+settings drop `version4` (a PUT that still sends it is accepted and ignored); the raw tenant
+export keeps stored rows as they are. Item 2 (guards): the
 two-person rule becomes universal. Outbound RSS now depends only on configured feeds.
 No database migration and no stored-record rewrite.
 
@@ -46,3 +47,9 @@ No database migration and no stored-record rewrite.
 - L1 — Original request verbatim: «te autorizo todo y avanza de forma autonoma , se supone que ahora todo debe decir MASCLI 4.0 , verdad ??». Clarification asked with four options (keep opt-in, enable demo project, default for new projects, rebrand only); answer verbatim: «quiero que todo este en 4.0 , objetivo actualizar todo , eliminar redundancia objetivo estar en la vanguardia».
 - L2 — Read-only map (explore mvq4armt-3-7p62), parent spot-checked `settings.ts:35-139`, `actions.ts:117-119`, `compose.ts:380,393,463` and migration 0025 (settings are `jsonb`; the switch lives only in code defaults). 31 TypeScript files reference the switch. The two open questions of the map (URL-only closing; RSS for every tenant) are resolved by S2 «todo este en 4.0»: file required, RSS limited to configured, unpaused feeds.
 - L3 — CI for PRs #79/#80 did not start: GitHub reports failed account payments or spending limit. Not a code defect; owner action in Billing & plans. Engram tools are unavailable in this session, so this document has no memory mirror.
+- L4 — Worker mvq4ez8w-4-5csz was cancelled by a tool abort after editing 40 files (+325/−520). Its RED evidence was not returned, so test-first order is unproven for this unit; the parent reviewed the diff instead. Parent added the sidebar brand and login heading («Ingresar a MASCLI 4.0») and the matching E2E selectors.
+- L5 — Parent checks: `pnpm typecheck` 0, `pnpm lint` 0, boundaries 737 modules / 2,173 dependencies. Full API (`--no-fs-module-cache`): 99 files passed, 5 skipped; 694 passed, 14 skipped (base 696: the removed tests asserted only 3.0 or toggle behaviour). A first focused run executed 1 of 8 files because of a harness quoting bug; superseded by the full run. The first web run exited 0 but its log was deleted by a parent cleanup command launched in parallel; rerun recorded separately.
+- L6 — Independent static review mvq63n7z-5-5vaj: no severe issue; two-person rule unconditional and not bypassable, PUT with `version4` accepted and ignored, stored key neither returned nor re-saved, no migration, `evidence_url`/`Origen`/audit label kept, polling limited to enabled due feeds. Applied its suggestions: two stale comments and an ADR note that the raw tenant export keeps stored rows. Flagged to the owner: the `/version-4` menu item is now «Configuración».
+- L7 — Parent confinement slip: one typecheck command wrote and removed `/tmp/null-tc` (outside the repository). Not repeated.
+- L8 — First full E2E: 89 passed, 4 failed. Workflow journeys (desktop, phone) still closed plans without a file (3.0 flow); fixed in the shared journey, which now asserts the refusal and closes with an uploaded synthetic receipt. Heatmap phone and mobile viewport failed on a real overflow (475 px in a 390 px page) from `nowrap` level labels that now carry meaning; fixed separately in `3bd65d5`. Two intermediate workflow reruns failed on harness mistakes (receipt linked to an intelligence-alert id → 404; `id` read instead of `attachment.id`), retained in evidence. Final `pnpm lint && pnpm e2e`: exit 0, 93 passed, 1 skipped.
+- L9 — Git hygiene: `5c8a955` ignores raw run output under `odd/evidence` (none was tracked), so status is clean apart from the owner's `.pi/`. Commit order: `5c8a955` chore, `3bd65d5` fix (valid on its own), then the `feat!` unit (API, contracts, web and E2E compile only together) with a `BREAKING CHANGE` footer.

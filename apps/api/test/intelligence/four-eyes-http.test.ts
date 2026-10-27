@@ -39,22 +39,12 @@ const setup = async () => {
     call('PATCH', `/system/intelligence/territorial-alerts/${id}`, { status }, cookie);
   const read = async (id: string) =>
     json(await call('GET', `/system/intelligence/territorial-alerts/${id}`));
-  const version4 = () => call('PUT', '/system/v4/settings', { version4: true });
-  return { t, json, coordinator, alert, decide, read, version4 };
+  return { t, json, coordinator, alert, decide, read };
 };
 
 describe('Four eyes on high-priority alerts (MASCLI 4.0)', () => {
-  it('keeps MASCLI 3.0: one person corroborates a high-priority alert', async () => {
-    const { alert, coordinator, decide, read } = await setup();
-    const ana = await coordinator('ana');
-    const id = await alert('Alta');
-    expect((await decide(id, 'Corroborado', ana)).status).toBe(200);
-    expect(await read(id)).toMatchObject({ status: 'Corroborado', first_validator: null });
-  });
-
   it('needs a second, different person to corroborate a high-priority alert', async () => {
-    const { json, alert, coordinator, decide, read, version4 } = await setup();
-    await version4();
+    const { json, alert, coordinator, decide, read } = await setup();
     const ana = await coordinator('ana');
     const luis = await coordinator('luis');
     const id = await alert('Alta');
@@ -85,8 +75,7 @@ describe('Four eyes on high-priority alerts (MASCLI 4.0)', () => {
   });
 
   it('leaves medium alerts and discarding to one person', async () => {
-    const { alert, coordinator, decide, read, version4 } = await setup();
-    await version4();
+    const { alert, coordinator, decide, read } = await setup();
     const ana = await coordinator('ana');
     const media = await alert('Media');
     expect((await decide(media, 'Corroborado', ana)).status).toBe(200);

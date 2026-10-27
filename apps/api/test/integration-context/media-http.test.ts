@@ -90,7 +90,8 @@ describe('media monitoring by RSS (ADR 0021)', () => {
       detail: 'Esa fuente ya está registrada',
     });
     const state = MediaMonitorState.parse((await call('GET', '/system/v4/media')).body);
-    expect(state).toMatchObject({ active: false, poll_minutes: 30, max_feeds: 20 });
+    expect(state).toMatchObject({ poll_minutes: 30, max_feeds: 20 });
+    expect(state).not.toHaveProperty('active');
     expect(state.feeds).toHaveLength(1);
     expect(
       await t.sql.query("SELECT detail FROM audit WHERE module = 'Monitoreo de medios'"),
@@ -107,7 +108,7 @@ describe('media monitoring by RSS (ADR 0021)', () => {
     expect((await call('DELETE', `/system/v4/media/feeds/${id}`)).status).toBe(404);
   });
 
-  it('polls only with MASCLI 4.0 on and imports each matching item once as a narrative', async () => {
+  it('polls configured feeds and imports each matching item once as a narrative', async () => {
     const { t, call, cron, narratives, reads } = await setup();
     await call('POST', '/system/automations/rules', {
       name: 'Noticias nuevas',
@@ -116,13 +117,18 @@ describe('media monitoring by RSS (ADR 0021)', () => {
       conditions: [],
       steps: [{ kind: 'notify', title: 'Noticia {id}' }],
     });
-    await call('POST', '/system/v4/media/feeds', FEED);
+    expect(await cron()).toBe(200);
+    expect(reads).toEqual([]);
+    const created = await call('POST', '/system/v4/media/feeds', FEED);
+    const id = created.body.id as number;
 
+    // A paused feed is never fetched.
+    await call('PUT', `/system/v4/media/feeds/${id}`, { ...FEED, enabled: false });
     expect(await cron()).toBe(200);
     expect(reads).toEqual([]);
     expect(await narratives()).toEqual([]);
 
-    await call('PUT', '/system/v4/settings', { version4: true });
+    await call('PUT', `/system/v4/media/feeds/${id}`, { ...FEED, enabled: true });
     expect(await cron()).toBe(200);
     expect(reads).toEqual([FEED_URL]);
     const rows = await narratives();
@@ -166,7 +172,6 @@ describe('media monitoring by RSS (ADR 0021)', () => {
 
   it('records a failing feed without stopping the cron', async () => {
     const { call, cron, setFail } = await setup();
-    await call('PUT', '/system/v4/settings', { version4: true });
     await call('POST', '/system/v4/media/feeds', FEED);
     setFail(true);
     expect(await cron()).toBe(200);

@@ -30,7 +30,7 @@ describe('Territorial lessons (MASCLI 4.0)', () => {
   });
 
   it('attaches past lessons to the situation of the same territory, topic or actor', () => {
-    const report = findSituations(records, { ...DEFAULT_SETTINGS, version4: true }, TODAY);
+    const report = findSituations(records, DEFAULT_SETTINGS, TODAY);
     const [valley] = report.situations;
     expect(valley?.key).toBe('territorio:valle alto');
     const withLessons = attachLessons(report.situations, [

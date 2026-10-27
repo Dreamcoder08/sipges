@@ -16,10 +16,10 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
-import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
-import { ProjectSettingsProvider, useVersion4 } from '../shared/lib/project-settings.tsx';
+import { ProjectSettingsProvider } from '../shared/lib/project-settings.tsx';
 import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
@@ -279,7 +279,7 @@ const appRoute = createRoute({
     const compact = useMediaQuery(COMPACT_QUERY);
     const unread = useUnreadNotifications(scope.scope);
     const projectLabel = label || scope.project_id;
-    // MASCLI 4.0 switch and colour meanings; until known every screen behaves as 3.0.
+    // Colour meanings of the project; until known the labels use their plain names.
     const settings = useQuery(projectSettingsQuery(scope.scope)).data ?? null;
     usePreloadScreens();
     return (
@@ -422,32 +422,12 @@ const StrategicPage = (context: FeatureContext) => (
     )}
   />
 );
-/** A MASCLI 4.0 screen opened while the project keeps 3.0 explains how to switch it on. */
-const Version4Only = ({ children }: { children: ReactNode }) =>
-  useVersion4() ? (
-    children
-  ) : (
-    <Card title="Disponible en MASCLI 4.0">
-      <p>
-        Esta sección es parte de MASCLI 4.0, que este proyecto aún no activó.{' '}
-        <Link to="/version-4">Ver MASCLI 4.0</Link>
-      </p>
-    </Card>
-  );
-const SituationsScreen = (context: FeatureContext) => (
-  <Version4Only>
-    <SituationsPage {...context} />
-  </Version4Only>
-);
+const SituationsScreen = (context: FeatureContext) => <SituationsPage {...context} />;
 const MailboxScreen = (context: FeatureContext) => (
-  <Version4Only>
-    <RecordsPage key={`${context.scope}/buzon`} module="buzon" {...context} />
-  </Version4Only>
+  <RecordsPage key={`${context.scope}/buzon`} module="buzon" {...context} />
 );
 const LessonsScreen = (context: FeatureContext) => (
-  <Version4Only>
-    <RecordsPage key={`${context.scope}/lecciones`} module="lecciones" {...context} />
-  </Version4Only>
+  <RecordsPage key={`${context.scope}/lecciones`} module="lecciones" {...context} />
 );
 const featurePages = {
   '/situaciones': SituationsScreen,

@@ -78,7 +78,7 @@ test.describe('sign-in (S7, ADR 0004)', () => {
     await expect(dashboard(page)).toBeVisible();
     const token = (await page.context().cookies()).find((c) => c.name === 'mascli_session');
     await signOut(page);
-    await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI 4.0' })).toBeVisible();
 
     // Replaying the old token must not authenticate any more.
     await page.context().addCookies([{ ...(token ?? { name: '', value: '', url: '' }) }]);
@@ -127,7 +127,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     expect(body).not.toContain('secret');
 
     await signOut(page);
-    await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI 4.0' })).toBeVisible();
 
     // Password alone is no longer enough: the form asks for the second factor.
     await signIn(page, analyst);

@@ -43,27 +43,12 @@ const setup = async () => {
   const patch = (id: string, body: Record<string, unknown>) =>
     call('PATCH', `/system/prevention/actions/${id}`, body);
   const room = async () => json(await call('GET', '/system/prevention/situation-room'));
-  const version4 = () => call('PUT', '/system/v4/settings', { version4: true });
-  return { json, plan, patch, room, version4 };
+  return { json, plan, patch, room };
 };
 
 describe('Situation room (MASCLI 4.0)', () => {
-  it('ignores blockers while the project keeps MASCLI 3.0', async () => {
-    const { plan, patch, room } = await setup();
-    const id = await plan('Mesa técnica sintética', '2026-12-01');
-    const res = await patch(id, {
-      status: 'En ejecución',
-      progress: 10,
-      blocked_by: 'Autoridad',
-      blocked_reason: 'Espera de permiso municipal',
-    });
-    expect(res.status).toBe(200);
-    expect((await room()).blocked).toEqual([]);
-  });
-
   it('shows what is blocked and by whom, what is overdue and what is moving', async () => {
-    const { json, plan, patch, room, version4 } = await setup();
-    await version4();
+    const { json, plan, patch, room } = await setup();
     const blocked = await plan('Mesa técnica sintética', '2026-12-01');
     const overdue = await plan('Visita de campo sintética', '2026-10-01');
     await plan('Monitoreo participativo sintético', '2026-12-15');

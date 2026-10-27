@@ -1,6 +1,5 @@
 import type { RecordVersion } from '@mascli/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { useVersion4 } from '../../shared/lib/project-settings.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { historyQuery } from './api.ts';
 import { MODULES, type RecordModule } from './modules.ts';
@@ -66,7 +65,6 @@ export const HistoryPanel = ({
   scope: string;
 }) => {
   const history = useQuery(historyQuery(module, scope, id));
-  const version4 = useVersion4();
   const labels = new Map(MODULES[module].fields.map((field) => [field.key, field.label]));
   return (
     <section className={styles.evidence} aria-labelledby={`history-${id}`}>
@@ -74,7 +72,7 @@ export const HistoryPanel = ({
       <QueryState query={history} label="el historial">
         {(versions) => (
           <>
-            {version4 ? <TraceSummary versions={versions} labels={labels} /> : null}
+            <TraceSummary versions={versions} labels={labels} />
             <ol className={styles.history}>
               {versions.map((version) => (
                 <li key={version.version}>

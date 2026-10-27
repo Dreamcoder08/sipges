@@ -62,7 +62,6 @@ export const PhaseWeights = z
 export type PhaseWeights = z.infer<typeof PhaseWeights>;
 
 export const ProjectSettingsIn = z.object({
-  version4: z.boolean().optional(),
   level_meanings: LevelMeanings.optional(),
   window_days: z.number().int().min(7).max(365).optional(),
   half_life_days: z.number().int().min(1).max(180).optional(),
@@ -76,7 +75,6 @@ export const ProjectSettingsIn = z.object({
 export type ProjectSettingsIn = z.infer<typeof ProjectSettingsIn>;
 
 export const ProjectSettings = z.object({
-  version4: z.boolean(),
   level_meanings: LevelMeanings,
   window_days: z.number(),
   half_life_days: z.number(),

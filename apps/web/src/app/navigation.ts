@@ -80,7 +80,7 @@ export const SCREENS = [
   },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología MASCLI', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
-  { path: '/version-4', label: 'MASCLI 4.0', title: 'MASCLI 4.0', ready: true },
+  { path: '/version-4', label: 'Configuración', title: 'Configuración del proyecto', ready: true },
 ] as const satisfies readonly {
   path: string;
   label: string;
@@ -190,13 +190,6 @@ export const MORE_GROUPS = [
     paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria', '/version-4'],
   },
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
-
-/** Screens of MASCLI 4.0, hidden while the project keeps 3.0 (docs/adr/0020). */
-export const VERSION4_PATHS: ReadonlySet<string> = new Set<ScreenPath>([
-  '/situaciones',
-  '/buzon',
-  '/lecciones',
-]);
 
 export const labelFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.label ?? path;

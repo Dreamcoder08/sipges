@@ -20,7 +20,7 @@ const TABLES = {
   notifications: 'id',
   // Authorization and query configuration has no provider credentials and no numeric id.
   source_import_settings: 'source_id',
-  // MASCLI 4.0 switch, colour meanings and thresholds (ADR 0020); one row per tenant.
+  // Colour meanings, thresholds and phase (ADR 0020, 0027); one row per tenant, exported as stored.
   project_settings: 'tenant_id',
 } as const;
 
