@@ -84,6 +84,7 @@ import { type AuditService, createAuditService } from './contexts/audit/applicat
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
   type DocumentLabService,
+  type DocumentReader,
   createDocumentLabService,
 } from './contexts/documents/application/index.ts';
 import {
@@ -215,6 +216,8 @@ export const buildContainer = async (deps: {
   googleSignIn?: GoogleSignIn;
   /** Overrides the native Argon2id hasher (Cloudflare Workers inject the WebAssembly one). */
   passwordHasher?: PasswordHasher;
+  /** Overrides the worker-thread PDF reader (Cloudflare Workers inject the inline one). */
+  documentReader?: DocumentReader;
   /** Overrides outbound HTTP for automation channels (tests record messages instead). */
   channelSender?: ChannelSender;
   /** Overrides browser push delivery (tests record pushes instead). */
@@ -337,8 +340,8 @@ export const buildContainer = async (deps: {
     phaseWeights: { forTenant: situations.phaseWeights },
   });
   const reader = deps.config.ocr
-    ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
-    : documentReader;
+    ? withOcr(deps.documentReader ?? documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
+    : (deps.documentReader ?? documentReader);
   const evidence = createEvidenceService({
     storage: deps.objectStorage ?? createObjectStorage(deps.config.storage),
     store: createSqlAttachmentStore(deps.sql),

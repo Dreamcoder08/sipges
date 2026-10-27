@@ -14,8 +14,6 @@ type Pending = {
 
 type Slot = { worker: Worker | null; readonly pending: Map<number, Pending> };
 
-const WORKER_URL = new URL('./pdf-worker.ts', import.meta.url);
-
 /**
  * pdf.js parses on the calling thread and blocked the event loop for 300-400 ms on a 100-page
  * PDF (docs/benchmarks). Extraction runs in a small pool of worker threads instead. A job
@@ -39,7 +37,7 @@ export const createPdfWorkerPool = (
   };
 
   const start = (slot: Slot) => {
-    const worker = new Worker(options.workerUrl ?? WORKER_URL);
+    const worker = new Worker(options.workerUrl ?? new URL('./pdf-worker.ts', import.meta.url));
     // Idle workers must not keep the process alive.
     worker.unref();
     worker.on('message', (reply: Reply) => {
