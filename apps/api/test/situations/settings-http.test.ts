@@ -111,21 +111,24 @@ describe('MASCLI 4.0 project settings', () => {
     ]);
   });
 
-  it('ignores a version4 key stored by earlier releases and does not echo it', async () => {
-    const { t, request, put } = await setup();
-    await t.sql.exec(
-      `INSERT INTO project_settings (tenant_id, settings, updated_by, updated_at)
-       VALUES ('${SECHURA}', '{"version4": false, "windowDays": 30}'::jsonb, 'legacy', now())`,
-    );
-    const read = await (await request('/system/v4/settings')).json();
-    expect(read).toMatchObject({ window_days: 30, updated_by: 'legacy' });
-    expect(read).not.toHaveProperty('version4');
-    const saved = await (await put({ half_life_days: 10 })).json();
-    expect(saved).toMatchObject({ window_days: 30, half_life_days: 10 });
-    expect(saved).not.toHaveProperty('version4');
-    expect((await put({ version4: true })).status).toBe(200);
-    expect(await (await request('/system/v4/settings')).json()).not.toHaveProperty('version4');
-  });
+  it.each([false, true])(
+    'ignores a stored version4 = %s key from earlier releases and does not echo it',
+    async (stored) => {
+      const { t, request, put } = await setup();
+      await t.sql.exec(
+        `INSERT INTO project_settings (tenant_id, settings, updated_by, updated_at)
+       VALUES ('${SECHURA}', '{"version4": ${stored}, "windowDays": 30}'::jsonb, 'legacy', now())`,
+      );
+      const read = await (await request('/system/v4/settings')).json();
+      expect(read).toMatchObject({ window_days: 30, updated_by: 'legacy' });
+      expect(read).not.toHaveProperty('version4');
+      const saved = await (await put({ half_life_days: 10 })).json();
+      expect(saved).toMatchObject({ window_days: 30, half_life_days: 10 });
+      expect(saved).not.toHaveProperty('version4');
+      expect((await put({ version4: !stored })).status).toBe(200);
+      expect(await (await request('/system/v4/settings')).json()).not.toHaveProperty('version4');
+    },
+  );
 
   it('keeps the project wording of a recommendation and uses it in situations', async () => {
     const { t, request, put } = await setup();

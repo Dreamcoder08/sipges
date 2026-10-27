@@ -39,5 +39,7 @@ redundancia».
   close, `Alta` alerts need two people, IRSA follows saved phase weights, and configured feeds
   are fetched. These are the 4.0 rules those projects had not turned on yet.
 - Clients that closed plans with only a URL now receive `evidence_required`.
-- Rolling back means restoring the switch in code; no data needs restoring.
+- Rolling back means restoring the switch in code, and it is not data-neutral: every settings
+  save since this change drops a stored `version4` key, so after a rollback those projects
+  read the old default (switch off, MASCLI 3.0) until an administrator turns 4.0 on again.
 - Deployment and production activation still need the owner's word.
