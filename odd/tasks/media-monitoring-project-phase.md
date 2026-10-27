@@ -22,7 +22,7 @@ la configuración de MASCLI 4.0 (`project_settings`); el IRSA los recibe por un 
 - T2 [x] — Lector RSS/Atom puro, filtro por palabras clave y validación de URL pública; pruebas puras. commit: see L3
 - T3 [x] — Fuentes de monitoreo por proyecto, consulta programada e importación idempotente a Narrativas; pruebas HTTP y de cron. commit: see L4
 - T4 [x] — Pantallas: fase y pesos, fuentes de monitoreo con vista previa y estado; pruebas de UI. commit: see L5
-- T5 [ ] — Verificación integrada y PR en borrador (la activación en producción requiere la palabra del titular). commit: pending
+- T5 [x] — Verificación integrada y PR en borrador (la activación en producción requiere la palabra del titular). commit: pending
 
 ## Registro
 
@@ -32,3 +32,4 @@ la configuración de MASCLI 4.0 (`project_settings`); el IRSA los recibe por un 
 - L4 (T3 Monitoreo programado): Migración 0026 media_feeds con RLS (máx. 20 por proyecto, URL única). /system/v4/media: listar, agregar, editar o pausar, eliminar (auditados, solo admin), vista previa sin guardar y consulta manual. El cron de automatizaciones consulta las fuentes vencidas (30 min) en paralelo con la Defensoría, solo con 4.0 activo; cada noticia coincidente crea una vez la narrativa SRC-RSS-<hash de URL y clave> con Fecha_Observacion, Tema y Palabras_Clave, y las reglas de Narrativas la ven (prueba con notificación). El lector resuelve DNS y rechaza direcciones privadas, no sigue redirecciones y corta a 8 s y 1 MB. Commit 5e6a6ed.
 - L5 (T4 Pantallas): Con 4.0 activo, la página MASCLI 4.0 muestra la tarjeta Fase del proyecto (botones de fase, pesos por dimensión con suma, sugerencia preliminar y vuelta a pesos generales) y Fuentes RSS regionales (estado de la última consulta, pausar/eliminar, Consultar ahora, Probar fuente y alta con nota de autorización). Con 4.0 apagado no aparecen; otros roles las ven solo en lectura. Commit e88bf04.
 - L6 (2026-10-26, cambio de requisito): «quiero que todo este en 4.0 , objetivo actualizar todo , eliminar redundancia objetivo estar en la vanguardia». S5 reescrita; ver mascli-4-only y ADR 0027.
+- L7 (2026-10-27, T5 Verificación integrada): E2E Chromium 93 aprobados / 1 omitido (incluye `19-mascli-4` y los flujos de medios), API 694 / 14 omitidos, web 282, revisión nativa aprobada (`review-b082ae718ab3f9a5`) y PR en borrador #81 (apilado sobre #80 y #79); evidencia en `odd/evidence/mascli-4-only/README.md`. La CI remota no arrancó por un bloqueo de facturación de la cuenta de GitHub. El despliegue a producción sigue requiriendo la palabra del titular y no se realizó. Las fuentes RSS se consultan solo si un proyecto las configuró y no las pausó.
