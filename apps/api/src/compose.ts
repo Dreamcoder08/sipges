@@ -130,7 +130,7 @@ import { createSecretCipher } from './contexts/identity/infrastructure/secret-ci
 import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
 import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
 import { createGoogleSignIn } from './contexts/identity/infrastructure/google-oidc.ts';
-import type { GoogleSignIn } from './contexts/identity/application/ports.ts';
+import type { GoogleSignIn, PasswordHasher } from './contexts/identity/application/ports.ts';
 import { totp } from './contexts/identity/infrastructure/totp.ts';
 import {
   createIndicatorsService,
@@ -213,6 +213,8 @@ export const buildContainer = async (deps: {
   narrator?: Narrator | null;
   /** Overrides the Google client (tests inject a fake identity provider). */
   googleSignIn?: GoogleSignIn;
+  /** Overrides the native Argon2id hasher (Cloudflare Workers inject the WebAssembly one). */
+  passwordHasher?: PasswordHasher;
   /** Overrides outbound HTTP for automation channels (tests record messages instead). */
   channelSender?: ChannelSender;
   /** Overrides browser push delivery (tests record pushes instead). */
@@ -221,7 +223,7 @@ export const buildContainer = async (deps: {
   const cipher = createSecretCipher(deps.config.dataKey);
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
-    hasher: passwordHasher,
+    hasher: deps.passwordHasher ?? passwordHasher,
     totp,
     cipher,
     tokens: sessionTokens,

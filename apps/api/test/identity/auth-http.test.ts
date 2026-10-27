@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { PasswordHasher } from '../../src/contexts/identity/application/ports.ts';
 import { totp } from '../../src/contexts/identity/infrastructure/totp.ts';
+import { wasmPasswordHasher } from '../../src/contexts/identity/infrastructure/wasm-password-hasher.ts';
 import { ORIGIN, createTestApp } from '../support/test-app.ts';
 
 const ADMIN = { username: 'admin', password: 'admin-password-123' };
@@ -387,5 +389,23 @@ describe('bootstrap admin', () => {
     const t = await createTestApp({ MASCLI_ADMIN_FULL_NAME: 'Mesa de Control' });
     const { res } = await t.login(ADMIN.username, ADMIN.password);
     expect(await json(res)).toEqual({ ok: true, name: 'Mesa de Control', role: 'admin' });
+  });
+});
+
+describe('POST /login with the WebAssembly hasher (Cloudflare Workers)', () => {
+  it('signs in through the injected hasher and refuses a wrong password', async () => {
+    const used: string[] = [];
+    const recording: PasswordHasher = {
+      hash: (password) => wasmPasswordHasher.hash(password),
+      async verify(password, stored) {
+        used.push('verify');
+        return wasmPasswordHasher.verify(password, stored);
+      },
+      needsRehash: (stored) => wasmPasswordHasher.needsRehash(stored),
+    };
+    const t = await createTestApp({}, { passwordHasher: recording });
+    expect((await t.login(ADMIN.username, ADMIN.password)).res.status).toBe(200);
+    expect((await t.login(ADMIN.username, 'not-the-password')).res.status).toBe(401);
+    expect(used).toEqual(['verify', 'verify']);
   });
 });
