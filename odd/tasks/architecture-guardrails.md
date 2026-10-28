@@ -12,9 +12,9 @@ No speculative backend rewrite or mandatory five-folder migration; do not claim 
 
 ## Tasks
 
-- T1 [done] (S2-S3) Narrow raw-colour exceptions from all geography stylesheets to evidence-backed cartographic files and pin rejected ordinary UI cases plus preserved cartographic cases with tests. Route: worker (parent context backstop). Commit: pending.
-- T2 [done] (S1-S3) Document the actual ports/adapters boundaries and Atomic Design roles using existing modules; run focused token tests and current dependency boundary check. Route: worker + parent checks. Commit: pending.
-- T3 [in_progress] (S1-S4) Record truthful evidence, limitations and an isolated local work-unit commit, excluding Cloudflare. Route: parent. Commit: pending.
+- T1 [done] (S2-S3) Narrow raw-colour exceptions from all geography stylesheets to evidence-backed cartographic files and pin rejected ordinary UI cases plus preserved cartographic cases with tests. Route: worker (parent context backstop). Commit: f38b6dc006a738f205577234b43d8fd8c91589ea.
+- T2 [done] (S1-S3) Document the actual ports/adapters boundaries and Atomic Design roles using existing modules; run focused token tests and current dependency boundary check. Route: worker + parent checks. Commit: f38b6dc006a738f205577234b43d8fd8c91589ea.
+- T3 [done] (S1-S4) Record truthful evidence, limitations and an isolated local work-unit commit, excluding Cloudflare. Route: parent. Commit: f38b6dc006a738f205577234b43d8fd8c91589ea; closure metadata follows.
 
 ## Log
 
@@ -35,4 +35,6 @@ Restricciones de diseño arquitectónico obligatorias:
 - L7: Worker added actual port/adapter and Atomic Design role mapping, with explicit limitations on ambient-effect audits and whole-file map exemptions. Parent is checking formatting and cited paths; no exhaustive architecture compliance claim.
 - L8: Parent targeted eslint and Prettier check passed. All 14 cited repository paths exist and no local guide link is missing. Evidence is in odd/evidence/architecture-guardrails/README.md with worker attribution and explicit limits. No production behavior changed, so no browser/build or command differential is applicable; no global-suite retry was attempted.
 - L9: Native ASSESS returned unassessable due unrelated untracked scope; plan requires writer self-verification and no independent verifier (no high-risk item). No reviewDue continuation supplied; no native approval claimed. Risk: none for this test/documentation unit; it changes no shared production code, dependency, security, persistence or public command contract.
+- L10: Commit f38b6dc006a738f205577234b43d8fd8c91589ea (`test(web): enforce exact map colour exceptions`) completed exit0 on feat/architecture-guardrails, 7 files, 152 insertions/13 deletions including generated memory metadata. Engram sync95f901c7 exit0, prompts excluded, credential-pattern scan found no matches (not an absolute privacy guarantee). Verified commit paths contain no Cloudflare work; remaining dirty paths are unrelated Cloudflare files.
+- L11: Committed-only native ASSESS from c84135ea0f38ac85602641628c3a1a816ccec091 remains unassessable due unrelated untracked scope. Its plan still requires self-verification and no independent verifier; no reviewDue continuation, native review or approval is claimed. First guardrail unit is complete; no push, PR or deployment. Broader domain-effect audits, intra-map-file colour precision and full UI taxonomy enforcement are not claimed solved or silently added as work.
 
