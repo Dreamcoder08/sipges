@@ -10,6 +10,55 @@ beforeEach(() =>
   resetApi({ me: { username: 'demo', full_name: 'Persona de prueba', role: 'consulta' } }),
 );
 
+it('does not inject style elements when search opens under the strict CSP', async () => {
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const user = userEvent.setup();
+  const trigger = await screen.findByRole('button', { name: 'Búsqueda global' });
+  const stylesBefore = Array.from(document.querySelectorAll('style'));
+  await user.click(trigger);
+  await screen.findByRole('dialog', { name: 'Búsqueda global' });
+  expect(Array.from(document.querySelectorAll('style'))).toEqual(stylesBefore);
+  await user.keyboard('{Escape}');
+});
+
+it('focuses and traps keyboard focus in search, then restores the trigger on Escape', async () => {
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const user = userEvent.setup();
+  const trigger = await screen.findByRole('button', { name: 'Búsqueda global' });
+  await user.click(trigger);
+  const box = await screen.findByRole('combobox', { name: 'Buscar en todo el proyecto' });
+  expect(box).toHaveFocus();
+  expect(screen.getByRole('dialog', { name: 'Búsqueda global' })).toHaveAttribute(
+    'aria-modal',
+    'true',
+  );
+  await user.keyboard('{Control>}k{/Control}');
+  expect(screen.getByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
+  await user.tab();
+  expect(box).toHaveFocus();
+  await user.tab({ shift: true });
+  expect(box).toHaveFocus();
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(trigger).toHaveFocus();
+});
+
+it('dismisses search on backdrop interaction and restores the trigger', async () => {
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const user = userEvent.setup();
+  const trigger = await screen.findByRole('button', { name: 'Búsqueda global' });
+  await user.click(trigger);
+  await screen.findByRole('dialog', { name: 'Búsqueda global' });
+  const overlay = document.querySelector('[data-slot="dialog-overlay"]');
+  expect(overlay).not.toBeNull();
+  await user.click(overlay as HTMLElement);
+  expect(screen.queryByRole('dialog')).toBeNull();
+  expect(trigger).toHaveFocus();
+});
+
 it('searches every object type with Ctrl+K and opens the chosen record', async () => {
   installRecordsApi({
     'DEMO/PRJ-DEMO/demandas': [{ _id: 'D-1', Descripcion: 'Acceso a agua potable' }],

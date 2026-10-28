@@ -1,0 +1,23 @@
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/app/Search.test.tsx[2m > [22mdismisses search on backdrop interaction and restores the trigger
+[31m[1mError[22m: Unable to perform pointer interaction as the element has `pointer-events: none`:
+
+DIV[39m
+[90m [2m❯[22m assertPointerEvents ../../node_modules/.pnpm/@testing-library+user-event@14.6.7_@testing-library+dom@10.4.2/node_modules/@testing-library/user-event/dist/esm/utils/pointer/cssPointerEvents.js:[2m45:15[22m[39m
+[90m [2m❯[22m Object.enter ../../node_modules/.pnpm/@testing-library+user-event@14.6.7_@testing-library+dom@10.4.2/node_modules/@testing-library/user-event/dist/esm/system/pointer/pointer.js:[2m48:17[22m[39m
+[90m [2m❯[22m PointerHost.move ../../node_modules/.pnpm/@testing-library+user-event@14.6.7_@testing-library+dom@10.4.2/node_modules/@testing-library/user-event/dist/esm/system/pointer/index.js:[2m49:79[22m[39m
+[90m [2m❯[22m pointerAction ../../node_modules/.pnpm/@testing-library+user-event@14.6.7_@testing-library+dom@10.4.2/node_modules/@testing-library/user-event/dist/esm/pointer/index.js:[2m57:39[22m[39m
+[90m [2m❯[22m Object.pointer ../../node_modules/.pnpm/@testing-library+user-event@14.6.7_@testing-library+dom@10.4.2/node_modules/@testing-library/user-event/dist/esm/pointer/index.js:[2m25:15[22m[39m
+[90m [2m❯[22m Object.asyncWrapper ../../node_modules/.pnpm/@testing-library+react@16.3.3_@testing-library+dom@10.4.2_@types+react-dom@19.3.0_@type_7c75ab20cc4ac7e43eae238a37408170/node_modules/@testing-library/react/dist/pure.js:[2m88:22[22m[39m
+[36m [2m❯[22m src/app/Search.test.tsx:[2m57:3[22m[39m
+    [90m 55|[39m   const overlay = document.querySelector('[data-slot="dialog-overlay"]…
+    [90m 56|[39m   expect(overlay).not.toBeNull();
+    [90m 57|[39m   await user.click(overlay as HTMLElement);
+    [90m   |[39m   [31m^[39m
+    [90m 58|[39m   expect(screen.queryByRole('dialog')).toBeNull();
+    [90m 59|[39m   expect(trigger).toHaveFocus();
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
