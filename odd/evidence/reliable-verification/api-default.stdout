@@ -1,0 +1,21 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mrejects unknown modules with 404 on every method[33m 3880[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mcreates records with the module id key, a generated prefix id, or a collision suffix[33m 906[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mlists newest-updated first with _id and _updated_at, filters by q and bounds limit[33m 872[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mreplaces payloads on PUT and returns 404 for missing records[33m 868[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mdeletes existing records and returns 404 without auditing missing ones[33m 859[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mrejects invalid payloads with 422 and leaves no record or audit entry[33m 815[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22misolates records and audit entries per tenant[33m 897[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mkeeps role gates and the body project guard on record routes[33m 919[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22mGET /system/audit[2m > [22mlists create, update and delete entries newest first with a bounded limit[33m 842[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22mpaginates the tenant list without changing the legacy array contract[33m 915[2mms[22m[39m
+ [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (MASCLI 4.0)[2m > [22mis a records module with its own prefix[32m 2[2mms[22m[39m
+ [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (MASCLI 4.0)[2m > [22mattaches past lessons to the situation of the same territory, topic or actor[32m 10[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 00:30:17
+[2m   Duration [22m 12.95s[2m (tests 93%, import 4%, transform 3%)[22m
+

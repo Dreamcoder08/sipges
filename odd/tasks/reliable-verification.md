@@ -1,0 +1,31 @@
+# Reliable verification
+
+Recover actionable API-runner evidence and verify the exact final search Dialog build before expanding UI migration.
+Diagnose before changing runner settings; preserve existing test/hook limits and unrelated Cloudflare work.
+
+## Specs
+
+- S1: "perfecto te autorizo todo y avanza de forma autonoma"
+- S2: "Organic Driven Development (ODD): El desarrollo debe ser evolutivo. No sobre-diseñes. Crea abstracciones que emerjan de necesidades reales y código funcional simple. Prioriza la refactorización continua sobre la arquitectura especulativa."
+
+## Tasks
+
+- T1 [done] (S1-S2) Distinguish bounded default-runner behavior, cache/import issues and representative fixture cost using explicitly selected files and durable outputs. Route: parent diagnostics + worker if a demonstrated fix needs multiple steps. Commit: pending.
+- T2 [done] (S1-S2) Apply only an evidenced correction or document why no runner mutation is justified; preserve isolation and existing limits. Route: worker (context backstop) if implementation is warranted. Commit: pending.
+- T3 [done] (S1-S2) Rebuild and run the search/360-degree E2E against the exact final Dialog source; run checks relevant to any correction, not blind full-suite retries. Route: parent background checks. Commit: pending.
+- T4 [in_progress] (S1-S2) Record results and limits, sync memory and commit an isolated local unit if artifacts or code changed. Route: parent. Commit: pending.
+
+## Log
+
+- L1: User accepted the proposed next unit with "perfecto te autorizo todo y avanza de forma autonoma".
+- L2: Accepted proposal context (assistant, not a verbatim user requirement): prioritize trustworthy verification; identify where API execution stalls, distinguish runner/cache/fixtures from regressions, verify the exact final Dialog build, and do not increase timeouts or rerun complete suites blindly. Other proposed UI/domain work remains downstream of this first unit, not claimed implemented here.
+- L3: Read-only exploration found no conclusive stuck test: the old full gate only reports API RUN and no summary. Existing per-test/hook limits are 20 seconds with one worker. Earlier minimal API no-filesystem-cache check passed. Root and app-local Vitest resolve to different pnpm peer variants; causal relevance is not established. API has 106 test files; total legitimate serial fixture cost is another hypothesis, not a proven hang.
+- L4: Start at 37029af on feat/architecture-guardrails; move to a dedicated verification branch before changes. Preserve dirty Cloudflare source/test/deployment/task/evidence. No dependencies, auth weakening, real data, migrations, publishing or deployment. No global suite launched without a discriminating finding. Forecast under 400 authored lines; local evidence and focused fixes only.
+- L5: Default cached app-local runner diagnostic exited 0 after 14 s: 2 explicitly selected files, 12 tests passed. Pure domain cases took 2 ms/10 ms; HTTP cases took 3.88 s first and about 0.82-0.92 s thereafter. This disproves a universal startup/collection failure for this pair, but does not establish the full-suite timeout cause. No cache bypass, cache deletion, fixture/security weakening or configuration mutation occurred. Do not infer a poisoned cache from different pnpm peer paths alone.
+- L6: Because the bounded diagnostic did not reproduce a runner defect, T2 must prefer documentation/observability guidance over an unproven configuration or fixture optimization. Preserve global timeout failures and avoid claiming a green full API suite. T1's completed scope is the bounded discriminating experiment, not a resolved global root cause.
+- L7: Worker completed docs/testing/verification.md and evidence README, explaining cached default passes, file-level fixture templates/app clones, real hashing, unchanged 20-second limits, explicit file filters and truthful outcome statuses. No runner, fixture or security changes. Seven local links checked successfully by worker before parent corrected the evidence links.
+- L8: Parent confirmed api-default.stderr and api-default.exit exist (184 bytes and `0`), although Git ignores them; corrected the worker's mistaken missing-artifact statement and will explicitly track those files. T3 will capture aggregate source hashes before and after build/browser execution to close the final-Dialog proof gap.
+- L9: Exact final browser check exited 0 after 13 s: web build 2.81 s and 1 Chromium search/360-degree test passed (8.3 s test run), including browser hygiene under the existing strict CSP. Source snapshots before/after match for all 282 frontend/config/lock inputs, aggregate SHA-256 94d62506f1ba32facf8f5d0db9abf6daa2cb2a0f29ea1906253dd8c90a7945b5. This closes the stale-build proof gap for that single browser scenario, not the full browser suite. Existing large-chunk warnings remain. No production source or runner configuration changed.
+- L10: User continuation messages: "Review the delivered subagent output and continue." and "continue". Parent reconciled durable exit codes and source hashes; no tests were rerun. T1-T3 done within their bounded scopes; T4 updates evidence/doc status and commits locally, preserving Cloudflare and all unresolved global-suite limitations.
+- L11: Closure worker updated the guide and evidence table to the final browser result. Targeted Prettier check exit0; all 16 local Markdown links exist, including ignored stderr/exit files. No runtime tests or builds repeated. The parent read back both final documents.
+- L12: Native ASSESS unavailable due unrelated untracked scope; returned plan keeps writer self-verification and requires no independent verifier. No reviewDue continuation or native approval claimed. Risk: none for this documentation/evidence-only unit, with no shared production, runner configuration, dependency, security, persistence or public API changes. Full gate and CI remain unproven; server PostgreSQL integration skipped without an explicit synthetic connection.

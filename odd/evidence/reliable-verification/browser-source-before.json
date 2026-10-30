@@ -1,0 +1,10 @@
+{
+  "git_head": "37029af05b2564b6c5006918f2a3dff9eb300f1b",
+  "source_tree_sha256": "94d62506f1ba32facf8f5d0db9abf6daa2cb2a0f29ea1906253dd8c90a7945b5",
+  "file_count": 282,
+  "dialog_files_sha256": {
+    "apps/web/src/shared/ui/dialog.tsx": "cf683c835cf5b257a3e731f62291254d11cfecac851278e15bbff6184dc7a870",
+    "apps/web/src/features/search/SearchPalette.tsx": "752c4f84f3b311c306190c4a9d05f44f0e639ee8c97150abedcdb9c7cd4106bd",
+    "apps/web/src/features/search/SearchPalette.module.css": "4082a498f6c8d4fc061a23305faee0fc94ac638eaed814915ba40dda3cace862"
+  }
+}
