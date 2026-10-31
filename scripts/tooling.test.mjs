@@ -9,7 +9,7 @@ const root = process.cwd();
 test('API app-local Vitest registers shared cleanup hooks in the active runner', () => {
   const result = spawnSync('./node_modules/.bin/vitest', ['run', 'test/config.test.ts'], {
     cwd: path.join(root, 'apps/api'),
-    env: { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8' },
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8', NO_COLOR: '1' },
     encoding: 'utf8',
   });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
@@ -20,7 +20,7 @@ test('API app-local Vitest registers shared cleanup hooks in the active runner',
 test('web app-local Vitest registers setup hooks in the active runner', () => {
   const result = spawnSync('./node_modules/.bin/vitest', ['run', 'src/app/navigation.test.ts'], {
     cwd: path.join(root, 'apps/web'),
-    env: { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8' },
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8', NO_COLOR: '1' },
     encoding: 'utf8',
   });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
