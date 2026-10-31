@@ -55,8 +55,12 @@ The Worker sets `NODE_ENV=production`, the database URL (from Hyperdrive), the u
 ```sh
 pnpm --filter @mascli/hosting-cloudflare build   # SPA into ./public + migration index
 pnpm --filter @mascli/hosting-cloudflare bundle  # dry run: bundle size and bindings
-pnpm exec wrangler deploy                        # only with the owner's go-ahead
+pnpm --filter @mascli/hosting-cloudflare run deploy:worker  # only with the owner's go-ahead
 ```
+
+`deploy:worker` turns Hyperdrive query caching off before every deploy, so a cache switched on
+in the dashboard cannot serve stale accounts, sessions or grants; a test pins the script to the
+Hyperdrive id in `wrangler.jsonc`. If you change the id, update both.
 
 Migrations run on the first request of each isolate, from the bundled SQL files.
 
