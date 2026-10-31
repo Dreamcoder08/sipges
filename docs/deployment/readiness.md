@@ -15,14 +15,17 @@ Related documents: [workspace and configuration](../migration/workspace.md),
 [ADRs](../adr/README.md) and the original
 [secure public deployment plan](../../odd/tasks/secure-mascli-public-deployment.md).
 
-## Hosting direction: retain Node/Vercel
+## Hosting direction: Node/Vercel published, Workers in local verification
 
-The owner accepted prioritizing the existing hosting path rather than maintaining a private
-cryptographic-library patch for Workers. The [Workers investigation](../../odd/tasks/cloudflare-workers.md)
-is deferred, not a verified deployment alternative. Its local PostgreSQL connection and migrations
-passed after a binding-only TLS correction, but application initialization remained blocked by
-`hash-wasm` dynamic WebAssembly compilation, which workerd rejects. No private-library patch,
-Cloudflare deployment or switch of the published demo was performed.
+The published demo stays on the existing Node/Vercel path. The
+[Workers investigation](../../odd/tasks/cloudflare-workers.md) was deferred (L14) because
+`hash-wasm` compiles WebAssembly at run time, which workerd rejects, and then resumed (L16) with a
+plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
+verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
+Hyperdrive connection and migrations already passed after a binding-only TLS correction.
+Workers is still not a verified deployment alternative: the end-to-end suite against `wrangler dev`
+(T4) and the delivery guide (T5) are open, and no Cloudflare deployment or switch of the published
+demo was performed.
 
 The existing serial Node/Chromium E2E suite (`pnpm e2e`, job-6) completed with exit 0:
 **93 passed, 1 skipped**. It built the SPA and used isolated synthetic PGlite state, with

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '../src/bindings.ts';
 
 const mocks = vi.hoisted(() => ({
@@ -24,9 +24,26 @@ vi.mock('../../api/src/contexts/identity/infrastructure/portable-password-hasher
 
 import worker from '../src/index.ts';
 
+/** The bindings and variables a deployed Worker has; synthetic values only. */
+const syntheticEnv = () =>
+  ({
+    HYPERDRIVE: {
+      connectionString: 'postgresql://synthetic:synthetic@binding.hyperdrive.local:5432/synthetic',
+    },
+    MASCLI_ALLOWED_HOSTS: 'localhost',
+    MASCLI_DATA_KEY: Buffer.alloc(32).toString('base64'),
+    EVIDENCE: {},
+    ASSETS: {},
+  }) as unknown as Env;
+
 describe('Worker Hyperdrive connection', () => {
-  it('uses the Hyperdrive socket without client TLS and closes after the response stream ends', async () => {
+  // Each case starts from fresh mocks, so the cases pass in any order or alone.
+  beforeEach(() => {
+    vi.clearAllMocks();
     mocks.postgres.mockReturnValue({ client: {}, close: mocks.close });
+  });
+
+  it('uses the Hyperdrive socket without client TLS and closes after the response stream ends', async () => {
     let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
     mocks.fetch.mockResolvedValue(
       new Response(
@@ -38,16 +55,7 @@ describe('Worker Hyperdrive connection', () => {
       ),
     );
     const pending: Promise<unknown>[] = [];
-    const env = {
-      HYPERDRIVE: {
-        connectionString:
-          'postgresql://synthetic:synthetic@binding.hyperdrive.local:5432/synthetic',
-      },
-      MASCLI_ALLOWED_HOSTS: 'localhost',
-      MASCLI_DATA_KEY: Buffer.alloc(32).toString('base64'),
-      EVIDENCE: {},
-      ASSETS: {},
-    } as unknown as Env;
+    const env = syntheticEnv();
     const response = await worker.fetch(new Request('http://localhost/health'), env, {
       waitUntil: (promise) => {
         pending.push(promise);
@@ -68,15 +76,8 @@ describe('Worker Hyperdrive connection', () => {
   });
 
   it('still runs scheduled work and closes its connection', async () => {
-    mocks.close.mockClear();
-    mocks.postgres.mockClear();
     const pending: Promise<unknown>[] = [];
-    const env = {
-      HYPERDRIVE: {
-        connectionString:
-          'postgresql://synthetic:synthetic@binding.hyperdrive.local:5432/synthetic',
-      },
-    } as unknown as Env;
+    const env = syntheticEnv();
     await worker.scheduled({}, env, {
       waitUntil: (promise) => {
         pending.push(promise);
