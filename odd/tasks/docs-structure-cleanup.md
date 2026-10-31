@@ -19,9 +19,9 @@ Gentleman/gentle-shell conventions: a short README as the entry point, one page 
 
 - T1 [x] S1 — Read-only audit: inventory of every documentation file (root, docs/, odd/), what each covers, duplicates and contradictions, broken links, obsolete material; route: gentle-ai-explore; commit: none
 - T2 [x] S1,S2 — Target structure and move/merge/delete map; route: inline; commit: this document
-- T3 [ ] S1,S2 — Root cleanup: legacy release notes and test results consolidated into history, legacy launchers moved under reference/python; route: worker; commit: own
-- T4 [ ] S1,S2 — README rewrite and docs/ index; merge duplicate pages; fix links; route: worker; commit: own
-- T5 [ ] S1 — Verification: link check, nothing referenced is lost, lint/format; route: inline; commit: final
+- T3 [x] S1,S2 — Root cleanup: legacy release notes and test results consolidated into history, legacy launchers moved under reference/python; route: worker; commit: own — f305a28
+- T4 [x] S1,S2 — README rewrite and docs/ index; merge duplicate pages; fix links; route: worker; commit: 0f635f0 (consolidation) + final commit (README and index)
+- T5 [x] S1 — Verification: link check, nothing referenced is lost, lint/format; route: inline; commit: final (README and index commit)
 
 ## Target map (T2)
 
@@ -48,3 +48,4 @@ Kept in place on purpose: docs/ARQUITECTURA.md and docs/diagrams (Archify skill 
 - L2 — The listing came from the main checkout (`feature/mascli-clean-rebuild`); the same legacy files are tracked on `main`: 14 NOVEDADES_RC_*.md, 2 RELEASE_NOTES_*, 4 RESULTADO_PRUEBA_*, PRUEBAS_RC_2_7, PILOTO_RETEST_V0_5_1.json, IRSA_ESPECIFICACION_TECNICA.txt, NUEVO_MODULO_ANALISIS_SITUACIONAL.txt, 4 launchers; docs/ holds 102 files. Work happens on branch `docs/structure-cleanup` from `origin/main`.
 
 - L3 — Audit (explorer mvx0dw43-4-repg): the four launchers run `uvicorn app:app` from the root and are broken since app.py moved to reference/python; docs/secure-cookies.md:18 still describes them; CHANGELOG has nothing before 1.0 though README points to it; three or four overlapping verification pages; docs/superpowers has no referrers; migration/web.md:108 stale status. No broken links found by search (real link check pending in T5).
+- L4 — T3–T5 applied on `docs/structure-cleanup`: 31 `git mv` renames under `reference/python/` (history, launchers, specs), evidence pages under `docs/history/`, `docs/testing.md` merged from two pages, `docs/superpowers/` deleted, `docs/overview.md` takes the stack/state/local-dev content removed from README, short README and `docs/README.md` index. Link check over tracked `*.md`: only pre-existing broken link `.agents/skills/judgment-day/SKILL.md → ../_shared/review-ledger-contract.md`; `pnpm lint` and `test/scenarios.test.ts` pass.

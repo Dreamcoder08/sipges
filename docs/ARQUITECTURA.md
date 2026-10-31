@@ -2,6 +2,11 @@
 
 El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](history/t11-verification.md) registra los flujos comprobados y sus límites.
 
+## Abrir el mapa
+
+Descarga [el HTML](diagrams/arquitectura.html) y ábrelo en el navegador: GitHub muestra el código del archivo y no ejecuta el visor. Selecciona un componente para consultar sus referencias de código. El visor funciona como un archivo autónomo; los enlaces al repositorio requieren conexión y permisos de acceso. Previsualización: [`arquitectura.png`](diagrams/arquitectura.png); fuente editable: [`arquitectura.json`](diagrams/arquitectura.json).
+
+
 ## Recorrido y reglas de dependencia
 
 La SPA React llama a Hono por HTTP del mismo origen. Zod valida las respuestas del cliente y las entradas HTTP. La sesión y el proyecto activo se mantienen en cookies HttpOnly; cambiar proyecto llama al servidor. Las rutas protegidas pasan por sesión/origen, tenancy y autorización por rol antes del caso de uso.

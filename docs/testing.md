@@ -4,12 +4,12 @@ Run `pnpm verify` from the repository root for the full local gate: lint, format
 
 ## Quick path
 
-| Goal | Command |
-| --- | --- |
-| Full gate | `pnpm verify` |
-| One API area | `timeout 60s pnpm --filter @mascli/api exec vitest run <files> --reporter=verbose` |
+| Goal             | Command                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Full gate        | `pnpm verify`                                                                                                      |
+| One API area     | `timeout 60s pnpm --filter @mascli/api exec vitest run <files> --reporter=verbose`                                 |
 | One browser flow | `pnpm --filter @mascli/web build`, then `pnpm --filter @mascli/e2e exec playwright test <file> --project=chromium` |
-| Tooling tests | `pnpm test:tooling` |
+| Tooling tests    | `pnpm test:tooling`                                                                                                |
 
 Use explicit package `exec vitest` file filters; arguments forwarded through `pnpm test --` may not select the intended files. Always inspect the final file and test counts.
 
@@ -86,12 +86,12 @@ These five tests keep cleanup between tests, account isolation and the closing o
 
 Capture the command, stdout, stderr and exit code separately, including empty stderr; identify the build and the selection.
 
-| Observation | Report as |
-| --- | --- |
-| Successful exit and final summary for that scope | **passed** |
-| Timeout, exit 124 | **failed (timeout)** |
-| Output without a final result | **incomplete** |
-| Not run, including optional integrations | **skipped** |
+| Observation                                      | Report as            |
+| ------------------------------------------------ | -------------------- |
+| Successful exit and final summary for that scope | **passed**           |
+| Timeout, exit 124                                | **failed (timeout)** |
+| Output without a final result                    | **incomplete**       |
+| Not run, including optional integrations         | **skipped**          |
 
 Progress from earlier stages does not make the root check or CI green.
 
