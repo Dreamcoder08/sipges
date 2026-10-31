@@ -159,14 +159,24 @@ export const severityOf = (value: string) => {
   return 1;
 };
 
-const hasWord = (haystack: string, word: string) =>
-  new RegExp(`(^|[^a-z0-9])${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(haystack);
+/**
+ * One pattern per topic, compiled once: a keyword matches at the start of a word (by prefix),
+ * never inside one. Building a RegExp per record and keyword dominated situation processing.
+ */
+const TOPIC_PATTERNS = Object.entries(TOPIC_KEYWORDS).map(
+  ([name, words]) =>
+    [
+      name,
+      new RegExp(
+        `(^|[^a-z0-9])(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
+      ),
+    ] as const,
+);
 
 /** Topic names of a record: its topic fields (mapped to a known topic when they match) and keywords. */
 export const topicsOf = (payload: SourceRecord['payload'], spec: ModuleSpec) => {
   const found = new Set<string>();
-  const known = (value: string) =>
-    Object.entries(TOPIC_KEYWORDS).filter(([, words]) => words.some((w) => hasWord(value, w)));
+  const known = (value: string) => TOPIC_PATTERNS.filter(([, pattern]) => pattern.test(value));
   for (const key of spec.topics) {
     const value = text(payload[key]);
     if (!value) continue;

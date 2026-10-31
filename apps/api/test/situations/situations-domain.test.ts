@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SETTINGS } from '../../src/contexts/situations/domain/settings.ts';
-import { dayOf, toSignal } from '../../src/contexts/situations/domain/signals.ts';
+import {
+  MODULE_SPECS,
+  dayOf,
+  toSignal,
+  topicsOf,
+} from '../../src/contexts/situations/domain/signals.ts';
 import {
   DEFAULT_RECOMMENDATIONS,
   findSituations,
@@ -166,5 +171,28 @@ describe('situations engine', () => {
     expect(dayOf('2026-02-30')).toBeNull();
     expect(toSignal({ module: 'Otro', id: 'x', payload: {} }, TODAY)).toBeNull();
     expect(listNames(['A', 'B', 'C', 'D', 'E'])).toBe('A, B, C y 2 más');
+  });
+});
+
+describe('topic keywords', () => {
+  const events = MODULE_SPECS['Eventos'];
+  if (!events) throw new Error('Eventos module spec is missing');
+  const topics = (text: string, Tema = '') =>
+    topicsOf({ Descripcion_Hecho: text, Tema }, events).sort();
+
+  it('match at the start of a word, by prefix, ignoring accents and case', () => {
+    expect(topics('Problema HÍDRICO en el canal')).toEqual(['Agua']);
+    expect(topics('Reclamo por contratación y polvo')).toEqual(['Empleo local', 'Medio ambiente']);
+    expect(topics('(paro) anunciado')).toEqual(['Movilización']);
+  });
+
+  it('never match inside a word, and multi-word keywords need the whole phrase', () => {
+    expect(topics('Llevaron paraguas al trabajo')).toEqual(['Empleo local']);
+    expect(topics('Consulta sobre el padrón')).toEqual(['Gobernanza comunal']);
+    expect(topics('Consulta previa convocada')).toEqual(['Participación y consulta']);
+  });
+
+  it('keeps an unknown topic field as its own capitalised topic', () => {
+    expect(topics('', 'caminos rurales')).toEqual(['Caminos rurales']);
   });
 });

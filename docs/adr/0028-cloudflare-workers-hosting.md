@@ -20,7 +20,10 @@ request (10 ms on Free; up to 5 minutes, default 30 s, on Paid).
 2. **PostgreSQL through Hyperdrive.** Each `fetch` and `scheduled` call binds its own
    connection (postgres.js, `max: 5`, `prepare: true`) through a request-scoped SQL client and
    closes it only after the response body and deferred work finish. The binding socket is
-   internal, so the client uses no TLS; Hyperdrive owns TLS to the origin.
+   internal, so the client uses no TLS; Hyperdrive owns TLS to the origin. Hyperdrive's query cache
+   stays disabled: it caches reads outside transactions, which here are the global accounts,
+   sessions, grants and API keys, so a revoked session could stay valid until the entry expires.
+   Tenant reads run in transactions and are never cached. `deploy:worker` re-asserts it.
 3. **Ports replaced at composition, never by branching business code.** `buildContainer` takes
    optional overrides that only the Worker sets:
    - `passwordHasher`: Argon2id and legacy PBKDF2 in plain JavaScript (`@noble/hashes`), same

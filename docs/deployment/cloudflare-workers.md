@@ -22,9 +22,15 @@ Use synthetic data until the owner approves a real-data migration.
 ```sh
 cd apps/hosting-cloudflare
 pnpm exec wrangler login
-pnpm exec wrangler hyperdrive create mascli --connection-string "<postgres-url-with-sslmode=require>"
+pnpm exec wrangler hyperdrive create mascli --caching-disabled true \
+  --connection-string "<postgres-url-with-sslmode=require>"
 pnpm exec wrangler r2 bucket create mascli-evidence
 ```
+
+Keep Hyperdrive's query cache **disabled**: it caches reads outside transactions by text and
+parameters, which in MASCLI are the global tables (accounts, sessions, grants, API keys). A cached
+read can keep a revoked session or key alive and shows writes up to a minute late. Tenant reads
+run inside `withTenant` transactions, which Hyperdrive never caches.
 
 Put the Hyperdrive id printed by the first command in `wrangler.jsonc`
 (`REPLACE_WITH_HYPERDRIVE_CONFIG_ID`). Never commit the connection string.
@@ -50,14 +56,22 @@ The Worker sets `NODE_ENV=production`, the database URL (from Hyperdrive), the u
 ```sh
 pnpm --filter @mascli/hosting-cloudflare build   # SPA into ./public + migration index
 pnpm --filter @mascli/hosting-cloudflare bundle  # dry run: bundle size and bindings
-pnpm exec wrangler deploy                        # only with the owner's go-ahead
+pnpm --filter @mascli/hosting-cloudflare run deploy:worker  # only with the owner's go-ahead
 ```
+
+`deploy:worker` turns Hyperdrive query caching off before every deploy, so a cache switched on
+in the dashboard cannot serve stale accounts, sessions or grants; a test pins the script to the
+Hyperdrive id in `wrangler.jsonc`. If you change the id, update both. Deploy only through
+`deploy:worker`: a plain `wrangler deploy` skips the guard, and the cache state is re-asserted
+only at deploy time, not while the Worker runs.
 
 Migrations run on the first request of each isolate, from the bundled SQL files.
 
 ## 4. Check the deployment
 
-1. `GET /health` returns 200 on the public host and 400 (`Host no permitido`) on any other host.
+1. `GET /health` returns 200 on the public host. On `workers.dev`, Cloudflare's edge already
+   answers 403 for a foreign host; a foreign host that reaches the Worker (custom domain or
+   route) gets 400 (`Host no permitido`).
 2. The SPA loads with MASCLI's CSP header (no inline scripts).
 3. Sign in, enrol MFA, open the territorial map and upload one evidence file (lands in R2).
 4. `wrangler tail` shows the 15-minute Cron Trigger completing without errors.
