@@ -1,0 +1,42 @@
+(node:1328526) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1328811) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1329187) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1329469) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1329528) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1329669) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1329781) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1329847) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | test/ontology/semantic-search.test.ts[2m > [22m[2mhybrid search[2m > [22m[2mfalls back to lexical search when the model is down or semantic search is off
+[22m[39m{"time":"2026-10-30T22:48:23.814Z","level":"warn","msg":"semantic_search_unavailable","request_id":"e0824ec7-7cb2-4b97-bbed-4b0f3d419987","trace_id":"6bb961081b6cb7f55873875e7f78cafc","span_id":"c7452cc483e86de3","actor":"admin","error":{"name":"Error","message":"offline","stack":"Error: offline\n    at Object.embed (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/semantic-search.test.ts:68:35)\n    at refreshEmbeddings (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/application/ontology-service.ts:178:41)\n    at semanticRefsFor (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/application/ontology-service.ts:196:7)\n    at Object.search (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/application/ontology-service.ts:539:13)\n    at /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/http/ontology-routes.ts:100:20\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)"}}
+
+[90mstderr[2m | test/ontology/semantic-search.test.ts[2m > [22m[2mhybrid search[2m > [22m[2mfalls back to lexical search when the model is down or semantic search is off
+[22m[39m{"time":"2026-10-30T22:48:23.832Z","level":"warn","msg":"semantic_search_unavailable","request_id":"3c4b594e-0a0c-4091-9aa9-4e4c243d9575","trace_id":"affa236e855be0ee4cf48a1f2bc30aed","span_id":"04866af48dfd923b","actor":"admin","error":{"name":"Error","message":"offline","stack":"Error: offline\n    at Object.embed (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/semantic-search.test.ts:68:35)\n    at refreshEmbeddings (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/application/ontology-service.ts:178:41)\n    at semanticRefsFor (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/application/ontology-service.ts:196:7)\n    at Object.search (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/application/ontology-service.ts:539:13)\n    at /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/ontology/http/ontology-routes.ts:100:20\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)\n    at async dispatch (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/hono@4.13.13/node_modules/hono/dist/compose.js:35:11)"}}
+
+(node:1329961) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330020) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330064) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330185) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330227) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330335) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330442) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330462) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330482) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1330515) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)

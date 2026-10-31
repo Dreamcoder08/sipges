@@ -1,0 +1,267 @@
+
+[2mRunning [22m9[2m tests using [22m1[2m worker[22m
+
+  [31m✘[39m  [2m1 [22m[31m[webkit] › tests/11-functional-audit.spec.ts:7:1 › counters follow records and every record opens, edits and shows its report[39m[2m (2ms)[22m
+  [31m✘[39m  [2m2 [22m[31m[webkit] › tests/11-functional-audit.spec.ts:87:1 › the geospatial view frames a concession and the directory lists contacts[39m[2m (3ms)[22m
+  [31m✘[39m  [2m3 [22m[31m[webkit] › tests/11-functional-audit.spec.ts:137:1 › narratives show their trend per day and category[39m[2m (2ms)[22m
+  [31m✘[39m  [2m4 [22m[31m[webkit] › tests/15-record-insights.spec.ts:5:3 › record heatmap and actor classification open stored files (desktop)[39m[2m (2ms)[22m
+  [31m✘[39m  [2m5 [22m[31m[webkit] › tests/15-record-insights.spec.ts:5:3 › record heatmap and actor classification open stored files (phone)[39m[2m (2ms)[22m
+  [31m✘[39m  [2m6 [22m[31m[webkit] › tests/17-quality-followup.spec.ts:5:3 › review, documented links and followup persist through real API (desktop)[39m[2m (3ms)[22m
+  [31m✘[39m  [2m7 [22m[31m[webkit] › tests/17-quality-followup.spec.ts:5:3 › review, documented links and followup persist through real API (phone)[39m[2m (2ms)[22m
+  [31m✘[39m  [2m8 [22m[31m[webkit] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (desktop)[39m[2m (3ms)[22m
+  [31m✘[39m  [2m9 [22m[31m[webkit] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (phone)[39m[2m (3ms)[22m
+
+
+[31m  1) [webkit] › tests/11-functional-audit.spec.ts:7:1 › counters follow records and every record opens, edits and shows its report [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  2) [webkit] › tests/11-functional-audit.spec.ts:87:1 › the geospatial view frames a concession and the directory lists contacts [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  3) [webkit] › tests/11-functional-audit.spec.ts:137:1 › narratives show their trend per day and category [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  4) [webkit] › tests/15-record-insights.spec.ts:5:3 › record heatmap and actor classification open stored files (desktop) [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  5) [webkit] › tests/15-record-insights.spec.ts:5:3 › record heatmap and actor classification open stored files (phone) [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  6) [webkit] › tests/17-quality-followup.spec.ts:5:3 › review, documented links and followup persist through real API (desktop) [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  7) [webkit] › tests/17-quality-followup.spec.ts:5:3 › review, documented links and followup persist through real API (phone) [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  8) [webkit] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (desktop) [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  9) [webkit] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (phone) [39m
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo pnpm exec playwright install-deps           ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libxml2\                                     ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+[2m    Error Context: test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/error-context.md[22m
+
+[2m    attachment #2: [1mtrace[2m (application/zip) [2m─────────────────────────────────────────────────────────[2m[22m
+[2m    test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/trace.zip[22m
+[2m    Usage:[22m
+
+[2m        pnpm exec playwright show-trace test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/trace.zip[22m
+
+[2m    [2m────────────────────────────────────────────────────────────────────────────────────────────────[2m[22m
+
+[31m  9 failed[39m
+[31m    [webkit] › tests/11-functional-audit.spec.ts:7:1 › counters follow records and every record opens, edits and shows its report [39m
+[31m    [webkit] › tests/11-functional-audit.spec.ts:87:1 › the geospatial view frames a concession and the directory lists contacts [39m
+[31m    [webkit] › tests/11-functional-audit.spec.ts:137:1 › narratives show their trend per day and category [39m
+[31m    [webkit] › tests/15-record-insights.spec.ts:5:3 › record heatmap and actor classification open stored files (desktop) [39m
+[31m    [webkit] › tests/15-record-insights.spec.ts:5:3 › record heatmap and actor classification open stored files (phone) [39m
+[31m    [webkit] › tests/17-quality-followup.spec.ts:5:3 › review, documented links and followup persist through real API (desktop) [39m
+[31m    [webkit] › tests/17-quality-followup.spec.ts:5:3 › review, documented links and followup persist through real API (phone) [39m
+[31m    [webkit] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (desktop) [39m
+[31m    [webkit] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (phone) [39m

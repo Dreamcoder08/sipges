@@ -1,0 +1,12 @@
+{
+  "synthetic": true,
+  "host": "127.0.0.1",
+  "port": 39043,
+  "workspace_ignored_state": "node_modules/.cache/mascli-full-verification-pg-8nn3oei2",
+  "started": true,
+  "stopped": true,
+  "removed": true,
+  "available_extensions": [
+    "pg_trgm"
+  ]
+}
