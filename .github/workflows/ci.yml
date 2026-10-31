@@ -62,13 +62,17 @@ jobs:
       - run: pnpm --filter @mascli/api exec vitest run --shard=${{ matrix.shard }}/3
 
   e2e:
-    name: End-to-end parity (Playwright, shard ${{ matrix.shard }}/2)
+    name: End-to-end parity (Playwright, ${{ matrix.browser }} ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        # Chromium splits in two shards; the short WebKit suite gets its own job.
+        include:
+          - { browser: chromium, shard: 1/2 }
+          - { browser: chromium, shard: 2/2 }
+          - { browser: webkit, shard: 1/1 }
     services:
       postgres:
         image: postgres:17
@@ -90,15 +94,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Browser revision follows the @playwright/test version pinned in apps/e2e (lockfile).
-      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps chromium ${{ matrix.shard == 2 && 'webkit' || '' }}
+      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps ${{ matrix.browser }}
       - run: pnpm --filter @mascli/web build
-      - run: pnpm --filter @mascli/e2e exec playwright test --shard=${{ matrix.shard }}/2
-      - if: matrix.shard == 2
+      - if: matrix.browser == 'chromium'
+        run: pnpm --filter @mascli/e2e exec playwright test --shard=${{ matrix.shard }}
+      - if: matrix.browser == 'webkit'
         run: pnpm --filter @mascli/e2e exec playwright test --config playwright.webkit.config.ts
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ matrix.shard }}
+          name: playwright-report-${{ matrix.browser }}-${{ strategy.job-index }}
           path: |
             apps/e2e/playwright-report
             apps/e2e/test-results
