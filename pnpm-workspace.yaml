@@ -15,3 +15,8 @@ packageExtensions:
   dependency-cruiser:
     peerDependencies:
       typescript: '>=5'
+
+# Wrangler (apps/hosting-cloudflare) needs the platform binaries these install scripts fetch.
+allowBuilds:
+  esbuild: true
+  workerd: true

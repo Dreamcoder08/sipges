@@ -17,9 +17,6 @@ export type EvidenceLookup = {
   find(scope: Scope, attachmentId: string): Promise<DecisionReceipt | null>;
 };
 
-/** Whether the scope's project has MASCLI 4.0 switched on (Situations context). */
-export type Version4Lookup = { enabled(scope: Scope): Promise<boolean> };
-
 export type NewAction = Omit<PreventiveAction, 'history' | 'status' | 'progress' | 'updatedAt'>;
 
 export type ActionStore = {

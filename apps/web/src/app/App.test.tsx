@@ -172,7 +172,12 @@ describe('dashboard and navigation', () => {
       within(demands as HTMLElement).getByRole('link', { name: 'Ver registros' }),
     ).toHaveAttribute('href', '/demandas');
     expect(await screen.findByText('42.3')).toBeVisible();
-    expect(screen.getByText('Amarillo', { selector: 'p > span' })).toBeVisible();
+    // The colour always carries its meaning; there is no per-project switch.
+    expect(
+      await screen.findByText('Amarillo – Requiere atención y seguimiento', {
+        selector: 'p > span',
+      }),
+    ).toBeVisible();
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
     expect(await screen.findByText('Motor sintético')).toBeVisible();
     const alerts = (
@@ -204,24 +209,18 @@ describe('dashboard and navigation', () => {
       'page',
     );
     expect(screen.queryByText('En migración')).toBeNull();
-    expect(document.title).toBe('Auditoría | MASCLI');
+    expect(document.title).toBe('Auditoría | MASCLI 4.0');
   });
 
-  it('keeps the MASCLI 3.0 menu until the project switches MASCLI 4.0 on', async () => {
+  it('shows the MASCLI 4.0 screens in the menu of every project, with no switch', async () => {
     signIn();
     at('/');
-    const { unmount } = render(<App />);
-    const nav = await screen.findByRole('navigation', { name: 'Secciones' });
-    expect(within(nav).getByRole('link', { name: 'MASCLI 4.0' })).toBeInTheDocument();
-    expect(within(nav).queryByRole('link', { name: 'Situaciones' })).toBeNull();
-    expect(within(nav).queryByRole('link', { name: 'Buzón' })).toBeNull();
-    unmount();
-    resetApi({ version4: true });
-    signIn();
     render(<App />);
-    const shown = await screen.findByRole('navigation', { name: 'Secciones' });
-    expect(await within(shown).findByRole('link', { name: 'Situaciones' })).toBeInTheDocument();
-    expect(within(shown).getByRole('link', { name: 'Buzón' })).toBeInTheDocument();
+    const nav = await screen.findByRole('navigation', { name: 'Secciones' });
+    expect(await within(nav).findByRole('link', { name: 'Situaciones' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Buzón' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Lecciones' })).toBeInTheDocument();
+    expect(within(nav).getByRole('link', { name: 'Configuración' })).toBeInTheDocument();
   });
 
   it('offers a skip link and keeps sign-out out of the desktop top bar', async () => {

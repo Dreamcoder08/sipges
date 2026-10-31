@@ -88,7 +88,9 @@ test.describe('Secure cookie policy and exact 0|1 override (S7)', () => {
         expect(run.setCookie).toContain('SameSite=Strict');
         // Chromium refuses a Secure cookie from an insecure origin: no session is established.
         expect(run.stored).toEqual([]);
-        await expect(run.page.getByRole('heading', { name: 'Ingresar a MASCLI' })).toBeVisible();
+        await expect(
+          run.page.getByRole('heading', { name: 'Ingresar a MASCLI 4.0' }),
+        ).toBeVisible();
         await run.close();
       } finally {
         await instance.stop();

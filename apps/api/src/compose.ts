@@ -33,6 +33,7 @@ import { log } from './platform/observability/logger.ts';
 import { randomBytes, randomUUID } from 'node:crypto';
 import {
   createReferenceService,
+  type ReferenceReader,
   type ReferenceService,
 } from './contexts/reference/application/index.ts';
 import { fileReferenceReader } from './contexts/reference/infrastructure/file-reference-reader.ts';
@@ -50,6 +51,7 @@ import {
   createAnalyticsService,
 } from './contexts/analytics/application/index.ts';
 import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import { createSqlDashboardRecordReader } from './contexts/analytics/infrastructure/sql-dashboard-record-reader.ts';
 import {
   type SituationsService,
   createSituationsService,
@@ -83,6 +85,7 @@ import { type AuditService, createAuditService } from './contexts/audit/applicat
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
   type DocumentLabService,
+  type DocumentReader,
   createDocumentLabService,
 } from './contexts/documents/application/index.ts';
 import {
@@ -129,7 +132,7 @@ import { createSecretCipher } from './contexts/identity/infrastructure/secret-ci
 import { sessionTokens } from './contexts/identity/infrastructure/session-tokens.ts';
 import { createSqlIdentityStore } from './contexts/identity/infrastructure/sql-identity-store.ts';
 import { createGoogleSignIn } from './contexts/identity/infrastructure/google-oidc.ts';
-import type { GoogleSignIn } from './contexts/identity/application/ports.ts';
+import type { GoogleSignIn, PasswordHasher } from './contexts/identity/application/ports.ts';
 import { totp } from './contexts/identity/infrastructure/totp.ts';
 import {
   createIndicatorsService,
@@ -212,6 +215,12 @@ export const buildContainer = async (deps: {
   narrator?: Narrator | null;
   /** Overrides the Google client (tests inject a fake identity provider). */
   googleSignIn?: GoogleSignIn;
+  /** Overrides the native Argon2id hasher (Cloudflare Workers inject the WebAssembly one). */
+  passwordHasher?: PasswordHasher;
+  /** Overrides the worker-thread PDF reader (Cloudflare Workers inject the inline one). */
+  documentReader?: DocumentReader;
+  /** Overrides the file reference reader (Cloudflare Workers inject bundled references). */
+  referenceReader?: ReferenceReader;
   /** Overrides outbound HTTP for automation channels (tests record messages instead). */
   channelSender?: ChannelSender;
   /** Overrides browser push delivery (tests record pushes instead). */
@@ -220,7 +229,7 @@ export const buildContainer = async (deps: {
   const cipher = createSecretCipher(deps.config.dataKey);
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
-    hasher: passwordHasher,
+    hasher: deps.passwordHasher ?? passwordHasher,
     totp,
     cipher,
     tokens: sessionTokens,
@@ -317,6 +326,7 @@ export const buildContainer = async (deps: {
   const recordReader = createSqlAnalyticsRecordReader(deps.sql);
   const analytics = createAnalyticsService({
     reader: recordReader,
+    dashboardReader: createSqlDashboardRecordReader(deps.sql),
     clock: deps.clock,
     renderer: docxRenderer,
   });
@@ -333,8 +343,8 @@ export const buildContainer = async (deps: {
     phaseWeights: { forTenant: situations.phaseWeights },
   });
   const reader = deps.config.ocr
-    ? withOcr(documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
-    : documentReader;
+    ? withOcr(deps.documentReader ?? documentReader, ocrmypdfRecognizer(deps.config.ocr.languages))
+    : (deps.documentReader ?? documentReader);
   const evidence = createEvidenceService({
     storage: deps.objectStorage ?? createObjectStorage(deps.config.storage),
     store: createSqlAttachmentStore(deps.sql),
@@ -375,7 +385,6 @@ export const buildContainer = async (deps: {
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
-    version4: { enabled: async (scope) => (await situations.settings(scope)).version4 },
   });
   const prevention = createPreventionService({
     store: createSqlActionStore(deps.sql),
@@ -388,7 +397,6 @@ export const buildContainer = async (deps: {
           : null;
       },
     },
-    version4: { enabled: async (scope) => (await situations.settings(scope)).version4 },
     clock: deps.clock,
     randomHex,
   });
@@ -458,7 +466,6 @@ export const buildContainer = async (deps: {
     feeds: createSqlMediaFeeds(deps.sql),
     gateway: deps.feedGateway ?? createRssFeedGateway(),
     importer: sourceImporter,
-    active: situations.version4,
     clock: deps.clock.now,
   });
   const automation = createAutomationService({
@@ -511,7 +518,7 @@ export const buildContainer = async (deps: {
     authorizedSources,
     media,
     runtime,
-    reference: createReferenceService(fileReferenceReader),
+    reference: createReferenceService(deps.referenceReader ?? fileReferenceReader),
     config: deps.config,
     identity,
     googleSignIn:

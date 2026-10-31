@@ -29,6 +29,18 @@ Reglas de memoria: guardar decisiones, correcciones, convenciones y hallazgos co
 **Qué / Por qué / Dónde / Aprendido**, en español y con `scope: project`. Nunca guardar datos reales,
 datos personales, credenciales ni URLs privadas: los fragmentos se commitean.
 
+## Skills duplicadas en Pi
+
+[`.pi/settings.json`](../../.pi/settings.json) evita los ocho conflictos con `~/.agents/skills/`:
+`chained-pr`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript`,
+`work-unit-commits` y `zod-4`. Se conservan las copias del proyecto en `.agents/skills/`, su contenido y
+los hashes de `skills-lock.json`; las demás skills globales siguen disponibles.
+
+Cada ruta global concreta se declara y se excluye con `-` en la misma lista. La declaración permite que
+el resolvedor de Pi registre esa ruta como desactivada antes del autodescubrimiento global; las
+exclusiones solas no filtran ese ámbito en la versión comprobada. No se modifica la instalación global.
+Tras aceptar la configuración del proyecto, reinicia Pi o ejecuta `/reload` para aplicarla.
+
 ## Qué no se adopta en el repositorio y por qué
 
 | Pieza de Gentle AI | Motivo |

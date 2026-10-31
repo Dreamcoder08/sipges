@@ -5,12 +5,61 @@ after algorithmic fixes and at 10× the current data volume:
 - p95 latency exceeds 500 ms, or
 - a CPU-bound task blocks the event loop for more than 50 ms and worker threads cannot solve it.
 
-**Result: the gate does not trip.** Four fixes brought every 10× scenario under both limits:
+**Historical result (2026-10-13): the gate did not trip.** Four fixes brought every 10×
+scenario under both limits on that environment:
 - two algorithmic fixes (candidate links and finding comparison);
 - one PDF worker thread;
 - one parallel embedding call.
 
 No second language is added.
+
+**Current local result (2026-10-24): the full synthetic run completed, but dashboard and
+IRSA exceeded 50 ms loop block at 10× on embedded PGlite (86.10 / 64.44 ms).** Their
+p95 values were 86.43 / 63.84 ms, below 500 ms. This is not a comparable PostgreSQL-server
+regression or justification for a native adapter. See [T6 evidence and limits](../../odd/evidence/t6-benchmark/README.md)
+and [the 36-scenario result JSON](../../odd/evidence/t6-benchmark/full.json).
+
+## Dashboard projection candidate (local, not a production gate)
+
+The first [production-candidate slice](../../odd/tasks/production-candidate.md) keeps the
+summary engine and generic analytics reader unchanged. Only dashboard uses a dedicated SQL
+projection: row IDs and module names, raw JSON `Estado` for Demandas/Alertas and raw JSON
+`Nivel_Preliminar`/`Nivel` for Alertas. Count-only modules return empty payloads. Ordering,
+`withTenant`, the non-owner role, forced-RLS catalog check and clearance policy remain in
+place; classification is evaluated on the stored row, not the projected payload. Missing
+keys become JSON null, equivalent for this engine's status and truthiness fallbacks.
+
+A transient in-memory PGlite comparison seeded `syntheticRecords(10)` (seed 42), all 4,840
+records, through the migrated schema with one synthetic tenant. Both readers ran on the
+same database: three warm-ups each, then ten interleaved samples, reversing reader order
+every sample. Timing covers `reader.read`, including tenant transaction and catalog check;
+JSON byte counting and summary calculation are outside timing. No files or external database
+were used. Results below serialize the returned `RecordsByModule`, **not wire bytes**:
+
+| Observation | Generic reader | Dashboard projection |
+| --- | --- | --- |
+| Returned rows | 3,580 | 3,580 |
+| Returned records JSON bytes (UTF-8) | 1,684,873 | 169,590 |
+| Reader p50 (5th sorted sample of 10) | 49.24 ms | 29.59 ms |
+| Reader p95 (10th sorted sample of 10) | 58.68 ms | 34.53 ms |
+
+Both summaries were byte-identical (191 bytes). Returned records JSON fell by 89.93%; row
+count did not change. These local timing samples show no reader latency regression in this
+run, but do not isolate SQL CPU cost or establish PostgreSQL-server/load performance. The
+historical baselines below are unchanged. A base-commit HTTP differential and the broader
+candidate gates remain separate evidence owned by T4.
+
+Focused regression (app-local runner, no persisted transform cache):
+
+```bash
+cd apps/api && env -i PATH="$PATH" HOME="$HOME" LANG=C.UTF-8 ./node_modules/.bin/vitest run test/analytics/dashboard-projection.test.ts test/analytics/dashboard-app.test.ts --no-fs-module-cache
+```
+
+Projection tests pin raw JSON types, row order, irrelevant-field removal and forced-RLS
+refusal. Composed HTTP tests pin all counters, falsy level fallback, Python-style coercion,
+closed states, a full-payload sibling analysis, tenant rejection without state changes, and
+the existing clearance distinction (`consulta` limited; `analista`/`coordinador` full).
+These tests establish behavior, not latency.
 
 ## Method
 
@@ -29,7 +78,17 @@ No second language is added.
 - HTTP scenarios go through the full Hono app with the session and tenancy middleware, reading
   4,840 records from **real PostgreSQL 16** (`MASCLI_BENCH_DATABASE_URL`). Without that
   variable the harness uses embedded PGlite, whose queries run on the event loop.
-- Hardware: Intel Xeon @ 2.10 GHz, 4 cores, 16 GiB. Node 22.22.0.
+- The HTTP fixture (`apps/api/bench/http-session.ts`) creates a disposable synthetic admin,
+  logs in, enrolls TOTP through the public setup/enable endpoints, and selects the granted
+  `MASCLI/PRJ-SECHURA` project through `/select-project`. Both session and scope cookies are
+  carried on measurements. MFA, role and tenant middleware remain enabled; enrollment and
+  project selection are setup costs, outside the timed GETs. Secrets and cookies are not
+  printed. Any non-200 GET aborts the run rather than counting a denial as latency.
+- `test/analytics/benchmark-session.test.ts` exercises that same fixture against isolated
+  in-memory PGlite and every declared HTTP scenario, including denial/error handling. It is
+  a functional regression, not a latency baseline or a real PostgreSQL measurement.
+- Hardware for the historical results below: Intel Xeon @ 2.10 GHz, 4 cores, 16 GiB.
+  Node 22.22.0.
 
 ```bash
 corepack pnpm --filter @mascli/api bench                     # full run, embedded PGlite
@@ -75,6 +134,30 @@ PostgreSQL.
 - **Semantic analysis** is latency-bound by the model. The orchestration adds about 2 ms.
 
 ## Re-running
+
+The historical results above are not a current baseline. A later synthetic run aborted after
+login with HTTP 403 (`mfa_required: true`): the freshly bootstrapped admin had not enrolled
+MFA. The shared HTTP fixture now completes enrollment without disabling the guard. Its
+functional regression is distinct from the current full-run measurements linked above. The
+current HTTP timings include embedded SQL, not isolated SQL timings or query counts.
+`--quick` still limits engine scales to 1×/10× and reduces repetitions; HTTP still uses 10×.
+`--out <file>` still writes the complete result JSON only after all scenarios succeed.
+
+### Focused HTTP fixture regression
+
+From the repository root, use the app-local runner and its existing configuration:
+
+```bash
+cd apps/api && env -i PATH="$PATH" HOME="$HOME" LANG=C.UTF-8 ./node_modules/.bin/vitest run test/analytics/benchmark-session.test.ts test/analytics/dashboard-app.test.ts --no-fs-module-cache
+```
+
+Vitest 5 persists transformed modules across invocations. After switching between the root
+and app-local launchers in this pnpm checkout, the cached benchmark test retained an absolute
+import of the root Vitest peer variant; the app-local runner then failed during collection
+with `Vitest failed to find the current suite`. The same unchanged sources passed both files
+with `--no-fs-module-cache` (4 tests). This option bypasses persisted transforms, not the test
+configuration, assertions or isolation; it does not delete caches. Do not treat a root-launcher
+pass alone as proof of compatibility with the app-local runner.
 
 Run the full harness before and after any change to a hotspot, and save the JSON next to these
 results. A new native adapter needs a run that trips the gate at 10× after algorithmic and

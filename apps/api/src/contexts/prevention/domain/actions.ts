@@ -109,14 +109,10 @@ export const checkTransition = (
 
 /**
  * MASCLI 4.0: completing a plan claims the risk was addressed, so it needs a receipt (an
- * attached evidence file). Progress, cancellation and MASCLI 3.0 stay as they were.
+ * attached evidence file). Progress and cancellation stay as they were.
  */
-export const checkReceipt = (
-  status: ActionStatus,
-  attachmentId: string,
-  version4: boolean,
-): UpdateRejection | null =>
-  version4 && status === 'Completada' && !attachmentId ? { kind: 'evidence_required' } : null;
+export const checkReceipt = (status: ActionStatus, attachmentId: string): UpdateRejection | null =>
+  status === 'Completada' && !attachmentId ? { kind: 'evidence_required' } : null;
 
 export const isActive = (action: Pick<PreventiveAction, 'status'>) =>
   !CLOSED.includes(action.status);

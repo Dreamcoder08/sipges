@@ -1,0 +1,50 @@
+{
+  "count": 9,
+  "tests": [
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "counters follow records and every record opens, edits and shows its report",
+      "project": "webkit"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "the geospatial view frames a concession and the directory lists contacts",
+      "project": "webkit"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "narratives show their trend per day and category",
+      "project": "webkit"
+    },
+    {
+      "file": "15-record-insights.spec.ts",
+      "title": "record heatmap and actor classification open stored files (desktop)",
+      "project": "webkit"
+    },
+    {
+      "file": "15-record-insights.spec.ts",
+      "title": "record heatmap and actor classification open stored files (phone)",
+      "project": "webkit"
+    },
+    {
+      "file": "17-quality-followup.spec.ts",
+      "title": "review, documented links and followup persist through real API (desktop)",
+      "project": "webkit"
+    },
+    {
+      "file": "17-quality-followup.spec.ts",
+      "title": "review, documented links and followup persist through real API (phone)",
+      "project": "webkit"
+    },
+    {
+      "file": "18-territorial-intelligence.spec.ts",
+      "title": "committed narrative creates one pending signal and linked inbox without a manual tick (desktop)",
+      "project": "webkit"
+    },
+    {
+      "file": "18-territorial-intelligence.spec.ts",
+      "title": "committed narrative creates one pending signal and linked inbox without a manual tick (phone)",
+      "project": "webkit"
+    }
+  ]
+}

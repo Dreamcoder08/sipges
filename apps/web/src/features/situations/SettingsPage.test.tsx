@@ -14,8 +14,7 @@ const meanings = {
   Naranja: 'Requiere intervención preventiva',
   Rojo: 'Situación crítica / atención inmediata',
 };
-const settings = (version4: boolean) => ({
-  version4,
+const settings = () => ({
   level_meanings: meanings,
   window_days: 90,
   half_life_days: 14,
@@ -43,8 +42,8 @@ const settings = (version4: boolean) => ({
       suggestion: { G: 0.15, A: 0.15, D: 0.2, N: 0.15, E: 0.25, I: 0.1 },
     },
   ],
-  updated_by: version4 ? 'admin' : '',
-  updated_at: version4 ? '2026-10-19T12:00:00Z' : null,
+  updated_by: 'admin',
+  updated_at: '2026-10-19T12:00:00Z',
 });
 const feed = {
   id: 1,
@@ -81,54 +80,36 @@ const renderPage = (role: 'admin' | 'consulta') =>
     </QueryClientProvider>,
   );
 
-it('shows only the colour while MASCLI 4.0 is off, and colour with meaning once on', () => {
+it('shows the colour alone until the settings load, then colour with meaning, with no switch', () => {
   const { rerender } = render(<LevelPill level="Naranja" />);
   expect(screen.getByText('Naranja')).toBeInTheDocument();
   rerender(
-    <ProjectSettingsProvider value={settings(false)}>
-      <LevelPill level="Naranja" />
-    </ProjectSettingsProvider>,
-  );
-  expect(screen.getByText('Naranja')).toBeInTheDocument();
-  rerender(
-    <ProjectSettingsProvider value={settings(true)}>
+    <ProjectSettingsProvider value={settings()}>
       <LevelPill level="Naranja" />
     </ProjectSettingsProvider>,
   );
   expect(screen.getByText('Naranja – Requiere intervención preventiva')).toBeInTheDocument();
 });
 
-it('lets an administrator switch MASCLI 4.0 on for the active project', async () => {
-  const user = userEvent.setup();
-  let sent: unknown;
-  let scope: string | null = null;
-  let current = settings(false);
-  server.use(
-    http.get('*/system/v4/settings', () => HttpResponse.json(current)),
-    http.put('*/system/v4/settings', async ({ request }) => {
-      sent = await request.json();
-      scope = request.headers.get('X-MASCLI-Scope');
-      current = settings(true);
-      return HttpResponse.json(current);
-    }),
-  );
+it('presents the project as MASCLI 4.0 with no switch to turn it on or off', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('admin');
-  expect(await screen.findByText('MASCLI 3.0 (4.0 desactivado)')).toBeInTheDocument();
-  await user.click(screen.getByRole('button', { name: 'Activar MASCLI 4.0' }));
-  expect(await screen.findByText('MASCLI 4.0 activado')).toBeInTheDocument();
-  expect(sent).toEqual({ version4: true });
-  expect(scope).toBe('ACME/P1');
-  expect(screen.getByRole('button', { name: 'Volver a MASCLI 3.0' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'MASCLI 4.0' })).toBeInTheDocument();
+  expect(screen.queryByText(/MASCLI 3\.0/)).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /Activar|Volver a/ })).not.toBeInTheDocument();
+  expect(screen.getByText('Significado de cada color')).toBeInTheDocument();
+  expect(screen.getByText('Fase del proyecto')).toBeInTheDocument();
+  expect(screen.getByText('Fuentes RSS regionales')).toBeInTheDocument();
 });
 
 it('saves edited colour meanings', async () => {
   const user = userEvent.setup();
   let sent: { level_meanings?: Record<string, string> } = {};
   server.use(
-    http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))),
+    http.get('*/system/v4/settings', () => HttpResponse.json(settings())),
     http.put('*/system/v4/settings', async ({ request }) => {
       sent = (await request.json()) as typeof sent;
-      return HttpResponse.json({ ...settings(true), level_meanings: sent.level_meanings });
+      return HttpResponse.json({ ...settings(), level_meanings: sent.level_meanings });
     }),
   );
   renderPage('admin');
@@ -144,10 +125,10 @@ it('saves the project wording of a suggested action', async () => {
   const user = userEvent.setup();
   let sent: unknown;
   server.use(
-    http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))),
+    http.get('*/system/v4/settings', () => HttpResponse.json(settings())),
     http.put('*/system/v4/settings', async ({ request }) => {
       sent = await request.json();
-      return HttpResponse.json(settings(true));
+      return HttpResponse.json(settings());
     }),
   );
   renderPage('admin');
@@ -160,30 +141,19 @@ it('saves the project wording of a suggested action', async () => {
 });
 
 it('shows the settings read-only to other roles', async () => {
-  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))));
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('consulta');
-  expect(
-    await screen.findByText('Solo un administrador puede cambiar la versión.'),
-  ).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: /MASCLI 3.0/ })).not.toBeInTheDocument();
-  expect(screen.getByLabelText('Verde')).toHaveAttribute('readonly');
+  expect(await screen.findByLabelText('Verde')).toHaveAttribute('readonly');
+  expect(screen.queryByRole('button', { name: 'Guardar significados' })).not.toBeInTheDocument();
   expect(
     within(screen.getByLabelText('Vista previa de niveles')).getAllByRole('listitem'),
   ).toHaveLength(4);
 });
 
-it('hides phase and media monitoring while MASCLI 4.0 is off', async () => {
-  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings(false))));
-  renderPage('admin');
-  expect(await screen.findByText('MASCLI 3.0 (4.0 desactivado)')).toBeInTheDocument();
-  expect(screen.queryByText('Fase del proyecto')).not.toBeInTheDocument();
-  expect(screen.queryByText('Fuentes RSS regionales')).not.toBeInTheDocument();
-});
-
 it('sets the project phase and saves its IRSA weights from the suggestion', async () => {
   const user = userEvent.setup();
   const sent: unknown[] = [];
-  let current = settings(true);
+  let current = settings();
   server.use(
     http.get('*/system/v4/settings', () => HttpResponse.json(current)),
     http.put('*/system/v4/settings', async ({ request }) => {
@@ -226,9 +196,9 @@ it('lists media sources, previews a new one and adds it', async () => {
   let added: unknown;
   let previewed: unknown;
   server.use(
-    http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))),
+    http.get('*/system/v4/settings', () => HttpResponse.json(settings())),
     http.get('*/system/v4/media', () =>
-      HttpResponse.json({ active: true, poll_minutes: 30, max_feeds: 20, feeds: [feed] }),
+      HttpResponse.json({ poll_minutes: 30, max_feeds: 20, feeds: [feed] }),
     ),
     http.post('*/system/v4/media/preview', async ({ request }) => {
       previewed = await request.json();
@@ -282,9 +252,9 @@ it('lists media sources, previews a new one and adds it', async () => {
 
 it('shows media sources read-only to other roles', async () => {
   server.use(
-    http.get('*/system/v4/settings', () => HttpResponse.json(settings(true))),
+    http.get('*/system/v4/settings', () => HttpResponse.json(settings())),
     http.get('*/system/v4/media', () =>
-      HttpResponse.json({ active: true, poll_minutes: 30, max_feeds: 20, feeds: [feed] }),
+      HttpResponse.json({ poll_minutes: 30, max_feeds: 20, feeds: [feed] }),
     ),
   );
   renderPage('consulta');

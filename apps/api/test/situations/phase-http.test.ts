@@ -89,20 +89,18 @@ describe('Project phase and phase IRSA weights (ADR 0021 §4)', () => {
     expect((await put({ phase: 'mantenimiento' })).status).toBe(422);
   });
 
-  it('leaves IRSA unchanged until MASCLI 4.0 is on and the phase has saved weights', async () => {
+  it('leaves IRSA unchanged until the phase has saved weights, then uses them', async () => {
     const { put, irsa } = await setup();
     const before = await irsa();
     expect(before.phase).toBeUndefined();
     await put({ phase: 'operacion' });
     expect(await irsa()).toEqual(before);
     await put({ phase_weights: { operacion: OPERATION } });
-    expect(await irsa()).toEqual(before);
-    await put({ version4: true });
     const phased = await irsa();
     expect(phased.weights).toEqual(OPERATION);
     expect(phased.phase).toEqual({ id: 'operacion', label: 'Operación' });
     expect(phased.notes.at(-1)).toContain('Pesos de la fase Operación');
-    await put({ version4: false });
+    await put({ phase_weights: { operacion: null } });
     expect(await irsa()).toEqual(before);
   });
 });

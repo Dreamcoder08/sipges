@@ -1,14 +1,20 @@
+/* The dialog is a sibling of its backdrop (Radix portal), so both are positioned on their own. */
+:global(body):has(.backdrop) {
+  overflow: hidden;
+}
 .backdrop {
   position: fixed;
   inset: 0;
   z-index: 100;
   background: var(--color-scrim);
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
 }
 .dialog {
-  width: min(100%, 32rem);
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  margin: auto;
+  width: min(100% - 2 * var(--space-4), 32rem);
+  height: fit-content;
   max-height: calc(100dvh - 2 * var(--space-4));
   overflow-y: auto;
   background: var(--color-surface);
@@ -26,11 +32,9 @@
 }
 @media (max-width: 40rem) {
   /* Dialogs open as a bottom sheet within thumb reach. */
-  .backdrop {
-    place-items: end stretch;
-    padding: 0;
-  }
   .dialog {
+    inset: auto 0 0;
+    margin: 0;
     width: 100%;
     max-height: 90dvh;
     padding: var(--space-4);

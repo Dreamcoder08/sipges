@@ -1,0 +1,9 @@
+{
+  "path": "apps/api/src/contexts/integration/application/authorized-sources.test.ts",
+  "head": "ee7d02aa8fa8baddb29158f9d0737dfcb60fda77",
+  "restored_sha256": "4edaf97d9bc4a0a82b1220e07938a7a9cb38f90da4ec89b07a9695a3348df861",
+  "matches_head_bytes": true,
+  "source_file_count": 418,
+  "source_tree_sha256": "e3638be77cc6a75e8c0f4cbfe3d6a575d041952e6e9d5459b705f9266ce104c0",
+  "source_tree_matches_preincident": true
+}

@@ -1,0 +1,299 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mopens a session with the bootstrap admin and sets the hardened cookie[33m 4166[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22momits Secure only when MASCLI_COOKIE_SECURE=0[33m 880[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mnormalizes the username like Python (trim + lower case)[33m 909[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mrejects wrong password with the uniform 401[33m 865[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mrejects unknown user with the uniform 401[33m 862[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mrejects inactive accounts with the uniform 401[33m 864[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22manswers missing form fields with a FastAPI-style 422[33m 827[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mupgrades a legacy PBKDF2 hash to Argon2id after a successful login[33m 968[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mlogin throttling (ADR 0004)[2m > [22mblocks a username after 5 failures, even with the right password, until the window passes[33m 1055[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mlogin throttling (ADR 0004)[2m > [22mblocks an address after 20 failures across usernames[33m 1562[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mlogin throttling (ADR 0004)[2m > [22mclears the username counter after a successful login[33m 1197[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22msessions[2m > [22mGET /system/auth/me returns null anonymously and the identity with a session[33m 859[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22msessions[2m > [22mrejects protected routes without a session[33m 822[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22msessions[2m > [22mexpires sessions after exactly 8 hours[33m 877[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22msessions[2m > [22mPOST /logout deletes the session and clears both cookies[33m 880[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22morigin check (ADR 0004, ADR 0008 #4)[2m > [22mrejects cross-origin POST /login[33m 882[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22morigin check (ADR 0004, ADR 0008 #4)[2m > [22mrejects cross-origin POST /logout[33m 896[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22morigin check (ADR 0004, ADR 0008 #4)[2m > [22mrejects cross-origin POST /system/auth/accounts[33m 873[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22morigin check (ADR 0004, ADR 0008 #4)[2m > [22maccepts same-origin POST[33m 947[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mlets an admin create and list accounts without exposing secrets[33m 972[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mdefaults the role to consulta like Python[33m 956[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mrejects invalid input with 422 and stores nothing[33m 942[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mrejects invalid input with 422 and stores nothing[33m 882[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mrejects invalid input with 422 and stores nothing[33m 899[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mrejects duplicates with 409 and keeps the original password[33m 965[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22m/system/auth/accounts[2m > [22mis restricted to admins[33m 954[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mTOTP enrollment and login[2m > [22menrolls, encrypts the secret at rest, enables MFA and keeps only the current session[33m 1118[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mTOTP enrollment and login[2m > [22mlets the read-only role enroll MFA (self-service, ADR 0009)[33m 946[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mbootstrap admin[2m > [22mrefuses to start an empty installation without a strong admin password[33m 758[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mbootstrap admin[2m > [22muses MASCLI_ADMIN_FULL_NAME instead of a hard-coded personal name (ADR 0008 #13)[33m 937[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login with the WebAssembly hasher (Cloudflare Workers)[2m > [22msigns in through the injected hasher and refuses a wrong password[33m 1058[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mconfiguration[2m > [22mrequires MFA unless MASCLI_REQUIRE_MFA is exactly "0"[32m 4[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mconfiguration[2m > [22mparses the host allowlist and rejects malformed names[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22msecurity headers[2m > [22msends a CSP that forbids scripts and framing on every response[33m 4107[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mhost allowlist[2m > [22mrejects unexpected Host headers when configured[33m 913[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mhost allowlist[2m > [22mis disabled by default for local development[33m 846[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mstrict origin check[2m > [22mrefuses writes that carry neither Origin nor Referer[33m 850[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mstrict origin check[2m > [22mrefuses Origin "null"[33m 833[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mstrict origin check[2m > [22mrefuses Origin "not a url"[33m 851[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mstrict origin check[2m > [22maccepts a same-host Referer when the browser omits Origin[33m 886[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mstrict origin check[2m > [22mrefuses a foreign Referer[33m 833[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mblocks every business route until the session enrolls TOTP[33m 926[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mlets read-only roles without any project grant enroll[33m 1041[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mkeeps /system/auth/me available to drive the enrollment screen[33m 876[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mis off when MASCLI_REQUIRE_MFA=0[33m 887[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22mclears the factor, ends the sessions and forces a new enrollment[33m 1095[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22mrefuses to reset the administrator’s own MFA[33m 1021[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22mis restricted to administrators[33m 1024[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22manswers 404 for unknown users and requires a same-origin request[33m 1047[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22madmin-cli reset-mfa[2m > [22mrecovers the sole administrator, which the HTTP route refuses[33m 926[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mlogin throttle under concurrency (verifier finding B1)[2m > [22mlets at most 5 concurrent wrong guesses per user through[33m 4435[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mlogin throttle under concurrency (verifier finding B1)[2m > [22mlets at most 20 concurrent wrong guesses per address through[33m 1487[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mlogin throttle under concurrency (verifier finding B1)[2m > [22mdoes not count a successful login as a failure[33m 1221[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mlogin throttle under concurrency (verifier finding B1)[2m > [22mpurges failure rows that left the window[33m 959[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mrole gate parity with app.py:244 (verifier finding A1)[2m > [22mHEAD /system/irsa/config is admin-only[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mrole gate parity with app.py:244 (verifier finding A1)[2m > [22mOPTIONS /system/irsa/config is admin-only[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mrole gate parity with app.py:244 (verifier finding A1)[2m > [22mPOST /system/irsa/config is admin-only[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mrole gate parity with app.py:244 (verifier finding A1)[2m > [22mPUT /system/irsa/config is admin-only[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mrole gate parity with app.py:244 (verifier finding A1)[2m > [22mGET /system/irsa/config stays readable[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mMFA with an unreadable sealed secret[2m > [22manswers 401 instead of 500 and does not open a session[33m 873[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mpassword length counts code points like Python len()[2m > [22mrejects 6 astral characters (12 UTF-16 units) as too short[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mrejected account commands leave identity state unchanged[2m > [22mkeeps users and sessions byte-identical[33m 912[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mHSTS (ADR 0004)[2m > [22mis sent when cookies are Secure[33m 841[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mHSTS (ADR 0004)[2m > [22mis omitted for intentional local HTTP (MASCLI_COOKIE_SECURE=0)[33m 859[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22musernames that can never exist (re-verification advisories)[2m > [22manswers the uniform 401, not 500, for a NUL byte and still counts the attempt[33m 886[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22musernames that can never exist (re-verification advisories)[2m > [22manswers the uniform 401, not 500, for more than 120 characters and still counts the attempt[33m 920[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mwrong second factor under concurrency[2m > [22mcounts each wrong OTP against the throttle when the password is right[33m 1057[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in availability[2m > [22mis hidden and unreachable without a configured client[33m 4164[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in availability[2m > [22mis advertised publicly when a client is configured[33m 868[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in availability[2m > [22mrequires both client values and a client for the bootstrap address[32m 2[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in flow[2m > [22msigns a linked account in, and the session counts as its second factor[33m 1002[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in flow[2m > [22mrefuses a missing, foreign or replayed state[33m 857[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in flow[2m > [22mreports a cancelled consent and a failed exchange without a session[33m 852[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in flow[2m > [22madmits only linked, active accounts[33m 986[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mare managed by administrators only, with one account per address[33m 1052[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mend Google sessions when the address changes or is removed[33m 999[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mlinks the bootstrap administrator from MASCLI_GOOGLE_ADMIN_EMAIL without overriding[33m 867[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/analyze[2m > [22mreads TXT, PDF and DOCX into located candidate findings[33m 4583[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/analyze[2m > [22mmaps every rejection to app.py status codes[33m 998[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/analyze[2m > [22mrefuses another project and is open to read-only roles[33m 1011[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/report.docx[2m > [22mreturns a Word report with the findings[33m 966[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/compare[2m > [22mpairs same-theme findings of two documents[33m 983[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mdocument review inbox[2m > [22mimports excerpts once, lists them and records decisions in the audit trail[33m 1032[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mdocument review inbox[2m > [22mvalidates the batch and keeps the inbox inside the tenant[33m 991[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22mGET /system/irsa and /system/indicators[2m > [22mcomputes an empty IRSA, not a 500, while module_records does not exist yet[33m 4131[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22mGET /system/irsa and /system/indicators[2m > [22mreads only the request tenant module records[33m 874[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22m/system/irsa/config[2m > [22mdefaults per tenant, rejects unbalanced weights and persists valid patches per tenant[33m 855[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22m/system/irsa/config[2m > [22manswers 422 for a body without payload or with non-numeric weights[33m 817[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22mIRSA snapshots[2m > [22msaves a snapshot and lists history newest first, scoped to the tenant[33m 849[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22mIRSA snapshots[2m > [22mrejects a non-integer limit with 422[33m 832[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22mclient contracts[2m > [22mGET /system/irsa and /system/model-status match the contracts the web app parses[33m 837[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-http.test.ts[2m > [22mstatic system documents[2m > [22mserves model status and the 32-row validation template[33m 813[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-preview.test.ts[2m > [22mGET /system/uploads/{id}/preview[2m > [22mreturns the text of informe.pdf with its metadata[33m 4322[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-preview.test.ts[2m > [22mGET /system/uploads/{id}/preview[2m > [22mreturns the text of informe.docx with its metadata[33m 961[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-preview.test.ts[2m > [22mGET /system/uploads/{id}/preview[2m > [22mreturns the text of informe.txt with its metadata[33m 940[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-preview.test.ts[2m > [22mGET /system/uploads/{id}/preview[2m > [22mmarks images for inline display and reports a missing file or id[33m 938[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-preview.test.ts[2m > [22mGET /system/uploads/{id}/preview[2m > [22msays when a PDF has no text layer instead of showing an empty page[33m 915[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-http.test.ts[2m > [22mPOST /system/uploads[2m > [22mstores the file, links it into the record and audits the upload[33m 4289[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-http.test.ts[2m > [22mPOST /system/uploads[2m > [22manswers each rejection with app.py status codes and stores nothing[33m 974[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-http.test.ts[2m > [22mPOST /system/uploads[2m > [22mdeletes the stored object when the metadata transaction fails[33m 908[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-http.test.ts[2m > [22mPOST /system/uploads[2m > [22mrefuses read-only roles and cross-origin posts[33m 929[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-http.test.ts[2m > [22mGET /system/uploads[2m > [22mlists, filters and fetches attachments of the active tenant only[33m 892[2mms[22m[39m
+ [32m✓[39m test/evidence/evidence-http.test.ts[2m > [22mGET /system/uploads[2m > [22mexports the metadata, answers 410 when the object is gone and cascades on delete[33m 867[2mms[22m[39m
+ [32m✓[39m test/health.test.ts[2m > [22mGET /health[2m > [22mreturns the Python health payload anonymously[33m 4087[2mms[22m[39m
+ [32m✓[39m test/health.test.ts[2m > [22mGET /health[2m > [22msets the parity security headers[33m 857[2mms[22m[39m
+ [32m✓[39m test/health.test.ts[2m > [22mGET /health[2m > [22mrequires a session before revealing whether a route exists (parity with app.py middleware)[33m 840[2mms[22m[39m
+ [32m✓[39m test/health.test.ts[2m > [22mGET /health[2m > [22manswers unknown routes with a FastAPI-compatible 404 body for signed-in users[33m 889[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mhashes new passwords with Argon2id and verifies them[32m 165[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22msalts every hash[32m 66[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mverifies hashes created by the Python application[32m 98[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value ""[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "garbage"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "pbkdf2_sha256$abc$00$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "md5$1$00$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "pbkdf2_sha256$310000$zz$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "pbkdf2_sha256$0$00112233445566778899aabbccddeeff$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "$argon2id$broken"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "$argon2i$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaA"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false for malformed stored value "$argon2d$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaA"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative passwordHasher[2m > [22mreturns false, never throws, for an empty password[32m 103[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mhashes new passwords with Argon2id and verifies them[32m 209[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22msalts every hash[32m 132[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mverifies hashes created by the Python application[33m 1994[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value ""[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "garbage"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "pbkdf2_sha256$abc$00$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "md5$1$00$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "pbkdf2_sha256$310000$zz$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "pbkdf2_sha256$0$00112233445566778899aabbccddeeff$00"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "$argon2id$broken"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "$argon2i$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaA"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false for malformed stored value "$argon2d$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaA"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mwasm passwordHasher[2m > [22mreturns false, never throws, for an empty password[33m 1094[2mms[22m[39m
+ [32m✓[39m test/identity/password-hasher.test.ts[2m > [22mnative and WebAssembly hashers are interchangeable[2m > [22mverifies each other’s Argon2id hashes, so stored passwords survive a runtime change[33m 330[2mms[22m[39m
+ [32m✓[39m test/documents/pdf-worker-pool.test.ts[2m > [22mPDF worker pool[2m > [22mextracts text off the main thread and keeps the caller bytes intact[32m 214[2mms[22m[39m
+ [32m✓[39m test/documents/pdf-worker-pool.test.ts[2m > [22mPDF worker pool[2m > [22mrefuses documents over the page limit and reports unreadable ones[32m 173[2mms[22m[39m
+ [32m✓[39m test/documents/pdf-worker-pool.test.ts[2m > [22mPDF worker pool[2m > [22mkeeps the event loop responsive while a 100-page PDF is parsed[33m 575[2mms[22m[39m
+ [32m✓[39m test/documents/pdf-worker-pool.test.ts[2m > [22mPDF worker pool[2m > [22mterminates a worker that exceeds the timeout and starts a new one[32m 202[2mms[22m[39m
+ [32m✓[39m test/documents/pdf-worker-pool.test.ts[2m > [22mPDF worker pool[2m > [22mrejects pending jobs when a worker exits[32m 82[2mms[22m[39m
+ [32m✓[39m test/documents/inline-document-reader.test.ts[2m > [22minline document reader[2m > [22mreads the same PDF pages as the worker-thread reader[33m 319[2mms[22m[39m
+ [32m✓[39m test/documents/inline-document-reader.test.ts[2m > [22minline document reader[2m > [22mstops at the page limit like the worker-thread reader[32m 7[2mms[22m[39m
+ [32m✓[39m test/documents/inline-document-reader.test.ts[2m > [22minline document reader[2m > [22mrejects a file that is not a PDF[32m 5[2mms[22m[39m
+ [32m✓[39m test/documents/inline-document-reader.test.ts[2m > [22minline document reader[2m > [22mshares the DOCX reader[32m 0[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mPython parity (scripts/python-parity/document-lab.py)[2m > [22msplits text lines like str.splitlines and drops the BOM[32m 3[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mPython parity (scripts/python-parity/document-lab.py)[2m > [22mproduces the same findings, theme counts and recommendations[32m 5[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mPython parity (scripts/python-parity/document-lab.py)[2m > [22mproduces the same comparison candidates in the same order[32m 12[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mPython parity (scripts/python-parity/document-lab.py)[2m > [22mreads a python-docx document into the same located chunks[32m 3[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mdocument insights[2m > [22mmeasures the minimum segment length in code points, not UTF-16 units[32m 2[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mdocument insights[2m > [22mstops at 75 findings with the same result as a full scan[32m 2[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mdocument insights[2m > [22mskips segments shorter than 20 characters and folds accents in both directions[32m 2[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mdocument insights[2m > [22mcuts excerpts at 480 code points, not UTF-16 units[32m 1[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mdocument sources[2m > [22mlabels PDF pages and skips blank ones[32m 0[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mdocument sources[2m > [22mdecodes invalid UTF-8 with replacement characters[32m 0[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mfingerprints[2m > [22mkeeps distinctive words of five or more ASCII characters[32m 0[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mreview decisions[2m > [22maccepts the four statuses and requires a note to corroborate[32m 0[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mDOCX adapters[2m > [22mround-trips text, line breaks, escaped characters and tables[32m 56[2mms[22m[39m
+ [32m✓[39m test/documents/document-lab-domain.test.ts[2m > [22mDOCX adapters[2m > [22mrejects archives without a Word body[32m 4[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mbuilds an authorization request with PKCE S256, nonce and state[32m 6[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mexchanges the code and returns the verified address[32m 31[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses another issuer[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses another audience[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses several audiences[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses an expired token[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses a token issued in the future[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses another nonce[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses an unverified address[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses no address[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/google-oidc.test.ts[2m > [22mGoogle OpenID Connect client[2m > [22mrefuses errors and malformed answers from the token endpoint[32m 14[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mrejects arbitrary destinations, unbounded areas and reversed coordinates[32m 13[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mexcludes holes and includes polygon boundaries[32m 1[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mnever geocodes names and distinguishes documented references[32m 1[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mdiscovers actual metadata only on fixed official services and bounds response size[32m 29[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mrejects nonzero-area self intersections[32m 1[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mnormalizes ArcGIS rings, reports truncation and excludes group layers[32m 3[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22maccepts strict decimal form coordinates and excludes polygon records inside holes[32m 1[2mms[22m[39m
+ [32m✓[39m test/geography/geography.test.ts[2m > [22mrejects exterior holes and touching self intersections[32m 1[2mms[22m[39m
+ [32m✓[39m test/geography/http.test.ts[2m > [22mrejects supplied URLs before provider calls and carries resolved scope into reader[32m 48[2mms[22m[39m
+ [32m✓[39m test/geography/http.test.ts[2m > [22mreports upstream failures and rejects oversized bodies[32m 10[2mms[22m[39m
+ [32m✓[39m test/geography/http.test.ts[2m > [22mstops consuming an oversized streaming query early[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mlocal object storage[2m > [22mstores, reads and deletes objects without leaving temporary files[32m 10[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mlocal object storage[2m > [22mrefuses key "../escape.pdf"[32m 2[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mlocal object storage[2m > [22mrefuses key "aaaaaaaaaaaaaaaaaaaaaaaa/../../x"[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mlocal object storage[2m > [22mrefuses key "/abs/path"[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mlocal object storage[2m > [22mrefuses key "aaaaaaaaaaaaaaaaaaaaaaaa/a/b"[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mS3 signature V4[2m > [22mmatches the AWS documentation example (GET Object)[32m 2[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mS3 object storage[2m > [22muses signed path-style requests and maps 404 to null[32m 28[2mms[22m[39m
+ [32m✓[39m test/evidence/object-storage.test.ts[2m > [22mS3 object storage[2m > [22msurfaces S3 errors instead of pretending success[32m 4[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIndicators (app.py compute_indicators v0.4)[2m > [22mreturns 32 indicators across G/A/D/N/E/I with metadata and a null A3[32m 6[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIndicators (app.py compute_indicators v0.4)[2m > [22mscores an empty base as zero except the inverse-coverage indicators I5 and I6[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIndicators (app.py compute_indicators v0.4)[2m > [22maverages each dimension over its non-null indicators only[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIndicators (app.py compute_indicators v0.4)[2m > [22mapplies the text and state rules of app.py to synthetic records[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIrsa[2m > [22mweights dimension scores and rounds the IRSA to 2 decimals[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIrsa[2m > [22muses the first band containing the IRSA and falls back to Rojo in band gaps[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIrsa[2m > [22mreturns the 15 highest non-null indicators as drivers, highest first[32m 2[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mcomputeIrsa[2m > [22mcomputes the empty-base IRSA from the default configuration[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mapplyIrsaConfigPatch[2m > [22mrejects weights that do not sum to 1 within 0.02[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mapplyIrsaConfigPatch[2m > [22mreplaces weights over every dimension, thresholds wholesale and merges contributions[32m 1[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mpyRound[2m > [22mmatches Python round() on binary ties and representation error[32m 0[2mms[22m[39m
+ [32m✓[39m test/indicators/indicators-domain.test.ts[2m > [22mPython parity[2m > [22mreproduces app.py compute_indicators on a synthetic multi-module dataset[32m 2[2mms[22m[39m
+ [32m✓[39m test/geography/influence.test.ts[2m > [22mdistance to a polygon[2m > [22mis zero inside and the shortest way to the boundary outside[32m 3[2mms[22m[39m
+ [32m✓[39m test/geography/influence.test.ts[2m > [22marea of influence[2m > [22madds records within the requested distance, nearest first, with their distance[32m 14[2mms[22m[39m
+ [32m✓[39m test/geography/influence.test.ts[2m > [22marea of influence[2m > [22mkeeps the strict relation when no area of influence is requested[32m 1[2mms[22m[39m
+ [32m✓[39m test/geography/influence.test.ts[2m > [22marea of influence[2m > [22mfalls back to the geodesic approximation without the PostGIS extension[32m 1[2mms[22m[39m
+ [2m[90m↓[39m[22m test/geography/influence.test.ts[2m > [22mPostGIS distances[2m > [22magrees with the geodesic approximation within one percent[32m 0[2mms[22m[39m
+ [32m✓[39m test/integration-context/feeds.test.ts[2m > [22mfeed reader (ADR 0021 §1)[2m > [22mreads RSS items with plain text, keys and dates, skipping unusable ones[32m 4[2mms[22m[39m
+ [32m✓[39m test/integration-context/feeds.test.ts[2m > [22mfeed reader (ADR 0021 §1)[2m > [22mreads Atom entries with their alternate link[32m 1[2mms[22m[39m
+ [32m✓[39m test/integration-context/feeds.test.ts[2m > [22mfeed reader (ADR 0021 §1)[2m > [22mreturns nothing for documents that are not feeds[32m 0[2mms[22m[39m
+ [32m✓[39m test/integration-context/feeds.test.ts[2m > [22mfeed reader (ADR 0021 §1)[2m > [22mmatches whole keywords without case or accents[32m 3[2mms[22m[39m
+ [32m✓[39m test/integration-context/feeds.test.ts[2m > [22mfeed reader (ADR 0021 §1)[2m > [22maccepts only https URLs on public host names[32m 1[2mms[22m[39m
+ [32m✓[39m test/integration-context/feeds.test.ts[2m > [22mfeed reader (ADR 0021 §1)[2m > [22mrecognises private and reserved addresses[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"Informe Final.PDF" -> "Informe-Final.pdf"[32m 3[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"C:\\fakepath\\acta.docx" -> "acta.docx"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"../../etc/passwd.txt" -> "passwd.txt"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"Reunión con señor Núñez.pdf" -> "Reunion-con-senor-Nunez.pdf"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"__.pdf" -> "archivo.pdf"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"" -> "archivo"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"tab\there.csv" -> "tab-here.csv"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22msafeUploadName (app.py _safe_upload_name)[2m > [22m"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png" -> "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.png"[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.pdf with the detected type[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.png with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.jpg with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.webp with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.docx with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.xls with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.csv with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22maccepts a.txt with the detected type[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22mrefuses a.pdf whose bytes do not match the extension[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22mrefuses a.png whose bytes do not match the extension[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22mrefuses a.docx whose bytes do not match the extension[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22mrefuses a.txt whose bytes do not match the extension[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22mrefuses a.csv whose bytes do not match the extension[32m 0[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mcheckUpload[2m > [22mrefuses unknown extensions, empty files and oversized files[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mrecord link (app.py upload_evidence)[2m > [22mappends to Adjuntos and sets the module-specific file field[32m 1[2mms[22m[39m
+ [32m✓[39m test/evidence/upload-policy.test.ts[2m > [22mrecord link (app.py upload_evidence)[2m > [22mtakes the project from the record, else from the active scope[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/secret-cipher.test.ts[2m > [22msecret cipher (AES-256-GCM)[2m > [22mround-trips and never stores the plaintext[32m 3[2mms[22m[39m
+ [32m✓[39m test/identity/secret-cipher.test.ts[2m > [22msecret cipher (AES-256-GCM)[2m > [22muses a fresh nonce for every seal[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/secret-cipher.test.ts[2m > [22msecret cipher (AES-256-GCM)[2m > [22mrejects tampered ciphertext and the wrong key[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/secret-cipher.test.ts[2m > [22msecret cipher (AES-256-GCM)[2m > [22mrequires a 32-byte key[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22maccepts the RFC/Python code at t=59[32m 3[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22maccepts the RFC/Python code at t=1111111109[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22maccepts the RFC/Python code at t=1234567890[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22maccepts the RFC/Python code at t=2000000000[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22maccepts codes one step before and after (clock drift window, parity)[32m 2[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects malformed code ""[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects malformed code "12345"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects malformed code "1234567"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects malformed code "abcdef"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects malformed code " 081804"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects malformed code "081804 "[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.verify[2m > [22mrejects replay of an already used step (ADR 0004)[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.generateSecret[2m > [22mcreates an unpadded base32 secret of 20 random bytes[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/totp.test.ts[2m > [22mtotp.generateSecret[2m > [22mbuilds the same otpauth URI format as Python[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista GET /system/auth/accounts[32m 3[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22madmin POST /system/auth/accounts[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista GET /system/export[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista GET /system/audit[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista POST /system/irsa/config[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista GET /system/irsa/config[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista GET /api/usuarios[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mcoordinador GET /api/roles[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista POST /api/proyectos[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista GET /api/proyectos[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mconsulta POST /api/eventos[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mconsulta GET /api/eventos[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mcoordinador POST /api/eventos[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mcoordinador POST /system/prevention/actions[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mcoordinador PATCH /system/intelligence/territorial-alerts/7[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22manalista POST /system/auth/totp/setup[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mconsulta POST /system/auth/totp/setup[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mconsulta POST /system/auth/totp/enable[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mcoordinador POST /system/auth/totp/setup[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mADR 0008 #3: read-only POST /system/analyze is open to every role[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mADR 0008 #3: read-only POST /system/document-lab/analyze is open to every role[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mADR 0008 #3: read-only POST /system/document-lab/compare is open to every role[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mADR 0008 #3: read-only POST /system/document-lab/report.docx is open to every role[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/access-policy.test.ts[2m > [22mcheckRoleAccess[2m > [22mADR 0008 #3: read-only POST /system/intelligence/semantic-analyze is open to every role[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22maccepts a valid account and truncates the full name to 120 characters[32m 3[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22mrejects username "ab"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22mrejects username "Ana"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22mrejects username "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22mrejects username "ana perez"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22mrejects username "ana@x"[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22mrejects unknown roles[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/account-rules.test.ts[2m > [22mvalidateNewAccount (app.py:298-302)[2m > [22menforces 12 to 256 characters for passwords[32m 0[2mms[22m[39m
+ [32m✓[39m test/documents/ocr.test.ts[2m > [22mOCR fallback[2m > [22mrecognizes only PDFs without any text layer[32m 4[2mms[22m[39m
+ [32m✓[39m test/identity/login-throttle.test.ts[2m > [22mthrottleDecision[2m > [22mallows attempts below both limits[32m 3[2mms[22m[39m
+ [32m✓[39m test/identity/login-throttle.test.ts[2m > [22mthrottleDecision[2m > [22mblocks a username that reached its failure limit within the window[32m 1[2mms[22m[39m
+ [32m✓[39m test/identity/login-throttle.test.ts[2m > [22mthrottleDecision[2m > [22mblocks an address that reached its failure limit within the window[32m 0[2mms[22m[39m
+ [32m✓[39m test/identity/login-throttle.test.ts[2m > [22mthrottleDecision[2m > [22muses OWASP-style conservative limits[32m 0[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m27 passed[39m[22m[90m (27)[39m
+[2m      Tests [22m [1m[32m288 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (289)[39m
+[2m   Start at [22m 17:44:17
+[2m   Duration [22m 138.82s[2m (tests 95%, import 4%, transform 1%)[22m
+
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-2-result.json

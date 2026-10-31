@@ -1,14 +1,12 @@
 import { Link, useRouterState } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
-import { useVersion4 } from '../../shared/lib/project-settings.tsx';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { Sheet } from '../../shared/ui/Sheet.tsx';
 import {
   MOBILE_TABS,
   MORE_GROUPS,
   NAV_GROUPS,
-  VERSION4_PATHS,
   SCREEN_ICONS,
   labelFor,
   projectParts,
@@ -70,9 +68,6 @@ export const AppShell = ({
 }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const compact = useMediaQuery(COMPACT_QUERY);
-  // MASCLI 4.0 screens appear only in projects that switched it on (docs/adr/0020).
-  const version4 = useVersion4();
-  const shown = (path: string) => version4 || !VERSION4_PATHS.has(path);
   const [sheet, setSheet] = useState<'project' | 'more' | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const topbar = useRef<HTMLElement>(null);
@@ -88,7 +83,7 @@ export const AppShell = ({
   }
 
   useEffect(() => {
-    document.title = `${title} | MASCLI`;
+    document.title = `${title} | MASCLI 4.0`;
     if (first.current) {
       first.current = false;
       return;
@@ -137,7 +132,7 @@ export const AppShell = ({
               M
             </span>
             <span>
-              <b>MASCLI</b>
+              <b>MASCLI 4.0</b>
               <small>Gestión socioambiental</small>
             </span>
           </div>
@@ -148,7 +143,7 @@ export const AppShell = ({
                   {group.label}
                 </p>
                 <ul>
-                  {group.paths.filter(shown).map((path) => (
+                  {group.paths.map((path) => (
                     <li key={path}>
                       <NavLink path={path} className={styles.link} />
                     </li>
@@ -254,7 +249,7 @@ export const AppShell = ({
                 <section key={group.label} className={styles.moreGroup}>
                   <h3>{group.label}</h3>
                   <ul>
-                    {group.paths.filter(shown).map((path) => (
+                    {group.paths.map((path) => (
                       <li key={path}>
                         <NavLink path={path} className={styles.row} onNavigate={close}>
                           <Icon name="chevronRight" className={styles.rowChevron} />

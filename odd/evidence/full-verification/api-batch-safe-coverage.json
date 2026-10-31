@@ -1,0 +1,54 @@
+{
+  "source_inventory": "odd/evidence/full-verification/api-list-all.stdout",
+  "manifest": "odd/evidence/full-verification/api-batch-manifest.json",
+  "source_status_before": "",
+  "source_status_after": "",
+  "batches": [
+    {
+      "batch": 1,
+      "exit": 0,
+      "expected_count": 27,
+      "observed_count": 27,
+      "exact_match": true,
+      "source_status_unchanged": true,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "batch": 2,
+      "exit": 0,
+      "expected_count": 27,
+      "observed_count": 27,
+      "exact_match": true,
+      "source_status_unchanged": true,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "batch": 3,
+      "exit": 0,
+      "expected_count": 26,
+      "observed_count": 26,
+      "exact_match": true,
+      "source_status_unchanged": true,
+      "missing": [],
+      "extra": []
+    },
+    {
+      "batch": 4,
+      "exit": 0,
+      "expected_count": 26,
+      "observed_count": 26,
+      "exact_match": true,
+      "source_status_unchanged": true,
+      "missing": [],
+      "extra": []
+    }
+  ],
+  "observed_total": 106,
+  "observed_unique": 106,
+  "missing": [],
+  "extra": [],
+  "overlaps": {},
+  "complete_disjoint": true
+}

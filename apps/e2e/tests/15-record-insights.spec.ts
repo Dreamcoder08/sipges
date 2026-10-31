@@ -120,7 +120,7 @@ for (const mobile of [false, true]) {
     // Keep all WebKit flow, axe and CSP assertions; capture artifacts with Chromium.
     if (browserName === 'chromium')
       await page
-        .getByRole('region', { name: 'Mapa de actores', exact: true })
+        .getByRole('region', { name: 'Mapa estratégico de actores', exact: true })
         .screenshot({ path: test.info().outputPath('actor-map.png') });
     if (mobile)
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(

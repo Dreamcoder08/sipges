@@ -1,0 +1,83 @@
+[
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/health.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/documents/document-lab-domain.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/documents/document-lab-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/documents/inline-document-reader.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/documents/ocr.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/documents/pdf-worker-pool.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/geography/geography.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/geography/http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/geography/influence.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/evidence/evidence-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/evidence/evidence-preview.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/evidence/object-storage.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/evidence/upload-policy.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/access-policy.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/account-rules.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/auth-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/deployment-hardening.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/google-oidc.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/google-sign-in.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/hardening.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/login-throttle.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/password-hasher.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/secret-cipher.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/identity/totp.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/indicators/indicators-domain.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/indicators/indicators-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration-context/feeds.test.ts"
+  }
+]

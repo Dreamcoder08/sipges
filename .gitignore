@@ -23,3 +23,10 @@ apps/hosting/public/
 
 # Engram working database (memories are shared through .engram/chunks)
 .engram/*.db*
+
+# Raw run output kept beside committed evidence indexes (odd/evidence/*/README.md).
+odd/evidence/**/*.log
+odd/evidence/**/*.exit
+odd/evidence/**/*.stderr
+odd/evidence/**/*.path
+odd/evidence/t6-benchmark/current-quick.json

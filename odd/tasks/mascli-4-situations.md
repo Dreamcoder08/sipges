@@ -11,7 +11,7 @@
 - S7 (narrativas): preparar redes y medios para que más adelante la IA revise publicaciones, identifique temas repetidos y detecte cambios de narrativa. Ahora se hace con reglas deterministas; la IA externa requiere aprobación del titular.
 - S8 (buzón): registrar quejas, denuncias, consultas y sugerencias con estado, responsable y seguimiento dentro del sistema.
 - S9 (trazabilidad): saber quién ingresó una información, quién la revisó, qué cambió y cuándo.
-- S10 (versión): lo que funciona en MASCLI 3.0 se mantiene. Las mejoras forman MASCLI 4.0, activable por proyecto y desactivada por defecto.
+- S10 (versión, reemplazada 2026-10-26 por [mascli-4-only](mascli-4-only.md)): todo funciona como MASCLI 4.0; el interruptor por proyecto se retira. Texto anterior: «lo que funciona en MASCLI 3.0 se mantiene. Las mejoras forman MASCLI 4.0, activable por proyecto y desactivada por defecto».
 - Reglas vigentes: solo datos reales (pruebas con datos sintéticos), sin credenciales, IRSA no se modifica automáticamente, sin despliegue ni migración de datos reales sin la palabra del titular.
 
 ## Diseño
@@ -33,7 +33,7 @@ siempre la confirma una persona. El buzón es un módulo de registros más (`buz
 - T5 [x] — Buzón de quejas, denuncias, consultas y sugerencias con seguimiento; pruebas de módulo y UI. commit: see L6
 - T6 [x] — Trazabilidad visible: registrado por, revisado por, cambios y fechas; pruebas de UI. commit: see L7
 - T7 [x] — Narrativas preparadas para IA: temas repetidos y cambio de tono, con puerto para un asistente futuro; pruebas puras. commit: see L8
-- T8 [ ] — Verificación integrada, revisión, PRs y activación (la activación en producción requiere la palabra del titular). commit: pending
+- T8 [x] — Verificación integrada, revisión y PRs; sin interruptor no hay paso de activación aparte (ver mascli-4-only). El despliegue a producción requiere la palabra del titular. commit: pending
 
 ## Registro
 
@@ -45,3 +45,5 @@ siempre la confirma una persona. El buzón es un módulo de registros más (`buz
 - L6 (T5 Buzón): Módulo Buzon (prefijo BZ) con tipo, canal, responsable, plazo y estados Recibido → Cerrado; entra como señal de situaciones. Commit 8ffe2c6.
 - L7 (T6 Trazabilidad): Resumen sobre el historial existente: registrado por, revisado por (cambios de estado o verificación) y última modificación, con fecha. Commit 51572a2.
 - L8 (T7 Narrativas para IA): Resumen de narrativas: temas repetidos, plataformas y cambio de tono (≥25 puntos). El puerto para un asistente de IA queda pendiente hasta que el titular apruebe proveedor y datos. Commit 1e9e764.
+- L9 (2026-10-26, cambio de requisito): el titular pidió «quiero que todo este en 4.0 , objetivo actualizar todo , eliminar redundancia objetivo estar en la vanguardia». S10 y T8 se reescriben; la implementación vive en [mascli-4-only](mascli-4-only.md) y ADR 0027.
+- L10 (2026-10-27, T8 Verificación integrada): E2E Chromium 93 aprobados / 1 omitido (incluye `19-mascli-4` y los flujos de medios), API 694 / 14 omitidos, web 282, revisión nativa aprobada (`review-b082ae718ab3f9a5`) y PR en borrador #81 (apilado sobre #80 y #79); evidencia en `odd/evidence/mascli-4-only/README.md`. La CI remota no arrancó por un bloqueo de facturación de la cuenta de GitHub. El despliegue a producción sigue requiriendo la palabra del titular y no se realizó.

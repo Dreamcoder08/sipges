@@ -11,8 +11,6 @@ import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { availableParallelism, cpus, totalmem } from 'node:os';
 import { PGlite } from '@electric-sql/pglite';
-import { buildContainer } from '../src/compose.ts';
-import { createApp } from '../src/app.ts';
 import { automatedConsensus } from '../src/contexts/analytics/domain/consensus.ts';
 import { candidatePairs } from '../src/contexts/analytics/domain/candidate-links.ts';
 import { integratedAnalysis } from '../src/contexts/analytics/domain/integrated.ts';
@@ -36,12 +34,12 @@ import {
 } from '../src/contexts/indicators/domain/index.ts';
 import { createIntelligenceService } from '../src/contexts/intelligence/application/index.ts';
 import { analyzeText, classifyRecord } from '../src/contexts/intelligence/domain/index.ts';
-import { loadConfig } from '../src/platform/config.ts';
 import { loadMigrations, migrate } from '../src/platform/database/migrator.ts';
 import { pgliteClient } from '../src/platform/database/pglite.ts';
 import { postgresClient } from '../src/platform/database/postgres.ts';
 import type { SqlClient } from '../src/platform/database/sql-client.ts';
 import { type Measurement, GATE, measure, table, tripsGate } from './harness.ts';
+import { BENCHMARK_HTTP_PATHS, createBenchmarkSession } from './http-session.ts';
 import {
   NEUTRAL_VOCABULARY,
   type Payload,
@@ -254,26 +252,7 @@ const openDatabase = async (): Promise<{
 const database = await openDatabase();
 try {
   await migrate(database.sql, await loadMigrations());
-  const config = loadConfig({
-    MASCLI_DATA_KEY: Buffer.alloc(32, 7).toString('base64'),
-    MASCLI_ADMIN_PASSWORD: 'synthetic-bench-password',
-    MASCLI_COOKIE_SECURE: '0',
-  });
-  const container = await buildContainer({
-    config,
-    sql: database.sql,
-    clock: { now: () => new Date() },
-    clientIp: () => '203.0.113.9',
-    embeddings: slowModel,
-  });
-  const app = createApp(container);
-  const login = await app.request('/login', {
-    method: 'POST',
-    headers: { host: 'localhost', origin: 'http://localhost' },
-    body: new URLSearchParams({ username: 'admin', password: 'synthetic-bench-password', otp: '' }),
-  });
-  const cookie = /mascli_session=[^;]*/.exec(login.headers.get('set-cookie') ?? '')?.[0];
-  if (!cookie) throw new Error(`Benchmark login failed: ${login.status}`);
+  const session = await createBenchmarkSession(database.sql, slowModel);
   const httpScale = quick ? 10 : 10;
   const records = syntheticRecords(httpScale);
   const tenant = 'MASCLI/PRJ-SECHURA';
@@ -293,25 +272,8 @@ try {
     }
   }
   const label = `${httpScale}× (${totalRecords(records)} records), ${database.kind}`;
-  for (const path of [
-    '/api/dashboard',
-    '/system/irsa',
-    '/system/situational-analysis',
-    '/system/integrated-analysis',
-    '/system/consensus-engine',
-    '/system/strategic-assessment',
-    '/api/eventos?limit=-1',
-  ]) {
-    await record(
-      `HTTP GET ${path}`,
-      label,
-      async () => {
-        const res = await app.request(path, { headers: { host: 'localhost', cookie } });
-        if (res.status !== 200) throw new Error(`${path} answered ${res.status}`);
-        await res.arrayBuffer();
-      },
-      { runs: RUNS },
-    );
+  for (const path of BENCHMARK_HTTP_PATHS) {
+    await record(`HTTP GET ${path}`, label, () => session.get(path), { runs: RUNS });
   }
 } finally {
   await database.close();

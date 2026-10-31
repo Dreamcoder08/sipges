@@ -139,7 +139,8 @@
   font-size: var(--text-sm);
   font-weight: 700;
   background: var(--color-track);
-  white-space: nowrap;
+  /* Colour labels carry their meaning (ADR 0027); let them wrap instead of widening the page. */
+  overflow-wrap: anywhere;
 }
 .softVerde {
   background: var(--level-green-soft);
@@ -195,7 +196,10 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+.levelTag .dot {
+  flex-shrink: 0;
 }
 .dot {
   width: 0.7rem;

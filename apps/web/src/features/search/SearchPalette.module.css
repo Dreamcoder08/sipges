@@ -36,18 +36,23 @@
   border-radius: var(--radius-sm);
   background: var(--color-surface);
 }
+:global(body):has(.backdrop) {
+  overflow: hidden;
+}
 .backdrop {
+  pointer-events: auto;
   position: fixed;
   inset: 0;
   z-index: 50;
-  display: grid;
-  justify-items: center;
-  align-items: start;
-  padding: 10vh var(--space-4) var(--space-4);
   background: var(--color-scrim);
 }
 .dialog {
-  width: min(40rem, 100%);
+  position: fixed;
+  z-index: 51;
+  top: 10vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(40rem, calc(100% - 2 * var(--space-4)));
   max-height: 75vh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -114,10 +119,9 @@
   .trigger kbd {
     display: none;
   }
-  .backdrop {
-    padding: var(--space-2);
-  }
   .dialog {
+    top: var(--space-2);
+    width: calc(100% - 2 * var(--space-2));
     max-height: 80dvh;
     border-radius: var(--radius-lg);
   }

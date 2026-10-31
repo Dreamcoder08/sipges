@@ -1,0 +1,35 @@
+{
+  "results": [
+    {
+      "stage": "lint",
+      "exit": 0,
+      "elapsed_seconds": 30.63
+    },
+    {
+      "stage": "boundaries",
+      "exit": 0,
+      "elapsed_seconds": 2.8
+    },
+    {
+      "stage": "typecheck",
+      "exit": 0,
+      "elapsed_seconds": 5.71
+    },
+    {
+      "stage": "non-api-tests",
+      "exit": 0,
+      "elapsed_seconds": 118.82
+    },
+    {
+      "stage": "tooling-tests",
+      "exit": 0,
+      "elapsed_seconds": 4.77
+    },
+    {
+      "stage": "python-reference",
+      "exit": 4,
+      "elapsed_seconds": 1.16
+    }
+  ],
+  "complete": false
+}

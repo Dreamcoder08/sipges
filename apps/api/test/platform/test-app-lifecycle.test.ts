@@ -1,8 +1,13 @@
 import type { PGliteInterface } from '@electric-sql/pglite';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { createTestApp } from '../support/test-app.ts';
 
 let previous: PGliteInterface;
+
+// Also check the last test's clone, which has no following test to observe cleanup.
+afterAll(() => {
+  expect(previous.closed).toBe(true);
+});
 
 describe('test application database lifecycle', { concurrent: false }, () => {
   it('provides a working isolated database for the current test', async () => {
@@ -28,5 +33,6 @@ describe('test application database lifecycle', { concurrent: false }, () => {
     const missing = await t.login('lifecycle.user', 'lifecycle-password-123');
     expect(missing.res.status).toBe(401);
     expect(t.db.closed).toBe(false);
+    previous = t.db;
   });
 });

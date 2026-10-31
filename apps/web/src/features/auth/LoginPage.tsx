@@ -63,7 +63,7 @@ export const LoginPage = ({
         <div className={styles.brand} aria-hidden="true">
           M
         </div>
-        <h1 id={titleId}>Ingresar a MASCLI</h1>
+        <h1 id={titleId}>Ingresar a MASCLI 4.0</h1>
         <p className={styles.lead}>
           Gestión del riesgo socioambiental con evidencia y validación humana.
         </p>

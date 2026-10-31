@@ -1,11 +1,16 @@
-import { type ReactNode, useEffect, useId, useRef } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { Alert } from './Alert.tsx';
 import { Button } from './Button.tsx';
 import styles from './ConfirmDialog.module.css';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './dialog.tsx';
+
+const keepOpen = (event: Event) => event.preventDefault();
 
 /**
- * Modal confirmation for an action that cannot be undone: focus starts on «Cancelar», Tab stays
- * inside, Escape cancels and focus returns to the trigger on close.
+ * Modal confirmation for an action that cannot be undone, on the shared Radix dialog with
+ * alert-dialog rules: focus starts on «Cancelar», stays inside and returns to the trigger on
+ * close; the rest of the page is hidden from assistive technology; Escape cancels unless the
+ * action is pending, and clicking the backdrop never dismisses it.
  */
 export const ConfirmDialog = ({
   title,
@@ -26,61 +31,44 @@ export const ConfirmDialog = ({
   onConfirm: () => void;
   onCancel: () => void;
 }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  const titleId = useId();
-  const description = useId();
-  useEffect(() => {
-    const previous = document.activeElement;
-    ref.current?.querySelector<HTMLButtonElement>('button')?.focus();
-    return () => {
-      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
-    };
-  }, []);
+  const cancel = useRef<HTMLButtonElement>(null);
+  // Consumers open the dialog from their own buttons, not a Radix trigger, so remember the
+  // opener before Radix moves focus and hand focus back to it on close.
+  const [opener] = useState(() =>
+    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  );
   return (
-    <div className={styles.backdrop}>
-      <div
-        ref={ref}
-        className={styles.dialog}
+    <Dialog open onOpenChange={(open) => (open ? undefined : onCancel())}>
+      <DialogContent
         role="alertdialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape' && !pending) {
-            event.preventDefault();
-            onCancel();
-          }
-          if (event.key === 'Tab') {
-            const buttons =
-              ref.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
-            const first = buttons?.[0];
-            const last = buttons?.[buttons.length - 1];
-            if (!first || !last) {
-              event.preventDefault();
-              return;
-            }
-            if (event.shiftKey && document.activeElement === first) {
-              event.preventDefault();
-              last.focus();
-            } else if (!event.shiftKey && document.activeElement === last) {
-              event.preventDefault();
-              first.focus();
-            }
-          }
+        className={styles.dialog}
+        overlayClassName={styles.backdrop}
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          cancel.current?.focus();
         }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          if (opener?.isConnected) opener.focus();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (pending) event.preventDefault();
+        }}
+        onPointerDownOutside={keepOpen}
+        onInteractOutside={keepOpen}
       >
-        <h2 id={titleId}>{title}</h2>
-        <p id={description}>{children}</p>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{children}</DialogDescription>
         {error ? <Alert tone="error">{error}</Alert> : null}
         <div className={styles.actions}>
-          <Button variant="secondary" disabled={pending} onClick={onCancel}>
+          <Button ref={cancel} variant="secondary" disabled={pending} onClick={onCancel}>
             Cancelar
           </Button>
           <Button disabled={pending} onClick={onConfirm}>
             {pending ? pendingLabel : confirmLabel}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
