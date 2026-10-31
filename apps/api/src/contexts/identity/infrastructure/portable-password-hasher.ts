@@ -6,7 +6,8 @@ import { parseLegacyHash, sameDigest } from './legacy-hash.ts';
 
 /** OWASP Password Storage Cheat Sheet minimum for Argon2id: m=19 MiB, t=2, p=1. */
 const COST = { m: 19456, t: 2, p: 1 } as const;
-const VERSION = 0x13;
+/** Argon2 version 1.3, written as `v=19` in the PHC string. */
+const VERSION = 19;
 /**
  * The most a stored hash may ask for. A Worker isolate has 128 MB of memory, and a crafted or
  * corrupted hash must fail fast instead of allocating gigabytes or burning the CPU budget.
@@ -23,13 +24,16 @@ const fromBase64 = (text: string) => {
   }
 };
 
-type Argon2idHash = { m: number; t: number; p: number; salt: Uint8Array; digest: Uint8Array };
+type Argon2Cost = { m: number; t: number; p: number };
+type Argon2idHash = Argon2Cost & { salt: Uint8Array; digest: Uint8Array };
+
+const PHC = new RegExp(
+  `^\\$argon2id\\$v=${VERSION}\\$m=(\\d{1,7}),t=(\\d{1,4}),p=(\\d{1,3})\\$([^$]+)\\$([^$]+)$`,
+);
 
 /** A `$argon2id$v=19$m=…,t=…,p=…$salt$hash` PHC string within the Worker budget, else null. */
 const parseArgon2id = (stored: string): Argon2idHash | null => {
-  const match = /^\$argon2id\$v=19\$m=(\d{1,7}),t=(\d{1,4}),p=(\d{1,3})\$([^$]+)\$([^$]+)$/.exec(
-    stored,
-  );
+  const match = PHC.exec(stored);
   if (!match) return null;
   const [m, t, p] = [Number(match[1]), Number(match[2]), Number(match[3])];
   if (p < 1 || p > LIMIT.p || t < 1 || t > LIMIT.t || m < 8 * p || m > LIMIT.m) return null;
@@ -39,13 +43,8 @@ const parseArgon2id = (stored: string): Argon2idHash | null => {
   return { m, t, p, salt, digest };
 };
 
-const argon2id = (password: string, salt: Uint8Array, cost: Omit<Argon2idHash, 'salt'>) =>
-  argon2idAsync(password, salt, {
-    ...cost,
-    version: VERSION,
-    dkLen: cost.digest.length,
-    maxmem: LIMIT.m * 1024,
-  });
+const argon2id = (password: string, salt: Uint8Array, { m, t, p }: Argon2Cost, dkLen: number) =>
+  argon2idAsync(password, salt, { m, t, p, dkLen, version: VERSION, maxmem: LIMIT.m * 1024 });
 
 /**
  * Argon2id and PBKDF2 in plain JavaScript, for runtimes without native addons or dynamic
@@ -56,8 +55,8 @@ const argon2id = (password: string, salt: Uint8Array, cost: Omit<Argon2idHash, '
 export const portablePasswordHasher: PasswordHasher = {
   async hash(password) {
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const digest = await argon2id(password, salt, { ...COST, digest: new Uint8Array(32) });
-    return `$argon2id$v=19$m=${COST.m},t=${COST.t},p=${COST.p}$${toBase64(salt)}$${toBase64(digest)}`;
+    const digest = await argon2id(password, salt, COST, 32);
+    return `$argon2id$v=${VERSION}$m=${COST.m},t=${COST.t},p=${COST.p}$${toBase64(salt)}$${toBase64(digest)}`;
   },
 
   async verify(password, stored) {
@@ -73,7 +72,8 @@ export const portablePasswordHasher: PasswordHasher = {
       }
       const parsed = parseArgon2id(stored);
       if (!parsed) return false;
-      return sameDigest(await argon2id(password, parsed.salt, parsed), parsed.digest);
+      const candidate = await argon2id(password, parsed.salt, parsed, parsed.digest.length);
+      return sameDigest(candidate, parsed.digest);
     } catch {
       return false;
     }
