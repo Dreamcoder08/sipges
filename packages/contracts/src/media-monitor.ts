@@ -38,8 +38,6 @@ export const MediaFeed = z.object({
 export type MediaFeed = z.infer<typeof MediaFeed>;
 
 export const MediaMonitorState = z.object({
-  /** Feeds are only polled while MASCLI 4.0 is on. */
-  active: z.boolean(),
   poll_minutes: z.number(),
   max_feeds: z.number(),
   feeds: z.array(MediaFeed),

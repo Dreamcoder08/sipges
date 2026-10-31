@@ -219,7 +219,18 @@ describe('territorial alerts and preventive plans', () => {
       { status: 'Corroborado', reviewer_note: 'Contrastado con acta' },
       { cookie: coordinator },
     );
+    // The alert is high priority: the first validation waits for a second person.
     expect(await json(decided)).toMatchObject({
+      ok: true,
+      status: 'Pendiente de verificación',
+      second_validation_required: true,
+      irsa_modified: false,
+    });
+    const confirmed = await call('PATCH', `/system/intelligence/territorial-alerts/${alertId}`, {
+      status: 'Corroborado',
+      reviewer_note: 'Contrastado con acta',
+    });
+    expect(await json(confirmed)).toMatchObject({
       ok: true,
       status: 'Corroborado',
       irsa_modified: false,
@@ -324,6 +335,7 @@ describe('territorial alerts and preventive plans', () => {
       'PrevencionTerritorial:UPDATE',
       'PrevencionTerritorial:CREATE',
       'InteligenciaDigital:REVIEW',
+      'InteligenciaDigital:REVIEW',
       'InteligenciaDigital:CREATE',
     ]);
 
@@ -417,14 +429,21 @@ describe('documented digital provenance and retry safety', () => {
     expect(results.filter((r) => r.outcome === 'created')).toHaveLength(1);
     expect(results.filter((r) => r.outcome === 'duplicate')).toHaveLength(3);
     const id = results[0]?.id;
-    expect(
-      (
-        await call('PATCH', `/system/intelligence/territorial-alerts/${id}`, {
-          status: 'Corroborado',
-          reviewer_note: 'Synthetic review',
-        })
-      ).status,
-    ).toBe(200);
+    // High priority: two different people validate it.
+    const second = await addUser(
+      t,
+      (await t.login('admin', 'admin-password-123')).cookie,
+      'coordinador',
+    );
+    const review = (cookie?: string) =>
+      call(
+        'PATCH',
+        `/system/intelligence/territorial-alerts/${id}`,
+        { status: 'Corroborado', reviewer_note: 'Synthetic review' },
+        cookie ? { cookie } : {},
+      );
+    expect((await review()).status).toBe(200);
+    expect((await review(second)).status).toBe(200);
     const retry = await (
       await call('POST', '/system/intelligence/territorial-alerts', body)
     ).json();
@@ -432,7 +451,7 @@ describe('documented digital provenance and retry safety', () => {
     const snapshots = await t.sql.query<{ action: string; event_payload: Record<string, unknown> }>(
       "SELECT action, event_payload FROM audit WHERE module = 'InteligenciaDigital' ORDER BY id",
     );
-    expect(snapshots).toHaveLength(2);
+    expect(snapshots).toHaveLength(3);
     expect(snapshots[0]).toMatchObject({
       action: 'CREATE',
       event_payload: {
@@ -445,6 +464,10 @@ describe('documented digital provenance and retry safety', () => {
       },
     });
     expect(snapshots[1]).toMatchObject({
+      action: 'REVIEW',
+      event_payload: { id, status: 'Pendiente de verificación', territory: body.territory },
+    });
+    expect(snapshots[2]).toMatchObject({
       action: 'REVIEW',
       event_payload: { id, status: 'Corroborado', territory: body.territory },
     });

@@ -75,8 +75,6 @@ export const createMediaMonitorService = (deps: {
   feeds: MediaFeedStore;
   gateway: FeedGateway;
   importer: SourceImporter;
-  /** True while the project has MASCLI 4.0 on; feeds are never fetched otherwise. */
-  active: (tenantId: string) => Promise<boolean>;
   clock: () => Date;
 }) => {
   const { feeds, gateway, importer, clock } = deps;
@@ -124,7 +122,6 @@ export const createMediaMonitorService = (deps: {
   return {
     async state(tenantId: string) {
       return {
-        active: await deps.active(tenantId),
         poll_minutes: POLL_MINUTES,
         max_feeds: MAX_FEEDS,
         feeds: await feeds.list(tenantId),
@@ -169,7 +166,6 @@ export const createMediaMonitorService = (deps: {
      */
     async poll(tenantId: string, options: { force?: boolean } = {}) {
       const report = { feeds: 0, imported: 0, duplicates: 0, errors: 0 };
-      if (!(await deps.active(tenantId))) return report;
       const at = clock().toISOString();
       const due = await feeds.claimDue(tenantId, at, options.force ? 0 : POLL_MINUTES);
       const reads = await Promise.allSettled(due.map((feed) => gateway.read(feed.url)));

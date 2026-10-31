@@ -20,14 +20,7 @@ import {
   isAlertState,
   isPublicHttpUrl,
 } from '../domain/index.ts';
-import type {
-  AlertStore,
-  Clock,
-  EmbeddingProvider,
-  NarrativeReader,
-  RandomHex,
-  Version4Lookup,
-} from './ports.ts';
+import type { AlertStore, Clock, EmbeddingProvider, NarrativeReader, RandomHex } from './ports.ts';
 
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
 
@@ -71,11 +64,8 @@ export const createIntelligenceService = (deps: {
   alerts: AlertStore;
   clock: Clock;
   randomHex: RandomHex;
-  /** Absent: every project behaves as MASCLI 3.0. */
-  version4?: Version4Lookup;
 }) => {
   const { narratives, embeddings, alerts, clock, randomHex } = deps;
-  const version4 = deps.version4 ?? { enabled: async () => false };
   // Reference concepts never change for a model, so their vectors are computed once.
   const conceptVectors = new Map<string, Promise<number[]>>();
   const conceptVector = (description: string) => {
@@ -276,7 +266,6 @@ export const createIntelligenceService = (deps: {
       const current = await alerts.get(formatScope(scope), input.id);
       if (!current || current.projectId !== scope.projectId) return err({ kind: 'missing' });
       const outcome = fourEyes({
-        version4: await version4.enabled(scope),
         level: current.level,
         current: current.status,
         next: input.status,

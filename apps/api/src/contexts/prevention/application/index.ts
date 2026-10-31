@@ -8,7 +8,7 @@ export {
   isCalendarDate,
   isOverdue,
 } from '../domain/index.ts';
-export type { ActionStore, AlertLookup, EvidenceLookup, Version4Lookup } from './ports.ts';
+export type { ActionStore, AlertLookup, EvidenceLookup } from './ports.ts';
 export {
   createPreventionService,
   type CreateError,
