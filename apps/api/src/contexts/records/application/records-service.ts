@@ -7,6 +7,7 @@ import {
   collisionId,
   isLookupableId,
   recordIdFor,
+  validatePayload,
   withAssignedId,
 } from '../domain/modules.ts';
 import type { Clock, RandomHex, RecordStore, StoredRecord } from './ports.ts';
@@ -25,6 +26,18 @@ export type ImportReport = {
   readonly created: number;
   readonly updated: number;
   readonly problems: readonly ImportProblem[];
+};
+
+/** A payload the module's id rule refuses; nothing was written. */
+export type InvalidPayload = {
+  readonly kind: 'invalid';
+  readonly field: string;
+  readonly message: string;
+};
+
+const checkPayload = (module: ModuleName, payload: Payload): InvalidPayload | null => {
+  const problem = validatePayload(module, payload);
+  return problem ? { kind: 'invalid', ...problem } : null;
 };
 
 /** Absolute ceiling for list sizes (docs/adr/0008 #10). */
@@ -83,7 +96,9 @@ export const createRecordsService = (deps: {
       tenantId: string,
       module: ModuleName,
       payload: Payload,
-    ): Promise<Result<string, 'exhausted'>> {
+    ): Promise<Result<string, InvalidPayload | { readonly kind: 'exhausted' }>> {
+      const invalid = checkPayload(module, payload);
+      if (invalid) return err(invalid);
       const preferred = recordIdFor(module, payload, randomHex);
       function* candidates() {
         yield preferred;
@@ -97,7 +112,7 @@ export const createRecordsService = (deps: {
         NOTES.create,
         clock.now(),
       );
-      return id ? ok(id) : err('exhausted');
+      return id ? ok(id) : err({ kind: 'exhausted' });
     },
 
     async replace(
@@ -105,11 +120,13 @@ export const createRecordsService = (deps: {
       module: ModuleName,
       id: string,
       payload: Payload,
-    ): Promise<boolean> {
-      return (
+    ): Promise<Result<true, InvalidPayload | { readonly kind: 'missing' }>> {
+      const invalid = checkPayload(module, payload);
+      if (invalid) return err(invalid);
+      const replaced =
         isLookupableId(id) &&
-        store.replace(tenantId, module, id, payload, NOTES.update, clock.now())
-      );
+        (await store.replace(tenantId, module, id, payload, NOTES.update, clock.now()));
+      return replaced ? ok(true) : err({ kind: 'missing' });
     },
 
     /**
