@@ -1,6 +1,6 @@
 # UI components
 
-Prefer proven, maintained primitives for generic controls such as dialogs. Keep domain-specific behavior in MASCLI, and adapt the primitive to existing CSS Modules and design tokens. Adopt components when a feature needs them; do not rewrite the application wholesale.
+Prefer proven, maintained primitives for generic controls such as dialogs. Keep domain-specific behavior in MASCLI, and adapt the primitive to existing CSS Modules and design tokens. Adopt components when a feature needs them; do not rewrite the application wholesale. See [architecture guardrails](architecture-guardrails.md) for UI roles and token policy.
 
 ## Search dialog provenance
 
