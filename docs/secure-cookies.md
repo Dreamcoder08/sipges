@@ -15,9 +15,9 @@ The policy is evaluated once at import. Restart the process after changing it; r
 
 ## Local HTTP quick path
 
-The four loopback launchers (`start_mascli.bat`, `INICIAR_MASCLI_FINAL.bat`, `start_mascli.sh`, `iniciar_mascli_final.sh`) supply `0` **only when the variable is absent**. They preserve explicit `1` and invalid values. An explicit `1` on their HTTP listener prevents normal authenticated follow-up; choose HTTPS or intentionally set `0` for local testing.
+The four loopback launchers in `reference/python/` (`start_mascli.bat`, `INICIAR_MASCLI_FINAL.bat`, `start_mascli.sh`, `iniciar_mascli_final.sh`; run them from there, since `app:app` only resolves in that directory) supply `0` **only when the variable is absent**. They preserve explicit `1` and invalid values. An explicit `1` on their HTTP listener prevents normal authenticated follow-up; choose HTTPS or intentionally set `0` for local testing.
 
-For direct local commands, set the override yourself:
+For direct local commands, set the override yourself and run from `reference/python/`:
 
 ```powershell
 $env:MASCLI_COOKIE_SECURE="0"

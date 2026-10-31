@@ -10,7 +10,7 @@ COOKIES Y HTTPS:
 - Solo el valor exacto 0 desactiva Secure: reservado para pruebas HTTP locales en loopback, nunca para el servicio público.
 - Vacío, espacios y cualquier otro valor provocan error al importar, antes de inicializar recursos.
 - La política se fija al inicio; reinicie después de cambiarla. No configura TLS por sí misma.
-- No utilice los lanzadores locales .bat/.sh como comando de despliegue: asignan 0 cuando la variable está ausente para su listener 127.0.0.1.
+- No utilice los lanzadores locales .bat/.sh (reference/python/) como comando de despliegue: asignan 0 cuando la variable está ausente para su listener 127.0.0.1.
 - Detalles y límites de variables vacías en shells: docs/secure-cookies.md.
 
 CONFIGURACIÓN DE DESPLIEGUE A VALIDAR (NO EJECUTAR CON DATOS REALES):
