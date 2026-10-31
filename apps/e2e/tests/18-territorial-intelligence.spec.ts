@@ -93,11 +93,16 @@ for (const mobile of [false, true]) {
         data: { payload },
       });
       expect(updated.status(), await updated.text()).toBe(200);
-      const runtime = await page.request.get('/system/automations/runtime', { headers });
-      expect(await runtime.json()).toMatchObject({
-        event_processing: true,
-        latest_attempt: { source: 'event', status: 'completed', error: '' },
-      });
+      // Vercel and Workers finish event automation after the response (waitUntil); only the
+      // local Node server awaits it, so wait for the attempt instead of reading it once.
+      await expect
+        .poll(async () =>
+          (await page.request.get('/system/automations/runtime', { headers })).json(),
+        )
+        .toMatchObject({
+          event_processing: true,
+          latest_attempt: { source: 'event', status: 'completed', error: '' },
+        });
       expect(await signals()).toHaveLength(1);
       expect(await notices()).toHaveLength(1);
       // Regression: navigate from an already mounted intelligence route with another selection.

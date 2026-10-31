@@ -1,0 +1,7 @@
+/wasm CompileError http=200 seconds=0.029592
+/hash $argon2id$v=19$m=19456,t=2,p=1 self=true http=200 seconds=0.503946
+/hash $argon2id$v=19$m=19456,t=2,p=1 self=true http=200 seconds=0.502001
+/verify-native ok=true wrong=false http=200 seconds=0.451543
+/verify-legacy ok=true wrong=false http=200 seconds=2.033933
+/verify-legacy ok=true wrong=false http=200 seconds=2.024123
+cleanup_worker=stopped
