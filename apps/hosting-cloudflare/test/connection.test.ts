@@ -6,13 +6,16 @@ const mocks = vi.hoisted(() => ({
   postgres: vi.fn(),
   fetch: vi.fn(),
   scheduled: vi.fn(async () => {}),
+  buildContainer: vi.fn(),
+  // The container is built once per isolate, so its dependencies are kept across cases.
+  built: { deps: undefined as unknown },
 }));
 
 vi.mock('../../api/src/platform/database/postgres.ts', () => ({ postgresClient: mocks.postgres }));
 vi.mock('../src/migrations.ts', () => ({ MIGRATIONS: [] }));
 vi.mock('../../api/src/platform/database/migrator.ts', () => ({ migrate: vi.fn(async () => []) }));
 vi.mock('../../api/src/compose.ts', () => ({
-  buildContainer: vi.fn(async () => ({ runtime: { scheduled: mocks.scheduled } })),
+  buildContainer: mocks.buildContainer,
 }));
 vi.mock('../../api/src/app.ts', () => ({ createApp: () => ({ fetch: mocks.fetch }) }));
 vi.mock('../../api/src/contexts/documents/infrastructure/index.ts', () => ({
@@ -41,6 +44,10 @@ describe('Worker Hyperdrive connection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.postgres.mockReturnValue({ client: {}, close: mocks.close });
+    mocks.buildContainer.mockImplementation(async (deps: unknown) => {
+      mocks.built.deps = deps;
+      return { runtime: { scheduled: mocks.scheduled } };
+    });
   });
 
   it('uses the Hyperdrive socket without client TLS and closes after the response stream ends', async () => {
@@ -91,5 +98,21 @@ describe('Worker Hyperdrive connection', () => {
       ssl: false,
     });
     expect(mocks.close).toHaveBeenCalledOnce();
+  });
+
+  it('serves the repository references from the bundle, since Workers have no filesystem', async () => {
+    const pending: Promise<unknown>[] = [];
+    await worker.scheduled({}, syntheticEnv(), {
+      waitUntil: (promise) => {
+        pending.push(promise);
+      },
+    });
+    await Promise.all(pending);
+    const deps = mocks.built.deps as
+      { referenceReader?: { coordinates: (scope: unknown) => Promise<unknown> } } | undefined;
+    expect(deps?.referenceReader).toBeDefined();
+    await expect(
+      deps?.referenceReader?.coordinates({ companyId: 'MASCLI', projectId: 'PRJ-SECHURA' }),
+    ).resolves.toMatchObject({ crs: { geometry: 'EPSG:4326' } });
   });
 });

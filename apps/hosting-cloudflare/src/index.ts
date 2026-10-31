@@ -3,6 +3,7 @@ import { createApp } from '../../api/src/app.ts';
 import { type Container, buildContainer } from '../../api/src/compose.ts';
 import { inlineDocumentReader } from '../../api/src/contexts/documents/infrastructure/index.ts';
 import { portablePasswordHasher } from '../../api/src/contexts/identity/infrastructure/portable-password-hasher.ts';
+import { staticReferenceReader } from '../../api/src/contexts/reference/infrastructure/static-reference-reader.ts';
 import { loadConfig, parseAllowedHosts } from '../../api/src/platform/config.ts';
 import { migrate } from '../../api/src/platform/database/migrator.ts';
 import { postgresClient } from '../../api/src/platform/database/postgres.ts';
@@ -10,6 +11,9 @@ import { requestScopedSqlClient } from '../../api/src/platform/database/request-
 import { workerWebAssets } from './assets.ts';
 import type { Env, ExecutionContext } from './bindings.ts';
 import { MIGRATIONS } from './migrations.ts';
+// Workers have no filesystem: the repository references are bundled as JSON modules.
+import canonicalEntities from '../../../data/canonical_entities.json' with { type: 'json' };
+import projectCoordinates from '../../../data/project_coordinates.json' with { type: 'json' };
 import { r2ObjectStorage } from './r2-storage.ts';
 
 /**
@@ -51,6 +55,10 @@ const initialize = async (env: Env): Promise<Backend> => {
     objectStorage: r2ObjectStorage(env.EVIDENCE),
     passwordHasher: portablePasswordHasher,
     documentReader: inlineDocumentReader,
+    referenceReader: staticReferenceReader({
+      coordinates: projectCoordinates,
+      entities: canonicalEntities,
+    }),
     clock: { now: () => new Date() },
     // Set by Cloudflare's edge for every request; clients cannot override it.
     clientIp: (c) => c.req.header('cf-connecting-ip') ?? 'unknown',
