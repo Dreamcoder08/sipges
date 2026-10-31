@@ -8,6 +8,17 @@ updates:
     groups:
       dev-tooling:
         dependency-type: development
+    ignore:
+      # The root keeps TypeScript 6 for typescript-eslint, which does not support TS 7 yet;
+      # workspaces already use TS 7. Drop this once typescript-eslint supports it.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Node types follow the Node major the runtime uses, not the newest one.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
+      # jsdom 30 stalls the NotificationBell test; upgrade it on its own with the fix.
+      - dependency-name: jsdom
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     target-branch: main
