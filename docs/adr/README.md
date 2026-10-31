@@ -31,6 +31,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0025](0025-postgis-areas-of-influence.md) | Areas of influence around concessions with PostGIS and a geodesic fallback | Accepted |
 | [0026](0026-territorial-3d-view.md) | 3D terrain with CesiumJS and open elevation, under the strict CSP | Accepted |
 | [0027](0027-mascli-4-only.md) | MASCLI 4.0 is the only behaviour: the per-project switch is retired | Accepted |
+| [0028](0028-cloudflare-workers-hosting.md) | Cloudflare Workers as an optional host, through Hyperdrive to PostgreSQL | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

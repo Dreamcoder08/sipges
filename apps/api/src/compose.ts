@@ -33,6 +33,7 @@ import { log } from './platform/observability/logger.ts';
 import { randomBytes, randomUUID } from 'node:crypto';
 import {
   createReferenceService,
+  type ReferenceReader,
   type ReferenceService,
 } from './contexts/reference/application/index.ts';
 import { fileReferenceReader } from './contexts/reference/infrastructure/file-reference-reader.ts';
@@ -218,6 +219,8 @@ export const buildContainer = async (deps: {
   passwordHasher?: PasswordHasher;
   /** Overrides the worker-thread PDF reader (Cloudflare Workers inject the inline one). */
   documentReader?: DocumentReader;
+  /** Overrides the file reference reader (Cloudflare Workers inject bundled references). */
+  referenceReader?: ReferenceReader;
   /** Overrides outbound HTTP for automation channels (tests record messages instead). */
   channelSender?: ChannelSender;
   /** Overrides browser push delivery (tests record pushes instead). */
@@ -515,7 +518,7 @@ export const buildContainer = async (deps: {
     authorizedSources,
     media,
     runtime,
-    reference: createReferenceService(fileReferenceReader),
+    reference: createReferenceService(deps.referenceReader ?? fileReferenceReader),
     config: deps.config,
     identity,
     googleSignIn:
