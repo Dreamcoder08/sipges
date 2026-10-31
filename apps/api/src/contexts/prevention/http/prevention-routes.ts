@@ -13,7 +13,7 @@ import {
 
 const CREATE_ERRORS = {
   alert_missing: [404, 'Alerta no pertenece al proyecto indicado'],
-  alert_unverified: [409, 'La alerta necesita verificación humana antes de crear un plan'],
+  alert_unverified: [409, 'La alerta necesita verificación antes de crear un plan'],
 } as const satisfies Record<CreateError['kind'], readonly [number, string]>;
 
 const UPDATE_ERRORS = {

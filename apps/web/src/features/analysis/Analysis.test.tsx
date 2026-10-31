@@ -139,7 +139,7 @@ describe('analysis pages', () => {
           dialogues_open: 0,
           aarc_complete: 0,
           attention: ['Verificar hecho pendiente'],
-          limitations: ['Revisión humana.'],
+          limitations: ['Revisión.'],
         }),
       ),
       http.get('*/system/consensus-engine', () =>
@@ -158,7 +158,7 @@ describe('analysis pages', () => {
               registros_relacionados: ['H1'],
               prioridad_orientativa: 'Alta',
               estado: 'Propuesta',
-              autorizacion: 'Requiere revisión humana',
+              autorizacion: 'Requiere revisión',
             },
           ],
           summary: { total: 1, alta: 1 },
@@ -181,7 +181,7 @@ describe('analysis pages', () => {
     inbox();
     mount(<StrategyPage {...context} renderRecords={(module) => <p>Editor {module}</p>} />);
     expect(await screen.findByText('Verificar hecho pendiente')).toBeVisible();
-    expect(await screen.findByText('Requiere revisión humana')).toBeVisible();
+    expect(await screen.findByText('Requiere revisión')).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: 'Hechos por verificar' }));
     expect(screen.getByText('Editor hechos')).toBeVisible();
   });

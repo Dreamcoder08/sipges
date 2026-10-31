@@ -113,8 +113,8 @@ export const IntelligencePage = (context: FeatureContext) => {
   return (
     <div className={styles.stack}>
       <Alert tone="info">
-        La prioridad textual requiere revisión humana. Analizar o corroborar una alerta no modifica
-        el IRSA. El enlace se conserva como referencia y no se consulta automáticamente.
+        La prioridad textual requiere revisión. Analizar o corroborar una alerta no modifica el
+        IRSA. El enlace se conserva como referencia y no se consulta automáticamente.
       </Alert>
       <Card title="Analizar publicación o reporte">
         <form
@@ -441,7 +441,7 @@ export const IntelligencePage = (context: FeatureContext) => {
                   </select>
                 </label>
                 <label>
-                  Nota de revisión humana
+                  Nota de revisión
                   <textarea
                     maxLength={2000}
                     value={note ?? selectedAlert.reviewer_note ?? ''}

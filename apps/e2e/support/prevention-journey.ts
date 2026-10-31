@@ -24,7 +24,7 @@ export const preventionJourney = async (page: Page, stamp: string, scope: string
   await open.click();
   await expect(page.getByRole('heading', { name: `Alerta ${alertId}` })).toBeFocused();
   await page.getByLabel('Estado de revisión').selectOption('Corroborado');
-  await page.getByLabel('Nota de revisión humana').fill('Contrastado con acta sintética.');
+  await page.getByLabel('Nota de revisión').fill('Contrastado con acta sintética.');
   await page.getByRole('button', { name: 'Guardar revisión' }).click();
   await expect(row.getByRole('cell', { name: 'Corroborado', exact: true })).toBeVisible();
 

@@ -64,9 +64,7 @@ export const LoginPage = ({
           M
         </div>
         <h1 id={titleId}>Ingresar a MASCLI 4.0</h1>
-        <p className={styles.lead}>
-          Gestión del riesgo socioambiental con evidencia y validación humana.
-        </p>
+        <p className={styles.lead}>Gestión del riesgo socioambiental.</p>
         {message ? <Alert tone="error">{message}</Alert> : null}
         {googleError && !message ? <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert> : null}
         {providers.data?.google ? (

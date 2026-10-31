@@ -107,7 +107,7 @@ export const createIntelligenceService = (deps: {
         matches: [],
         note: 'Análisis de temas por reglas. No se ha interpretado semánticamente el texto.',
       },
-      verification_status: 'Pendiente de corroboración humana',
+      verification_status: 'Pendiente de corroboración',
       source_retrieved: false,
     };
     if (input.mode === 'rules') return ok(report);
@@ -139,7 +139,7 @@ export const createIntelligenceService = (deps: {
         note: 'Los valores son similitudes relativas, no probabilidades de conflicto ni pruebas de veracidad.',
       };
       report.method =
-        'Análisis híbrido: reglas y similitud semántica local. Requiere corroboración humana.';
+        'Análisis híbrido: reglas y similitud semántica local. Requiere corroboración.';
     } catch {
       if (input.mode === 'semantic') return err({ kind: 'unavailable' });
       report.semantic.note =

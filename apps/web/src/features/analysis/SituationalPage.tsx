@@ -29,7 +29,7 @@ export const SituationalPage = (context: FeatureContext) => {
     <div className={styles.page}>
       <p>
         Diagnóstico del proyecto {context.projectLabel} a partir de sus registros. Las
-        recomendaciones requieren contraste humano.
+        recomendaciones requieren validación.
       </p>
       <div className={styles.actions}>
         <Button

@@ -355,8 +355,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                   </form>
                 ) : (
                   <p>
-                    Primero corrobore una alerta mediante revisión humana para crear un plan
-                    preventivo.
+                    Primero corrobore una alerta mediante revisión para crear un plan preventivo.
                   </p>
                 )
               }

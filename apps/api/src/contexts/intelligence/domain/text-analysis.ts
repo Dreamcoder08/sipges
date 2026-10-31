@@ -212,7 +212,7 @@ const textReport = (
     limitations: [
       'No valida la autenticidad ni el contenido del enlace.',
       'No permite afirmar causalidad, sentimientos, intenciones o riesgo individual.',
-      'Confirmar con fuentes y revisión humana.',
+      'Confirmar con fuentes y revisión.',
       'El texto enviado no se guarda por este endpoint.',
     ],
   };

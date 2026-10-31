@@ -140,7 +140,7 @@ describe('automatedConsensus rule families (app.py:745)', () => {
       origen: 'hechos/h1',
       registros_relacionados: ['h1'],
       prioridad_orientativa: 'Alta',
-      estado: 'Propuesta automática; pendiente de revisión humana',
+      estado: 'Propuesta automática; pendiente de revisión',
       autorizacion: 'No constituye acuerdo ni compromiso',
     });
   });

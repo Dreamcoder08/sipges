@@ -27,7 +27,7 @@ export const situationalReport = (data: SituationalAnalysis): ReportDocument => 
     title('INFORME DE ANÁLISIS SITUACIONAL'),
     paragraph(`${pyStr(data.project_name)} | Corte: ${data.generated_at}`),
     paragraph(
-      'Documento generado automáticamente por MASCLI. BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN HUMANA.',
+      'Documento generado automáticamente por MASCLI. BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN.',
     ),
     heading(1, '1. Resumen ejecutivo'),
     paragraph(
@@ -114,7 +114,7 @@ export const consensusReport = (report: ConsensusReport): ReportDocument => ({
     title('MASCLI | Motor de valor y consenso'),
     paragraph(`Proyecto: ${report.project_id} · Corte: ${report.generated_at}`),
     paragraph(
-      'BORRADOR AUTOMATIZADO: recomendaciones basadas en registros y reglas. REVISIÓN HUMANA OBLIGATORIA.',
+      'BORRADOR AUTOMATIZADO: recomendaciones basadas en registros y reglas. REVISIÓN OBLIGATORIA.',
     ),
     ...report.recommendations.flatMap((x, i) => [
       heading(2, `${i + 1}. ${x.titulo}`),
@@ -163,7 +163,7 @@ export const strategicReport = (
     title('MASCLI | Informe estratégico territorial'),
     paragraph(`${pyStr(situation.project_name)} | Corte: ${report.generated_at}`),
     paragraph(
-      'BORRADOR AUTOMATIZADO — REQUIERE REVISIÓN Y APROBACIÓN HUMANA. No sustituye decisiones institucionales.',
+      'BORRADOR AUTOMATIZADO — REQUIERE REVISIÓN Y APROBACIÓN. No sustituye decisiones institucionales.',
     ),
     heading(1, '1. Situación social documentada'),
     ...situation.observaciones.map(bullet),

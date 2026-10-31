@@ -63,7 +63,7 @@ const ReviewDecision = ({
       aria-label={`Revisar hallazgo ${item.id}`}
       disabled={mutation.isPending}
     >
-      <legend>Decisión humana</legend>
+      <legend>Decisión</legend>
       <label>
         Decisión
         <select

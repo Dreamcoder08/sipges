@@ -36,7 +36,7 @@ const SCENARIOS = [
 const LIMITATIONS = [
   'Las asociaciones textuales son candidatas, no relaciones verificadas. No se hacen inferencias personales sobre los actores.',
   'Los escenarios son condicionales, no pronósticos ni probabilidades. No se modifica el IRSA.',
-  'No se crea ningún compromiso, se asignan presupuestos ni se califica legitimidad sin revisión humana.',
+  'No se crea ningún compromiso, se asignan presupuestos ni se califica legitimidad sin revisión.',
   'Los resultados proceden solo de registros del proyecto y requieren auditoría de fuentes y control de acceso.',
 ];
 

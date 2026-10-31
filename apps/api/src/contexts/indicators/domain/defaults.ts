@@ -229,7 +229,7 @@ export const DEFAULT_IRSA_CONFIG: IrsaConfig = {
     'Los pesos son iguales únicamente como línea base de prototipado.',
     'Los pesos definitivos deberán validarse mediante el método aprobado en la tesis (p. ej., AHP/Delphi).',
     'Los umbrales del semáforo son provisionales y requieren calibración y análisis de sensibilidad.',
-    'El cálculo no sustituye la evaluación humana.',
+    'El cálculo no sustituye la evaluación del equipo.',
   ],
 };
 
