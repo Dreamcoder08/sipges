@@ -49,6 +49,9 @@ request (10 ms on Free; up to 5 minutes, default 30 s, on Paid).
 - Verified locally only: the full Playwright suite passes against `wrangler dev` with
   PostgreSQL through Hyperdrive (93 passed, 1 optional skip; ODD L20). Not verified: a deployed
   Worker, Hyperdrive against Neon, R2 in an account, latency against the Node build.
+- Migrations run in the deploy job (`migrate.mjs`), not per isolate: the first request no longer
+  pays the advisory-lock and DDL round trips, and a Worker started on an unmigrated database
+  answers 503 instead of migrating.
 - No deployment, Cloudflare account access or switch of the published demo happens without the
   owner's explicit word. The steps are in
   [docs/deployment/cloudflare-workers.md](../deployment/cloudflare-workers.md).
