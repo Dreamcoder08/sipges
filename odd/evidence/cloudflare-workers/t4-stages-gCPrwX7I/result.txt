@@ -1,0 +1,9 @@
+pg_ready_before=yes
+pg_ready_after=yes
+probe_exit=0 probe_http=500
+T4_STAGE_CONFIG
+T4_STAGE_CONNECT
+T4_STAGE_MIGRATE
+T4_STAGE_CONTAINER
+stage=CONTAINER error_name=CompileError error_code=UNKNOWN wasm_condition=NO_KNOWN_MATCH
+cleanup_worker=stopped cleanup_postgres=stopped

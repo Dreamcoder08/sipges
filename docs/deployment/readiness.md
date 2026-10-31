@@ -15,6 +15,29 @@ Related documents: [workspace and configuration](../migration/workspace.md),
 [ADRs](../adr/README.md) and the original
 [secure public deployment plan](../../odd/tasks/secure-mascli-public-deployment.md).
 
+## Hosting direction: retain Node/Vercel
+
+The owner accepted prioritizing the existing hosting path rather than maintaining a private
+cryptographic-library patch for Workers. The [Workers investigation](../../odd/tasks/cloudflare-workers.md)
+is deferred, not a verified deployment alternative. Its local PostgreSQL connection and migrations
+passed after a binding-only TLS correction, but application initialization remained blocked by
+`hash-wasm` dynamic WebAssembly compilation, which workerd rejects. No private-library patch,
+Cloudflare deployment or switch of the published demo was performed.
+
+The existing serial Node/Chromium E2E suite (`pnpm e2e`, job-6) completed with exit 0:
+**93 passed, 1 skipped**. It built the SPA and used isolated synthetic PGlite state, with
+temporary files inside the repository. The skipped case is the optional mobile screenshot
+capture (`MASCLI_E2E_SCREENSHOT_DIR` was unset). Local ignored evidence:
+`odd/evidence/cloudflare-workers/node-readiness-U8eOId1G/node-e2e.log` and its adjacent
+`node-e2e.exit`; these artifacts are not distributed with a fresh clone.
+The run started from HEAD `f582ebb` with uncommitted Worker diagnostics; unrelated UI and
+dependency changes were visible afterward. This is evidence for that observed run, not an
+immutable certification of the complete current working tree.
+
+No deployed revision, host configuration, Neon/Blob access, restore capability or institutional
+acceptance was verified by this local run. GitHub CI was previously blocked by account billing;
+its current status was not rechecked here. The owner must resolve the account-level issue.
+
 ## Current local candidate, not production acceptance
 
 The [production-candidate ODD](../../odd/tasks/production-candidate.md) records the isolated
