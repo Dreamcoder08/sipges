@@ -65,7 +65,7 @@
           ]
         },
         "review_required": false,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -126,7 +126,7 @@
           "I": []
         },
         "review_required": false,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -192,7 +192,7 @@
           "I": []
         },
         "review_required": false,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -248,7 +248,7 @@
           "I": []
         },
         "review_required": false,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -309,7 +309,7 @@
           ]
         },
         "review_required": false,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -345,7 +345,7 @@
           "I": []
         },
         "review_required": true,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -376,7 +376,7 @@
           "I": []
         },
         "review_required": true,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     },
     {
@@ -424,7 +424,7 @@
           "I": []
         },
         "review_required": false,
-        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana."
+        "nota": "Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación."
       }
     }
   ],
@@ -524,7 +524,7 @@
         "limitations": [
           "No valida la autenticidad ni el contenido del enlace.",
           "No permite afirmar causalidad, sentimientos, intenciones o riesgo individual.",
-          "Confirmar con fuentes y revisión humana.",
+          "Confirmar con fuentes y revisión.",
           "El texto enviado no se guarda por este endpoint."
         ]
       }
@@ -589,7 +589,7 @@
         "limitations": [
           "No valida la autenticidad ni el contenido del enlace.",
           "No permite afirmar causalidad, sentimientos, intenciones o riesgo individual.",
-          "Confirmar con fuentes y revisión humana.",
+          "Confirmar con fuentes y revisión.",
           "El texto enviado no se guarda por este endpoint."
         ]
       }
@@ -620,7 +620,7 @@
         "limitations": [
           "No valida la autenticidad ni el contenido del enlace.",
           "No permite afirmar causalidad, sentimientos, intenciones o riesgo individual.",
-          "Confirmar con fuentes y revisión humana.",
+          "Confirmar con fuentes y revisión.",
           "El texto enviado no se guarda por este endpoint."
         ]
       }
@@ -691,7 +691,7 @@
         "limitations": [
           "No valida la autenticidad ni el contenido del enlace.",
           "No permite afirmar causalidad, sentimientos, intenciones o riesgo individual.",
-          "Confirmar con fuentes y revisión humana.",
+          "Confirmar con fuentes y revisión.",
           "El texto enviado no se guarda por este endpoint."
         ]
       }

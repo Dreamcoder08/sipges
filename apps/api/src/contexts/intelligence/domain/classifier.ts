@@ -218,6 +218,6 @@ export const classifyRecord = (payload: unknown) => {
     margin: pyRound(margin, 2),
     evidence,
     review_required: confidence < 70 || margin < 3,
-    nota: 'Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación humana.',
+    nota: 'Sugerencia automática calibrada. No constituye referencia experta ni resultado final de tesis; requiere validación.',
   };
 };

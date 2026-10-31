@@ -195,7 +195,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
               </Button>
               <p>
                 El segundo paso permite elegir bandeja o canal autorizado. Una señal pendiente
-                requiere revisión humana.
+                requiere revisión.
               </p>
             </Card>
             <Card

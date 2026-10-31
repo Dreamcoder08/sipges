@@ -105,7 +105,7 @@ beforeEach(() => {
         version: '0.4',
         content_validation: 'Pendiente de expertos',
         functional_validation: 'Paridad técnica',
-        release_rule: 'Requiere revisión humana',
+        release_rule: 'Requiere revisión',
       }),
     ),
     http.get('*/system/validation-template', () =>

@@ -62,9 +62,7 @@ export const DashboardPage = ({
         <>
           <section className={styles.hero} aria-labelledby="hero-title">
             <p className={styles.kicker}>Monitoreo preventivo · G-A-D-N-E-I</p>
-            <h2 id="hero-title">
-              Riesgo socioambiental con evidencia, trazabilidad y validación humana.
-            </h2>
+            <h2 id="hero-title">Riesgo socioambiental con evidencia y trazabilidad.</h2>
             <p>
               MASCLI integra información territorial, actores, demandas, narrativas, ambiente e
               institucionalidad para priorizar señales y orientar acciones preventivas.

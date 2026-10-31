@@ -41,7 +41,7 @@ describe('operational pages', () => {
           by_priority: {},
           themes: [],
           irsa_integration: 'Sin modificación automática',
-          caution: 'Revisión humana',
+          caution: 'Revisión',
         }),
       ),
       http.post('*/system/intelligence/semantic-analyze', async ({ request }) => {
@@ -59,7 +59,7 @@ describe('operational pages', () => {
           suggested_actions: ['Verificar'],
           evidence: { fragment: 'Texto', sha256: 'abc' },
           method: 'Reglas',
-          limitations: ['Revisión humana'],
+          limitations: ['Revisión'],
           semantic: {
             active: false,
             method: 'rules',
@@ -298,7 +298,7 @@ it('reports unavailable semantic models without registering an alert', async () 
         by_priority: {},
         themes: [],
         irsa_integration: 'Independiente',
-        caution: 'Humana',
+        caution: 'Revisión',
       }),
     ),
     http.post('*/system/intelligence/semantic-analyze', () =>
@@ -328,7 +328,7 @@ it('reviews a territorial alert in active scope and preserves the IRSA separatio
         by_priority: { Media: 1 },
         themes: [],
         irsa_integration: 'Sin modificación automática',
-        caution: 'Revisión humana',
+        caution: 'Revisión',
       }),
     ),
     http.patch('*/system/intelligence/territorial-alerts/review-me', async ({ request }) => {
@@ -347,7 +347,7 @@ it('reviews a territorial alert in active scope and preserves the IRSA separatio
   await user.click(await screen.findByRole('button', { name: 'Ver alerta review-me' }));
   await user.selectOptions(screen.getByLabelText('Estado de revisión'), 'Corroborado');
   await user.type(
-    screen.getByLabelText('Nota de revisión humana'),
+    screen.getByLabelText('Nota de revisión'),
     'Confirmado con fuente primaria sintética',
   );
   await user.click(screen.getByRole('button', { name: 'Guardar revisión' }));
@@ -392,7 +392,7 @@ it('opens notification deep links with documented territory and source provenanc
         by_priority: {},
         themes: [],
         irsa_integration: 'IRSA independiente',
-        caution: 'Revisión humana',
+        caution: 'Revisión',
       }),
     ),
   );
@@ -483,7 +483,7 @@ it('MASCLI 4.0 shows that a high-priority alert waits for a second person', asyn
         by_priority: { Alta: 1 },
         themes: [],
         irsa_integration: 'Sin modificación automática',
-        caution: 'Revisión humana',
+        caution: 'Revisión',
       }),
     ),
     http.patch('*/system/intelligence/territorial-alerts/alta-1', () =>

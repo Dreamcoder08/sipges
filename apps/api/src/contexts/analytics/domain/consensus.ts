@@ -45,7 +45,7 @@ const collectCards = (r: ExtendedRecords): ConsensusCard[] => {
       origen,
       registros_relacionados,
       prioridad_orientativa,
-      estado: 'Propuesta automática; pendiente de revisión humana',
+      estado: 'Propuesta automática; pendiente de revisión',
       autorizacion: 'No constituye acuerdo ni compromiso',
     });
   };

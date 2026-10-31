@@ -77,7 +77,7 @@ export const createAuthorizedSourcesService = (deps: {
       url: 'https://www.defensoria.gob.pe/',
       checked_at: '2026-10-17',
       attribution:
-        'Publicaciones oficiales de la Defensoría del Pueblo. Solo título y extracto; disponibilidad externa variable. Pendientes de verificación humana.',
+        'Publicaciones oficiales de la Defensoría del Pueblo. Solo título y extracto; disponibilidad externa variable. Pendientes de verificación.',
       state: await deps.settings.get(tenantId),
     }),
     preview: (query: string) => deps.gateway.preview(query),

@@ -15,7 +15,7 @@ const result = {
   margin: 3,
   evidence: { E: [{ signal: 'agua', weight: 5 }] },
   review_required: true,
-  nota: 'Clasificación provisional: revisión humana.',
+  nota: 'Clasificación provisional: revisión.',
 };
 const open = () =>
   render(

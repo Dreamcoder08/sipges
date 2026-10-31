@@ -16,7 +16,7 @@ export const AARC_DIMENSIONS = [
 const LIMITATIONS = [
   'Métricas descriptivas sobre registros: no representan un índice de consenso ni una estimación predictiva.',
   'Las calificaciones AARC, cuando existan, son observaciones cualitativas; no se incorporan al IRSA.',
-  'Registrar fuentes, fecha y validación humana antes de tomar decisiones o comunicar resultados.',
+  'Registrar fuentes, fecha y validación antes de tomar decisiones o comunicar resultados.',
 ];
 
 /** Strategic assessment (app.py:715): descriptive metrics of the RC 1.7 second layer. */
