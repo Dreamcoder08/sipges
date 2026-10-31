@@ -1,10 +1,12 @@
 // Public API of the Document Lab context (docs/adr/0002).
 export type { DocxContent, ReviewItem } from '../domain/index.ts';
-export { LAB_REPORT_FILENAME } from '../domain/index.ts';
+export { DEFAULT_REVIEW_PAGE, LAB_REPORT_FILENAME, MAX_REVIEW_PAGE } from '../domain/index.ts';
 export type {
   DocumentReader,
   PdfText,
   ReportRenderer,
+  ReviewPage,
+  ReviewQuery,
   ReviewStore,
   TextRecognizer,
 } from './ports.ts';

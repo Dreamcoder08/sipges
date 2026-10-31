@@ -75,9 +75,37 @@ const inbox = () =>
       HttpResponse.json({
         items: [review],
         total: 1,
+        limit: 50,
+        offset: 0,
+        themes: { [review.theme]: 1 },
         limitations: 'Revisión no certifica verdad.',
       }),
     ),
+  );
+
+/** Serves a 120-item queue (2 themes) honouring limit, offset, theme and status. */
+const pagedInbox = (requests: URL[]) =>
+  server.use(
+    http.get('*/system/document-lab/review', ({ request }) => {
+      const url = new URL(request.url);
+      requests.push(url);
+      const limit = Number(url.searchParams.get('limit') ?? 50);
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const theme = url.searchParams.get('theme');
+      const all = Array.from({ length: 120 }, (_, n) => ({
+        ...review,
+        id: `review${n}`,
+        theme: n < 100 ? 'Compromisos' : 'Demandas',
+      })).filter((row) => !theme || row.theme === theme);
+      return HttpResponse.json({
+        items: all.slice(offset, offset + limit),
+        total: all.length,
+        limit,
+        offset,
+        themes: { Compromisos: 100, Demandas: 20 },
+        limitations: 'Revisión no certifica verdad.',
+      });
+    }),
   );
 
 describe('analysis pages', () => {
@@ -271,6 +299,65 @@ describe('document lab', () => {
       reviewer: context.fullName,
       note: 'Acta original contrastada con fecha y firma.',
     });
+  });
+  it('pages the review queue and shows the total, page and item count', async () => {
+    const requests: URL[] = [];
+    pagedInbox(requests);
+    mount(<DocumentLab {...context} />);
+    expect(await screen.findByText('120 ítems')).toBeVisible();
+    expect(screen.getByText('Página 1 de 3')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+    expect(requests.at(-1)?.searchParams.get('offset')).toBe('0');
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(await screen.findByText('Página 2 de 3')).toBeVisible();
+    expect(requests.at(-1)?.searchParams.get('offset')).toBe('50');
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(await screen.findByText('Página 3 de 3')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Anterior' }));
+    expect(await screen.findByText('Página 2 de 3')).toBeVisible();
+  });
+  it('filters by theme with counts and by status, returning to the first page', async () => {
+    const requests: URL[] = [];
+    pagedInbox(requests);
+    mount(<DocumentLab {...context} />);
+    const theme = await screen.findByLabelText('Filtrar tema');
+    expect(
+      await within(theme).findByRole('option', { name: 'Compromisos (100)' }),
+    ).toBeInTheDocument();
+    expect(within(theme).getByRole('option', { name: 'Demandas (20)' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(await screen.findByText('Página 2 de 3')).toBeVisible();
+    await userEvent.selectOptions(theme, 'Demandas');
+    expect(await screen.findByText('20 ítems')).toBeVisible();
+    expect(screen.getByText('Página 1 de 1')).toBeVisible();
+    const last = requests.at(-1);
+    expect(last?.searchParams.get('theme')).toBe('Demandas');
+    expect(last?.searchParams.get('offset')).toBe('0');
+    await userEvent.selectOptions(
+      screen.getByLabelText('Filtrar estado de revisión'),
+      'descartado',
+    );
+    await waitFor(() => expect(requests.at(-1)?.searchParams.get('status')).toBe('descartado'));
+    expect(requests.at(-1)?.searchParams.get('theme')).toBe('Demandas');
+  });
+  it('refetches the current page after a decision', async () => {
+    const requests: URL[] = [];
+    pagedInbox(requests);
+    server.use(
+      http.patch('*/system/document-lab/review/:id', ({ params }) =>
+        HttpResponse.json({ ok: true, id: params.id, status: 'descartado' }),
+      ),
+    );
+    mount(<DocumentLab {...context} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Siguiente' }));
+    const row = await screen.findByRole('group', { name: 'Revisar hallazgo review50' });
+    const before = requests.length;
+    await userEvent.selectOptions(within(row).getByLabelText('Decisión'), 'descartado');
+    await userEvent.click(within(row).getByRole('button', { name: 'Guardar decisión' }));
+    await waitFor(() => expect(requests.length).toBeGreaterThan(before));
+    expect(requests.at(-1)?.searchParams.get('offset')).toBe('50');
+    expect(screen.getByText('Página 2 de 3')).toBeVisible();
   });
   it('compares files as candidates and exposes failure without discarding selected documents', async () => {
     inbox();

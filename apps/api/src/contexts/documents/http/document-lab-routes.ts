@@ -9,7 +9,9 @@ import { formatScope } from '../../tenancy/application/index.ts';
 import {
   type DocumentLabService,
   type ImportError,
+  DEFAULT_REVIEW_PAGE,
   LAB_REPORT_FILENAME,
+  MAX_REVIEW_PAGE,
   type ReadError,
   type ReviewItem,
 } from '../application/index.ts';
@@ -106,6 +108,14 @@ const reviewJson = (item: ReviewItem) => ({
   updated_at: isoSeconds(item.updatedAt),
 });
 
+/** Whole-number query value inside [min, max]; undefined means "not supplied". */
+const boundedInt = (raw: string | undefined, min: number, max: number) => {
+  if (raw === undefined) return undefined;
+  if (!/^\d+$/.test(raw)) return null;
+  const value = Number.parseInt(raw, 10);
+  return value >= min && value <= max ? value : null;
+};
+
 const ReviewBatchBody = z.object({
   project_id: z.string().optional(),
   filename: z.string(),
@@ -190,14 +200,33 @@ export const documentLabRoutes = (lab: DocumentLabService) => {
 
     .get('/system/document-lab/review', async (c) => {
       const scope = c.get('scope');
-      const items = await lab.listReview(
-        formatScope(scope),
-        c.req.query('project_id') || scope.projectId,
-        c.req.query('status') ?? null,
-      );
+      const limit = boundedInt(c.req.query('limit'), 1, MAX_REVIEW_PAGE);
+      if (limit === null) {
+        return c.json(
+          { detail: `Parámetro limit inválido: use un entero de 1 a ${MAX_REVIEW_PAGE}` },
+          422,
+        );
+      }
+      const offset = boundedInt(c.req.query('offset'), 0, Number.MAX_SAFE_INTEGER);
+      if (offset === null) {
+        return c.json(
+          { detail: 'Parámetro offset inválido: use un entero mayor o igual a 0' },
+          422,
+        );
+      }
+      const page = await lab.listReview(formatScope(scope), {
+        projectId: c.req.query('project_id') || scope.projectId,
+        status: c.req.query('status') ?? null,
+        theme: c.req.query('theme') ?? null,
+        limit: limit ?? DEFAULT_REVIEW_PAGE,
+        offset: offset ?? 0,
+      });
       return c.json({
-        items: items.map(reviewJson),
-        total: items.length,
+        items: page.items.map(reviewJson),
+        total: page.total,
+        limit: limit ?? DEFAULT_REVIEW_PAGE,
+        offset: offset ?? 0,
+        themes: page.themes,
         limitations: 'Revisado no implica verdad certificada: comprobar fuente y documentación.',
       });
     })

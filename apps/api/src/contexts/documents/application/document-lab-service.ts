@@ -11,10 +11,8 @@ import {
   type DocumentKind,
   MAX_PDF_PAGES,
   MAX_REVIEW_IMPORT,
-  MAX_REVIEW_LIST,
   REVIEW_LIMITS,
   type ReviewDecisionError,
-  type ReviewItem,
   type TextChunk,
   checkDecision,
   compareFindings,
@@ -33,6 +31,8 @@ import type {
   NewReviewItem,
   RandomHex,
   ReportRenderer,
+  ReviewPage,
+  ReviewQuery,
   ReviewStore,
 } from './ports.ts';
 
@@ -204,9 +204,14 @@ export const createDocumentLabService = (deps: {
       return ok(rows.length === 0 ? 0 : await reviews.importItems(tenantId, rows));
     },
 
-    listReview(tenantId: string, projectId: string, status: string | null): Promise<ReviewItem[]> {
-      if (hasNul(projectId) || (status !== null && hasNul(status))) return Promise.resolve([]);
-      return reviews.list(tenantId, { projectId, status: status || null, limit: MAX_REVIEW_LIST });
+    listReview(tenantId: string, query: ReviewQuery): Promise<ReviewPage> {
+      const texts = [query.projectId, query.status ?? '', query.theme ?? ''];
+      if (texts.some(hasNul)) return Promise.resolve({ items: [], total: 0, themes: {} });
+      return reviews.list(tenantId, {
+        ...query,
+        status: query.status || null,
+        theme: query.theme || null,
+      });
     },
 
     async decide(
