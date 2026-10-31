@@ -13,7 +13,10 @@ import type {
   PushSender,
 } from '../../src/contexts/automation/application/index.ts';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
-import type { GoogleSignIn } from '../../src/contexts/identity/application/ports.ts';
+import type {
+  GoogleSignIn,
+  PasswordHasher,
+} from '../../src/contexts/identity/application/ports.ts';
 import { createApp } from '../../src/app.ts';
 import type { WebAssets } from '../../src/platform/http/spa.ts';
 import { loadConfig } from '../../src/platform/config.ts';
@@ -108,6 +111,7 @@ export const createTestApp = async (
     pushSender?: PushSender | null;
     activity?: Partial<ActivityOptions>;
     feedGateway?: FeedGateway;
+    passwordHasher?: PasswordHasher;
   } = {},
 ) => {
   const db = trackTestDatabase(await (await migratedTemplate()).clone());
@@ -124,6 +128,7 @@ export const createTestApp = async (
     objectStorage: options.objectStorage ?? memory.storage,
     embeddings: options.embeddings ?? offlineEmbeddings,
     ...(options.googleSignIn ? { googleSignIn: options.googleSignIn } : {}),
+    ...(options.passwordHasher ? { passwordHasher: options.passwordHasher } : {}),
     narrator: options.narrator ?? null,
     channelSender: options.channelSender ?? outbox.sender,
     pushSender: options.pushSender ?? null,

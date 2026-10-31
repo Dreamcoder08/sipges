@@ -13,16 +13,28 @@ const wrap = (sql: Sql, transaction: SqlClient['transaction']): SqlClient => ({
   transaction,
 });
 
+/** Driver settings a host can override; the defaults suit a long-lived Node process. */
+export type PostgresOptions = {
+  readonly max?: number;
+  /** Cloudflare Hyperdrive documents that postgres.js without prepared statements can hang. */
+  readonly prepare?: boolean;
+  /** Overrides the TLS choice made from the URL, for hosts that manage TLS themselves. */
+  readonly ssl?: false | 'require';
+};
+
 /**
  * Production adapter (postgres.js). TLS is required unless the URL targets a local host,
  * matching docs/adr/0003 guidance for managed PostgreSQL.
  */
-export const postgresClient = (url: string): { client: SqlClient; close: () => Promise<void> } => {
+export const postgresClient = (
+  url: string,
+  options: PostgresOptions = {},
+): { client: SqlClient; close: () => Promise<void> } => {
   const local = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
   const sql = postgres(url, {
-    max: 10,
-    ssl: local ? false : 'require',
-    prepare: false,
+    max: options.max ?? 10,
+    ssl: options.ssl ?? (local ? false : 'require'),
+    prepare: options.prepare ?? false,
     types: {
       /**
        * Repositories pass JSON *text* for `json`/`jsonb` parameters (`$n::jsonb`). postgres.js

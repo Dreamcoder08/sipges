@@ -1,7 +1,7 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 export const apiMain = path.join(repoRoot, 'apps/api/src/main.ts');
 export const webDist = path.join(repoRoot, 'apps/web/dist');
+export const workerDir = path.join(repoRoot, 'apps/hosting-cloudflare');
 
 /** A free loopback port chosen by the OS (closed again before the API binds it). */
 export const freePort = () =>
@@ -99,6 +100,65 @@ export const startApi = async (options: StartOptions): Promise<RunningApi> => {
   throw new Error(`API did not become healthy in time:\n${output}`);
 };
 
+/**
+ * Runs the Cloudflare Workers adapter under `wrangler dev` (workerd) against a PostgreSQL
+ * database through Hyperdrive's local connection, with R2 simulated in `stateDir`. Secrets go
+ * to a 0600 `.dev.vars` file there, never to the command line.
+ */
+export const startWorker = async (options: {
+  readonly env: Readonly<Record<string, string | undefined>>;
+  readonly databaseUrl: string;
+  readonly stateDir: string;
+  readonly hostname?: string;
+  readonly timeoutMs?: number;
+}): Promise<RunningApi> => {
+  const port = await freePort();
+  const vars = path.join(options.stateDir, '.dev.vars');
+  const lines = Object.entries(options.env)
+    .filter((entry): entry is [string, string] => entry[1] !== undefined)
+    .map(([key, value]) => `${key}=${JSON.stringify(value)}`);
+  await writeFile(vars, `${lines.join('\n')}\n`, { mode: 0o600 });
+  const wrangler = path.join(workerDir, 'node_modules/.bin/wrangler');
+  const args = ['dev', '--port', String(port), '--ip', '127.0.0.1'];
+  args.push('--persist-to', path.join(options.stateDir, 'state'), '--env-file', vars);
+  const child: ChildProcess = spawn(wrangler, args, {
+    cwd: workerDir,
+    env: {
+      ...baseEnv(),
+      WRANGLER_SEND_METRICS: 'false',
+      CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE: options.databaseUrl,
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let output = '';
+  child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
+  child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()));
+  const exited = new Promise<number | null>((resolve) => child.once('exit', resolve));
+  const url = `http://${options.hostname ?? '127.0.0.1'}:${port}`;
+  const stop = async () => {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
+    const timer = setTimeout(() => child.kill('SIGKILL'), 5_000);
+    await exited;
+    clearTimeout(timer);
+  };
+  const deadline = Date.now() + (options.timeoutMs ?? 120_000);
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`wrangler dev exited with code ${child.exitCode}:\n${output}`);
+    }
+    try {
+      // The host allowlist sees the public name, so probe the same URL the browser uses.
+      const response = await fetch(`${url}/health`);
+      if (response.ok) return { url, output: () => output, stop };
+    } catch {
+      // Not listening yet.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  await stop();
+  throw new Error(`The Worker did not become healthy in time:\n${output}`);
+};
+
 /** Runs the API expecting it to refuse to start; resolves with its exit code and output. */
 export const expectStartupFailure = async (
   env: Readonly<Record<string, string | undefined>>,
@@ -123,5 +183,13 @@ export const scratchDir = async (label: string) => {
 export const assertWebBuilt = () => {
   if (!existsSync(path.join(webDist, 'index.html'))) {
     throw new Error('apps/web/dist is missing: run `pnpm --filter @mascli/web build` first.');
+  }
+};
+
+export const assertWorkerBuilt = () => {
+  if (!existsSync(path.join(workerDir, 'public', 'index.html'))) {
+    throw new Error(
+      'apps/hosting-cloudflare/public is missing: run `pnpm --filter @mascli/hosting-cloudflare build` first.',
+    );
   }
 };

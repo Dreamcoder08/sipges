@@ -125,36 +125,28 @@ export const spaMiddleware =
   };
 
 /** Reads a Vite build directory; asset names are validated before they reach the path. */
-export const fileWebAssets = (dir: string): WebAssets => ({
+/**
+ * WebAssets over any file source. Every name is validated here, before `read` sees it, so no
+ * host adapter can serve a path outside the built app.
+ */
+export const webAssetsFrom = (
+  read: (relativePath: string) => Promise<Uint8Array | null>,
+): WebAssets => ({
   async index() {
-    try {
-      return await readFile(join(dir, 'index.html'), 'utf8');
-    } catch {
-      return null;
-    }
+    const bytes = await read('index.html');
+    // ignoreBOM keeps a leading BOM, exactly as readFile(..., 'utf8') did.
+    return bytes ? new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes) : null;
   },
-  async rootFile(name) {
-    if (!Object.hasOwn(ROOT_FILES, `/${name}`)) return null;
-    try {
-      return await readFile(join(dir, name));
-    } catch {
-      return null;
-    }
-  },
-  async cesium(path) {
-    if (!CESIUM_PATH.test(path)) return null;
-    try {
-      return await readFile(join(dir, 'cesium', path));
-    } catch {
-      return null;
-    }
-  },
-  async asset(name) {
-    if (!ASSET_NAME.test(name)) return null;
-    try {
-      return await readFile(join(dir, 'assets', name));
-    } catch {
-      return null;
-    }
-  },
+  rootFile: async (name) => (Object.hasOwn(ROOT_FILES, `/${name}`) ? read(name) : null),
+  cesium: async (path) => (CESIUM_PATH.test(path) ? read(`cesium/${path}`) : null),
+  asset: async (name) => (ASSET_NAME.test(name) ? read(`assets/${name}`) : null),
 });
+
+export const fileWebAssets = (dir: string): WebAssets =>
+  webAssetsFrom(async (relativePath) => {
+    try {
+      return await readFile(join(dir, relativePath));
+    } catch {
+      return null;
+    }
+  });
