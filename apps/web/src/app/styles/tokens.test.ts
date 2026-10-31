@@ -17,12 +17,8 @@ const sheets = Object.fromEntries(
 );
 const tokens = sheets['/app/styles/tokens.css'] ?? '';
 
-/** Token definitions and map paint palettes, not geography UI controls. */
-const RAW_COLOUR_ALLOWED = new Set([
-  '/app/styles/tokens.css',
-  '/features/geography/Geography.module.css',
-  '/features/geography/TerritorialMap.module.css',
-]);
+/** Only token definitions hold raw colours; map paint uses named --map-* tokens too. */
+const RAW_COLOUR_ALLOWED = new Set(['/app/styles/tokens.css']);
 const RAW_COLOUR = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|:\s*(white|black)\s*;/i;
 
 const rawColourOffenders = (entries: [string, string][]) =>
@@ -153,7 +149,7 @@ describe('design tokens', () => {
     expect(rawColourOffenders(Object.entries(sheets))).toEqual([]);
   });
 
-  it('exempts only the token definition and actual map stylesheets', () => {
+  it('exempts only the token definition stylesheet', () => {
     const css = '.control { color: #abc; }';
     expect(
       rawColourOffenders([
@@ -167,6 +163,8 @@ describe('design tokens', () => {
         ['/other/styles/tokens.css', css],
       ]),
     ).toEqual([
+      `/features/geography/Geography.module.css:1 ${css}`,
+      `/features/geography/TerritorialMap.module.css:1 ${css}`,
       `/features/geography/Controls.module.css:1 ${css}`,
       `/features/records/Controls.module.css:1 ${css}`,
       `/features/other/geography/Geography.module.css:1 ${css}`,

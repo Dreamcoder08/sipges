@@ -192,6 +192,14 @@
       "sessions": 2,
       "memories": 1,
       "prompts": 0
+    },
+    {
+      "id": "90a7c138",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-10-31T18:05:11.503168394Z",
+      "sessions": 1,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }
