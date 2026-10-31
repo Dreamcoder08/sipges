@@ -88,9 +88,8 @@ describe('portable hasher on Cloudflare Workers', () => {
     '$argon2id$v=19$m=19456,t=2,p=64$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaA',
     '$argon2id$v=16$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaA',
     'pbkdf2_sha256$9999999$00112233445566778899aabbccddeeff$00',
-  ])('refuses stored costs beyond the Worker budget without computing them: %j', async (stored) => {
-    const started = performance.now();
+  ])('refuses stored costs beyond the Worker budget: %j', async (stored) => {
+    // portable-password-hasher-budget.test.ts proves that nothing is computed for these.
     expect(await portablePasswordHasher.verify('anything-long', stored)).toBe(false);
-    expect(performance.now() - started).toBeLessThan(50);
   });
 });
