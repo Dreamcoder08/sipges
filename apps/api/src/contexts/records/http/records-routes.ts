@@ -12,11 +12,10 @@ import { isoSeconds } from '../../../platform/http/time.ts';
 import { parseIntQuery, parseJson } from '../../../platform/http/validation.ts';
 import { formatScope } from '../../tenancy/application/index.ts';
 import {
-  type ModuleName,
+  type InvalidPayload,
   type RecordsService,
   isImportable,
   moduleForSlug,
-  validatePayload,
 } from '../application/index.ts';
 
 const UNKNOWN_MODULE = { detail: 'Módulo no válido' };
@@ -24,24 +23,16 @@ const MISSING_RECORD = { detail: 'Registro no encontrado' };
 
 const tenantOf = (c: Context<AppEnv>) => formatScope(c.get('scope'));
 
-/** RecordIn plus the per-module id rule, reported FastAPI-style (docs/adr/0007). */
-const parseRecord = async (c: Context<AppEnv>, module: ModuleName) => {
-  const body = await parseJson(c, RecordIn);
-  if (!body.ok) return body;
-  const problem = validatePayload(module, body.value.payload);
-  if (!problem) return body;
-  return {
-    ok: false as const,
-    response: c.json(
-      {
-        detail: [
-          { type: 'value_error', loc: ['body', 'payload', problem.field], msg: problem.message },
-        ],
-      },
-      422,
-    ),
-  };
-};
+/** The per-module id rule the use case refused, reported FastAPI-style (docs/adr/0007). */
+const invalidPayload = (c: Context<AppEnv>, problem: InvalidPayload) =>
+  c.json(
+    {
+      detail: [
+        { type: 'value_error', loc: ['body', 'payload', problem.field], msg: problem.message },
+      ],
+    },
+    422,
+  );
 
 /** Generic CRUD for the territorial modules (app.py /api/{module}); always tenant-scoped. */
 export const recordsRoutes = (records: RecordsService) =>
@@ -117,9 +108,10 @@ export const recordsRoutes = (records: RecordsService) =>
     .post('/api/:module', async (c) => {
       const module = moduleForSlug(c.req.param('module'));
       if (!module) return c.json(UNKNOWN_MODULE, 404);
-      const body = await parseRecord(c, module);
+      const body = await parseJson(c, RecordIn);
       if (!body.ok) return body.response;
       const created = await records.create(tenantOf(c), module, body.value.payload);
+      if (!created.ok && created.error.kind === 'invalid') return invalidPayload(c, created.error);
       if (!created.ok) throw new Error('Could not allocate a record id');
       return c.json({ ok: true, id: created.value } satisfies RecordCreated);
     })
@@ -127,7 +119,7 @@ export const recordsRoutes = (records: RecordsService) =>
     .put('/api/:module/:id', async (c) => {
       const module = moduleForSlug(c.req.param('module'));
       if (!module) return c.json(UNKNOWN_MODULE, 404);
-      const body = await parseRecord(c, module);
+      const body = await parseJson(c, RecordIn);
       if (!body.ok) return body.response;
       const replaced = await records.replace(
         tenantOf(c),
@@ -135,7 +127,10 @@ export const recordsRoutes = (records: RecordsService) =>
         c.req.param('id'),
         body.value.payload,
       );
-      return replaced ? c.json({ ok: true }) : c.json(MISSING_RECORD, 404);
+      if (replaced.ok) return c.json({ ok: true });
+      return replaced.error.kind === 'invalid'
+        ? invalidPayload(c, replaced.error)
+        : c.json(MISSING_RECORD, 404);
     })
 
     .delete('/api/:module/:id', async (c) => {

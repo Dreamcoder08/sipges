@@ -1,16 +1,21 @@
 import type { ModuleRecord } from '@mascli/contracts';
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { foldText } from '../../../shared/lib/text.ts';
 import { Button } from '../../../shared/ui/Button.tsx';
+import { Icon } from '../../../shared/ui/Icon.tsx';
+import { ICON_PATHS, type IconName } from '../../../shared/ui/icons.ts';
 import {
   CARD,
   INFLUENCE_BANDS,
   layoutActors,
   MAP,
   type PlacedActor,
+  type PositionTone,
   positionTone,
   RING_EDGES,
   ringEdge,
   RINGS,
+  type Sector,
   SECTORS,
   toPoint,
 } from './actor-map.ts';
@@ -24,12 +29,19 @@ const tones = [
   ['contra', 'En contra'],
   ['unknown', 'Sin clasificar / otra'],
 ] as const;
-const RING_FILLS = ['#f4a7af', '#cddcfb', '#90a5f0'] as const;
+const SECTOR_ICONS: Record<Sector, IconName> = {
+  Gobierno: 'landmark',
+  Privado: 'briefcase',
+  'Sociedad civil': 'users',
+  Academia: 'bookOpen',
+};
+/** Left edge of an actor name: the position dot sits before it. */
+const TEXT_START = 20;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
 
 /** Splits a name into at most two lines that fit an actor card. */
-const lines = (text: string, limit = 24) => {
+const lines = (text: string, limit = 20) => {
   const words = text.split(/\s+/);
   const out: string[] = [''];
   for (const word of words) {
@@ -85,6 +97,8 @@ export const ActorMap = ({
 }) => {
   const id = useId();
   const [sector, setSector] = useState('');
+  const [position, setPosition] = useState<PositionTone | ''>('');
+  const [search, setSearch] = useState('');
   const [active, setActive] = useState<{
     id: string;
     pinned: boolean;
@@ -92,7 +106,14 @@ export const ActorMap = ({
     top: string;
   } | null>(null);
   const { actors: placed, scale } = useMemo(() => layoutActors(rows), [rows]);
-  const visible = placed.filter((a) => !sector || a.sector === sector);
+  const query = foldText(search).trim();
+  // Filters only hide actors: every card keeps its place, so the map never reshuffles.
+  const visible = placed.filter(
+    (a) =>
+      (!sector || a.sector === sector) &&
+      (!position || a.tone === position) &&
+      (!query || foldText(a.name).includes(query)),
+  );
   const svgRef = useRef<SVGSVGElement>(null);
   const layerRef = useRef<SVGGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -218,7 +239,8 @@ export const ActorMap = ({
       <div className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Relacionamiento del proyecto</p>
-          <h4 id={id}>Mapa de actores</h4>
+          <h4 id={id}>Mapa estratégico de actores</h4>
+          <p className={map.subtitle}>Actores, influencia y relaciones en una sola vista</p>
         </div>
         <span className={styles.count}>{rows.length} actores</span>
       </div>
@@ -229,7 +251,46 @@ export const ActorMap = ({
       </p>
       {rows.length ? (
         <>
-          <div className={map.toolbar}>
+          <div className={map.toolbar} role="group" aria-label="Filtros del mapa de actores">
+            <div className={map.searchField}>
+              <label htmlFor={`${id}-search`} className="visually-hidden">
+                Buscar actor
+              </label>
+              <Icon name="search" className={map.searchIcon} />
+              <input
+                id={`${id}-search`}
+                type="search"
+                placeholder="Buscar actor…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <label htmlFor={`${id}-sector`} className="visually-hidden">
+              Sector
+            </label>
+            <select id={`${id}-sector`} value={sector} onChange={(e) => setSector(e.target.value)}>
+              <option value="">Todos los sectores · {placed.length}</option>
+              {SECTORS.map((name, index) => (
+                <option key={name} value={name}>
+                  {name} · {counts[index]}
+                </option>
+              ))}
+            </select>
+            <label htmlFor={`${id}-position`} className="visually-hidden">
+              Posición frente al proyecto
+            </label>
+            <select
+              id={`${id}-position`}
+              value={position}
+              onChange={(e) => setPosition(e.target.value as PositionTone | '')}
+            >
+              <option value="">Todas las posiciones</option>
+              {tones.map(([tone, label]) => (
+                <option key={tone} value={tone}>
+                  {label}
+                </option>
+              ))}
+            </select>
             <div className={map.zoom} role="group" aria-label="Acercamiento del mapa">
               <Button variant="secondary" onClick={() => zoomAt(1.4)} aria-label="Acercar mapa">
                 +
@@ -250,6 +311,11 @@ export const ActorMap = ({
                 Ver todo
               </Button>
             </div>
+          </div>
+          <div className={map.status}>
+            <p role="status">
+              {visible.length} de {placed.length} actores en el mapa
+            </p>
             <p className={map.hint}>
               Arrastre para mover; use los botones, Ctrl + rueda o dos dedos para acercar.
             </p>
@@ -285,7 +351,7 @@ export const ActorMap = ({
                     markerHeight="7"
                     orient="auto-start-reverse"
                   >
-                    <path d="M0 0 L10 5 L0 10 z" fill="#1d2b3f" />
+                    <path d="M0 0 L10 5 L0 10 z" className={map.arrow} />
                   </marker>
                 </defs>
                 <g ref={layerRef}>
@@ -296,7 +362,7 @@ export const ActorMap = ({
                       cy={MAP.cy}
                       rx={ringEdge(edge) * MAP.stretch}
                       ry={ringEdge(edge)}
-                      fill={RING_FILLS[edge - 1]}
+                      className={map.ring}
                     />
                   ))}
                   <line
@@ -305,6 +371,7 @@ export const ActorMap = ({
                     y1={MAP.cy - RING_EDGES[3] - 14}
                     y2={MAP.cy + RING_EDGES[3] + 14}
                     className={map.axis}
+                    strokeDasharray="3 5"
                   />
                   <line
                     x1={MAP.cx - RING_EDGES[3] * MAP.stretch - 14}
@@ -317,8 +384,9 @@ export const ActorMap = ({
                   {RINGS.map((ring, index) => (
                     <text
                       key={ring}
-                      x={MAP.cx + 8}
-                      y={MAP.cy - ringEdge(index + 1) + 16}
+                      x={MAP.cx}
+                      y={MAP.cy - ringEdge(index + 1) + 22}
+                      textAnchor="middle"
                       className={map.ringLabel}
                     >
                       {ring.toUpperCase()}
@@ -327,16 +395,22 @@ export const ActorMap = ({
                   {SECTORS.map((name, index) => {
                     const left = name === 'Gobierno' || name === 'Academia';
                     const top = name === 'Gobierno' || name === 'Privado';
+                    const y = top ? 34 : MAP.height - 22;
                     return (
-                      <text
-                        key={name}
-                        x={left ? 18 : MAP.width - 18}
-                        y={top ? 30 : MAP.height - 16}
-                        textAnchor={left ? 'start' : 'end'}
-                        className={map.sectorLabel}
-                      >
-                        {name.toUpperCase()} · {counts[index]}
-                      </text>
+                      <g key={name} className={map.sectorLabel}>
+                        <path
+                          d={ICON_PATHS[SECTOR_ICONS[name]]}
+                          transform={`translate(${left ? 20 : MAP.width - 46} ${y - 18}) scale(1.1)`}
+                        />
+                        <text
+                          x={left ? 56 : MAP.width - 56}
+                          y={y}
+                          textAnchor={left ? 'start' : 'end'}
+                        >
+                          {name.toUpperCase()}{' '}
+                          <tspan className={map.sectorCount}>· {counts[index]}</tspan>
+                        </text>
+                      </g>
                     );
                   })}
                   {visible.map((actor) => {
@@ -376,14 +450,17 @@ export const ActorMap = ({
                     cy={MAP.cy}
                     rx={RING_EDGES[0] * MAP.stretch}
                     ry={RING_EDGES[0]}
-                    fill="white"
-                    stroke="#173958"
-                    strokeWidth={2}
+                    className={map.center}
                   />
-                  <text x={MAP.cx} y={MAP.cy - 4} textAnchor="middle" className={map.centerLabel}>
+                  <path
+                    d={ICON_PATHS.target}
+                    className={map.centerIcon}
+                    transform={`translate(${MAP.cx - 10} ${MAP.cy - 38}) scale(0.85)`}
+                  />
+                  <text x={MAP.cx} y={MAP.cy + 4} textAnchor="middle" className={map.centerLabel}>
                     Proyecto
                   </text>
-                  <text x={MAP.cx} y={MAP.cy + 14} textAnchor="middle" className={map.centerLabel}>
+                  <text x={MAP.cx} y={MAP.cy + 22} textAnchor="middle" className={map.centerLabel}>
                     activo
                   </text>
                   {visible.map((actor) => {
@@ -410,12 +487,13 @@ export const ActorMap = ({
                           }
                         }}
                       >
-                        <rect width={CARD.width} height={CARD.height} rx={5} />
-                        <text x={CARD.width / 2} y={second ? 14 : 21} textAnchor="middle">
+                        <rect width={CARD.width} height={CARD.height} rx={6} />
+                        <circle cx={11} cy={CARD.height / 2} r={4.5} className={map.dot} />
+                        <text x={TEXT_START} y={second ? 14 : 20}>
                           {first}
                         </text>
                         {second ? (
-                          <text x={CARD.width / 2} y={27} textAnchor="middle">
+                          <text x={TEXT_START} y={27}>
                             {second}
                           </text>
                         ) : null}
@@ -528,18 +606,6 @@ export const ActorMap = ({
             no se reconoce, queda en Sociedad civil. El tipo y el sentido de la relación se
             registran en la ficha del actor.
           </p>
-          <div className={map.listHeader}>
-            <label htmlFor={`${id}-sector`}>Sector</label>
-            <select id={`${id}-sector`} value={sector} onChange={(e) => setSector(e.target.value)}>
-              <option value="">Todos los sectores · {placed.length}</option>
-              {SECTORS.map((name, index) => (
-                <option key={name} value={name}>
-                  {name} · {counts[index]}
-                </option>
-              ))}
-            </select>
-            <p className={styles.explanation}>{visible.length} actor(es) en el mapa</p>
-          </div>
           <ul className={`${styles.actorList} ${map.list}`}>
             {visible.map((actor) => (
               <li key={actor.row._id}>
