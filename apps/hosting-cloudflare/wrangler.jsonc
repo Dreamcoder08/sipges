@@ -3,7 +3,7 @@
   "name": "mascli",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-20",
-  // workerd cannot load the native Argon2 addon; the adapter injects the WebAssembly hasher.
+  // workerd cannot load the native Argon2 addon; the adapter injects the plain-JavaScript hasher.
   "alias": { "@node-rs/argon2": "./src/native-argon2-unavailable.ts" },
   "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": false }],
   // Every request reaches the Worker first, so MASCLI applies its own CSP, security headers
