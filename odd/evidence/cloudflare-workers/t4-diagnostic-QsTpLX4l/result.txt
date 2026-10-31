@@ -1,0 +1,5 @@
+health_exit=0 health_http=503
+diagnostic_exit=0 diagnostic_http=500
+T4_STAGE_CONFIG
+T4_STAGE_CONNECT
+T4_FAILURE_CONNECT_CONNECT_TIMEOUT

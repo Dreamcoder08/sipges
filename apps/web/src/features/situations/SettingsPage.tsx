@@ -24,7 +24,7 @@ const FEATURES = [
   'Fase del proyecto con pesos IRSA propios y monitoreo de medios regionales por RSS.',
 ];
 
-/** MASCLI 4.0 switch and colour meanings of the active project (docs/adr/0020). */
+/** MASCLI 4.0 configuration of the active project: colour meanings, phase, feeds (docs/adr/0020). */
 export const SettingsPage = ({ scope, role }: FeatureContext) => {
   const settings = useQuery(projectSettingsQuery(scope));
   // Kept here: the form remounts with the saved settings, which would drop the message.
@@ -71,7 +71,7 @@ const SettingsForm = ({
         body: { json: body },
       }),
     onMutate: () => onSaved(''),
-    onSuccess: async (saved, body) => {
+    onSuccess: async (_saved, body) => {
       onSaved(
         body.phase !== undefined
           ? 'Fase del proyecto guardada.'
@@ -79,11 +79,7 @@ const SettingsForm = ({
             ? 'Pesos de la fase guardados.'
             : body.recommendations
               ? 'Acciones sugeridas guardadas.'
-              : body.version4 === undefined
-                ? 'Significados guardados.'
-                : saved.version4
-                  ? 'MASCLI 4.0 activado en este proyecto.'
-                  : 'El proyecto volvió a MASCLI 3.0.',
+              : 'Significados guardados.',
       );
       await cache.invalidateQueries({ queryKey: ['project-settings', scope] });
     },
@@ -94,14 +90,8 @@ const SettingsForm = ({
   };
   return (
     <>
-      <Card
-        eyebrow="Versión del proyecto"
-        title={data.version4 ? 'MASCLI 4.0 activado' : 'MASCLI 3.0 (4.0 desactivado)'}
-      >
-        <p>
-          MASCLI 4.0 agrega estas funciones sin cambiar lo que ya funciona. Se activa por proyecto y
-          puede desactivarse en cualquier momento sin perder datos.
-        </p>
+      <Card eyebrow="Proyecto" title="MASCLI 4.0">
+        <p>Este proyecto funciona con MASCLI 4.0. Estas son sus funciones:</p>
         <ul>
           {FEATURES.map((feature) => (
             <li key={feature}>{feature}</li>
@@ -112,22 +102,11 @@ const SettingsForm = ({
             Último cambio: {data.updated_by} · {formatDateTime(new Date(data.updated_at))}
           </p>
         ) : null}
-        {admin ? (
-          <Button
-            variant={data.version4 ? 'secondary' : 'primary'}
-            disabled={save.isPending}
-            onClick={() => save.mutate({ version4: !data.version4 })}
-          >
-            {data.version4 ? 'Volver a MASCLI 3.0' : 'Activar MASCLI 4.0'}
-          </Button>
-        ) : (
-          <p className={styles.muted}>Solo un administrador puede cambiar la versión.</p>
-        )}
       </Card>
       <Card eyebrow="Niveles de riesgo" title="Significado de cada color">
         <p>
-          Significados preliminares, pendientes de revisión metodológica. Con MASCLI 4.0 activo se
-          muestran junto al color, por ejemplo «Naranja – Requiere intervención preventiva».
+          Significados preliminares, pendientes de revisión metodológica. Se muestran junto al
+          color, por ejemplo «Naranja – Requiere intervención preventiva».
         </p>
         <form onSubmit={submit} className={styles.form}>
           {LEVELS.map((level) => (
@@ -147,15 +126,13 @@ const SettingsForm = ({
             </Button>
           ) : null}
         </form>
-        {data.version4 ? (
-          <ul className={styles.legend} aria-label="Vista previa de niveles">
-            {LEVELS.map((level) => (
-              <li key={level}>
-                <LevelPill level={level} />
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <ul className={styles.legend} aria-label="Vista previa de niveles">
+          {LEVELS.map((level) => (
+            <li key={level}>
+              <LevelPill level={level} />
+            </li>
+          ))}
+        </ul>
       </Card>
       <Card eyebrow="Recomendaciones" title="Acciones sugeridas por condición">
         <p>
@@ -187,12 +164,8 @@ const SettingsForm = ({
           ) : null}
         </form>
       </Card>
-      {data.version4 ? (
-        <>
-          <PhaseCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
-          <MediaMonitorCard scope={scope} admin={admin} />
-        </>
-      ) : null}
+      <PhaseCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
+      <MediaMonitorCard scope={scope} admin={admin} />
       {save.isError ? <Alert tone="error">{errorDetail(save.error)}</Alert> : null}
     </>
   );

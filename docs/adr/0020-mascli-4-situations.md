@@ -1,6 +1,6 @@
 # ADR 0020 — MASCLI 4.0: related situations, explained alerts and a grievance mailbox
 
-- Status: Accepted
+- Status: Accepted; §1 (per-project switch) superseded by [ADR 0027](0027-mascli-4-only.md)
 - Date: 2026-10-19
 - Task: `odd/tasks/mascli-4-situations.md`
 

@@ -2,6 +2,7 @@ import { pbkdf2, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { hash, verify } from '@node-rs/argon2';
 import type { PasswordHasher } from '../application/ports.ts';
+import { parseLegacyHash } from './legacy-hash.ts';
 
 const pbkdf2Async = promisify(pbkdf2);
 
@@ -16,22 +17,18 @@ const ARGON2_OPTIONS = {
   parallelism: 1,
 };
 
-const HEX = /^(?:[0-9a-f]{2})+$/;
-
 /** Verifies `pbkdf2_sha256$<iterations>$<saltHex>$<digestHex>` hashes produced by app.py. */
 const verifyLegacy = async (password: string, stored: string): Promise<boolean> => {
-  const [algorithm, iterations, salt, digest, ...rest] = stored.split('$');
-  if (algorithm !== 'pbkdf2_sha256' || rest.length > 0 || !salt || !digest) return false;
-  if (!/^\d{1,7}$/.test(iterations ?? '') || !HEX.test(salt) || !HEX.test(digest)) return false;
-  const expected = Buffer.from(digest, 'hex');
+  const legacy = parseLegacyHash(stored);
+  if (!legacy) return false;
   const candidate = await pbkdf2Async(
     password,
-    Buffer.from(salt, 'hex'),
-    Number(iterations),
-    expected.length,
+    legacy.salt,
+    legacy.iterations,
+    legacy.digest.length,
     'sha256',
   );
-  return timingSafeEqual(candidate, expected);
+  return timingSafeEqual(candidate, legacy.digest);
 };
 
 export const passwordHasher: PasswordHasher = {

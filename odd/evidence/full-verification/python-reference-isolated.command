@@ -1,0 +1,1 @@
+timeout --kill-after=10s 600s env PYTHONPATH=reference/python /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.cache/mascli-python-reference/venv/bin/python -m pytest -q reference/python/tests

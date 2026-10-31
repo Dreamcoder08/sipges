@@ -1,0 +1,282 @@
+{
+  "config": {
+    "argv": [
+      "/home/dreamcoder08/.hermes/node/bin/node",
+      "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
+      "test",
+      "--config",
+      "playwright.webkit.config.ts",
+      "--list",
+      "--reporter=json"
+    ],
+    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/playwright.webkit.config.ts",
+    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "/(?:11-functional-audit|15-record-insights|17-quality-followup|18-territorial-intelligence)\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "11-functional-audit.spec.ts",
+      "file": "11-functional-audit.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "counters follow records and every record opens, edits and shows its report",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f2b1957ec2b5f9834698-e6013f460b398808b670",
+          "file": "11-functional-audit.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "the geospatial view frames a concession and the directory lists contacts",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f2b1957ec2b5f9834698-21d68fdd878e2111aaf7",
+          "file": "11-functional-audit.spec.ts",
+          "line": 87,
+          "column": 1
+        },
+        {
+          "title": "narratives show their trend per day and category",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f2b1957ec2b5f9834698-732d8038daf8634d0b75",
+          "file": "11-functional-audit.spec.ts",
+          "line": 137,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "15-record-insights.spec.ts",
+      "file": "15-record-insights.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "record heatmap and actor classification open stored files (desktop)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "31a7062f4155999c93db-9188081d2aaed6bd5e79",
+          "file": "15-record-insights.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "record heatmap and actor classification open stored files (phone)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "31a7062f4155999c93db-c74d1c30febe8bdb6b1e",
+          "file": "15-record-insights.spec.ts",
+          "line": 5,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "17-quality-followup.spec.ts",
+      "file": "17-quality-followup.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "review, documented links and followup persist through real API (desktop)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ff922aee6db58c049f04-415260b745dc0bb693da",
+          "file": "17-quality-followup.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "review, documented links and followup persist through real API (phone)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ff922aee6db58c049f04-51eff9b3a79588fc443a",
+          "file": "17-quality-followup.spec.ts",
+          "line": 5,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "18-territorial-intelligence.spec.ts",
+      "file": "18-territorial-intelligence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "committed narrative creates one pending signal and linked inbox without a manual tick (desktop)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "30485bda3f3f33fff677-6048c3170dc6ce620d47",
+          "file": "18-territorial-intelligence.spec.ts",
+          "line": 12,
+          "column": 3
+        },
+        {
+          "title": "committed narrative creates one pending signal and linked inbox without a manual tick (phone)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "webkit",
+              "projectName": "webkit",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "30485bda3f3f33fff677-2429b7843d39ba492940",
+          "file": "18-territorial-intelligence.spec.ts",
+          "line": 12,
+          "column": 3
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-30T22:57:38.888Z",
+    "duration": 103.928,
+    "expected": 0,
+    "skipped": 9,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

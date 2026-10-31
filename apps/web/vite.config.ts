@@ -87,6 +87,8 @@ export default defineConfig({
   // Pre-bundling would skip the CSP patches above in development.
   optimizeDeps: { exclude: ['@cesium/engine'] },
   resolve: {
+    // Keep setup hooks and the runner on one pnpm peer instance, as in the API.
+    dedupe: ['vitest'],
     alias: {
       // CesiumJS's only use of it is never reached; the real module compiles WebAssembly on
       // import, which the strict CSP forbids (engine/meshopt-stub.ts).
@@ -114,6 +116,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Serial shell commands alone do not bound concurrent jsdom workers or lazy route loads.
+    maxWorkers: 1,
+    fileParallelism: false,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
   },

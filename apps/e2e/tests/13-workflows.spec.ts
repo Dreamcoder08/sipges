@@ -14,7 +14,7 @@ import {
 
 test('digital signal to completed preventive plan on desktop', async ({ page, admin }) => {
   await signInToProject(page, admin, DEFAULT_SCOPE);
-  await preventionJourney(page, `d${Date.now()}`);
+  await preventionJourney(page, `d${Date.now()}`, DEFAULT_SCOPE);
 });
 
 test('administration: accounts, Google link, projects, grants and deactivation', async ({

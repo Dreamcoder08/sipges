@@ -36,6 +36,3 @@ export type AlertStore = {
     validation: { id: string; actor: string; note: string; at: Date },
   ): Promise<boolean>;
 };
-
-/** Whether the scope's project has MASCLI 4.0 switched on (Situations context). */
-export type Version4Lookup = { enabled(scope: Scope): Promise<boolean> };

@@ -1,13 +1,13 @@
 # Deployment readiness (T14)
 
-Actualización 2026-10-14: el propietario solicitó acceso sencillo para la demo académica con datos sintéticos. Vercel producción usa `MASCLI_REQUIRE_MFA=0`; login con contraseña, dashboard, administración, recarga y logout se comprobaron en la URL pública. La inscripción MFA ya no es un requisito de esa demo. Las recomendaciones MFA institucionales de este documento y el valor predeterminado del runtime se mantienen como guía para un futuro uso con datos reales. Véase [la comprobación actualizada](public-demo-verification.md).
+Registro histórico de la demo, 2026-10-14: el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `MASCLI_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](public-demo-verification.md).
 
 This is the checklist for putting the TypeScript MASCLI (`apps/api` serving the built
-`apps/web`) in front of users. It records what is verified, what an operator still has to do and
-what needs a decision. La primera publicación autorizada es una demo académica/personal con datos sintéticos.
-Vercel, Blob privado y la integración PostgreSQL Neon están conectados. Salud, login, sesión
-y el bloqueo previo a MFA se comprobaron en la URL pública; falta inscripción MFA del propietario
-y el smoke público de CRUD/evidencias/documentos. No hay migración de datos reales ni dominio adquirido.
+`apps/web`) in front of users. Dated demo evidence, current local candidate checks and
+institutional acceptance are separate. The documented demo used Vercel, private Blob and the
+owner's Neon integration with synthetic data only; it is not evidence that this candidate is
+deployed or approved for real data. Institutional MFA recommendations and the runtime's
+secure default remain unchanged. No real-data migration or newly acquired domain is claimed.
 
 Related documents: [workspace and configuration](../migration/workspace.md),
 [legacy data migration runbook](../migration/data-migration.md),
@@ -15,7 +15,54 @@ Related documents: [workspace and configuration](../migration/workspace.md),
 [ADRs](../adr/README.md) and the original
 [secure public deployment plan](../../odd/tasks/secure-mascli-public-deployment.md).
 
-## What is verified before a deploy
+## Hosting direction: Node/Vercel published, Workers deployed with synthetic data
+
+The published demo stays on the existing Node/Vercel path. The
+[Workers investigation](../../odd/tasks/cloudflare-workers.md) was deferred (L14) because
+`hash-wasm` compiles WebAssembly at run time, which workerd rejects, and then resumed (L16) with a
+plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
+verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
+Hyperdrive connection and migrations already passed after a binding-only TLS correction.
+A Worker now runs at `https://mascli.dreamcoder-dev08.workers.dev` against a separate, empty Neon database
+(ODD L22); it holds no real data and the published demo was not switched. The end-to-end suite against `wrangler dev`
+(T4) now passes locally (93 passed, 1 optional skip; L20) and the steps are in the
+[Workers deployment guide](cloudflare-workers.md) (ADR 0028).
+
+The existing serial Node/Chromium E2E suite (`pnpm e2e`, job-6) completed with exit 0:
+**93 passed, 1 skipped**. It built the SPA and used isolated synthetic PGlite state, with
+temporary files inside the repository. The skipped case is the optional mobile screenshot
+capture (`MASCLI_E2E_SCREENSHOT_DIR` was unset). Local ignored evidence:
+`odd/evidence/cloudflare-workers/node-readiness-U8eOId1G/node-e2e.log` and its adjacent
+`node-e2e.exit`; these artifacts are not distributed with a fresh clone.
+The run started from HEAD `f582ebb` with uncommitted Worker diagnostics; unrelated UI and
+dependency changes were visible afterward. This is evidence for that observed run, not an
+immutable certification of the complete current working tree.
+
+No deployed revision, host configuration, Neon/Blob access, restore capability or institutional
+acceptance was verified by this local run. GitHub CI was previously blocked by account billing;
+its current status was not rechecked here. The owner must resolve the account-level issue.
+
+## Current local candidate, not production acceptance
+
+The [production-candidate ODD](../../odd/tasks/production-candidate.md) records the isolated
+code slice `4a4b5f0` → `2ba2b5a` and [its synthetic HTTP differential](../../odd/evidence/production-candidate/comparison.json).
+
+- Lint, format, architecture boundaries and six workspace typechecks passed. The complete
+  API run passed 696 tests, with 14 skipped (99 files passed, five skipped). Optional
+  PostgreSQL-server integration was not run without an authorized synthetic connection.
+- Seven public GET responses matched the base byte-for-byte; anonymous/ungranted requests
+  retained exact 401/403 responses and did not change public records/counters. Dashboard
+  SQL row-array materialization fell 84.54%; short serial timings are diagnostic, not load proof.
+- Independent static security review found no blocker. It did not independently run tests.
+  Native review assessment remains unavailable because of undeclared untracked files, even
+  for the committed range; no native authority, reviewDue result or approval was established.
+- No new browser run, aggregate `pnpm verify`, remote CI or public deployment smoke is claimed
+  for this slice. Prior browser/demo evidence remains tied to its original revision.
+- `reference/python` is a behavioral/parity reference outside the deployed TypeScript runtime.
+  Migration/import tools remain useful for separately authorized data work. Neither is
+  redundant merely because the runtime moved to TypeScript; no legacy deletion was performed.
+
+## Required gates before a deploy
 
 | Gate | Command | Covers |
 | --- | --- | --- |
@@ -188,8 +235,11 @@ solo aplican si se elige posteriormente esa alternativa.
 
 - The API logs to stdout/stderr: the start line, the PGlite warning in development and
   unexpected errors (`console.error` in the error handler, with a generic 500 for the client).
-  There is no per-request access log in the app. Cloudflare's dashboard and logs cover edge
-  traffic.
+  Structured per-request access logging is enabled by `MASCLI_ACCESS_LOG` (default on),
+  through `platform/http/observability.ts`. It records method, matched route, request path,
+  status and duration, without query strings, request bodies or cookies. A path can contain
+  record identifiers: restrict log access and retention. Edge-provider logs are separate and
+  do not replace application logs.
 - [ ] Capture stdout/stderr with journald or the platform's log collector, rotate them and
       restrict access. Logs must never contain passwords, TOTP secrets, session tokens or record
       payloads. The migration tool's redaction is test-asserted; the API's request logging is
@@ -217,7 +267,8 @@ solo aplican si se elige posteriormente esa alternativa.
 | Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
 | Recursos de demo | Vercel y Blob privado creados; PostgreSQL Neon vinculado por el propietario. Cuenta bootstrap persistida. |
 | Restore drill and an E2E run against the deployed URL | Not done |
-| Publicación de demo | Publicada y comprobada para salud, login, sesión y logout. Pendientes inscripción MFA del propietario y smoke público de CRUD/Blob/PDF/DOCX. Solo datos sintéticos; sin migración real ni servicios de pago. |
+| Operator inputs for the remaining gates | Not authorizations by themselves: (1) an explicitly synthetic, least-privilege PostgreSQL connection for the server integration run; (2) a disposable restore environment with coordinated database/object backups and key scope; (3) institutional identity, storage and monitoring owners, plus the external-acceptance owners already named in the [production-candidate ODD](../../odd/tasks/production-candidate.md); (4) a separate delivery/activation decision. No gate in these rows is closed and the candidate is not declared production-ready. |
+| Publicación de demo | Evidencia histórica del 2026-10-14: acceso sin inscripción MFA obligatoria por decisión del propietario; no es una excepción institucional. Smoke público CRUD/Blob/PDF/DOCX pendiente en esa evidencia. No se verificó de nuevo ni se publicó esta candidata. |
 
 ## Not verifiable in the development environment
 

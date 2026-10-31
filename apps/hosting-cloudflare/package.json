@@ -1,0 +1,24 @@
+{
+  "name": "@mascli/hosting-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "migrations": "node generate-migrations.mjs",
+    "bundle": "wrangler deploy --dry-run --outdir dist",
+    "dev": "wrangler dev",
+    "deploy:worker": "wrangler hyperdrive update 9eae2c5e3d614feca42b525fc82e10e1 --caching-disabled true && wrangler deploy",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mascli/api": "workspace:*",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4",
+    "wrangler": "4.151.2"
+  }
+}

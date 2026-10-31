@@ -49,7 +49,7 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
     path.startsWith('/system/integrations') ||
     // Python gates every method except GET here (app.py:244), unlike the read set used elsewhere.
     (path.startsWith('/system/irsa/config') && method !== 'GET') ||
-    // Switching MASCLI 4.0 and its colour meanings is a project decision (ADR 0020).
+    // Project settings (colour meanings, thresholds, phase) are a project decision (ADR 0020, 0027).
     (path.startsWith('/system/v4/settings') && !isRead) ||
     // Which media sources the project reads is a project decision too (ADR 0021).
     (path.startsWith('/system/v4/media') && !isRead);

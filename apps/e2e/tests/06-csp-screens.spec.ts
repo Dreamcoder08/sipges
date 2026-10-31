@@ -1,4 +1,4 @@
-import { SCREENS, VERSION4_PATHS } from '../../web/src/app/navigation.ts';
+import { SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
@@ -71,9 +71,7 @@ test('every screen renders without CSP violations or script errors', async ({ pa
     const link = page
       .getByRole('navigation', { name: 'Secciones' })
       .getByRole('link', { name: screen.label, exact: true });
-    // MASCLI 4.0 screens stay out of the menu while the project keeps 3.0 (docs/adr/0020).
-    if (VERSION4_PATHS.has(screen.path)) await expect(link).toHaveCount(0);
-    else await expect(link).toHaveAttribute('aria-current', 'page');
+    await expect(link).toHaveAttribute('aria-current', 'page');
     // Let lazy chunks and their queries settle before moving on.
     await settled();
   }

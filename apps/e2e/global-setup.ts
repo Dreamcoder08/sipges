@@ -4,8 +4,10 @@ import postgres from 'postgres';
 import { usingCleanup } from './support/cleanup.ts';
 import {
   assertWebBuilt,
+  assertWorkerBuilt,
   scratchDir,
   startApi,
+  startWorker,
   syntheticSecrets,
   webDist,
 } from './support/server.ts';
@@ -41,27 +43,43 @@ export default async function globalSetup() {
       database = { MASCLI_DATABASE_URL: url.toString() };
     }
 
-    const api = await startApi({
-      // `localhost` is a potentially trustworthy origin, so Chromium stores the default Secure
-      // cookies over plain HTTP here; the cookie spec covers the non-loopback case.
-      hostname: 'localhost',
-      env: {
-        ...database,
-        // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
-        MASCLI_REQUIRE_MFA: '0',
-        // Explicit opt-in for synthetic browser suites running on intentional local HTTP.
-        // The default suite still tests Secure cookies and leaves this unset.
-        MASCLI_COOKIE_SECURE: process.env.MASCLI_E2E_COOKIE_SECURE,
-        MASCLI_DATA_KEY: secrets.dataKey,
-        MASCLI_ADMIN_USERNAME: ADMIN_USERNAME,
-        MASCLI_ADMIN_PASSWORD: secrets.adminPassword,
-        MASCLI_ADMIN_FULL_NAME: 'Administración E2E',
-        MASCLI_UPLOAD_DIR: path.join(scratch.dir, 'uploads'),
-        MASCLI_WEB_DIR: webDist,
-        // No embedding server in the suite: semantic analysis falls back to rules.
-        MASCLI_OLLAMA_URL: 'http://127.0.0.1:9',
-      },
-    });
+    const shared = {
+      // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
+      MASCLI_REQUIRE_MFA: '0',
+      // Explicit opt-in for synthetic browser suites running on intentional local HTTP.
+      // The default suite still tests Secure cookies and leaves this unset.
+      MASCLI_COOKIE_SECURE: process.env.MASCLI_E2E_COOKIE_SECURE,
+      MASCLI_DATA_KEY: secrets.dataKey,
+      MASCLI_ADMIN_USERNAME: ADMIN_USERNAME,
+      MASCLI_ADMIN_PASSWORD: secrets.adminPassword,
+      MASCLI_ADMIN_FULL_NAME: 'Administración E2E',
+      // No embedding server in the suite: semantic analysis falls back to rules.
+      MASCLI_OLLAMA_URL: 'http://127.0.0.1:9',
+    };
+    // MASCLI_E2E_RUNTIME=workers runs the suite against the Cloudflare adapter (wrangler dev).
+    const workers = process.env.MASCLI_E2E_RUNTIME === 'workers';
+    if (workers && !database.MASCLI_DATABASE_URL) {
+      throw new Error('MASCLI_E2E_RUNTIME=workers needs MASCLI_E2E_DATABASE_URL (no PGlite there)');
+    }
+    if (workers) assertWorkerBuilt();
+    // `localhost` is a potentially trustworthy origin, so Chromium stores the default Secure
+    // cookies over plain HTTP here; the cookie spec covers the non-loopback case.
+    const api = workers
+      ? await startWorker({
+          hostname: 'localhost',
+          databaseUrl: database.MASCLI_DATABASE_URL ?? '',
+          stateDir: scratch.dir,
+          env: { ...shared, MASCLI_ALLOWED_HOSTS: 'localhost' },
+        })
+      : await startApi({
+          hostname: 'localhost',
+          env: {
+            ...database,
+            ...shared,
+            MASCLI_UPLOAD_DIR: path.join(scratch.dir, 'uploads'),
+            MASCLI_WEB_DIR: webDist,
+          },
+        });
     register(api.stop);
 
     process.env.MASCLI_E2E_BASE_URL = api.url;

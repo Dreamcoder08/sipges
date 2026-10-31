@@ -35,6 +35,8 @@ export const ICON_PATHS = {
   close: 'M18 6 6 18M6 6l12 12',
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
+  landmark: 'M3 21h18M5 21v-9M10 21v-9M14 21v-9M19 21v-9M2 10l10-7 10 7z',
+  briefcase: 'M3 7h18v13H3zM9 7V4h6v3M3 13h18',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

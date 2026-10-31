@@ -9,6 +9,8 @@ export default tseslint.config(
       '**/node_modules/**',
       '**/dist/**',
       'apps/hosting/public/**',
+      'apps/hosting-cloudflare/public/**',
+      '**/.wrangler/**',
       '**/coverage/**',
       '.venv/**',
       'reference/python/static/**',

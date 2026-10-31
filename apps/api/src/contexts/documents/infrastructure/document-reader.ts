@@ -1,6 +1,7 @@
 import { strFromU8, unzipSync } from 'fflate';
 import type { DocumentReader, DocxContent } from '../application/index.ts';
 import { createPdfWorkerPool } from './pdf-worker-pool.ts';
+import { extractPdfText } from './pdf-text.ts';
 
 const DOCUMENT_PART = 'word/document.xml';
 /** Upper bound for the uncompressed body part; a larger one is treated as a zip bomb. */
@@ -94,19 +95,32 @@ const docxContent = (xml: string): DocxContent => {
   };
 };
 
-/** PDF parsing blocks for hundreds of ms on large files, so it runs off the event loop (T12). */
-const pdfWorkers = createPdfWorkerPool();
+const readDocx: DocumentReader['readDocx'] = async (bytes) => {
+  const files = unzipSync(bytes, {
+    filter: (file) => file.name === DOCUMENT_PART && file.originalSize <= MAX_DOCUMENT_XML_BYTES,
+  });
+  const part = files[DOCUMENT_PART];
+  if (!part) throw new Error('Missing or oversized document part');
+  return docxContent(strFromU8(part));
+};
+
+/**
+ * PDF parsing blocks for hundreds of ms on large files, so it runs off the event loop (T12).
+ * The pool starts with the first PDF, so importing this module never spawns threads.
+ */
+let pdfWorkers: ReturnType<typeof createPdfWorkerPool> | undefined;
 
 /** PDF text via pdf.js (unpdf) in worker threads and DOCX text via fflate; no filesystem. */
 export const documentReader: DocumentReader = {
-  readPdf: (bytes, maxPages) => pdfWorkers.read(bytes, maxPages),
+  readPdf: (bytes, maxPages) => (pdfWorkers ??= createPdfWorkerPool()).read(bytes, maxPages),
+  readDocx,
+};
 
-  async readDocx(bytes) {
-    const files = unzipSync(bytes, {
-      filter: (file) => file.name === DOCUMENT_PART && file.originalSize <= MAX_DOCUMENT_XML_BYTES,
-    });
-    const part = files[DOCUMENT_PART];
-    if (!part) throw new Error('Missing or oversized document part');
-    return docxContent(strFromU8(part));
-  },
+/**
+ * The same reader parsing PDFs on the calling thread, for runtimes without worker threads
+ * (Cloudflare Workers), where the per-request CPU limit bounds a hostile PDF instead.
+ */
+export const inlineDocumentReader: DocumentReader = {
+  readPdf: (bytes, maxPages) => extractPdfText(bytes, maxPages),
+  readDocx,
 };

@@ -3,19 +3,20 @@ import type { SqlClient } from './sql-client.ts';
 
 export type Migration = { readonly version: string; readonly sql: string };
 
-const MIGRATIONS_DIR = new URL('./migrations/', import.meta.url);
 /** Arbitrary constant shared by every MASCLI instance for pg_advisory_xact_lock. */
 const MIGRATION_LOCK_KEY = 7_361_524_002;
 
 /** Loads `NNNN_name.sql` files bundled with the API, sorted by version. */
 export const loadMigrations = async (): Promise<Migration[]> => {
-  const files = (await readdir(MIGRATIONS_DIR))
+  // Resolved on call, not on import: runtimes without a file system never evaluate it.
+  const migrationsDir = new URL('./migrations/', import.meta.url);
+  const files = (await readdir(migrationsDir))
     .filter((f) => /^\d{4}_[a-z0-9_]+\.sql$/.test(f))
     .sort();
   return Promise.all(
     files.map(async (file) => ({
       version: file.replace(/\.sql$/, ''),
-      sql: await readFile(new URL(file, MIGRATIONS_DIR), 'utf8'),
+      sql: await readFile(new URL(file, migrationsDir), 'utf8'),
     })),
   );
 };

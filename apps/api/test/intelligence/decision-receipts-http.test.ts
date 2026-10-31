@@ -58,8 +58,7 @@ const setup = async () => {
 
   const patch = (body: Record<string, unknown>) =>
     call('PATCH', `/system/prevention/actions/${actionId}`, body);
-  const version4 = (on: boolean) => call('PUT', '/system/v4/settings', { version4: on });
-  return { t, call, json, patch, version4, attachmentId };
+  return { t, call, json, patch, attachmentId };
 };
 
 const COMPLETE = { status: 'Completada', progress: 100, note: 'Acuerdo firmado' };
@@ -71,17 +70,8 @@ const closing = async (res: Response) =>
   );
 
 describe('Decision receipts on preventive actions (MASCLI 4.0)', () => {
-  it('keeps MASCLI 3.0 unchanged: completing needs no attachment and the id is ignored', async () => {
-    const { patch, attachmentId } = await setup();
-    const res = await patch({ ...COMPLETE, evidence_attachment_id: attachmentId });
-    expect(res.status).toBe(200);
-    expect(await closing(res)).toMatchObject({ status: 'Completada', receipt: null });
-  });
-
   it('requires an attached file to complete a plan and binds the decision to its sha256', async () => {
-    const { t, patch, json, version4, attachmentId } = await setup();
-    expect((await version4(true)).status).toBe(200);
-
+    const { t, patch, json, attachmentId } = await setup();
     const missing = await patch(COMPLETE);
     expect(missing.status).toBe(422);
     expect(await json(missing)).toEqual({

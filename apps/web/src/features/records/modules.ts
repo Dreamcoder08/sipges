@@ -395,7 +395,8 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
   demandas: {
     label: 'Demandas',
     titleField: 'Descripcion',
-    columns: ['Fecha_Registro', 'Descripcion', 'Actor/Grupo', 'Prioridad', 'Estado'],
+    // «Avance» is not a stored field: the table derives it from «Estado» (RecordCell).
+    columns: ['Fecha_Registro', 'Descripcion', 'Actor/Grupo', 'Prioridad', 'Avance', 'Estado'],
     fields: [
       { key: 'Fecha_Registro', label: 'Fecha de registro', type: 'date' },
       { key: 'Actor/Grupo', label: 'Actor o grupo' },

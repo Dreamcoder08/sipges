@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it, vi } from 'vitest';
-import { ProjectSettingsProvider } from '../../shared/lib/project-settings.tsx';
 import { server } from '../../test/server.ts';
 import { IntelligencePage } from './IntelligencePage.tsx';
 import { ManagementPage } from './ManagementPage.tsx';
@@ -106,6 +105,7 @@ describe('operational pages', () => {
         }),
       ),
       http.get('*/system/intelligence/territorial-alerts', () => HttpResponse.json([])),
+      ...receiptHandlers,
     );
     mount(<ManagementPage {...context} />);
     expect(await screen.findByRole('alert')).toHaveTextContent('Proyecto sin acceso');
@@ -181,6 +181,29 @@ const overviewFixture = {
   methodology: 'Descriptivo',
   limitations: ['IRSA independiente'],
 };
+const attachmentFixture = {
+  id: 'ADJ-1',
+  original_name: 'acta-cierre.pdf',
+  content_type: 'application/pdf',
+  size_bytes: 10,
+  sha256: '7a0610ad8ab6ac06e61aa4e05ea56a8bf5d85a6b6d419cd756c56d5321a78aee',
+  linked_module: 'eventos',
+  linked_record_id: 'EV-1',
+  document_type: 'Acta',
+  author: '',
+  verification: 'A',
+  notes: '',
+  project_id: 'PRJ-DEMO',
+  project_name: 'Demo',
+  created_at: '2026-10-19T12:00:00Z',
+};
+// The plan page always reads the evidence files and the situation room (MASCLI 4.0).
+const receiptHandlers = [
+  http.get('*/system/uploads', () => HttpResponse.json([])),
+  http.get('*/system/prevention/situation-room', () =>
+    HttpResponse.json({ blocked: [], overdue: [], moving: 0, blocked_by_count: {} }),
+  ),
+];
 const installManagement = () =>
   server.use(
     http.get('*/system/management/overview', () => HttpResponse.json(overviewFixture)),
@@ -204,12 +227,14 @@ const installManagement = () =>
         alertFixture('verified', 'Corroborado'),
       ]),
     ),
+    ...receiptHandlers,
   );
 it('coordinador creates plans only from verified alerts and saves scoped transitions with history', async () => {
   installManagement();
   let created: unknown;
   let updated: unknown;
   server.use(
+    http.get('*/system/uploads', () => HttpResponse.json([attachmentFixture])),
     http.post('*/system/prevention/actions', async ({ request }) => {
       expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
       created = await request.json();
@@ -240,12 +265,15 @@ it('coordinador creates plans only from verified alerts and saves scoped transit
   await user.selectOptions(screen.getByLabelText('Estado del plan'), 'Completada');
   expect(screen.getByRole('button', { name: 'Guardar avance' })).toBeDisabled();
   await user.type(screen.getByLabelText('Nota de avance'), 'Revisión final documentada');
+  expect(screen.getByRole('button', { name: 'Guardar avance' })).toBeDisabled();
+  await user.selectOptions(await screen.findByLabelText('Evidencia adjunta (recibo)'), 'ADJ-1');
   await user.click(screen.getByRole('button', { name: 'Guardar avance' }));
   expect(await screen.findByText('Avance registrado; no modifica el IRSA.')).toBeVisible();
   expect(updated).toMatchObject({
     status: 'Completada',
     progress: 100,
     note: 'Revisión final documentada',
+    evidence_attachment_id: 'ADJ-1',
   });
 });
 it('consulta sees prevention history without write forms', async () => {
@@ -377,23 +405,6 @@ it('opens notification deep links with documented territory and source provenanc
   window.history.replaceState({}, '', '/');
 });
 
-const version4Settings = {
-  version4: true,
-  level_meanings: {
-    Verde: 'Situación estable / riesgo bajo',
-    Amarillo: 'Requiere atención y seguimiento',
-    Naranja: 'Requiere intervención preventiva',
-    Rojo: 'Situación crítica / atención inmediata',
-  },
-  window_days: 90,
-  half_life_days: 14,
-  thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
-  phase: null,
-  phases: [],
-  recommendations: [],
-  updated_by: 'admin',
-  updated_at: '2026-10-19T12:00:00Z',
-};
 const SHA = '7a0610ad8ab6ac06e61aa4e05ea56a8bf5d85a6b6d419cd756c56d5321a78aee';
 it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its receipt', async () => {
   installManagement();
@@ -401,26 +412,7 @@ it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its r
   let stored: unknown = actionFixture;
   server.use(
     http.get('*/system/prevention/actions', () => HttpResponse.json([stored])),
-    http.get('*/system/uploads', () =>
-      HttpResponse.json([
-        {
-          id: 'ADJ-1',
-          original_name: 'acta-cierre.pdf',
-          content_type: 'application/pdf',
-          size_bytes: 10,
-          sha256: SHA,
-          linked_module: 'eventos',
-          linked_record_id: 'EV-1',
-          document_type: 'Acta',
-          author: '',
-          verification: 'A',
-          notes: '',
-          project_id: 'PRJ-DEMO',
-          project_name: 'Demo',
-          created_at: '2026-10-19T12:00:00Z',
-        },
-      ]),
-    ),
+    http.get('*/system/uploads', () => HttpResponse.json([attachmentFixture])),
     http.patch('*/system/prevention/actions/action-1', async ({ request }) => {
       updated = await request.json();
       const closing = {
@@ -447,11 +439,7 @@ it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its r
       return HttpResponse.json({ action: stored, irsa_modified: false });
     }),
   );
-  mount(
-    <ProjectSettingsProvider value={version4Settings}>
-      <ManagementPage {...context} role="coordinador" />
-    </ProjectSettingsProvider>,
-  );
+  mount(<ManagementPage {...context} role="coordinador" />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: 'Ver plan action-1' }));
   await user.selectOptions(screen.getByLabelText('Estado del plan'), 'Completada');
@@ -470,13 +458,14 @@ it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its r
     ),
   ).toBeVisible();
 });
-it('MASCLI 3.0 keeps the evidence URL form without receipts', async () => {
+it('MASCLI 4.0 plan form offers the evidence receipt and blocker with no project switch', async () => {
   installManagement();
   mount(<ManagementPage {...context} role="coordinador" />);
   const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: 'Ver plan action-1' }));
   expect(screen.getByLabelText('URL de evidencia')).toBeVisible();
-  expect(screen.queryByLabelText('Evidencia adjunta (recibo)')).toBeNull();
+  expect(screen.getByLabelText('Evidencia adjunta (recibo)')).toBeVisible();
+  expect(screen.getByLabelText('Bloqueado por')).toBeVisible();
 });
 it('MASCLI 4.0 shows that a high-priority alert waits for a second person', async () => {
   server.use(
@@ -547,11 +536,7 @@ it('MASCLI 4.0 situation room shows who each plan waits on and records a blocker
       return HttpResponse.json({ action: actionFixture, irsa_modified: false });
     }),
   );
-  mount(
-    <ProjectSettingsProvider value={version4Settings}>
-      <ManagementPage {...context} role="coordinador" />
-    </ProjectSettingsProvider>,
-  );
+  mount(<ManagementPage {...context} role="coordinador" />);
   expect(await screen.findByText('Sala de situación')).toBeVisible();
   expect(
     await screen.findByText(

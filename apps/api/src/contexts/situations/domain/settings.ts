@@ -31,8 +31,6 @@ export const PHASE_WEIGHT_SUGGESTIONS: Readonly<Record<Phase, PhaseWeights>> = {
 };
 
 export type ProjectSettings = {
-  /** Off by default: the project keeps the MASCLI 3.0 screens. */
-  readonly version4: boolean;
   /** Preliminary meanings, to be reviewed with the client's methodology owner. */
   readonly levelMeanings: Readonly<Record<Level, string>>;
   /** Records older than this many days do not form situations. */
@@ -52,13 +50,7 @@ export type ProjectSettings = {
 };
 
 type Editable =
-  | 'version4'
-  | 'levelMeanings'
-  | 'windowDays'
-  | 'halfLifeDays'
-  | 'thresholds'
-  | 'recommendations'
-  | 'phase';
+  'levelMeanings' | 'windowDays' | 'halfLifeDays' | 'thresholds' | 'recommendations' | 'phase';
 /**
  * Fields left undefined keep their current value. Phase weights merge by phase; null removes
  * a phase's weights so it falls back to the general ones.
@@ -68,7 +60,6 @@ export type ProjectSettingsPatch = { readonly [K in Editable]?: ProjectSettings[
 };
 
 export const DEFAULT_SETTINGS: ProjectSettings = {
-  version4: false,
   levelMeanings: {
     Verde: 'Situación estable / riesgo bajo',
     Amarillo: 'Requiere atención y seguimiento',
@@ -85,10 +76,16 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   updatedAt: null,
 };
 
-/** Stored settings over the defaults, so a later field never reads as missing. */
+/**
+ * Stored settings over the defaults, so a later field never reads as missing. Fields are picked
+ * one by one: the `version4` key that earlier releases stored is not part of the settings and is
+ * neither read nor carried into a later save.
+ */
 export const withDefaults = (stored: Partial<ProjectSettings> | null): ProjectSettings => ({
-  ...DEFAULT_SETTINGS,
-  ...stored,
+  windowDays: stored?.windowDays ?? DEFAULT_SETTINGS.windowDays,
+  halfLifeDays: stored?.halfLifeDays ?? DEFAULT_SETTINGS.halfLifeDays,
+  updatedBy: stored?.updatedBy ?? DEFAULT_SETTINGS.updatedBy,
+  updatedAt: stored?.updatedAt ?? DEFAULT_SETTINGS.updatedAt,
   levelMeanings: { ...DEFAULT_SETTINGS.levelMeanings, ...stored?.levelMeanings },
   thresholds: { ...DEFAULT_SETTINGS.thresholds, ...stored?.thresholds },
   recommendations: { ...stored?.recommendations },
@@ -98,9 +95,9 @@ export const withDefaults = (stored: Partial<ProjectSettings> | null): ProjectSe
 
 /** The weights IRSA should use instead of the general ones, or null to leave IRSA as is. */
 export const activePhaseWeights = (
-  settings: Pick<ProjectSettings, 'version4' | 'phase' | 'phaseWeights'>,
+  settings: Pick<ProjectSettings, 'phase' | 'phaseWeights'>,
 ): { phase: Phase; label: string; weights: PhaseWeights } | null => {
-  if (!settings.version4 || !settings.phase) return null;
+  if (!settings.phase) return null;
   const weights = settings.phaseWeights[settings.phase];
   return weights ? { phase: settings.phase, label: PHASE_LABELS[settings.phase], weights } : null;
 };
@@ -136,7 +133,6 @@ export const levelText = (settings: Pick<ProjectSettings, 'levelMeanings'>, leve
 export const changedFields = (before: ProjectSettings, after: ProjectSettings) =>
   (
     [
-      'version4',
       'levelMeanings',
       'windowDays',
       'halfLifeDays',

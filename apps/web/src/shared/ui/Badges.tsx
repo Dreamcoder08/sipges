@@ -17,7 +17,7 @@ const LEVEL_CLASS: Readonly<Record<string, string | undefined>> = {
 
 const isLevel = (value: string): value is Level => (LEVELS as readonly string[]).includes(value);
 
-/** The colour, and with MASCLI 4.0 on also its meaning (docs/adr/0020). */
+/** The colour and, once the project settings load, its meaning (docs/adr/0020). */
 export const LevelPill = ({ level }: { level: string }) => {
   const label = useLevelLabel();
   return (

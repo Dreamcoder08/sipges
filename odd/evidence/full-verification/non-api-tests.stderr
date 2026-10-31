@@ -1,0 +1,9 @@
+$ node --test support/cleanup.test.ts support/network.test.ts
+$ vitest run
+$ vitest run
+$ vitest run
+$ vitest run
+(node:1338566) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1338553) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)

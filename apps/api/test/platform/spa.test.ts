@@ -8,6 +8,7 @@ import {
   SPA_CSP,
   type WebAssets,
   fileWebAssets,
+  webAssetsFrom,
 } from '../../src/platform/http/spa.ts';
 import { createTestApp } from '../support/test-app.ts';
 
@@ -149,5 +150,24 @@ describe('single-page app delivery', () => {
     ).toBe('{}');
     expect(await web.cesium?.('../index.html')).toBeNull();
     expect(await fileWebAssets(join(dir, 'missing')).index()).toBeNull();
+  });
+});
+
+describe('webAssetsFrom', () => {
+  it('maps valid names to build paths and never passes an unsafe name to the source', async () => {
+    const reads: string[] = [];
+    const web = webAssetsFrom(async (path) => {
+      reads.push(path);
+      return new TextEncoder().encode(`bytes of ${path}`);
+    });
+    expect(await web.index()).toBe('bytes of index.html');
+    expect(await web.asset('index-abc123.js')).not.toBeNull();
+    expect(await web.rootFile?.('sw.js')).not.toBeNull();
+    for (const unsafe of ['../index.html', '..%2Fsecret', 'a/b.js', '']) {
+      expect(await web.asset(unsafe)).toBeNull();
+      expect(await web.cesium?.(unsafe)).toBeNull();
+    }
+    expect(await web.rootFile?.('index.html')).toBeNull();
+    expect(reads).toEqual(['index.html', 'assets/index-abc123.js', 'sw.js']);
   });
 });

@@ -1,0 +1,50 @@
+verify: PGlite enabled; optional PostgreSQL tests skipped (omitidas)
+Checking formatting...
+All matched files use Prettier code style!
+Boundaries OK: 785 modules, 2244 dependencies.
+Scope: 7 of 8 workspace projects
+packages/kernel typecheck$ tsc -p tsconfig.json
+apps/e2e typecheck$ tsc -p tsconfig.json
+packages/kernel typecheck: Done
+packages/contracts typecheck$ tsc -p tsconfig.json
+apps/e2e typecheck: Done
+packages/contracts typecheck: Done
+apps/web typecheck$ tsc -p tsconfig.json
+apps/api typecheck$ tsc -p tsconfig.json
+apps/api typecheck: Done
+apps/hosting-cloudflare typecheck$ tsc -p tsconfig.json
+apps/web typecheck: Done
+apps/hosting typecheck$ tsc -p tsconfig.json
+apps/hosting-cloudflare typecheck: Done
+apps/hosting typecheck: Done
+Scope: 7 of 8 workspace projects
+[32m✔ failed startup releases registered database, connection and scratch before rejecting [90m(2.469465ms)[39m[39m
+[32m✔ teardown attempts every release despite errors and never repeats released resources [90m(0.409047ms)[39m[39m
+[32m✔ setup failure preserves its original error if resource cleanup also fails [90m(0.363701ms)[39m[39m
+[32m✔ a committed main document releases abandoned requests from the previous document [90m(1.682479ms)[39m[39m
+[32m✔ requests the previous document starts while the navigation awaits its response are released [90m(11.850197ms)[39m[39m
+[32m✔ navigation keeps its document and assets started before the commit under observation [90m(20.797927ms)[39m[39m
+[32m✔ same-document URL changes retain active requests [90m(10.210641ms)[39m[39m
+[32m✔ child-frame navigation never clears main document requests [90m(11.187773ms)[39m[39m
+[32m✔ an uncommitted failed navigation keeps previous document activity [90m(11.022924ms)[39m[39m
+[32m✔ only the long-lived activity stream is excluded; failed finite requests settle [90m(9.946903ms)[39m[39m
+[34mℹ tests 10[39m
+[34mℹ suites 0[39m
+[34mℹ pass 10[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 262.877585[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/packages/kernel[39m
+
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 23:36:13
+[2m   Duration [22m 537ms[2m (transform 67%, import 16%, tests 11%, worker 6%)[22m
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+

@@ -175,7 +175,12 @@
   height: 1.25rem;
 }
 .swatchCadastre {
-  background: linear-gradient(90deg, #2f5fd0 0 33%, #3a9d3a 33% 66%, #222 66%);
+  background: linear-gradient(
+    90deg,
+    var(--map-cadastre-1) 0 33%,
+    var(--map-cadastre-2) 33% 66%,
+    var(--map-cadastre-3) 66%
+  );
 }
 .picker {
   display: grid;
@@ -195,7 +200,7 @@
 }
 /* Over satellite imagery: light district outlines that read on dark ground. */
 .imagery .outline {
-  stroke: #fffaf0;
+  stroke: var(--map-outline-imagery);
   stroke-opacity: 0.85;
 }
 

@@ -16,6 +16,7 @@
     "@deck.gl/mapbox": "9.4.0",
     "@mascli/contracts": "workspace:*",
     "@mascli/kernel": "workspace:*",
+    "@radix-ui/react-dialog": "1.1.15",
     "@tanstack/react-query": "^5.104.2",
     "@tanstack/react-router": "1.170.41",
     "maplibre-gl": "6.11.2",

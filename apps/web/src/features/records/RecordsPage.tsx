@@ -21,8 +21,9 @@ import { ActorMap } from './insights/ActorMap.tsx';
 import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
+import { RecordCell, isCompactCell } from './RecordCell.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
-import { canWriteRecords, fieldValue, isCompactField } from './model.ts';
+import { canWriteRecords, fieldValue } from './model.ts';
 import { FACETS, MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
 
@@ -413,7 +414,9 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                                 scope="col"
                                 key={key}
                                 className={
-                                  field && isCompactField(field) ? styles.compact : undefined
+                                  isCompactCell(module, field ?? { key, label: key })
+                                    ? styles.compact
+                                    : undefined
                                 }
                               >
                                 {field?.label ?? key}
@@ -436,9 +439,11 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                                 <td
                                   key={key}
                                   data-label={field.label}
-                                  className={isCompactField(field) ? styles.compact : undefined}
+                                  className={
+                                    isCompactCell(module, field) ? styles.compact : undefined
+                                  }
                                 >
-                                  {fieldValue(row, field) || '—'}
+                                  <RecordCell module={module} row={row} field={field} />
                                 </td>
                               );
                             })}
@@ -486,6 +491,7 @@ const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role }: Prop
                                     </Button>
                                     <Button
                                       variant="ghost"
+                                      className={styles.deleteAction}
                                       disabled={busy}
                                       aria-label={`Eliminar ${row._id}`}
                                       onClick={() => {
