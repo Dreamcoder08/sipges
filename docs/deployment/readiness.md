@@ -1,6 +1,6 @@
 # Deployment readiness (T14)
 
-Registro histórico de la demo, 2026-10-14: el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `MASCLI_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](public-demo-verification.md).
+Registro histórico de la demo, 2026-10-14: el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `MASCLI_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](../history/public-demo-verification.md).
 
 This is the checklist for putting the TypeScript MASCLI (`apps/api` serving the built
 `apps/web`) in front of users. Dated demo evidence, current local candidate checks and

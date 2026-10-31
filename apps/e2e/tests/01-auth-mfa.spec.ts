@@ -118,7 +118,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     await expect(page.getByText('MFA activado.')).toBeVisible();
     await expect(page.getByText(secret)).toHaveCount(0);
 
-    // Enrollment guard (docs/mfa-enrollment.md): the retained session cannot replace the secret.
+    // Enrollment guard (reference/python/docs/mfa-enrollment.md): the retained session cannot replace the secret.
     const origin = { Origin: new URL(baseURL ?? '').origin };
     const again = await page.request.post('/system/auth/totp/setup', { headers: origin });
     expect(again.status()).toBe(409);

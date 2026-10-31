@@ -1,6 +1,6 @@
 # Verificación de skills y scripts
 
-2026-10-13. Skills adaptadas para descubrimiento nativo de Codex en `.agents/skills`; fuente oficial y evidencia de recurrencia en [skills.md](skills.md).
+2026-10-13. Skills adaptadas para descubrimiento nativo de Codex en `.agents/skills`; fuente oficial y evidencia de recurrencia en [skills.md](../agents/skills.md).
 
 Baseline: un agente independiente no encontró ninguna skill en el directorio canónico, detectó instrucciones de publicación que no reutilizaban PR y comprobó que solo había dos benchmarks independientes. Tras adaptar cada skill, se repitieron escenarios de verificación, cierre ODD, continuación de PR y actualización Archify. Los cuatro escenarios pasaron; no se añadieron skills de benchmarking, migración o despliegue sin tres usos.
 

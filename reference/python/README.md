@@ -11,3 +11,11 @@ PYTHONPATH=reference/python /tmp/mascli-reference-venv/bin/python -m pytest -q r
 ```
 
 Las pruebas redirigen los recursos a directorios temporales. No arranques esta referencia sobre datos reales ni copies `data/seed.json` o bases de datos operativas.
+
+## Lanzadores locales
+
+Los lanzadores `start_mascli.sh`, `start_mascli.bat`, `iniciar_mascli_final.sh` e `INICIAR_MASCLI_FINAL.bat` arrancan `app:app` con uvicorn en `127.0.0.1:8000`; se ejecutan desde este directorio y asignan `MASCLI_COOKIE_SECURE=0` solo si la variable está ausente ([cookies seguras](../../docs/secure-cookies.md)).
+
+## Historial del prototipo
+
+Notas de versión, resultados de prueba y especificaciones del prototipo (RC 1.7 → 3.0, v0.4 → v0.5.1) están en [`history/`](history/) y [`docs/`](docs/). Resumen en [docs/history/python-prototype.md](../../docs/history/python-prototype.md).

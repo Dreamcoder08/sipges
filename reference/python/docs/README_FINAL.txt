@@ -29,11 +29,11 @@ QUÉ INCLUYE
 
 INICIO EN WINDOWS
 1. Tener Python instalado.
-2. Ejecutar: INICIAR_MASCLI_FINAL.bat
+2. Ejecutar: reference/python/INICIAR_MASCLI_FINAL.bat
 3. Abrir en el navegador: http://127.0.0.1:8000
 
 INICIO EN LINUX / MAC
-1. Ejecutar: ./iniciar_mascli_final.sh
+1. Ejecutar: ./reference/python/iniciar_mascli_final.sh
 2. Abrir: http://127.0.0.1:8000
 
 IMPORTANTE
@@ -49,4 +49,4 @@ ALMACENAMIENTO DE ARCHIVOS
 - Las áreas nominales se conservan separadas de las áreas GIS: la presentación proporcionada aporta nombres, códigos y hectáreas, pero no coordenadas numéricas.
 
 
-IMPORTANTE RC 2.9: leer NOVEDADES_RC_2_9.md antes de iniciar. Es obligatorio configurar MASCLI_ADMIN_PASSWORD en el primer arranque.
+IMPORTANTE RC 2.9: leer reference/python/history/NOVEDADES_RC_2_9.md antes de iniciar. Es obligatorio configurar MASCLI_ADMIN_PASSWORD en el primer arranque.
