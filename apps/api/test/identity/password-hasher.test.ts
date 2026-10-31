@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PasswordHasher } from '../../src/contexts/identity/application/ports.ts';
 import { passwordHasher } from '../../src/contexts/identity/infrastructure/password-hasher.ts';
-import { wasmPasswordHasher } from '../../src/contexts/identity/infrastructure/wasm-password-hasher.ts';
+import { portablePasswordHasher } from '../../src/contexts/identity/infrastructure/portable-password-hasher.ts';
 
 // Produced by app.py hash_password's algorithm with a fixed salt (see L14 in the ODD log).
 const LEGACY_HASH =
@@ -9,7 +9,7 @@ const LEGACY_HASH =
 
 const HASHERS: readonly (readonly [string, PasswordHasher])[] = [
   ['native', passwordHasher],
-  ['wasm', wasmPasswordHasher],
+  ['portable', portablePasswordHasher],
 ];
 
 describe.each(HASHERS)('%s passwordHasher', (_name, hasher) => {
@@ -51,13 +51,45 @@ describe.each(HASHERS)('%s passwordHasher', (_name, hasher) => {
   });
 });
 
-describe('native and WebAssembly hashers are interchangeable', () => {
+describe('native and portable hashers are interchangeable', () => {
   it('verifies each other’s Argon2id hashes, so stored passwords survive a runtime change', async () => {
     const native = await passwordHasher.hash('shared-password-1');
-    const wasm = await wasmPasswordHasher.hash('shared-password-1');
-    expect(await wasmPasswordHasher.verify('shared-password-1', native)).toBe(true);
-    expect(await passwordHasher.verify('shared-password-1', wasm)).toBe(true);
-    expect(await wasmPasswordHasher.verify('shared-password-2', native)).toBe(false);
-    expect(await passwordHasher.verify('shared-password-2', wasm)).toBe(false);
+    const portable = await portablePasswordHasher.hash('shared-password-1');
+    expect(await portablePasswordHasher.verify('shared-password-1', native)).toBe(true);
+    expect(await passwordHasher.verify('shared-password-1', portable)).toBe(true);
+    expect(await portablePasswordHasher.verify('shared-password-2', native)).toBe(false);
+    expect(await passwordHasher.verify('shared-password-2', portable)).toBe(false);
+  });
+});
+
+describe('portable hasher on Cloudflare Workers', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('hashes and verifies with WebAssembly compilation disabled, as workerd does', async () => {
+    const native = await passwordHasher.hash('workerd-password-1');
+    // The API compiles without DOM types, so reach the runtime's WebAssembly through globalThis.
+    const wasm = (globalThis as unknown as { WebAssembly: Record<string, () => unknown> })
+      .WebAssembly;
+    const disabled = () => {
+      throw new Error('Wasm code generation disallowed by embedder');
+    };
+    for (const entry of ['compile', 'instantiate', 'Module'])
+      vi.spyOn(wasm, entry).mockImplementation(disabled);
+    const hash = await portablePasswordHasher.hash('workerd-password-1');
+    expect(hash).toMatch(/^\$argon2id\$v=19\$m=19456,t=2,p=1\$/);
+    expect(await portablePasswordHasher.verify('workerd-password-1', hash)).toBe(true);
+    expect(await portablePasswordHasher.verify('workerd-password-1', native)).toBe(true);
+    expect(await portablePasswordHasher.verify('legacy-password-123', LEGACY_HASH)).toBe(true);
+  });
+
+  it.each([
+    '$argon2id$v=19$m=4194304,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaA',
+    '$argon2id$v=19$m=19456,t=1000,p=1$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaA',
+    '$argon2id$v=19$m=19456,t=2,p=64$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaA',
+    '$argon2id$v=16$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0$aGFzaGhhc2hoYXNoaGFzaA',
+    'pbkdf2_sha256$9999999$00112233445566778899aabbccddeeff$00',
+  ])('refuses stored costs beyond the Worker budget: %j', async (stored) => {
+    // portable-password-hasher-budget.test.ts proves that nothing is computed for these.
+    expect(await portablePasswordHasher.verify('anything-long', stored)).toBe(false);
   });
 });
