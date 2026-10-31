@@ -39,4 +39,8 @@ function DialogTitle(props: ComponentProps<typeof DialogPrimitive.Title>) {
   return <DialogPrimitive.Title data-slot="dialog-title" {...props} />;
 }
 
-export { Dialog, DialogContent, DialogTitle, DialogTrigger };
+function DialogDescription(props: ComponentProps<typeof DialogPrimitive.Description>) {
+  return <DialogPrimitive.Description data-slot="dialog-description" {...props} />;
+}
+
+export { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger };
