@@ -1,7 +1,8 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
+import { type KeyboardEvent, useEffect, useId, useState } from 'react';
 import { isApiError } from '../../shared/api/client.ts';
 import { objectHref, useInternalNavigate } from '../../shared/lib/navigation.tsx';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '../../shared/ui/dialog.tsx';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { searchQuery } from './api.ts';
 import styles from './SearchPalette.module.css';
@@ -101,55 +102,40 @@ const Results = ({ scope, onClose }: { scope: string; onClose: () => void }) => 
 /** Global search across every object type, opened with Ctrl/⌘+K (docs/adr/0011 §5). */
 export const SearchPalette = ({ scope }: { scope: string }) => {
   const [open, setOpen] = useState(false);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const titleId = useId();
-  const close = () => {
-    setOpen(false);
-    trigger.current?.focus();
-  };
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         setOpen(true);
-      } else if (event.key === 'Escape') {
-        setOpen(false);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
   return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className={styles.trigger}
-        aria-haspopup="dialog"
-        aria-label="Búsqueda global"
-        aria-keyshortcuts="Control+K Meta+K"
-        onClick={() => setOpen(true)}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className={styles.trigger}
+          aria-haspopup="dialog"
+          aria-label="Búsqueda global"
+          aria-keyshortcuts="Control+K Meta+K"
+        >
+          <Icon name="search" />
+          <span className={styles.label}>Buscar</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+      </DialogTrigger>
+      <DialogContent
+        className={styles.dialog}
+        overlayClassName={styles.backdrop}
+        aria-modal="true"
+        aria-describedby={undefined}
       >
-        <Icon name="search" />
-        <span className={styles.label}>Buscar</span>
-        <kbd>Ctrl K</kbd>
-      </button>
-      {open ? (
-        <div className={styles.backdrop} onClick={close}>
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            className={styles.dialog}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 id={titleId} className="visually-hidden">
-              Búsqueda global
-            </h2>
-            <Results scope={scope} onClose={() => setOpen(false)} />
-          </div>
-        </div>
-      ) : null}
-    </>
+        <DialogTitle className="visually-hidden">Búsqueda global</DialogTitle>
+        <Results scope={scope} onClose={() => setOpen(false)} />
+      </DialogContent>
+    </Dialog>
   );
 };

@@ -1,0 +1,65 @@
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/app/Search.test.tsx[2m > [22mdoes not inject style elements when search opens under the strict CSP
+[31m[1mAssertionError[22m: expected [ <style type="text/css"></style> ] to deeply equal [][39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   <style[39m
+[31m+     type="text/css"[39m
+[31m+   >[39m
+[31m+     [39m
+[31m+   .with-scroll-bars-hidden {[39m
+[31m+    overflow: hidden !important;[39m
+[31m+    padding-right: 1024px !important;[39m
+[31m+   }[39m
+[31m+   body[data-scroll-locked] {[39m
+[31m+     overflow: hidden !important;[39m
+[31m+     overscroll-behavior: contain;[39m
+[31m+     position: relative !important;[39m
+[31m+     padding-left: 8px;[39m
+[31m+     padding-top: 8px;[39m
+[31m+     padding-right: 8px;[39m
+[31m+     margin-left:0;[39m
+[31m+     margin-top:0;[39m
+[31m+     margin-right: 1024px !important;[39m
+[31m+     [39m
+[31m+   }[39m
+[31m+   [39m
+[31m+   .right-scroll-bar-position {[39m
+[31m+     right: 1024px !important;[39m
+[31m+   }[39m
+[31m+   [39m
+[31m+   .width-before-scroll-bar {[39m
+[31m+     margin-right: 1024px !important;[39m
+[31m+   }[39m
+[31m+   [39m
+[31m+   .right-scroll-bar-position .right-scroll-bar-position {[39m
+[31m+     right: 0 !important;[39m
+[31m+   }[39m
+[31m+   [39m
+[31m+   .width-before-scroll-bar .width-before-scroll-bar {[39m
+[31m+     margin-right: 0 !important;[39m
+[31m+   }[39m
+[31m+   [39m
+[31m+   body[data-scroll-locked] {[39m
+[31m+     --removed-body-scroll-bar-size: 1024px;[39m
+[31m+   }[39m
+[31m+[39m
+[31m+   </style>,[39m
+[31m+ ][39m
+
+[36m [2m❯[22m src/app/Search.test.tsx:[2m21:58[22m[39m
+    [90m 19|[39m   await user.click(trigger);
+    [90m 20|[39m   await screen.findByRole('dialog', { name: 'Búsqueda global' });
+    [90m 21|[39m   expect(Array.from(document.querySelectorAll('style'))).toEqual(style…
+    [90m   |[39m                                                          [31m^[39m
+    [90m 22|[39m   await user.keyboard('{Escape}');
+    [90m 23|[39m });
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
