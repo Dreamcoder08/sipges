@@ -66,19 +66,33 @@ export const createSqlReviewStore = (sql: SqlClient): ReviewStore => ({
       return inserted;
     }),
 
-  list: (tenantId, { projectId, status, limit }) =>
-    withTenant(sql, tenantId, async (tx) =>
-      (
-        await tx.query<Row>(
-          `SELECT id, project_id, source_file, source_sha256, location, theme, excerpt, action,
-                  status, reviewer, note, created_at, updated_at
-             FROM document_review
-            WHERE project_id = $1 AND ($2::text IS NULL OR status = $2)
-            ORDER BY created_at DESC, id DESC LIMIT $3`,
-          [projectId, status, limit],
-        )
-      ).map(toItem),
-    ),
+  list: (tenantId, { projectId, status, theme, limit, offset }) =>
+    withTenant(sql, tenantId, async (tx) => {
+      const byProject = 'project_id = $1 AND ($2::text IS NULL OR status = $2)';
+      const rows = await tx.query<Row>(
+        `SELECT id, project_id, source_file, source_sha256, location, theme, excerpt, action,
+                status, reviewer, note, created_at, updated_at
+           FROM document_review
+          WHERE ${byProject} AND ($3::text IS NULL OR theme = $3)
+          ORDER BY created_at DESC, id DESC LIMIT $4 OFFSET $5`,
+        [projectId, status, theme, limit, offset],
+      );
+      const [matching] = await tx.query<{ total: number | string }>(
+        `SELECT count(*) AS total FROM document_review
+          WHERE ${byProject} AND ($3::text IS NULL OR theme = $3)`,
+        [projectId, status, theme],
+      );
+      const counts = await tx.query<{ theme: string; total: number | string }>(
+        `SELECT theme, count(*) AS total FROM document_review
+          WHERE ${byProject} GROUP BY theme ORDER BY theme`,
+        [projectId, status],
+      );
+      return {
+        items: rows.map(toItem),
+        total: Number(matching?.total ?? 0),
+        themes: Object.fromEntries(counts.map((row) => [row.theme, Number(row.total)])),
+      };
+    }),
 
   decide: (tenantId, decision) =>
     withTenant(sql, tenantId, async (tx) => {

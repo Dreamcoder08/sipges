@@ -13,7 +13,8 @@ export const isReviewStatus = (value: string): value is ReviewStatus =>
   (REVIEW_STATUSES as readonly string[]).includes(value);
 
 export const MAX_REVIEW_IMPORT = 75;
-export const MAX_REVIEW_LIST = 500;
+export const DEFAULT_REVIEW_PAGE = 50;
+export const MAX_REVIEW_PAGE = 200;
 
 export const REVIEW_LIMITS = {
   projectId: 120,

@@ -77,7 +77,12 @@ export const DocumentReviewItem = z.strictObject({
 export type DocumentReviewItem = z.infer<typeof DocumentReviewItem>;
 export const DocumentReviewResponse = z.strictObject({
   items: z.array(DocumentReviewItem),
+  /** Full count matching the filters, not the page length. */
   total: z.number().int(),
+  limit: z.number().int(),
+  offset: z.number().int(),
+  /** Theme → items matching project and status, ignoring the theme filter. */
+  themes: z.record(z.string(), z.number().int()),
   limitations: z.string(),
 });
 export const DocumentReviewImportResponse = z.strictObject({

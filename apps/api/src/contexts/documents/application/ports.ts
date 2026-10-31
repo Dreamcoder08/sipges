@@ -26,13 +26,26 @@ export type ReportRenderer = {
 
 export type NewReviewItem = Omit<ReviewItem, 'status' | 'reviewer' | 'note' | 'updatedAt'>;
 
+export type ReviewQuery = {
+  projectId: string;
+  status: string | null;
+  theme: string | null;
+  limit: number;
+  offset: number;
+};
+
+export type ReviewPage = {
+  items: ReviewItem[];
+  /** Rows matching every filter, regardless of the page. */
+  total: number;
+  /** Theme → rows matching project and status only. */
+  themes: Record<string, number>;
+};
+
 export type ReviewStore = {
   /** Inserts items, skipping exact duplicates; returns how many rows were new. */
   importItems(tenantId: string, items: readonly NewReviewItem[]): Promise<number>;
-  list(
-    tenantId: string,
-    query: { projectId: string; status: string | null; limit: number },
-  ): Promise<ReviewItem[]>;
+  list(tenantId: string, query: ReviewQuery): Promise<ReviewPage>;
   /** Updates one item and writes its audit row in the same transaction; false when missing. */
   decide(
     tenantId: string,

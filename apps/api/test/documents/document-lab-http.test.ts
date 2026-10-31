@@ -303,6 +303,119 @@ describe('document review inbox', () => {
     expect(exported.data.document_review).toHaveLength(2);
   });
 
+  type Page = {
+    items: { id: string; theme: string; status: string }[];
+    total: number;
+    limit: number;
+    offset: number;
+    themes: Record<string, number>;
+  };
+  const themed = (theme: string, n: number) => ({ ...item(n), tema: theme });
+  const seed = async (json: Awaited<ReturnType<typeof setup>>['json']) => {
+    const items = [
+      ...[1, 2, 3].map((n) => themed('Tema A', n)),
+      ...[4, 5].map((n) => themed('Tema B', n)),
+    ];
+    const res = await json('POST', '/system/document-lab/review/import', {
+      filename: 'acta.txt',
+      sha256: SHA,
+      items,
+    });
+    expect(((await res.json()) as { new_items: number }).new_items).toBe(5);
+  };
+  const page = async (json: Awaited<ReturnType<typeof setup>>['json'], query: string) =>
+    (await (await json('GET', `/system/document-lab/review${query}`)).json()) as Page;
+
+  it('pages the queue newest first with a stable id tiebreak and reports the full total', async () => {
+    const { json } = await setup();
+    await seed(json);
+    const all = await page(json, '');
+    expect(all).toMatchObject({ total: 5, limit: 50, offset: 0 });
+    const ids = all.items.map((i) => i.id);
+    expect(ids).toEqual([...ids].sort().reverse());
+    const first = await page(json, '?limit=2');
+    const second = await page(json, '?limit=2&offset=2');
+    const last = await page(json, '?limit=2&offset=4');
+    expect([first, second, last].map((p) => p.total)).toEqual([5, 5, 5]);
+    expect(second).toMatchObject({ limit: 2, offset: 2 });
+    expect([...first.items, ...second.items, ...last.items].map((i) => i.id)).toEqual(ids);
+    expect((await page(json, '?limit=2&offset=9')).items).toEqual([]);
+  });
+
+  it('rejects out-of-range paging values with a Spanish detail and no data', async () => {
+    const { json } = await setup();
+    await seed(json);
+    for (const query of [
+      'limit=0',
+      'limit=201',
+      'limit=abc',
+      'limit=1.5',
+      'offset=-1',
+      'offset=x',
+    ]) {
+      const res = await json('GET', `/system/document-lab/review?${query}`);
+      expect(res.status, query).toBe(422);
+      const body = (await res.json()) as { detail: string; items?: unknown };
+      expect(body.detail).toMatch(/^Parámetro (limit|offset) inválido/);
+      expect(body.items).toBeUndefined();
+    }
+    expect((await page(json, '?limit=200')).limit).toBe(200);
+    expect((await page(json, '?limit=1&offset=0')).items).toHaveLength(1);
+  });
+
+  it('filters by exact theme and counts themes ignoring the theme filter', async () => {
+    const { json } = await setup();
+    await seed(json);
+    const b = await page(json, '?theme=Tema%20B');
+    expect(b.total).toBe(2);
+    expect(b.items.every((i) => i.theme === 'Tema B')).toBe(true);
+    expect(b.themes).toEqual({ 'Tema A': 3, 'Tema B': 2 });
+    expect((await page(json, '?theme=Tema')).total).toBe(0);
+
+    const id = (await page(json, '?theme=Tema%20A')).items[0]?.id ?? '';
+    expect(
+      (await json('PATCH', `/system/document-lab/review/${id}`, { status: 'descartado' })).status,
+    ).toBe(200);
+    const pending = await page(json, '?status=pendiente&theme=Tema%20B');
+    expect(pending.themes).toEqual({ 'Tema A': 2, 'Tema B': 2 });
+    expect(pending.total).toBe(2);
+  });
+
+  it('never leaks another tenant into total, themes or items', async () => {
+    const { t, admin, json } = await setup();
+    await seed(json);
+    expect(
+      (
+        await t.createScope(admin.cookie, {
+          company_id: 'ACME',
+          project_id: 'NORTE',
+          label: 'Norte',
+          username: 'admin',
+        })
+      ).status,
+    ).toBe(200);
+    const north = { 'x-mascli-scope': 'ACME/NORTE' };
+    const southBatch = {
+      filename: 'norte.txt',
+      sha256: 'b'.repeat(64),
+      items: [themed('Tema Norte', 9)],
+    };
+    expect(
+      (await json('POST', '/system/document-lab/review/import', southBatch, north)).status,
+    ).toBe(200);
+    const read = async (extra: Record<string, string>) =>
+      (await (
+        await json('GET', '/system/document-lab/review?limit=200', undefined, extra)
+      ).json()) as Page;
+    const norte = await read(north);
+    expect(norte.total).toBe(1);
+    expect(norte.themes).toEqual({ 'Tema Norte': 1 });
+    expect(norte.items.map((i) => i.theme)).toEqual(['Tema Norte']);
+    const sechura = await read({ 'x-mascli-scope': 'MASCLI/PRJ-SECHURA' });
+    expect(sechura.total).toBe(5);
+    expect(sechura.themes).toEqual({ 'Tema A': 3, 'Tema B': 2 });
+  });
+
   it('validates the batch and keeps the inbox inside the tenant', async () => {
     const { t, admin, json } = await setup();
     const importBatch = (body: unknown, extra: Record<string, string> = {}) =>
