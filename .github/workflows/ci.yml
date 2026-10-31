@@ -90,10 +90,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Browser revision follows the @playwright/test version pinned in apps/e2e (lockfile).
-      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps chromium ${{ matrix.shard == 1 && 'webkit' || '' }}
+      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps chromium ${{ matrix.shard == 2 && 'webkit' || '' }}
       - run: pnpm --filter @mascli/web build
       - run: pnpm --filter @mascli/e2e exec playwright test --shard=${{ matrix.shard }}/2
-      - if: matrix.shard == 1
+      - if: matrix.shard == 2
         run: pnpm --filter @mascli/e2e exec playwright test --config playwright.webkit.config.ts
       - if: failure()
         uses: actions/upload-artifact@v4
