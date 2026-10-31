@@ -84,7 +84,12 @@ const withConnection = async <T>(
 ): Promise<T> => {
   // Hyperdrive pools connections, so a client per request is cheap; a few in parallel cover
   // the API's concurrent transactions within one request.
-  const connection = postgresClient(env.HYPERDRIVE.connectionString, { max: 5, prepare: true });
+  // The binding is an internal Hyperdrive socket; Hyperdrive manages TLS to the origin.
+  const connection = postgresClient(env.HYPERDRIVE.connectionString, {
+    max: 5,
+    prepare: true,
+    ssl: false,
+  });
   const tasks: Promise<unknown>[] = [];
   let ended: Promise<unknown> = Promise.resolve();
   try {
