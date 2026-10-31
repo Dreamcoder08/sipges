@@ -148,6 +148,20 @@
   /* Raster tiles: streets are inverted for the dark theme, imagery only dimmed. */
   --map-filter-streets: none;
   --map-filter-satellite: none;
+  /* Theme-invariant map paint, defined only here so both dark blocks inherit it unchanged. */
+  /* Cadastre legend mirrors the GEOCATMIN raster tiles, which do not follow the theme. */
+  --map-cadastre-1: #2f5fd0;
+  --map-cadastre-2: #3a9d3a;
+  --map-cadastre-3: #222222;
+  /* District outlines drawn over satellite imagery, which is always dark ground. */
+  --map-outline-imagery: #fffaf0;
+  /* Record markers: white ring and label on the marker fill, dark ring when active. */
+  --map-marker-on: #ffffff;
+  --map-marker-active: #17212b;
+  /* Concession polygons: resting, active and keyboard-focused fills. */
+  --map-concession-fill: rgb(23 54 93 / 0.08);
+  --map-concession-fill-active: rgb(23 54 93 / 0.28);
+  --map-concession-fill-focus: rgb(43 108 176 / 0.3);
 
   /* ---------- Spacing: 4-pt scale ---------- */
   --space-0: 0.125rem;
