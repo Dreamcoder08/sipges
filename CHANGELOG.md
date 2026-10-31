@@ -27,4 +27,8 @@ Primera versión publicada de MASCLI en TypeScript, desplegada en Vercel desde `
 
 - Se retiró el caso académico sintético de la base (migración 0019) y del código: solo queda la información real del proyecto (#49).
 
+## Pre-1.0 — Python prototype
+
+Antes de v1.0.0 MASCLI fue un prototipo FastAPI + SQLite (RC 1.3 → 3.0 y v0.4 → v0.5.1). Su historial está resumido en [docs/history/python-prototype.md](docs/history/python-prototype.md); las notas originales se conservan en [`reference/python/history/`](reference/python/history/).
+
 [1.0.0]: https://github.com/Dreamcoder08/mascli/releases/tag/v1.0.0

@@ -8,7 +8,7 @@ La nueva versión de MASCLI es un monorepo TypeScript para la gestión y el aná
 
 - [Mapa interactivo](docs/diagrams/arquitectura.html): SPA, contratos compartidos, Hono, casos de uso, dominio, adaptadores, PostgreSQL, objetos y embeddings.
 - [Guía de arquitectura y regeneración](docs/ARQUITECTURA.md).
-- [Fuente JSON editable](docs/diagrams/arquitectura.json) y [verificación](docs/VERIFICACION.md).
+- [Fuente JSON editable](docs/diagrams/arquitectura.json) y [verificación](docs/history/archify-verification.md).
 
 Descarga el HTML y ábrelo en el navegador: GitHub muestra el código del archivo y no ejecuta el visor. Selecciona un componente para consultar sus referencias de código. El visor funciona como un archivo autónomo; los enlaces al repositorio requieren conexión y permisos de acceso.
 

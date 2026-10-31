@@ -1,0 +1,39 @@
+# Python prototype history (RC 1.7 → 3.0, v0.4 → v0.5.1)
+
+Before the TypeScript rewrite (v1.0.0, see the [CHANGELOG](../../CHANGELOG.md)), MASCLI was a FastAPI + SQLite prototype. Its code is frozen in [`reference/python`](../../reference/python/README.md); its raw release notes and test results live in [`reference/python/history/`](../../reference/python/history/). This page is the short index. Dates are October 2026.
+
+## Release candidates (RC 1.7 → 3.0)
+
+| Version | What it added | Raw notes |
+| --- | --- | --- |
+| RC 1.3 – 1.5 | Test results for the first web build, projects (`PRJ-SECHURA`, `Proyecto_ID` tagging) and the five Bayóvar concessions in WGS 84 | [1.3](../../reference/python/history/RESULTADO_PRUEBA_RC_1_3.txt), [1.4](../../reference/python/history/RESULTADO_PRUEBA_RC_1_4.txt), [1.5](../../reference/python/history/RESULTADO_PRUEBA_RC_1_5.txt) |
+| RC 1.7 | Territorial strategic intelligence | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_1_7.md) |
+| RC 1.8 | Explainable value and consensus engine (joint fact finding, stakeholders, mutual gains) | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_1_8.md) |
+| RC 1.9 | Intermodule analysis: candidate links and suggested actions | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_1_9.md) |
+| RC 2.0 | Document lab: PDF/DOCX/TXT/MD reading and DOCX report | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_0.md) |
+| RC 2.1 | Document comparison and persistent findings inbox | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_1.md) |
+| RC 2.2 | Digital links and contacts, indicative follow-up priority | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_2.md) |
+| RC 2.3 | Social-network intelligence panel and filters | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_3.md) |
+| RC 2.4 | Local text analysis from vocabularies | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_4.md) |
+| RC 2.5 | Optional local semantic analysis (Ollama embeddings) | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_5.md) |
+| RC 2.6 | Digital-alert review inbox per project | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_6.md) |
+| RC 2.7 | Preventive action plans linked to alerts; automated test log | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_7.md), [PRUEBAS](../../reference/python/history/PRUEBAS_RC_2_7.txt) |
+| RC 2.8 | Management control center (KPIs, CSV export) | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_8.md) |
+| RC 2.9 | Access and effective roles; admin password required on first start | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_2_9.md) |
+| RC 3.0 | Company/project isolation and TOTP MFA | [NOVEDADES](../../reference/python/history/NOVEDADES_RC_3_0.md) |
+
+## Early versions (v0.4 → v0.5.1)
+
+| Version | What it was | Raw notes |
+| --- | --- | --- |
+| v0.4 | Indicator engine test; provisional IRSA, pending expert validation | [RESULTADO](../../reference/python/history/RESULTADO_PRUEBA_V0_4.txt) |
+| v0.5 | Expert-validation panel, canonical community naming, 32 indicators awaiting Aiken's V | [RELEASE_NOTES](../../reference/python/history/RELEASE_NOTES_V0_5.txt) |
+| v0.5.1 | Technical calibration: weighted contextual classifier, human-review flag | [RELEASE_NOTES](../../reference/python/history/RELEASE_NOTES_V0_5_1.txt), [retest](../../reference/python/history/PILOTO_RETEST_V0_5_1.json) |
+
+## Related prototype material
+
+- Technical specs: [IRSA specification](../../reference/python/docs/IRSA_ESPECIFICACION_TECNICA.txt) and [situational analysis module](../../reference/python/docs/NUEVO_MODULO_ANALISIS_SITUACIONAL.txt). The executable IRSA reference is [docs/escenarios/irsa.md](../escenarios/irsa.md).
+- Prototype fixes: [export isolation](../../reference/python/docs/export-isolation.md), [storage backend](../../reference/python/docs/storage-backend.md), [MFA enrollment](../../reference/python/docs/mfa-enrollment.md); superseded by the ADRs.
+- Local launchers (`start_mascli.*`, `INICIAR_MASCLI_FINAL.bat`, `iniciar_mascli_final.sh`) are in [`reference/python`](../../reference/python/README.md); cookie behavior in [secure cookies](../secure-cookies.md).
+
+The prototype figures are provisional: the IRSA was never presented as a validated model, and external scientific validation remains a separate process.

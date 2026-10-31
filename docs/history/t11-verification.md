@@ -44,6 +44,6 @@ Capturas revisadas visualmente: [mapa en escritorio](assets/t11-map-desktop.png)
 
 ## Documentación y límites
 
-El [ODD](../../odd/tasks/typescript-hexagonal-migration.md) registra T11 completo. [La guía web](web.md) explica funciones, permisos y diferencias deliberadas. El [mapa Archify](../diagrams/arquitectura.html) apunta al commit anterior; [su verificación](../VERIFICACION.md) separa las comprobaciones aprobadas del bloqueo de Chromium sobre `file://`.
+El [ODD](../../odd/tasks/typescript-hexagonal-migration.md) registra T11 completo. [La guía web](../migration/web.md) explica funciones, permisos y diferencias deliberadas. El [mapa Archify](../diagrams/arquitectura.html) apunta al commit anterior; [su verificación](archify-verification.md) separa las comprobaciones aprobadas del bloqueo de Chromium sobre `file://`.
 
 Estas pruebas verifican los flujos de T11 con datos sintéticos, no la paridad exhaustiva ni preparación de despliegue de T14. T12 benchmarks y T13 migración/normalización siguen pendientes. No se ejecutó una migración de datos reales ni un despliegue. La ausencia de geometría o embeddings se presenta explícitamente; no se inventan mediciones, coordenadas ni validación científica IRSA.

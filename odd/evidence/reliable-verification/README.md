@@ -1,6 +1,6 @@
 # Reliable verification evidence
 
-Local synthetic-data diagnostics only; neither the root check nor CI has passed as a result of this work. See the [verification guide](../../../docs/testing/verification.md) and [earlier mature UI evidence](../mature-ui/README.md).
+Local synthetic-data diagnostics only; neither the root check nor CI has passed as a result of this work. See the [verification guide](../../../docs/testing.md) and [earlier mature UI evidence](../mature-ui/README.md).
 
 | Scope | Result | Evidence and limit |
 | --- | --- | --- |

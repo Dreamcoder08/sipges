@@ -14,7 +14,7 @@ HTML generado: `diagrams/arquitectura.html`, SHA-256 `b80eccba2224c0d5caf2ad2f86
 | `browser-check` integrado con `/usr/bin/chromium` | Falló: `Chrome navigation failed: net::ERR_BLOCKED_BY_ADMINISTRATOR` al abrir `file://` |
 | Prueba independiente por HTTP local | Pasó en Chromium/Playwright a 1600×1100 y 390×844; SVG presente, sin desbordamiento horizontal ni errores de página |
 | Referencias e interacciones HTTP | Nodo Geografía mostró tres enlaces Git con el commit fijado; cambio a tema oscuro y apertura del menú SVG/PNG comprobados |
-| Inspección visual | Captura [arquitectura.png](diagrams/arquitectura.png) revisada: 16 nodos, etiquetas y tarjetas legibles, sin solapamientos visibles |
+| Inspección visual | Captura [arquitectura.png](../diagrams/arquitectura.png) revisada: 16 nodos, etiquetas y tarjetas legibles, sin solapamientos visibles |
 
 Los recibos frescos permanecen en `/tmp/mascli-archify-territorial-review-1` y `/tmp/mascli-archify-territorial-review-2`; la comprobación HTTP produjo `/tmp/mascli-archify-http-review.json` dentro del contenedor de navegador. Son evidencia local y contienen rutas efímeras, por lo que no se versionan. Un primer intento de interacción HTTP agotó su selector; se corrigió el selector al identificador del nodo y la prueba siguiente pasó. No se modificó la política del navegador. La prueba HTTP no sustituye el gate geométrico integrado, que permanece fallido, ni comprueba los formatos exportados.
 
@@ -65,13 +65,13 @@ HTML comprobado: `diagrams/arquitectura.html`, SHA-256 `8974bd8941d30bf79eda117f
 | Prueba adicional por HTTP local con Playwright/Chromium | Pasó en 1440×900, 1600×1000, 1920×1080, 2048×1320 y 390×844; SVG presente y sin desbordamiento horizontal de la página |
 | Interacciones adicionales | Abrir nodo HTTP/Hono mostró tres enlaces al código fijado; cambio de tema y apertura del menú de exportación comprobados |
 | JavaScript durante la prueba HTTP | Sin errores de página |
-| Verificación del runtime integrado | Web: 99 aprobadas; API SPA: 5 aprobadas; referencia Python: 40 aprobadas. Suite completa y CI se registran en [la consolidación](migration/main-consolidation.md). |
+| Verificación del runtime integrado | Web: 99 aprobadas; API SPA: 5 aprobadas; referencia Python: 40 aprobadas. Suite completa y CI se registran en [la consolidación](main-consolidation.md). |
 | Inspección visual | Captura de escritorio en tema oscuro revisada; nodos y etiquetas legibles, sin solapamientos visibles |
 
-La captura de escritorio está en [la vista previa](diagrams/arquitectura.png). La prueba HTTP adicional comprueba carga e interacciones básicas; no ejecuta todos los criterios geométricos del `browser-check` de Archify ni prueba los formatos exportados. La comprobación completa de `finalize` queda pendiente en un entorno que permita abrir el archivo local. No se modificaron las políticas del navegador ni el transporte de Archify.
+La captura de escritorio está en [la vista previa](../diagrams/arquitectura.png). La prueba HTTP adicional comprueba carga e interacciones básicas; no ejecuta todos los criterios geométricos del `browser-check` de Archify ni prueba los formatos exportados. La comprobación completa de `finalize` queda pendiente en un entorno que permita abrir el archivo local. No se modificaron las políticas del navegador ni el transporte de Archify.
 
-Los recibos detallados de Archify se generan localmente y no se versionan porque contienen rutas de la máquina de ejecución. Consulta [la guía de regeneración](ARQUITECTURA.md) para volver a ejecutar las comprobaciones. La CI de integración usa PostgreSQL real; el resultado final se registra en el informe de consolidación. Se arrancó una instancia temporal Hono/PGlite con cuentas y datos sintéticos para la verificación web; no se modificaron datos reales de usuarios.
+Los recibos detallados de Archify se generan localmente y no se versionan porque contienen rutas de la máquina de ejecución. Consulta [la guía de regeneración](../ARQUITECTURA.md) para volver a ejecutar las comprobaciones. La CI de integración usa PostgreSQL real; el resultado final se registra en el informe de consolidación. Se arrancó una instancia temporal Hono/PGlite con cuentas y datos sintéticos para la verificación web; no se modificaron datos reales de usuarios.
 
-T11 completo se comprobó además contra una instancia local temporal de Hono/PGlite con datos sintéticos; consulta [el informe de verificación](migration/t11-verification.md).
+T11 completo se comprobó además contra una instancia local temporal de Hono/PGlite con datos sintéticos; consulta [el informe de verificación](t11-verification.md).
 
 Demo pública: despliegue Vercel `dpl_82Q51rFoAhxYALtRchiTDD8pbyC9` READY, conectado al PostgreSQL Neon vinculado por el propietario. Chromium comprobó SPA/login y CSP, `/health` 200 tras migraciones, contraseña válida contra la cuenta persistida, cookie Secure/HttpOnly/SameSite=Strict, sesión tras recargar, vista móvil y logout. Administración devuelve 403 antes de inscribir MFA. Sin errores de página. Quedan pendientes la inscripción del autenticador del propietario y el smoke público de CRUD, Blob y PDF/DOCX; no se presentan como comprobados. CI del código `70d2c40`: PostgreSQL real y 29 pruebas E2E aprobados, ejecución `38477948969`.

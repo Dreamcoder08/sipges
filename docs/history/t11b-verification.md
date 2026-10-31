@@ -20,7 +20,7 @@ Las [capturas de evidencias en escritorio](assets/t11b-evidence-desktop.png) y [
 
 La revisión encontró tres fallos: controles que permitían cambiar de editor durante un guardado, pérdida del nombre del proyecto al editar y recuperación de aliases después de limpiar un campo. Las tres pruebas fallaron antes de corregir el código y pasaron después. Otra regresión bloquea la edición/eliminación mientras una evidencia está subiendo.
 
-Se conservan dos diferencias de paridad menores: clasificación explícita de dimensión en eventos y aliases de directorio enumerados. Se documentan en [la guía web](web.md); no se afirma paridad completa de todas las pantallas. Esa verificación pertenece a T14.
+Se conservan dos diferencias de paridad menores: clasificación explícita de dimensión en eventos y aliases de directorio enumerados. Se documentan en [la guía web](../migration/web.md); no se afirma paridad completa de todas las pantallas. Esa verificación pertenece a T14.
 
 ## Resultado de la comprobación final
 

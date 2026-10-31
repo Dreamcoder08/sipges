@@ -1,4 +1,4 @@
-> **Superseded for the TypeScript API by [ADR 0009](adr/0009-internet-exposure-hardening.md)**: MFA is mandatory by default, every role can enroll, and administrators can reset another user's MFA.
+> **Superseded for the TypeScript API by [ADR 0009](../../../docs/adr/0009-internet-exposure-hardening.md)**: MFA is mandatory by default, every role can enroll, and administrators can reset another user's MFA.
 
 # MFA enrollment reset protection (P2a)
 

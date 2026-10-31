@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de MASCLI · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](migration/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](history/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Recorrido y reglas de dependencia
 
@@ -66,7 +66,7 @@ La revisión territorial añade catálogo/intersecciones, señales verificables,
 - `diagrams/arquitectura.json`: componentes, conexiones, geometría, tarjetas y referencias Git.
 - `diagrams/arquitectura.html`: visor autónomo generado; conservar los bytes generados.
 - `diagrams/arquitectura.png`: vista previa del visor en escritorio.
-- [Licencia Archify](ARCHIFY-LICENSE.txt) y [verificación de la entrega](VERIFICACION.md).
+- [Licencia Archify](ARCHIFY-LICENSE.txt) y [verificación de la entrega](history/archify-verification.md).
 
 Herramienta: [tt-a1i/archify](https://github.com/tt-a1i/archify), revisión `c21c31ffb879668900c5487ea24993bf45d89b15`. Archify se usa para documentación y no se instala como dependencia de MASCLI. Requiere Node.js y Chrome/Chromium para la comprobación de navegador.
 
@@ -85,4 +85,4 @@ ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs fin
 
 En PowerShell, establece `$env:ARCHIFY_UPDATE_CHECK_DISABLED="1"` antes del comando `node`. Usa una carpeta de revisión nueva al modificar el candidato y conserva los recibos anteriores. Para actualizarlo, inspecciona el código TypeScript y el ODD, ajusta responsabilidades, conexiones y referencias, y fija `meta.repository.revision` a la revisión que contiene los archivos citados. Las referencias se comprueban contra bytes comprometidos en Git.
 
-Los resultados de la regeneración territorial, los gates de Archify y sus límites se registran en [VERIFICACION.md](VERIFICACION.md). Los recibos históricos conservan su propia revisión y no constituyen evidencia del HTML actual.
+Los resultados de la regeneración territorial, los gates de Archify y sus límites se registran en [archify-verification.md](history/archify-verification.md). Los recibos históricos conservan su propia revisión y no constituyen evidencia del HTML actual.

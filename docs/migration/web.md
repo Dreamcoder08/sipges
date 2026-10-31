@@ -105,7 +105,7 @@ The six rebuilt routes use the isolated `features/records` feature. Each module 
 
 T11c incorpora `/system/analyze`: muestra señales y confianza orientativa, y aplica la dimensión solo a petición del usuario. Un cambio de borrador descarta respuestas anteriores. Directory aliases are enumerated rather than fuzzy-matched against arbitrary source column names; unknown fields are preserved by edits, while broader import normalization belongs with T13 migration tooling. Sources can be created before attaching a file, making failed uploads retryable on the same record.
 
-Verification and synthetic-browser evidence: [T11b verification report](t11b-verification.md). La entrega histórica T11b se amplía con [la verificación de T11 completo](t11-verification.md). T12 benchmarks, T13 migration tooling y T14 comprehensive parity/deployment readiness siguen pendientes.
+Verification and synthetic-browser evidence: [T11b verification report](../history/t11b-verification.md). La entrega histórica T11b se amplía con [la verificación de T11 completo](../history/t11-verification.md). T12 benchmarks, T13 migration tooling y T14 comprehensive parity/deployment readiness siguen pendientes.
 
 
 ## Análisis y gestión (T11c/d)
