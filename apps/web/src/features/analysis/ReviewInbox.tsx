@@ -200,7 +200,7 @@ export const ReviewInbox = (context: FeatureContext) => {
       <QueryState query={query} label="la bandeja documental">
         {(data) => (
           <>
-            <p>{data.total} ítems</p>
+            <p>{data.total} hallazgos en la bandeja del proyecto.</p>
             <Alert tone="info">{data.limitations}</Alert>
             {data.items.length ? (
               data.items.map((item) => (

@@ -304,7 +304,7 @@ describe('document lab', () => {
     const requests: URL[] = [];
     pagedInbox(requests);
     mount(<DocumentLab {...context} />);
-    expect(await screen.findByText('120 ítems')).toBeVisible();
+    expect(await screen.findByText('120 hallazgos en la bandeja del proyecto.')).toBeVisible();
     expect(screen.getByText('Página 1 de 3')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
     expect(requests.at(-1)?.searchParams.get('offset')).toBe('0');
@@ -329,7 +329,7 @@ describe('document lab', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(await screen.findByText('Página 2 de 3')).toBeVisible();
     await userEvent.selectOptions(theme, 'Demandas');
-    expect(await screen.findByText('20 ítems')).toBeVisible();
+    expect(await screen.findByText('20 hallazgos en la bandeja del proyecto.')).toBeVisible();
     expect(screen.getByText('Página 1 de 1')).toBeVisible();
     const last = requests.at(-1);
     expect(last?.searchParams.get('theme')).toBe('Demandas');
