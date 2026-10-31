@@ -1,0 +1,475 @@
+{
+  "count": 94,
+  "tests": [
+    {
+      "file": "01-auth-mfa.spec.ts",
+      "title": "rejects a wrong password and signs in with the right one",
+      "project": "chromium"
+    },
+    {
+      "file": "01-auth-mfa.spec.ts",
+      "title": "issues an HttpOnly, SameSite=Strict, Secure session cookie by default",
+      "project": "chromium"
+    },
+    {
+      "file": "01-auth-mfa.spec.ts",
+      "title": "returns to the requested screen after sign-in and ignores foreign redirects",
+      "project": "chromium"
+    },
+    {
+      "file": "01-auth-mfa.spec.ts",
+      "title": "signs out and revokes the session server-side",
+      "project": "chromium"
+    },
+    {
+      "file": "01-auth-mfa.spec.ts",
+      "title": "enrolls TOTP, refuses re-enrollment and then requires the code",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "MASCLI_COOKIE_SECURE=(unset) marks cookies Secure, so plain HTTP keeps no session",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "MASCLI_COOKIE_SECURE=1 marks cookies Secure, so plain HTTP keeps no session",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "MASCLI_COOKIE_SECURE=0 drops Secure for intentional local HTTP only",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "refuses to start with MASCLI_COOKIE_SECURE=\"\"",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "refuses to start with MASCLI_COOKIE_SECURE=\"true\"",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "refuses to start with MASCLI_COOKIE_SECURE=\"yes\"",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "refuses to start with MASCLI_COOKIE_SECURE=\"01\"",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "refuses to start with MASCLI_COOKIE_SECURE=\" 1\"",
+      "project": "chromium"
+    },
+    {
+      "file": "02-cookie-policy.spec.ts",
+      "title": "refuses to start with MASCLI_COOKIE_SECURE=\"2\"",
+      "project": "chromium"
+    },
+    {
+      "file": "03-mfa-required.spec.ts",
+      "title": "mandatory MFA enrolls before dashboard and requires a code on the next login",
+      "project": "chromium"
+    },
+    {
+      "file": "03-tenancy.spec.ts",
+      "title": "an administrator creates a second project and switches to it server-side",
+      "project": "chromium"
+    },
+    {
+      "file": "03-tenancy.spec.ts",
+      "title": "records created in one project never appear in the other",
+      "project": "chromium"
+    },
+    {
+      "file": "03-tenancy.spec.ts",
+      "title": "cross-tenant access is refused with 403 (scope) and 404 (foreign ids)",
+      "project": "chromium"
+    },
+    {
+      "file": "03-tenancy.spec.ts",
+      "title": "the export downloads mascli-tenant.json with the active project only",
+      "project": "chromium"
+    },
+    {
+      "file": "04-records-evidence.spec.ts",
+      "title": "territorial record CRUD with evidence upload and byte-exact download",
+      "project": "chromium"
+    },
+    {
+      "file": "04-records-evidence.spec.ts",
+      "title": "event and demand screens create records in the active project",
+      "project": "chromium"
+    },
+    {
+      "file": "05-analysis-management.spec.ts",
+      "title": "IRSA computes the index and stores a snapshot in the history",
+      "project": "chromium"
+    },
+    {
+      "file": "05-analysis-management.spec.ts",
+      "title": "situational and strategic analyses render and download DOCX reports",
+      "project": "chromium"
+    },
+    {
+      "file": "05-analysis-management.spec.ts",
+      "title": "document lab reads a file, downloads its report and sends candidates to review",
+      "project": "chromium"
+    },
+    {
+      "file": "05-analysis-management.spec.ts",
+      "title": "management center shows project metrics and downloads the CSV report",
+      "project": "chromium"
+    },
+    {
+      "file": "06-csp-screens.spec.ts",
+      "title": "the SPA shell and its assets are served with a strict CSP",
+      "project": "chromium"
+    },
+    {
+      "file": "06-csp-screens.spec.ts",
+      "title": "the policy is enforced: injected inline scripts and handlers are blocked",
+      "project": "chromium"
+    },
+    {
+      "file": "06-csp-screens.spec.ts",
+      "title": "every screen renders without CSP violations or script errors",
+      "project": "chromium"
+    },
+    {
+      "file": "07-accessibility.spec.ts",
+      "title": "sign-in and every screen pass the automated WCAG 2.1 AA checks (light)",
+      "project": "chromium"
+    },
+    {
+      "file": "07-accessibility.spec.ts",
+      "title": "sign-in and every screen pass the automated WCAG 2.1 AA checks (dark)",
+      "project": "chromium"
+    },
+    {
+      "file": "08-territorial-map.spec.ts",
+      "title": "events with a known locality appear on the territorial map with their detail",
+      "project": "chromium"
+    },
+    {
+      "file": "09-ontology-intelligence.spec.ts",
+      "title": "360\u00b0 view: inferred links, cited briefing, history, search and chronology",
+      "project": "chromium"
+    },
+    {
+      "file": "10-automation-integration.spec.ts",
+      "title": "automation rule, API key, inbound webhook, notification and MCP",
+      "project": "chromium"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "counters follow records and every record opens, edits and shows its report",
+      "project": "chromium"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "the geospatial view frames a concession and the directory lists contacts",
+      "project": "chromium"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "narratives show their trend per day and category",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "eventos: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "actores: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "directorio: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "demandas: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "compromisos: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "narrativas: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "fuentes: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "alertas: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "acciones: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "intereses: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "dialogos: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "oportunidades: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "hechos: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.spec.ts",
+      "title": "aarc: create, search, read, edit and delete on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "digital signal to completed preventive plan on desktop",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "administration: accounts, Google link, projects, grants and deactivation",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "CSV import, record links, history and audit trail",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "document review decision, strategic reports and chronology filters",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "automation rules edited, paused and removed; webhook channel added",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "every link on the home screen opens a real screen",
+      "project": "chromium"
+    },
+    {
+      "file": "13-workflows.spec.ts",
+      "title": "360\u00b0 view: approve an analyst proposal and restrict a record",
+      "project": "chromium"
+    },
+    {
+      "file": "14-roles.spec.ts",
+      "title": "analista: every screen opens without errors",
+      "project": "chromium"
+    },
+    {
+      "file": "14-roles.spec.ts",
+      "title": "coordinador: every screen opens without errors",
+      "project": "chromium"
+    },
+    {
+      "file": "14-roles.spec.ts",
+      "title": "consulta: every screen opens without errors",
+      "project": "chromium"
+    },
+    {
+      "file": "15-record-insights.spec.ts",
+      "title": "record heatmap and actor classification open stored files (desktop)",
+      "project": "chromium"
+    },
+    {
+      "file": "15-record-insights.spec.ts",
+      "title": "record heatmap and actor classification open stored files (phone)",
+      "project": "chromium"
+    },
+    {
+      "file": "16-audit-persistence.spec.ts",
+      "title": "CSV imports refresh the cached dashboard and uploaded evidence refreshes the source list",
+      "project": "chromium"
+    },
+    {
+      "file": "16-audit-persistence.spec.ts",
+      "title": "directory pagination reaches a stored contact beyond the API first page",
+      "project": "chromium"
+    },
+    {
+      "file": "17-quality-followup.spec.ts",
+      "title": "review, documented links and followup persist through real API (desktop)",
+      "project": "chromium"
+    },
+    {
+      "file": "17-quality-followup.spec.ts",
+      "title": "review, documented links and followup persist through real API (phone)",
+      "project": "chromium"
+    },
+    {
+      "file": "18-territorial-intelligence.spec.ts",
+      "title": "committed narrative creates one pending signal and linked inbox without a manual tick (desktop)",
+      "project": "chromium"
+    },
+    {
+      "file": "18-territorial-intelligence.spec.ts",
+      "title": "committed narrative creates one pending signal and linked inbox without a manual tick (phone)",
+      "project": "chromium"
+    },
+    {
+      "file": "19-mascli-4.spec.ts",
+      "title": "MASCLI 4.0 relates recent records, explains the colour and lets a person raise the alert",
+      "project": "chromium"
+    },
+    {
+      "file": "20-territorial-operations.spec.ts",
+      "title": "the territorial map relates a signal to its alert, the action taken and what is pending",
+      "project": "chromium"
+    },
+    {
+      "file": "21-territorial-3d.spec.ts",
+      "title": "the territorial map opens a 3D terrain view of documented records and returns",
+      "project": "chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "eventos: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "actores: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "directorio: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "demandas: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "compromisos: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "narrativas: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "fuentes: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "alertas: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "acciones: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "intereses: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "dialogos: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "oportunidades: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "hechos: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "12-module-crud.mobile.spec.ts",
+      "title": "aarc: create, search, read, edit and delete on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "digital signal to completed preventive plan on a phone",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "phone \u00b7 administration: accounts, Google link, projects, grants and deactivation",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "phone \u00b7 CSV import, record links, history and audit trail",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "phone \u00b7 document review decision, strategic reports and chronology filters",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "phone \u00b7 automation rules edited, paused and removed; webhook channel added",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "phone \u00b7 every link on the home screen opens a real screen",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "13-workflows.mobile.spec.ts",
+      "title": "phone \u00b7 360\u00b0 view: approve an analyst proposal and restrict a record",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "mobile.spec.ts",
+      "title": "mobile viewport: sign-in, bottom bar, sheets and every screen fit the width",
+      "project": "mobile-chromium"
+    },
+    {
+      "file": "screenshots.mobile.spec.ts",
+      "title": "capture the mobile shell",
+      "project": "mobile-chromium"
+    }
+  ]
+}

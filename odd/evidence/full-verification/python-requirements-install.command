@@ -1,0 +1,1 @@
+timeout 300s uv pip install --python /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.cache/mascli-python-reference/venv/bin/python -r reference/python/requirements-test.txt

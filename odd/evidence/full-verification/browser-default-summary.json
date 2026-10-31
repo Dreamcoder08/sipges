@@ -1,0 +1,24 @@
+{
+  "stats": {
+    "startTime": "2026-10-31T17:29:06.854Z",
+    "duration": 458540.613,
+    "expected": 93,
+    "skipped": 1,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "expected": 94,
+  "reported": 94,
+  "exact_test_match": true,
+  "not_expected": [
+    {
+      "file": "screenshots.mobile.spec.ts",
+      "title": "capture the mobile shell",
+      "project": "mobile-chromium",
+      "status": "skipped",
+      "results": [
+        "skipped"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "interpreter": "3.12.8",
+  "environment": "node_modules/.cache/mascli-python-reference",
+  "results": [
+    {
+      "step": "python-interpreter-install",
+      "exit": 0,
+      "elapsed_seconds": 2.39
+    },
+    {
+      "step": "python-venv-create",
+      "exit": 0,
+      "elapsed_seconds": 0.21
+    },
+    {
+      "step": "python-requirements-install",
+      "exit": 0,
+      "elapsed_seconds": 1.7
+    },
+    {
+      "step": "python-environment-freeze",
+      "exit": 0,
+      "elapsed_seconds": 0.04
+    },
+    {
+      "step": "python-reference-isolated",
+      "exit": 0,
+      "elapsed_seconds": 16.98
+    }
+  ],
+  "complete": true
+}

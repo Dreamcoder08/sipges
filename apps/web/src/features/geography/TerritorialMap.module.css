@@ -95,11 +95,11 @@
 }
 
 .marker circle {
-  stroke: #fff;
+  stroke: var(--map-marker-on);
 }
 
 .marker text {
-  fill: #fff;
+  fill: var(--map-marker-on);
   font-weight: 800;
   pointer-events: none;
 }
@@ -107,7 +107,7 @@
 .marker:focus-visible circle,
 .marker:hover circle,
 .marker[aria-pressed='true'] circle {
-  stroke: #17212b;
+  stroke: var(--map-marker-active);
 }
 
 .marker:focus-visible {
@@ -370,15 +370,15 @@
 }
 
 .concession {
-  fill: rgb(23 54 93 / 0.08);
+  fill: var(--map-concession-fill);
   cursor: pointer;
 }
 .concession[data-active='true'] {
-  fill: rgb(23 54 93 / 0.28);
+  fill: var(--map-concession-fill-active);
 }
 .concession:focus-visible {
   outline: none;
-  fill: rgb(43 108 176 / 0.3);
+  fill: var(--map-concession-fill-focus);
 }
 .swatch {
   display: inline-block;

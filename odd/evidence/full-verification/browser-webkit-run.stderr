@@ -1,0 +1,5 @@
+Error: [31mERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL[0m
+
+  [31m×[0m "pnpm recursive exec" failed in /home/dreamcoder08/Documents/PROYECTOS/
+  [31m│[0m mascli/.worktrees/github-main/apps/e2e
+

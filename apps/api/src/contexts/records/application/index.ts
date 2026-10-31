@@ -14,6 +14,7 @@ export {
   boundLimit,
   createRecordsService,
   type ImportReport,
+  type InvalidPayload,
   type RecordVersion,
   type RecordsService,
 } from './records-service.ts';

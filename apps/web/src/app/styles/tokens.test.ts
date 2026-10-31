@@ -17,9 +17,20 @@ const sheets = Object.fromEntries(
 );
 const tokens = sheets['/app/styles/tokens.css'] ?? '';
 
-/** Cartography keeps its own palette: map paint is data, not interface chrome. */
-const RAW_COLOUR_ALLOWED = ['/styles/tokens.css', '/geography/'];
+/** Only token definitions hold raw colours; map paint uses named --map-* tokens too. */
+const RAW_COLOUR_ALLOWED = new Set(['/app/styles/tokens.css']);
 const RAW_COLOUR = /#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(|:\s*(white|black)\s*;/i;
+
+const rawColourOffenders = (entries: [string, string][]) =>
+  entries
+    .filter(([path]) => !RAW_COLOUR_ALLOWED.has(path))
+    .flatMap(([path, css]) =>
+      css
+        .split('\n')
+        .map((line, index) => ({ line, index }))
+        .filter(({ line }) => RAW_COLOUR.test(line) && !line.trim().startsWith('/*'))
+        .map(({ line, index }) => `${path}:${index + 1} ${line.trim()}`),
+    );
 
 const block = (pattern: RegExp) => {
   const match = pattern.exec(tokens);
@@ -135,16 +146,36 @@ const UI_PAIRS: [string, string][] = [
 
 describe('design tokens', () => {
   it('keeps raw colours out of modules', () => {
-    const offenders = Object.entries(sheets)
-      .filter(([path]) => !RAW_COLOUR_ALLOWED.some((allowed) => path.includes(allowed)))
-      .flatMap(([path, css]) =>
-        css
-          .split('\n')
-          .map((line, index) => ({ line, index }))
-          .filter(({ line }) => RAW_COLOUR.test(line) && !line.trim().startsWith('/*'))
-          .map(({ line, index }) => `${path}:${index + 1} ${line.trim()}`),
-      );
-    expect(offenders).toEqual([]);
+    expect(rawColourOffenders(Object.entries(sheets))).toEqual([]);
+  });
+
+  it('exempts only the token definition stylesheet', () => {
+    const css = '.control { color: #abc; }';
+    expect(
+      rawColourOffenders([
+        ['/app/styles/tokens.css', css],
+        ['/features/geography/Geography.module.css', css],
+        ['/features/geography/TerritorialMap.module.css', css],
+        ['/features/geography/Controls.module.css', css],
+        ['/features/records/Controls.module.css', css],
+        ['/features/other/geography/Geography.module.css', css],
+        ['/features/geography/Geography.module.css.extra.css', css],
+        ['/other/styles/tokens.css', css],
+      ]),
+    ).toEqual([
+      `/features/geography/Geography.module.css:1 ${css}`,
+      `/features/geography/TerritorialMap.module.css:1 ${css}`,
+      `/features/geography/Controls.module.css:1 ${css}`,
+      `/features/records/Controls.module.css:1 ${css}`,
+      `/features/other/geography/Geography.module.css:1 ${css}`,
+      `/features/geography/Geography.module.css.extra.css:1 ${css}`,
+      `/other/styles/tokens.css:1 ${css}`,
+    ]);
+    expect(
+      rawColourOffenders([
+        ['/features/geography/Controls.module.css', '.control { color: var(--color-text); }'],
+      ]),
+    ).toEqual([]);
   });
 
   it('defines the device dark theme and the picked dark theme with the same values', () => {

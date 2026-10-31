@@ -1,0 +1,58 @@
+{
+  "expected_inventory_count": 106,
+  "batches": [
+    {
+      "batch": 1,
+      "exit": 0,
+      "expected_files": 27,
+      "reported_files": 27,
+      "exact_file_match": true,
+      "missing": [],
+      "extra": [],
+      "passed_tests": 153,
+      "failed_tests": 0,
+      "pending_tests": 0,
+      "success": true
+    },
+    {
+      "batch": 2,
+      "exit": 0,
+      "expected_files": 27,
+      "reported_files": 27,
+      "exact_file_match": true,
+      "missing": [],
+      "extra": [],
+      "passed_tests": 288,
+      "failed_tests": 0,
+      "pending_tests": 1,
+      "success": true
+    },
+    {
+      "batch": 3,
+      "exit": 0,
+      "expected_files": 26,
+      "reported_files": 26,
+      "exact_file_match": true,
+      "missing": [],
+      "extra": [],
+      "passed_tests": 138,
+      "failed_tests": 0,
+      "pending_tests": 0,
+      "success": true
+    },
+    {
+      "batch": 4,
+      "exit": 0,
+      "expected_files": 26,
+      "reported_files": 26,
+      "exact_file_match": true,
+      "missing": [],
+      "extra": [],
+      "passed_tests": 157,
+      "failed_tests": 0,
+      "pending_tests": 0,
+      "success": true
+    }
+  ],
+  "complete": true
+}

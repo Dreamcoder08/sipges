@@ -1,0 +1,12 @@
+{
+  "git_head": "ee7d02aa8fa8baddb29158f9d0737dfcb60fda77",
+  "roots": [
+    "apps/api/src",
+    "apps/api/test",
+    "packages/kernel/src",
+    "packages/contracts/src"
+  ],
+  "file_count": 418,
+  "source_tree_sha256": "e3638be77cc6a75e8c0f4cbfe3d6a575d041952e6e9d5459b705f9266ce104c0",
+  "algorithm": "sha256 over sorted relative path, NUL, then binary sha256 of file contents"
+}

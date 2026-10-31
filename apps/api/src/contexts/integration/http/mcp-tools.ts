@@ -6,11 +6,7 @@ import {
   type ObjectSummary,
   type OntologyService,
 } from '../../ontology/application/index.ts';
-import {
-  type RecordsService,
-  moduleForSlug,
-  validatePayload,
-} from '../../records/application/index.ts';
+import { type RecordsService, moduleForSlug } from '../../records/application/index.ts';
 import { type ApiPrincipal, keyActor, payloadProject } from '../application/index.ts';
 
 /** Services an MCP tool may call; all of them run inside the key's tenant transaction. */
@@ -228,12 +224,11 @@ export const MCP_TOOLS = [
       const project = payloadProject(input.payload);
       if (project && project !== call.projectId)
         return fail('No se permite escribir en otro proyecto');
-      const problem = validatePayload(module, input.payload);
-      if (problem) return fail(problem.message);
       const created = await s.records.create(call.principal.tenantId, module, input.payload);
-      return created.ok
-        ? done({ module: input.module, id: created.value })
-        : fail('No se pudo asignar un id');
+      if (created.ok) return done({ module: input.module, id: created.value });
+      return fail(
+        created.error.kind === 'invalid' ? created.error.message : 'No se pudo asignar un id',
+      );
     },
   }),
   tool({

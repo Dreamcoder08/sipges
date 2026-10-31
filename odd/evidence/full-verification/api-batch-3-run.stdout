@@ -1,0 +1,203 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mreports every module in dry-run and writes nothing[33m 3283[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mapplies the migration, then verifies counts, checksums and attachment bytes[33m 2904[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mrefuses to apply twice and stays idempotent when explicitly allowed[33m 2724[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mreports a bootstrapped account instead of keeping it silently, and verify flags it[33m 2809[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mverify checksums every migrated tenant table, not only records[33m 2692[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mreports a failing tenant, keeps applying the others and resumes without duplicates[33m 2812[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mmigrates the default IRSA configuration for a tenant without its own file[33m 2676[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mnever leaks record contents, password hashes or TOTP secrets into its output[33m 2568[2mms[22m[39m
+ [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mreads uploads only as regular files directly inside the scope folder[32m 163[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mdefaults historical relationship payloads to undocumented evidence[32m 6[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mserves the catalog[33m 4183[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mcreates, lists from both ends, and deletes explicit links with audit[33m 1065[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mattaches and clears real source evidence with audit, rejecting missing sources atomically[33m 1055[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mretains private append-only source history across replacement, clear and link deletion[33m 1084[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mredacts restricted source identifiers and titles and denies reader evidence edits[33m 1106[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mrejects a source that exists only in another tenant and cross-tenant evidence updates[33m 1018[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mrejects invalid links[33m 931[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mstores symmetric links once[33m 936[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22minfers links from reference fields and actor names[33m 1044[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mdrops links when a linked record is deleted[33m 1008[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mbuilds a bounded n-hop graph[33m 1012[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mexplores the joint neighbourhood of several records along typed hops[33m 990[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mlets read-only roles compute a neighbourhood without seeing restricted records[33m 1005[2mms[22m[39m
+ [32m✓[39m test/ontology/links-http.test.ts[2m > [22montology catalog and typed links[2m > [22mkeeps read-only roles from writing and tenants apart[33m 1065[2mms[22m[39m
+ [32m✓[39m test/platform/migrator.test.ts[2m > [22mmigrate[2m > [22mapplies pending migrations in order and records them[33m 3080[2mms[22m[39m
+ [32m✓[39m test/platform/migrator.test.ts[2m > [22mmigrate[2m > [22mis idempotent: a second run applies nothing[33m 2489[2mms[22m[39m
+ [32m✓[39m test/platform/migrator.test.ts[2m > [22mmigrate[2m > [22mrolls back a failing migration and leaves earlier ones applied[33m 2362[2mms[22m[39m
+ [32m✓[39m test/platform/migrator.test.ts[2m > [22mmigrate[2m > [22mrejects migrations that are out of order[33m 2362[2mms[22m[39m
+ [32m✓[39m test/platform/migrator.test.ts[2m > [22mloadMigrations[2m > [22mloads the bundled SQL files sorted by version[32m 6[2mms[22m[39m
+ [32m✓[39m test/platform/migrator.test.ts[2m > [22mmigrate under concurrency[2m > [22mapplies each migration once when two runners start together[33m 2363[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mPOST /system/analyze[2m > [22mclassifies a record payload and is open to read-only roles[33m 4182[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mtext and semantic analysis[2m > [22manalyzes text with the error codes of app.py[33m 1011[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mtext and semantic analysis[2m > [22mfalls back to rules when the model is offline and answers 503 in semantic mode[33m 1005[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mtext and semantic analysis[2m > [22mranks reference themes by cosine similarity and embeds each concept once[33m 1159[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mterritorial alerts and preventive plans[2m > [22mruns the alert inbox, plan lifecycle and management report end to end[33m 1432[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mOllama embeddings adapter[2m > [22mposts to the configured /api/embed and validates the vector[32m 4[2mms[22m[39m
+ [32m✓[39m test/intelligence/operations-http.test.ts[2m > [22mdocumented digital provenance and retry safety[2m > [22mdeduplicates concurrent evidence, preserves reviewed status and immutable audit snapshots[33m 1313[2mms[22m[39m
+ [32m✓[39m test/integration-context/mcp-http.test.ts[2m > [22mAPI keys[2m > [22mshows the token once, lists only metadata and stays with administrators[33m 4374[2mms[22m[39m
+ [32m✓[39m test/integration-context/mcp-http.test.ts[2m > [22mAPI keys[2m > [22mstops working once revoked, and never authenticates the browser API[33m 937[2mms[22m[39m
+ [32m✓[39m test/integration-context/mcp-http.test.ts[2m > [22mMCP server[2m > [22mrejects requests without a valid key or from a foreign browser origin[33m 910[2mms[22m[39m
+ [32m✓[39m test/integration-context/mcp-http.test.ts[2m > [22mMCP server[2m > [22mnegotiates the protocol and lists read tools for read keys[33m 919[2mms[22m[39m
+ [32m✓[39m test/integration-context/mcp-http.test.ts[2m > [22mMCP server[2m > [22manswers searches, records, links, timelines and briefings within the key clearance[33m 993[2mms[22m[39m
+ [32m✓[39m test/integration-context/mcp-http.test.ts[2m > [22mMCP server[2m > [22mwrites only with write keys, inside the key project, audited as the key[33m 961[2mms[22m[39m
+ [32m✓[39m test/migration/migrated-app-http.test.ts[2m > [22mmigrated installation through the HTTP app[2m > [22mlets a migrated user sign in with the legacy password and read their records[33m 4314[2mms[22m[39m
+ [32m✓[39m test/migration/migrated-app-http.test.ts[2m > [22mmigrated installation through the HTTP app[2m > [22mkeeps the migrated TOTP enrolment working[33m 1097[2mms[22m[39m
+ [32m✓[39m test/migration/migrated-app-http.test.ts[2m > [22mmigrated installation through the HTTP app[2m > [22misolates tenants after the migration (S7)[33m 1101[2mms[22m[39m
+ [32m✓[39m test/migration/migrated-app-http.test.ts[2m > [22mmigrated installation through the HTTP app[2m > [22mdownloads migrated attachment bytes and exports the tenant[33m 1084[2mms[22m[39m
+ [32m✓[39m test/migration/migrated-app-http.test.ts[2m > [22mmigrated installation through the HTTP app[2m > [22mserves migrated IRSA configuration and history[33m 1019[2mms[22m[39m
+ [32m✓[39m test/integration-context/media-http.test.ts[2m > [22mmedia monitoring by RSS (ADR 0021)[2m > [22mregisters feeds with validation and audit, admin-only[33m 4239[2mms[22m[39m
+ [32m✓[39m test/integration-context/media-http.test.ts[2m > [22mmedia monitoring by RSS (ADR 0021)[2m > [22mpolls configured feeds and imports each matching item once as a narrative[33m 1186[2mms[22m[39m
+ [32m✓[39m test/integration-context/media-http.test.ts[2m > [22mmedia monitoring by RSS (ADR 0021)[2m > [22mrecords a failing feed without stopping the cron[33m 914[2mms[22m[39m
+ [32m✓[39m test/integration-context/media-http.test.ts[2m > [22mmedia monitoring by RSS (ADR 0021)[2m > [22mpreviews a feed with the keywords each item matches, saving nothing[33m 909[2mms[22m[39m
+ [32m✓[39m test/integration-context/ingest-http.test.ts[2m > [22minbound webhooks[2m > [22mcreates records as the key, one CREATE each, so automation rules react[33m 4156[2mms[22m[39m
+ [32m✓[39m test/integration-context/ingest-http.test.ts[2m > [22minbound webhooks[2m > [22maccepts a plain form post[33m 904[2mms[22m[39m
+ [32m✓[39m test/integration-context/ingest-http.test.ts[2m > [22minbound webhooks[2m > [22mreplays a retried call with the same Idempotency-Key instead of duplicating[33m 914[2mms[22m[39m
+ [32m✓[39m test/integration-context/ingest-http.test.ts[2m > [22minbound webhooks[2m > [22mrefuses read keys, bad keys, unknown modules and bad bodies without writing[33m 891[2mms[22m[39m
+ [32m✓[39m test/integration-context/ingest-http.test.ts[2m > [22mingest payload shapes[2m > [22maccepts one object, an array or {records}, within limits[32m 1[2mms[22m[39m
+ [32m✓[39m test/ontology/semantic-search.test.ts[2m > [22mhybrid search[2m > [22mfinds records by meaning and fuses them with lexical hits[33m 4291[2mms[22m[39m
+ [32m✓[39m test/ontology/semantic-search.test.ts[2m > [22mhybrid search[2m > [22mfalls back to lexical search when the model is down or semantic search is off[33m 1876[2mms[22m[39m
+ [32m✓[39m test/ontology/semantic-search.test.ts[2m > [22mranking helpers[2m > [22mfuses rankings by reciprocal rank and measures cosine similarity[32m 2[2mms[22m[39m
+ [32m✓[39m test/ontology/search.test.ts[2m > [22msearch terms[2m > [22mfolds accents, drops noise and builds a prefix query[32m 4[2mms[22m[39m
+ [32m✓[39m test/ontology/search.test.ts[2m > [22msearch terms[2m > [22mexcerpts the first matching field, preferring the title[32m 1[2mms[22m[39m
+ [32m✓[39m test/ontology/search.test.ts[2m > [22mGET /system/search[2m > [22mfinds records across types by accent-insensitive prefixes[33m 4220[2mms[22m[39m
+ [32m✓[39m test/ontology/search.test.ts[2m > [22mGET /system/search[2m > [22mfilters by object type, bounds the limit and ignores empty queries[33m 947[2mms[22m[39m
+ [32m✓[39m test/ontology/search.test.ts[2m > [22mGET /system/search[2m > [22mnever returns another tenant’s records[33m 925[2mms[22m[39m
+ [32m✓[39m test/ontology/classification.test.ts[2m > [22mclassification markings[2m > [22mhides restricted records, their history, links and search hits from read-only roles[33m 4526[2mms[22m[39m
+ [32m✓[39m test/ontology/classification.test.ts[2m > [22mclassification markings[2m > [22mvalidates, audits and restricts who may classify[33m 994[2mms[22m[39m
+ [32m✓[39m test/intelligence/four-eyes-http.test.ts[2m > [22mFour eyes on high-priority alerts (MASCLI 4.0)[2m > [22mneeds a second, different person to corroborate a high-priority alert[33m 4521[2mms[22m[39m
+ [32m✓[39m test/intelligence/four-eyes-http.test.ts[2m > [22mFour eyes on high-priority alerts (MASCLI 4.0)[2m > [22mleaves medium alerts and discarding to one person[33m 1116[2mms[22m[39m
+ [32m✓[39m test/ontology/timeline.test.ts[2m > [22mGET /system/timeline[2m > [22mlists dated records of every type newest first, within the range[33m 4215[2mms[22m[39m
+ [32m✓[39m test/ontology/timeline.test.ts[2m > [22mGET /system/timeline[2m > [22mhides restricted records from read-only roles[33m 1041[2mms[22m[39m
+ [32m✓[39m test/ontology/timeline.test.ts[2m > [22mGET /system/timeline[2m > [22mexpands partial bounds[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/situation-room-http.test.ts[2m > [22mSituation room (MASCLI 4.0)[2m > [22mshows what is blocked and by whom, what is overdue and what is moving[33m 4291[2mms[22m[39m
+ [32m✓[39m test/intelligence/decision-receipts-http.test.ts[2m > [22mDecision receipts on preventive actions (MASCLI 4.0)[2m > [22mrequires an attached file to complete a plan and binds the decision to its sha256[33m 4336[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mreads naive legacy timestamps as UTC and accepts explicit offsets[32m 4[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22maccepts legacy PBKDF2 hashes and rejects anything else[32m 241[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mkeeps unknown payload fields and refuses payloads PostgreSQL cannot store[32m 2[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mmaps the legacy module slug to the stored module name of the foreign key[32m 1[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mderives object keys the storage adapters accept[32m 1[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mchecksums records independently of order and key order[32m 1[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mreports any output text PostgreSQL cannot store instead of failing on insert[32m 2[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mrejects alerts whose JSON columns or review date app.py could not read[32m 1[2mms[22m[39m
+ [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22monly accepts stored names that stay inside one upload folder[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22muses stored evidence and explicit territory, rules only, with original record provenance[32m 94[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mpreserves the documented source type Documento[32m 2[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mpreserves the documented source type Reporte de campo[32m 2[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mpreserves the documented source type Publicación digital[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 0[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 1[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 2[32m 3[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 3[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 4[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 5[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mexcludes restricted or unusable/below-threshold evidence 6[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22menforces the configured threshold and reports deduplication from the store[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/narrative-evaluation.test.ts[2m > [22mauthorized narrative evaluation[2m > [22mdoes not infer territory from narrative text[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 0 like app.py[32m 4[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 1 like app.py[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 2 like app.py[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 3 like app.py[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 4 like app.py[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 5 like app.py[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 6 like app.py[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mclassifies synthetic record 7 like app.py[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22manalyzes synthetic text 0 like app.py[32m 78[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22manalyzes synthetic text 1 like app.py[32m 11[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22manalyzes synthetic text 2 like app.py[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22manalyzes synthetic text 3 like app.py[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython parity (scripts/python-parity/operations.py)[2m > [22mwrites the management CSV byte for byte like csv.writer[32m 1[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython helpers[2m > [22mrounds exact halves to even like round()[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython helpers[2m > [22mserializes like json.dumps(ensure_ascii=False)[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython helpers[2m > [22maccepts only http(s) URLs with a host[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mPython helpers[2m > [22mcomputes cosine similarity and treats mismatched vectors as unrelated[32m 0[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mtext analysis limits[2m > [22mrefuses empty and overlong text[32m 4[2mms[22m[39m
+ [32m✓[39m test/intelligence/intelligence-domain.test.ts[2m > [22mmanagement overview[2m > [22mcounts overdue work and neutralizes spreadsheet formulas in the CSV[32m 2[2mms[22m[39m
+ [32m✓[39m test/integration-context/rss-feed-gateway.test.ts[2m > [22mRSS feed gateway (ADR 0021 §1)[2m > [22mreads a public feed without following redirects[32m 37[2mms[22m[39m
+ [32m✓[39m test/integration-context/rss-feed-gateway.test.ts[2m > [22mRSS feed gateway (ADR 0021 §1)[2m > [22mrefuses hosts that resolve to private addresses before fetching[32m 4[2mms[22m[39m
+ [32m✓[39m test/integration-context/rss-feed-gateway.test.ts[2m > [22mRSS feed gateway (ADR 0021 §1)[2m > [22mnames redirects, errors, oversized bodies and non-feeds[32m 5[2mms[22m[39m
+ [32m✓[39m test/ontology/catalog.test.ts[2m > [22montology catalog[2m > [22mmaps every object type onto an existing records module[32m 3[2mms[22m[39m
+ [32m✓[39m test/ontology/catalog.test.ts[2m > [22montology catalog[2m > [22monly names known object types in link types and inference rules[32m 3[2mms[22m[39m
+ [32m✓[39m test/ontology/catalog.test.ts[2m > [22montology catalog[2m > [22mvalidates link endpoints against the link type[32m 0[2mms[22m[39m
+ [32m✓[39m test/platform/client-ip.test.ts[2m > [22mresolveClientIp (verifier finding S2)[2m > [22muses the socket peer when the proxy is not trusted, ignoring spoofable headers[32m 3[2mms[22m[39m
+ [32m✓[39m test/platform/client-ip.test.ts[2m > [22mresolveClientIp (verifier finding S2)[2m > [22muses the right-most X-Forwarded-For entry (added by the trusted proxy)[32m 1[2mms[22m[39m
+ [32m✓[39m test/platform/client-ip.test.ts[2m > [22mresolveClientIp (verifier finding S2)[2m > [22mfalls back to the socket peer when a trusted proxy sent no header[32m 0[2mms[22m[39m
+ [32m✓[39m test/platform/client-ip.test.ts[2m > [22mresolveClientIp (verifier finding S2)[2m > [22mnever returns an empty subject[32m 0[2mms[22m[39m
+ [32m✓[39m test/integration/automation-postgres.test.ts[2m > [22mautomation on real PostgreSQL[2m > [22mlets the cron tick find tenants while rules stay isolated per tenant[32m 282[2mms[22m[39m
+ [32m✓[39m test/integration/automation-postgres.test.ts[2m > [22mautomation on real PostgreSQL[2m > [22mcreates, authenticates and revokes API keys with an audited trail[32m 30[2mms[22m[39m
+ [32m✓[39m test/integration/automation-postgres.test.ts[2m > [22mautomation on real PostgreSQL[2m > [22mkeeps ingest receipts per tenant and replays them[32m 39[2mms[22m[39m
+ [32m✓[39m test/integration/automation-postgres.test.ts[2m > [22mautomation on real PostgreSQL[2m > [22mstores embeddings as real[] and ranks by meaning on PostgreSQL[32m 47[2mms[22m[39m
+[90mstdout[2m | test/integration/migration-postgres.test.ts[2m > [22m[2mlegacy migration on real PostgreSQL
+[22m[39m{
+  severity_local: [32m'NOTICE'[39m,
+  severity: [32m'NOTICE'[39m,
+  code: [32m'00000'[39m,
+  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  file: [32m'user.c'[39m,
+  line: [32m'1889'[39m,
+  routine: [32m'AddRoleMems'[39m
+}
+
+ [32m✓[39m test/integration/migration-postgres.test.ts[2m > [22mlegacy migration on real PostgreSQL[2m > [22mapplies and verifies every tenant through withTenant transactions[32m 130[2mms[22m[39m
+[90mstdout[2m | test/integration/postgres.test.ts[2m > [22m[2mPostgreSQL integration[2m > [22m[2mapplies every migration exactly once when two instances start together
+[22m[39m{
+  severity_local: [32m'NOTICE'[39m,
+  severity: [32m'NOTICE'[39m,
+  code: [32m'42P07'[39m,
+  message: [32m'relation "schema_migrations" already exists, skipping'[39m,
+  file: [32m'parse_utilcmd.c'[39m,
+  line: [32m'208'[39m,
+  routine: [32m'transformCreateStmt'[39m
+}
+
+[90mstdout[2m | test/integration/postgres.test.ts[2m > [22m[2mPostgreSQL integration[2m > [22m[2mapplies every migration exactly once when two instances start together
+[22m[39m{
+  severity_local: [32m'NOTICE'[39m,
+  severity: [32m'NOTICE'[39m,
+  code: [32m'00000'[39m,
+  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  file: [32m'user.c'[39m,
+  line: [32m'1889'[39m,
+  routine: [32m'AddRoleMems'[39m
+}
+
+ [32m✓[39m test/integration/postgres.test.ts[2m > [22mPostgreSQL integration[2m > [22mapplies every migration exactly once when two instances start together[32m 236[2mms[22m[39m
+ [32m✓[39m test/integration/postgres.test.ts[2m > [22mPostgreSQL integration[2m > [22mholds the login throttle under real parallel connections[33m 365[2mms[22m[39m
+[90mstdout[2m | test/integration/tenancy-postgres.test.ts[2m > [22m[2mpooled PostgreSQL tenant isolation
+[22m[39m{
+  severity_local: [32m'NOTICE'[39m,
+  severity: [32m'NOTICE'[39m,
+  code: [32m'00000'[39m,
+  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  file: [32m'user.c'[39m,
+  line: [32m'1889'[39m,
+  routine: [32m'AddRoleMems'[39m
+}
+
+ [32m✓[39m test/integration/tenancy-postgres.test.ts[2m > [22mpooled PostgreSQL tenant isolation[2m > [22misolates simultaneous tenant transactions across two real pools[32m 93[2mms[22m[39m
+ [32m✓[39m test/integration/tenancy-postgres.test.ts[2m > [22mpooled PostgreSQL tenant isolation[2m > [22mrejects cross-tenant and identity reads and resets pooled settings after rollback[32m 22[2mms[22m[39m
+ [32m✓[39m test/integration/tenancy-postgres.test.ts[2m > [22mpooled PostgreSQL tenant isolation[2m > [22mexports only selected rows concurrently and restores pools after export failure[32m 123[2mms[22m[39m
+ [32m✓[39m test/integration/tenancy-postgres.test.ts[2m > [22mpooled PostgreSQL tenant isolation[2m > [22mserializes simultaneous administrator deactivation and preserves one active administrator[32m 204[2mms[22m[39m
+[90mstdout[2m | test/intelligence/digital-signal-postgres.test.ts[2m > [22m[2mdigital evidence on real PostgreSQL connections
+[22m[39m{
+  severity_local: [32m'NOTICE'[39m,
+  severity: [32m'NOTICE'[39m,
+  code: [32m'00000'[39m,
+  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  file: [32m'user.c'[39m,
+  line: [32m'1889'[39m,
+  routine: [32m'AddRoleMems'[39m
+}
+
+ [32m✓[39m test/intelligence/digital-signal-postgres.test.ts[2m > [22mdigital evidence on real PostgreSQL connections[2m > [22mserializes concurrent retries, preserves review and isolates tenants/provenance[32m 85[2mms[22m[39m
+ [32m✓[39m test/intelligence/digital-signal-postgres.test.ts[2m > [22mdigital evidence on real PostgreSQL connections[2m > [22mdeduplicates an earlier-started request even if a later timestamp won the lock[32m 11[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m26 passed[39m[22m[90m (26)[39m
+[2m      Tests [22m [1m[32m138 passed[39m[22m[90m (138)[39m
+[2m   Start at [22m 17:46:37
+[2m   Duration [22m 150.36s[2m (tests 93%, import 6%, transform 1%)[22m
+
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-3-result.json

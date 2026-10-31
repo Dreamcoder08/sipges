@@ -1,21 +1,63 @@
+.subtitle {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-base);
+}
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: 0.5rem;
   align-items: center;
-  justify-content: space-between;
-  margin-block: 0.75rem;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-alt);
+}
+.toolbar select {
+  min-height: 44px;
+  flex: 1 1 11rem;
+}
+.searchField {
+  position: relative;
+  flex: 2 1 14rem;
+  display: flex;
+  align-items: center;
+}
+.searchField input {
+  width: 100%;
+  min-height: 44px;
+  padding-left: 2.25rem;
+}
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--color-muted);
+  pointer-events: none;
 }
 .zoom {
   display: flex;
   gap: 0.4rem;
+  margin-left: auto;
+}
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-block: 0.5rem 0.75rem;
+}
+.status p {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 .zoom button {
   min-width: 44px;
 }
-.hint {
-  margin: 0;
-  font-size: var(--text-sm);
+.status .hint {
+  font-weight: 400;
   color: var(--color-muted);
 }
 .stage {
@@ -43,32 +85,70 @@
 .zoomed {
   touch-action: none;
 }
+/* Concentric rings: each layer adds a faint brand tint, so the centre reads as the core. */
+.ring {
+  fill: var(--color-accent);
+  fill-opacity: 0.05;
+  stroke: var(--color-accent);
+  stroke-opacity: 0.4;
+  stroke-width: 1.5;
+}
 .axis {
-  stroke: var(--ink);
-  stroke-width: 2;
+  stroke: var(--ink-faint);
+  stroke-width: 1;
+  opacity: 0.6;
 }
 .ringLabel {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
-  letter-spacing: 0.08em;
-  fill: var(--ink);
+  letter-spacing: 0.1em;
+  fill: var(--color-brand-text);
+  paint-order: stroke;
+  stroke: var(--canvas);
+  stroke-width: 4;
 }
-.sectorLabel {
-  font-size: 16px;
+.sectorLabel path {
+  fill: none;
+  stroke: var(--color-brand-text);
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.sectorLabel text {
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: 0.05em;
   fill: var(--color-brand-text);
 }
+.sectorCount {
+  fill: var(--color-accent);
+}
+.center {
+  fill: var(--color-surface);
+  stroke: var(--color-brand);
+  stroke-width: 3;
+  filter: drop-shadow(0 2px 6px var(--color-scrim));
+}
+.centerIcon {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
 .centerLabel {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   fill: var(--color-brand-text);
+}
+.arrow {
+  fill: var(--ink);
 }
 .strong,
 .weak,
 .unrecorded {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--color-brand);
+  stroke-opacity: 0.7;
 }
 .strong {
   stroke-width: 1.6;
@@ -81,17 +161,18 @@
 .unrecorded {
   stroke-width: 1;
   stroke: var(--ink-soft);
-  opacity: 0.45;
+  stroke-opacity: 0.45;
 }
 .actor {
   cursor: pointer;
   outline: none;
 }
+/* Actor cards stay neutral and legible; the dot carries the position colour. */
 .actor rect {
-  fill: var(--canvas-node);
-  stroke: var(--ink-faint);
-  stroke-width: 1.5;
-  filter: drop-shadow(0 1px 1px var(--color-scrim));
+  fill: var(--color-surface-raised);
+  stroke: var(--color-hairline-strong);
+  stroke-width: 1.25;
+  filter: drop-shadow(0 1px 2px var(--color-scrim));
 }
 .actor text {
   font-size: 10.5px;
@@ -101,31 +182,31 @@
 }
 .actor:hover rect,
 .current rect {
-  stroke-width: 3;
+  stroke: var(--color-brand);
+  stroke-width: 2;
 }
 .actor:focus-visible rect {
   stroke: var(--color-accent);
-  stroke-width: 4;
+  stroke-width: 3;
 }
-.favor rect {
-  fill: var(--tone-positive-bg);
-  stroke: var(--tone-positive-solid);
+.dot {
+  stroke: var(--color-surface-raised);
+  stroke-width: 1;
 }
-.contra rect {
-  fill: var(--tone-negative-bg);
-  stroke: var(--tone-negative-solid);
+.favor .dot {
+  fill: var(--tone-positive-solid);
 }
-.neutral rect {
-  fill: var(--tone-info-bg);
-  stroke: var(--tone-info-solid);
+.contra .dot {
+  fill: var(--tone-negative-solid);
 }
-.expectante rect {
-  fill: var(--tone-warning-bg);
-  stroke: var(--tone-warning-solid);
+.neutral .dot {
+  fill: var(--tone-info-solid);
 }
-.unknown rect {
-  fill: var(--canvas-node);
-  stroke: var(--ink-faint);
+.expectante .dot {
+  fill: var(--tone-warning-solid);
+}
+.unknown .dot {
+  fill: var(--color-hairline-strong);
 }
 .tooltip {
   position: absolute;
@@ -182,19 +263,6 @@
   width: 2.5rem;
   height: 0.7rem;
   overflow: visible;
-}
-.listHeader {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  align-items: center;
-}
-.listHeader label {
-  font-size: var(--text-base);
-  font-weight: 700;
-}
-.listHeader select {
-  min-height: 44px;
 }
 .list {
   display: grid;
