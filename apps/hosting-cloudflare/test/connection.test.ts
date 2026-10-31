@@ -18,8 +18,8 @@ vi.mock('../../api/src/app.ts', () => ({ createApp: () => ({ fetch: mocks.fetch 
 vi.mock('../../api/src/contexts/documents/infrastructure/index.ts', () => ({
   inlineDocumentReader: {},
 }));
-vi.mock('../../api/src/contexts/identity/infrastructure/wasm-password-hasher.ts', () => ({
-  wasmPasswordHasher: {},
+vi.mock('../../api/src/contexts/identity/infrastructure/portable-password-hasher.ts', () => ({
+  portablePasswordHasher: {},
 }));
 
 import worker from '../src/index.ts';
