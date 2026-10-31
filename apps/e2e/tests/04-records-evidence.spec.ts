@@ -72,6 +72,9 @@ test('territorial record CRUD with evidence upload and byte-exact download', asy
   await expect(row).toBeVisible();
   await page.getByRole('button', { name: `Eliminar ${id}` }).click();
   await dialog.getByRole('button', { name: 'Confirmar eliminación' }).click();
+  // The open dialog hides the table from the accessibility tree, so wait for it to close
+  // (the delete has settled) before checking that the row is gone.
+  await expect(dialog).toBeHidden();
   await expect(row).toHaveCount(0);
   expect((await page.request.get(`/api/fuentes/${encodeURIComponent(id)}`)).status()).toBe(404);
 });
