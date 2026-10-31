@@ -1,6 +1,5 @@
 // Must run before CesiumJS resolves its workers and assets: they are served from /cesium/.
 import './cesium-base.ts';
-import type { Cartesian2 } from '@cesium/engine';
 import {
   BoundingSphere,
   type Camera,
@@ -233,7 +232,7 @@ const CesiumCanvas = ({
     scene.renderError.addEventListener(() => handlers.current.onFailure());
     frameExtent(instance.camera, initial.current.home, 0);
     const clicks = new ScreenSpaceEventHandler(scene.canvas);
-    clicks.setInputAction((event: { position: Cartesian2 }) => {
+    clicks.setInputAction((event: { position: Parameters<typeof scene.pick>[0] }) => {
       const picked: unknown = scene.pick(event.position);
       const entity = (picked as { id?: unknown } | undefined)?.id;
       if (!(entity instanceof Entity)) return;
