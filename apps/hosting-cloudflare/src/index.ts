@@ -5,7 +5,7 @@ import { inlineDocumentReader } from '../../api/src/contexts/documents/infrastru
 import { portablePasswordHasher } from '../../api/src/contexts/identity/infrastructure/portable-password-hasher.ts';
 import { staticReferenceReader } from '../../api/src/contexts/reference/infrastructure/static-reference-reader.ts';
 import { loadConfig, parseAllowedHosts } from '../../api/src/platform/config.ts';
-import { migrate } from '../../api/src/platform/database/migrator.ts';
+import { pendingMigrations } from '../../api/src/platform/database/migrator.ts';
 import { postgresClient } from '../../api/src/platform/database/postgres.ts';
 import { requestScopedSqlClient } from '../../api/src/platform/database/request-scoped-client.ts';
 import { workerWebAssets } from './assets.ts';
@@ -24,6 +24,16 @@ import { r2ObjectStorage } from './r2-storage.ts';
  */
 const sql = requestScopedSqlClient();
 const deferred = new AsyncLocalStorage<Promise<unknown>[]>();
+
+/** The database is behind the bundled migrations: the deploy step that migrates has not run. */
+class PendingMigrationsError extends Error {
+  readonly pending: readonly string[];
+  constructor(pending: readonly string[]) {
+    super(`Pending migrations: ${pending.join(', ')}. Run migrate.mjs before serving.`);
+    this.name = 'PendingMigrationsError';
+    this.pending = pending;
+  }
+}
 
 type Backend = { readonly container: Container; readonly app: ReturnType<typeof createApp> };
 let backend: Promise<Backend> | undefined;
@@ -48,7 +58,11 @@ const initialize = async (env: Env): Promise<Backend> => {
     // Cron Triggers run scheduled automation; an isolate has no long-lived timer.
     MASCLI_AUTOMATION_INTERVAL: '0',
   });
-  await migrate(sql.client, MIGRATIONS);
+  // Migrations run at deploy time (migrate.mjs); a request never takes the lock or runs DDL.
+  const pending = await pendingMigrations(sql.client, MIGRATIONS);
+  if (pending.length > 0) {
+    throw new PendingMigrationsError(pending);
+  }
   const container = await buildContainer({
     config,
     sql: sql.client,
@@ -123,9 +137,11 @@ const observeEnd = (response: Response) => {
 };
 
 const unavailable = (error: unknown) => {
-  // Only the error class is logged: messages may contain connection strings or data.
+  // Only the error class and pending versions are logged: other messages may contain
+  // connection strings or data.
   console.error('MASCLI initialization failed', {
     kind: error instanceof Error ? error.name : typeof error,
+    ...(error instanceof PendingMigrationsError ? { pending: error.pending } : {}),
   });
   return new Response(JSON.stringify({ detail: 'MASCLI no está disponible temporalmente' }), {
     status: 503,

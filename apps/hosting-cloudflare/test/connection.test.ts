@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   postgres: vi.fn(),
   fetch: vi.fn(),
   scheduled: vi.fn(async () => {}),
+  migrate: vi.fn(async () => [] as string[]),
+  pendingMigrations: vi.fn(async () => [] as string[]),
   buildContainer: vi.fn(),
   // The container is built once per isolate, so its dependencies are kept across cases.
   built: { deps: undefined as unknown },
@@ -13,7 +15,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../../api/src/platform/database/postgres.ts', () => ({ postgresClient: mocks.postgres }));
 vi.mock('../src/migrations.ts', () => ({ MIGRATIONS: [] }));
-vi.mock('../../api/src/platform/database/migrator.ts', () => ({ migrate: vi.fn(async () => []) }));
+vi.mock('../../api/src/platform/database/migrator.ts', () => ({
+  migrate: mocks.migrate,
+  pendingMigrations: mocks.pendingMigrations,
+}));
 vi.mock('../../api/src/compose.ts', () => ({
   buildContainer: mocks.buildContainer,
 }));
@@ -44,6 +49,7 @@ describe('Worker Hyperdrive connection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.postgres.mockReturnValue({ client: {}, close: mocks.close });
+    mocks.pendingMigrations.mockResolvedValue([]);
     mocks.buildContainer.mockImplementation(async (deps: unknown) => {
       mocks.built.deps = deps;
       return { runtime: { scheduled: mocks.scheduled } };
@@ -114,5 +120,45 @@ describe('Worker Hyperdrive connection', () => {
     await expect(
       deps?.referenceReader?.coordinates({ companyId: 'MASCLI', projectId: 'PRJ-SECHURA' }),
     ).resolves.toMatchObject({ crs: { geometry: 'EPSG:4326' } });
+  });
+
+  it('never migrates at request time and answers 503 while migrations are pending', async () => {
+    // The backend is cached per isolate: load a fresh module so initialization runs again.
+    vi.resetModules();
+    const { default: fresh } = await import('../src/index.ts');
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.pendingMigrations.mockResolvedValue(['0029_next']);
+    const pending: Promise<unknown>[] = [];
+    const response = await fresh.fetch(new Request('http://localhost/health'), syntheticEnv(), {
+      waitUntil: (promise) => {
+        pending.push(promise);
+      },
+    });
+    await Promise.all(pending);
+    expect(response.status).toBe(503);
+    expect(mocks.migrate).not.toHaveBeenCalled();
+    expect(mocks.buildContainer).not.toHaveBeenCalled();
+    expect(mocks.fetch).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('serves once the pending migrations have been applied by the deploy', async () => {
+    // The backend is cached per isolate: load a fresh module so initialization runs again.
+    vi.resetModules();
+    const { default: fresh } = await import('../src/index.ts');
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.fetch.mockResolvedValue(new Response('ok'));
+    const waitUntil = () => {};
+    mocks.pendingMigrations.mockResolvedValueOnce(['0029_next']);
+    const first = await fresh.fetch(new Request('http://localhost/health'), syntheticEnv(), {
+      waitUntil,
+    });
+    expect(first.status).toBe(503);
+    const second = await fresh.fetch(new Request('http://localhost/health'), syntheticEnv(), {
+      waitUntil,
+    });
+    expect(second.status).toBe(200);
+    expect(mocks.migrate).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });
