@@ -13,10 +13,31 @@ permissions:
   contents: read
 
 jobs:
-  typescript:
-    name: TypeScript (lint, boundaries, typecheck, test)
+  static:
+    name: Static checks and non-API tests (lint, boundaries, typecheck, web, tooling)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint && pnpm boundaries && pnpm typecheck
+      # `pnpm check` minus @mascli/api, which runs sharded in the api job below.
+      - run: pnpm -r --workspace-concurrency=1 --filter '!@mascli/api' run test && pnpm test:tooling
+      - run: pnpm --filter @mascli/web build
+
+  api:
+    name: API tests (shard ${{ matrix.shard }}/3)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     services:
       postgres:
         # PostGIS ships with the image so the opt-in distance test runs (docs/adr/0025).
@@ -37,13 +58,21 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm --filter @mascli/web build
+      # Each shard has its own PostgreSQL service, so shards share no database state.
+      - run: pnpm --filter @mascli/api exec vitest run --shard=${{ matrix.shard }}/3
 
   e2e:
-    name: End-to-end parity (Playwright, Chromium)
+    name: End-to-end parity (Playwright, ${{ matrix.browser }} ${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # Chromium splits in two shards; the short WebKit suite gets its own job.
+        include:
+          - { browser: chromium, shard: 1/2 }
+          - { browser: chromium, shard: 2/2 }
+          - { browser: webkit, shard: 1/1 }
     services:
       postgres:
         image: postgres:17
@@ -65,13 +94,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Browser revision follows the @playwright/test version pinned in apps/e2e (lockfile).
-      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps chromium webkit
-      - run: pnpm e2e
-      - run: pnpm --filter @mascli/e2e exec playwright test --config playwright.webkit.config.ts
+      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm --filter @mascli/web build
+      - if: matrix.browser == 'chromium'
+        run: pnpm --filter @mascli/e2e exec playwright test --shard=${{ matrix.shard }}
+      - if: matrix.browser == 'webkit'
+        run: pnpm --filter @mascli/e2e exec playwright test --config playwright.webkit.config.ts
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}-${{ strategy.job-index }}
           path: |
             apps/e2e/playwright-report
             apps/e2e/test-results
