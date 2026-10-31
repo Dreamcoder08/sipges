@@ -1,0 +1,7 @@
+postgres=postgres_(PostgreSQL)_18.6
+worker_build=ok
+e2e_exit=0 seconds=654
+summary:1 skipped
+summary:93 passed (10.9m)
+cleanup_postgres=stopped
+cleanup_leftover_processes=0

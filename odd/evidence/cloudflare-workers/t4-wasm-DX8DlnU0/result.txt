@@ -1,0 +1,4 @@
+probe_exit=0 probe_http=200
+minimal_result=error minimal_name=CompileError minimal_category=DYNAMIC_CODE_DISABLED minimal_fingerprint=NONE
+hasher_result=error hasher_name=CompileError hasher_category=DYNAMIC_CODE_DISABLED hasher_fingerprint=NONE
+cleanup_worker=stopped

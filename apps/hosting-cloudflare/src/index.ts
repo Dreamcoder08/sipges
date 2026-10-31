@@ -2,7 +2,8 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { createApp } from '../../api/src/app.ts';
 import { type Container, buildContainer } from '../../api/src/compose.ts';
 import { inlineDocumentReader } from '../../api/src/contexts/documents/infrastructure/index.ts';
-import { wasmPasswordHasher } from '../../api/src/contexts/identity/infrastructure/wasm-password-hasher.ts';
+import { portablePasswordHasher } from '../../api/src/contexts/identity/infrastructure/portable-password-hasher.ts';
+import { staticReferenceReader } from '../../api/src/contexts/reference/infrastructure/static-reference-reader.ts';
 import { loadConfig, parseAllowedHosts } from '../../api/src/platform/config.ts';
 import { migrate } from '../../api/src/platform/database/migrator.ts';
 import { postgresClient } from '../../api/src/platform/database/postgres.ts';
@@ -10,6 +11,9 @@ import { requestScopedSqlClient } from '../../api/src/platform/database/request-
 import { workerWebAssets } from './assets.ts';
 import type { Env, ExecutionContext } from './bindings.ts';
 import { MIGRATIONS } from './migrations.ts';
+// Workers have no filesystem: the repository references are bundled as JSON modules.
+import canonicalEntities from '../../../data/canonical_entities.json' with { type: 'json' };
+import projectCoordinates from '../../../data/project_coordinates.json' with { type: 'json' };
 import { r2ObjectStorage } from './r2-storage.ts';
 
 /**
@@ -49,8 +53,12 @@ const initialize = async (env: Env): Promise<Backend> => {
     config,
     sql: sql.client,
     objectStorage: r2ObjectStorage(env.EVIDENCE),
-    passwordHasher: wasmPasswordHasher,
+    passwordHasher: portablePasswordHasher,
     documentReader: inlineDocumentReader,
+    referenceReader: staticReferenceReader({
+      coordinates: projectCoordinates,
+      entities: canonicalEntities,
+    }),
     clock: { now: () => new Date() },
     // Set by Cloudflare's edge for every request; clients cannot override it.
     clientIp: (c) => c.req.header('cf-connecting-ip') ?? 'unknown',
@@ -84,7 +92,12 @@ const withConnection = async <T>(
 ): Promise<T> => {
   // Hyperdrive pools connections, so a client per request is cheap; a few in parallel cover
   // the API's concurrent transactions within one request.
-  const connection = postgresClient(env.HYPERDRIVE.connectionString, { max: 5, prepare: true });
+  // The binding is an internal Hyperdrive socket; Hyperdrive manages TLS to the origin.
+  const connection = postgresClient(env.HYPERDRIVE.connectionString, {
+    max: 5,
+    prepare: true,
+    ssl: false,
+  });
   const tasks: Promise<unknown>[] = [];
   let ended: Promise<unknown> = Promise.resolve();
   try {
