@@ -1,0 +1,8 @@
+node_sql=ok
+binding_protocol=postgresql: binding_hostname=e49b7e767c94d803b37cb51116cc333d.hyperdrive.local binding_port=5432 production_tls=required
+worker_planned_mode=ssl_false_diagnostic
+pg_ready_before=yes
+pg_ready_after=yes
+worker_probe_curl_exit=0 worker_probe_http=200
+worker_mode=ssl_false_diagnostic worker_result=ok worker_code=NONE
+cleanup_worker=stopped cleanup_postgres=stopped
