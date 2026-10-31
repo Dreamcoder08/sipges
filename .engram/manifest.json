@@ -96,6 +96,30 @@
       "sessions": 1,
       "memories": 1,
       "prompts": 0
+    },
+    {
+      "id": "e900d588",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-10-24T10:09:02.430039591Z",
+      "sessions": 16,
+      "memories": 83,
+      "prompts": 0
+    },
+    {
+      "id": "9d869ff9",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-10-24T10:41:13.256716024Z",
+      "sessions": 4,
+      "memories": 6,
+      "prompts": 0
+    },
+    {
+      "id": "311f2f31",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-10-24T10:46:06.580793305Z",
+      "sessions": 1,
+      "memories": 2,
+      "prompts": 0
     }
   ]
 }

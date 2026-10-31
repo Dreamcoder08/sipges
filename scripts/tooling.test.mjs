@@ -6,6 +6,28 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 const root = process.cwd();
+test('API app-local Vitest registers shared cleanup hooks in the active runner', () => {
+  const result = spawnSync('./node_modules/.bin/vitest', ['run', 'test/config.test.ts'], {
+    cwd: path.join(root, 'apps/api'),
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8', NO_COLOR: '1' },
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /Test Files\s+1 passed \(1\)/);
+  assert.match(result.stdout, /Tests\s+36 passed \(36\)/);
+  assert.doesNotMatch(result.stdout + result.stderr, /Vitest failed to find/);
+});
+test('web app-local Vitest registers setup hooks in the active runner', () => {
+  const result = spawnSync('./node_modules/.bin/vitest', ['run', 'src/app/navigation.test.ts'], {
+    cwd: path.join(root, 'apps/web'),
+    env: { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8', NO_COLOR: '1' },
+    encoding: 'utf8',
+  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.match(result.stdout, /Test Files\s+1 passed \(1\)/);
+  assert.match(result.stdout, /Tests\s+[1-9]\d* passed/);
+  assert.doesNotMatch(result.stdout + result.stderr, /Vitest failed to find|no tests|\d+ skipped/);
+});
 const fixture = (run) => {
   const dir = mkdtempSync(path.join(tmpdir(), 'mascli-tooling-'));
   try {
