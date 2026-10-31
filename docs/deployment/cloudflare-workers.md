@@ -22,9 +22,14 @@ Use synthetic data until the owner approves a real-data migration.
 ```sh
 cd apps/hosting-cloudflare
 pnpm exec wrangler login
-pnpm exec wrangler hyperdrive create mascli --connection-string "<postgres-url-with-sslmode=require>"
+pnpm exec wrangler hyperdrive create mascli --caching-disabled true \
+  --connection-string "<postgres-url-with-sslmode=require>"
 pnpm exec wrangler r2 bucket create mascli-evidence
 ```
+
+Keep Hyperdrive's query cache **disabled**: it caches read queries by text and parameters, so
+reads right after a write can return stale rows for up to a minute, and MASCLI scopes tenants per
+transaction with `set_config` and row-level security, which a shared cache must not bypass.
 
 Put the Hyperdrive id printed by the first command in `wrangler.jsonc`
 (`REPLACE_WITH_HYPERDRIVE_CONFIG_ID`). Never commit the connection string.

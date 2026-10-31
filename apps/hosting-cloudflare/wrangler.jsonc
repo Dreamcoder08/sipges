@@ -17,9 +17,11 @@
     "html_handling": "none",
     "not_found_handling": "none",
   },
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "REPLACE_WITH_HYPERDRIVE_CONFIG_ID" }],
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "9eae2c5e3d614feca42b525fc82e10e1" }],
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "mascli-evidence" }],
   "triggers": { "crons": ["*/15 * * * *"] },
+  // Not secret: the public host. Secrets go through `wrangler secret put` (deployment guide).
+  "vars": { "MASCLI_ALLOWED_HOSTS": "mascli.dreamcoder-dev08.workers.dev" },
   "limits": { "cpu_ms": 30000 },
   "observability": { "enabled": true },
 }
