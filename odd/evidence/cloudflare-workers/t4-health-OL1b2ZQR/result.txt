@@ -1,0 +1,4 @@
+pg_ready_before=yes
+pg_ready_after=yes
+health_exit=0 health_http=503
+cleanup_worker=stopped cleanup_postgres=stopped
