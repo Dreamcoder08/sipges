@@ -24,8 +24,9 @@ plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hash
 verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
 Hyperdrive connection and migrations already passed after a binding-only TLS correction.
 Workers is still not a verified deployment alternative: the end-to-end suite against `wrangler dev`
-(T4) and the delivery guide (T5) are open, and no Cloudflare deployment or switch of the published
-demo was performed.
+(T4) now passes locally (93 passed, 1 optional skip; L20) and the steps are in the
+[Workers deployment guide](cloudflare-workers.md) (ADR 0028); no Cloudflare deployment or switch of
+the published demo was performed.
 
 The existing serial Node/Chromium E2E suite (`pnpm e2e`, job-6) completed with exit 0:
 **93 passed, 1 skipped**. It built the SPA and used isolated synthetic PGlite state, with

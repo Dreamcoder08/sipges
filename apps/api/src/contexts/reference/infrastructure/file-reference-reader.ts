@@ -1,9 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { CanonicalEntities, ProjectCoordinates } from '@mascli/contracts';
 import type { ReferenceReader } from '../application/index.ts';
-const registered = (scope: { companyId: string; projectId: string }) =>
-  scope.companyId === 'MASCLI' && scope.projectId === 'PRJ-SECHURA';
-/** Trusted repository references are registered to one tenant, never used as a fallback. */
+import { isRegisteredReferenceScope as registered } from './static-reference-reader.ts';
+/** Reads the repository references from disk (Node); Workers use the static reader. */
 export const fileReferenceReader: ReferenceReader = {
   coordinates: async (scope) =>
     registered(scope)

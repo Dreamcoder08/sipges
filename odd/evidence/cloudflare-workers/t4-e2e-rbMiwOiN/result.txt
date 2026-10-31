@@ -1,0 +1,15 @@
+postgres=postgres_(PostgreSQL)_18.6
+worker_build=ok
+e2e_exit=1 seconds=760
+summary:7 failed
+summary:1 skipped
+summary:86 passed (12.7m)
+failed:1) [chromium] › tests/08-territorial-map.spec.ts:3:1 › events with a known locality appear on the territorial map with their detail
+failed:2) [chromium] › tests/11-functional-audit.spec.ts:87:1 › the geospatial view frames a concession and the directory lists contacts
+failed:3) [chromium] › tests/14-roles.spec.ts:16:3 › analista: every screen opens without errors ────────
+failed:4) [chromium] › tests/14-roles.spec.ts:16:3 › coordinador: every screen opens without errors ─────
+failed:5) [chromium] › tests/14-roles.spec.ts:16:3 › consulta: every screen opens without errors ────────
+failed:6) [chromium] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (desktop)
+failed:7) [chromium] › tests/18-territorial-intelligence.spec.ts:12:3 › committed narrative creates one pending signal and linked inbox without a manual tick (phone)
+cleanup_postgres=stopped
+cleanup_leftover_processes=0
