@@ -1,0 +1,12 @@
+readline: ~/.inputrc: line 86: cdspell: unknown variable name
+[31mImportError while loading conftest '/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/reference/python/tests/conftest.py'.[0m
+[31m[1m[31mreference/python/tests/conftest.py[0m:10: in <module>[0m
+[31m    [0m[94mfrom[39;49;00m[90m [39;49;00m[04m[96mfastapi[39;49;00m[04m[96m.[39;49;00m[04m[96mtestclient[39;49;00m[90m [39;49;00m[94mimport[39;49;00m TestClient[90m[39;49;00m[0m
+[31m[1m[31m/usr/lib/python3.14/site-packages/fastapi/testclient.py[0m:1: in <module>[0m
+[31m    [0m[94mfrom[39;49;00m[90m [39;49;00m[04m[96mstarlette[39;49;00m[04m[96m.[39;49;00m[04m[96mtestclient[39;49;00m[90m [39;49;00m[94mimport[39;49;00m TestClient [94mas[39;49;00m TestClient  [90m# noqa[39;49;00m[90m[39;49;00m[0m
+[31m    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[90m[39;49;00m[0m
+[31m[1m[31m/usr/lib/python3.14/site-packages/starlette/testclient.py[0m:34: in <module>[0m
+[31m    [0m[94mraise[39;49;00m [96mRuntimeError[39;49;00m([90m[39;49;00m[0m
+[31m[1m[31mE   RuntimeError: The starlette.testclient module requires the httpx2 package to be installed.[0m[0m
+[31m[1m[31mE   You can install this with:[0m[0m
+[31m[1m[31mE       $ pip install httpx2[0m[0m

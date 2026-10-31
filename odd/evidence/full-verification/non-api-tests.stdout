@@ -1,0 +1,59 @@
+Scope: 6 of 8 workspace projects
+[32m✔ failed startup releases registered database, connection and scratch before rejecting [90m(2.720315ms)[39m[39m
+[32m✔ teardown attempts every release despite errors and never repeats released resources [90m(0.482824ms)[39m[39m
+[32m✔ setup failure preserves its original error if resource cleanup also fails [90m(0.354942ms)[39m[39m
+[32m✔ a committed main document releases abandoned requests from the previous document [90m(1.378701ms)[39m[39m
+[32m✔ requests the previous document starts while the navigation awaits its response are released [90m(11.33007ms)[39m[39m
+[32m✔ navigation keeps its document and assets started before the commit under observation [90m(21.317129ms)[39m[39m
+[32m✔ same-document URL changes retain active requests [90m(11.164891ms)[39m[39m
+[32m✔ child-frame navigation never clears main document requests [90m(10.140434ms)[39m[39m
+[32m✔ an uncommitted failed navigation keeps previous document activity [90m(11.305694ms)[39m[39m
+[32m✔ only the long-lived activity stream is excluded; failed finite requests settle [90m(10.914644ms)[39m[39m
+[34mℹ tests 10[39m
+[34mℹ suites 0[39m
+[34mℹ pass 10[39m
+[34mℹ fail 0[39m
+[34mℹ cancelled 0[39m
+[34mℹ skipped 0[39m
+[34mℹ todo 0[39m
+[34mℹ duration_ms 243.575899[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/packages/kernel[39m
+
+
+[2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
+[2m      Tests [22m [1m[32m8 passed[39m[22m[90m (8)[39m
+[2m   Start at [22m 17:55:28
+[2m   Duration [22m 222ms[2m (tests 34%, import 30%, transform 22%, worker 14%)[22m
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/hosting-cloudflare[39m
+
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 17:55:29
+[2m   Duration [22m 363ms[2m (transform 60%, import 20%, tests 15%, worker 5%)[22m
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/web[39m
+
+
+[2m Test Files [22m [1m[32m65 passed[39m[22m[90m (65)[39m
+[2m      Tests [22m [1m[32m286 passed[39m[22m[90m (286)[39m
+[2m   Start at [22m 17:55:30
+[2m   Duration [22m 113.40s[2m (tests 51%, environment 26%, setup 12%, import 9%, transform 2%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 65 times[39m[2m · 26.86s total, 26% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/hosting[39m
+
+
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 17:57:24
+[2m   Duration [22m 2.47s[2m (tests 50%, transform 32%, import 17%, worker 1%)[22m
+

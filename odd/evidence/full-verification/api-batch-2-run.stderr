@@ -1,0 +1,47 @@
+(node:1326580) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1326937) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1327195) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | test/identity/hardening.test.ts[2m > [22m[2mMFA with an unreadable sealed secret[2m > [22m[2manswers 401 instead of 500 and does not open a session
+[22m[39mUnreadable sealed TOTP secret; check MASCLI_DATA_KEY
+
+(node:1327364) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1327454) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Warning: Indexing all PDF objects
+(node:1327737) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1327882) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:1327954) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | test/evidence/evidence-http.test.ts[2m > [22m[2mPOST /system/uploads[2m > [22m[2mdeletes the stored object when the metadata transaction fails
+[22m[39m{"time":"2026-10-30T22:46:16.452Z","level":"error","msg":"unhandled_error","request_id":"d3d3bceb-fbc7-48f8-969d-c8d28b6ac807","trace_id":"1d1c7f1b10b1c0fbcc2b2b05fe37171c","span_id":"7f0f00b5c4d0f151","actor":"admin","method":"POST","path":"/system/uploads","error":{"name":"error","message":"new row for relation \"attachments\" violates check constraint \"fail_all\"","stack":"error: new row for relation \"attachments\" violates check constraint \"fail_all\"\n    at pe.Ue (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@electric-sql+pglite@0.5.9/node_modules/@electric-sql/pglite/dist/chunk-2BOC2OMW.js:1:17959)\n    at pe.tt (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@electric-sql+pglite@0.5.9/node_modules/@electric-sql/pglite/dist/chunk-2BOC2OMW.js:1:15347)\n    at pe.parse (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@electric-sql+pglite@0.5.9/node_modules/@electric-sql/pglite/dist/chunk-2BOC2OMW.js:1:14021)\n    at D.Ne (file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@electric-sql+pglite@0.5.9/node_modules/@electric-sql/pglite/dist/index.js:5:1763)\n    at file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@electric-sql+pglite@0.5.9/node_modules/@electric-sql/pglite/dist/index.js:5:1155\n    at wasm://wasm/0269e01e:wasm-function[10979]:0x5ad057\n    at wasm://wasm/0269e01e:wasm-function[3598]:0x281dd2\n    at wasm://wasm/0269e01e:wasm-function[3640]:0x289ccf\n    at wasm://wasm/0269e01e:wasm-function[3650]:0x289f2b\n    at wasm://wasm/0269e01e:wasm-function[9956]:0x556968"}}
+
+(node:1328078) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Warning: Indexing all PDF objects
+(node:1328262) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | test/documents/inline-document-reader.test.ts[2m > [22m[2minline document reader[2m > [22m[2mrejects a file that is not a PDF
+[22m[39mWarning: Indexing all PDF objects
+
+(node:1328271) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[90mstderr[2m | test/identity/google-oidc.test.ts[2m > [22m[2mGoogle OpenID Connect client[2m > [22m[2mrefuses errors and malformed answers from the token endpoint
+[22m[39mGoogle token endpoint answered 400
+
+[90mstderr[2m | test/identity/google-oidc.test.ts[2m > [22m[2mGoogle OpenID Connect client[2m > [22m[2mrefuses errors and malformed answers from the token endpoint
+[22m[39mGoogle token request failed Error: network down
+    at answers [90m(/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/[39mtest/identity/google-oidc.test.ts:104:28[90m)[39m
+    at fetcher [90m(/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/[39mtest/identity/google-oidc.test.ts:36:12[90m)[39m
+    at Object.exchange [90m(/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/[39msrc/contexts/identity/infrastructure/google-oidc.ts:71:24[90m)[39m
+    at [90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/[39mtest/identity/google-oidc.test.ts:108:27
+[90m    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
+    at async file:///home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/vitest@5.0.4_@types+node@24.19.2_jsdom@26.1.0_supports-color@7.2.0__msw@3.0.3_@types+no_dd0067614a479a857d0fee11fcbb2bf9/node_modules/[4mvitest[24m/dist/chunks/run.Cm2sd7-x.js:2794:20
+
+(node:1328393) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)

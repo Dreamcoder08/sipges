@@ -1,0 +1,170 @@
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mbootstrap[2m > [22mcreates the legacy default project and grants it to admins[33m 4181[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mbootstrap[2m > [22mrequires a session to list scopes (ADR 0008 #4)[33m 839[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mcreates a project, grants it to the named user and keeps it out of other users[33m 967[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mrejects invalid creation and stores nothing[33m 925[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mrejects invalid creation and stores nothing[33m 942[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mrejects invalid creation and stores nothing[33m 933[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mrejects invalid creation and stores nothing[33m 945[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mrejects duplicates with 409 and keeps the original label[33m 934[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/scopes[2m > [22mis restricted to admins[33m 977[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/grants[2m > [22mgrants an existing project idempotently[33m 984[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/grants[2m > [22manswers 404 for missing references and stores nothing[33m 937[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/grants[2m > [22manswers 404 for missing references and stores nothing[33m 938[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/grants[2m > [22mis restricted to admins with the FastAPI default body[33m 1013[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22muses the sole grant when no scope was requested[33m 911[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22masks to choose when several grants exist and lists them[33m 901[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mhonours X-MASCLI-Scope and rejects scopes that are not granted[33m 912[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mdenies every scoped route to a user without grants[33m 936[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mrejects a query project_id outside the active scope[33m 911[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mrejects a JSON body that targets another project ({"project_id":"NORTE"}) before the handler runs[33m 913[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mrejects a JSON body that targets another project ({"payload":{"Proyecto_ID":"NORTE"}}) before the handler runs[33m 911[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mrejects a JSON body that targets another project ({"payload":{"project_id":"NORTE"}}) before the handler runs[33m 903[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mlets a JSON body that names the active project through[33m 985[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22m/select-project[2m > [22mredirects anonymous visitors to the login page[33m 818[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22m/select-project[2m > [22mlists only granted projects with HTML-escaped labels[33m 916[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22m/select-project[2m > [22mstores a granted choice in the scope cookie and redirects home[33m 899[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22m/select-project[2m > [22mrefuses projects that are not granted[33m 904[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22m/select-project[2m > [22mrequires a session to choose[33m 822[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22m/select-project[2m > [22mrejects cross-origin choices[33m 894[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mrevokes a grant immediately without destroying the user session[33m 4533[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mrejects non-admin grant revocation and leaves the grant unchanged[33m 981[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mreports missing grant references without removing existing access[33m 987[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mdeactivates an account, revokes every session and rejects future logins[33m 1080[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mrejects non-admin deactivation and cross-origin writes without changing access[33m 996[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mreports a missing account and preserves current sessions[33m 976[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mprevents removal of the last active administrator[33m 983[2mms[22m[39m
+ [32m✓[39m test/tenancy/access-lifecycle.test.ts[2m > [22madministrator access lifecycle[2m > [22mdoes not issue a session when deactivation wins an in-flight login[33m 992[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mSQL-backed event automation lifecycle[2m > [22mprocesses a committed narrative into exactly one linked inbox entry without manual tick[33m 4820[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mSQL-backed event automation lifecycle[2m > [22mpreserves business writes on worker failure and recovers through authenticated cron[33m 1176[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mSQL-backed event automation lifecycle[2m > [22mdoes not lose a second committed event while the first worker finishes[33m 1266[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mSQL-backed event automation lifecycle[2m > [22mkeeps restricted events restricted under anonymous cron default limited request context[33m 1159[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mSQL-backed event automation lifecycle[2m > [22mignores stale completion tokens in persisted evidence[33m 905[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mprocesses an authenticated structured source through a signal and notification and replays without duplicates[33m 1176[2mms[22m[39m
+ [32m✓[39m test/system/runtime-http.test.ts[2m > [22mstarts the first rule after pre-rule backlog even when earlier workers failed[33m 1255[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mdownloads only active-tenant business data without auth tables or credentials[33m 4289[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mpreserves authorized source configuration and immutable digital audit snapshots only in its tenant export[33m 1102[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mhonours selected granted tenant and restores identity access after export[33m 1011[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mrequires a session and admin role without changing exported data[33m 1043[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mrejects an ungranted tenant and mismatching project query before export[33m 960[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mexports empty arrays for a tenant without business data[33m 924[2mms[22m[39m
+ [32m✓[39m test/tenancy/export-http.test.ts[2m > [22mGET /system/export versioned tenant JSON[2m > [22mfails closed on missing table privileges without returning partial data[33m 946[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mserves the shell for client routes without a session, with a strict CSP[33m 4022[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mserves hashed assets and refuses unknown or unsafe names[33m 816[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mserves the CesiumJS workers and assets under the SPA policy, refusing anything else[33m 804[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mleaves API paths, JSON requests and writes to the API[33m 820[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mserves the installable-app files from the build root, never cached[33m 1588[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mserves nothing extra when no web build is configured[33m 869[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mreads a Vite build directory[32m 5[2mms[22m[39m
+ [32m✓[39m test/platform/spa.test.ts[2m > [22mwebAssetsFrom[2m > [22mmaps valid names to build paths and never passes an unsafe name to the source[32m 1[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mstarts with the preliminary colour meanings and no version switch[33m 4097[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22msaves a change for one project only and audits it[33m 855[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mignores a stored version4 = false key from earlier releases and does not echo it[33m 844[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mignores a stored version4 = true key from earlier releases and does not echo it[33m 847[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mkeeps the project wording of a recommendation and uses it in situations[33m 862[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mwrites nothing when nothing changes[33m 831[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mrejects empty meanings and thresholds out of order[33m 816[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mlets every role read the settings but only an administrator change them[32m 1[2mms[22m[39m
+ [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/grants username without public state changes[33m 4206[2mms[22m[39m
+ [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/grants company_id without public state changes[33m 976[2mms[22m[39m
+ [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/grants project_id without public state changes[33m 972[2mms[22m[39m
+ [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/scopes username without public state changes[33m 968[2mms[22m[39m
+ [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/scopes label without public state changes[33m 952[2mms[22m[39m
+ [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mpreserves valid scope creation, grant issuance and deletion[33m 961[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mrejects unknown modules with 404 on every method[33m 4119[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mcreates records with the module id key, a generated prefix id, or a collision suffix[33m 949[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mlists newest-updated first with _id and _updated_at, filters by q and bounds limit[33m 917[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mreplaces payloads on PUT and returns 404 for missing records[33m 902[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mdeletes existing records and returns 404 without auditing missing ones[33m 897[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mrejects invalid payloads with 422 and leaves no record or audit entry[33m 885[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22misolates records and audit entries per tenant[33m 915[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22m/api/{module} generic records[2m > [22mkeeps role gates and the body project guard on record routes[33m 964[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22mGET /system/audit[2m > [22mlists create, update and delete entries newest first with a bounded limit[33m 968[2mms[22m[39m
+ [32m✓[39m test/records/records-http.test.ts[2m > [22mpaginates the tenant list without changing the legacy array contract[33m 937[2mms[22m[39m
+ [32m✓[39m test/records/history-http.test.ts[2m > [22mGET /api/{module}/{id}/history[2m > [22mrecords every change with its actor and field differences, newest first[33m 4275[2mms[22m[39m
+ [32m✓[39m test/records/history-http.test.ts[2m > [22mGET /api/{module}/{id}/history[2m > [22mskips writes that change nothing and keeps the history after deletion[33m 899[2mms[22m[39m
+ [32m✓[39m test/records/history-http.test.ts[2m > [22mGET /api/{module}/{id}/history[2m > [22manswers 404 for unknown records and modules[33m 881[2mms[22m[39m
+ [32m✓[39m test/records/history-http.test.ts[2m > [22mGET /api/{module}/{id}/history[2m > [22mis append-only and isolated per tenant[33m 890[2mms[22m[39m
+ [32m✓[39m test/platform/tenant-transaction.test.ts[2m > [22mwithTenant[2m > [22mshows each tenant only its own rows[33m 4121[2mms[22m[39m
+ [32m✓[39m test/platform/tenant-transaction.test.ts[2m > [22mwithTenant[2m > [22mrejects writes into another tenant and leaves its data unchanged[33m 866[2mms[22m[39m
+ [32m✓[39m test/platform/tenant-transaction.test.ts[2m > [22mwithTenant[2m > [22mcannot read identity tables from a tenant transaction[33m 850[2mms[22m[39m
+ [32m✓[39m test/platform/tenant-transaction.test.ts[2m > [22mwithTenant[2m > [22mrestores the connection role and tenant after the transaction[33m 814[2mms[22m[39m
+ [32m✓[39m test/platform/tenant-transaction.test.ts[2m > [22mwithTenant[2m > [22mrefuses an empty tenant id[33m 814[2mms[22m[39m
+ [32m✓[39m test/platform/realtime-trace.test.ts[2m > [22mlive activity stream[2m > [22mstreams module and action of new activity, without record ids[33m 4245[2mms[22m[39m
+ [32m✓[39m test/platform/realtime-trace.test.ts[2m > [22mlive activity stream[2m > [22mresumes after Last-Event-ID and needs a session[33m 932[2mms[22m[39m
+ [32m✓[39m test/platform/realtime-trace.test.ts[2m > [22mW3C trace context[2m > [22mjoins a valid caller trace and answers with its own span[33m 844[2mms[22m[39m
+ [32m✓[39m test/platform/realtime-trace.test.ts[2m > [22mW3C trace context[2m > [22mrejects malformed or zero ids and continues the trace on outbound calls[32m 1[2mms[22m[39m
+ [32m✓[39m test/platform/observability.test.ts[2m > [22mobservability[2m > [22mtags responses with a request id and server timing, keeping safe caller ids[33m 4099[2mms[22m[39m
+[90mstdout[2m | test/platform/observability.test.ts[2m > [22m[2mobservability[2m > [22m[2mwrites one JSON access line per request with route pattern and actor
+[22m[39m{"time":"2026-10-30T22:51:24.513Z","level":"info","msg":"request","request_id":"f472638d-1f87-4ac0-907e-c388494ec54a","trace_id":"1593c0d77d9648e244d9e27019966187","span_id":"3aec45ed9e2bb119","method":"POST","route":"/login","path":"/login","status":200,"duration_ms":66.1}
+
+ [32m✓[39m test/platform/observability.test.ts[2m > [22mobservability[2m > [22mwrites one JSON access line per request with route pattern and actor[33m 915[2mms[22m[39m
+ [32m✓[39m test/platform/observability.test.ts[2m > [22mobservability[2m > [22mserves Prometheus metrics to administrators only[33m 1023[2mms[22m[39m
+ [32m✓[39m test/platform/observability.test.ts[2m > [22mcreateMetrics[2m > [22mrenders counters and cumulative histogram buckets[32m 1[2mms[22m[39m
+ [32m✓[39m test/records/import-http.test.ts[2m > [22mPOST /system/import/{module}[2m > [22mpreviews, then merges in one audited transaction without erasing data[33m 4139[2mms[22m[39m
+ [32m✓[39m test/records/import-http.test.ts[2m > [22mPOST /system/import/{module}[2m > [22mrefuses the whole batch when any row has a problem[33m 955[2mms[22m[39m
+ [32m✓[39m test/records/import-http.test.ts[2m > [22mPOST /system/import/{module}[2m > [22mis limited to writers and territorial modules[33m 1002[2mms[22m[39m
+ [32m✓[39m test/situations/phase-http.test.ts[2m > [22mProject phase and phase IRSA weights (ADR 0021 §4)[2m > [22msaves the phase and its weights, audited, and clears them with null[33m 4085[2mms[22m[39m
+ [32m✓[39m test/situations/phase-http.test.ts[2m > [22mProject phase and phase IRSA weights (ADR 0021 §4)[2m > [22mrejects weights that do not sum to 1 and unknown phases[33m 818[2mms[22m[39m
+ [32m✓[39m test/situations/phase-http.test.ts[2m > [22mProject phase and phase IRSA weights (ADR 0021 §4)[2m > [22mleaves IRSA unchanged until the phase has saved weights, then uses them[33m 876[2mms[22m[39m
+ [32m✓[39m test/platform/verify-failed-setup.test.ts[2m > [22mS3 T5d rejected setup ownership[2m > [22mowns allocation before synchronous configuration failure[33m 4175[2mms[22m[39m
+ [32m✓[39m test/platform/verify-failed-setup.test.ts[2m > [22mS3 T5d rejected setup ownership[2m > [22mcloses rejected configuration allocation and owns failed bootstrap[33m 758[2mms[22m[39m
+ [32m✓[39m test/platform/verify-failed-setup.test.ts[2m > [22mS3 T5d rejected setup ownership[2m > [22mcloses failed bootstrap allocation and permits a fresh working clone[33m 956[2mms[22m[39m
+ [32m✓[39m test/platform/test-app-lifecycle.test.ts[2m > [22mtest application database lifecycle[2m > [22mprovides a working isolated database for the current test[33m 4169[2mms[22m[39m
+ [32m✓[39m test/platform/test-app-lifecycle.test.ts[2m > [22mtest application database lifecycle[2m > [22mcloses the previous database and retains isolated bootstrap in the next test[33m 925[2mms[22m[39m
+ [32m✓[39m test/system/request-boundaries.test.ts[2m > [22mbounds source and geography requests before tenancy parses JSON and preserves its scoped body cache[33m 4164[2mms[22m[39m
+ [32m✓[39m test/reference/reference-http.test.ts[2m > [22mexposes reference geometry only for its registered company and project[33m 4178[2mms[22m[39m
+ [32m✓[39m test/platform/remove-demo-migration.test.ts[2m > [22mmigration 0019_remove_demo_records[2m > [22mdeletes only the synthetic academic case, in every tenant, through forced RLS[33m 3209[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/alertas.md[2m > [22mhas scenarios[32m 2[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/alertas.md[2m > [22mAlta: Exigimos agua limpia: anuncian paro y b…[32m 85[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/alertas.md[2m > [22mMedia: Exigimos el cumplimiento del compromiso…[32m 19[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/alertas.md[2m > [22mBaja: La comunidad celebró su aniversario con…[32m 13[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/irsa.md[2m > [22mhas scenarios[32m 0[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/irsa.md[2m > [22mVerde: Territorio estable[32m 1[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/irsa.md[2m > [22mAmarillo: Demandas abiertas sin respuesta[32m 0[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/irsa.md[2m > [22mNaranja: Conflicto por agua en escalada[32m 0[2mms[22m[39m
+ [32m✓[39m test/scenarios.test.ts[2m > [22mdocs/escenarios/irsa.md[2m > [22mRojo: Crisis en todas las dimensiones[32m 0[2mms[22m[39m
+ [32m✓[39m test/system/automation-wakeup.test.ts[2m > [22mwakes only committed scoped business writes and authenticated nonreplayed ingestion[32m 32[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mrelates recent records on one topic and explains an orange alert[32m 9[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mgives old facts less weight than recent ones[32m 3[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mnever infers a territory from text, only from the recorded field[32m 2[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mcounts undated records apart and ignores alerts MASCLI 4.0 suggested[32m 1[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mreports a change of narrative tone[32m 2[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mreads dd/mm/yyyy dates and rejects impossible ones[32m 0[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mcoalesces a project without suppressing another project[32m 4[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mregisters deferred work and records failures without rejecting committed writes[32m 1[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mstops at the scheduled budget boundary[32m 1[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mattempts another scope but rejects partial cron success[32m 1[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mreads evidence only for the requested scope[32m 0[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mcollects configured sources before scanning committed source events[32m 0[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22msource outages cannot block pending delivery and remain failed attempts[32m 1[2mms[22m[39m
+ [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mkeeps committed work alive if a deferred adapter is unavailable[32m 0[2mms[22m[39m
+ [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (MASCLI 4.0)[2m > [22mis a records module with its own prefix[32m 2[2mms[22m[39m
+ [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (MASCLI 4.0)[2m > [22mattaches past lessons to the situation of the same territory, topic or actor[32m 6[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mscope text[2m > [22mformats and parses company/project, splitting at the first slash like Python[32m 3[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mscope text[2m > [22mkeeps the legacy default scope[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mprefers the X-MASCLI-Scope header over the cookie[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mfalls back to the scope cookie[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mselects the only grant when nothing was requested[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mrefuses when nothing was requested and the user has several grants[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mrefuses a requested scope that is not granted[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mrefuses everything for a user without grants[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22maccepts valid IDs and truncates the label to 120 characters[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22mrejects ID "A"[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22mrejects ID "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22mrejects ID "with space"[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22mrejects ID "acme/x"[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22mrejects ID "ñandu"[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mvalidateNewTenant (app.py:355-361)[2m > [22mreserves the legacy default scope[32m 0[2mms[22m[39m
+ [32m✓[39m test/platform/request-scoped-client.test.ts[2m > [22mrequestScopedSqlClient[2m > [22mroutes every call to the client bound to the current request[32m 3[2mms[22m[39m
+ [32m✓[39m test/platform/request-scoped-client.test.ts[2m > [22mrequestScopedSqlClient[2m > [22mkeeps concurrent requests on their own connections across awaits[32m 4[2mms[22m[39m
+ [32m✓[39m test/platform/request-scoped-client.test.ts[2m > [22mrequestScopedSqlClient[2m > [22mrefuses a call outside any request instead of sharing a connection[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m26 passed[39m[22m[90m (26)[39m
+[2m      Tests [22m [1m[32m157 passed[39m[22m[90m (157)[39m
+[2m   Start at [22m 17:49:08
+[2m   Duration [22m 177.50s[2m (tests 94%, import 5%)[22m
+
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-4-result.json

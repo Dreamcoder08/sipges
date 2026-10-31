@@ -1,0 +1,2244 @@
+{
+  "config": {
+    "argv": [
+      "/home/dreamcoder08/.hermes/node/bin/node",
+      "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
+      "test",
+      "--list",
+      "--reporter=json"
+    ],
+    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/playwright.config.ts",
+    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/global-setup.ts",
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testIgnore": [
+          "/mobile\\.spec\\.ts/"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "mobile-chromium",
+        "name": "mobile-chromium",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "/mobile\\.spec\\.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.63.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "01-auth-mfa.spec.ts",
+      "file": "01-auth-mfa.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "sign-in (S7, ADR 0004)",
+          "file": "01-auth-mfa.spec.ts",
+          "line": 15,
+          "column": 6,
+          "specs": [
+            {
+              "title": "rejects a wrong password and signs in with the right one",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "c2eee34baf1c5c270091-4e7bd56b564272422d8d",
+              "file": "01-auth-mfa.spec.ts",
+              "line": 16,
+              "column": 3
+            },
+            {
+              "title": "issues an HttpOnly, SameSite=Strict, Secure session cookie by default",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "c2eee34baf1c5c270091-34ebd71f10b2923c1af0",
+              "file": "01-auth-mfa.spec.ts",
+              "line": 27,
+              "column": 3
+            },
+            {
+              "title": "returns to the requested screen after sign-in and ignores foreign redirects",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "c2eee34baf1c5c270091-8c246614e851580f41a6",
+              "file": "01-auth-mfa.spec.ts",
+              "line": 51,
+              "column": 3
+            },
+            {
+              "title": "signs out and revokes the session server-side",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "c2eee34baf1c5c270091-25174c7cc1842b11f15d",
+              "file": "01-auth-mfa.spec.ts",
+              "line": 76,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "MFA enrollment and TOTP sign-in (S7)",
+          "file": "01-auth-mfa.spec.ts",
+          "line": 90,
+          "column": 6,
+          "specs": [
+            {
+              "title": "enrolls TOTP, refuses re-enrollment and then requires the code",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "c2eee34baf1c5c270091-7720632442d32996dc21",
+              "file": "01-auth-mfa.spec.ts",
+              "line": 91,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "02-cookie-policy.spec.ts",
+      "file": "02-cookie-policy.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Secure cookie policy and exact 0|1 override (S7)",
+          "file": "02-cookie-policy.spec.ts",
+          "line": 73,
+          "column": 6,
+          "specs": [
+            {
+              "title": "MASCLI_COOKIE_SECURE=(unset) marks cookies Secure, so plain HTTP keeps no session",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-07171ef35fe8ad62e907",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 81,
+              "column": 5
+            },
+            {
+              "title": "MASCLI_COOKIE_SECURE=1 marks cookies Secure, so plain HTTP keeps no session",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-4fea2d7ff4b161c138ad",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 81,
+              "column": 5
+            },
+            {
+              "title": "MASCLI_COOKIE_SECURE=0 drops Secure for intentional local HTTP only",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-e55b8808047297834d74",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 101,
+              "column": 3
+            },
+            {
+              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-937cbfd42cf259882fbd",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"true\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-86bbf1624cc395802e1c",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"yes\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-5856496e78876cd0960d",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"01\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-0f407a6cce0fe1f529f6",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "refuses to start with MASCLI_COOKIE_SECURE=\" 1\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-f28bd3d640e41f1a2423",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 140,
+              "column": 5
+            },
+            {
+              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"2\"",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "6cbba0af8a6f17eb2724-f7d360cf11a86b7a0dd5",
+              "file": "02-cookie-policy.spec.ts",
+              "line": 140,
+              "column": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "03-mfa-required.spec.ts",
+      "file": "03-mfa-required.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "mandatory MFA enrolls before dashboard and requires a code on the next login",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ad7bd524654e3cf13a45-a12aeb199bb370228584",
+          "file": "03-mfa-required.spec.ts",
+          "line": 7,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "03-tenancy.spec.ts",
+      "file": "03-tenancy.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "an administrator creates a second project and switches to it server-side",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ba631ca00246bce3d98b-1be2b8b7e1d08ed6851b",
+          "file": "03-tenancy.spec.ts",
+          "line": 43,
+          "column": 1
+        },
+        {
+          "title": "records created in one project never appear in the other",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ba631ca00246bce3d98b-559f2a66fe75ffe4526d",
+          "file": "03-tenancy.spec.ts",
+          "line": 75,
+          "column": 1
+        },
+        {
+          "title": "cross-tenant access is refused with 403 (scope) and 404 (foreign ids)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ba631ca00246bce3d98b-d67b988991355c865d6f",
+          "file": "03-tenancy.spec.ts",
+          "line": 96,
+          "column": 1
+        },
+        {
+          "title": "the export downloads mascli-tenant.json with the active project only",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "serial",
+                  "location": {
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "line": 0,
+                    "column": 0
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ba631ca00246bce3d98b-77051bac2bd86294ff4f",
+          "file": "03-tenancy.spec.ts",
+          "line": 186,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "04-records-evidence.spec.ts",
+      "file": "04-records-evidence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "territorial record CRUD with evidence upload and byte-exact download",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "4f9a34cf990904c4cc05-e8cc56627cf1ca88cc50",
+          "file": "04-records-evidence.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "event and demand screens create records in the active project",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "4f9a34cf990904c4cc05-316f49956f1496058480",
+          "file": "04-records-evidence.spec.ts",
+          "line": 79,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "05-analysis-management.spec.ts",
+      "file": "05-analysis-management.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "IRSA computes the index and stores a snapshot in the history",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "452e0917d2cf9ab739e6-278aa636f6542233224b",
+          "file": "05-analysis-management.spec.ts",
+          "line": 19,
+          "column": 1
+        },
+        {
+          "title": "situational and strategic analyses render and download DOCX reports",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "452e0917d2cf9ab739e6-a7071231e3508141c650",
+          "file": "05-analysis-management.spec.ts",
+          "line": 37,
+          "column": 1
+        },
+        {
+          "title": "document lab reads a file, downloads its report and sends candidates to review",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "452e0917d2cf9ab739e6-d2be772db4bc7dde85fc",
+          "file": "05-analysis-management.spec.ts",
+          "line": 58,
+          "column": 1
+        },
+        {
+          "title": "management center shows project metrics and downloads the CSV report",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "452e0917d2cf9ab739e6-9480ad4bc919d51f529c",
+          "file": "05-analysis-management.spec.ts",
+          "line": 90,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "06-csp-screens.spec.ts",
+      "file": "06-csp-screens.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "the SPA shell and its assets are served with a strict CSP",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "7c231f2e13c08c5d0674-153d457a5f2e9ac1f348",
+          "file": "06-csp-screens.spec.ts",
+          "line": 8,
+          "column": 1
+        },
+        {
+          "title": "the policy is enforced: injected inline scripts and handlers are blocked",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "7c231f2e13c08c5d0674-fd55f5d070fdb185c602",
+          "file": "06-csp-screens.spec.ts",
+          "line": 25,
+          "column": 1
+        },
+        {
+          "title": "every screen renders without CSP violations or script errors",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "7c231f2e13c08c5d0674-3d4fb703d11cf19ed7d1",
+          "file": "06-csp-screens.spec.ts",
+          "line": 63,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "07-accessibility.spec.ts",
+      "file": "07-accessibility.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "sign-in and every screen pass the automated WCAG 2.1 AA checks (light)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "0dd502290b76812733db-44cc0f0b239252306198",
+          "file": "07-accessibility.spec.ts",
+          "line": 19,
+          "column": 3
+        },
+        {
+          "title": "sign-in and every screen pass the automated WCAG 2.1 AA checks (dark)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "0dd502290b76812733db-ea29ed9f3063688ff0fd",
+          "file": "07-accessibility.spec.ts",
+          "line": 19,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "08-territorial-map.spec.ts",
+      "file": "08-territorial-map.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "events with a known locality appear on the territorial map with their detail",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "d5e12c052dfb7bde8332-e967da9584c8f3c76eda",
+          "file": "08-territorial-map.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "09-ontology-intelligence.spec.ts",
+      "file": "09-ontology-intelligence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "360° view: inferred links, cited briefing, history, search and chronology",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "a21a3d2607652aff1146-07341879e58ff0ce9cd0",
+          "file": "09-ontology-intelligence.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "10-automation-integration.spec.ts",
+      "file": "10-automation-integration.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "automation rule, API key, inbound webhook, notification and MCP",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "b0fd51ec021b9503ad71-c91d7a5982b43a358e34",
+          "file": "10-automation-integration.spec.ts",
+          "line": 8,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "11-functional-audit.spec.ts",
+      "file": "11-functional-audit.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "counters follow records and every record opens, edits and shows its report",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f2b1957ec2b5f9834698-a864217d5a576a165733",
+          "file": "11-functional-audit.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "the geospatial view frames a concession and the directory lists contacts",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f2b1957ec2b5f9834698-bcc64cd058aa039f0d39",
+          "file": "11-functional-audit.spec.ts",
+          "line": 87,
+          "column": 1
+        },
+        {
+          "title": "narratives show their trend per day and category",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f2b1957ec2b5f9834698-4173d10603d206fb8748",
+          "file": "11-functional-audit.spec.ts",
+          "line": 137,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "12-module-crud.spec.ts",
+      "file": "12-module-crud.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "eventos: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-b89ab48c762b05343eae",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "actores: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-063c106128e84dd2728f",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "directorio: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-b2decf776bd68938f327",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "demandas: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-ae676b88df793e615282",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "compromisos: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-628235316497e1a73d2e",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "narrativas: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-61fbdb5bd66c07ac2037",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "fuentes: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-fdcd0d2f0919bdf711a8",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "alertas: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-666a7833297ca004588b",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "acciones: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-05ce4727cdc1b8c2d63a",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "intereses: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-f3690f99f51cfc5911c2",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "dialogos: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-7b3045fd852b5c8b9442",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "oportunidades: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-3721e9b6a09a23accb11",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "hechos: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-ec2532360f1832626844",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "aarc: create, search, read, edit and delete on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "93a66306fa03ba33dbda-287db561836bd1a37594",
+          "file": "12-module-crud.spec.ts",
+          "line": 6,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "13-workflows.spec.ts",
+      "file": "13-workflows.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "digital signal to completed preventive plan on desktop",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-af80069aa62317dc3de3",
+          "file": "13-workflows.spec.ts",
+          "line": 15,
+          "column": 1
+        },
+        {
+          "title": "administration: accounts, Google link, projects, grants and deactivation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-9a8ab642b7a82fb3f245",
+          "file": "13-workflows.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "CSV import, record links, history and audit trail",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-6b48c1b361111354cd1b",
+          "file": "13-workflows.spec.ts",
+          "line": 28,
+          "column": 1
+        },
+        {
+          "title": "document review decision, strategic reports and chronology filters",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-e4b3d68ccf4e11c901bf",
+          "file": "13-workflows.spec.ts",
+          "line": 33,
+          "column": 1
+        },
+        {
+          "title": "automation rules edited, paused and removed; webhook channel added",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-fc8caa163bb94e888707",
+          "file": "13-workflows.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "every link on the home screen opens a real screen",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-1e5349e774f0e56e5e63",
+          "file": "13-workflows.spec.ts",
+          "line": 49,
+          "column": 1
+        },
+        {
+          "title": "360° view: approve an analyst proposal and restrict a record",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e6b036e27920ea4a0707-b03f52444ec84f43af51",
+          "file": "13-workflows.spec.ts",
+          "line": 54,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "14-roles.spec.ts",
+      "file": "14-roles.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "analista: every screen opens without errors",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f38963c68b4407e6bf7e-eab91b8f4b694901683c",
+          "file": "14-roles.spec.ts",
+          "line": 16,
+          "column": 3
+        },
+        {
+          "title": "coordinador: every screen opens without errors",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f38963c68b4407e6bf7e-5bb92c3f663822a56e20",
+          "file": "14-roles.spec.ts",
+          "line": 16,
+          "column": 3
+        },
+        {
+          "title": "consulta: every screen opens without errors",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f38963c68b4407e6bf7e-e5feb8209f8448ddb2cd",
+          "file": "14-roles.spec.ts",
+          "line": 16,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "15-record-insights.spec.ts",
+      "file": "15-record-insights.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "record heatmap and actor classification open stored files (desktop)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "31a7062f4155999c93db-7992394ee56d164c10c5",
+          "file": "15-record-insights.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "record heatmap and actor classification open stored files (phone)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "31a7062f4155999c93db-343018f21434ef571708",
+          "file": "15-record-insights.spec.ts",
+          "line": 5,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "16-audit-persistence.spec.ts",
+      "file": "16-audit-persistence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "CSV imports refresh the cached dashboard and uploaded evidence refreshes the source list",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "57d258c6e6598fa7acb5-2a92122d41aef1fe5d28",
+          "file": "16-audit-persistence.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "directory pagination reaches a stored contact beyond the API first page",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "57d258c6e6598fa7acb5-1981c438f405b948f874",
+          "file": "16-audit-persistence.spec.ts",
+          "line": 58,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "17-quality-followup.spec.ts",
+      "file": "17-quality-followup.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "review, documented links and followup persist through real API (desktop)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ff922aee6db58c049f04-92ee475036625121b71f",
+          "file": "17-quality-followup.spec.ts",
+          "line": 5,
+          "column": 3
+        },
+        {
+          "title": "review, documented links and followup persist through real API (phone)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "ff922aee6db58c049f04-e04bb9157b834b49ff98",
+          "file": "17-quality-followup.spec.ts",
+          "line": 5,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "18-territorial-intelligence.spec.ts",
+      "file": "18-territorial-intelligence.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "committed narrative creates one pending signal and linked inbox without a manual tick (desktop)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "30485bda3f3f33fff677-9d5918fcc282d1b3585e",
+          "file": "18-territorial-intelligence.spec.ts",
+          "line": 12,
+          "column": 3
+        },
+        {
+          "title": "committed narrative creates one pending signal and linked inbox without a manual tick (phone)",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "30485bda3f3f33fff677-7ec75be579a601fccb02",
+          "file": "18-territorial-intelligence.spec.ts",
+          "line": 12,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "19-mascli-4.spec.ts",
+      "file": "19-mascli-4.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "MASCLI 4.0 relates recent records, explains the colour and lets a person raise the alert",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "f7a96b71b34be71369ef-109e5da5ca7e6b353e3a",
+          "file": "19-mascli-4.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "20-territorial-operations.spec.ts",
+      "file": "20-territorial-operations.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "the territorial map relates a signal to its alert, the action taken and what is pending",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e0179341649fd689d9dc-04584c48dc67f955beae",
+          "file": "20-territorial-operations.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "21-territorial-3d.spec.ts",
+      "file": "21-territorial-3d.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "the territorial map opens a 3D terrain view of documented records and returns",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "9a7b44ba484bd16b00d0-d0301ae273f5b88863da",
+          "file": "21-territorial-3d.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "12-module-crud.mobile.spec.ts",
+      "file": "12-module-crud.mobile.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "eventos: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-28bce3b89601191850eb",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "actores: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-93f15dd359e8dee77448",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "directorio: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-1cde82f9141b61db6ff4",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "demandas: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-d900304e551689cd9678",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "compromisos: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-9bd1f2894ef81dee82fc",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "narrativas: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-999ac05a6f4d4fcadf17",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "fuentes: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-bcf45a743b7a37321545",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "alertas: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-47e02c84eac3a04cb18d",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "acciones: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-d6bbff4110a2f88f1b5b",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "intereses: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-3f23ca591b1acf51e01c",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "dialogos: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-3532e5077fe229e69159",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "oportunidades: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-39fcad28c65059191c28",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "hechos: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-f2b6fc741436b3ec3db7",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        },
+        {
+          "title": "aarc: create, search, read, edit and delete on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "72f953df3711a72638f7-51f9ca79cf0e374590e6",
+          "file": "12-module-crud.mobile.spec.ts",
+          "line": 6,
+          "column": 3
+        }
+      ]
+    },
+    {
+      "title": "13-workflows.mobile.spec.ts",
+      "file": "13-workflows.mobile.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "digital signal to completed preventive plan on a phone",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-86e6c94aa17c65aa1b68",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 15,
+          "column": 1
+        },
+        {
+          "title": "phone · administration: accounts, Google link, projects, grants and deactivation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-80bee936f55a5e4be886",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 20,
+          "column": 1
+        },
+        {
+          "title": "phone · CSV import, record links, history and audit trail",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-fee6f9a26db7c4b3503f",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 28,
+          "column": 1
+        },
+        {
+          "title": "phone · document review decision, strategic reports and chronology filters",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-be4b589d31e54b558db2",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 33,
+          "column": 1
+        },
+        {
+          "title": "phone · automation rules edited, paused and removed; webhook channel added",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-acf9bd67d8d74530da4f",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 41,
+          "column": 1
+        },
+        {
+          "title": "phone · every link on the home screen opens a real screen",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-fbefaaa744ef25e19b67",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 49,
+          "column": 1
+        },
+        {
+          "title": "phone · 360° view: approve an analyst proposal and restrict a record",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "19076eaabf5576388a94-21feb53781201e3651c8",
+          "file": "13-workflows.mobile.spec.ts",
+          "line": 54,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "mobile.spec.ts",
+      "file": "mobile.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "mobile viewport: sign-in, bottom bar, sheets and every screen fit the width",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "e79c838550b25e92508e-767c829f96f7c2443b71",
+          "file": "mobile.spec.ts",
+          "line": 31,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "screenshots.mobile.spec.ts",
+      "file": "screenshots.mobile.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "capture the mobile shell",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [
+                {
+                  "type": "skip",
+                  "description": "MASCLI_E2E_SCREENSHOT_DIR is not set",
+                  "location": {
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/screenshots.mobile.spec.ts",
+                    "line": 10,
+                    "column": 6
+                  }
+                }
+              ],
+              "expectedStatus": "skipped",
+              "projectId": "mobile-chromium",
+              "projectName": "mobile-chromium",
+              "results": [],
+              "status": "skipped"
+            }
+          ],
+          "id": "3bea6e95495810a6c18d-d30191434b5fa8dc0f37",
+          "file": "screenshots.mobile.spec.ts",
+          "line": 49,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-30T22:57:37.239Z",
+    "duration": 676.1309999999999,
+    "expected": 0,
+    "skipped": 94,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

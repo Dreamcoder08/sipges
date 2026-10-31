@@ -1,0 +1,15 @@
+Scope: 7 of 8 workspace projects
+apps/e2e typecheck$ tsc -p tsconfig.json
+packages/kernel typecheck$ tsc -p tsconfig.json
+packages/kernel typecheck: Done
+packages/contracts typecheck$ tsc -p tsconfig.json
+apps/e2e typecheck: Done
+packages/contracts typecheck: Done
+apps/web typecheck$ tsc -p tsconfig.json
+apps/api typecheck$ tsc -p tsconfig.json
+apps/api typecheck: Done
+apps/hosting-cloudflare typecheck$ tsc -p tsconfig.json
+apps/web typecheck: Done
+apps/hosting typecheck$ tsc -p tsconfig.json
+apps/hosting-cloudflare typecheck: Done
+apps/hosting typecheck: Done

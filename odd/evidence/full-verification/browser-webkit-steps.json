@@ -1,0 +1,12 @@
+[
+  {
+    "step": "webkit-install",
+    "exit": 0,
+    "elapsed_seconds": 13.25
+  },
+  {
+    "step": "browser-webkit-run",
+    "exit": 1,
+    "elapsed_seconds": 15.49
+  }
+]

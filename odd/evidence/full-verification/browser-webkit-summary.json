@@ -1,0 +1,69 @@
+{
+  "stats": {
+    "startTime": "2026-10-31T17:37:26.717Z",
+    "duration": 14584.288999999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 9,
+    "flaky": 0
+  },
+  "expected": 9,
+  "reported": 9,
+  "exact_test_match": true,
+  "not_expected": [
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "counters follow records and every record opens, edits and shows its report",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "the geospatial view frames a concession and the directory lists contacts",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "11-functional-audit.spec.ts",
+      "title": "narratives show their trend per day and category",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "15-record-insights.spec.ts",
+      "title": "record heatmap and actor classification open stored files (desktop)",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "15-record-insights.spec.ts",
+      "title": "record heatmap and actor classification open stored files (phone)",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "17-quality-followup.spec.ts",
+      "title": "review, documented links and followup persist through real API (desktop)",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "17-quality-followup.spec.ts",
+      "title": "review, documented links and followup persist through real API (phone)",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "18-territorial-intelligence.spec.ts",
+      "title": "committed narrative creates one pending signal and linked inbox without a manual tick (desktop)",
+      "project": "webkit",
+      "status": "unexpected"
+    },
+    {
+      "file": "18-territorial-intelligence.spec.ts",
+      "title": "committed narrative creates one pending signal and linked inbox without a manual tick (phone)",
+      "project": "webkit",
+      "status": "unexpected"
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/scenarios.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/observability.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/realtime-trace.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/remove-demo-migration.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/request-scoped-client.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/spa.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/tenant-transaction.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/test-app-lifecycle.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/verify-failed-setup.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/reference/reference-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/records/history-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/records/import-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/records/records-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/situations/lessons-domain.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/situations/phase-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/situations/settings-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/situations/situations-domain.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/system/automation-runtime.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/system/automation-wakeup.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/system/request-boundaries.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/system/runtime-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/tenancy/access-lifecycle.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/tenancy/export-http.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/tenancy/independent-inputs.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/tenancy/scope.test.ts"
+  },
+  {
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/tenancy/tenancy-http.test.ts"
+  }
+]
