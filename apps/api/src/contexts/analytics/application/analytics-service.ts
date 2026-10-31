@@ -28,6 +28,8 @@ export type RenderedReport = {
 
 export const createAnalyticsService = (deps: {
   reader: AnalyticsRecordReader;
+  /** Optional narrow input for dashboard only; other engines always use reader. */
+  dashboardReader?: AnalyticsRecordReader;
   clock: Clock;
   renderer: ReportRenderer;
 }) => {
@@ -66,7 +68,9 @@ export const createAnalyticsService = (deps: {
   return {
     /** Executive counters for the dashboard (app.py `/api/dashboard`). */
     async dashboard(scope: Scope) {
-      return dashboardSummary(await reader.read(scope, DASHBOARD_MODULES));
+      return dashboardSummary(
+        await (deps.dashboardReader ?? reader).read(scope, DASHBOARD_MODULES),
+      );
     },
     situational,
     async strategic(scope: Scope) {

@@ -50,6 +50,7 @@ import {
   createAnalyticsService,
 } from './contexts/analytics/application/index.ts';
 import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import { createSqlDashboardRecordReader } from './contexts/analytics/infrastructure/sql-dashboard-record-reader.ts';
 import {
   type SituationsService,
   createSituationsService,
@@ -317,6 +318,7 @@ export const buildContainer = async (deps: {
   const recordReader = createSqlAnalyticsRecordReader(deps.sql);
   const analytics = createAnalyticsService({
     reader: recordReader,
+    dashboardReader: createSqlDashboardRecordReader(deps.sql),
     clock: deps.clock,
     renderer: docxRenderer,
   });
