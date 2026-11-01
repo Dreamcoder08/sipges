@@ -1,33 +1,39 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
+import { Link, useRouter } from '@tanstack/react-router';
 import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react';
-import { THEME_OPTIONS, setTheme, useThemePreference } from '../../shared/lib/theme.ts';
 import { accountDisplayName, accountInitials } from '../../shared/ui/account-name.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { logout, meQuery } from '../../features/auth/index.ts';
-import { SYSTEM_PATHS } from '../navigation.ts';
+import { SYSTEM_PATHS, iconFor, labelFor } from '../navigation.ts';
+
+const SETTINGS_PATH = '/version-4';
 import { NavLink } from './NavLink.tsx';
 import styles from './SidebarAccount.module.css';
 
 const ITEMS = '[role^="menuitem"]';
 
+/** Settings shortcut: Ctrl+, or Cmd+, from anywhere except while typing. */
+const typing = (target: EventTarget | null) =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+
 /**
- * Account row at the foot of the wide sidebar (docs/adr/0015). Its menu holds what no longer
- * has a place in the list: the Sistema screens, the appearance choice and sign-out. It follows
+ * Account row at the foot of the wide sidebar (docs/adr/0015). Its menu is short, like the
+ * account menus of Claude or ChatGPT: who is signed in, Configuración (which also holds the
+ * appearance choice, docs/adr/0018), Administración, Auditoría, help and sign-out. It follows
  * the menu button pattern: Enter, Space or ArrowDown open it on the first item, ArrowUp on the
  * last; arrows, Home and End move; Escape closes and returns focus to the row.
  */
 export const SidebarAccount = ({
   pathname,
-  projectLabel,
 }: {
   pathname: string;
-  projectLabel: string;
+  /** Still passed by Sidebar; the menu header now shows the username instead. */
+  projectLabel?: string;
 }) => {
   const me = useQuery(meQuery).data;
   const client = useQueryClient();
   const router = useRouter();
-  const theme = useThemePreference();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -44,6 +50,18 @@ export const SidebarAccount = ({
   });
   const name = accountDisplayName(me?.full_name ?? 'Mi cuenta');
   const letters = accountInitials(name) || '?';
+
+  // Ctrl+, / Cmd+, opens Configuración, the way desktop apps open their settings.
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== ',' || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (typing(event.target)) return;
+      event.preventDefault();
+      void router.navigate({ to: SETTINGS_PATH });
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [router]);
 
   const items = () => [...(menu.current?.querySelectorAll<HTMLElement>(ITEMS) ?? [])];
 
@@ -115,7 +133,7 @@ export const SidebarAccount = ({
         <span className={styles.copy}>
           <span className="visually-hidden">Cuenta de </span>
           <b>{name}</b>
-          <span>Sistema, tema y sesión</span>
+          <span>Configuración y sesión</span>
         </span>
         <Icon name="chevronDown" className={styles.chevron} />
       </button>
@@ -134,43 +152,47 @@ export const SidebarAccount = ({
             </span>
             <span className={styles.who}>
               <b>{name}</b>
-              <span>{projectLabel}</span>
+              {me?.username ? <span>{me.username}</span> : null}
             </span>
           </div>
-          <div role="group" aria-label="Sistema">
-            <p className={styles.label} aria-hidden="true">
-              Sistema
-            </p>
-            {SYSTEM_PATHS.map((path) => (
-              <NavLink
-                key={path}
-                path={path}
-                className={styles.item}
-                role="menuitem"
-                tabIndex={-1}
-                onNavigate={() => close(false)}
-              />
-            ))}
-          </div>
-          <div role="group" aria-label="Tema">
-            <p className={styles.label} aria-hidden="true">
-              Tema
-            </p>
-            {THEME_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="menuitemradio"
-                aria-checked={theme === option.value}
-                tabIndex={-1}
-                className={styles.item}
-                onClick={() => setTheme(option.value)}
-              >
-                <span className={styles.dot} aria-hidden="true" />
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
+          <Link
+            to={SETTINGS_PATH}
+            className={styles.item}
+            role="menuitem"
+            tabIndex={-1}
+            aria-keyshortcuts="Control+, Meta+,"
+            activeOptions={{ exact: true }}
+            activeProps={{ 'aria-current': 'page' }}
+            onClick={() => close(false)}
+          >
+            <Icon name={iconFor(SETTINGS_PATH)} className={styles.icon} />
+            <span>{labelFor(SETTINGS_PATH)}</span>
+            <kbd className={styles.hint} aria-hidden="true">
+              Ctrl+,
+            </kbd>
+          </Link>
+          <NavLink
+            path="/administracion"
+            className={styles.item}
+            role="menuitem"
+            tabIndex={-1}
+            onNavigate={() => close(false)}
+          />
+          <NavLink
+            path="/auditoria"
+            className={styles.item}
+            role="menuitem"
+            tabIndex={-1}
+            onNavigate={() => close(false)}
+          />
+          <NavLink
+            path="/metodologia"
+            label="Ayuda y metodología"
+            className={styles.item}
+            role="menuitem"
+            tabIndex={-1}
+            onNavigate={() => close(false)}
+          />
           <hr className={styles.rule} />
           <button
             type="button"

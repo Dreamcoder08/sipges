@@ -73,7 +73,7 @@ test('search, inbox, project and account are in the sidebar, not in the top bar'
   await account.focus();
   await page.keyboard.press('Enter');
   const menu = page.getByRole('menu', { name: 'Cuenta' });
-  await expect(menu.getByRole('menuitem', { name: 'Administración' })).toBeFocused();
+  await expect(menu.getByRole('menuitem', { name: 'Configuración' })).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(menu).toBeHidden();
   await expect(account).toBeFocused();
@@ -82,6 +82,52 @@ test('search, inbox, project and account are in the sidebar, not in the top bar'
   await expect(
     page.getByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
   ).toBeVisible();
+});
+
+test('Ctrl+, opens Configuración, where Apariencia pins the theme and the menu has no theme', async ({
+  page,
+  admin,
+}) => {
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/eventos');
+  await expect(page.getByRole('heading', { level: 1, name: 'Eventos' })).toBeVisible();
+  await page.keyboard.press('Control+,');
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+  ).toBeVisible();
+
+  const group = page.getByRole('group', { name: 'Tema' });
+  await group.getByRole('radio', { name: 'Oscuro' }).check({ force: true });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(group.getByRole('radio', { name: 'Oscuro' })).toBeChecked();
+
+  await page
+    .locator('aside')
+    .first()
+    .getByRole('button', { name: /^Cuenta de / })
+    .click();
+  const menu = page.getByRole('menu', { name: 'Cuenta' });
+  await expect(menu.getByRole('menuitem')).toHaveText([
+    'ConfiguraciónCtrl+,',
+    'Administración',
+    'Auditoría',
+    'Ayuda y metodología',
+    'Cerrar sesión',
+  ]);
+  await expect(menu.getByRole('menuitemradio')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+
+  // Typing in a field never triggers the shortcut.
+  await page.goto('/eventos');
+  await page
+    .locator('aside')
+    .first()
+    .getByRole('button', { name: /^Buscar/ })
+    .click();
+  await page.keyboard.press('Control+,');
+  await expect(page).toHaveURL(/\/eventos/);
 });
 
 test('captures /eventos in light and dark', async ({ page, admin }) => {
