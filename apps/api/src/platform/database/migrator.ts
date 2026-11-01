@@ -21,6 +21,26 @@ export const loadMigrations = async (): Promise<Migration[]> => {
   );
 };
 
+/**
+ * Versions in `migrations` not yet recorded in `schema_migrations`, read-only: no lock, no DDL.
+ * A database that was never migrated (no table) has every migration pending.
+ */
+export const pendingMigrations = async (
+  client: SqlClient,
+  migrations: readonly Migration[],
+): Promise<string[]> => {
+  const [{ present } = { present: false }] = await client.query<{ present: boolean }>(
+    "SELECT to_regclass('schema_migrations') IS NOT NULL AS present",
+  );
+  if (!present) return migrations.map((m) => m.version);
+  const done = new Set(
+    (await client.query<{ version: string }>('SELECT version FROM schema_migrations')).map(
+      (r) => r.version,
+    ),
+  );
+  return migrations.map((m) => m.version).filter((v) => !done.has(v));
+};
+
 /** Applies pending migrations, each in its own transaction. Returns the applied versions. */
 export const migrate = async (
   client: SqlClient,

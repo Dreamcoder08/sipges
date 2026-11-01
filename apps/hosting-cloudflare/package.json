@@ -6,6 +6,7 @@
     "build": "node build.mjs",
     "migrations": "node generate-migrations.mjs",
     "bundle": "wrangler deploy --dry-run --outdir dist",
+    "migrate": "node migrate.mjs",
     "dev": "wrangler dev",
     "deploy:worker": "wrangler hyperdrive update 9eae2c5e3d614feca42b525fc82e10e1 --caching-disabled true && wrangler deploy",
     "typecheck": "tsc -p tsconfig.json",

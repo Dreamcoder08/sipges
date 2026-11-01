@@ -2,7 +2,11 @@ import { PGlite } from '@electric-sql/pglite';
 import { trackTestDatabase } from '../support/test-database.ts';
 import { describe, expect, it } from 'vitest';
 import { pgliteClient } from '../../src/platform/database/pglite.ts';
-import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
+import {
+  loadMigrations,
+  migrate,
+  pendingMigrations,
+} from '../../src/platform/database/migrator.ts';
 
 const first = { version: '0001_first', sql: 'CREATE TABLE first (id int PRIMARY KEY);' };
 const second = { version: '0002_second', sql: 'CREATE TABLE second (id int PRIMARY KEY);' };
@@ -68,5 +72,29 @@ describe('migrate under concurrency', () => {
       'SELECT version FROM schema_migrations ORDER BY 1',
     );
     expect(versions.rows.map((r) => r.version)).toEqual(['0001_first', '0002_second']);
+  });
+});
+
+describe('pendingMigrations', () => {
+  it('is empty when every migration is applied', async () => {
+    const db = trackTestDatabase(new PGlite());
+    await migrate(pgliteClient(db), migrations);
+    expect(await pendingMigrations(pgliteClient(db), migrations)).toEqual([]);
+  });
+
+  it('lists the migrations that are not applied yet, without applying them', async () => {
+    const db = trackTestDatabase(new PGlite());
+    await migrate(pgliteClient(db), [first]);
+    expect(await pendingMigrations(pgliteClient(db), migrations)).toEqual(['0002_second']);
+    expect(await tables(db)).toEqual(['first', 'schema_migrations']);
+  });
+
+  it('treats every migration as pending when schema_migrations does not exist, creating nothing', async () => {
+    const db = trackTestDatabase(new PGlite());
+    expect(await pendingMigrations(pgliteClient(db), migrations)).toEqual([
+      '0001_first',
+      '0002_second',
+    ]);
+    expect(await tables(db)).toEqual([]);
   });
 });

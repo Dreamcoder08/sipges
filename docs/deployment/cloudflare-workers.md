@@ -51,11 +51,26 @@ Secrets go through `wrangler secret put <NAME>`; plain values can go in `vars`.
 The Worker sets `NODE_ENV=production`, the database URL (from Hyperdrive), the upload directory
 (unused, R2 replaces it) and turns the in-process automation timer off; do not set those.
 
-## 3. Build and deploy
+## 3. Build, migrate and deploy
+
+Deploys are automatic: when the `CI` workflow succeeds on a push to `main`, the
+`Deploy Workers` workflow (`.github/workflows/deploy-workers.yml`) checks out that exact
+commit, builds, applies the migrations, runs `deploy:worker` and smoke-tests `/health`. It can
+also be started by hand (`workflow_dispatch`, `main` only) and runs one at a time. Define these
+secrets on the GitHub `production` environment:
+
+| Secret | Value |
+| --- | --- |
+| `MASCLI_MIGRATION_DATABASE_URL` | Direct Neon URL (not Hyperdrive) with `sslmode=require` |
+| `CLOUDFLARE_API_TOKEN` | Token allowed to edit Workers and Hyperdrive |
+| `CLOUDFLARE_ACCOUNT_ID` | The Cloudflare account id |
+
+Manual run, with the owner's go-ahead:
 
 ```sh
 pnpm --filter @mascli/hosting-cloudflare build   # SPA into ./public + migration index
 pnpm --filter @mascli/hosting-cloudflare bundle  # dry run: bundle size and bindings
+MASCLI_MIGRATION_DATABASE_URL="<direct-url>" pnpm --filter @mascli/hosting-cloudflare migrate
 pnpm --filter @mascli/hosting-cloudflare run deploy:worker  # only with the owner's go-ahead
 ```
 
@@ -65,7 +80,10 @@ Hyperdrive id in `wrangler.jsonc`. If you change the id, update both. Deploy onl
 `deploy:worker`: a plain `wrangler deploy` skips the guard, and the cache state is re-asserted
 only at deploy time, not while the Worker runs.
 
-Migrations run on the first request of each isolate, from the bundled SQL files.
+Migrations no longer run in the Worker: `migrate.mjs` applies them (advisory lock, one
+transaction each) before the new code goes live. A request that finds migrations pending gets
+503 and logs the pending versions, so always run `migrate` before `deploy:worker`. Migrations
+must stay compatible with the version still serving while the deploy finishes.
 
 ## 4. Check the deployment
 
