@@ -25,9 +25,13 @@ visible choices, no frequency-based priority and a heavy navy panel.
   selector, the search composer («Ctrl K») with the notification bell, the five destinations,
   «Integraciones» (Automatizaciones for now), «Recientes» (the last four screens or hub tabs
   opened, kept in sessionStorage for the browser tab only, never sent to the server) and, at the foot, an
-  account row. There are no collapsible groups. The Sistema screens, the appearance choice and
-  sign-out live in the account menu (menu button pattern: Enter, Space or arrows open it, arrows,
-  Home and End move, Escape closes and returns focus). The tools are the same components as on
+  account row. There are no collapsible groups. The account menu is short, like Claude's or
+  ChatGPT's: a header with the full name and username, Configuración (hint «Ctrl+,»; the shortcut
+  Ctrl+, / Cmd+, opens it from anywhere except while typing), Administración, Auditoría, Ayuda y
+  metodología and sign-out (menu button pattern: Enter, Space or arrows open it, arrows, Home and
+  End move, Escape closes and returns focus). Automatizaciones is reached from «Integraciones»;
+  the theme choice lives in Configuración → Apariencia, on phones too (the account sheet links to
+  the same four screens and has no theme control). The tools are the same components as on
   phones (`search`, `notifications`, `projectSwitcher` slots), so labels and requests do not
   change; the phone layout is untouched. Only the navigation scrolls.
 - **Context before chrome.** The phone header holds only the project context, search and the

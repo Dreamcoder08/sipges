@@ -102,6 +102,18 @@ it('presents the project as SIPGES with no switch to turn it on or off', async (
   expect(screen.getByText('Fuentes RSS regionales')).toBeInTheDocument();
 });
 
+it('shows Apariencia on top of the page to every role, even a read-only one', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('consulta');
+  expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+  const appearance = screen.getByRole('heading', { name: 'Apariencia' });
+  const project = screen.getByRole('heading', { name: 'SIPGES' });
+  expect(
+    appearance.compareDocumentPosition(project) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+});
+
 it('saves edited colour meanings', async () => {
   const user = userEvent.setup();
   let sent: { level_meanings?: Record<string, string> } = {};

@@ -32,6 +32,8 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   page,
   admin,
 }) => {
+  // Every screen and hub is visited at two widths; the loop outgrew the default 60 s as screens were added.
+  test.setTimeout(120_000);
   await page.goto('/login');
   await expectNoHorizontalPageScroll(page);
   const settled = watchNetwork(page);
@@ -95,6 +97,8 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   const account = page.getByRole('dialog', { name: 'Cuenta' });
   await expect(account.getByText('Notificaciones', { exact: true })).toBeVisible();
   await expect(account.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+  await expect(account.getByRole('link', { name: 'Configuración' })).toBeVisible();
+  await expect(account.getByRole('radio')).toHaveCount(0);
   await expectAccessible(page, 'the account sheet');
   await page.keyboard.press('Escape');
 
