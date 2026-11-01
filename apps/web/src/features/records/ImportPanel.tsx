@@ -1,4 +1,4 @@
-import type { ImportReport } from '@mascli/contracts';
+import type { ImportReport } from '@sipges/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type ChangeEvent, useId, useState } from 'react';
 import { isApiError } from '../../shared/api/client.ts';
@@ -128,7 +128,7 @@ export const ImportPanel = ({
               <thead>
                 <tr>
                   <th scope="col">Columna</th>
-                  <th scope="col">Campo de MASCLI</th>
+                  <th scope="col">Campo de SIPGES</th>
                   <th scope="col">Ejemplo</th>
                 </tr>
               </thead>

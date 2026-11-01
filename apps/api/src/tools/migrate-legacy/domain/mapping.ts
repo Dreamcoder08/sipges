@@ -4,7 +4,7 @@
  * counts and identifiers without ever touching record contents (ODD T13 requirement 4).
  */
 import { createHash } from 'node:crypto';
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import type {
   LegacyActionLogRow,
   LegacyActionRow,

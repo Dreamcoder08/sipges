@@ -3,7 +3,7 @@ import type { SqlClient } from './sql-client.ts';
 
 export type Migration = { readonly version: string; readonly sql: string };
 
-/** Arbitrary constant shared by every MASCLI instance for pg_advisory_xact_lock. */
+/** Arbitrary constant shared by every SIPGES instance for pg_advisory_xact_lock. */
 const MIGRATION_LOCK_KEY = 7_361_524_002;
 
 /** Loads `NNNN_name.sql` files bundled with the API, sorted by version. */

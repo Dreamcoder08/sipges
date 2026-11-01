@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 
 export const ROLES = ['admin', 'analista', 'coordinador', 'consulta'] as const;
 export type Role = (typeof ROLES)[number];

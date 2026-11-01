@@ -16,7 +16,7 @@ it('retrieves records beyond the API limit without losing their origin or scope'
       const params = new URL(request.url).searchParams;
       const offset = Number(params.get('offset') ?? 0);
       offsets.push(offset);
-      expect(request.headers.get('X-MASCLI-Scope')).toBe('A/B');
+      expect(request.headers.get('X-SIPGES-Scope')).toBe('A/B');
       return HttpResponse.json(rows.slice(offset, offset + 500));
     }),
   );

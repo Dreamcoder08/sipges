@@ -11,13 +11,13 @@ import { TEST_ENV, TestClock } from '../support/test-app.ts';
 /**
  * Real PostgreSQL checks that single-connection PGlite cannot exercise: concurrent pools,
  * advisory locks and postgres.js parameter typing. Opt-in:
- *   MASCLI_TEST_DATABASE_URL=postgres://postgres:secret@127.0.0.1:55432/postgres pnpm test
+ *   SIPGES_TEST_DATABASE_URL=postgres://postgres:secret@127.0.0.1:55432/postgres pnpm test
  * A throwaway database is created per run and dropped afterwards.
  */
-const adminUrl = process.env.MASCLI_TEST_DATABASE_URL;
+const adminUrl = process.env.SIPGES_TEST_DATABASE_URL;
 
 describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
-  const name = `mascli_test_${randomBytes(6).toString('hex')}`;
+  const name = `sipges_test_${randomBytes(6).toString('hex')}`;
   let admin: postgres.Sql;
   let url: string;
   const pools: { close: () => Promise<void> }[] = [];

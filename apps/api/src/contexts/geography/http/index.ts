@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
-import { GeographyQuery } from '@mascli/contracts';
+import { GeographyQuery } from '@sipges/contracts';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import type { GeographyService } from '../application/index.ts';
 /** Install before tenancy consumes/caches JSON, also for requests without Content-Length. */

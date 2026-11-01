@@ -5,7 +5,7 @@ import {
   ScopeCreate,
   type ScopeSummary,
   SelectProjectForm,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
 import { SCOPE_COOKIE, SESSION_COOKIE, setAuthCookie } from '../../../platform/http/cookies.ts';
@@ -45,7 +45,7 @@ const selectProjectPage = (tenants: readonly TenantSummary[]) => {
     })
     .join('');
   return (
-    '<html lang="es"><meta charset="utf-8"><title>Seleccionar proyecto MASCLI</title>' +
+    '<html lang="es"><meta charset="utf-8"><title>Seleccionar proyecto SIPGES</title>' +
     '<body style="font:18px system-ui;max-width:600px;margin:10vh auto"><h1>Selecciona tu proyecto autorizado</h1>' +
     '<form method="post" action="/select-project"><select name="scope" style="padding:12px;width:100%">' +
     options +
@@ -84,7 +84,7 @@ export const tenancyRoutes = (deps: {
       .get('/system/export', async (c) => {
         const result = await tenancy.exportData(c.get('identity'), c.get('scope'));
         if (!result.ok) return c.json({ detail: 'Requiere rol administrador' }, 403);
-        c.header('Content-Disposition', 'attachment; filename="mascli-tenant.json"');
+        c.header('Content-Disposition', 'attachment; filename="sipges-tenant.json"');
         c.header('Content-Type', 'application/json; charset=UTF-8');
         return c.body(JSON.stringify(result.value), 200);
       })

@@ -15,7 +15,7 @@ explícita y reversible.
 - La salida contiene módulos, conteos y posiciones; nunca valores de registros.
 - Cualquier problema del archivo bloquea toda la escritura.
 
-Si la instalación legacy aún tiene `data/mascli.db` y `data/uploads`, use primero
+Si la instalación legacy aún tiene `data/sipges.db` y `data/uploads`, use primero
 `migrate:legacy` (docs/migration/data-migration.md): trae los registros ya editados y los
 informes adjuntos. Esta herramienta es para cuando solo se conserva la matriz `seed.json`.
 
@@ -26,10 +26,10 @@ El proyecto destino debe existir (se crea al iniciar la API o desde Administraci
 
 ```bash
 # Simulación: informa qué se crearía; no escribe nada.
-MASCLI_DATABASE_URL=… pnpm --filter @mascli/api import:base-maestra -- --seed data/seed.json
+SIPGES_DATABASE_URL=… pnpm --filter @sipges/api import:base-maestra -- --seed data/seed.json
 
-# Importación (por defecto en MASCLI/PRJ-SECHURA; otro: --scope EMPRESA/PROYECTO)
-MASCLI_DATABASE_URL=… pnpm --filter @mascli/api import:base-maestra -- --seed data/seed.json --apply
+# Importación (por defecto en SIPGES/PRJ-SECHURA; otro: --scope EMPRESA/PROYECTO)
+SIPGES_DATABASE_URL=… pnpm --filter @sipges/api import:base-maestra -- --seed data/seed.json --apply
 ```
 
 Para revertir: los registros importados se identifican por la entrada de auditoría y sus

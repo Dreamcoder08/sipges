@@ -1,4 +1,4 @@
-/** MASCLI 4.0 project settings (docs/adr/0020 §1). Pure: no I/O. */
+/** SIPGES project settings (docs/adr/0020 §1). Pure: no I/O. */
 
 export const LEVELS = ['Verde', 'Amarillo', 'Naranja', 'Rojo'] as const;
 export type Level = (typeof LEVELS)[number];

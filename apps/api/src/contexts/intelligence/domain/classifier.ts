@@ -1,7 +1,7 @@
 import { foldMarks, pyJsonDumps, pyRound } from './python.ts';
 
 /**
- * Calibrated lexical classifier of a territorial record into one MASCLI dimension
+ * Calibrated lexical classifier of a territorial record into one SIPGES dimension
  * (app.py:1207-1320, version 0.5.1). Suggestions only; never persisted.
  */
 

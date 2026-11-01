@@ -10,7 +10,7 @@ const TAG_BYTES = 16;
  * Format: `v1.<base64url(nonce | ciphertext | tag)>`; the version prefix allows key rotation.
  */
 export const createSecretCipher = (key: Buffer): SecretCipher => {
-  if (key.length !== 32) throw new Error('MASCLI_DATA_KEY must decode to 32 bytes');
+  if (key.length !== 32) throw new Error('SIPGES_DATA_KEY must decode to 32 bytes');
 
   return {
     seal(plaintext) {

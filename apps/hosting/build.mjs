@@ -2,7 +2,7 @@ import { cp, readFile, rm, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 
 const root = new URL('../../', import.meta.url);
-execFileSync('corepack', ['pnpm', '--filter', '@mascli/web', 'build'], {
+execFileSync('corepack', ['pnpm', '--filter', '@sipges/web', 'build'], {
   cwd: root,
   stdio: 'inherit',
   env: { ...process.env, CI: '1' },
@@ -19,7 +19,7 @@ if (process.env.VERCEL === '1') {
       [
         'pnpm',
         '--filter',
-        `@mascli/${name}`,
+        `@sipges/${name}`,
         'exec',
         'tsc',
         '-p',

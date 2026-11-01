@@ -2,7 +2,7 @@ import {
   ConsensusEngineResponse,
   IntegratedAnalysisResponse,
   StrategicAssessmentResponse,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
@@ -71,19 +71,19 @@ export const StrategyPage = (
         <ReportDownload
           scope={context.scope}
           path="/system/strategic-report.docx"
-          filename="MASCLI_Informe_Estrategico.docx"
+          filename="SIPGES_Informe_Estrategico.docx"
           label="Descargar informe estratégico"
         />
         <ReportDownload
           scope={context.scope}
           path="/system/consensus-engine.docx"
-          filename="MASCLI_Motor_Valor_Consenso.docx"
+          filename="SIPGES_Motor_Valor_Consenso.docx"
           label="Descargar propuestas de consenso"
         />
         <ReportDownload
           scope={context.scope}
           path="/system/integrated-analysis.docx"
-          filename="MASCLI_RC19_Analisis_Integrado.docx"
+          filename="SIPGES_RC19_Analisis_Integrado.docx"
           label="Descargar análisis integrado"
         />
       </div>

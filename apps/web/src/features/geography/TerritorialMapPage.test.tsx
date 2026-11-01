@@ -163,7 +163,7 @@ const renderPage = () =>
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <TerritorialMapPage
-        scope="MASCLI/PRJ-SECHURA"
+        scope="SIPGES/PRJ-SECHURA"
         projectId="PRJ-SECHURA"
         projectLabel="Sechura"
         role="consulta"

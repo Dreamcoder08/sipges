@@ -8,7 +8,7 @@ it('preserves raw legacy dashboard values and full sibling analytics over HTTP',
     t.sql.query(
       `INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at)
        VALUES ($1, $2, $3, $4::jsonb, $5, $5)`,
-      ['MASCLI/PRJ-SECHURA', module, id, JSON.stringify(payload), '2026-01-01T00:00:00Z'],
+      ['SIPGES/PRJ-SECHURA', module, id, JSON.stringify(payload), '2026-01-01T00:00:00Z'],
     );
   for (const [index, value] of [undefined, null, false, 0, '', [], {}].entries()) {
     await seed('Alertas', `fallback-${index}`, { Nivel_Preliminar: value, Nivel: 'Verde' });
@@ -87,7 +87,7 @@ it('retains clearance and tenant isolation, and rejected scope leaves records an
         headers: {
           cookie: admin.cookie,
           'content-type': 'application/json',
-          'x-mascli-scope': 'ACME/NORTE',
+          'x-sipges-scope': 'ACME/NORTE',
         },
         body: JSON.stringify({ payload: { ID_Evento: 'foreign' } }),
       })

@@ -2,7 +2,7 @@ import {
   type GeographyCatalogue,
   GeographyServiceId,
   type GeographyQuery,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 const ORIGIN = 'https://geocatmin.ingemmet.gob.pe/arcgis/rest/services/';
 export const officialServiceUrl = (id: string) =>
   `${ORIGIN}${GeographyServiceId.parse(id)}/MapServer`;

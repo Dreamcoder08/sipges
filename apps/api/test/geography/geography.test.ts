@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { GeographyQuery, type GeographyPolygon } from '@mascli/contracts';
+import { GeographyQuery, type GeographyPolygon } from '@sipges/contracts';
 import { pointInPolygon } from '../../src/contexts/geography/domain/geometry.ts';
 import { relateRecords } from '../../src/contexts/geography/application/relations.ts';
 import { createIngemmetGateway } from '../../src/contexts/geography/infrastructure/index.ts';

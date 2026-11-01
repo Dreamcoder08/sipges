@@ -4,7 +4,7 @@ import type { AppEnv } from '../../src/platform/http/env.ts';
 import { geographyRequestLimit, geographyRoutes } from '../../src/contexts/geography/http/index.ts';
 import { createGeographyService } from '../../src/contexts/geography/application/index.ts';
 import { geodesicSpatialEngine } from '../../src/contexts/geography/infrastructure/spatial-engine.ts';
-import type { GeographyCatalogue } from '@mascli/contracts';
+import type { GeographyCatalogue } from '@sipges/contracts';
 const catalogue: GeographyCatalogue = {
   status: 'verified',
   checkedAt: '2026-10-17',

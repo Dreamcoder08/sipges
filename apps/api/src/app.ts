@@ -4,7 +4,7 @@ import { sourceRequestLimit, sourceRoutes } from './contexts/integration/http/so
 import { mediaRoutes } from './contexts/integration/http/media-routes.ts';
 import { signalRoutes } from './contexts/integration/http/signal-routes.ts';
 import { automationWakeup } from './platform/http/automation-wakeup.ts';
-import type { ErrorResponse } from '@mascli/contracts';
+import type { ErrorResponse } from '@sipges/contracts';
 import { Hono } from 'hono';
 import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';

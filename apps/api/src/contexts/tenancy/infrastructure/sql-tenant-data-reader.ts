@@ -35,7 +35,7 @@ export const createSqlTenantDataReader = (sql: SqlClient): TenantDataReader => (
         "SELECT set_config('app.tenant_id', $1, true), set_config('app.clearance', 'full', true)",
         [tenantId],
       );
-      await tx.exec('SET LOCAL ROLE mascli_tenant');
+      await tx.exec('SET LOCAL ROLE sipges_tenant');
       const tenant = tx;
       {
         const data: { -readonly [K in keyof TenantExportData]: TenantExportData[K] } = {

@@ -1,4 +1,4 @@
-import { Attachment, AttachmentPreview, AttachmentUploaded } from '@mascli/contracts';
+import { Attachment, AttachmentPreview, AttachmentUploaded } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { request, requestJson } from '../../shared/api/client.ts';

@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { type DimensionCode, dimensionOf, foldText } from '../../shared/lib/text.ts';
 
 /** Series of the narrative trend chart, in legend order. */

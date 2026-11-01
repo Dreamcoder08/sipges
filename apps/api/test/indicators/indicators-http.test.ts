@@ -22,7 +22,7 @@ import { createTestApp } from '../support/test-app.ts';
 
 type Snapshot = IrsaResult & { ok: true; id: number };
 
-const SECHURA = 'MASCLI/PRJ-SECHURA';
+const SECHURA = 'SIPGES/PRJ-SECHURA';
 const NORTE = 'ACME/NORTE';
 
 /** Mounts only the Indicators routes; the scope comes from a test header (synthetic tenants). */
@@ -57,8 +57,8 @@ const setup = async () => {
 const seedModuleRecords = async (t: Awaited<ReturnType<typeof createTestApp>>) =>
   t.sql.exec(`
     INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at) VALUES
-      ('MASCLI/PRJ-SECHURA', 'Demandas', 'D-1', '{"Estado":"Abierta","Tema":"Empleo"}', now(), now()),
-      ('MASCLI/PRJ-SECHURA', 'Demandas', 'D-2', '{"Estado":"Abierta","Tema":"Vías"}', now(), now()),
+      ('SIPGES/PRJ-SECHURA', 'Demandas', 'D-1', '{"Estado":"Abierta","Tema":"Empleo"}', now(), now()),
+      ('SIPGES/PRJ-SECHURA', 'Demandas', 'D-2', '{"Estado":"Abierta","Tema":"Vías"}', now(), now()),
       ('ACME/NORTE', 'Demandas', 'D-9', '{"Estado":"Abierta","Tema":"Agua"}', now(), now());
   `);
 

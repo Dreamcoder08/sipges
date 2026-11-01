@@ -1,4 +1,4 @@
-import { type ReportDocument, bullet, heading, paragraph, title } from '@mascli/kernel';
+import { type ReportDocument, bullet, heading, paragraph, title } from '@sipges/kernel';
 import type { Finding } from './insights.ts';
 
 export const ANALYSIS_VERSION = '2.1';
@@ -45,12 +45,14 @@ export type DocumentAnalysis = {
   readonly limitations: readonly string[];
 };
 
-export const LAB_REPORT_FILENAME = 'MASCLI_RC20_Lectura_Documental.docx';
+export const LAB_REPORT_FILENAME = 'SIPGES_RC20_Lectura_Documental.docx';
 
 /** Outline of app.py `document_lab_report`. */
 export const labReport = (analysis: DocumentAnalysis): ReportDocument => ({
   blocks: [
-    title('MASCLI RC 2.0 | Informe de lectura documental'),
+    title(
+      'SIPGES (Sistema Inteligente de Predicción y GEStión Social) RC 2.0 | Informe de lectura documental',
+    ),
     paragraph('PROTOTIPO · Material para revisión técnica, no informe oficial'),
     ...(['filename', 'project_id', 'sha256', 'generated_at', 'method'] as const).map((key) =>
       paragraph(`${key}: ${analysis[key]}`),

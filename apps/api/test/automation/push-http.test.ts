@@ -166,7 +166,7 @@ describe('own device tests and durable attempts', () => {
     await t.call('POST', '/system/automations/tick', {});
     expect(endpoints).toEqual([subscription(1).endpoint]);
     expect((await t.call('GET', '/system/notifications')).body.items).toHaveLength(1);
-    await withTenant(t.sql, 'MASCLI/PRJ-SECHURA', async (tx) => {
+    await withTenant(t.sql, 'SIPGES/PRJ-SECHURA', async (tx) => {
       await tx.query("UPDATE automation_runs SET status='pending',next_attempt_at=$1", [
         t.clock.now(),
       ]);

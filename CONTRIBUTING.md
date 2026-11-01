@@ -1,6 +1,6 @@
-# Contribuir a MASCLI
+# Contribuir a SIPGES
 
-La versión final de MASCLI es el monorepo TypeScript (`apps/`, `packages/`). La app Python (`app.py`, `static/`) es legada: solo recibe correcciones de seguridad hasta que la migración alcance paridad.
+La versión final de SIPGES es el monorepo TypeScript (`apps/`, `packages/`). La app Python (`app.py`, `static/`) es legada: solo recibe correcciones de seguridad hasta que la migración alcance paridad.
 
 ## Ramas
 
@@ -23,6 +23,6 @@ pnpm check              # lint + límites de capas + typecheck + tests
 python -m pytest -q tests   # solo si tocas la app Python legada
 ```
 
-Las pruebas de integración con PostgreSQL real corren en CI. En local, actívalas con `MASCLI_TEST_DATABASE_URL` (ver `docs/migration/workspace.md`).
+Las pruebas de integración con PostgreSQL real corren en CI. En local, actívalas con `SIPGES_TEST_DATABASE_URL` (ver `docs/migration/workspace.md`).
 
 Las decisiones de arquitectura van como ADR en `docs/adr/`.

@@ -6,7 +6,7 @@
 
 ## Context
 
-MASCLI runs its Hono API and React SPA on Node, published on Vercel. The owner asked why not
+SIPGES runs its Hono API and React SPA on Node, published on Vercel. The owner asked why not
 Cloudflare and chose «Cloudflare Workers + Hyperdrive + Neon». The data must stay in PostgreSQL
 with forced row-level security, so D1 (SQLite, no RLS) is out. Workers differ from Node in ways
 that touch the API: no native addons, no filesystem, no `worker_threads` or `child_process`, no
@@ -33,10 +33,10 @@ request (10 ms on Free; up to 5 minutes, default 30 s, on Paid).
    - `referenceReader`: the repository references (`data/project_coordinates.json`,
      `data/canonical_entities.json`) bundled as JSON modules, with the same contracts and
      single-tenant rule as the file reader.
-   - `objectStorage`: evidence files in a private R2 bucket behind MASCLI's own checks.
-4. **MASCLI's own security still applies to every request.** Static Assets run Worker-first, so
+   - `objectStorage`: evidence files in a private R2 bucket behind SIPGES's own checks.
+4. **SIPGES's own security still applies to every request.** Static Assets run Worker-first, so
    the strict CSP, security headers and host allowlist cover the SPA. The Worker refuses to start
-   without `MASCLI_ALLOWED_HOSTS`; it is never derived from the client-controlled Host header.
+   without `SIPGES_ALLOWED_HOSTS`; it is never derived from the client-controlled Host header.
 5. **Scheduled work runs on Cron Triggers** (every 15 minutes); event automation after a write
    finishes through `waitUntil`, as it already does on Vercel.
 6. **Workers Paid is required.** Argon2id costs about 250 ms of CPU per login and a legacy hash

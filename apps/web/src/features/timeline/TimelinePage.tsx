@@ -1,4 +1,4 @@
-import type { Timeline } from '@mascli/contracts';
+import type { Timeline } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';

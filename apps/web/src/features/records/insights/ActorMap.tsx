@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { foldText } from '../../../shared/lib/text.ts';
 import { Button } from '../../../shared/ui/Button.tsx';

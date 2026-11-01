@@ -4,14 +4,14 @@ import { createSqlAnalyticsRecordReader } from '../../src/contexts/analytics/inf
 import { pgliteClient } from '../../src/platform/database/pglite.ts';
 import { trackTestDatabase } from '../support/test-database.ts';
 
-const SECHURA = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+const SECHURA = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 
 // Minimal synthetic stand-in for the T6 table and the T5 tenant role.
 const setup = async (withTable: boolean, forced = true) => {
   const db = trackTestDatabase(new PGlite());
   const sql = pgliteClient(db);
   await sql.exec(
-    `CREATE ROLE mascli_tenant NOLOGIN; GRANT USAGE ON SCHEMA public TO mascli_tenant;`,
+    `CREATE ROLE sipges_tenant NOLOGIN; GRANT USAGE ON SCHEMA public TO sipges_tenant;`,
   );
   if (withTable)
     await sql.exec(`
@@ -21,11 +21,11 @@ const setup = async (withTable: boolean, forced = true) => {
       ${forced ? 'ALTER TABLE module_records FORCE ROW LEVEL SECURITY;' : ''}
       CREATE POLICY tenant_isolation ON module_records
         USING (tenant_id = current_setting('app.tenant_id', true));
-      GRANT SELECT ON module_records TO mascli_tenant;
+      GRANT SELECT ON module_records TO sipges_tenant;
       INSERT INTO module_records VALUES
-        ('MASCLI/PRJ-SECHURA','Eventos','e-old','{"Tema":"old"}','2026-01-01'),
-        ('MASCLI/PRJ-SECHURA','Eventos','e-new','{"Tema":"new"}','2026-02-01'),
-        ('MASCLI/PRJ-SECHURA','Actores','a1','{}','2026-01-01'),
+        ('SIPGES/PRJ-SECHURA','Eventos','e-old','{"Tema":"old"}','2026-01-01'),
+        ('SIPGES/PRJ-SECHURA','Eventos','e-new','{"Tema":"new"}','2026-02-01'),
+        ('SIPGES/PRJ-SECHURA','Actores','a1','{}','2026-01-01'),
         ('ACME/NORTE','Eventos','n1','{"Tema":"north"}','2026-03-01');
     `);
   return createSqlAnalyticsRecordReader(sql);

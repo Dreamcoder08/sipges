@@ -46,7 +46,7 @@ const setup = async () => {
   return { json, plan, patch, room };
 };
 
-describe('Situation room (MASCLI 4.0)', () => {
+describe('Situation room (SIPGES)', () => {
   it('shows what is blocked and by whom, what is overdue and what is moving', async () => {
     const { json, plan, patch, room } = await setup();
     const blocked = await plan('Mesa técnica sintética', '2026-12-01');

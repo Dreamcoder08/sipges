@@ -10,7 +10,7 @@ import {
   PreventiveActions,
   SituationRoom,
   TerritorialAlerts,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { requestJson } from '../../shared/api/client.ts';
 import { downloadFile } from '../../shared/api/download.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
@@ -68,7 +68,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
     queryFn: ({ signal }) =>
       requestJson('/system/prevention/summary', PreventionSummary, { scope, signal }),
   });
-  // MASCLI 4.0 decision receipts (ADR 0023): a closing names an evidence file of the project.
+  // SIPGES decision receipts (ADR 0023): a closing names an evidence file of the project.
   const attachments = useQuery({
     queryKey: ['operations', scope, 'attachments'],
     enabled: writable,
@@ -132,7 +132,7 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
   });
   const csv = useMutation({
     mutationFn: () =>
-      downloadFile(scope, '/system/management/report.csv', 'mascli_rc28_reporte_gerencial.csv'),
+      downloadFile(scope, '/system/management/report.csv', 'sipges_rc28_reporte_gerencial.csv'),
   });
   const busy = create.isPending || update.isPending;
   const actionable =

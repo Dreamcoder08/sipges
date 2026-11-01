@@ -120,7 +120,7 @@ describe('situations engine', () => {
     expect(situations[0]?.territories).toEqual(['Sur']);
   });
 
-  it('counts undated records apart and ignores alerts MASCLI 4.0 suggested', () => {
+  it('counts undated records apart and ignores alerts SIPGES suggested', () => {
     const report = findSituations(
       [
         ...employment(),
@@ -128,7 +128,7 @@ describe('situations engine', () => {
         {
           module: 'Alertas',
           id: 'AL-1',
-          payload: { Fecha: ago(1), Causa: 'Empleo', Origen: 'MASCLI 4.0' },
+          payload: { Fecha: ago(1), Causa: 'Empleo', Origen: 'SIPGES' },
         },
       ],
       DEFAULT_SETTINGS,

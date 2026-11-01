@@ -1,4 +1,4 @@
-import type { Role } from '@mascli/contracts';
+import type { Role } from '@sipges/contracts';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
 
@@ -34,7 +34,7 @@ export const resetApi = (overrides: Partial<ApiState> = {}) => {
 };
 
 const unauthorized = () =>
-  HttpResponse.json({ detail: 'Inicie sesión para acceder a MASCLI' }, { status: 401 });
+  HttpResponse.json({ detail: 'Inicie sesión para acceder a SIPGES' }, { status: 401 });
 
 const signedIn = <T>(respond: () => T) => (api.me ? respond() : unauthorized());
 

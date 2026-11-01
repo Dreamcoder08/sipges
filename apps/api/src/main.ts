@@ -36,7 +36,7 @@ const server = serve(
     hostname: config.host,
     port: config.port,
   },
-  (info) => console.info(`MASCLI API listening on http://${info.address}:${info.port}`),
+  (info) => console.info(`SIPGES API listening on http://${info.address}:${info.port}`),
 );
 
 // Automations tick in-process on a long-running server (ADR 0014 §4).

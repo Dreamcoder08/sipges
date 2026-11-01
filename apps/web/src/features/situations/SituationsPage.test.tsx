@@ -129,7 +129,7 @@ it('creates the alert only when a person asks, with the explanation and cited re
     Nivel_Preliminar: 'Naranja',
     Estado: 'Abierta',
     Accion_Sugerida: situation.recommendations.join('\n'),
-    Origen: 'MASCLI 4.0',
+    Origen: 'SIPGES',
     Situacion: 'tema:empleo local',
     Explicacion: situation.reasons[0]?.text,
     Registros_Relacionados: ['Demandas:D-1', 'Narrativas:N-1', 'Eventos:EV-1'],
@@ -141,7 +141,7 @@ it('does not offer a second alert for a situation that already has one', async (
   server.use(
     http.get('*/system/v4/situations', () => HttpResponse.json(report)),
     http.get('*/api/alertas', () =>
-      HttpResponse.json([{ _id: 'AL-3', Origen: 'MASCLI 4.0', Situacion: 'tema:empleo local' }]),
+      HttpResponse.json([{ _id: 'AL-3', Origen: 'SIPGES', Situacion: 'tema:empleo local' }]),
     ),
   );
   renderPage('analista');

@@ -1,8 +1,8 @@
-# MASCLI
+# SIPGES — Sistema Inteligente de Predicción y GEStión Social
 
 Gestión y análisis territorial con TypeScript y arquitectura hexagonal.
 
-MASCLI es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobre PostgreSQL con aislamiento por proyecto. Reúne registros territoriales, mapas, inteligencia de redes, IRSA y automatizaciones en una sola aplicación. La versión publicada es **v1.0.0** ([CHANGELOG](CHANGELOG.md)).
+SIPGES es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobre PostgreSQL con aislamiento por proyecto. Reúne registros territoriales, mapas, inteligencia de redes, IRSA y automatizaciones en una sola aplicación. La versión publicada es **v1.0.0** ([CHANGELOG](CHANGELOG.md)).
 
 ## Inicio rápido
 
@@ -11,17 +11,17 @@ Requiere Node.js 24 y Corepack.
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm check                          # lint, límites de capas, tipos y pruebas
-corepack pnpm --filter @mascli/api dev       # API en http://127.0.0.1:8000
-corepack pnpm --filter @mascli/web dev       # SPA en http://127.0.0.1:5173
+corepack pnpm --filter @sipges/api dev       # API en http://127.0.0.1:8000
+corepack pnpm --filter @sipges/web dev       # SPA en http://127.0.0.1:5173
 ```
 
-Antes de arrancar la API configura `MASCLI_DATA_KEY` y `MASCLI_ADMIN_PASSWORD`; para HTTP local, `MASCLI_COOKIE_SECURE=0`.
+Antes de arrancar la API configura `SIPGES_DATA_KEY` y `SIPGES_ADMIN_PASSWORD`; para HTTP local, `SIPGES_COOKIE_SECURE=0`.
 
 **[Docs →](docs/overview.md)**
 
 ## Arquitectura
 
-[![Arquitectura hexagonal TypeScript de MASCLI](docs/diagrams/arquitectura.png)](docs/diagrams/arquitectura.html)
+[![Arquitectura hexagonal TypeScript de SIPGES](docs/diagrams/arquitectura.png)](docs/diagrams/arquitectura.html)
 
 SPA, contratos compartidos, Hono, casos de uso, dominio, adaptadores, PostgreSQL, objetos y embeddings, con dependencias que apuntan hacia dentro. El [mapa interactivo](docs/diagrams/arquitectura.html) se descarga y se abre en el navegador.
 

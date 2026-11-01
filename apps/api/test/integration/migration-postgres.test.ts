@@ -1,7 +1,7 @@
 /**
  * The legacy migration against a real PostgreSQL server (RLS, roles and driver typing that
  * single-connection PGlite cannot exercise). Opt-in:
- *   MASCLI_TEST_DATABASE_URL=postgres://postgres:secret@127.0.0.1:5432/postgres pnpm test
+ *   SIPGES_TEST_DATABASE_URL=postgres://postgres:secret@127.0.0.1:5432/postgres pnpm test
  */
 import { randomBytes } from 'node:crypto';
 import postgres from 'postgres';
@@ -20,10 +20,10 @@ import {
 import { buildLegacyFixture, type LegacyFixture } from '../support/legacy-fixture.ts';
 import { TEST_DATA_KEY, memoryStorage } from '../support/test-app.ts';
 
-const adminUrl = process.env.MASCLI_TEST_DATABASE_URL;
+const adminUrl = process.env.SIPGES_TEST_DATABASE_URL;
 
 describe.skipIf(!adminUrl)('legacy migration on real PostgreSQL', () => {
-  const name = `mascli_migration_test_${randomBytes(6).toString('hex')}`;
+  const name = `sipges_migration_test_${randomBytes(6).toString('hex')}`;
   let admin: postgres.Sql;
   let pool: ReturnType<typeof postgresClient>;
   let fixture: LegacyFixture;
@@ -89,13 +89,13 @@ describe.skipIf(!adminUrl)('legacy migration on real PostgreSQL', () => {
     expect(verified.problems.filter((p) => p.code.startsWith('verify_'))).toEqual([]);
 
     // Rows really are tenant-scoped: inside one tenant's transaction the other is invisible.
-    const visible = await withTenant(pool.client, 'MASCLI/PRJ-SECHURA', async (tx) =>
+    const visible = await withTenant(pool.client, 'SIPGES/PRJ-SECHURA', async (tx) =>
       tx.query<{ tenant_id: string }>('SELECT DISTINCT tenant_id FROM module_records'),
     );
-    expect(visible.map((r) => r.tenant_id)).toEqual(['MASCLI/PRJ-SECHURA']);
+    expect(visible.map((r) => r.tenant_id)).toEqual(['SIPGES/PRJ-SECHURA']);
 
     // Regression: postgres.js must not JSON-encode JSON text parameters a second time.
-    const [typed] = await withTenant(pool.client, 'MASCLI/PRJ-SECHURA', async (tx) =>
+    const [typed] = await withTenant(pool.client, 'SIPGES/PRJ-SECHURA', async (tx) =>
       tx.query<{ t: string }>('SELECT jsonb_typeof(payload) AS t FROM module_records LIMIT 1'),
     );
     expect(typed?.t).toBe('object');

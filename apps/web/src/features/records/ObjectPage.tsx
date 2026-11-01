@@ -1,4 +1,4 @@
-import type { Role } from '@mascli/contracts';
+import type { Role } from '@sipges/contracts';
 import { useState } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { Card } from '../../shared/ui/Card.tsx';
@@ -168,6 +168,6 @@ export const ObjectPage = ({
     />
   ) : (
     <Card title="Tipo de registro no válido">
-      <p>La dirección no corresponde a un tipo de registro de MASCLI.</p>
+      <p>La dirección no corresponde a un tipo de registro de SIPGES.</p>
     </Card>
   );

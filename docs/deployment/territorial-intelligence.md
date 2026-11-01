@@ -13,8 +13,8 @@ al detalle de la señal y a la narrativa original.
 
 Para el teléfono, activar notificaciones en el propio dispositivo y ejecutar su prueba. En iOS,
 instalar primero la aplicación web en la pantalla de inicio. La aceptación del servicio push
-no demuestra recepción/lectura. Configurar MASCLI_VAPID_PUBLIC_KEY, MASCLI_VAPID_PRIVATE_KEY y
-MASCLI_VAPID_SUBJECT, conservar las claves mientras haya suscripciones y no publicar la privada.
+no demuestra recepción/lectura. Configurar SIPGES_VAPID_PUBLIC_KEY, SIPGES_VAPID_PRIVATE_KEY y
+SIPGES_VAPID_SUBJECT, conservar las claves mientras haya suscripciones y no publicar la privada.
 Telegram/correo requieren sus propios canales autorizados; no reciben la prueba personal push.
 
 ## Ejecución y reintentos
@@ -27,11 +27,11 @@ un nuevo barrido; los trabajadores aplican su propio contexto de seguridad y los
 vigentes de cada destinatario.
 
 Respaldo nativo: GET /system/automations/cron a las **04:15 UTC diariamente**. Vercel Hobby puede
-ejecutarlo dentro de esa hora. Configurar CRON_SECRET; si existe MASCLI_CRON_SECRET, deben
-coincidir porque MASCLI le da precedencia. Sin secreto válido, el endpoint rechaza la petición.
+ejecutarlo dentro de esa hora. Configurar CRON_SECRET; si existe SIPGES_CRON_SECRET, deben
+coincidir porque SIPGES le da precedencia. Sin secreto válido, el endpoint rechaza la petición.
 Un ejecutor externo autorizado puede llamar al mismo endpoint mediante Bearer para mayor
 frecuencia. No se instala un cron frecuente en el repositorio privado ni se contratan servicios.
-El servidor persistente utiliza el mismo coordinador con MASCLI_AUTOMATION_INTERVAL.
+El servidor persistente utiliza el mismo coordinador con SIPGES_AUTOMATION_INTERVAL.
 
 Los reintentos se atienden al despertar el motor. El cron diario no garantiza detección oportuna
 de publicaciones externas durante el día. El estado fallido de una fuente no impide intentar
@@ -94,13 +94,13 @@ La ficha de una concesión en `/mapa` ofrece un área de influencia de 1, 3, 5 o
 los registros con coordenadas propias, ordenados por distancia al límite oficial. Una localidad
 escrita no ubica un registro. Estar en el área indica cercanía, no impacto ni causalidad.
 
-MASCLI mide con PostGIS (elipsoide WGS84) si la extensión está instalada en la base de datos y,
+SIPGES mide con PostGIS (elipsoide WGS84) si la extensión está instalada en la base de datos y,
 mientras no lo esté, con una aproximación geodésica interna que la ficha declara. La aplicación
 nunca crea la extensión ni añade columnas; la consulta no lee ni escribe tablas.
 
 Para habilitar PostGIS en Neon (una sola vez, por la persona responsable de la base):
 
-1. En la consola de Neon, abrir el proyecto de MASCLI, la rama de producción y el SQL Editor,
+1. En la consola de Neon, abrir el proyecto de SIPGES, la rama de producción y el SQL Editor,
    con el rol propietario de la base (no el rol de la aplicación).
 2. Ejecutar `CREATE EXTENSION IF NOT EXISTS postgis;`.
 3. Comprobar con `SELECT postgis_full_version();`.
@@ -109,4 +109,4 @@ Para habilitar PostGIS en Neon (una sola vez, por la persona responsable de la b
    minutos, sin reiniciar.
 
 Revertir: `DROP EXTENSION postgis;` devuelve la aproximación geodésica; no se pierde ningún dato
-de MASCLI porque ninguna tabla depende de la extensión.
+de SIPGES porque ninguna tabla depende de la extensión.

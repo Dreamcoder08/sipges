@@ -1,4 +1,4 @@
-import type { RecordNeighbourhood } from '@mascli/contracts';
+import type { RecordNeighbourhood } from '@sipges/contracts';
 import { describe, expect, it } from 'vitest';
 import { buildDossier } from './operations.ts';
 

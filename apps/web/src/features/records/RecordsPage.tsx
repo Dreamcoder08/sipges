@@ -1,5 +1,5 @@
 import { FollowupPanel } from './followup/FollowupPanel.tsx';
-import type { ModuleRecord, Role } from '@mascli/contracts';
+import type { ModuleRecord, Role } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { ZodError } from 'zod';

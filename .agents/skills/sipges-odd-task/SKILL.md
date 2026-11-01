@@ -1,6 +1,6 @@
 ---
-name: mascli-odd-task
-description: "Use when an implemented MASCLI ODD task must be closed, its evidence recorded, or the next open task identified. A request to update the log alone does not prove task completion."
+name: sipges-odd-task
+description: "Use when an implemented SIPGES ODD task must be closed, its evidence recorded, or the next open task identified. A request to update the log alone does not prove task completion."
 ---
 
 # Actualizar una tarea ODD
@@ -21,6 +21,6 @@ Trabajo pequeño y entendido no necesita ODD (ver *Proportional work* en `AGENTS
 
 Una tarea ya cerrada no se vuelve a cerrar: el script rechaza la operación sin modificar el archivo. Añade correcciones de evidencia como cambios de documentación revisados, preservando el log original. Si falta una decisión necesaria para completar la tarea, registra el pendiente; no marques trabajo incompleto como terminado.
 
-Entrega tarea, entrada de log, PR y pendientes. La publicación usa `mascli-task-pr`; la verificación usa `mascli-verify`.
+Entrega tarea, entrada de log, PR y pendientes. La publicación usa `sipges-task-pr`; la verificación usa `sipges-verify`.
 
 Referencia: [skills oficiales de Codex](https://developers.openai.com/codex/skills/). Herramienta: `scripts/odd-close-task.mjs`.

@@ -18,7 +18,7 @@ test.beforeEach(async ({ page, admin }) => {
 
 test('IRSA computes the index and stores a snapshot in the history', async ({ page }) => {
   await page.goto('/irsa');
-  await expect(page.getByRole('heading', { level: 1, name: 'IRSA-MASCLI' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'IRSA-SIPGES' })).toBeVisible();
   await expect(page.getByText('PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS')).toBeVisible();
   await expect(
     page.getByRole('table', { name: 'Puntuación y disponibilidad por dimensión' }),
@@ -94,7 +94,7 @@ test('management center shows project metrics and downloads the CSV report', asy
   ).toBeVisible();
   await expect(page.getByText(/^Proyecto: PRJ-SECHURA · Generado: /)).toBeVisible();
   const csv = await download(page, 'Descargar CSV');
-  expect(csv.file.suggestedFilename()).toBe('mascli_rc28_reporte_gerencial.csv');
+  expect(csv.file.suggestedFilename()).toBe('sipges_rc28_reporte_gerencial.csv');
   const content = csv.bytes.toString('utf8').replace(/^\uFEFF/, '');
   expect(content.split(/\r?\n/).length).toBeGreaterThan(1);
   expect(content).toContain('PRJ-SECHURA');

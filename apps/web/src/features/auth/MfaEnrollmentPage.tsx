@@ -1,4 +1,4 @@
-import { TotpSetupResponse, TotpEnabled } from '@mascli/contracts';
+import { TotpSetupResponse, TotpEnabled } from '@sipges/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';

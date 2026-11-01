@@ -23,19 +23,19 @@ describe(`migration ${VERSION}`, () => {
 
     await db.exec(`
       INSERT INTO tenants (company_id, project_id, label) VALUES
-        ('MASCLI', 'PRJ-SECHURA', 'Sechura'), ('MASCLI', 'PRJ-OTRO', 'Otro');
+        ('SIPGES', 'PRJ-SECHURA', 'Sechura'), ('SIPGES', 'PRJ-OTRO', 'Otro');
     `);
     const rows = [
-      record('MASCLI/PRJ-SECHURA', 'D-REAL', { ID_Demanda: 'D-REAL', Tema: 'Agua' }),
-      record('MASCLI/PRJ-SECHURA', 'DEMO-D-01', { Dato_Sintetico: true, Demo_ID: 'DEMO-D-01' }),
+      record('SIPGES/PRJ-SECHURA', 'D-REAL', { ID_Demanda: 'D-REAL', Tema: 'Agua' }),
+      record('SIPGES/PRJ-SECHURA', 'DEMO-D-01', { Dato_Sintetico: true, Demo_ID: 'DEMO-D-01' }),
       record(
-        'MASCLI/PRJ-SECHURA',
+        'SIPGES/PRJ-SECHURA',
         'DEMO-D-02',
         { Demo_Dataset: 'mascli-academic-v1' },
         'restringido',
       ),
-      record('MASCLI/PRJ-OTRO', 'DEMO-D-03', { Dato_Sintetico: true }),
-      record('MASCLI/PRJ-OTRO', 'D-FALSO', { Dato_Sintetico: false, Demo_Dataset: '' }),
+      record('SIPGES/PRJ-OTRO', 'DEMO-D-03', { Dato_Sintetico: true }),
+      record('SIPGES/PRJ-OTRO', 'D-FALSO', { Dato_Sintetico: false, Demo_Dataset: '' }),
     ];
     for (const row of rows)
       await db.query(
@@ -45,8 +45,8 @@ describe(`migration ${VERSION}`, () => {
       );
     await db.exec(`
       INSERT INTO irsa_snapshots (tenant_id, ts, irsa, level, scores, note) VALUES
-        ('MASCLI/PRJ-SECHURA', now(), 40, 'Amarillo', '{}', 'DEMO mascli-academic-v1: corte inicial sintético'),
-        ('MASCLI/PRJ-SECHURA', now(), 41, 'Amarillo', '{}', 'Corte real');
+        ('SIPGES/PRJ-SECHURA', now(), 40, 'Amarillo', '{}', 'DEMO mascli-academic-v1: corte inicial sintético'),
+        ('SIPGES/PRJ-SECHURA', now(), 41, 'Amarillo', '{}', 'Corte real');
     `);
 
     // Run as a table owner without BYPASSRLS, like a managed PostgreSQL owner role.

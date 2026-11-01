@@ -1,4 +1,4 @@
-import type { ProjectSettings } from '@mascli/contracts';
+import type { ProjectSettings } from '@sipges/contracts';
 import { createContext, type ReactNode, useContext } from 'react';
 import type { Level } from './text.ts';
 

@@ -37,7 +37,7 @@ export const SCREENS = [
   { path: '/situaciones', label: 'Situaciones', title: 'Situaciones relacionadas', ready: true },
   { path: '/buzon', label: 'Buzón', title: 'Buzón de quejas y sugerencias', ready: true },
   { path: '/lecciones', label: 'Lecciones', title: 'Lecciones territoriales', ready: true },
-  { path: '/mapa', label: 'Mapa territorial', title: 'Mapa territorial MASCLI', ready: true },
+  { path: '/mapa', label: 'Mapa territorial', title: 'Mapa territorial SIPGES', ready: true },
   {
     path: '/ubicacion',
     label: 'Ubicación geoespacial',
@@ -57,7 +57,7 @@ export const SCREENS = [
     title: 'Inteligencia estratégica territorial',
     ready: true,
   },
-  { path: '/irsa', label: 'IRSA-MASCLI', title: 'IRSA-MASCLI', ready: true },
+  { path: '/irsa', label: 'IRSA-SIPGES', title: 'IRSA-SIPGES', ready: true },
   { path: '/validacion', label: 'Validación', title: 'Validación', ready: true },
   {
     path: '/calidad',
@@ -78,7 +78,7 @@ export const SCREENS = [
     title: 'Automatizaciones e integraciones',
     ready: true,
   },
-  { path: '/metodologia', label: 'Metodología', title: 'Metodología MASCLI', ready: true },
+  { path: '/metodologia', label: 'Metodología', title: 'Metodología SIPGES', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
   { path: '/version-4', label: 'Configuración', title: 'Configuración del proyecto', ready: true },
 ] as const satisfies readonly {
@@ -205,7 +205,7 @@ export const projectParts = (label: string): { name: string; detail: string } =>
 };
 
 export const titleFor = (path: string) =>
-  SCREENS.find((screen) => screen.path === path)?.title ?? 'MASCLI';
+  SCREENS.find((screen) => screen.path === path)?.title ?? 'SIPGES';
 
 /** Only same-app paths are accepted as a post-login destination (no open redirect). */
 export const safeRedirect = (value: unknown) =>

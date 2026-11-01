@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import {
   DEFAULT_SCOPE,
   DEFAULT_SCOPE_LABEL,
@@ -50,7 +50,7 @@ export const createTenancyService = (deps: {
         return err('forbidden' as const);
       const data = await deps.dataReader.read(scope);
       return ok({
-        format: 'mascli.tenant-export' as const,
+        format: 'sipges.tenant-export' as const,
         version: 1 as const,
         scope: { company_id: scope.companyId, project_id: scope.projectId },
         exported_at: `${clock.now().toISOString().slice(0, 19)}Z`,

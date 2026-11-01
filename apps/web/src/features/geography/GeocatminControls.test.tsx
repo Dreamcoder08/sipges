@@ -66,7 +66,7 @@ it('selects layers, controls opacity and queries scoped same-origin geometry wit
   server.use(
     http.get('/system/geography/catalogue', () => HttpResponse.json(catalogue)),
     http.post('/system/geography/query', async ({ request }) => {
-      scope = request.headers.get('X-MASCLI-Scope');
+      scope = request.headers.get('X-SIPGES-Scope');
       requestBody = await request.json();
       return HttpResponse.json({
         features: [{ attributes: { CODIGOU: 'SYNTHETIC' } }],

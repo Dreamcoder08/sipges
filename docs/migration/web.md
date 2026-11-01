@@ -30,7 +30,7 @@ route tree.
 
 - `shared/api/client.ts` calls the API same-origin with `credentials: 'same-origin'`. The
   session and the active project live in HttpOnly cookies; the SPA never handles tokens.
-- Every answer is parsed with its `@mascli/contracts` schema. New client-facing contracts:
+- Every answer is parsed with its `@sipges/contracts` schema. New client-facing contracts:
   `DashboardResponse`, `IrsaSummary`, `ModelStatus`.
 - A failure becomes an `ApiError` whose `detail` is shown as text. FastAPI-style validation
   lists are summarised, never rendered raw.
@@ -48,7 +48,7 @@ selected leads to `/proyecto`.
 
 ## Delivery and security
 
-- `MASCLI_WEB_DIR` (for example `apps/web/dist` after `pnpm --filter @mascli/web build`) makes
+- `SIPGES_WEB_DIR` (for example `apps/web/dist` after `pnpm --filter @sipges/web build`) makes
   the API serve the SPA. HTML navigations to non-API paths get `index.html`. `/assets/*` serves
   hashed files with validated names. API paths, JSON requests and writes are untouched.
 - The shell and bundle are served without a session because they hold no tenant data. Every
@@ -78,7 +78,7 @@ selected leads to `/proyecto`.
 
 ## Tests
 
-`pnpm --filter @mascli/web test` covers the following with Vitest, Testing Library and MSW on
+`pnpm --filter @sipges/web test` covers the following with Vitest, Testing Library and MSW on
 synthetic data:
 - sign-in, MFA and the redirect guard;
 - session expiry and sign-out;
@@ -93,7 +93,7 @@ The API side has tests for `/api/dashboard` and for SPA delivery and its CSP
 
 The six rebuilt routes use the isolated `features/records` feature. Each module has its own field definition, labels and list columns; demands also offers commitments. The shared UI supports search, create, view, full-replacement edit and confirmed delete. Lists use the API's 500-record ceiling and explain when the reader should refine the search. Tables scroll inside a labelled keyboard-focusable region on narrow screens.
 
-- Every record query key includes the authorized company/project. HTTP calls send `X-MASCLI-Scope`, including the fresh GET before PUT, uploads and downloads, so a request started before a project switch remains scoped to its original tenant.
+- Every record query key includes the authorized company/project. HTTP calls send `X-SIPGES-Scope`, including the fresh GET before PUT, uploads and downloads, so a request started before a project switch remains scoped to its original tenant.
 - The router keys the workspace by scope/module. A project switch discards the old form and detail panel. Server grants, role policies and RLS remain authoritative.
 - Admin and analyst can mutate these records; consultation and coordinator roles see read-only controls. The UI locks conflicting record controls during saves, deletes and uploads.
 - PUT reads the latest record and overlays only editable fields, retaining unknown fields, IDs and evidence links. Existing project display names are preserved; new records use the granted project label when available. Explicitly blank canonical directory fields override imported aliases, so clearing a contact value remains effective.
@@ -112,7 +112,7 @@ Verification and synthetic-browser evidence: [T11b verification report](../histo
 
 - **IRSA y validación:** puntuaciones, factores, indicadores, disponibilidad, historial y cortes. Solo administradores editan pesos, bandas y contribuciones; administrador/analista guardan cortes. La plantilla CSV para expertos conserva el estado científico pendiente y no inventa calificaciones Aiken.
 - **Alertas:** CRUD de alertas territoriales documentadas y acciones asociadas. Las alertas digitales tienen su bandeja específica en inteligencia de redes y planes preventivos en gerencia.
-- **Mapa:** SVG interactivo sin servicios externos; selección, zoom, navegación, vértices y CSV de las cinco concesiones referenciales. Los datos del adaptador `reference` están registrados únicamente para `MASCLI/PRJ-SECHURA`; otras empresas/proyectos reciben un estado sin geometría. No se inventan coordenadas para actores o eventos. Se muestran CRS, fecha, organización y límites de la fuente.
+- **Mapa:** SVG interactivo sin servicios externos; selección, zoom, navegación, vértices y CSV de las cinco concesiones referenciales. Los datos del adaptador `reference` están registrados únicamente para `SIPGES/PRJ-SECHURA`; otras empresas/proyectos reciben un estado sin geometría. No se inventan coordenadas para actores o eventos. Se muestran CRS, fecha, organización y límites de la fuente.
 - **Situación y estrategia:** análisis situacional, valoración estratégica, consenso e integración con descargas DOCX. Cinco formularios específicos permiten registrar intereses, diálogos, oportunidades, hechos compartidos y AARC. Guardar un registro invalida los resúmenes correspondientes.
 - **Documentos:** lectura, comparación, reporte, importación con huella SHA-256 y decisiones humanas. Corroborar exige una nota de evidencia contrastada. Los candidatos no se convierten automáticamente en hechos, registros ni componentes del IRSA.
 - **Inteligencia:** análisis por reglas, semántico o automático con respaldo. Sin modelo disponible, automático conserva la explicación del respaldo; semántico presenta el error. El servidor no descarga la URL proporcionada.
@@ -120,6 +120,6 @@ Verification and synthetic-browser evidence: [T11b verification report](../histo
 - **Administración:** cuentas reales de identidad, proyectos autorizados, creación de proyectos, concesión/revocación explícita, desactivación confirmada y exportación del proyecto sin credenciales. No hay catálogo global de todos los tenants ni listado de grants porque la API actual no los ofrece. MFA personal permite configurar/activar a los roles que autoriza el servidor; desactivar MFA no está expuesto por la API.
 - **Auditoría y metodología:** búsqueda de operaciones del proyecto para administradores; definiciones y reglas reales de indicadores con el estado de validación del servidor.
 
-Las páginas reciben un contexto común y se reinician al cambiar de alcance. Todas las lecturas, escrituras y descargas protegidas fijan `X-MASCLI-Scope`; también se corrigieron las consultas del dashboard. Los resultados se validan con contratos Zod. Formularios en curso conservan sus valores para reintentar y bloquean controles incompatibles.
+Las páginas reciben un contexto común y se reinician al cambiar de alcance. Todas las lecturas, escrituras y descargas protegidas fijan `X-SIPGES-Scope`; también se corrigieron las consultas del dashboard. Los resultados se validan con contratos Zod. Formularios en curso conservan sus valores para reintentar y bloquean controles incompatibles.
 
 La verificación funcional usa datos sintéticos. La cobertura de estas pantallas no sustituye T14 ni certifica el modelo IRSA. La normalización amplia de columnas importadas sigue correspondiendo a T13.

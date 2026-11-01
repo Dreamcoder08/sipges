@@ -38,7 +38,7 @@ export const renderEvidence = async (file: EvidenceFixture): Promise<Uint8Array<
   return new Uint8Array(
     await Packer.toBuffer(
       new Document({
-        creator: 'MASCLI',
+        creator: 'SIPGES',
         title: 'Registro de seguimiento',
         sections: [{ children: file.text.split('\n').map((line) => new Paragraph(line)) }],
       }),

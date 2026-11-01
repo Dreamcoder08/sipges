@@ -9,7 +9,7 @@ import {
   TerritorialAlerts,
   TerritorialSummary,
   TextAnalysisResponse,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { requestJson } from '../../shared/api/client.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';

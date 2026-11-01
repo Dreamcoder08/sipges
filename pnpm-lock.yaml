@@ -210,10 +210,10 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.4
         version: 2.1.4(hono@4.13.13)
-      '@mascli/contracts':
+      '@sipges/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@mascli/kernel':
+      '@sipges/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
       '@noble/hashes':
@@ -271,7 +271,7 @@ importers:
 
   apps/hosting:
     dependencies:
-      '@mascli/api':
+      '@sipges/api':
         specifier: workspace:*
         version: link:../api
       '@vercel/blob':
@@ -284,7 +284,7 @@ importers:
         specifier: ^4.13.13
         version: 4.13.13
     devDependencies:
-      '@mascli/web':
+      '@sipges/web':
         specifier: workspace:*
         version: link:../web
       '@types/node':
@@ -299,7 +299,7 @@ importers:
 
   apps/hosting-cloudflare:
     dependencies:
-      '@mascli/api':
+      '@sipges/api':
         specifier: workspace:*
         version: link:../api
       hono:
@@ -333,10 +333,10 @@ importers:
       '@deck.gl/mapbox':
         specifier: 9.4.0
         version: 9.4.0(@deck.gl/core@9.4.0(@luma.gl/webgpu@9.4.2(@luma.gl/core@9.4.2)(@luma.gl/shadertools@9.4.2(@luma.gl/core@9.4.2))))(@luma.gl/core@9.4.2)(@math.gl/web-mercator@4.1.0)
-      '@mascli/contracts':
+      '@sipges/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@mascli/kernel':
+      '@sipges/kernel':
         specifier: workspace:*
         version: link:../../packages/kernel
       '@radix-ui/react-dialog':
@@ -397,7 +397,7 @@ importers:
 
   packages/contracts:
     dependencies:
-      '@mascli/kernel':
+      '@sipges/kernel':
         specifier: workspace:*
         version: link:../kernel
       zod:

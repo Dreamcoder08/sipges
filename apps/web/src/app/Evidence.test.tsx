@@ -51,7 +51,7 @@ describe('linked evidence', () => {
       }),
       http.post('/system/uploads', async ({ request }) => {
         sent = await request.formData();
-        scope = request.headers.get('X-MASCLI-Scope') ?? '';
+        scope = request.headers.get('X-SIPGES-Scope') ?? '';
         attachments.push(attachment);
         return HttpResponse.json({ ok: true, attachment });
       }),
@@ -105,7 +105,7 @@ describe('linked evidence', () => {
     server.use(
       http.get('/system/uploads', () => HttpResponse.json([attachment])),
       http.get('/system/uploads/ADJ-1/download', ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe('DEMO/PRJ-DEMO');
+        expect(request.headers.get('X-SIPGES-Scope')).toBe('DEMO/PRJ-DEMO');
         return HttpResponse.json({ detail: 'El archivo ya no está disponible' }, { status: 410 });
       }),
     );
@@ -152,7 +152,7 @@ it('keeps a pending upload scoped to the original tenant after a project switch'
   let uploadScope: string | null = null;
   server.use(
     http.post('/system/uploads', async ({ request }) => {
-      uploadScope = request.headers.get('X-MASCLI-Scope');
+      uploadScope = request.headers.get('X-SIPGES-Scope');
       started = true;
       await new Promise<void>((resolve) => {
         release = resolve;

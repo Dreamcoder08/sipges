@@ -6,7 +6,7 @@ Two bounded contexts port the Python engines as pure domain functions behind ten
 
 - Endpoints: `GET /system/irsa`, `GET|POST /system/irsa/config`, `POST /system/irsa/snapshot`, `GET /system/irsa/history?limit`, `GET /system/indicators`, `GET /system/model-status`, `GET /system/validation-template`.
 - The 32 indicators match `app.py` `compute_indicators` exactly on a golden synthetic fixture (`test/indicators/python-parity.fixture.json`); rounding reproduces Python `round()` ties-to-even.
-- Config is stored per tenant in `irsa_configs` (defaults from `data/irsa_config.json`); snapshots in `irsa_snapshots`. Both live in migration `0005_irsa.sql` with forced RLS; `mascli_tenant` has no DELETE. Values are stored as `json`, not `jsonb`, so band order (first match wins) is preserved.
+- Config is stored per tenant in `irsa_configs` (defaults from `data/irsa_config.json`); snapshots in `irsa_snapshots`. Both live in migration `0005_irsa.sql` with forced RLS; `sipges_tenant` has no DELETE. Values are stored as `json`, not `jsonb`, so band order (first match wins) is preserved.
 - Config updates and snapshots append audit rows in the same tenant transaction.
 - Deliberate differences from Python: malformed weights, contributions or bands return 422 instead of 500; timestamps are UTC ISO seconds with `Z`.
 

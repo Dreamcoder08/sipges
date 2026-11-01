@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** MASCLI 4.0 project settings (docs/adr/0020 §1). */
+/** SIPGES project settings (docs/adr/0020 §1). */
 const meaning = z
   .string()
   .trim()
@@ -126,7 +126,7 @@ export const Situation = z.object({
   territories: z.array(z.string()),
   topics: z.array(z.string()),
   last_date: z.string(),
-  /** MASCLI 4.0 lessons recorded earlier about the same key (ADR 0024 §4). */
+  /** SIPGES lessons recorded earlier about the same key (ADR 0024 §4). */
   lessons: z.array(z.object({ id: z.string(), date: z.string(), learned: z.string() })).optional(),
 });
 export type Situation = z.infer<typeof Situation>;

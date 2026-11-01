@@ -2,7 +2,7 @@ import type { ObjectStorage } from '../../api/src/contexts/evidence/application/
 import type { R2Bucket } from './bindings.ts';
 
 /**
- * Evidence files in a private R2 bucket. Downloads always go through MASCLI's session,
+ * Evidence files in a private R2 bucket. Downloads always go through SIPGES's session,
  * project and permission checks; the bucket is never public and no object URL is issued.
  */
 export const r2ObjectStorage = (bucket: R2Bucket): ObjectStorage => ({

@@ -15,6 +15,6 @@ export const openDatabase = async (
   }
   await mkdir(config.pgliteDir, { recursive: true });
   const db = new PGlite(config.pgliteDir);
-  console.warn(`MASCLI is using embedded PGlite at ${config.pgliteDir} (development only).`);
+  console.warn(`SIPGES is using embedded PGlite at ${config.pgliteDir} (development only).`);
   return { sql: pgliteClient(db), close: () => db.close() };
 };

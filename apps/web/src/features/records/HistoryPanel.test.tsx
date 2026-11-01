@@ -9,7 +9,7 @@ it('lists versions newest first with labelled field changes', async () => {
   let scope: string | null = null;
   server.use(
     http.get('/api/actores/A-1/history', ({ request }) => {
-      scope = request.headers.get('X-MASCLI-Scope');
+      scope = request.headers.get('X-SIPGES-Scope');
       return HttpResponse.json([
         {
           version: 2,

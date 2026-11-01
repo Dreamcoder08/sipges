@@ -1,4 +1,4 @@
-import type { ProjectCoordinates } from '@mascli/contracts';
+import type { ProjectCoordinates } from '@sipges/contracts';
 import type { Extent } from './BaseMap.tsx';
 
 type Concession = ProjectCoordinates['concessions'][number];

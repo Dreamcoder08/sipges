@@ -9,7 +9,7 @@ test('the territorial map relates a signal to its alert, the action taken and wh
   const stamp = Date.now();
   const event = `EV-OPS-${stamp}`;
   const alert = `AL-OPS-${stamp}`;
-  const headers = { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+  const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
   const post = async (path: string, data: Record<string, unknown>) => {
     const response = await page.request.post(path, { headers, data });
     expect(response.status()).toBe(200);

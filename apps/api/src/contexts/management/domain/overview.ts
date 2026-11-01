@@ -4,7 +4,7 @@ import {
   isValidCalendarDate,
   recordDueDate,
   roundHalfEven,
-} from '@mascli/kernel';
+} from '@sipges/kernel';
 
 /** Per-project management center (app.py:2224-2270, RC 2.8). Descriptive counts only. */
 
@@ -187,12 +187,12 @@ const FLOAT_METRICS = new Set(['completion_percent', 'average_progress']);
 const pythonNumber = (key: string, value: number, totalActions: number) =>
   FLOAT_METRICS.has(key) && totalActions > 0 && Number.isInteger(value) ? `${value}.0` : value;
 
-export const MANAGEMENT_CSV_FILENAME = 'mascli_rc28_reporte_gerencial.csv';
+export const MANAGEMENT_CSV_FILENAME = 'sipges_rc28_reporte_gerencial.csv';
 
 /** app.py `rc28_export_csv`: UTF-8 with BOM, CRLF rows like Python's csv.writer. */
 export const managementCsv = (report: ManagementOverview) =>
   '\ufeff' +
-  row(['MASCLI RC 2.8', 'Resumen gerencial', report.project_id, report.generated_at]) +
+  row(['SIPGES RC 2.8', 'Resumen gerencial', report.project_id, report.generated_at]) +
   row(['Indicador', 'Valor']) +
   Object.entries(report.metrics)
     .map(([k, v]) => row([k, pythonNumber(k, v, report.metrics.total_actions)]))

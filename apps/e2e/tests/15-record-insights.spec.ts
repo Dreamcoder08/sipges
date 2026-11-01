@@ -16,7 +16,7 @@ for (const mobile of [false, true]) {
     const territory = `Territorio de prueba ${stamp}`;
     const post = async (module: string, payload: Record<string, unknown>) => {
       const response = await page.request.post(`/api/${module}`, {
-        headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+        headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
         data: { payload },
       });
       expect(response.status()).toBe(200);

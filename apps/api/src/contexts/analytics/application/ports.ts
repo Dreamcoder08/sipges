@@ -1,4 +1,4 @@
-import type { ReportDocument } from '@mascli/kernel';
+import type { ReportDocument } from '@sipges/kernel';
 import type { Scope } from '../../tenancy/application/index.ts';
 import type { RecordsByModule } from '../domain/records.ts';
 

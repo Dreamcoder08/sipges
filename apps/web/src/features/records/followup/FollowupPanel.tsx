@@ -1,5 +1,5 @@
-import type { ModuleRecord } from '@mascli/contracts';
-import { limaToday } from '@mascli/kernel';
+import type { ModuleRecord } from '@sipges/contracts';
+import { limaToday } from '@sipges/kernel';
 import { useId, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { followupRows, type FollowupBucket } from './followup.ts';

@@ -1,6 +1,6 @@
-# Arquitectura TypeScript de MASCLI · ODD
+# Arquitectura TypeScript de SIPGES · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de MASCLI en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](history/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de SIPGES en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](history/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Abrir el mapa
 
@@ -32,13 +32,13 @@ El backend organiza cada contexto en `http`, `application`, `domain` e `infrastr
 | Analista | Informe extractivo con citas; Narrator opcional con Claude (`@anthropic-ai/sdk`) | [ADR 0013](adr/0013-cited-analyst-briefings.md) |
 | Herramientas | pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser | Enmienda del [ADR 0001](adr/0001-monorepo-and-toolchain.md): sin Turborepo/Biome |
 
-El adaptador de demo en `apps/hosting` reutiliza Hono y añade Blob privado al puerto ObjectStorage. La demo académica está publicada en Vercel con PostgreSQL Neon del propietario. Por su petición, esta demo sintética configura `MASCLI_REQUIRE_MFA=0`: admite contraseña sin inscripción obligatoria y conserva TOTP para cuentas que lo activen voluntariamente. El valor predeterminado de MASCLI sigue exigiendo MFA. La evidencia pública vigente y la configuración figuran en [hosting](../apps/hosting/README.md); los recibos históricos que exigían inscripción describen aquella revisión, no la demo actual.
+El adaptador de demo en `apps/hosting` reutiliza Hono y añade Blob privado al puerto ObjectStorage. La demo académica está publicada en Vercel con PostgreSQL Neon del propietario. Por su petición, esta demo sintética configura `SIPGES_REQUIRE_MFA=0`: admite contraseña sin inscripción obligatoria y conserva TOTP para cuentas que lo activen voluntariamente. El valor predeterminado de SIPGES sigue exigiendo MFA. La evidencia pública vigente y la configuración figuran en [hosting](../apps/hosting/README.md); los recibos históricos que exigían inscripción describen aquella revisión, no la demo actual.
 
 El mapa agrupa los contextos identity, tenancy, records, ontology, analyst, audit, indicators, analytics, evidence, documents, intelligence, prevention, management, reference, automation, integration, geography y system. La composición de gerencia consulta APIs de aplicación de inteligencia y prevención; no debe acceder directamente a sus tablas. Los formatos de reporte usan el modelo `ReportDocument` del kernel.
 
 ## Inteligencia territorial y ejecución
 
-El contexto `geography` consulta siete categorías de servicios INGEMMET fijos. Descubre sus subcapas consultables y conserva atribución, fecha de comprobación, escalas desconocidas y errores por servicio. La SPA mantiene su mapa SVG y geometría de concesiones; las imágenes oficiales se alinean en WGS84. Las consultas de atributos e intersecciones pasan por MASCLI con scope autorizado, límites de área/bytes, timeout y truncamiento. Los registros propios se relacionan por coordenadas/GeoJSON válidos o referencia de concesión explícita con fuente; los nombres territoriales no producen geometría. La disponibilidad en vivo de GEOCATMIN sigue pendiente por respuestas TLS/503; no se presentan siete capas renderizadas como comprobadas.
+El contexto `geography` consulta siete categorías de servicios INGEMMET fijos. Descubre sus subcapas consultables y conserva atribución, fecha de comprobación, escalas desconocidas y errores por servicio. La SPA mantiene su mapa SVG y geometría de concesiones; las imágenes oficiales se alinean en WGS84. Las consultas de atributos e intersecciones pasan por SIPGES con scope autorizado, límites de área/bytes, timeout y truncamiento. Los registros propios se relacionan por coordenadas/GeoJSON válidos o referencia de concesión explícita con fuente; los nombres territoriales no producen geometría. La disponibilidad en vivo de GEOCATMIN sigue pendiente por respuestas TLS/503; no se presentan siete capas renderizadas como comprobadas.
 
 La evaluación de narrativas usa reglas existentes y crea señales pendientes de verificación humana con procedencia y deduplicación concurrente de 24 horas. La auditoría conserva instantáneas para evaluar reglas reproducibles; no se invoca IA de pago ni se modifica IRSA. Una regla posterior puede notificar según prioridad/estado. La suscripción Web Push es voluntaria; aceptar una entrega en el proveedor no confirma recepción en un teléfono.
 
@@ -46,9 +46,9 @@ La evaluación de narrativas usa reglas existentes y crea señales pendientes de
 
 ## Persistencia y aislamiento
 
-`MASCLI_DATABASE_URL` selecciona PostgreSQL mediante postgres.js. Sin esa variable, desarrollo usa PGlite embebido; `NODE_ENV=production` exige la URL. Las migraciones se aplican al arrancar. `withTenant` establece `app.tenant_id` y `SET LOCAL ROLE mascli_tenant` dentro de la transacción. Las tablas territoriales llevan RLS, mientras usuarios, sesiones, tenants y grants son globales. Los cambios de registros y su auditoría se escriben en la misma transacción. Esto describe los controles implementados, sin constituir una auditoría de seguridad.
+`SIPGES_DATABASE_URL` selecciona PostgreSQL mediante postgres.js. Sin esa variable, desarrollo usa PGlite embebido; `NODE_ENV=production` exige la URL. Las migraciones se aplican al arrancar. `withTenant` establece `app.tenant_id` y `SET LOCAL ROLE sipges_tenant` dentro de la transacción. Las tablas territoriales llevan RLS, mientras usuarios, sesiones, tenants y grants son globales. Los cambios de registros y su auditoría se escriben en la misma transacción. Esto describe los controles implementados, sin constituir una auditoría de seguridad.
 
-La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptador local o S3 según `MASCLI_STORAGE`; los metadatos quedan en PostgreSQL. El laboratorio procesa documentos mediante puertos y genera DOCX sin invocar Python. Ollama se llama solo al solicitar semántica: `mode=rules` devuelve el análisis por reglas sin invocar embeddings. El adaptador de referencias lee geometría y entidades del repositorio únicamente para su empresa/proyecto registrado; no ofrece la geometría de Sechura como fallback de otro tenant. No se representa ningún proveedor alojado como si ya estuviera desplegado.
+La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptador local o S3 según `SIPGES_STORAGE`; los metadatos quedan en PostgreSQL. El laboratorio procesa documentos mediante puertos y genera DOCX sin invocar Python. Ollama se llama solo al solicitar semántica: `mode=rules` devuelve el análisis por reglas sin invocar embeddings. El adaptador de referencias lee geometría y entidades del repositorio únicamente para su empresa/proyecto registrado; no ofrece la geometría de Sechura como fallback de otro tenant. No se representa ningún proveedor alojado como si ya estuviera desplegado.
 
 ## Estado del ODD en esta revisión
 
@@ -73,7 +73,7 @@ La revisión territorial añade catálogo/intersecciones, señales verificables,
 - `diagrams/arquitectura.png`: vista previa del visor en escritorio.
 - [Licencia Archify](ARCHIFY-LICENSE.txt) y [verificación de la entrega](history/archify-verification.md).
 
-Herramienta: [tt-a1i/archify](https://github.com/tt-a1i/archify), revisión `c21c31ffb879668900c5487ea24993bf45d89b15`. Archify se usa para documentación y no se instala como dependencia de MASCLI. Requiere Node.js y Chrome/Chromium para la comprobación de navegador.
+Herramienta: [tt-a1i/archify](https://github.com/tt-a1i/archify), revisión `c21c31ffb879668900c5487ea24993bf45d89b15`. Archify se usa para documentación y no se instala como dependencia de SIPGES. Requiere Node.js y Chrome/Chromium para la comprobación de navegador.
 
 Clona la herramienta en una carpeta hermana y fija su revisión:
 
@@ -82,10 +82,10 @@ git clone https://github.com/tt-a1i/archify.git ../archify-tool
 git -C ../archify-tool checkout c21c31ffb879668900c5487ea24993bf45d89b15
 ```
 
-Desde la raíz de MASCLI:
+Desde la raíz de SIPGES:
 
 ```bash
-ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs finalize architecture docs/diagrams/arquitectura.json docs/diagrams/arquitectura.html --repo-root . --quality showcase --json --out-dir /tmp/mascli-archify-review
+ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs finalize architecture docs/diagrams/arquitectura.json docs/diagrams/arquitectura.html --repo-root . --quality showcase --json --out-dir /tmp/sipges-archify-review
 ```
 
 En PowerShell, establece `$env:ARCHIFY_UPDATE_CHECK_DISABLED="1"` antes del comando `node`. Usa una carpeta de revisión nueva al modificar el candidato y conserva los recibos anteriores. Para actualizarlo, inspecciona el código TypeScript y el ODD, ajusta responsabilidades, conexiones y referencias, y fija `meta.repository.revision` a la revisión que contiene los archivos citados. Las referencias se comprueban contra bytes comprometidos en Git.

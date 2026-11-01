@@ -42,7 +42,7 @@ const setup = async () => {
   return { t, json, coordinator, alert, decide, read };
 };
 
-describe('Four eyes on high-priority alerts (MASCLI 4.0)', () => {
+describe('Four eyes on high-priority alerts (SIPGES)', () => {
   it('needs a second, different person to corroborate a high-priority alert', async () => {
     const { json, alert, coordinator, decide, read } = await setup();
     const ana = await coordinator('ana');

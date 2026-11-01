@@ -12,7 +12,7 @@ vi.mock('../../shared/api/download.ts', () => ({
   downloadFile: vi.fn().mockResolvedValue(undefined),
 }));
 const context: FeatureContext = {
-  scope: 'MASCLI/PRJ-SECHURA',
+  scope: 'SIPGES/PRJ-SECHURA',
   projectId: 'PRJ-SECHURA',
   projectLabel: 'Sechura',
   role: 'admin',
@@ -112,7 +112,7 @@ describe('analysis pages', () => {
   it('shows actual situational counts, source excerpts and limitations; downloads scoped report', async () => {
     server.use(
       http.get('*/system/situational-analysis', ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         return HttpResponse.json({
           project_id: context.projectId,
           project_name: 'Sechura',
@@ -152,7 +152,7 @@ describe('analysis pages', () => {
     expect(downloadFile).toHaveBeenCalledWith(
       context.scope,
       '/system/situational-report.docx',
-      'MASCLI_Analisis_Situacional.docx',
+      'SIPGES_Analisis_Situacional.docx',
     );
   });
   it('renders strategic recommendations as proposals and composes requested record editor', async () => {
@@ -231,14 +231,14 @@ describe('document lab', () => {
     const imported: unknown[] = [];
     server.use(
       http.post('*/system/document-lab/analyze', async ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         const form = await request.formData();
         expect(form.get('project_id')).toBe(context.projectId);
         expect(form.get('file')).toBeInstanceOf(File);
         return HttpResponse.json(analysis);
       }),
       http.post('*/system/document-lab/review/import', async ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         imported.push(await request.json());
         return HttpResponse.json({ ok: true, new_items: 1, message: 'Extractos importados.' });
       }),
@@ -272,7 +272,7 @@ describe('document lab', () => {
     const decisions: unknown[] = [];
     server.use(
       http.patch('*/system/document-lab/review/review1', async ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         decisions.push(await request.json());
         return HttpResponse.json({
           ok: true,
@@ -367,7 +367,7 @@ describe('document lab', () => {
         const form = await request.formData();
         expect(form.get('file_a')).toBeInstanceOf(File);
         expect(form.get('file_b')).toBeInstanceOf(File);
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         if (++calls === 1)
           return HttpResponse.json({ detail: 'No se puede leer el documento' }, { status: 422 });
         return HttpResponse.json({
@@ -507,7 +507,7 @@ describe('document operation regressions', () => {
     expect(matching?.slice(0, 3)).toEqual([
       context.scope,
       '/system/document-lab/report.docx',
-      'MASCLI_RC20_Lectura_Documental.docx',
+      'SIPGES_RC20_Lectura_Documental.docx',
     ]);
     expect(matching?.[3]?.method).toBe('POST');
     const body = matching?.[3]?.body;
@@ -525,7 +525,7 @@ describe('document operation regressions', () => {
     let started = false;
     server.use(
       http.post('*/system/document-lab/analyze', async ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         started = true;
         await gate;
         return HttpResponse.json(analysis);
@@ -544,7 +544,7 @@ describe('document operation regressions', () => {
     await waitFor(() => expect(started).toBe(true));
     const other = {
       ...context,
-      scope: 'MASCLI/PRJ-NORTE',
+      scope: 'SIPGES/PRJ-NORTE',
       projectId: 'PRJ-NORTE',
       projectLabel: 'Norte',
     };

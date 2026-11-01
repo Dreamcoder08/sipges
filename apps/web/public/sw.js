@@ -1,4 +1,4 @@
-// MASCLI service worker (docs/adr/0014): shows device notifications and opens the record.
+// SIPGES service worker (docs/adr/0014): shows device notifications and opens the record.
 // It deliberately has no fetch handler: project data is never cached on the device.
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -9,11 +9,11 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'MASCLI', body: event.data ? event.data.text() : '' };
+    data = { title: 'SIPGES', body: event.data ? event.data.text() : '' };
   }
   const url = typeof data.url === 'string' && data.url.startsWith('/') ? data.url : '/';
   event.waitUntil(
-    self.registration.showNotification(String(data.title || 'MASCLI'), {
+    self.registration.showNotification(String(data.title || 'SIPGES'), {
       body: String(data.body || ''),
       icon: '/icon.svg',
       badge: '/icon.svg',

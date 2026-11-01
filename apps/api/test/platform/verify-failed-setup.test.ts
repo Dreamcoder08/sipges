@@ -28,13 +28,13 @@ const captureRejectedClone = async (env: Record<string, string>, error: string) 
 describe('S3 T5d rejected setup ownership', { concurrent: false }, () => {
   it('owns allocation before synchronous configuration failure', async () => {
     await captureRejectedClone(
-      { MASCLI_PORT: '0' },
-      'MASCLI_PORT must be an integer between 1 and 65535',
+      { SIPGES_PORT: '0' },
+      'SIPGES_PORT must be an integer between 1 and 65535',
     );
   });
   it('closes rejected configuration allocation and owns failed bootstrap', async () => {
     expect(previous?.closed).toBe(true);
-    await captureRejectedClone({ MASCLI_ADMIN_PASSWORD: 'short' }, 'MASCLI_ADMIN_PASSWORD');
+    await captureRejectedClone({ SIPGES_ADMIN_PASSWORD: 'short' }, 'SIPGES_ADMIN_PASSWORD');
   });
   it('closes failed bootstrap allocation and permits a fresh working clone', async () => {
     expect(previous?.closed).toBe(true);

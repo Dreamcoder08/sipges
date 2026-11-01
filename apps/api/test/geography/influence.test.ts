@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import type { GeographyCatalogue, GeographyPolygon } from '@mascli/contracts';
+import type { GeographyCatalogue, GeographyPolygon } from '@sipges/contracts';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createGeographyService } from '../../src/contexts/geography/application/index.ts';
@@ -126,10 +126,10 @@ describe('area of influence', () => {
  * Real PostGIS (opt-in, like test/integration/postgres.test.ts): the extension is created only
  * in a throwaway database, and skipped where the server does not ship PostGIS.
  */
-const adminUrl = process.env.MASCLI_TEST_DATABASE_URL;
+const adminUrl = process.env.SIPGES_TEST_DATABASE_URL;
 
 describe.skipIf(!adminUrl)('PostGIS distances', () => {
-  const name = `mascli_gis_${randomBytes(6).toString('hex')}`;
+  const name = `sipges_gis_${randomBytes(6).toString('hex')}`;
   let admin: postgres.Sql;
   let pool: { client: SqlClient; close: () => Promise<void> } | null = null;
   let installed = false;

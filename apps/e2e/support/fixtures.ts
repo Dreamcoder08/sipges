@@ -13,7 +13,7 @@ const required = (name: string): string => {
 };
 
 /** Bootstrap tenant created by the API on an empty installation. */
-export const DEFAULT_SCOPE = 'MASCLI/PRJ-SECHURA';
+export const DEFAULT_SCOPE = 'SIPGES/PRJ-SECHURA';
 
 export type Credentials = { readonly username: string; readonly password: string };
 
@@ -101,7 +101,7 @@ export const createAccount = async (
   const password = `e2e-${crypto.randomUUID()}`;
   const created = await admin.post('/system/auth/accounts', {
     // Account routes resolve a project scope like other business routes (tenancy middleware).
-    headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE },
+    headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
     data: { ...account, full_name: `Cuenta ${account.username}`, password },
   });
   expect(created.status(), await created.text()).toBe(200);
@@ -125,12 +125,12 @@ type Fixtures = {
 export const test = base.extend<Fixtures>({
   // Playwright requires object destructuring for the fixture argument, even when empty.
   // eslint-disable-next-line no-empty-pattern
-  baseURL: async ({}, use) => use(required('MASCLI_E2E_BASE_URL')),
+  baseURL: async ({}, use) => use(required('SIPGES_E2E_BASE_URL')),
   // eslint-disable-next-line no-empty-pattern
   admin: async ({}, use) =>
     use({
-      username: required('MASCLI_E2E_ADMIN_USERNAME'),
-      password: required('MASCLI_E2E_ADMIN_PASSWORD'),
+      username: required('SIPGES_E2E_ADMIN_USERNAME'),
+      password: required('SIPGES_E2E_ADMIN_PASSWORD'),
     }),
   adminApi: async ({ baseURL, admin }, use) => {
     const context = await apiSession(baseURL ?? '', admin);

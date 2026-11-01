@@ -13,8 +13,8 @@ corepack pnpm check            # ESLint + Prettier, architecture boundaries, typ
 corepack pnpm test             # tests only (all workspaces)
 corepack pnpm boundaries       # hexagonal dependency rules (dependency-cruiser)
 corepack pnpm e2e              # build the SPA + Playwright parity suite in Chromium (apps/e2e)
-corepack pnpm --filter @mascli/api dev   # API on http://127.0.0.1:8000
-corepack pnpm --filter @mascli/web dev   # SPA on http://127.0.0.1:5173 (proxies API routes)
+corepack pnpm --filter @sipges/api dev   # API on http://127.0.0.1:8000
+corepack pnpm --filter @sipges/web dev   # SPA on http://127.0.0.1:5173 (proxies API routes)
 ```
 
 ### Test database lifecycle
@@ -24,11 +24,11 @@ API tests run with one Vitest worker and sequential files to bound PGlite's WASM
 Do not raise Node's heap limit to hide missing fixture teardown. PGlite remains a single-connection test adapter; sequential test files do not replace the real-server concurrency checks below.
 
 ### Real PostgreSQL integration tests (optional)
-Unit and HTTP tests use in-process PGlite (single connection). Concurrency, advisory locks and postgres.js typing are checked against a real server when `MASCLI_TEST_DATABASE_URL` is set; each run creates and drops a throwaway database. The integration suite also checks tenant isolation across two pools, rejected cross-tenant/identity access, role reset after rollback, concurrent tenant exports and serialized last-administrator protection. Missing credentials skip these checks; skipped tests are not security proof. Use synthetic local databases only.
+Unit and HTTP tests use in-process PGlite (single connection). Concurrency, advisory locks and postgres.js typing are checked against a real server when `SIPGES_TEST_DATABASE_URL` is set; each run creates and drops a throwaway database. The integration suite also checks tenant isolation across two pools, rejected cross-tenant/identity access, role reset after rollback, concurrent tenant exports and serialized last-administrator protection. Missing credentials skip these checks; skipped tests are not security proof. Use synthetic local databases only.
 ```bash
-docker run -d --rm --name mascli-pg-test -e POSTGRES_PASSWORD=<pw> -p 127.0.0.1:55432:5432 postgres:18-alpine
-MASCLI_TEST_DATABASE_URL=postgres://postgres:<pw>@127.0.0.1:55432/postgres corepack pnpm --filter @mascli/api test
-docker stop mascli-pg-test
+docker run -d --rm --name sipges-pg-test -e POSTGRES_PASSWORD=<pw> -p 127.0.0.1:55432:5432 postgres:18-alpine
+SIPGES_TEST_DATABASE_URL=postgres://postgres:<pw>@127.0.0.1:55432/postgres corepack pnpm --filter @sipges/api test
+docker stop sipges-pg-test
 ```
 
 End-to-end coverage, real-PostgreSQL option and the deployment checklist: [docs/deployment/readiness.md](../deployment/readiness.md).
@@ -47,30 +47,30 @@ End-to-end coverage, real-PostgreSQL option and the deployment checklist: [docs/
 ## Configuration
 | Variable | Values | Default |
 |---|---|---|
-| `MASCLI_COOKIE_SECURE` | exactly `0` or `1` | unset → Secure cookies; any other value stops startup |
-| `MASCLI_HOST` | bind address | `127.0.0.1` |
-| `MASCLI_PORT` | 1–65535 | `8000` |
-| `MASCLI_DATA_KEY` | base64 of exactly 32 bytes (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) | **required**; encrypts TOTP secrets at rest (ADR 0004) |
-| `MASCLI_ADMIN_USERNAME` | lower-cased, trimmed | `admin` |
-| `MASCLI_ADMIN_PASSWORD` | 12+ characters | required only on an empty installation |
-| `MASCLI_ADMIN_FULL_NAME` | display name of the bootstrap admin | `Administrator` |
-| `MASCLI_DATABASE_URL` | PostgreSQL URL; TLS required unless the host is local | unset → embedded PGlite (development only) |
-| `MASCLI_PGLITE_DIR` | embedded database directory | `.data/pglite` |
-| `MASCLI_TRUST_PROXY` | exactly `0` or `1`; `1` only behind a reverse proxy that sets `X-Forwarded-For` | `0` (socket address) |
-| `MASCLI_MAX_UPLOAD_BYTES` | 1–104857600 | `10485760` (10 MiB); also bounds each document lab file |
-| `MASCLI_STORAGE` | `local` or `s3` | `local` |
-| `MASCLI_UPLOAD_DIR` | directory for `local` storage | `.data/uploads` |
-| `MASCLI_S3_ENDPOINT` | HTTPS URL of an S3-compatible service (plain HTTP only for a local host) | required for `s3` |
-| `MASCLI_S3_REGION` | signing region | `auto` |
-| `MASCLI_S3_BUCKET` / `MASCLI_S3_ACCESS_KEY_ID` / `MASCLI_S3_SECRET_ACCESS_KEY` | bucket and credentials | required for `s3` |
-| `MASCLI_OLLAMA_URL` | http(s) base URL of the Ollama embeddings server (T10) | `http://127.0.0.1:11434` |
-| `MASCLI_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
-| `MASCLI_ANALYST_PROVIDER` | `anthropic` enables narrated briefings (ADR 0013); requires `ANTHROPIC_API_KEY` | unset (extractive only) |
-| `MASCLI_ANALYST_MODEL` | Claude model for narrated briefings | `claude-opus-5-5` |
-| `MASCLI_WEB_DIR` | built SPA to serve, e.g. `apps/web/dist` (docs/migration/web.md) | unset → API only |
-| `MASCLI_REQUIRE_MFA` | exactly `0` or `1` | unset → every session must enroll TOTP before using the API (ADR 0009) |
-| `MASCLI_ALLOWED_HOSTS` | comma-separated host names without port, e.g. `mascli.example.org` | unset → no Host check (local development); set it in every deployment (ADR 0009) |
-| `NODE_ENV` | `production` requires `MASCLI_DATABASE_URL` (embedded PGlite is refused) | unset |
+| `SIPGES_COOKIE_SECURE` | exactly `0` or `1` | unset → Secure cookies; any other value stops startup |
+| `SIPGES_HOST` | bind address | `127.0.0.1` |
+| `SIPGES_PORT` | 1–65535 | `8000` |
+| `SIPGES_DATA_KEY` | base64 of exactly 32 bytes (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) | **required**; encrypts TOTP secrets at rest (ADR 0004) |
+| `SIPGES_ADMIN_USERNAME` | lower-cased, trimmed | `admin` |
+| `SIPGES_ADMIN_PASSWORD` | 12+ characters | required only on an empty installation |
+| `SIPGES_ADMIN_FULL_NAME` | display name of the bootstrap admin | `Administrator` |
+| `SIPGES_DATABASE_URL` | PostgreSQL URL; TLS required unless the host is local | unset → embedded PGlite (development only) |
+| `SIPGES_PGLITE_DIR` | embedded database directory | `.data/pglite` |
+| `SIPGES_TRUST_PROXY` | exactly `0` or `1`; `1` only behind a reverse proxy that sets `X-Forwarded-For` | `0` (socket address) |
+| `SIPGES_MAX_UPLOAD_BYTES` | 1–104857600 | `10485760` (10 MiB); also bounds each document lab file |
+| `SIPGES_STORAGE` | `local` or `s3` | `local` |
+| `SIPGES_UPLOAD_DIR` | directory for `local` storage | `.data/uploads` |
+| `SIPGES_S3_ENDPOINT` | HTTPS URL of an S3-compatible service (plain HTTP only for a local host) | required for `s3` |
+| `SIPGES_S3_REGION` | signing region | `auto` |
+| `SIPGES_S3_BUCKET` / `SIPGES_S3_ACCESS_KEY_ID` / `SIPGES_S3_SECRET_ACCESS_KEY` | bucket and credentials | required for `s3` |
+| `SIPGES_OLLAMA_URL` | http(s) base URL of the Ollama embeddings server (T10) | `http://127.0.0.1:11434` |
+| `SIPGES_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
+| `SIPGES_ANALYST_PROVIDER` | `anthropic` enables narrated briefings (ADR 0013); requires `ANTHROPIC_API_KEY` | unset (extractive only) |
+| `SIPGES_ANALYST_MODEL` | Claude model for narrated briefings | `claude-opus-5-5` |
+| `SIPGES_WEB_DIR` | built SPA to serve, e.g. `apps/web/dist` (docs/migration/web.md) | unset → API only |
+| `SIPGES_REQUIRE_MFA` | exactly `0` or `1` | unset → every session must enroll TOTP before using the API (ADR 0009) |
+| `SIPGES_ALLOWED_HOSTS` | comma-separated host names without port, e.g. `sipges.example.org` | unset → no Host check (local development); set it in every deployment (ADR 0009) |
+| `NODE_ENV` | `production` requires `SIPGES_DATABASE_URL` (embedded PGlite is refused) | unset |
 
 Migrations in `apps/api/src/platform/database/migrations/` run automatically at startup.
 

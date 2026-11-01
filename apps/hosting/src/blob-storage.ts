@@ -1,7 +1,7 @@
 import { del, get, put } from '@vercel/blob';
 import type { ObjectStorage } from '../../api/src/contexts/evidence/application/index.ts';
 
-/** Private, persistent objects; downloads still pass through MASCLI tenant authorization. */
+/** Private, persistent objects; downloads still pass through SIPGES tenant authorization. */
 export const privateBlobStorage = (): ObjectStorage => {
   const check = (key: string) => {
     if (!/^[0-9a-f]{24}\/[A-Za-z0-9._-]+$/.test(key)) throw new Error('Invalid object key');

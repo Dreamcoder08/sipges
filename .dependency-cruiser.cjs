@@ -1,6 +1,6 @@
 /**
  * Hexagonal dependency rule (docs/adr/0002-hexagonal-architecture-and-bounded-contexts.md).
- * domain -> nothing outside domain and @mascli/kernel
+ * domain -> nothing outside domain and @sipges/kernel
  * application -> domain (+ kernel, contracts)
  * infrastructure/http -> inward only; never another context's internals
  */

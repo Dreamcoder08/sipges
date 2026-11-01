@@ -1,5 +1,5 @@
-import type { ModuleRecord } from '@mascli/contracts';
-import { isTerminalStatus, limaToday, recordDueDate } from '@mascli/kernel';
+import type { ModuleRecord } from '@sipges/contracts';
+import { isTerminalStatus, limaToday, recordDueDate } from '@sipges/kernel';
 
 export type FollowupBucket = 'overdue' | 'today' | 'upcoming' | 'undated' | 'closed';
 export const followupRows = (rows: readonly ModuleRecord[], today = limaToday()) =>

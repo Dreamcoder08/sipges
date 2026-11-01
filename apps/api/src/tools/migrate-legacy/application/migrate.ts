@@ -1,5 +1,5 @@
 /**
- * Legacy migration use case (ODD T13). Reads a legacy MASCLI installation through the
+ * Legacy migration use case (ODD T13). Reads a legacy SIPGES installation through the
  * `LegacySource` port, maps it with the pure functions in ../domain and writes it through
  * the `TargetStore` and `ObjectStorage` ports.
  *

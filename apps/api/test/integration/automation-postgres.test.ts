@@ -9,7 +9,7 @@ import { postgresClient } from '../../src/platform/database/postgres.ts';
 import { withTenant } from '../../src/platform/database/tenant-transaction.ts';
 import { TEST_ENV, TestClock, recordingSender } from '../support/test-app.ts';
 
-const adminUrl = process.env.MASCLI_TEST_DATABASE_URL;
+const adminUrl = process.env.SIPGES_TEST_DATABASE_URL;
 const CRON_SECRET = 'cron-secret-synthetic-0123456789';
 
 /**
@@ -17,7 +17,7 @@ const CRON_SECRET = 'cron-secret-synthetic-0123456789';
  * automation tables as a non-superuser owner, as on a managed PostgreSQL service (ADR 0014).
  */
 describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
-  const name = `mascli_automation_test_${randomBytes(6).toString('hex')}`;
+  const name = `sipges_automation_test_${randomBytes(6).toString('hex')}`;
   let admin: postgres.Sql;
   let pool: ReturnType<typeof postgresClient>;
   beforeAll(async () => {
@@ -39,7 +39,7 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
   it('lets the cron tick find tenants while rules stay isolated per tenant', async () => {
     const outbox = recordingSender();
     const container = await buildContainer({
-      config: loadConfig({ ...TEST_ENV, MASCLI_CRON_SECRET: CRON_SECRET }),
+      config: loadConfig({ ...TEST_ENV, SIPGES_CRON_SECRET: CRON_SECRET }),
       sql: pool.client,
       clock: new TestClock(),
       clientIp: () => '203.0.113.72',
@@ -117,18 +117,18 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
       clientIp: () => '203.0.113.73',
     });
     const created = await container.apiKeys.create(
-      'MASCLI/PRJ-SECHURA',
+      'SIPGES/PRJ-SECHURA',
       { name: 'Agente PG', access: 'read', clearance: 'limited' },
       'admin',
     );
     if (!created.ok) throw new Error('key not created');
     expect(await container.apiKeys.authenticate(created.value.token)).toMatchObject({
-      tenantId: 'MASCLI/PRJ-SECHURA',
+      tenantId: 'SIPGES/PRJ-SECHURA',
       name: 'Agente PG',
     });
-    expect(await container.apiKeys.revoke('MASCLI/PRJ-SECHURA', created.value.id)).toBe(true);
+    expect(await container.apiKeys.revoke('SIPGES/PRJ-SECHURA', created.value.id)).toBe(true);
     expect(await container.apiKeys.authenticate(created.value.token)).toBeNull();
-    const audit = await withTenant(pool.client, 'MASCLI/PRJ-SECHURA', (tx) =>
+    const audit = await withTenant(pool.client, 'SIPGES/PRJ-SECHURA', (tx) =>
       tx.query<{ action: string }>(
         "SELECT action FROM audit WHERE module = 'Integraciones' ORDER BY id",
       ),
@@ -144,7 +144,7 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
       clientIp: () => '203.0.113.74',
     });
     const created = await container.apiKeys.create(
-      'MASCLI/PRJ-SECHURA',
+      'SIPGES/PRJ-SECHURA',
       { name: 'Formulario PG', access: 'write', clearance: 'limited' },
       'admin',
     );
@@ -169,7 +169,7 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
 
   it('stores embeddings as real[] and ranks by meaning on PostgreSQL', async () => {
     const container = await buildContainer({
-      config: loadConfig({ ...TEST_ENV, MASCLI_SEMANTIC_SEARCH: '1' }),
+      config: loadConfig({ ...TEST_ENV, SIPGES_SEMANTIC_SEARCH: '1' }),
       sql: pool.client,
       clock: new TestClock(),
       clientIp: () => '203.0.113.75',
@@ -178,13 +178,13 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
         embed: async (text) => [/agua|hídric/i.test(text) ? 1 : 0, 0.01, 0, 0, 0, 0, 0, 0],
       },
     });
-    const created = await container.records.create('MASCLI/PRJ-SECHURA', 'Eventos', {
+    const created = await container.records.create('SIPGES/PRJ-SECHURA', 'Eventos', {
       ID_Evento: 'EV-PG-1',
       Descripcion_Hecho: 'Conflicto hídrico sintético',
     });
     expect(created.ok).toBe(true);
-    const hits = await container.ontology.search('MASCLI/PRJ-SECHURA', 'agua', ['eventos'], 5);
+    const hits = await container.ontology.search('SIPGES/PRJ-SECHURA', 'agua', ['eventos'], 5);
     expect(hits.map((h) => [h.id, h.semantic])).toContainEqual(['EV-PG-1', true]);
-    expect(await container.ontology.refreshEmbeddings('MASCLI/PRJ-SECHURA')).toBe(0);
+    expect(await container.ontology.refreshEmbeddings('SIPGES/PRJ-SECHURA')).toBe(0);
   });
 });

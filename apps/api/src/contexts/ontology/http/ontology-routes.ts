@@ -12,7 +12,7 @@ import {
   type RecordLinks,
   type SearchResults,
   type Timeline,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';

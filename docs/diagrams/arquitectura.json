@@ -2,7 +2,7 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "MASCLI TypeScript · Inteligencia territorial / ODD",
+    "title": "SIPGES TypeScript · Inteligencia territorial / ODD",
     "locale": "es",
     "output": "docs/diagrams/arquitectura.html",
     "quality_profile": "showcase",
@@ -50,7 +50,7 @@
       "id": "contracts",
       "type": "backend",
       "label": "Contratos compartidos",
-      "sublabel": "@mascli/contracts · Zod",
+      "sublabel": "@sipges/contracts · Zod",
       "pos": [
         197,
         40
@@ -343,7 +343,7 @@
           "path": "apps/api/src/platform/config.ts",
           "line": 169,
           "end_line": 183,
-          "label": "Desactivado salvo MASCLI_ANALYST_PROVIDER"
+          "label": "Desactivado salvo SIPGES_ANALYST_PROVIDER"
         }
       ],
       "tag": "OPCIONAL"
@@ -659,8 +659,8 @@
       "title": "Frontend y acceso",
       "items": [
         "SPA TypeScript: React 19, Vite, TanStack Router/Query. Registros con historial, vínculos e importación CSV; vista 360° con grafo e informe citado; búsqueda global Ctrl+K y cronología transversal. Campana de avisos, avisos en el dispositivo (PWA) y actualización en vivo por SSE.",
-        "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-MASCLI-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
-        "MFA obligatorio por defecto; la demo sintética del propietario permite MASCLI_REQUIRE_MFA=0 y conserva TOTP voluntario. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
+        "Las cookies HttpOnly llevan sesión y alcance. Consultas, escrituras y descargas fijan X-SIPGES-Scope; cambiar proyecto descarta borradores y consulta el alcance nuevo.",
+        "MFA obligatorio por defecto; la demo sintética del propietario permite SIPGES_REQUIRE_MFA=0 y conserva TOTP voluntario. Escrituras con Origin/Referer verificado; sesión, tenancy y rol protegen los casos de uso."
       ]
     },
     {
@@ -676,9 +676,9 @@
       "dot": "violet",
       "title": "Adaptadores y procesamiento",
       "items": [
-        "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por MASCLI.",
+        "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por SIPGES.",
         "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
-        "Ollama para inteligencia y, con MASCLI_SEMANTIC_SEARCH=1, búsqueda híbrida con vectores real[] sin restringidos. Claude es opcional (ADR 0013) y nunca ve registros restringidos. OCR local opcional con ocrmypdf.",
+        "Ollama para inteligencia y, con SIPGES_SEMANTIC_SEARCH=1, búsqueda híbrida con vectores real[] sin restringidos. Claude es opcional (ADR 0013) y nunca ve registros restringidos. OCR local opcional con ocrmypdf.",
         "Canales salientes (webhook firmado, Slack, Teams, Discord, Google Chat, Telegram, Resend) con secretos sellados y destinos https públicos; Web Push propio; traceparent hacia webhooks, Ollama y S3.",
         "Geografía consulta siete servicios INGEMMET fijos con timeout, límites de bytes/área y truncamiento. Relaciona registros solo por geometría WGS84 válida o referencia explícita documentada; no geocodifica nombres. Defensoría usa un host/API fijo y solo importa publicaciones autorizadas, con huella e idempotencia. Fallos externos visibles; no se ha confirmado disponibilidad en vivo."
       ]

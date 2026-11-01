@@ -1,4 +1,4 @@
-import { SearchResults } from '@mascli/contracts';
+import { SearchResults } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 

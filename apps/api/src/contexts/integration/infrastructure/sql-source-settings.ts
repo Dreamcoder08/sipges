@@ -1,4 +1,4 @@
-import type { AuthorizedSourceState } from '@mascli/contracts';
+import type { AuthorizedSourceState } from '@sipges/contracts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import { emptySourceState, type SourceSettingsStore } from '../application/authorized-sources.ts';

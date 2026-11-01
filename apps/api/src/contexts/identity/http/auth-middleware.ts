@@ -55,7 +55,7 @@ export const sessionMiddleware =
     const token = getCookie(c, SESSION_COOKIE);
     const principal = await identity.authenticate(token);
     if (!principal || !token) {
-      return c.json({ detail: 'Inicie sesión para acceder a MASCLI' }, 401);
+      return c.json({ detail: 'Inicie sesión para acceder a SIPGES' }, 401);
     }
     if (write && !originAllowed(c)) return forbiddenOrigin(c);
     if (options.requireMfa && !principal.mfaEnabled && !MFA_ENROLLMENT_PATHS.has(c.req.path)) {

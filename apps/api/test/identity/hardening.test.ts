@@ -131,8 +131,8 @@ describe('HSTS (ADR 0004)', () => {
     );
   });
 
-  it('is omitted for intentional local HTTP (MASCLI_COOKIE_SECURE=0)', async () => {
-    const t = await createTestApp({ MASCLI_COOKIE_SECURE: '0' });
+  it('is omitted for intentional local HTTP (SIPGES_COOKIE_SECURE=0)', async () => {
+    const t = await createTestApp({ SIPGES_COOKIE_SECURE: '0' });
     expect((await t.request('/health')).headers.get('strict-transport-security')).toBeNull();
   });
 });

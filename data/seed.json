@@ -1641,7 +1641,7 @@
       "Prioridad": "Alta",
       "Estado": "Nueva",
       "Fuente_ID": "F006",
-      "Observaciones": "Refuerza D005 y se traduce en módulo de trazabilidad MASCLI.",
+      "Observaciones": "Refuerza D005 y se traduce en módulo de trazabilidad SIPGES.",
       "col_14": null,
       "col_15": null,
       "col_16": null,
@@ -2715,7 +2715,7 @@
       "Accion_Sugerida": "Implementar matriz de consultas/compromisos con responsable, plazo, respuesta y evidencia por localidad.",
       "Responsable": "Equipo social",
       "Fecha_Cierre": null,
-      "Observaciones": "Refuerza el módulo de compromisos MASCLI.",
+      "Observaciones": "Refuerza el módulo de compromisos SIPGES.",
       "col_14": null,
       "col_15": null,
       "col_16": null,
@@ -2966,7 +2966,7 @@
       "Estado": "Pendiente",
       "Evidencia": "",
       "Fecha_Cierre": "",
-      "Observaciones": "Puede convertirse en módulo funcional del prototipo MASCLI.",
+      "Observaciones": "Puede convertirse en módulo funcional del prototipo SIPGES.",
       "col_11": null,
       "col_12": null,
       "col_13": null,
@@ -3022,11 +3022,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Janet Santamaria",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "16",
@@ -3036,11 +3036,11 @@
       "Cargo": "Comisario",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "17",
@@ -3050,11 +3050,11 @@
       "Cargo": "Presidente / Secretario General",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "18",
@@ -3064,11 +3064,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "19",
@@ -3078,11 +3078,11 @@
       "Cargo": "Jefe/a",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "20",
@@ -3092,11 +3092,11 @@
       "Cargo": "Juez/a de Paz",
       "Nombre actualizado 2026": "Noelia Aranda",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "21",
@@ -3106,11 +3106,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Marg Antony Aguirre Panta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "22",
@@ -3120,11 +3120,11 @@
       "Cargo": "Pastor",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "23",
@@ -3134,11 +3134,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "24",
@@ -3148,11 +3148,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "25",
@@ -3162,11 +3162,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "26",
@@ -3176,11 +3176,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "27",
@@ -3190,11 +3190,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Luis Alberto Cabrera Alvarado",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "28",
@@ -3204,11 +3204,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "29",
@@ -3218,11 +3218,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "30",
@@ -3232,11 +3232,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "31",
@@ -3246,11 +3246,11 @@
       "Cargo": "Secretario",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "32",
@@ -3260,11 +3260,11 @@
       "Cargo": "Dirigente / representante",
       "Nombre actualizado 2026": "Wilmer Rumiche Imán",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "33",
@@ -3274,11 +3274,11 @@
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "34",
@@ -3288,11 +3288,11 @@
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "35",
@@ -3302,11 +3302,11 @@
       "Cargo": "Presidenta",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "36",
@@ -3316,11 +3316,11 @@
       "Cargo": "Director/a",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "37",
@@ -3330,11 +3330,11 @@
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "38",
@@ -3344,11 +3344,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "119",
@@ -3358,11 +3358,11 @@
       "Cargo": "Gerente General",
       "Nombre actualizado 2026": "Segundo Eduardo Reusche Castillo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "120",
@@ -3372,11 +3372,11 @@
       "Cargo": "Representante ante FOSPIBAY",
       "Nombre actualizado 2026": "Liliana Paola Farfán Vignolo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "121",
@@ -3386,11 +3386,11 @@
       "Cargo": "Representante ante FOSPIBAY",
       "Nombre actualizado 2026": "José Adrianzén Romero",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "122",
@@ -3400,11 +3400,11 @@
       "Cargo": "Representante de la Municipalidad Provincial de Sechura",
       "Nombre actualizado 2026": "Edgardo Chapilliquén Martínez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "123",
@@ -3414,11 +3414,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "Silvia Paola Alzamora Gómez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "160",
@@ -3428,11 +3428,11 @@
       "Cargo": "Agente Municipal; vigencia por confirmar",
       "Nombre actualizado 2026": "Reynaldo Valdera Santisteban",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "61",
@@ -3442,11 +3442,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Walter Arturo Martínez Belupo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "62",
@@ -3456,11 +3456,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Rubio Bayona",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "63",
@@ -3470,11 +3470,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Juan Pingo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "64",
@@ -3484,11 +3484,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Lucio Quezada",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "136",
@@ -3498,11 +3498,11 @@
       "Cargo": "Presidenta",
       "Nombre actualizado 2026": "Andrea Morales Chunga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "41",
@@ -3512,11 +3512,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Néstor Pozo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "46",
@@ -3526,11 +3526,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "47",
@@ -3540,11 +3540,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "48",
@@ -3554,11 +3554,11 @@
       "Cargo": "Presidenta",
       "Nombre actualizado 2026": "Deysi Oliden Serrano",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "58",
@@ -3568,11 +3568,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Deysi del Carmen Quiroga Pazo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "59",
@@ -3582,11 +3582,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Alex Panta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "60",
@@ -3596,11 +3596,11 @@
       "Cargo": "Presidente; cargo de teniente gobernador por confirmar",
       "Nombre actualizado 2026": "Jorge Aldo Martín Gonzales Espinoza",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "1",
@@ -3610,11 +3610,11 @@
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Augusto Nunura Zeta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "2",
@@ -3624,11 +3624,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "José Miguel Chunga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "3",
@@ -3638,11 +3638,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Carlos Chunga Vilela",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "4",
@@ -3652,11 +3652,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Miguel Chunga Pasache",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "5",
@@ -3666,11 +3666,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "6",
@@ -3680,11 +3680,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "7",
@@ -3694,11 +3694,11 @@
       "Cargo": "Fiscal",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "39",
@@ -3708,11 +3708,11 @@
       "Cargo": "Alcalde",
       "Nombre actualizado 2026": "Mario de la Cruz Ángeles Chapilliquén",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "40",
@@ -3722,11 +3722,11 @@
       "Cargo": "Juez de Paz",
       "Nombre actualizado 2026": "Iván Morales, juez de paz",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "42",
@@ -3736,11 +3736,11 @@
       "Cargo": "Comisario",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "43",
@@ -3750,11 +3750,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "44",
@@ -3764,11 +3764,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "45",
@@ -3778,11 +3778,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "56",
@@ -3792,11 +3792,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "57",
@@ -3806,11 +3806,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "65",
@@ -3820,11 +3820,11 @@
       "Cargo": "Mayor Jefe",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "118",
@@ -3834,11 +3834,11 @@
       "Cargo": "Mayor Jefe",
       "Nombre actualizado 2026": "Por confirmar",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "116",
@@ -3848,11 +3848,11 @@
       "Cargo": "Capitán de Puerto",
       "Nombre actualizado 2026": "Capitán de Fragata Jorge Luis Gonzales Arbirio",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "103",
@@ -3862,11 +3862,11 @@
       "Cargo": "Gobernador Regional",
       "Nombre actualizado 2026": "Abog. Luis Ernesto Neyra León",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "104",
@@ -3876,11 +3876,11 @@
       "Cargo": "Gerente Regional",
       "Nombre actualizado 2026": "Antero Guillermo Martín Martínez Gonzales",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "105",
@@ -3890,11 +3890,11 @@
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Ing. Hernán Froebel García Lamadrid",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "106",
@@ -3904,11 +3904,11 @@
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Ing. Segundo Juan Alzamora Encalada",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "107",
@@ -3918,11 +3918,11 @@
       "Cargo": "Director/a",
       "Nombre actualizado 2026": "Juval Martín Córdova Palacios",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "108",
@@ -3932,11 +3932,11 @@
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Abog. Daniel Eduardo Seminario Madueño",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "109",
@@ -3946,11 +3946,11 @@
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Méd. Manuel Eduardo Girón Martínez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "110",
@@ -3960,11 +3960,11 @@
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Lic. Wilmer Charly González Rojas",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "111",
@@ -3974,11 +3974,11 @@
       "Cargo": "Jefe/a",
       "Nombre actualizado 2026": "Rosario Moses Chávez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "112",
@@ -3988,11 +3988,11 @@
       "Cargo": "Director",
       "Nombre actualizado 2026": "Oresteres Paúl Escajadillo Llontop",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "113",
@@ -4002,11 +4002,11 @@
       "Cargo": "Administrador Local de Agua",
       "Nombre actualizado 2026": "Alexander Gonzales Barboza",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "114",
@@ -4016,11 +4016,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Macario Silva Vílchez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "115",
@@ -4030,11 +4030,11 @@
       "Cargo": "Comandante",
       "Nombre actualizado 2026": "Contralmirante Jorge Guillermo Masías Calizaya Portal",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "117",
@@ -4044,11 +4044,11 @@
       "Cargo": "Comandante General",
       "Nombre actualizado 2026": "General de División Carlos Alberto Rabanal Calderón",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "124",
@@ -4058,11 +4058,11 @@
       "Cargo": "Decano de la facultad de minas",
       "Nombre actualizado 2026": "Wilmer Arévalo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "128",
@@ -4072,11 +4072,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Javier Bereche Álvarez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "129",
@@ -4086,11 +4086,11 @@
       "Cargo": "Gerente",
       "Nombre actualizado 2026": "Susana Seminario Vega",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "8",
@@ -4100,11 +4100,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Martín del Águila Silva",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "9",
@@ -4114,11 +4114,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Iván Noé Ruiz Morales",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "10",
@@ -4128,11 +4128,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Martin del Aguila Silva",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "11",
@@ -4142,11 +4142,11 @@
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "12",
@@ -4156,11 +4156,11 @@
       "Cargo": "Representante / Presidenta",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "153",
@@ -4170,11 +4170,11 @@
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Vanessa del Rosario Tume Pingo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "66",
@@ -4184,11 +4184,11 @@
       "Cargo": "Alcaldesa Provincial",
       "Nombre actualizado 2026": "Carmen Rosa Morales Loro",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "67",
@@ -4198,11 +4198,11 @@
       "Cargo": "Primer Regidor",
       "Nombre actualizado 2026": "Agustín Eche Temoche",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "68",
@@ -4212,11 +4212,11 @@
       "Cargo": "Subprefecto Provincial",
       "Nombre actualizado 2026": "David Omar Álvarez Fiestas",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "69",
@@ -4226,11 +4226,11 @@
       "Cargo": "Comisario",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "70",
@@ -4240,11 +4240,11 @@
       "Cargo": "Director",
       "Nombre actualizado 2026": "José Luis Herrera Montero",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "71",
@@ -4254,11 +4254,11 @@
       "Cargo": "Jefe de Gestión Pedagógica",
       "Nombre actualizado 2026": "César Augusto Puescas Chunga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "72",
@@ -4268,11 +4268,11 @@
       "Cargo": "Gerente / Jefe",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "73",
@@ -4282,11 +4282,11 @@
       "Cargo": "Párroco / representante",
       "Nombre actualizado 2026": "Tito Zapata Olivares",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "74",
@@ -4296,11 +4296,11 @@
       "Cargo": "Exjuez de Paz; destituido en 2026",
       "Nombre actualizado 2026": "Humberto Antonio Querevalú Eche",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "75",
@@ -4310,11 +4310,11 @@
       "Cargo": "Segundo accesitario; ejercicio provisional por confirmar",
       "Nombre actualizado 2026": "Sixto Obispo Fiestas Panta",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "76",
@@ -4324,11 +4324,11 @@
       "Cargo": "Exjueza supernumeraria; referencia 2023",
       "Nombre actualizado 2026": "Cinthya Tatiana Antón Guerrero",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "77",
@@ -4338,11 +4338,11 @@
       "Cargo": "Exjuez supernumerario; designación concluida en 2023",
       "Nombre actualizado 2026": "Richard Armando Torres Cruz",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "78",
@@ -4352,11 +4352,11 @@
       "Cargo": "Juez; verificación oficial 2025",
       "Nombre actualizado 2026": "Asdrúbal Méndez Castañeda",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "79",
@@ -4366,11 +4366,11 @@
       "Cargo": "Juez supernumerario; verificación oficial 2026",
       "Nombre actualizado 2026": "Darwin Jonathan Sernaqué Juárez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "80",
@@ -4380,11 +4380,11 @@
       "Cargo": "Juez; verificación oficial 2026",
       "Nombre actualizado 2026": "José Fernando Panta Ruiz",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "81",
@@ -4394,11 +4394,11 @@
       "Cargo": "Responsable / Jefe",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "82",
@@ -4408,11 +4408,11 @@
       "Cargo": "Gerente Municipal",
       "Nombre actualizado 2026": "Ing. Juan Manuel Antón Antón",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "83",
@@ -4422,11 +4422,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "84",
@@ -4436,11 +4436,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "85",
@@ -4450,11 +4450,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "86",
@@ -4464,11 +4464,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "87",
@@ -4478,11 +4478,11 @@
       "Cargo": "Gerente / representante",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "88",
@@ -4492,11 +4492,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "89",
@@ -4506,11 +4506,11 @@
       "Cargo": "Gerente / representante",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "90",
@@ -4520,11 +4520,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Segundo Bernabé Guerrero Bermeo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "91",
@@ -4534,11 +4534,11 @@
       "Cargo": "Comisario sectorial",
       "Nombre actualizado 2026": "Oscar Choquehuanca Zapata,",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "92",
@@ -4548,11 +4548,11 @@
       "Cargo": "Subprefecto Distrital",
       "Nombre actualizado 2026": "Leoncio Mendoza Benites",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "93",
@@ -4562,11 +4562,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Jesús Hipólito Inoñan Aldana",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "94",
@@ -4576,11 +4576,11 @@
       "Cargo": "Teniente Gobernadora - jurisdicción 2026 por confirmar",
       "Nombre actualizado 2026": "Faviana Espinoza Fiestas",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "95",
@@ -4590,11 +4590,11 @@
       "Cargo": "Teniente Gobernadora - jurisdicción 2026 por confirmar",
       "Nombre actualizado 2026": "Blanca Rosa Gómez Purizaca",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "98",
@@ -4604,11 +4604,11 @@
       "Cargo": "Presidente - Junta Transitoria",
       "Nombre actualizado 2026": "Miguel Henry Zavaleta Amaya",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "99",
@@ -4618,11 +4618,11 @@
       "Cargo": "Administrador judicial",
       "Nombre actualizado 2026": "Teófilo Chapa Quiroga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "100",
@@ -4632,11 +4632,11 @@
       "Cargo": "Administrador judicial",
       "Nombre actualizado 2026": "Pedro Luis Temoche",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "101",
@@ -4646,11 +4646,11 @@
       "Cargo": "Comisión de Agricultura / responsable",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "102",
@@ -4660,11 +4660,11 @@
       "Cargo": "Representante comunal ante otras instituciones",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "125",
@@ -4674,11 +4674,11 @@
       "Cargo": "Presidenta de Comisión Organizadora",
       "Nombre actualizado 2026": "Yojani María Abad Sullón",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "126",
@@ -4688,11 +4688,11 @@
       "Cargo": "Miembro de Comisión Organizadora",
       "Nombre actualizado 2026": "Luis Gerardo Saavedra Frías",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "127",
@@ -4702,11 +4702,11 @@
       "Cargo": "Miembro de Comisión Organizadora",
       "Nombre actualizado 2026": "Carmen Lucila Infante Saavedra",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "130",
@@ -4716,11 +4716,11 @@
       "Cargo": "Teniente gobernador",
       "Nombre actualizado 2026": "Marcelino Eche Casanova",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "131",
@@ -4730,11 +4730,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Blanca Rosa Gomez Purizaca",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "132",
@@ -4744,11 +4744,11 @@
       "Cargo": "Asentamiento Humano Vicente Chunga Aldana",
       "Nombre actualizado 2026": "Digna Ruiz Pago",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "133",
@@ -4758,11 +4758,11 @@
       "Cargo": "Jurisdicción pendiente de confirmar",
       "Nombre actualizado 2026": "Daniel Santos Eche Pazo",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "134",
@@ -4772,11 +4772,11 @@
       "Cargo": "Jurisdicción pendiente de confirmar",
       "Nombre actualizado 2026": "Pedro Pablo Goicochea Cobeñas",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "135",
@@ -4786,11 +4786,11 @@
       "Cargo": "Jurisdicción y apellido final pendientes de corroborar",
       "Nombre actualizado 2026": "José Alfredo García Amaya",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "140",
@@ -4800,11 +4800,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Jorge Luis Siesquén Quiroz",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "141",
@@ -4814,11 +4814,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "José Félix Roa Navarro",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "142",
@@ -4828,11 +4828,11 @@
       "Cargo": "Presidenta",
       "Nombre actualizado 2026": "Lidia Mariana Paiva Tume",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "143",
@@ -4842,11 +4842,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "144",
@@ -4856,11 +4856,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "José Marino Querevalú Jacinto",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "145",
@@ -4870,11 +4870,11 @@
       "Cargo": "Representante",
       "Nombre actualizado 2026": "Jhonatan Alexander Chapilliquen Sanchez",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "146",
@@ -4884,11 +4884,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Dévora Guevara Oblitas",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "147",
@@ -4898,11 +4898,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Zoila Anita Encinas Miranda",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "148",
@@ -4912,11 +4912,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Lourdes Margarita Inga García",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "149",
@@ -4926,11 +4926,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Carlos Iván Fiestas Curo",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "150",
@@ -4940,11 +4940,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Carolina Vise Castañeda",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "151",
@@ -4954,11 +4954,11 @@
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Digna Emérita Chapilliquén Jacinto",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "152",
@@ -4968,11 +4968,11 @@
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Victoria Galán Martínez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "154",
@@ -4982,11 +4982,11 @@
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Deise Teresa Navarro Zapata",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "155",
@@ -4996,11 +4996,11 @@
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Pedro Gregorio Silva Calderón",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "156",
@@ -5010,11 +5010,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Roman Merced Ayala Tume",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "158",
@@ -5024,11 +5024,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Marcos Puescas Zapata",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Baja / revisar",
+      "Prioridad SIPGES propuesta": "Baja / revisar",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "159",
@@ -5038,11 +5038,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "César Humberto Chapa Zapata",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "96",
@@ -5052,11 +5052,11 @@
       "Cargo": "Alcalde de Vice",
       "Nombre actualizado 2026": "José Luis Eche Calderón",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "97",
@@ -5066,11 +5066,11 @@
       "Cargo": "Exsubprefecta distrital; cargo 2026 por confirmar",
       "Nombre actualizado 2026": "Yesenia Angélica Chapilliquén Pinday",
       "Estado de verificación": "Por confirmar según fuente",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "137",
@@ -5080,11 +5080,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Santos Félix Saba Córdova",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "138",
@@ -5094,11 +5094,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "139",
@@ -5108,11 +5108,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Eusebio Temoche Jacinto",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "13",
@@ -5122,11 +5122,11 @@
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
-      "Prioridad MASCLI propuesta": "Media",
+      "Prioridad SIPGES propuesta": "Media",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "14",
@@ -5136,11 +5136,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "49",
@@ -5150,11 +5150,11 @@
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Pablo Norberto Martinez Chunga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "50",
@@ -5164,11 +5164,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Antonio Bayona",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "51",
@@ -5178,11 +5178,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Raúl Martínez",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "52",
@@ -5192,11 +5192,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Julio Chunga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "53",
@@ -5206,11 +5206,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Agustín Morales",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "54",
@@ -5220,11 +5220,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "",
       "Estado de verificación": "Nombre no consignado",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     },
     {
       "N° fuente": "55",
@@ -5234,11 +5234,11 @@
       "Cargo": "",
       "Nombre actualizado 2026": "Miguel Chunga",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
-      "Prioridad MASCLI propuesta": "Alta",
+      "Prioridad SIPGES propuesta": "Alta",
       "Fuente_ID": "F008",
-      "Observaciones MASCLI": "Clasificación MASCLI propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
+      "Observaciones SIPGES": "Clasificación SIPGES propuesta; los datos de autoridad/nombre se conservan tal como figuran en la matriz fuente."
     }
   ],
   "Actores_Priorizados": [
@@ -5248,7 +5248,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Janet Santamaria",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5261,7 +5261,7 @@
       "Institución / Organización": "Policía Nacional del Perú - Comisaría",
       "Cargo": "Comisario",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5274,7 +5274,7 @@
       "Institución / Organización": "Frente de Pescadores Artesanales Acuicultores de Puerto Rico",
       "Cargo": "Presidente / Secretario General",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5287,7 +5287,7 @@
       "Institución / Organización": "FREPAB - Frente de Defensa y Desarrollo de Pescadores y Acuicultores Artesanales",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5300,7 +5300,7 @@
       "Institución / Organización": "Centro/Posta de Salud",
       "Cargo": "Jefe/a",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5313,7 +5313,7 @@
       "Institución / Organización": "Juzgado de Paz",
       "Cargo": "Juez/a de Paz",
       "Nombre actualizado 2026": "Noelia Aranda",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5326,7 +5326,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Marg Antony Aguirre Panta",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5339,7 +5339,7 @@
       "Institución / Organización": "Iglesia Evangélica del Señor Jesucristo",
       "Cargo": "Pastor",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5352,7 +5352,7 @@
       "Institución / Organización": "Comité Central",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5365,7 +5365,7 @@
       "Institución / Organización": "Primera Plataforma",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5378,7 +5378,7 @@
       "Institución / Organización": "Tercera Plataforma / Comité de Desarrollo",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5391,7 +5391,7 @@
       "Institución / Organización": "Asociación de Maricultores Santa Rosa de Lima",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5404,7 +5404,7 @@
       "Institución / Organización": "Asociación de pescadores artesanales -Mundo silencioso",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Luis Alberto Cabrera Alvarado",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5417,7 +5417,7 @@
       "Institución / Organización": "Asociación de Bodegueros Formales",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5430,7 +5430,7 @@
       "Institución / Organización": "Asociación Los Guerreros de Puerto Rico",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5443,7 +5443,7 @@
       "Institución / Organización": "Asociación de Propietarios de Plataformas",
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5456,7 +5456,7 @@
       "Institución / Organización": "Asociación Deportiva de Niños",
       "Cargo": "Secretario",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5469,7 +5469,7 @@
       "Institución / Organización": "Transportistas ruta Sechura-Bayóvar",
       "Cargo": "Dirigente / representante",
       "Nombre actualizado 2026": "Wilmer Rumiche Imán",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5482,7 +5482,7 @@
       "Institución / Organización": "Segunda Plataforma",
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5495,7 +5495,7 @@
       "Institución / Organización": "Asociación de Viviendas",
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5508,7 +5508,7 @@
       "Institución / Organización": "Comité Vaso de Leche San Pedro - III Plataforma",
       "Cargo": "Presidenta",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5521,7 +5521,7 @@
       "Institución / Organización": "I.E. N.° 20208",
       "Cargo": "Director/a",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5534,7 +5534,7 @@
       "Institución / Organización": "APAFA - I.E. N.° 20208",
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5547,7 +5547,7 @@
       "Institución / Organización": "Capitanía / Guardacostas",
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5560,7 +5560,7 @@
       "Institución / Organización": "FOSPIBAY",
       "Cargo": "Gerente General",
       "Nombre actualizado 2026": "Segundo Eduardo Reusche Castillo",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5573,7 +5573,7 @@
       "Institución / Organización": "Compañía Minera Miski Mayo",
       "Cargo": "Representante ante FOSPIBAY",
       "Nombre actualizado 2026": "Liliana Paola Farfán Vignolo",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5586,7 +5586,7 @@
       "Institución / Organización": "MINEM",
       "Cargo": "Representante ante FOSPIBAY",
       "Nombre actualizado 2026": "José Adrianzén Romero",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5599,7 +5599,7 @@
       "Institución / Organización": "FOSPIBAY - Consejo de Vigilancia / MPS",
       "Cargo": "Representante de la Municipalidad Provincial de Sechura",
       "Nombre actualizado 2026": "Edgardo Chapilliquén Martínez",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5612,7 +5612,7 @@
       "Institución / Organización": "FOSPIBAY - Consejo de Vigilancia / Miski Mayo",
       "Cargo": "Representante",
       "Nombre actualizado 2026": "Silvia Paola Alzamora Gómez",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5625,7 +5625,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal; vigencia por confirmar",
       "Nombre actualizado 2026": "Reynaldo Valdera Santisteban",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Por confirmar según fuente",
@@ -5638,7 +5638,7 @@
       "Institución / Organización": "Ministerio del Interior - Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Walter Arturo Martínez Belupo",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5651,7 +5651,7 @@
       "Institución / Organización": "Cooperativa Agraria Punta Arenas - Belisario",
       "Cargo": "",
       "Nombre actualizado 2026": "Rubio Bayona",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5664,7 +5664,7 @@
       "Institución / Organización": "Asociación Paz de Azufre",
       "Cargo": "",
       "Nombre actualizado 2026": "Juan Pingo",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5677,7 +5677,7 @@
       "Institución / Organización": "Asociación San Cristóbal",
       "Cargo": "",
       "Nombre actualizado 2026": "Lucio Quezada",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5690,7 +5690,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Néstor Pozo",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5703,7 +5703,7 @@
       "Institución / Organización": "FIUPAAC",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5716,7 +5716,7 @@
       "Institución / Organización": "Gremio de Pescadores Artesanales",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5729,7 +5729,7 @@
       "Institución / Organización": "Comité de Desarrollo",
       "Cargo": "Presidenta",
       "Nombre actualizado 2026": "Deysi Oliden Serrano",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5742,7 +5742,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Deysi del Carmen Quiroga Pazo",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5755,7 +5755,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Alex Panta",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5768,7 +5768,7 @@
       "Institución / Organización": "Asociación de Pescadores Artesanales y Buzos para Maricultura Mundo Submarino 2",
       "Cargo": "Presidente; cargo de teniente gobernador por confirmar",
       "Nombre actualizado 2026": "Jorge Aldo Martín Gonzales Espinoza",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Por confirmar según fuente",
@@ -5781,7 +5781,7 @@
       "Institución / Organización": "Empresa Comunal de Servicios Agropecuarios \"San Cayetano\" S.R.L.",
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Augusto Nunura Zeta",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5794,7 +5794,7 @@
       "Institución / Organización": "Asociación de Ganaderos Posesionarios San Cayetano de Illescas-Bayóvar (AGPOSCAIB)",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "José Miguel Chunga",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5807,7 +5807,7 @@
       "Institución / Organización": "Empresa Agropecuaria y de Servicios San Cayetano de Illescas (EMASCAI)",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Carlos Chunga Vilela",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5820,7 +5820,7 @@
       "Institución / Organización": "Ministerio del Interior - Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Miguel Chunga Pasache",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5833,7 +5833,7 @@
       "Institución / Organización": "Ministerio del Interior - Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5846,7 +5846,7 @@
       "Institución / Organización": "Ministerio del Interior - Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5859,7 +5859,7 @@
       "Institución / Organización": "EMASCAI S.A.C.",
       "Cargo": "Fiscal",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5872,7 +5872,7 @@
       "Institución / Organización": "Municipalidad del Centro Poblado",
       "Cargo": "Alcalde",
       "Nombre actualizado 2026": "Mario de la Cruz Ángeles Chapilliquén",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5885,7 +5885,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Juez de Paz",
       "Nombre actualizado 2026": "Iván Morales, juez de paz",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5898,7 +5898,7 @@
       "Institución / Organización": "Policía Nacional del Perú - Comisaría",
       "Cargo": "Comisario",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5911,7 +5911,7 @@
       "Institución / Organización": "GREPAEM",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5924,7 +5924,7 @@
       "Institución / Organización": "Frente de Asociaciones de Maricultores Artesanales - FAMAP",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -5937,7 +5937,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -5950,7 +5950,7 @@
       "Institución / Organización": "Comité de Desarrollo",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -5963,7 +5963,7 @@
       "Institución / Organización": "Capitanía de Puerto de Paita",
       "Cargo": "Capitán de Puerto",
       "Nombre actualizado 2026": "Capitán de Fragata Jorge Luis Gonzales Arbirio",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5976,7 +5976,7 @@
       "Institución / Organización": "Dirección Regional de Energía y Minas - DREM",
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Ing. Hernán Froebel García Lamadrid",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -5989,7 +5989,7 @@
       "Institución / Organización": "Dirección Regional de Producción - PRODUCE",
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Ing. Segundo Juan Alzamora Encalada",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6002,7 +6002,7 @@
       "Institución / Organización": "Dirección Regional de Transportes y Comunicaciones",
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Abog. Daniel Eduardo Seminario Madueño",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6015,7 +6015,7 @@
       "Institución / Organización": "Dirección Regional de Salud",
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Méd. Manuel Eduardo Girón Martínez",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6028,7 +6028,7 @@
       "Institución / Organización": "Dirección Regional de Educación",
       "Cargo": "Director Regional",
       "Nombre actualizado 2026": "Lic. Wilmer Charly González Rojas",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6041,7 +6041,7 @@
       "Institución / Organización": "OEFA - Oficina Desconcentrada de Piura",
       "Cargo": "Jefe/a",
       "Nombre actualizado 2026": "Rosario Moses Chávez",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6054,7 +6054,7 @@
       "Institución / Organización": "Autoridad Administrativa del Agua Jequetepeque-Zarumilla",
       "Cargo": "Director",
       "Nombre actualizado 2026": "Oresteres Paúl Escajadillo Llontop",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6067,7 +6067,7 @@
       "Institución / Organización": "Administración Local de Agua Medio y Bajo Piura",
       "Cargo": "Administrador Local de Agua",
       "Nombre actualizado 2026": "Alexander Gonzales Barboza",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6080,7 +6080,7 @@
       "Institución / Organización": "Universidad Nacional de Sechura",
       "Cargo": "Decano de la facultad de minas",
       "Nombre actualizado 2026": "Wilmer Arévalo",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6093,7 +6093,7 @@
       "Institución / Organización": "Cámara de comercio y produccion Piura",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Javier Bereche Álvarez",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6106,7 +6106,7 @@
       "Institución / Organización": "Cámara de comercio y produccion Piura",
       "Cargo": "Gerente",
       "Nombre actualizado 2026": "Susana Seminario Vega",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6119,7 +6119,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Martín del Águila Silva",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6132,7 +6132,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Iván Noé Ruiz Morales",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6145,7 +6145,7 @@
       "Institución / Organización": "Asociación de pescadores artesanales",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Martin del Aguila Silva",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6158,7 +6158,7 @@
       "Institución / Organización": "Asociación de Ganaderos Señor Cautivo",
       "Cargo": "Presidente/a",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6171,7 +6171,7 @@
       "Institución / Organización": "Comité de Vaso de Leche",
       "Cargo": "Representante / Presidenta",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6184,7 +6184,7 @@
       "Institución / Organización": "Asociación de Mujeres Llícuar Buscando un Porvenir | Partida registral N.º 11196015",
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Vanessa del Rosario Tume Pingo",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6197,7 +6197,7 @@
       "Institución / Organización": "Municipalidad Provincial de Sechura",
       "Cargo": "Alcaldesa Provincial",
       "Nombre actualizado 2026": "Carmen Rosa Morales Loro",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6210,7 +6210,7 @@
       "Institución / Organización": "Municipalidad Provincial de Sechura",
       "Cargo": "Primer Regidor",
       "Nombre actualizado 2026": "Agustín Eche Temoche",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6223,7 +6223,7 @@
       "Institución / Organización": "Subprefectura Provincial de Sechura",
       "Cargo": "Subprefecto Provincial",
       "Nombre actualizado 2026": "David Omar Álvarez Fiestas",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6236,7 +6236,7 @@
       "Institución / Organización": "Policía Nacional del Perú - Comisaría",
       "Cargo": "Comisario",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6249,7 +6249,7 @@
       "Institución / Organización": "UGEL Sechura",
       "Cargo": "Director",
       "Nombre actualizado 2026": "José Luis Herrera Montero",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6262,7 +6262,7 @@
       "Institución / Organización": "UGEL Sechura",
       "Cargo": "Jefe de Gestión Pedagógica",
       "Nombre actualizado 2026": "César Augusto Puescas Chunga",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6275,7 +6275,7 @@
       "Institución / Organización": "CLAS / establecimiento de salud de Sechura",
       "Cargo": "Gerente / Jefe",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6288,7 +6288,7 @@
       "Institución / Organización": "Iglesia Católica",
       "Cargo": "Párroco / representante",
       "Nombre actualizado 2026": "Tito Zapata Olivares",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6301,7 +6301,7 @@
       "Institución / Organización": "Juzgado Civil de Sechura",
       "Cargo": "Exjuez supernumerario; designación concluida en 2023",
       "Nombre actualizado 2026": "Richard Armando Torres Cruz",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6314,7 +6314,7 @@
       "Institución / Organización": "Juzgado Penal Unipersonal de Sechura",
       "Cargo": "Juez; verificación oficial 2025",
       "Nombre actualizado 2026": "Asdrúbal Méndez Castañeda",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6327,7 +6327,7 @@
       "Institución / Organización": "Juzgado Civil de Sechura",
       "Cargo": "Juez; verificación oficial 2026",
       "Nombre actualizado 2026": "José Fernando Panta Ruiz",
-      "Tipo de actor MASCLI": "Judicial",
+      "Tipo de actor SIPGES": "Judicial",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6340,7 +6340,7 @@
       "Institución / Organización": "Municipalidad Provincial de Sechura",
       "Cargo": "Gerente Municipal",
       "Nombre actualizado 2026": "Ing. Juan Manuel Antón Antón",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6353,7 +6353,7 @@
       "Institución / Organización": "ATRAMS - Asociación de Transportistas, Maquinaria Pesada y Servicios",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6366,7 +6366,7 @@
       "Institución / Organización": "APEMAR-Asociación de Pescadores y Maricultores de Sechura.",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6379,7 +6379,7 @@
       "Institución / Organización": "Frente de Defensa de los Intereses de la Bahía y Provincia de Sechura",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6392,7 +6392,7 @@
       "Institución / Organización": "Radio Sechura",
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6405,7 +6405,7 @@
       "Institución / Organización": "Radio Paraíso",
       "Cargo": "Gerente / representante",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6418,7 +6418,7 @@
       "Institución / Organización": "Radio Girasol",
       "Cargo": "Representante",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Medio de comunicación",
+      "Tipo de actor SIPGES": "Medio de comunicación",
       "Dimensión principal propuesta": "N - Narrativas y señales digitales",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6431,7 +6431,7 @@
       "Institución / Organización": "Bayóvar Tours",
       "Cargo": "Gerente / representante",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6444,7 +6444,7 @@
       "Institución / Organización": "Federación de Pescadores Artesanales AMYPES.",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Segundo Bernabé Guerrero Bermeo",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6457,7 +6457,7 @@
       "Institución / Organización": "PNP",
       "Cargo": "Comisario sectorial",
       "Nombre actualizado 2026": "Oscar Choquehuanca Zapata,",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6470,7 +6470,7 @@
       "Institución / Organización": "Ministerio del Interior - Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "Jesús Hipólito Inoñan Aldana",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6483,7 +6483,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernadora - jurisdicción 2026 por confirmar",
       "Nombre actualizado 2026": "Faviana Espinoza Fiestas",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Por confirmar según fuente",
@@ -6496,7 +6496,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernadora - jurisdicción 2026 por confirmar",
       "Nombre actualizado 2026": "Blanca Rosa Gómez Purizaca",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Por confirmar según fuente",
@@ -6509,7 +6509,7 @@
       "Institución / Organización": "Comunidad Campesina San Martín de Sechura",
       "Cargo": "Presidente - Junta Transitoria",
       "Nombre actualizado 2026": "Miguel Henry Zavaleta Amaya",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6522,7 +6522,7 @@
       "Institución / Organización": "Fundación Comunal San Martín de Sechura",
       "Cargo": "Administrador judicial",
       "Nombre actualizado 2026": "Teófilo Chapa Quiroga",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6535,7 +6535,7 @@
       "Institución / Organización": "Fundación Comunal San Martín de Sechura",
       "Cargo": "Administrador judicial",
       "Nombre actualizado 2026": "Pedro Luis Temoche",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6548,7 +6548,7 @@
       "Institución / Organización": "Comunidad Campesina San Martín de Sechura",
       "Cargo": "Comisión de Agricultura / responsable",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6561,7 +6561,7 @@
       "Institución / Organización": "Comunidad Campesina San Martín de Sechura",
       "Cargo": "Representante comunal ante otras instituciones",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Comunal",
+      "Tipo de actor SIPGES": "Comunal",
       "Dimensión principal propuesta": "G - Gobernanza y representación",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6574,7 +6574,7 @@
       "Institución / Organización": "Universidad Nacional de Sechura",
       "Cargo": "Presidenta de Comisión Organizadora",
       "Nombre actualizado 2026": "Yojani María Abad Sullón",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6587,7 +6587,7 @@
       "Institución / Organización": "Universidad Nacional de Sechura",
       "Cargo": "Miembro de Comisión Organizadora",
       "Nombre actualizado 2026": "Luis Gerardo Saavedra Frías",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6600,7 +6600,7 @@
       "Institución / Organización": "Universidad Nacional de Sechura",
       "Cargo": "Miembro de Comisión Organizadora",
       "Nombre actualizado 2026": "Carmen Lucila Infante Saavedra",
-      "Tipo de actor MASCLI": "Académico / educativo",
+      "Tipo de actor SIPGES": "Académico / educativo",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6613,7 +6613,7 @@
       "Institución / Organización": "ACOMADES / agente municipal",
       "Cargo": "Asentamiento Humano Vicente Chunga Aldana",
       "Nombre actualizado 2026": "Digna Ruiz Pago",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Por confirmar según fuente",
@@ -6626,7 +6626,7 @@
       "Institución / Organización": "Asociación de Comerciantes Sechuranos Unidos",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Jorge Luis Siesquén Quiroz",
-      "Tipo de actor MASCLI": "Empresarial / productivo",
+      "Tipo de actor SIPGES": "Empresarial / productivo",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6639,7 +6639,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Dévora Guevara Oblitas",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6652,7 +6652,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Zoila Anita Encinas Miranda",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6665,7 +6665,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Lourdes Margarita Inga García",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6678,7 +6678,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Carlos Iván Fiestas Curo",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6691,7 +6691,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Carolina Vise Castañeda",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6704,7 +6704,7 @@
       "Institución / Organización": "Asociación de Mujeres Productivas Artesanas y Multiservicios de Sechura | Partida registral N.º 11155478",
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Digna Emérita Chapilliquén Jacinto",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6717,7 +6717,7 @@
       "Institución / Organización": "Asociación de Mujeres Artesanales Trabajando por Sechura | Partida registral N.º 11231282",
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Victoria Galán Martínez",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6730,7 +6730,7 @@
       "Institución / Organización": "Asociación de Mujeres Confeccionando Sueños y Multiservicios Sechura - A.C.D.M.C.S.Y.M. Sechura | Partida registral N.º 11306374",
       "Cargo": "Representante legal",
       "Nombre actualizado 2026": "Deise Teresa Navarro Zapata",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6743,7 +6743,7 @@
       "Institución / Organización": "Agencia Municipal",
       "Cargo": "Agente Municipal",
       "Nombre actualizado 2026": "Pedro Gregorio Silva Calderón",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6756,7 +6756,7 @@
       "Institución / Organización": "Junta Vecinal de Seguridad Sechura",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "César Humberto Chapa Zapata",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6769,7 +6769,7 @@
       "Institución / Organización": "Municipalidad de Vice",
       "Cargo": "Alcalde de Vice",
       "Nombre actualizado 2026": "José Luis Eche Calderón",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6782,7 +6782,7 @@
       "Institución / Organización": "Subprefectura Distrital de Vice",
       "Cargo": "Exsubprefecta distrital; cargo 2026 por confirmar",
       "Nombre actualizado 2026": "Yesenia Angélica Chapilliquén Pinday",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Por confirmar según fuente",
@@ -6795,7 +6795,7 @@
       "Institución / Organización": "Asociación Club Deportivo Francisco Bolognesi de Vice - Sechura",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Santos Félix Saba Córdova",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6808,7 +6808,7 @@
       "Institución / Organización": "Asociación Deportivo Municipal de Vice (ADM - VICE)",
       "Cargo": "",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Social / comunitario",
+      "Tipo de actor SIPGES": "Social / comunitario",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6821,7 +6821,7 @@
       "Institución / Organización": "Asociación Deportiva Club Alfonso Ugarte de Vice - Sechura",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Eusebio Temoche Jacinto",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Media",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6834,7 +6834,7 @@
       "Institución / Organización": "Tenencia Gobernación",
       "Cargo": "Teniente Gobernador",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Institucional / autoridad",
+      "Tipo de actor SIPGES": "Institucional / autoridad",
       "Dimensión principal propuesta": "I - Institucional y trazabilidad",
       "Prioridad": "Media",
       "Estado de verificación": "Nombre no consignado",
@@ -6847,7 +6847,7 @@
       "Institución / Organización": "Frente de Pescadores Artesanales de Vichayo",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Productivo",
+      "Tipo de actor SIPGES": "Productivo",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6860,7 +6860,7 @@
       "Institución / Organización": "Asociación de Guardaparques Usuarios del Subsector Voluntarios del Área de Conservación Ambiental \"Estuarios de Virrilá\"",
       "Cargo": "Presidente",
       "Nombre actualizado 2026": "Pablo Norberto Martinez Chunga",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "E - Ambiental-territorial",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6873,7 +6873,7 @@
       "Institución / Organización": "ADISEV",
       "Cargo": "",
       "Nombre actualizado 2026": "Antonio Bayona",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6886,7 +6886,7 @@
       "Institución / Organización": "Nuevo Horizonte",
       "Cargo": "",
       "Nombre actualizado 2026": "Raúl Martínez",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6899,7 +6899,7 @@
       "Institución / Organización": "SSN Francisco de Asís II",
       "Cargo": "",
       "Nombre actualizado 2026": "Julio Chunga",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6912,7 +6912,7 @@
       "Institución / Organización": "Señor de los Milagros",
       "Cargo": "",
       "Nombre actualizado 2026": "Agustín Morales",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",
@@ -6925,7 +6925,7 @@
       "Institución / Organización": "AGROPESGAN",
       "Cargo": "",
       "Nombre actualizado 2026": "",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Nombre no consignado",
@@ -6938,7 +6938,7 @@
       "Institución / Organización": "San Cayetano",
       "Cargo": "",
       "Nombre actualizado 2026": "Miguel Chunga",
-      "Tipo de actor MASCLI": "Otro / por clasificar",
+      "Tipo de actor SIPGES": "Otro / por clasificar",
       "Dimensión principal propuesta": "A - Actores e influencia",
       "Prioridad": "Alta",
       "Estado de verificación": "Actualizado 2026 según matriz fuente",

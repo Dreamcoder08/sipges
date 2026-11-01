@@ -1,5 +1,5 @@
 {
-  "name": "@mascli/hosting-cloudflare",
+  "name": "@sipges/hosting-cloudflare",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@mascli/api": "workspace:*",
+    "@sipges/api": "workspace:*",
     "hono": "^4.13.13"
   },
   "devDependencies": {

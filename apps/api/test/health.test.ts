@@ -1,4 +1,4 @@
-import { HealthResponse } from '@mascli/contracts';
+import { HealthResponse } from '@sipges/contracts';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp } from './support/test-app.ts';
 
@@ -15,7 +15,7 @@ describe('GET /health', () => {
     const body = await res.json();
     expect(HealthResponse.parse(body)).toEqual({
       status: 'ok',
-      service: 'MASCLI',
+      service: 'SIPGES',
       version: 'V0.5.1',
     });
   });
@@ -31,7 +31,7 @@ describe('GET /health', () => {
   it('requires a session before revealing whether a route exists (parity with app.py middleware)', async () => {
     const res = await t.app.request('/does-not-exist');
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+    expect(await res.json()).toEqual({ detail: 'Inicie sesión para acceder a SIPGES' });
   });
 
   it('answers unknown routes with a FastAPI-compatible 404 body for signed-in users', async () => {

@@ -55,7 +55,7 @@ export const totp: TotpService & { codeAt(secret: string, at: Date): string } = 
   generateSecret: () => base32Encode(randomBytes(20)),
 
   uri: (username, secret) =>
-    `otpauth://totp/MASCLI:${encodeURIComponent(username)}?secret=${secret}&issuer=MASCLI&algorithm=SHA1&digits=6&period=30`,
+    `otpauth://totp/SIPGES:${encodeURIComponent(username)}?secret=${secret}&issuer=SIPGES&algorithm=SHA1&digits=6&period=30`,
 
   codeAt: (secret, at) => hotp(base32Decode(secret), stepAt(at)),
 

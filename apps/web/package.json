@@ -1,5 +1,5 @@
 {
-  "name": "@mascli/web",
+  "name": "@sipges/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,8 +14,8 @@
     "@deck.gl/core": "9.4.0",
     "@deck.gl/layers": "9.4.0",
     "@deck.gl/mapbox": "9.4.0",
-    "@mascli/contracts": "workspace:*",
-    "@mascli/kernel": "workspace:*",
+    "@sipges/contracts": "workspace:*",
+    "@sipges/kernel": "workspace:*",
     "@radix-ui/react-dialog": "1.1.15",
     "@tanstack/react-query": "^5.104.2",
     "@tanstack/react-router": "1.170.41",

@@ -5,7 +5,7 @@ The TypeScript API separates global access administration from tenant-owned busi
 ## Request ordering
 
 1. Session authentication and Origin validation.
-2. Scope resolution: `X-MASCLI-Scope`, then `mascli_scope`, then the only granted project.
+2. Scope resolution: `X-SIPGES-Scope`, then `sipges_scope`, then the only granted project.
 3. Query and JSON body project checks on scoped routes.
 4. Role authorization.
 5. Route handler.
@@ -20,7 +20,7 @@ All operations below require an authenticated administrator and pass the shared 
 
 | Operation | Request | Outcome |
 |---|---|---|
-| Revoke a project grant | `DELETE /system/auth/grants` with JSON `{ "username": "viewer", "company_id": "MASCLI", "project_id": "PRJ-SECHURA" }` | `200 { "ok": true }`; missing user/project/grant returns `404` |
+| Revoke a project grant | `DELETE /system/auth/grants` with JSON `{ "username": "viewer", "company_id": "SIPGES", "project_id": "PRJ-SECHURA" }` | `200 { "ok": true }`; missing user/project/grant returns `404` |
 | Disable an account | `POST /system/auth/accounts/viewer/deactivate` | `200 { "ok": true }`; unknown user returns `404`; repeating an existing deactivation succeeds |
 
 Revoking a grant does not destroy the user's session: `/system/auth/scopes` immediately removes the project and scoped requests are denied unless another authorized project is selected. `POST /system/auth/grants` restores access.
@@ -33,22 +33,22 @@ Grant removal validates nonempty lookup fields of at most 120 characters and rej
 
 ## Database boundary
 
-`withTenant(sql, tenantId, callback)` sets `app.tenant_id` transaction-locally and changes to the restricted `mascli_tenant` role. Tenant tables must:
+`withTenant(sql, tenantId, callback)` sets `app.tenant_id` transaction-locally and changes to the restricted `sipges_tenant` role. Tenant tables must:
 
 - have a `tenant_id` column;
 - enable and force row-level security;
 - use matching `USING` and `WITH CHECK` policies;
-- grant only the required privileges to `mascli_tenant`.
+- grant only the required privileges to `sipges_tenant`.
 
-The tenant role has no access to identity tables. Connection settings revert when the transaction ends. The startup/migration role needs permission to create and grant `mascli_tenant`; do not configure production with a superuser runtime role.
+The tenant role has no access to identity tables. Connection settings revert when the transaction ends. The startup/migration role needs permission to create and grant `sipges_tenant`; do not configure production with a superuser runtime role.
 
 ## Tenant JSON export
 
-`GET /system/export` requires an administrator with an active, granted scope. It returns `Content-Type: application/json; charset=UTF-8`, `Content-Disposition: attachment; filename="mascli-tenant.json"` and `Cache-Control: no-store`.
+`GET /system/export` requires an administrator with an active, granted scope. It returns `Content-Type: application/json; charset=UTF-8`, `Content-Disposition: attachment; filename="sipges-tenant.json"` and `Cache-Control: no-store`.
 
-The version 1 envelope contains `format: "mascli.tenant-export"`, `version: 1`, `scope: { company_id, project_id }`, `exported_at` (UTC seconds) and `data: { module_records, audit, attachments, document_review, digital_alert_reviews, preventive_actions, preventive_action_log }`. Only these explicitly allowed business tables are read; future contexts must extend the reader and its tests explicitly. Tables not installed yet produce empty arrays. Existing tables without forced RLS, tenant columns or required role privileges cause a generic `500`, never a partial dump or owner-role fallback.
+The version 1 envelope contains `format: "sipges.tenant-export"`, `version: 1`, `scope: { company_id, project_id }`, `exported_at` (UTC seconds) and `data: { module_records, audit, attachments, document_review, digital_alert_reviews, preventive_actions, preventive_action_log }`. Only these explicitly allowed business tables are read; future contexts must extend the reader and its tests explicitly. Tables not installed yet produce empty arrays. Existing tables without forced RLS, tenant columns or required role privileges cause a generic `500`, never a partial dump or owner-role fallback.
 
-All table reads use one repeatable-read, read-only transaction with transaction-local tenant ID and restricted `mascli_tenant` role, plus an explicit `tenant_id` predicate. Identity, sessions, grants and TOTP tables are not export sources. Transaction settings reset on success or failure. The artifact is an in-memory JSON business-data snapshot, not a SQLite file, PostgreSQL backup, import tool or attachment-binary archive. The format change from legacy `mascli.db` was selected explicitly (ODD S8).
+All table reads use one repeatable-read, read-only transaction with transaction-local tenant ID and restricted `sipges_tenant` role, plus an explicit `tenant_id` predicate. Identity, sessions, grants and TOTP tables are not export sources. Transaction settings reset on success or failure. The artifact is an in-memory JSON business-data snapshot, not a SQLite file, PostgreSQL backup, import tool or attachment-binary archive. The format change from legacy `sipges.db` was selected explicitly (ODD S8).
 
 ## Current limits
 

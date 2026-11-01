@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { CanonicalEntities, ProjectCoordinates } from '@mascli/contracts';
+import { CanonicalEntities, ProjectCoordinates } from '@sipges/contracts';
 import type { ReferenceReader } from '../application/index.ts';
 import { isRegisteredReferenceScope as registered } from './static-reference-reader.ts';
 /** Reads the repository references from disk (Node); Workers use the static reader. */

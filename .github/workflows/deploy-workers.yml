@@ -42,19 +42,19 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @mascli/hosting-cloudflare build
+      - run: pnpm --filter @sipges/hosting-cloudflare build
       # Before the new code goes live: migrations are additive, so the running version keeps working.
       - name: Apply database migrations
-        run: pnpm --filter @mascli/hosting-cloudflare migrate
+        run: pnpm --filter @sipges/hosting-cloudflare migrate
         env:
-          MASCLI_MIGRATION_DATABASE_URL: ${{ secrets.MASCLI_MIGRATION_DATABASE_URL }}
+          SIPGES_MIGRATION_DATABASE_URL: ${{ secrets.SIPGES_MIGRATION_DATABASE_URL }}
       # deploy:worker also re-asserts Hyperdrive query caching off (see the deployment guide).
       - name: Deploy the Worker
-        run: pnpm --filter @mascli/hosting-cloudflare run deploy:worker
+        run: pnpm --filter @sipges/hosting-cloudflare run deploy:worker
       - name: Smoke test /health
         run: |
           for attempt in 1 2 3 4 5 6; do
-            if curl -fsS --max-time 20 https://mascli.dreamcoder-dev08.workers.dev/health; then
+            if curl -fsS --max-time 20 https://sipges.dreamcoder-dev08.workers.dev/health; then
               exit 0
             fi
             echo "Attempt $attempt failed; retrying in 10 s"

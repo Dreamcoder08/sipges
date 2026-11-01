@@ -1,4 +1,4 @@
-import type { Attachment, ModuleRecord } from '@mascli/contracts';
+import type { Attachment, ModuleRecord } from '@sipges/contracts';
 import { foldText } from '../../../shared/lib/text.ts';
 import { actorGroups, actorName, positionTone } from '../insights/actor-map.ts';
 import { alertTerritory, MISSING_TERRITORY, recordedLevel } from '../insights/alert-heatmap.ts';

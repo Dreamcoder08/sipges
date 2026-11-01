@@ -1,4 +1,4 @@
-import type { CanonicalEntities, ProjectCoordinates } from '@mascli/contracts';
+import type { CanonicalEntities, ProjectCoordinates } from '@sipges/contracts';
 import type { Scope } from '../../tenancy/application/index.ts';
 export type ReferenceReader = {
   coordinates(scope: Scope): Promise<ProjectCoordinates | null>;

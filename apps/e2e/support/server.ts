@@ -38,7 +38,7 @@ export type RunningApi = {
 };
 
 export type StartOptions = {
-  /** Extra or overriding MASCLI_* variables; `undefined` removes a variable. */
+  /** Extra or overriding SIPGES_* variables; `undefined` removes a variable. */
   readonly env: Readonly<Record<string, string | undefined>>;
   /** Host name used in the returned URL (the API always binds 127.0.0.1). */
   readonly hostname?: string;
@@ -46,7 +46,7 @@ export type StartOptions = {
 };
 
 const baseEnv = (): Record<string, string> => {
-  // Only what Node needs to run; no MASCLI_* variable of the caller leaks into the API.
+  // Only what Node needs to run; no SIPGES_* variable of the caller leaks into the API.
   const keep = ['PATH', 'HOME', 'TMPDIR', 'LANG', 'SYSTEMROOT'];
   return Object.fromEntries(
     keep.flatMap((key) => (process.env[key] ? [[key, process.env[key] ?? '']] : [])),
@@ -65,7 +65,7 @@ const mergeEnv = (overrides: Readonly<Record<string, string | undefined>>) => {
 /** Spawns the real API composition root (apps/api/src/main.ts) and waits for /health. */
 export const startApi = async (options: StartOptions): Promise<RunningApi> => {
   const port = await freePort();
-  const env = mergeEnv({ MASCLI_HOST: '127.0.0.1', ...options.env, MASCLI_PORT: String(port) });
+  const env = mergeEnv({ SIPGES_HOST: '127.0.0.1', ...options.env, SIPGES_PORT: String(port) });
   let output = '';
   const child: ChildProcess = spawn(process.execPath, [apiMain], {
     cwd: repoRoot,
@@ -163,7 +163,7 @@ export const startWorker = async (options: {
 export const expectStartupFailure = async (
   env: Readonly<Record<string, string | undefined>>,
 ): Promise<{ code: number | null; output: string }> => {
-  const merged = mergeEnv({ ...env, MASCLI_PORT: String(await freePort()) });
+  const merged = mergeEnv({ ...env, SIPGES_PORT: String(await freePort()) });
   const child = spawn(process.execPath, [apiMain], { cwd: repoRoot, env: merged });
   let output = '';
   child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
@@ -176,20 +176,20 @@ export const expectStartupFailure = async (
 
 /** A temporary directory for PGlite and uploads, removed by the returned cleanup. */
 export const scratchDir = async (label: string) => {
-  const dir = await mkdtemp(path.join(tmpdir(), `mascli-e2e-${label}-`));
+  const dir = await mkdtemp(path.join(tmpdir(), `sipges-e2e-${label}-`));
   return { dir, remove: () => rm(dir, { recursive: true, force: true }) };
 };
 
 export const assertWebBuilt = () => {
   if (!existsSync(path.join(webDist, 'index.html'))) {
-    throw new Error('apps/web/dist is missing: run `pnpm --filter @mascli/web build` first.');
+    throw new Error('apps/web/dist is missing: run `pnpm --filter @sipges/web build` first.');
   }
 };
 
 export const assertWorkerBuilt = () => {
   if (!existsSync(path.join(workerDir, 'public', 'index.html'))) {
     throw new Error(
-      'apps/hosting-cloudflare/public is missing: run `pnpm --filter @mascli/hosting-cloudflare build` first.',
+      'apps/hosting-cloudflare/public is missing: run `pnpm --filter @sipges/hosting-cloudflare build` first.',
     );
   }
 };

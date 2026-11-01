@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 
 const root = new URL('../../', import.meta.url);
 // pnpm directly: Node 26 no longer ships corepack, and the repository pins pnpm.
-execFileSync('pnpm', ['--filter', '@mascli/web', 'build'], {
+execFileSync('pnpm', ['--filter', '@sipges/web', 'build'], {
   cwd: root,
   stdio: 'inherit',
   env: { ...process.env, CI: '1' },

@@ -4,7 +4,7 @@ import type { SqlClient } from './sql-client.ts';
 /**
  * Runs `fn` in a transaction scoped to one tenant (docs/adr/0003):
  * - `app.tenant_id` is set transaction-locally and read by every RLS policy;
- * - the transaction drops to the non-owner role `mascli_tenant`, so policies are enforced
+ * - the transaction drops to the non-owner role `sipges_tenant`, so policies are enforced
  *   and global tables (users, sessions, grants) are unreadable.
  * - `app.actor` names the authenticated user of the current request, read by the record
  *   history trigger (docs/adr/0011); it is empty outside a request.
@@ -25,7 +25,7 @@ export const withTenant = async <T>(
               set_config('app.clearance', $3, true)`,
       [tenantId, context?.actor ?? '', context?.clearance ?? 'full'],
     );
-    await tx.exec('SET LOCAL ROLE mascli_tenant');
+    await tx.exec('SET LOCAL ROLE sipges_tenant');
     return fn(tx);
   });
 };

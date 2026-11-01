@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { useId, useState } from 'react';
 import { useLevelLabel } from '../../../shared/lib/project-settings.tsx';
 import { DIMENSION_NAMES, type DimensionCode } from '../../../shared/lib/text.ts';
@@ -42,7 +42,7 @@ export const AlertHeatmap = ({
         <span className={styles.count}>{data.active.length} activas</span>
       </div>
       <p className={styles.explanation}>
-        Nivel de riesgo por dimensión MASCLI y comunidad: cada celda muestra el nivel máximo
+        Nivel de riesgo por dimensión SIPGES y comunidad: cada celda muestra el nivel máximo
         registrado y su número de alertas activas. Selecciónela para revisar los registros que la
         sustentan.
       </p>
@@ -70,12 +70,12 @@ export const AlertHeatmap = ({
               >
                 <table className={styles.matrix}>
                   <caption className="visually-hidden">
-                    Nivel máximo documentado por dimensión MASCLI y territorio; las celdas vacías
+                    Nivel máximo documentado por dimensión SIPGES y territorio; las celdas vacías
                     indican sin datos.
                   </caption>
                   <thead>
                     <tr>
-                      <th scope="col">Dimensión MASCLI</th>
+                      <th scope="col">Dimensión SIPGES</th>
                       {data.territories.map((t) => (
                         <th scope="col" key={t}>
                           {t}

@@ -3,11 +3,11 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
 
 /**
  * Visual record of the mobile shell for pull requests (odd/tasks/mobile-first-redesign.md).
- * Runs only when MASCLI_E2E_SCREENSHOT_DIR names an output folder, so the regular suite
- * never writes files: `MASCLI_E2E_SCREENSHOT_DIR=/tmp/shots pnpm e2e -- screenshots`.
+ * Runs only when SIPGES_E2E_SCREENSHOT_DIR names an output folder, so the regular suite
+ * never writes files: `SIPGES_E2E_SCREENSHOT_DIR=/tmp/shots pnpm e2e -- screenshots`.
  */
-const dir = process.env.MASCLI_E2E_SCREENSHOT_DIR;
-test.skip(!dir, 'MASCLI_E2E_SCREENSHOT_DIR is not set');
+const dir = process.env.SIPGES_E2E_SCREENSHOT_DIR;
+test.skip(!dir, 'SIPGES_E2E_SCREENSHOT_DIR is not set');
 
 const shot = (page: Page, name: string) =>
   page.screenshot({ path: `${dir}/${name}.png`, animations: 'disabled' });
@@ -50,7 +50,7 @@ test('capture the mobile shell', async ({ page, admin, adminApi }) => {
   for (const [module, rows] of Object.entries(SAMPLE)) {
     for (const payload of rows) {
       const created = await adminApi.post(`/api/${module}`, {
-        headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE },
+        headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
         data: { payload },
       });
       expect(created.status(), await created.text()).toBe(200);

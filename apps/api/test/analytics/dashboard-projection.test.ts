@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createSqlDashboardRecordReader } from '../../src/contexts/analytics/infrastructure/sql-dashboard-record-reader.ts';
 import { createTestApp } from '../support/test-app.ts';
 
-const SCOPE = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+const SCOPE = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 
 describe('dashboard SQL projection', () => {
   it('materializes only raw dashboard values, preserving row order and JSON types', async () => {
@@ -22,7 +22,7 @@ describe('dashboard SQL projection', () => {
         `INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at)
          VALUES ($1, $2, $3, $4::jsonb, $5, $5)`,
         [
-          'MASCLI/PRJ-SECHURA',
+          'SIPGES/PRJ-SECHURA',
           module,
           id,
           JSON.stringify(payload),

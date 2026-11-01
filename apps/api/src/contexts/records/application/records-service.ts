@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import { type FieldChange, type VersionOperation, diffPayloads } from '../domain/history.ts';
 import { type ImportProblem, MAX_IMPORT_ROWS, planImport } from '../domain/import.ts';
 import {

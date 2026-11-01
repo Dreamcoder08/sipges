@@ -112,7 +112,7 @@ describe('legacy mapping', () => {
       linked_record_id: 'EV-1',
       created_at: '2026-10-01T09:00:00',
     };
-    const mapped = mapAttachment(row, { tenantId: 'MASCLI/PRJ-SECHURA', moduleForSlug });
+    const mapped = mapAttachment(row, { tenantId: 'SIPGES/PRJ-SECHURA', moduleForSlug });
     expect(mapped.ok && mapped.value.recordModule).toBe('Eventos');
     expect(mapped.ok && mapped.value.linkedModule).toBe('eventos');
     expect(mapped.ok && mapped.value.contentType).toBe('application/octet-stream');
@@ -121,7 +121,7 @@ describe('legacy mapping', () => {
     const unknown = mapAttachment(
       { ...row, linked_module: 'inexistente' },
       {
-        tenantId: 'MASCLI/PRJ-SECHURA',
+        tenantId: 'SIPGES/PRJ-SECHURA',
         moduleForSlug,
       },
     );
@@ -158,7 +158,7 @@ describe('legacy mapping', () => {
       linked_record_id: 'EV-1',
       created_at: '2026-10-01T09:00:00',
     };
-    const deps = { tenantId: 'MASCLI/PRJ-SECHURA', moduleForSlug };
+    const deps = { tenantId: 'SIPGES/PRJ-SECHURA', moduleForSlug };
     expect(mapAttachment(attachment, deps).ok).toBe(true);
     for (const field of [
       'original_name',
@@ -259,7 +259,7 @@ describe('legacy mapping', () => {
         linked_record_id: 'EV-1',
         created_at: '2026-10-01T09:00:00',
       },
-      { tenantId: 'MASCLI/PRJ-SECHURA', moduleForSlug },
+      { tenantId: 'SIPGES/PRJ-SECHURA', moduleForSlug },
     );
     expect(!escaped.ok && escaped.error).toBe('attachment_stored_name_unsafe');
   });

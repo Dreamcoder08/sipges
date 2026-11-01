@@ -1,4 +1,4 @@
-import { AuthorizedSourceConfigIn, AuthorizedSourceImportIn } from '@mascli/contracts';
+import { AuthorizedSourceConfigIn, AuthorizedSourceImportIn } from '@sipges/contracts';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { AppEnv } from '../../../platform/http/env.ts';

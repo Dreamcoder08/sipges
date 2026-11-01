@@ -1,7 +1,7 @@
 # 0001 — Monorepo and toolchain
 
 ## Context
-MASCLI has a backend, a frontend and contracts both must agree on. The Python app keeps them in one file plus static assets, so contracts drift silently (e.g. the UI project switch never reaches the server).
+SIPGES has a backend, a frontend and contracts both must agree on. The Python app keeps them in one file plus static assets, so contracts drift silently (e.g. the UI project switch never reaches the server).
 
 ## Decision
 - **pnpm workspaces** (via Corepack, version pinned in `packageManager`); `pnpm -r` runs tasks in topological order.

@@ -36,7 +36,7 @@ their id in `Proyecto_ID`. Audit details keep the Python texts.
 ## Isolation and atomicity
 
 `module_records` and `audit` (migration `0004_records_audit.sql`) are tenant-owned under forced
-RLS and accessed only through `withTenant` as `mascli_tenant`. Each change and its audit entry
+RLS and accessed only through `withTenant` as `sipges_tenant`. Each change and its audit entry
 commit in the same transaction (`platform/database/audit-trail.ts`); the role may only `SELECT`
 and `INSERT` on `audit`, so the trail is append-only for the application. Other contexts append
 audit entries the same way inside their own tenant transaction.

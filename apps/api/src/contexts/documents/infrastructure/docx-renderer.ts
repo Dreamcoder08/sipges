@@ -9,7 +9,7 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
-import type { ReportDocument } from '@mascli/kernel';
+import type { ReportDocument } from '@sipges/kernel';
 import type { ReportRenderer } from '../application/index.ts';
 
 const HEADINGS = {
@@ -52,7 +52,7 @@ export const docxRenderer: ReportRenderer = {
   contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   async render(report) {
     const document = new Document({
-      creator: 'MASCLI',
+      creator: 'SIPGES',
       sections: [{ children: toChildren(report) }],
     });
     return new Uint8Array(await Packer.toBuffer(document));

@@ -4,7 +4,7 @@ import {
   type ChannelKind,
   type RuleIn,
   TickReport,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
@@ -94,7 +94,7 @@ export const CHANNEL_FIELDS: Record<
       {
         key: 'from',
         label: 'Remitente verificado',
-        hint: 'Ejemplo: MASCLI <avisos@tu-dominio.org>',
+        hint: 'Ejemplo: SIPGES <avisos@tu-dominio.org>',
       },
       { key: 'to', label: 'Destinatarios', hint: 'Separados por comas, hasta 20.' },
     ],

@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { ProjectCoordinatesResponse, CanonicalEntitiesResponse } from '@mascli/contracts';
+import { ProjectCoordinatesResponse, CanonicalEntitiesResponse } from '@sipges/contracts';
 import { createTestApp } from '../support/test-app.ts';
 
 it('exposes reference geometry only for its registered company and project', async () => {
@@ -18,17 +18,17 @@ it('exposes reference geometry only for its registered company and project', asy
     username: 'admin',
   });
   const second = await t.request('/system/project-coordinates', {
-    headers: { cookie, 'X-MASCLI-Scope': 'OTHER/PRJ-SECHURA' },
+    headers: { cookie, 'X-SIPGES-Scope': 'OTHER/PRJ-SECHURA' },
   });
   expect(await second.json()).toMatchObject({ available: false, data: null });
   const canonical = await t.request('/system/canonical-entities', {
-    headers: { cookie, 'X-MASCLI-Scope': 'MASCLI/PRJ-SECHURA' },
+    headers: { cookie, 'X-SIPGES-Scope': 'SIPGES/PRJ-SECHURA' },
   });
   expect(
     CanonicalEntitiesResponse.parse(await canonical.json()).data?.CCSMS?.canonical_name,
   ).toContain('San Martín');
   const wrong = await t.request('/system/canonical-entities', {
-    headers: { cookie, 'X-MASCLI-Scope': 'OTHER/PRJ-SECHURA' },
+    headers: { cookie, 'X-SIPGES-Scope': 'OTHER/PRJ-SECHURA' },
   });
   expect(await wrong.json()).toMatchObject({ available: false, data: null });
   expect((await t.request('/system/project-coordinates')).status).toBe(401);
