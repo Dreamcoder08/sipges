@@ -4,6 +4,7 @@
 // Node must run TypeScript natively (22.18+), like the API's own scripts.
 import { loadMigrations, migrate } from '../api/src/platform/database/migrator.ts';
 import { postgresClient } from '../api/src/platform/database/postgres.ts';
+import { describeMigrationFailure } from './migration-failure.mjs';
 
 const url = process.env.SIPGES_MIGRATION_DATABASE_URL;
 if (!url) {
@@ -25,11 +26,7 @@ try {
   );
 } catch (error) {
   failed = true;
-  // Never print the URL: only the migration failure message and its class.
-  console.error(error instanceof Error ? error.message : 'Migration failed');
-  if (error instanceof Error && error.cause instanceof Error) {
-    console.error(`Cause: ${error.cause.name}`);
-  }
+  for (const line of describeMigrationFailure(error)) console.error(line);
 } finally {
   await database.close();
 }
