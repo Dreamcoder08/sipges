@@ -42,6 +42,60 @@ describe('destination hubs', () => {
   });
 });
 
+describe('Integraciones', () => {
+  const installIntegrationsApi = () =>
+    server.use(
+      http.get('*/system/automations', () =>
+        HttpResponse.json({
+          sources: [],
+          actions: ['CREATE'],
+          operators: ['eq'],
+          rules: [],
+          channels: [],
+          runs: [],
+        }),
+      ),
+      http.get('*/system/automations/runtime', () =>
+        HttpResponse.json({
+          event_processing: true,
+          cron_configured: false,
+          cron_schedule: null,
+          interval_ms: 30000,
+          latest_attempt: null,
+        }),
+      ),
+      http.get('*/system/integrations/api-keys', () => HttpResponse.json([])),
+      http.get('*/system/intelligence/sources', () => HttpResponse.json({}, { status: 503 })),
+      http.get('*/system/geography/catalogue', () => HttpResponse.json({}, { status: 503 })),
+    );
+
+  it('is one page at /integraciones with its filters, and /automatizaciones still renders', async () => {
+    installIntegrationsApi();
+    at('/integraciones');
+    const page = render(<App />);
+    expect(await screen.findByRole('heading', { level: 1, name: 'Integraciones' })).toBeVisible();
+    const chips = await screen.findByRole('group', { name: 'Filtrar por tipo' });
+    expect(
+      within(chips)
+        .getAllByRole('button')
+        .map((chip) => chip.textContent),
+    ).toEqual([
+      expect.stringMatching(/^Todos/),
+      expect.stringMatching(/^Conectores/),
+      expect.stringMatching(/^Skills/),
+      expect.stringMatching(/^Programadas/),
+    ]);
+    page.unmount();
+
+    at('/automatizaciones');
+    render(<App />);
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Automatizaciones e integraciones' }),
+    ).toBeVisible();
+    expect(await screen.findByLabelText('Nombre de la regla')).toBeVisible();
+  });
+});
+
 describe('Registros hub', () => {
   const chips = () => screen.findByRole('group', { name: 'Tipo de registro' });
   const label = (button: string | null) => button?.replace(/\s+\S+$/, '');
