@@ -130,6 +130,38 @@ export const NAV_GROUPS = [
   },
 ] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
 
+/**
+ * Desktop sidebar (docs/adr/0015): the screens people open most sit under «Fijados» and are not
+ * repeated in their group.
+ */
+export const PINNED_PATHS = [
+  '/',
+  '/eventos',
+  '/alertas',
+  '/mapa',
+  '/validacion',
+] as const satisfies readonly ScreenPath[];
+
+const PINNED: ReadonlySet<string> = new Set(PINNED_PATHS);
+
+/** Name of the group whose screens live in the account menu instead of the sidebar list. */
+const SYSTEM_GROUP = 'Sistema';
+
+/** Collapsible sidebar sections: NAV_GROUPS without the pinned screens and without Sistema. */
+export const SIDEBAR_SECTIONS: readonly { label: string; paths: readonly ScreenPath[] }[] =
+  NAV_GROUPS.filter((group) => group.label !== SYSTEM_GROUP).map((group) => ({
+    label: group.label,
+    paths: group.paths.filter((path) => !PINNED.has(path)),
+  }));
+
+/** Sistema screens, reached from the account menu. */
+export const SYSTEM_PATHS: readonly ScreenPath[] =
+  NAV_GROUPS.find((group) => group.label === SYSTEM_GROUP)?.paths ?? [];
+
+/** Label of the NAV_GROUPS group that owns a path, or null for routes outside the menu. */
+export const groupLabelFor = (path: string): string | null =>
+  NAV_GROUPS.find((group) => (group.paths as readonly string[]).includes(path))?.label ?? null;
+
 /** Icon shown next to each screen in the sidebar, the bottom bar and the "Más" sheet. */
 export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/': 'home',

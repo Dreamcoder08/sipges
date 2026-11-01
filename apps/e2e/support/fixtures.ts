@@ -57,8 +57,8 @@ export const signIn = async (page: Page, credentials: Credentials, otp?: string)
 
 /**
  * Signs in and makes `scope` the active project: through the selection screen when the account
- * has several projects and none is selected, otherwise through the header switcher (in the
- * project sheet on phones).
+ * has several projects and none is selected, otherwise through the project selector (in the
+ * sidebar on wide screens, in the project sheet on phones).
  */
 export const signInToProject = async (page: Page, credentials: Credentials, scope: string) => {
   await signIn(page, credentials);
@@ -83,12 +83,15 @@ export const signInToProject = async (page: Page, credentials: Credentials, scop
   await expect(switcher).toHaveValue(scope);
 };
 
-/** Signs out through the account menu, where the action lives on every viewport. */
+/**
+ * Signs out through the account menu, where the action lives on every viewport: the sidebar
+ * menu on wide screens, the account sheet on phones.
+ */
 export const signOut = async (page: Page) => {
   await page.getByRole('button', { name: /^Cuenta de / }).click();
   await page
-    .getByRole('dialog', { name: 'Cuenta' })
-    .getByRole('button', { name: 'Cerrar sesión' })
+    .getByRole('menuitem', { name: 'Cerrar sesión' })
+    .or(page.getByRole('dialog', { name: 'Cuenta' }).getByRole('button', { name: 'Cerrar sesión' }))
     .click();
 };
 

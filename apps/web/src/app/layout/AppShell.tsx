@@ -6,45 +6,22 @@ import { Sheet } from '../../shared/ui/Sheet.tsx';
 import {
   MOBILE_TABS,
   MORE_GROUPS,
-  NAV_GROUPS,
   SCREEN_ICONS,
   labelFor,
   projectParts,
   titleFor,
 } from '../navigation.ts';
 import styles from './AppShell.module.css';
+import { NavLink } from './NavLink.tsx';
+import { Sidebar } from './Sidebar.tsx';
 
 const MORE_PATHS: ReadonlySet<string> = new Set(MORE_GROUPS.flatMap((group) => group.paths));
-
-/** A navigation link with its icon; the current screen is marked for styles and assistive tech. */
-const NavLink = ({
-  path,
-  className,
-  onNavigate,
-  children,
-}: {
-  path: keyof typeof SCREEN_ICONS;
-  className: string | undefined;
-  onNavigate?: () => void;
-  children?: ReactNode;
-}) => (
-  <Link
-    to={path}
-    className={className}
-    activeOptions={{ exact: true }}
-    onClick={onNavigate}
-    activeProps={{ 'aria-current': 'page' }}
-  >
-    <Icon name={SCREEN_ICONS[path]} className={styles.icon} />
-    <span className={styles.text}>{labelFor(path)}</span>
-    {children}
-  </Link>
-);
 
 /**
  * Layout of every signed-in screen (docs/adr/0015): skip link, navigation, page heading and
  * main region. Focus moves to the heading after each navigation so screen readers announce it.
- * Wide screens keep a persistent sidebar and a tool bar. Phones and tablets get a context bar
+ * Wide screens keep a persistent sidebar, which holds the project, search, inbox and account,
+ * and a top bar with the title only. Phones and tablets get a context bar
  * (project, search, account), the title under it, a five-item bottom bar and sheets for the
  * project selector and the remaining sections.
  */
@@ -126,33 +103,13 @@ export const AppShell = ({
         Saltar al contenido principal
       </a>
       {compact ? null : (
-        <aside className={styles.sidebar}>
-          <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
-            <span className={styles.mark} aria-hidden="true">
-              S
-            </span>
-            <span>
-              <b>SIPGES</b>
-              <small>Gestión socioambiental</small>
-            </span>
-          </div>
-          <nav aria-label="Secciones">
-            {NAV_GROUPS.map((group) => (
-              <div key={group.label} className={styles.group}>
-                <p className={styles.groupLabel} aria-hidden="true">
-                  {group.label}
-                </p>
-                <ul>
-                  {group.paths.map((path) => (
-                    <li key={path}>
-                      <NavLink path={path} className={styles.link} />
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </aside>
+        <Sidebar
+          pathname={pathname}
+          projectLabel={projectLabel}
+          projectSwitcher={projectSwitcher}
+          search={search}
+          notifications={notifications}
+        />
       )}
       <div className={styles.body}>
         <header ref={topbar} className={styles.topbar}>
@@ -180,18 +137,10 @@ export const AppShell = ({
               </div>
             </>
           ) : (
-            <>
-              <div className={styles.heading}>
-                <p className={styles.eyebrow}>{projectLabel}</p>
-                {h1}
-              </div>
-              <div className={styles.tools}>
-                {search}
-                {notifications}
-                {projectSwitcher}
-                {account}
-              </div>
-            </>
+            <div className={styles.heading}>
+              <p className={styles.eyebrow}>{projectLabel}</p>
+              {h1}
+            </div>
           )}
         </header>
         {compact ? <div className={styles.titleRow}>{h1}</div> : null}

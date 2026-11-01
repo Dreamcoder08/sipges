@@ -17,6 +17,8 @@ test('SIPGES relates recent records, explains the colour and lets a person raise
     ).toBe(200);
   await page.goto('/');
   const nav = page.getByRole('navigation', { name: 'Secciones' });
+  // Only the section of the current screen starts open; «Situaciones» sits in the next one.
+  await nav.getByRole('button', { name: /^Gestión y alertas/ }).click();
   await expect(nav.getByRole('link', { name: 'Situaciones', exact: true })).toBeVisible();
 
   await post('demandas', {
