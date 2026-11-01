@@ -20,7 +20,7 @@ import {
   titleOf,
 } from '../domain/catalog.ts';
 import { findMention, suggestedLink } from '../domain/mentions.ts';
-import { matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
+import { foldText, matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
 import { MIN_SIMILARITY, cosine, embeddingText, fuseRankings } from '../domain/semantic.ts';
 import type {
   Clock,
@@ -622,7 +622,16 @@ export const createOntologyService = (deps: {
           objectType.titleField,
           ...objectType.summaryFields,
         ]);
-        if (visibleField && !match) return [];
+        // The store requires every term somewhere in the record; with hidden fields every term
+        // must be in a visible one, or pairing a visible word with a probe reveals hidden text.
+        if (visibleField) {
+          const visible = foldText(
+            Object.values(payload)
+              .filter((v) => typeof v === 'string' || typeof v === 'number')
+              .join(' '),
+          );
+          if (!match || !terms.every((term) => visible.includes(term))) return [];
+        }
         return [{ ...summarize(objectType, row), match, semantic: semanticKeys.has(k) }];
       });
     },

@@ -55,6 +55,27 @@ describe('search_records never reveals what a dropped field holds', () => {
     expect(out.structuredContent.hits).toEqual([]);
   });
 
+  it.each([
+    ['sechura diabetes', 'EV-1'],
+    ['sechura contra', 'A-1'],
+    ['sechura sindicato', 'A-1'],
+    ['queja tapia', 'BZ-1'],
+    ['queja diabetes', 'BZ-1'],
+  ])(
+    'a query pairing an allowed word with a dropped one («%s») does not find %s',
+    async (query, id) => {
+      const t = await setupPrivacy();
+      await t.seed();
+      await t.setSwitch(true);
+      const { token } = await t.key('Analista', undefined, 'read', 'limited');
+
+      const out = await t.tool(token, 'search_records', { query });
+
+      expect(out.isError).toBe(false);
+      expect(out.structuredContent.hits.map((h: Hit) => h.id)).not.toContain(id);
+    },
+  );
+
   it('still finds records through their allowed fields', async () => {
     const t = await setupPrivacy();
     await t.seed();
