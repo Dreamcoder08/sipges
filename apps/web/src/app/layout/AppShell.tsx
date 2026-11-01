@@ -163,16 +163,15 @@ export const AppShell = ({
                 className={styles.context}
                 aria-haspopup="dialog"
                 aria-expanded={sheet === 'project'}
-                aria-label={`Proyecto ${projectLabel}. Cambiar de proyecto`}
                 onClick={() => setSheet('project')}
               >
                 <span className={styles.mark} aria-hidden="true">
                   M
                 </span>
                 <span className={styles.contextText}>
-                  <b>{project.name}</b>
-                  <small>{project.detail}</small>
+                  <b>{project.name}</b> <small>{project.detail}</small>
                 </span>
+                <span className="visually-hidden">. Cambiar de proyecto</span>
                 <Icon name="chevronDown" className={styles.chevron} />
               </button>
               <div className={styles.actions}>
