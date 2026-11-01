@@ -113,7 +113,7 @@ export const InicioPage = ({
           </label>
           <textarea
             id={fieldId}
-            rows={2}
+            rows={1}
             value={question}
             placeholder="Pregunta por eventos, actores, demandas o compromisos…"
             onChange={(event) => setQuestion(event.target.value)}

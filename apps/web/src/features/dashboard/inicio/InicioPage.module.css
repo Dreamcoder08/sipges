@@ -263,3 +263,136 @@
     flex-wrap: wrap;
   }
 }
+
+/*
+ * Phones read Inicio like a chat app (ChatGPT, Claude mobile): the greeting centred in the free
+ * space, the briefing as one-line rows, one swipeable strip of suggestions and the composer resting
+ * on the bottom bar. The order changes only visually; the DOM keeps the desktop reading order.
+ */
+@media (max-width: 40rem) {
+  .home {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: calc(100dvh - 15.5rem);
+    padding-top: 0;
+  }
+
+  .hero {
+    display: contents;
+  }
+
+  .eyebrow,
+  .briefHead,
+  .suggestLabel,
+  .hint,
+  .card :is(.list, .empty, .risk) {
+    display: none;
+  }
+
+  .title {
+    order: 1;
+    margin-block: auto;
+    padding-block: var(--space-6);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    text-align: center;
+  }
+
+  .brief {
+    order: 2;
+    gap: 0;
+  }
+
+  .grid {
+    gap: 0;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: 3rem;
+    padding: var(--space-2) var(--space-1);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+  }
+
+  .card h3 {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+  }
+
+  /* The whole row is the link; its text stays the accessible name. */
+  .more {
+    font-size: 0;
+    color: var(--color-muted);
+    text-decoration: none;
+  }
+
+  .more::before {
+    content: '›';
+    font-size: var(--text-xl);
+  }
+
+  .more::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .suggest {
+    order: 3;
+    width: 100%;
+  }
+
+  .chips {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .chip {
+    flex: none;
+    white-space: nowrap;
+    scroll-snap-align: start;
+  }
+
+  .ask {
+    position: sticky;
+    bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2));
+    z-index: 1;
+    order: 4;
+    width: 100%;
+    padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);
+    border-radius: 1.75rem;
+  }
+
+  .ask textarea {
+    font-size: var(--text-md);
+  }
+
+  .bar {
+    flex-wrap: nowrap;
+  }
+
+  .scope {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .send {
+    margin-left: auto;
+    flex: none;
+  }
+}
