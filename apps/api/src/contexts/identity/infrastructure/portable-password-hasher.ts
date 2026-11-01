@@ -43,8 +43,32 @@ const parseArgon2id = (stored: string): Argon2idHash | null => {
   return { m, t, p, salt, digest };
 };
 
+/**
+ * Argon2id computations allowed at once per isolate. Each one allocates `m` KiB (up to 64 MiB),
+ * so an unbounded burst of logins could exhaust the 128 MB of a Worker isolate.
+ */
+const MAX_CONCURRENT_ARGON2 = 2;
+let running = 0;
+const waiting: Array<() => void> = [];
+
+/** Runs `task` once a slot is free, in arrival order; the slot is released even if it throws. */
+const withArgon2Slot = async <T>(task: () => Promise<T>): Promise<T> => {
+  if (running >= MAX_CONCURRENT_ARGON2) await new Promise<void>((resolve) => waiting.push(resolve));
+  else running++;
+  try {
+    return await task();
+  } finally {
+    // Hand the slot straight to the next waiter, so `running` only drops when nobody is queued.
+    const next = waiting.shift();
+    if (next) next();
+    else running--;
+  }
+};
+
 const argon2id = (password: string, salt: Uint8Array, { m, t, p }: Argon2Cost, dkLen: number) =>
-  argon2idAsync(password, salt, { m, t, p, dkLen, version: VERSION, maxmem: LIMIT.m * 1024 });
+  withArgon2Slot(() =>
+    argon2idAsync(password, salt, { m, t, p, dkLen, version: VERSION, maxmem: LIMIT.m * 1024 }),
+  );
 
 /**
  * Argon2id and PBKDF2 in plain JavaScript, for runtimes without native addons or dynamic
@@ -74,7 +98,12 @@ export const portablePasswordHasher: PasswordHasher = {
       if (!parsed) return false;
       const candidate = await argon2id(password, parsed.salt, parsed, parsed.digest.length);
       return sameDigest(candidate, parsed.digest);
-    } catch {
+    } catch (error) {
+      // Malformed hashes already returned false; this is an infrastructure fault (for example an
+      // allocation failure). Fail closed, but leave a trace with the error class only.
+      console.error('MASCLI password verification failed', {
+        kind: error instanceof Error ? error.name : typeof error,
+      });
       return false;
     }
   },

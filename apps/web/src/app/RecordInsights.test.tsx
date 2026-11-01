@@ -39,11 +39,11 @@ it('starts the alert centre on an overview whose heatmap opens the actual alert'
     'true',
   );
   const cell = await screen.findByRole('button', {
-    name: 'G · Territorio de prueba: 1 alerta(s), Medio-alto (Naranja)',
+    name: 'G · Territorio de prueba: Medio-alto 1 alerta(s) (Naranja)',
   });
   expect(
     screen.getByRole('button', {
-      name: 'E · Sin territorio registrado: 1 alerta(s), Crítico (Rojo)',
+      name: 'E · Sin territorio registrado: Crítico 1 alerta(s) (Rojo)',
     }),
   ).toBeVisible();
   const ranking = screen.getByRole('region', { name: 'Comunidades prioritarias' });

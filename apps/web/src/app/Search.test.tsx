@@ -14,7 +14,7 @@ it('does not inject style elements when search opens under the strict CSP', asyn
   window.history.replaceState(null, '', '/');
   render(<App />);
   const user = userEvent.setup();
-  const trigger = await screen.findByRole('button', { name: 'Búsqueda global' });
+  const trigger = await screen.findByRole('button', { name: /^Buscar/ });
   const stylesBefore = Array.from(document.querySelectorAll('style'));
   await user.click(trigger);
   await screen.findByRole('dialog', { name: 'Búsqueda global' });
@@ -26,7 +26,7 @@ it('focuses and traps keyboard focus in search, then restores the trigger on Esc
   window.history.replaceState(null, '', '/');
   render(<App />);
   const user = userEvent.setup();
-  const trigger = await screen.findByRole('button', { name: 'Búsqueda global' });
+  const trigger = await screen.findByRole('button', { name: /^Buscar/ });
   await user.click(trigger);
   const box = await screen.findByRole('combobox', { name: 'Buscar en todo el proyecto' });
   expect(box).toHaveFocus();
@@ -49,7 +49,7 @@ it('dismisses search on backdrop interaction and restores the trigger', async ()
   window.history.replaceState(null, '', '/');
   render(<App />);
   const user = userEvent.setup();
-  const trigger = await screen.findByRole('button', { name: 'Búsqueda global' });
+  const trigger = await screen.findByRole('button', { name: /^Buscar/ });
   await user.click(trigger);
   await screen.findByRole('dialog', { name: 'Búsqueda global' });
   const overlay = document.querySelector('[data-slot="dialog-overlay"]');
@@ -101,7 +101,7 @@ it('searches every object type with Ctrl+K and opens the chosen record', async (
   window.history.replaceState(null, '', '/');
   render(<App />);
   const user = userEvent.setup();
-  await screen.findByRole('button', { name: 'Búsqueda global' });
+  await screen.findByRole('button', { name: /^Buscar/ });
   await user.keyboard('{Control>}k{/Control}');
   const box = await screen.findByRole('combobox', { name: 'Buscar en todo el proyecto' });
   await user.type(box, 'agua');
@@ -114,4 +114,13 @@ it('searches every object type with Ctrl+K and opens the chosen record', async (
   await user.keyboard('{Enter}');
   await waitFor(() => expect(window.location.pathname).toBe('/objeto/demandas/D-1'));
   expect(screen.queryByRole('dialog')).toBeNull();
+});
+
+// WCAG 2.5.3 (label in name): the accessible name must contain the visible "Buscar" text.
+it('names the search trigger after its visible label', async () => {
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const trigger = await screen.findByRole('button', { name: /^Buscar/ });
+  expect(trigger).toHaveAccessibleName(/^Buscar/);
+  expect(trigger).toHaveAttribute('aria-keyshortcuts', 'Control+K Meta+K');
 });

@@ -12,13 +12,13 @@
   "dependencies": {
     "@cesium/engine": "26.4.0",
     "@deck.gl/core": "9.4.0",
-    "@deck.gl/layers": "9.4.0",
+    "@deck.gl/layers": "9.4.1",
     "@deck.gl/mapbox": "9.4.0",
     "@sipges/contracts": "workspace:*",
     "@sipges/kernel": "workspace:*",
     "@radix-ui/react-dialog": "1.1.15",
-    "@tanstack/react-query": "^5.104.2",
-    "@tanstack/react-router": "1.170.41",
+    "@tanstack/react-query": "^5.105.0",
+    "@tanstack/react-router": "1.170.46",
     "maplibre-gl": "6.11.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
@@ -27,14 +27,14 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.0.0",
-    "@testing-library/user-event": "14.6.7",
+    "@testing-library/user-event": "14.6.8",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^26.0.0",
     "msw": "^3.0.3",
     "typescript": "^7.0.2",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   }
 }

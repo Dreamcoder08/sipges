@@ -10,13 +10,13 @@
   "dependencies": {
     "@sipges/api": "workspace:*",
     "@vercel/blob": "2.8.2",
-    "@vercel/functions": "3.10.1",
-    "hono": "^4.13.13"
+    "@vercel/functions": "3.10.4",
+    "hono": "^4.13.14"
   },
   "devDependencies": {
     "@sipges/web": "workspace:*",
     "@types/node": "^24.0.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.5"
   }
 }

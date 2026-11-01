@@ -46,7 +46,7 @@ test('360° view: inferred links, cited briefing, history, search and chronology
 
   // Global search (Ctrl+K) opens the record's 360° view.
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Búsqueda global' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Buscar/ })).toBeVisible();
   await page.keyboard.press('Control+k');
   await page
     .getByRole('combobox', { name: 'Buscar en todo el proyecto' })

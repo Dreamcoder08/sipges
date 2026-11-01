@@ -110,14 +110,28 @@ export const AlertHeatmap = ({
                                 className={`${styles.heatCell} ${styles[cell.level ?? 'unknown']}`}
                                 disabled={!cell.rows.length}
                                 aria-pressed={chosen === cell}
-                                aria-label={`${dimension} · ${territory}: ${cell.rows.length ? `${cell.rows.length} alerta(s), ${cell.level ? `${label} (${cell.level})` : 'sin nivel registrado'}` : 'sin datos'}`}
                                 onClick={() => setSelected(cellKey(dimension, territory))}
                               >
+                                {/* The name is built from the visible text (WCAG 2.5.3). */}
+                                <span className="visually-hidden">
+                                  {dimension} · {territory}:{' '}
+                                </span>
                                 <strong>{cell.rows.length ? label : 'Sin datos'}</strong>
                                 {cell.rows.length ? (
-                                  <span>{cell.rows.length} alerta(s)</span>
+                                  <>
+                                    {' '}
+                                    <span>{cell.rows.length} alerta(s)</span>
+                                  </>
                                 ) : null}
-                                {cell.unknown ? <small>{cell.unknown} sin nivel</small> : null}
+                                {cell.unknown ? (
+                                  <>
+                                    {' '}
+                                    <small>{cell.unknown} sin nivel</small>
+                                  </>
+                                ) : null}
+                                {cell.rows.length && cell.level ? (
+                                  <span className="visually-hidden"> ({cell.level})</span>
+                                ) : null}
                               </button>
                             </td>
                           );

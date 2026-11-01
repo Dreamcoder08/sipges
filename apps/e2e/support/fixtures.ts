@@ -143,7 +143,9 @@ export const test = base.extend<Fixtures>({
       // CDP-injected init scripts are not subject to the page CSP.
       await page.addInitScript(() => {
         document.addEventListener('securitypolicyviolation', (event) => {
-          console.error(`CSP violation: ${event.violatedDirective} ${event.blockedURI}`);
+          console.error(
+            `CSP violation: ${event.violatedDirective} ${event.blockedURI} (${event.effectiveDirective} on ${document.URL}, ${event.sourceFile}:${event.lineNumber})`,
+          );
         });
       });
       page.on('pageerror', (error) => problems.push(`pageerror: ${error.message}`));
