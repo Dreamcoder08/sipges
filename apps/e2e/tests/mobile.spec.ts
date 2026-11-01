@@ -32,6 +32,8 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   page,
   admin,
 }) => {
+  // Every screen and hub is visited at two widths; the loop outgrew the default 60 s as screens were added.
+  test.setTimeout(120_000);
   await page.goto('/login');
   await expectNoHorizontalPageScroll(page);
   const settled = watchNetwork(page);
