@@ -107,10 +107,13 @@ export const labelFor = (path: string): string =>
 /** A tab of a destination hub: one of today's screens, chosen by `value` in the URL search. */
 type HubTab = { value: string; screen: ScreenPath; label: string };
 type Tabs = readonly [HubTab, ...HubTab[]];
-const tabs = (
-  ...entries: readonly [readonly [string, ScreenPath], ...(readonly [string, ScreenPath])[]]
-) =>
-  entries.map(([value, screen]) => ({ value, screen, label: labelFor(screen) })) as unknown as Tabs;
+type TabEntry = readonly [value: string, screen: ScreenPath, label?: string];
+const tabs = (...entries: readonly [TabEntry, ...TabEntry[]]) =>
+  entries.map(([value, screen, label]) => ({
+    value,
+    screen,
+    label: label ?? labelFor(screen),
+  })) as unknown as Tabs;
 
 /**
  * The five destinations (odd/tasks/workspace-architecture.md S3). Each hub renders the screens
@@ -123,7 +126,9 @@ export const DESTINATIONS = [
     label: 'Inicio',
     icon: 'home',
     param: 'vista',
-    tabs: tabs(['dashboard', '/'], ['gerencial', '/gerencia']),
+    // The first tab is the briefing page (features/dashboard/inicio); it has no screen of its own
+    // and shares «/» with the Dashboard tab, which keeps the old route's content.
+    tabs: tabs(['inicio', '/', 'Inicio'], ['dashboard', '/'], ['gerencial', '/gerencia']),
   },
   {
     path: '/registros',
@@ -202,7 +207,10 @@ export const visitFor = (path: string, search: string): { href: string; label: s
   }
   const asked = new URLSearchParams(search).get(hub.param);
   const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
-  return { href: hubHref(hub, tab.value), label: `${hub.label} · ${tab.label}` };
+  return {
+    href: hubHref(hub, tab.value),
+    label: tab.label === hub.label ? hub.label : `${hub.label} · ${tab.label}`,
+  };
 };
 
 /** Icon shown next to each screen in the sidebar, the bottom bar and the "Más" sheet. */

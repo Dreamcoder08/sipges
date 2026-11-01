@@ -16,10 +16,24 @@ const useDebounced = (value: string, ms: number) => {
   return debounced;
 };
 
-const Results = ({ scope, onClose }: { scope: string; onClose: () => void }) => {
+const SEARCH_EVENT = 'sipges:search';
+
+/** Opens the global search with `text` already typed (the Inicio composer hands its question here). */
+export const openSearch = (text: string) =>
+  document.dispatchEvent(new CustomEvent<string>(SEARCH_EVENT, { detail: text }));
+
+const Results = ({
+  scope,
+  initialText,
+  onClose,
+}: {
+  scope: string;
+  initialText: string;
+  onClose: () => void;
+}) => {
   const navigate = useInternalNavigate();
   const listId = useId();
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText);
   const [active, setActive] = useState(0);
   const q = useDebounced(text.trim(), 200);
   const results = useQuery({ ...searchQuery(scope, q), placeholderData: keepPreviousData });
@@ -102,15 +116,25 @@ const Results = ({ scope, onClose }: { scope: string; onClose: () => void }) => 
 /** Global search across every object type, opened with Ctrl/⌘+K (docs/adr/0011 §5). */
 export const SearchPalette = ({ scope }: { scope: string }) => {
   const [open, setOpen] = useState(false);
+  const [seed, setSeed] = useState('');
   useEffect(() => {
     const onKey = (event: globalThis.KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
+        setSeed('');
         setOpen(true);
       }
     };
+    const onSearch = (event: Event) => {
+      setSeed(event instanceof CustomEvent && typeof event.detail === 'string' ? event.detail : '');
+      setOpen(true);
+    };
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    document.addEventListener(SEARCH_EVENT, onSearch);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener(SEARCH_EVENT, onSearch);
+    };
   }, []);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -133,7 +157,7 @@ export const SearchPalette = ({ scope }: { scope: string }) => {
         aria-describedby={undefined}
       >
         <DialogTitle className="visually-hidden">Búsqueda global</DialogTitle>
-        <Results scope={scope} onClose={() => setOpen(false)} />
+        <Results scope={scope} initialText={seed} onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   );
