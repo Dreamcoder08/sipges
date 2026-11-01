@@ -489,12 +489,12 @@ export const ActorMap = ({
                       >
                         <rect width={CARD.width} height={CARD.height} rx={6} />
                         <circle cx={11} cy={CARD.height / 2} r={4.5} className={map.dot} />
-                        {/* The trailing space keeps the two lines readable as one visible label (WCAG 2.5.3). */}
-                        <text x={TEXT_START} y={second ? 14 : 20}>
+                        {/* Truncated with an ellipsis, so it cannot match the name; aria-label names the card. */}
+                        <text x={TEXT_START} y={second ? 14 : 20} aria-hidden="true">
                           {second ? `${first} ` : first}
                         </text>
                         {second ? (
-                          <text x={TEXT_START} y={27}>
+                          <text x={TEXT_START} y={27} aria-hidden="true">
                             {second}
                           </text>
                         ) : null}

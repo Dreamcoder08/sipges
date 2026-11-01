@@ -92,7 +92,7 @@ test('event and demand screens create records in the active project', async ({ p
   await expect(page.getByRole('cell', { name: `Reunión sintética ${stamp}` })).toBeVisible();
 
   await page.getByLabel('Buscar registros').fill('sin-coincidencias-e2e');
-  await page.getByRole('button', { name: 'Buscar' }).click();
+  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   await expect(page.getByText('Sin registros para esta búsqueda.')).toBeVisible();
 
   await page.goto('/demandas');
