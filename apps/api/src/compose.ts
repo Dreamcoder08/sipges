@@ -104,6 +104,12 @@ import {
   createOllamaEmbeddings,
   createSqlAlertStore,
 } from './contexts/intelligence/infrastructure/index.ts';
+import { type EgressGuard, createEgressGuard } from './contexts/privacy/application/index.ts';
+import {
+  createPseudonymKeys,
+  createSqlEgressLog,
+  createSqlNameDirectory,
+} from './contexts/privacy/infrastructure/index.ts';
 import {
   createManagementService,
   type ManagementService,
@@ -178,6 +184,8 @@ export type Container = {
   readonly records: RecordsService;
   readonly ontology: OntologyService;
   readonly analyst: AnalystService;
+  /** Gate for every path that sends tenant data to an external model or client (ADR 0030). */
+  readonly egress: EgressGuard;
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
@@ -258,12 +266,30 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
   });
+  const situations = createSituationsService({
+    settings: createSqlProjectSettingsStore(deps.sql),
+    records: createSqlSituationRecordReader(deps.sql),
+    clock: deps.clock,
+  });
+  const egress = createEgressGuard({
+    switch: { enabled: (tenantId) => situations.externalAiEnabled(tenantId) },
+    names: createSqlNameDirectory(deps.sql),
+    keys: createPseudonymKeys(deps.config.dataKey),
+    log: createSqlEgressLog(deps.sql),
+    clock: deps.clock,
+  });
   const embeddings = deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama);
   const ontology = createOntologyService({
     store: createSqlOntologyStore(deps.sql),
     clock: deps.clock,
     ...(deps.config.semanticSearch
-      ? { semantic: { index: createSqlEmbeddingIndex(deps.sql), embedder: embeddings } }
+      ? {
+          semantic: {
+            index: createSqlEmbeddingIndex(deps.sql),
+            embedder: embeddings,
+            egress,
+          },
+        }
       : {}),
   });
   const analyst = createAnalystService({
@@ -319,6 +345,7 @@ export const buildContainer = async (deps: {
         : deps.config.analyst
           ? createClaudeNarrator({ model: deps.config.analyst.model })
           : null,
+    egress,
     clock: deps.clock,
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
@@ -329,11 +356,6 @@ export const buildContainer = async (deps: {
     dashboardReader: createSqlDashboardRecordReader(deps.sql),
     clock: deps.clock,
     renderer: docxRenderer,
-  });
-  const situations = createSituationsService({
-    settings: createSqlProjectSettingsStore(deps.sql),
-    records: createSqlSituationRecordReader(deps.sql),
-    clock: deps.clock,
   });
   const indicators = createIndicatorsService({
     records: createSqlModuleRecordReader(deps.sql),
@@ -382,6 +404,7 @@ export const buildContainer = async (deps: {
         ),
     },
     embeddings,
+    egress,
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
@@ -528,6 +551,7 @@ export const buildContainer = async (deps: {
     records,
     ontology,
     analyst,
+    egress,
     audit,
     indicators,
     analytics,

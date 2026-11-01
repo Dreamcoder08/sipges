@@ -1,3 +1,4 @@
+import type { SanitisedPayload } from '../../privacy/application/index.ts';
 import type { EmbeddingProvider } from '../application/index.ts';
 import { outboundTraceHeaders } from '../../../platform/observability/trace.ts';
 
@@ -5,9 +6,16 @@ const TIMEOUT_MS = 12_000;
 const MAX_RESPONSE_BYTES = 1_500_000;
 const MAX_INPUT_CODE_POINTS = 12_000;
 
+/** Only a server on this machine is not egress: the text never crosses a network. */
+const isLoopback = (url: URL) =>
+  url.hostname === 'localhost' ||
+  url.hostname === '[::1]' ||
+  /^127(\.\d{1,3}){3}$/.test(url.hostname);
+
 /**
  * Embeddings from an Ollama server (`POST /api/embed`), local by default like app.py. Only the
- * configured base URL is ever contacted; request text never selects a host.
+ * configured base URL is ever contacted; request text never selects a host. A base URL that is
+ * not loopback is external AI: its callers clear every text with the egress guard first.
  */
 export const createOllamaEmbeddings = (config: {
   baseUrl: string;
@@ -18,7 +26,8 @@ export const createOllamaEmbeddings = (config: {
   const endpoint = new URL('/api/embed', config.baseUrl);
   return {
     model: config.model,
-    async embed(text) {
+    egress: isLoopback(endpoint) ? 'local' : 'external',
+    async embed(text: SanitisedPayload<string>) {
       const res = await doFetch(endpoint, {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...outboundTraceHeaders() },

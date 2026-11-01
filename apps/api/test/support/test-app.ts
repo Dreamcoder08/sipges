@@ -76,6 +76,7 @@ afterAll(async () => {
 /** Tests never reach a real model; this provider behaves like an Ollama that is not running. */
 export const offlineEmbeddings: EmbeddingProvider = {
   model: 'offline-test-model',
+  egress: 'local',
   embed: () => Promise.reject(new Error('Embedding service offline')),
 };
 

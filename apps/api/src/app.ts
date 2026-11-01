@@ -128,6 +128,7 @@ export const createApp = (
         ontology: container.ontology,
         records: container.records,
         analyst: container.analyst,
+        guard: container.egress,
       },
     }),
   );

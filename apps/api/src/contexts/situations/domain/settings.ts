@@ -45,12 +45,23 @@ export type ProjectSettings = {
   readonly phase: Phase | null;
   /** IRSA weights saved for each phase; a phase without weights uses the general ones. */
   readonly phaseWeights: Readonly<Partial<Record<Phase, PhaseWeights>>>;
+  /**
+   * «Envío a IA externa» (docs/adr/0030): whether data of this project may go, pseudonymised,
+   * to an external model or client. Off until an admin turns it on.
+   */
+  readonly externalAi: { readonly enabled: boolean };
   readonly updatedBy: string;
   readonly updatedAt: Date | null;
 };
 
 type Editable =
-  'levelMeanings' | 'windowDays' | 'halfLifeDays' | 'thresholds' | 'recommendations' | 'phase';
+  | 'levelMeanings'
+  | 'windowDays'
+  | 'halfLifeDays'
+  | 'thresholds'
+  | 'recommendations'
+  | 'phase'
+  | 'externalAi';
 /**
  * Fields left undefined keep their current value. Phase weights merge by phase; null removes
  * a phase's weights so it falls back to the general ones.
@@ -72,6 +83,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   recommendations: {},
   phase: null,
   phaseWeights: {},
+  externalAi: { enabled: false },
   updatedBy: '',
   updatedAt: null,
 };
@@ -91,6 +103,7 @@ export const withDefaults = (stored: Partial<ProjectSettings> | null): ProjectSe
   recommendations: { ...stored?.recommendations },
   phase: stored?.phase ?? null,
   phaseWeights: { ...stored?.phaseWeights },
+  externalAi: { enabled: stored?.externalAi?.enabled === true },
 });
 
 /** The weights IRSA should use instead of the general ones, or null to leave IRSA as is. */
@@ -140,5 +153,6 @@ export const changedFields = (before: ProjectSettings, after: ProjectSettings) =
       'recommendations',
       'phase',
       'phaseWeights',
+      'externalAi',
     ] as const
   ).filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));

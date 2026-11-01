@@ -11,6 +11,7 @@ it('the real benchmark session reaches every declared HTTP scenario with existin
     await migrate(sql, await loadMigrations());
     const session = await createBenchmarkSession(sql, {
       model: 'offline-benchmark-test',
+      egress: 'local',
       embed: async () => {
         throw new Error('Unexpected model call');
       },

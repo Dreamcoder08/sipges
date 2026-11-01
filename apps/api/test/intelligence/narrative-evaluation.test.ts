@@ -18,7 +18,8 @@ const setup = () => {
   const embed = vi.fn();
   const service = createIntelligenceService({
     narratives: { read: async () => [] },
-    embeddings: { model: 'unused', embed },
+    embeddings: { model: 'unused', egress: 'local', embed },
+    egress: { open: async () => ({ ok: false, reason: 'disabled' }) },
     alerts: { create } as unknown as AlertStore,
     clock: { now: () => new Date('2026-10-17T12:00:00Z') },
     randomHex: () => 'synthetic',

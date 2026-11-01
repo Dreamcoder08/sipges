@@ -1,3 +1,4 @@
+import type { SanitisedPayload } from '../../privacy/application/index.ts';
 import type { Scope } from '../../tenancy/application/index.ts';
 import type { AlertState, TerritorialAlert } from '../domain/index.ts';
 
@@ -10,12 +11,16 @@ export type NarrativeReader = {
 };
 
 /**
- * Text embeddings from a local model (Ollama by default). Throws when the model is not
- * reachable or returns no usable vector; callers fall back to rules or answer 503.
+ * Text embeddings from a model (Ollama, local by default). Throws when the model is not
+ * reachable or returns no usable vector; callers fall back to rules or answer 503. Text sent to
+ * a model that is not on this machine (`egress: 'external'`) is cleared by the egress guard
+ * first (docs/adr/0030); the payload type makes that the only way to call `embed`.
  */
 export type EmbeddingProvider = {
   readonly model: string;
-  embed(text: string): Promise<number[]>;
+  /** `local`: loopback, not egress. Anything else is treated as external. */
+  readonly egress: 'local' | 'external';
+  embed(text: SanitisedPayload<string>): Promise<number[]>;
 };
 
 export type NewAlert = Omit<TerritorialAlert, 'reviewerNote' | 'reviewedAt' | 'status'>;

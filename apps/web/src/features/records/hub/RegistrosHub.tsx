@@ -1,29 +1,21 @@
 import type { Role } from '@sipges/contracts';
 import { useQueries } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
-import { Card } from '../../../shared/ui/Card.tsx';
 import { ChipRow } from '../../../shared/ui/ChipRow.tsx';
 import { QueryState } from '../../../shared/ui/QueryState.tsx';
 import { recordsQuery } from '../api.ts';
+import { canWriteRecords } from '../model.ts';
 import type { RecordModule } from '../modules.ts';
 import { RecordsPage } from '../RecordsPage.tsx';
 import { type Density, useDensity } from './density.ts';
+import { useDocked } from './dock.ts';
 import styles from './Hub.module.css';
+import { HUB_TYPES } from './types.ts';
 import { type OpenRecord, RecordSheet } from './RecordSheet.tsx';
 import { type RecordSummary, summarize } from './summary.ts';
 import { TodosList } from './TodosList.tsx';
-
-/** The record types the hub lists, in the order of the chips. */
-export const HUB_TYPES = [
-  ['eventos', 'Eventos'],
-  ['actores', 'Actores'],
-  ['directorio', 'Directorio territorial'],
-  ['demandas', 'Demandas'],
-  ['narrativas', 'Narrativas'],
-  ['fuentes', 'Fuentes'],
-  ['buzon', 'Buzón'],
-] as const satisfies readonly (readonly [RecordModule, string])[];
+import { TypePicker } from './TypePicker.tsx';
 
 const isType = (value: string | undefined): value is (typeof HUB_TYPES)[number][0] =>
   HUB_TYPES.some(([module]) => module === value);
@@ -72,40 +64,83 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
       : undefined,
   };
   const [open, setOpen] = useState<OpenRecord | null>(null);
+  const [intent, setIntent] = useState<{ module: RecordModule; kind: 'create' | 'import' } | null>(
+    null,
+  );
+  const docked = useDocked();
+  const choose = (next: string) => {
+    setIntent(null);
+    onTipo(next);
+  };
+  const begin = (kind: 'create' | 'import') => (module: RecordModule) => {
+    setIntent({ module, kind });
+    onTipo(module);
+  };
   return (
     <div className={styles.hub}>
-      <ChipRow label="Tipo de registro">
-        <Button
-          variant={selected === 'todos' ? 'primary' : 'secondary'}
-          aria-pressed={selected === 'todos'}
-          onClick={() => onTipo('todos')}
-        >
-          Todos <span className={styles.count}>{total}</span>
-        </Button>
-        {HUB_TYPES.map(([module, label], index) => (
+      <div className={styles.head}>
+        <ChipRow label="Tipo de registro">
           <Button
-            key={module}
-            variant={selected === module ? 'primary' : 'secondary'}
-            aria-pressed={selected === module}
-            onClick={() => onTipo(module)}
+            size="sm"
+            variant={selected === 'todos' ? 'primary' : 'secondary'}
+            aria-pressed={selected === 'todos'}
+            onClick={() => choose('todos')}
           >
-            {label} <span className={styles.count}>{count(lists[index])}</span>
+            Todos <span className={styles.count}>{total}</span>
           </Button>
-        ))}
-      </ChipRow>
-      <Workspace
-        key={`${context.scope}/${selected}`}
-        selected={selected}
-        everything={everything}
-        onOpen={setOpen}
-        {...context}
-      />
-      <RecordSheet
-        record={open}
-        onClose={() => setOpen(null)}
-        scope={context.scope}
-        role={context.role}
-      />
+          {HUB_TYPES.map(([module, label], index) => (
+            <Button
+              key={module}
+              size="sm"
+              variant={selected === module ? 'primary' : 'secondary'}
+              aria-pressed={selected === module}
+              onClick={() => choose(module)}
+            >
+              {label} <span className={styles.count}>{count(lists[index])}</span>
+            </Button>
+          ))}
+        </ChipRow>
+        {selected === 'todos' && canWriteRecords(context.role) ? (
+          <div className={styles.pageActions}>
+            <TypePicker
+              label="Importar"
+              menuLabel="Tipo de la importación"
+              icon="file"
+              types={HUB_TYPES}
+              onPick={begin('import')}
+            />
+            <TypePicker
+              primary
+              label="Nuevo registro"
+              menuLabel="Tipo del nuevo registro"
+              icon="plus"
+              types={HUB_TYPES}
+              onPick={begin('create')}
+            />
+          </div>
+        ) : null}
+      </div>
+      <div className={styles.layout} data-docked={docked && open !== null}>
+        <div className={styles.main}>
+          <Workspace
+            key={`${context.scope}/${selected}`}
+            selected={selected}
+            everything={everything}
+            onOpen={setOpen}
+            docked={docked && open !== null}
+            start={intent?.module === selected ? intent.kind : undefined}
+            onStarted={() => setIntent(null)}
+            {...context}
+          />
+        </div>
+        <RecordSheet
+          record={open}
+          onClose={() => setOpen(null)}
+          scope={context.scope}
+          role={context.role}
+          docked={docked}
+        />
+      </div>
     </div>
   );
 };
@@ -114,39 +149,50 @@ const Workspace = ({
   selected,
   everything,
   onOpen,
+  docked,
+  start,
+  onStarted,
   ...context
 }: Omit<Props, 'tipo' | 'onTipo'> & {
   selected: 'todos' | RecordModule;
   everything: Parameters<typeof QueryState<RecordSummary[]>>[0]['query'];
   onOpen: (record: OpenRecord) => void;
+  docked: boolean;
+  start: 'create' | 'import' | undefined;
+  onStarted: () => void;
 }) => {
   const [density, setDensity] = useDensity(selected);
+  // The intent only opens the type screen once; later remounts must not reopen the form.
+  useEffect(() => {
+    if (start) onStarted();
+  }, [start, onStarted]);
+  const control = (
+    <div role="group" aria-label="Densidad de filas" className={styles.segmented}>
+      {DENSITIES.map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={density === value}
+          onClick={() => setDensity(value)}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
   return (
     <>
-      <ChipRow label="Densidad de filas">
-        {DENSITIES.map(([value, label]) => (
-          <Button
-            key={value}
-            size="sm"
-            variant={density === value ? 'primary' : 'secondary'}
-            aria-pressed={density === value}
-            onClick={() => setDensity(value)}
-          >
-            {label}
-          </Button>
-        ))}
-      </ChipRow>
+      {selected === 'todos' ? null : <div className={styles.densityRow}>{control}</div>}
       <div className={styles.density} data-density={density}>
         {selected === 'todos' ? (
-          <Card title="Todos los registros">
-            <QueryState query={everything} label="los registros">
-              {(rows) => <TodosList rows={rows} onOpen={onOpen} />}
-            </QueryState>
-          </Card>
+          <QueryState query={everything} label="los registros">
+            {(rows) => <TodosList rows={rows} onOpen={onOpen} density={control} narrow={docked} />}
+          </QueryState>
         ) : (
           <RecordsPage
             module={selected}
             onView={(id) => onOpen({ module: selected, id })}
+            start={start}
             {...context}
           />
         )}

@@ -61,6 +61,10 @@ export const PhaseWeights = z
   });
 export type PhaseWeights = z.infer<typeof PhaseWeights>;
 
+/** «Envío a IA externa» (docs/adr/0030): off by default, only an administrator changes it. */
+export const ExternalAiSetting = z.object({ enabled: z.boolean() });
+export type ExternalAiSetting = z.infer<typeof ExternalAiSetting>;
+
 export const ProjectSettingsIn = z.object({
   level_meanings: LevelMeanings.optional(),
   window_days: z.number().int().min(7).max(365).optional(),
@@ -71,6 +75,7 @@ export const ProjectSettingsIn = z.object({
   phase: ProjectPhase.nullable().optional(),
   /** Per phase: weights to save, or null to go back to the general IRSA weights. */
   phase_weights: z.partialRecord(ProjectPhase, PhaseWeights.nullable()).optional(),
+  external_ai: ExternalAiSetting.optional(),
 });
 export type ProjectSettingsIn = z.infer<typeof ProjectSettingsIn>;
 
@@ -98,6 +103,8 @@ export const ProjectSettings = z.object({
       suggestion: z.record(z.string(), z.number()),
     }),
   ),
+  /** Absent from servers that predate the switch; read as off. */
+  external_ai: ExternalAiSetting.optional(),
   updated_by: z.string(),
   updated_at: z.string().nullable(),
 });

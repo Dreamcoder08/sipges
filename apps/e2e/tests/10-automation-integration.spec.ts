@@ -51,21 +51,45 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
   await inbox.getByRole('link', { name: new RegExp(alertId) }).click();
   await expect(page).toHaveURL(new RegExp(`/objeto/alertas/${alertId}$`));
 
-  // The same key reads the record back over MCP, as an agent would.
-  const mcp = await page.request.post('/mcp', {
-    headers: {
-      authorization: `Bearer ${token}`,
-      accept: 'application/json, text/event-stream',
-    },
-    data: {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: { name: 'get_record', arguments: { module: 'alertas', id: alertId } },
-    },
-  });
+  // The same key reads the record back over MCP, as an agent would (ADR 0030): only once an
+  // administrator turns «Envío a IA externa» on, and pseudonymised even then.
+  const getRecord = () =>
+    page.request.post('/mcp', {
+      headers: {
+        authorization: `Bearer ${token}`,
+        accept: 'application/json, text/event-stream',
+      },
+      data: {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'get_record', arguments: { module: 'alertas', id: alertId } },
+      },
+    });
+  await page.goto('/version-4');
+  const externalAi = page.getByRole('checkbox', { name: 'Envío a IA externa' });
+  // A controlled checkbox: it flips only once the server saved the setting.
+  const setExternalAi = async (on: boolean) => {
+    if ((await externalAi.isChecked()) !== on) await externalAi.click();
+    await expect(externalAi).toBeChecked({ checked: on });
+  };
+  await setExternalAi(false);
+  await expect(page.getByText(/^Desactivado: ningún dato del proyecto sale/)).toBeVisible();
+  const refused = await getRecord();
+  expect(refused.status(), await refused.text()).toBe(200);
+  const refusal = JSON.stringify(await refused.json());
+  expect(refusal).toContain('El envío a IA externa está desactivado para este proyecto');
+  expect(refusal).not.toContain(cause);
+
+  await setExternalAi(true);
+  await expect(page.getByText(/^Activado: el servidor MCP/)).toBeVisible();
+  const mcp = await getRecord();
   expect(mcp.status(), await mcp.text()).toBe(200);
   expect(JSON.stringify(await mcp.json())).toContain(cause);
+
+  // Leave the project as every new project starts: nothing leaves.
+  await setExternalAi(false);
+  await expect(page.getByText(/^Desactivado: ningún dato del proyecto sale/)).toBeVisible();
 });
 
 /** S4: one Integraciones page, reached from the sidebar, with filters and the synthetic-data warning (S7). */

@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
 import { type Result, err, ok } from '@sipges/kernel';
+import {
+  type EgressGuard,
+  EXTERNAL_AI_DISABLED,
+  exemptPayload,
+} from '../../privacy/application/index.ts';
 import { type Scope, formatScope } from '../../tenancy/application/index.ts';
 import {
   ANALYSIS_MODES,
@@ -61,6 +66,8 @@ export type SemanticReport = Omit<TextReport, 'version'> & {
 export const createIntelligenceService = (deps: {
   narratives: NarrativeReader;
   embeddings: EmbeddingProvider;
+  /** Clears the text sent to an embeddings service that is not on this machine (ADR 0030). */
+  egress: EgressGuard;
   alerts: AlertStore;
   clock: Clock;
   randomHex: RandomHex;
@@ -71,7 +78,8 @@ export const createIntelligenceService = (deps: {
   const conceptVector = (description: string) => {
     let vector = conceptVectors.get(description);
     if (!vector) {
-      vector = embeddings.embed(description);
+      // A reference description is written in the code: no tenant data is in it.
+      vector = embeddings.embed(exemptPayload(description, 'constant'));
       vector.catch(() => conceptVectors.delete(description));
       conceptVectors.set(description, vector);
     }
@@ -113,9 +121,21 @@ export const createIntelligenceService = (deps: {
     if (input.mode === 'rules') return ok(report);
     try {
       const entries = Object.entries(SEMANTIC_CONCEPTS);
+      const trimmed = input.text.trim();
+      let cleared;
+      if (embeddings.egress === 'local') cleared = exemptPayload(trimmed, 'loopback');
+      else {
+        const opened = await deps.egress.open({
+          tenantId: formatScope(scope),
+          channel: 'embeddings',
+          purpose: 'semantic-analyze',
+        });
+        if (!opened.ok) throw new Error(EXTERNAL_AI_DISABLED);
+        cleared = await opened.session.release(opened.session.text(trimmed));
+      }
       // The text and any uncached concept are embedded concurrently: one model round trip.
       const [content, vectors] = await Promise.all([
-        embeddings.embed(input.text.trim()),
+        embeddings.embed(cleared),
         Promise.all(entries.map(([, description]) => conceptVector(description))),
       ]);
       const scored = entries
