@@ -3,13 +3,20 @@ import { argon2id } from '@noble/hashes/argon2.js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Wrap the real primitive to track how many Argon2id computations are in flight at once.
-const state = vi.hoisted(() => ({ inFlight: 0, peak: 0, started: 0, failNext: 0 }));
+const state = vi.hoisted(() => ({
+  inFlight: 0,
+  peak: 0,
+  started: 0,
+  failNext: 0,
+  order: [] as string[],
+}));
 vi.mock('@noble/hashes/argon2.js', async (importOriginal) => {
   const original = await importOriginal<typeof Argon2>();
   return {
     ...original,
     argon2idAsync: async (...args: Parameters<typeof original.argon2idAsync>) => {
       state.started++;
+      state.order.push(String(args[0]));
       state.inFlight++;
       state.peak = Math.max(state.peak, state.inFlight);
       try {
@@ -36,7 +43,7 @@ const phc = (password: string) =>
   `$argon2id$v=19$m=8,t=1,p=1$${b64(SALT)}$${b64(argon2id(password, SALT, { m: 8, t: 1, p: 1, dkLen: 32 }))}`;
 
 beforeEach(() => {
-  Object.assign(state, { inFlight: 0, peak: 0, started: 0, failNext: 0 });
+  Object.assign(state, { inFlight: 0, peak: 0, started: 0, failNext: 0, order: [] });
 });
 
 describe('portable hasher Argon2id concurrency gate', () => {
@@ -90,5 +97,18 @@ describe('portable hasher Argon2id concurrency gate', () => {
     expect(state.inFlight).toBe(0);
     expect(state.peak).toBe(2);
     expect(await portablePasswordHasher.verify('gate-password-four', stored)).toBe(true);
+  });
+
+  it('starts queued computations in arrival order', async () => {
+    const passwords = Array.from({ length: 5 }, (_, index) => `fifo-password-${index}`);
+
+    const results = await Promise.all(
+      passwords.map((password) => portablePasswordHasher.verify(password, phc(password))),
+    );
+
+    expect(results).toEqual([true, true, true, true, true]);
+    // The first two take the free slots at once; the other three wait and must start in call order.
+    expect(state.order.slice(2)).toEqual(passwords.slice(2));
+    expect(state.order.slice(0, 2).sort()).toEqual(passwords.slice(0, 2));
   });
 });
