@@ -29,8 +29,8 @@ backwards compatibility, as the owner chose.
 
 ## Tasks
 
-- T1 [ ] S1,S2 — Code, packages, configuration, UI, docs, tests (one mechanical commit + reviewed fix-ups); route: worker after the in-flight PRs land; commit: own
-- T2 [ ] S2 — Database migration: company id and stored `MASCLI 4.0` values, with RLS-safe rename and test; route: inline, test first; commit: own (risk item 1)
+- T1 [x] S1,S2 — Code, packages, configuration, UI, docs, tests (one mechanical commit + reviewed fix-ups); route: worker after the in-flight PRs land; commit: `752184e`
+- T2 [x] S2 — Database migration: company id and stored `MASCLI 4.0` values, with RLS-safe rename and test; route: worker, test first; commit: `9620ab9` (risk item 1)
 - T3 [ ] S2 — Workers deployment: new Worker `sipges`, secrets `SIPGES_*`, R2 bucket copy, Hyperdrive rename, Google OAuth redirect URI; route: inline; commit: config
 - T4 [ ] S2 — Vercel: environment variables renamed (needs the owner's Vercel access); route: owner + inline
 - T5 [ ] S1 — Repository rename on GitHub (redirects keep old links) and local remote update; route: owner word
@@ -44,3 +44,6 @@ Items 1 (stored data rewritten), 2 (cookies, MFA and Google sign-in config), 3 (
 
 - L1 — «elimina todo el nombre o relacion con MASCLI este es su nuevo nombre , Sistema Inteligente de Predicción y GEStión Social-SIPGES»; scope question answered «Todo de una vez».
 - L2 — Size on origin/main: 576 files, 3,309 occurrences; most frequent: `@mascli/contracts`, `MASCLI_COOKIE_SECURE`, `X-MASCLI-Scope`, `MASCLI/PRJ-SECHURA`, `MASCLI_TENANT`, `MASCLI_DATA_KEY`. Open PRs touching the same files (docs cleanup, human-validation wording) land first to avoid a 576-file conflict.
+- L3 — Owner authorized merging the docs and wording PRs first («yes te autorizo todo y avanza»); #97, #98 and #99 landed, then the branch was rebased on main (c9cddd2, with the Workers auto-deploy).
+- L4 — T3 prepared before merging (nothing touched the running `mascli` Worker): Worker `sipges` secrets `SIPGES_*`, GitHub secret `SIPGES_MIGRATION_DATABASE_URL`, R2 bucket `sipges-evidence` with all 51 objects copied (sizes identical), Google OAuth redirect URI for the new host added and consent screen renamed SIPGES.
+- L5 — T1 `752184e` (mechanical rename) and T2 `9620ab9` (migration 0030 + tests). First full run: 3 API failures (`permission denied for table record_links`): the role move revoked table privileges before copying column grants, and REVOKE ALL drops column grants. Fixed by copying column grants first; the migration test now asserts `UPDATE (evidence_source_id)` on record_links for sipges_tenant (RED with the old order, GREEN after). Gates: lint, typecheck, API 761 passed / 14 skipped, web, hosting-cloudflare 9/9, tooling, `wrangler deploy --dry-run`. Remaining `mascli` hits are history (closed ODD tasks, ADR titles 0020/0027, applied migrations 0001–0029, CHANGELOG, diagrams snapshot) and the repository/Vercel URLs pending T4/T5.
