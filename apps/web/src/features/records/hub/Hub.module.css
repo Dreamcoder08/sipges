@@ -1,5 +1,7 @@
+/* minmax(0, 1fr): an implicit auto track grows to the chip row's min-content and the page scrolls sideways. */
 .hub {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   min-width: 0;
 }
