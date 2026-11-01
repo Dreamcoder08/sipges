@@ -2,7 +2,7 @@
 
 ## Inteligencia territorial y ejecución por eventos (2026-10-17)
 
-Fuente fijada: `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1`, revisión publicada que contiene todos los archivos/rangos enlazados. El mapa representa esa instantánea; los cambios posteriores conservan sus propios commits. Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`, obtenida del archivo oficial de GitHub para ese commit después de interrumpir una clonación sin progreso. No se añadió como dependencia de MASCLI.
+Fuente fijada: `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1`, revisión publicada que contiene todos los archivos/rangos enlazados. El mapa representa esa instantánea; los cambios posteriores conservan sus propios commits. Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`, obtenida del archivo oficial de GitHub para ese commit después de interrumpir una clonación sin progreso. No se añadió como dependencia de SIPGES.
 
 HTML generado: `diagrams/arquitectura.html`, SHA-256 `b80eccba2224c0d5caf2ad2f867c53feb6f9376a4e1c384fd8cbd9e6f9bda996` (859833 bytes). Fuente JSON: SHA-256 `5f98c37c0afa112a6c84a4b5bf02d60f5125a2d3ca4ec9e5c81971d7190c7ba7`.
 
@@ -18,9 +18,9 @@ HTML generado: `diagrams/arquitectura.html`, SHA-256 `b80eccba2224c0d5caf2ad2f86
 
 Los recibos frescos permanecen en `/tmp/mascli-archify-territorial-review-1` y `/tmp/mascli-archify-territorial-review-2`; la comprobación HTTP produjo `/tmp/mascli-archify-http-review.json` dentro del contenedor de navegador. Son evidencia local y contienen rutas efímeras, por lo que no se versionan. Un primer intento de interacción HTTP agotó su selector; se corrigió el selector al identificador del nodo y la prueba siguiente pasó. No se modificó la política del navegador. La prueba HTTP no sustituye el gate geométrico integrado, que permanece fallido, ni comprueba los formatos exportados.
 
-Se documentaron geography/system, los destinos fijos INGEMMET/Defensoría, señales pendientes de verificación humana, ejecución por `waitUntil` y respaldo cron diario autenticado a las 04:15 UTC. No se presenta la evaluación por reglas como IA de pago, ni se garantiza latencia o recepción humana. La verificación en vivo de GEOCATMIN sigue pendiente por errores TLS/503; el diagrama no acredita disponibilidad de proveedores ni recepción en un teléfono real. Esta entrega no ejecutó el gate completo de MASCLI ni redesplegó producción; el cierre de su ODD registra esas comprobaciones por separado.
+Se documentaron geography/system, los destinos fijos INGEMMET/Defensoría, señales pendientes de verificación humana, ejecución por `waitUntil` y respaldo cron diario autenticado a las 04:15 UTC. No se presenta la evaluación por reglas como IA de pago, ni se garantiza latencia o recepción humana. La verificación en vivo de GEOCATMIN sigue pendiente por errores TLS/503; el diagrama no acredita disponibilidad de proveedores ni recepción en un teléfono real. Esta entrega no ejecutó el gate completo de SIPGES ni redesplegó producción; el cierre de su ODD registra esas comprobaciones por separado.
 
-La demo actual permite contraseña sin inscripción obligatoria con `MASCLI_REQUIRE_MFA=0`, por petición del propietario; conserva TOTP voluntario y el valor predeterminado de MASCLI exige MFA. Los párrafos históricos siguientes describen las configuraciones y revisiones de sus fechas.
+La demo actual permite contraseña sin inscripción obligatoria con `SIPGES_REQUIRE_MFA=0`, por petición del propietario; conserva TOTP voluntario y el valor predeterminado de SIPGES exige MFA. Los párrafos históricos siguientes describen las configuraciones y revisiones de sus fechas.
 
 ## Automatización e integración (2026-10-14)
 
@@ -52,7 +52,7 @@ No se comprobaron los formatos exportados. La demo pública no se redesplegó co
 
 ## Consolidación sobre `main` (2026-10-13)
 
-Fuente MASCLI TypeScript: `70d2c40ed6ec7c24c2895889890716168aed4587` (rama de consolidación sobre `main`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`.
+Fuente SIPGES TypeScript: `70d2c40ed6ec7c24c2895889890716168aed4587` (rama de consolidación sobre `main`). Herramienta Archify: `c21c31ffb879668900c5487ea24993bf45d89b15`.
 
 HTML comprobado: `diagrams/arquitectura.html`, SHA-256 `8974bd8941d30bf79eda117fad99fe19c8d8585bbd883aac563e5add567102f1`.
 
