@@ -53,6 +53,22 @@ for (const colorScheme of ['light', 'dark'] as const) {
     }));
     expect(widths.scroll).toBeLessThanOrEqual(widths.view);
 
+    // The narrowest supported phone (360 px) keeps the composer, its send button included, inside the width.
+    // A long project name stands in for wider fonts (CI renders with DejaVu Sans).
+    await page.setViewportSize({ width: 360, height: 780 });
+    await composer
+      .getByText(/^Registros de /)
+      .evaluate((node) => {
+        node.lastChild!.textContent = 'Registros de Proyecto con un nombre muy largo (migración)';
+      });
+    const narrow = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      view: document.documentElement.clientWidth,
+    }));
+    expect(narrow.scroll).toBeLessThanOrEqual(narrow.view);
+    const send = await box(page.getByRole('button', { name: 'Enviar pregunta' }));
+    expect(send.x + send.width).toBeLessThanOrEqual(360);
+
     // A suggestion still fills the composer.
     await chips.first().tap();
     await expect(page.getByLabel('Pregunta a SIPGES')).toHaveValue(/\S/);

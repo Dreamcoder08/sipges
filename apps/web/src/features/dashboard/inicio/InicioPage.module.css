@@ -371,6 +371,7 @@
     bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2));
     z-index: 1;
     order: 4;
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
     padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);
     border-radius: 1.75rem;
@@ -384,11 +385,20 @@
     flex-wrap: nowrap;
   }
 
+  /* Block, not inline-flex: a bare text node in a flex box cannot shrink, so a long project
+     name would push the send button off a 360 px screen. */
   .scope {
+    display: block;
+    flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .scope svg {
+    vertical-align: -0.125em;
+    margin-right: var(--space-2);
   }
 
   .send {
