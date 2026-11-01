@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Privacidad
+
+- Guarda de envío a IA externa ([ADR 0030](docs/adr/0030-external-ai-egress-guard.md)): el servidor MCP, el resumen asistido y los embeddings a una URL no local pasan por una sola guarda. Interruptor por proyecto «Envío a IA externa» (apagado por defecto, solo administradores, en Configuración); apagado, las herramientas de lectura de MCP responden con error, el resumen asistido no se genera y esos embeddings se rechazan. Encendido, solo salen los campos permitidos de cada módulo, con seudónimos estables por proyecto en lugar de nombres, y correos, teléfonos y DNI quedan tapados. Los registros restringidos nunca salen, ni con una clave de autorización plena. Cada envío deja una fila en Auditoría (módulo «IA externa») con ids y conteos, sin valores. Los embeddings de un Ollama local no cambian. Los proveedores de embeddings deben declarar `egress: 'local' | 'external'`. Sin migración: el ajuste vive en `project_settings`.
+
 ### Interfaz
 
 - Barra lateral compacta en pantallas anchas ([ADR 0015](docs/adr/0015-mobile-first-shell.md)): «Fijados» (Dashboard, Eventos, Alertas, Mapa territorial, Validación) y tres secciones plegables de las que solo se abre la de la pantalla actual, sin repetir pantallas fijadas. La búsqueda (Ctrl K), las notificaciones y el selector de proyecto pasan de la barra superior a la barra lateral; las pantallas de Sistema, el tema y «Cerrar sesión» quedan en el menú de la cuenta, al pie. En el teléfono no cambia nada.

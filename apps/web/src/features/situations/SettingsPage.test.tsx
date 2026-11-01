@@ -263,3 +263,45 @@ it('shows media sources read-only to other roles', async () => {
   expect(screen.queryByLabelText('Agregar fuente')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Operación' })).not.toBeInTheDocument();
 });
+
+const COPY =
+  'Envío a IA externa — los datos salen siempre seudonimizados; nunca se envían nombres reales ni datos sensibles. Requiere revisión legal (Ley 29733).';
+
+it('shows «Envío a IA externa» off by default, with the privacy copy', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('admin');
+  const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
+  expect(toggle).not.toBeChecked();
+  expect(screen.getByText(COPY)).toBeInTheDocument();
+});
+
+it('lets an administrator turn «Envío a IA externa» on and sends only that setting', async () => {
+  const user = userEvent.setup();
+  let sent: unknown;
+  let stored: ReturnType<typeof settings> & { external_ai?: { enabled: boolean } } = settings();
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(stored)),
+    http.put('*/system/v4/settings', async ({ request }) => {
+      sent = await request.json();
+      stored = { ...settings(), external_ai: { enabled: true } };
+      return HttpResponse.json(stored);
+    }),
+  );
+  renderPage('admin');
+  await user.click(await screen.findByRole('checkbox', { name: 'Envío a IA externa' }));
+  expect(await screen.findByText('Envío a IA externa activado.')).toBeInTheDocument();
+  expect(sent).toEqual({ external_ai: { enabled: true } });
+  expect(await screen.findByRole('checkbox', { name: 'Envío a IA externa' })).toBeChecked();
+});
+
+it('shows the switch to everyone else read-only', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({ ...settings(), external_ai: { enabled: true } }),
+    ),
+  );
+  renderPage('consulta');
+  const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
+  expect(toggle).toBeChecked();
+  expect(toggle).toBeDisabled();
+});

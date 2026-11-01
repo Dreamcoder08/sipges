@@ -12,6 +12,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { ExternalAiCard } from './ExternalAiCard.tsx';
 import { MediaMonitorCard } from './MediaMonitorCard.tsx';
 import { PhaseCard } from './PhaseCard.tsx';
 import styles from './Situations.module.css';
@@ -73,13 +74,15 @@ const SettingsForm = ({
     onMutate: () => onSaved(''),
     onSuccess: async (_saved, body) => {
       onSaved(
-        body.phase !== undefined
-          ? 'Fase del proyecto guardada.'
-          : body.phase_weights
-            ? 'Pesos de la fase guardados.'
-            : body.recommendations
-              ? 'Acciones sugeridas guardadas.'
-              : 'Significados guardados.',
+        body.external_ai
+          ? `Envío a IA externa ${body.external_ai.enabled ? 'activado' : 'desactivado'}.`
+          : body.phase !== undefined
+            ? 'Fase del proyecto guardada.'
+            : body.phase_weights
+              ? 'Pesos de la fase guardados.'
+              : body.recommendations
+                ? 'Acciones sugeridas guardadas.'
+                : 'Significados guardados.',
       );
       await cache.invalidateQueries({ queryKey: ['project-settings', scope] });
     },
@@ -166,6 +169,7 @@ const SettingsForm = ({
       </Card>
       <PhaseCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
       <MediaMonitorCard scope={scope} admin={admin} />
+      <ExternalAiCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
       {save.isError ? <Alert tone="error">{errorDetail(save.error)}</Alert> : null}
     </>
   );
