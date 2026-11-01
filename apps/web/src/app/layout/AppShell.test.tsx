@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installRecordsApi } from '../../test/records-api.ts';
 import { api, resetApi, server } from '../../test/server.ts';
 import { App } from '../App.tsx';
 import { DESTINATIONS, SCREENS, SYSTEM_PATHS } from '../navigation.ts';
@@ -118,13 +119,22 @@ describe('desktop sidebar', () => {
   });
 
   it('reaches all 26 screens: hub tabs, the Integraciones link or the account menu', async () => {
+    installRecordsApi();
     const { nav, user } = await renderAt('/');
     const reached = new Set<string>();
     for (const hub of DESTINATIONS) {
       await user.click(within(nav).getByRole('link', { name: hub.label }));
-      const tabs = await screen.findByRole('group', { name: hub.label });
+      // Registros shows its types as chips with a count (and Todos first), not as plain tabs.
+      const records = hub.path === '/registros';
+      const tabs = await screen.findByRole('group', {
+        name: records ? 'Tipo de registro' : hub.label,
+      });
       for (const tab of hub.tabs) {
-        expect(within(tabs).getByRole('button', { name: tab.label })).toBeVisible();
+        expect(
+          within(tabs).getByRole('button', {
+            name: records ? new RegExp(`^${tab.label}\\b`) : tab.label,
+          }),
+        ).toBeVisible();
         reached.add(tab.screen);
       }
     }
