@@ -7,9 +7,9 @@ import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import { createSqlSourceSettings } from './sql-source-settings.ts';
 const setupTables = async (sql: SqlClient) => {
   await sql.exec(`
-    CREATE ROLE sipges_tenant NOLOGIN;
+    CREATE ROLE mascli_tenant NOLOGIN;
     CREATE ROLE source_owner NOLOGIN NOSUPERUSER NOBYPASSRLS;
-    GRANT sipges_tenant TO source_owner;
+    GRANT mascli_tenant TO source_owner;
     GRANT CREATE ON SCHEMA public TO source_owner;
     CREATE TABLE tenants(tenant_id text PRIMARY KEY);
     INSERT INTO tenants VALUES ('A/P1'),('B/P2');
@@ -20,7 +20,7 @@ const setupTables = async (sql: SqlClient) => {
     CREATE POLICY tenant_rows ON audit
       USING (tenant_id = current_setting('app.tenant_id', true))
       WITH CHECK (tenant_id = current_setting('app.tenant_id', true));
-    GRANT SELECT ON audit TO sipges_tenant;
+    GRANT SELECT ON audit TO mascli_tenant;
     CREATE TABLE automation_cursors (
       tenant_id text PRIMARY KEY REFERENCES tenants,
       last_audit_id integer NOT NULL DEFAULT 0
@@ -29,7 +29,7 @@ const setupTables = async (sql: SqlClient) => {
     CREATE POLICY tenant_rows ON automation_cursors
       USING (tenant_id = current_setting('app.tenant_id', true))
       WITH CHECK (tenant_id = current_setting('app.tenant_id', true));
-    GRANT SELECT, INSERT, UPDATE ON automation_cursors TO sipges_tenant;
+    GRANT SELECT, INSERT, UPDATE ON automation_cursors TO mascli_tenant;
   `);
   await sql.exec(
     await readFile(
@@ -37,7 +37,9 @@ const setupTables = async (sql: SqlClient) => {
       'utf8',
     ),
   );
+  // Migration 0024 predates the rename and grants to mascli_tenant; withTenant uses the new name.
   await sql.exec(`
+    ALTER ROLE mascli_tenant RENAME TO sipges_tenant;
     ALTER TABLE tenants OWNER TO source_owner;
     ALTER TABLE audit OWNER TO source_owner;
     ALTER TABLE automation_cursors OWNER TO source_owner;
