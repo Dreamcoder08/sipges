@@ -11,7 +11,7 @@
     "@mascli/api": "workspace:*",
     "@vercel/blob": "2.8.2",
     "@vercel/functions": "3.10.4",
-    "hono": "^4.13.13"
+    "hono": "^4.13.14"
   },
   "devDependencies": {
     "@mascli/web": "workspace:*",
