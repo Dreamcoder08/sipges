@@ -349,5 +349,13 @@ describe('phone shell', () => {
     const account = screen.getByRole('dialog', { name: 'Cuenta' });
     expect(within(account).getByText('Notificaciones')).toBeVisible();
     expect(within(account).getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+    const links = within(within(account).getByRole('navigation', { name: 'Cuenta y ajustes' }));
+    expect(links.getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Configuración',
+      'Administración',
+      'Auditoría',
+      'Ayuda y metodología',
+    ]);
+    expect(within(account).queryByRole('radio')).toBeNull();
   });
 });
