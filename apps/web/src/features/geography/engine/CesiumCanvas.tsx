@@ -33,6 +33,7 @@ import { type LonLat, SECHURA_DISTRICTS } from '../sechura-base.ts';
 import { BASEMAPS, type Basemap } from '../TileLayer.tsx';
 import frame from '../MapFrame.module.css';
 import { columnsOf, COLUMN_RADIUS, METRES_PER_RECORD } from './columns.ts';
+import { type PaintTheme, type PaintToken, paintColour } from './paint.ts';
 import { GRID, RELIEF, sampleHeights, sourceTile } from './terrarium.ts';
 import type { CanvasConcession, CanvasPoint, Focus } from './types.ts';
 import styles from './GeoCanvas.module.css';
@@ -43,15 +44,12 @@ const TEMPLATES: Readonly<Record<Exclude<Basemap, 'ninguno'>, string>> = {
   calles: BASEMAPS.calles.url(0, 0, 0).replace('/0/0/0.', '/{z}/{x}/{y}.'),
 };
 
-const GLOBE = { light: '#e9eef3', dark: '#0b0d10' } as const;
-const SELECTED = { light: '#0f2541', dark: '#ffffff' } as const;
-const DISTRICT = { light: [23, 54, 93], dark: [201, 212, 223] } as const;
 const ALPHA = { observado: 0.92, estimado: 0.47, escenario: 0 } as const;
 const SIZE = { current: 20, normal: 14, dim: 10 } as const;
 /** Camera of the 3D view: looking north-north-east, tilted enough to read the relief. */
 const VIEW = { heading: CesiumMath.toRadians(-15), pitch: CesiumMath.toRadians(-38) };
 
-const rgba = ([r, g, b]: readonly number[], alpha: number) =>
+const fromRgb = ([r, g, b]: readonly number[], alpha: number) =>
   new Color((r ?? 0) / 255, (g ?? 0) / 255, (b ?? 0) / 255, alpha);
 const ringPositions = (ring: readonly LonLat[]) =>
   Cartesian3.fromDegreesArray(ring.flatMap(([lon, lat]) => [lon, lat]));
@@ -67,20 +65,27 @@ const sphereOf = (extent: Extent) => {
 
 /** Heights the no-basemap tint spans, in metres: Sechura's coast to the Illescas summits. */
 const TINT_RANGE = [0, 600] as const;
-const TINT_STOPS = {
-  light: ['#eef0e2', '#d6e2b8', '#e3d39c', '#c9a477', '#94714f'],
-  dark: ['#14211a', '#27402c', '#4a4a2c', '#5e4630', '#7a5c44'],
-} as const;
+const TINT_STOPS = [
+  '--map-relief-1',
+  '--map-relief-2',
+  '--map-relief-3',
+  '--map-relief-4',
+  '--map-relief-5',
+] as const;
+const cssColour = (token: PaintToken, theme: PaintTheme) =>
+  Color.fromCssColorString(paintColour(token, theme));
 
 /** Colour ramp texture for the globe when no basemap is shown, so the relief stays readable. */
-const tint = (theme: 'light' | 'dark') => {
+const tint = (theme: PaintTheme) => {
   const canvas = document.createElement('canvas');
   canvas.width = 256;
   canvas.height = 1;
   const context = canvas.getContext('2d');
   if (context) {
     const ramp = context.createLinearGradient(0, 0, 256, 0);
-    TINT_STOPS[theme].forEach((color, i, all) => ramp.addColorStop(i / (all.length - 1), color));
+    TINT_STOPS.forEach((token, i, all) =>
+      ramp.addColorStop(i / (all.length - 1), paintColour(token, theme)),
+    );
     context.fillStyle = ramp;
     context.fillRect(0, 0, 256, 1);
   }
@@ -225,7 +230,7 @@ const CesiumCanvas = ({
     }
     const { scene } = instance;
     scene.globe.depthTestAgainstTerrain = true;
-    scene.globe.baseColor = Color.fromCssColorString(GLOBE[initial.current.theme]);
+    scene.globe.baseColor = cssColour('--map-bg', initial.current.theme);
     scene.globe.showGroundAtmosphere = false;
     scene.verticalExaggeration = 1.5;
     scene.canvas.setAttribute('aria-describedby', hint);
@@ -252,7 +257,7 @@ const CesiumCanvas = ({
   useEffect(() => {
     const instance = widget.current;
     if (!instance) return;
-    instance.scene.globe.baseColor = Color.fromCssColorString(GLOBE[theme]);
+    instance.scene.globe.baseColor = cssColour('--map-bg', theme);
     instance.imageryLayers.removeAll();
     // Without a basemap the ground is tinted by height; a basemap is draped as it is.
     instance.scene.globe.material = basemap === 'ninguno' ? tint(theme) : undefined;
@@ -282,14 +287,14 @@ const CesiumCanvas = ({
     const { entities } = instance;
     entities.suspendEvents();
     entities.removeAll();
-    const selected = Color.fromCssColorString(SELECTED[theme]);
+    const selected = cssColour('--map-outline-selected', theme);
     for (const d of SECHURA_DISTRICTS)
       entities.add({
         polyline: {
           positions: ringPositions(d.ring),
           clampToGround: true,
           width: 1,
-          material: rgba(DISTRICT[theme], 0.6),
+          material: cssColour('--map-district-line', theme).withAlpha(0.6),
         },
       });
     for (const c of concessions) {
@@ -304,13 +309,13 @@ const CesiumCanvas = ({
               ringPositions(outer),
               holes.map((hole) => new PolygonHierarchy(ringPositions(hole))),
             ),
-            material: rgba(color, chosen ? 0.35 : 0.12),
+            material: fromRgb(color, chosen ? 0.35 : 0.12),
           },
           polyline: {
             positions: ringPositions(outer),
             clampToGround: true,
             width: chosen ? 3 : 1.5,
-            material: chosen ? selected : rgba(color, 1),
+            material: chosen ? selected : fromRgb(color, 1),
           },
         });
       }
@@ -324,10 +329,10 @@ const CesiumCanvas = ({
           bottomRadius: COLUMN_RADIUS,
           heightReference: HeightReference.RELATIVE_TO_GROUND,
           // Solid when every record of the cell has explicit coordinates, lighter otherwise.
-          material: rgba(c.color, c.observed === c.count ? 0.85 : 0.45),
+          material: fromRgb(c.color, c.observed === c.count ? 0.85 : 0.45),
         },
       });
-    const halo = theme === 'dark' ? Color.BLACK : Color.WHITE;
+    const halo = cssColour('--map-point-halo', theme);
     for (const p of points) {
       const chosen = p.id === selectedPoint;
       entities.add({
@@ -335,11 +340,11 @@ const CesiumCanvas = ({
         position: Cartesian3.fromDegrees(p.at[0], p.at[1]),
         point: {
           pixelSize: chosen ? 24 : SIZE[p.emphasis],
-          color: rgba(p.color, p.emphasis === 'dim' ? 0.27 : ALPHA[p.evidence]),
+          color: fromRgb(p.color, p.emphasis === 'dim' ? 0.27 : ALPHA[p.evidence]),
           outlineColor: chosen
             ? selected
             : p.evidence === 'escenario'
-              ? rgba(p.color, 1)
+              ? fromRgb(p.color, 1)
               : halo.withAlpha(p.emphasis === 'dim' ? 0.5 : 1),
           outlineWidth: chosen || p.evidence === 'escenario' ? 3 : 2,
           heightReference: HeightReference.CLAMP_TO_GROUND,

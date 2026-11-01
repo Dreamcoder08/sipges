@@ -19,6 +19,7 @@ import { legendOf } from '../legend.ts';
 import { SECHURA_DISTRICTS } from '../sechura-base.ts';
 import { BASEMAPS, type Basemap } from '../TileLayer.tsx';
 import frame from '../MapFrame.module.css';
+import { paintColour, paintRgb } from './paint.ts';
 import type { CanvasConcession, CanvasPoint, Focus } from './types.ts';
 import styles from './GeoCanvas.module.css';
 
@@ -34,21 +35,14 @@ const TEMPLATES: Readonly<Record<Exclude<Basemap, 'ninguno'>, string>> = {
 type Theme = 'light' | 'dark';
 
 /**
- * Paint WebGL cannot read from CSS tokens (docs/adr/0019). In the dark theme street tiles are
- * inverted (brightness min/max swapped, hues turned back) and imagery is dimmed, matching the
- * SVG renderer's --map-filter-* tokens.
+ * Paint WebGL cannot read through var(): the colours come from the --map-* tokens (paint.ts);
+ * the raster adjustments have no token. In the dark theme street tiles are inverted (brightness
+ * min/max swapped, hues turned back) and imagery is dimmed, matching the SVG renderer's
+ * --map-filter-* tokens (docs/adr/0019).
  */
-const PAINT = {
-  light: {
-    background: '#e9eef3',
-    calles: {},
-    satelite: {},
-    district: [23, 54, 93, 150],
-    selected: [15, 37, 65, 255],
-    halo: [255, 255, 255],
-  },
+const RASTER = {
+  light: { calles: {}, satelite: {} },
   dark: {
-    background: '#0b0d10',
     calles: {
       'raster-brightness-min': 0.92,
       'raster-brightness-max': 0.04,
@@ -57,11 +51,15 @@ const PAINT = {
       'raster-contrast': -0.1,
     },
     satelite: { 'raster-brightness-max': 0.8, 'raster-saturation': -0.1 },
-    district: [201, 212, 223, 150],
-    selected: [255, 255, 255, 255],
-    halo: [0, 0, 0],
   },
 } as const;
+
+/** Deck.gl colours of the current theme, read when a layer is built. */
+const overlayPaint = (theme: Theme) => ({
+  district: [...paintRgb('--map-district-line', theme), 150] as const,
+  selected: [...paintRgb('--map-outline-selected', theme), 255] as const,
+  halo: paintRgb('--map-point-halo', theme),
+});
 
 /** Raster basemap only; everything SIPGES draws lives in deck.gl layers above it. */
 export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecification => ({
@@ -78,10 +76,14 @@ export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecifi
           },
         },
   layers: [
-    { id: 'fondo', type: 'background', paint: { 'background-color': PAINT[theme].background } },
+    {
+      id: 'fondo',
+      type: 'background',
+      paint: { 'background-color': paintColour('--map-bg', theme) },
+    },
     ...(basemap === 'ninguno'
       ? []
-      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: PAINT[theme][basemap] }]),
+      : [{ id: 'base', type: 'raster' as const, source: 'base', paint: RASTER[theme][basemap] }]),
   ],
 });
 
@@ -149,7 +151,6 @@ const GeoCanvas = ({
     [extent[2], extent[3]],
   ];
   const theme = useResolvedTheme();
-  const paint = PAINT[theme];
   const initial = useRef({ home, basemap, theme });
 
   useEffect(() => {
@@ -224,6 +225,7 @@ const GeoCanvas = ({
   }, [focus]);
 
   useEffect(() => {
+    const paint = overlayPaint(theme);
     overlay.current?.setProps({
       getCursor: ({ isHovering }) => (isHovering ? 'pointer' : 'grab'),
       layers: [
@@ -296,7 +298,7 @@ const GeoCanvas = ({
         }),
       ],
     });
-  }, [points, concessions, selectedPoint, selectedConcession, paint, theme]);
+  }, [points, concessions, selectedPoint, selectedConcession, theme]);
 
   type Action = 'in' | 'out' | 'home' | '3d';
   const act = (action: Action) => {

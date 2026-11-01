@@ -99,10 +99,10 @@ export const BaseMap = ({
       <title>{title}</title>
       {/* Everything that moves with the map; gestures transform this group between renders. */}
       <g data-map-content="">
-        {/* Explicit fills: if the stylesheet is missing, shapes must not fall back to black. */}
+        {/* Explicit token fills: shapes must not fall back to black if the module class is missing. */}
         <rect
           className={styles.sea}
-          fill="#d6e8f3"
+          fill="var(--map-sea)"
           x={minX - width}
           y={-maxY - height}
           width={width * 3}
@@ -114,8 +114,8 @@ export const BaseMap = ({
               <path
                 key={district.name}
                 className={`${styles.district} ${districtClass?.(district.name) ?? ''}`}
-                fill="#f6f3ea"
-                stroke="#9aa8b4"
+                fill="var(--map-land)"
+                stroke="var(--map-line)"
                 d={ringsPath([district.ring])}
                 strokeWidth={unit * 0.35}
                 {...districtProps?.(district.name)}

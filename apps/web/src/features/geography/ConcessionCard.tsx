@@ -2,7 +2,7 @@ import type { GeographyResult } from '@sipges/contracts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { foldText } from '../../shared/lib/text.ts';
 import { Button } from '../../shared/ui/Button.tsx';
-import { type Concession, legendOf } from './concessions.ts';
+import { type Concession, legendOf, legendRgb } from './concessions.ts';
 import { GEOCATMIN_VIEWER } from './MiningCadastreLayer.tsx';
 import type { MapPoint } from './territorial-model.ts';
 import { EVIDENCE_LABELS } from './evidence.ts';
@@ -88,7 +88,7 @@ export const ConcessionCard = ({
         <dd>
           <span
             className={styles.swatch}
-            style={{ borderColor: `rgb(${legendOf(concession.legend).color.join(' ')})` }}
+            style={{ borderColor: legendRgb(concession.legend) }}
             aria-hidden="true"
           />{' '}
           {legendOf(concession.legend).label}

@@ -16,3 +16,5 @@ const UNKNOWN: { label: string; color: [number, number, number] } = {
   color: [90, 102, 115],
 };
 export const legendOf = (value: string) => LEGEND[value] ?? UNKNOWN;
+/** CSS colour of a legend class; official legend data, not a theme token. */
+export const legendRgb = (value: string) => `rgb(${legendOf(value).color.join(' ')})`; // token-exempt: INGEMMET legend colour

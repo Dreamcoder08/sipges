@@ -145,6 +145,16 @@
   --map-heat-2: #f8c27a;
   --map-heat-3: #ee8f44;
   --map-heat-4: #cf5a2a;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #0f2541;
+  --map-district-line: #17365d;
+  --map-point-halo: #ffffff;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #eef0e2;
+  --map-relief-2: #d6e2b8;
+  --map-relief-3: #e3d39c;
+  --map-relief-4: #c9a477;
+  --map-relief-5: #94714f;
   /* Raster tiles: streets are inverted for the dark theme, imagery only dimmed. */
   --map-filter-streets: none;
   --map-filter-satellite: none;
@@ -347,6 +357,16 @@
     --map-heat-2: #6b4518;
     --map-heat-3: #a35a22;
     --map-heat-4: #d0612c;
+    /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+    --map-outline-selected: #ffffff;
+    --map-district-line: #c9d4df;
+    --map-point-halo: #000000;
+    /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+    --map-relief-1: #14211a;
+    --map-relief-2: #27402c;
+    --map-relief-3: #4a4a2c;
+    --map-relief-4: #5e4630;
+    --map-relief-5: #7a5c44;
     --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
     --map-filter-satellite: brightness(0.8) saturate(0.9);
 
@@ -454,6 +474,16 @@
   --map-heat-2: #6b4518;
   --map-heat-3: #a35a22;
   --map-heat-4: #d0612c;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #ffffff;
+  --map-district-line: #c9d4df;
+  --map-point-halo: #000000;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #14211a;
+  --map-relief-2: #27402c;
+  --map-relief-3: #4a4a2c;
+  --map-relief-4: #5e4630;
+  --map-relief-5: #7a5c44;
   --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
   --map-filter-satellite: brightness(0.8) saturate(0.9);
 

@@ -24,7 +24,7 @@ import {
   type Concession,
   concessionsOf,
   LEGEND,
-  legendOf,
+  legendRgb,
   queryExtent,
   relationPolygon,
 } from './concessions.ts';
@@ -443,7 +443,7 @@ const TerritorialWorkspace = ({
                 className={styles.concession}
                 data-active={active}
                 fillRule="evenodd"
-                style={{ stroke: `rgb(${legendOf(c.legend).color.join(' ')})` }}
+                style={{ stroke: legendRgb(c.legend) }}
                 strokeWidth={unit * (active ? 0.8 : 0.4)}
                 role="button"
                 tabIndex={0}
@@ -718,7 +718,7 @@ const TerritorialWorkspace = ({
                   <li key={key}>
                     <span
                       className={styles.swatch}
-                      style={{ borderColor: `rgb(${legendOf(key).color.join(' ')})` }}
+                      style={{ borderColor: legendRgb(key) }}
                       aria-hidden="true"
                     />
                     {LEGEND[key]?.label}
