@@ -172,3 +172,10 @@ BEGIN
   END LOOP;
 END
 $$;
+
+-- The operator-only evidence history guard rejects the runtime role by name (0020); keep
+-- that defence for the renamed role.
+DROP POLICY IF EXISTS operator_read_evidence_history ON link_evidence_history;
+CREATE POLICY operator_read_evidence_history ON link_evidence_history FOR SELECT
+  USING (current_user <> 'sipges_tenant'
+    AND tenant_id = current_setting('app.tenant_id', true));

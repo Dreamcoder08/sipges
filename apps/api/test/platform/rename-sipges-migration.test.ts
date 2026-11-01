@@ -185,6 +185,19 @@ const expectRoleAndIsolation = async (db: PGlite) => {
   );
   expect(functions.rows.map((r) => r.proname)).toEqual(['sipges_can_see']);
 
+  // No policy keeps naming the old role: the operator-only evidence history guard must
+  // still reject the runtime role by its new name.
+  const stalePolicies = await db.query<{ n: number }>(
+    `SELECT count(*)::int AS n FROM pg_policies
+      WHERE coalesce(qual, '') ~ 'mascli' OR coalesce(with_check, '') ~ 'mascli'`,
+  );
+  expect(stalePolicies.rows[0]?.n).toBe(0);
+  const guard = await db.query<{ qual: string }>(
+    `SELECT qual FROM pg_policies
+      WHERE tablename = 'link_evidence_history' AND policyname = 'operator_read_evidence_history'`,
+  );
+  expect(guard.rows[0]?.qual).toContain('sipges_tenant');
+
   // Two tenants stay isolated under the new role, and the old scope matches nothing.
   const sql = pgliteClient(db);
   const ids = (tenant: string) =>
