@@ -59,9 +59,14 @@ test('search, inbox, project and account are in the sidebar, not in the top bar'
 
   await expect(sidebar.getByLabel('Proyecto activo')).toHaveValue(DEFAULT_SCOPE);
   await expect(sidebar.getByRole('button', { name: /^Notificaciones/ })).toBeVisible();
-  await sidebar.getByRole('button', { name: /^Buscar/ }).click();
+  const search = sidebar.getByRole('button', { name: /^Buscar/ });
+  await search.click();
   await expect(page.getByRole('combobox', { name: 'Buscar en todo el proyecto' })).toBeFocused();
   await page.keyboard.press('Escape');
+  // The palette returns focus to its trigger after it closes; wait for that before moving focus,
+  // or the late restore steals it from the account row and Enter reopens the palette.
+  await expect(page.getByRole('combobox', { name: 'Buscar en todo el proyecto' })).toBeHidden();
+  await expect(search).toBeFocused();
 
   // The account menu reaches the Sistema screens and closes with Escape.
   const account = sidebar.getByRole('button', { name: /^Cuenta de / });
