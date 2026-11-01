@@ -9,11 +9,6 @@ export default defineConfig({
   testMatch:
     /(?:11-functional-audit|15-record-insights|17-quality-followup|18-territorial-intelligence)\.spec\.ts/,
   outputDir: './test-results/webkit',
-  use: {
-    ...base.use,
-    launchOptions: {},
-    // Trace screenshots call inPagePrepareForScreenshots, which injects style under the strict CSP on WebKit.
-    trace: { mode: 'retain-on-failure', screenshots: false },
-  },
+  use: { ...base.use, launchOptions: {} },
   projects: [{ name: 'webkit', use: { ...devices['Desktop Safari'] } }],
 });
