@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@mascli/api": "workspace:*",
-    "hono": "^4.13.13"
+    "hono": "^4.13.14"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
