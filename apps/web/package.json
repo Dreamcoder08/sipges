@@ -17,7 +17,7 @@
     "@mascli/contracts": "workspace:*",
     "@mascli/kernel": "workspace:*",
     "@radix-ui/react-dialog": "1.1.15",
-    "@tanstack/react-query": "^5.104.2",
+    "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-router": "1.170.46",
     "maplibre-gl": "6.11.2",
     "react": "^19.3.0",
