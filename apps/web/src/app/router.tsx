@@ -28,7 +28,6 @@ import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
   LoginPage,
-  AccountMenu,
   MfaEnrollmentPage,
   logout,
   meQuery,
@@ -43,12 +42,7 @@ import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
-import {
-  NotificationBell,
-  NotificationList,
-  useUnreadNotifications,
-} from '../features/notifications/index.ts';
-import { COMPACT_QUERY, useMediaQuery } from '../shared/lib/media.ts';
+import { NotificationBell } from '../features/notifications/index.ts';
 import { AppShell } from './layout/AppShell.tsx';
 import { useQualityReview } from './pending-quality.ts';
 
@@ -266,24 +260,6 @@ const selectProjectRoute = createRoute({
 });
 
 /** Every signed-in screen: needs a session and an active project. */
-/** Phone account sheet links, the same screens as the desktop account menu. */
-const AccountLinks = () => (
-  <>
-    <Link to="/version-4" activeOptions={{ exact: true }}>
-      Configuración
-    </Link>
-    <Link to="/administracion" activeOptions={{ exact: true }}>
-      Administración
-    </Link>
-    <Link to="/auditoria" activeOptions={{ exact: true }}>
-      Auditoría
-    </Link>
-    <Link to="/metodologia" activeOptions={{ exact: true }}>
-      Ayuda y metodología
-    </Link>
-  </>
-);
-
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'app',
@@ -301,13 +277,11 @@ const appRoute = createRoute({
   },
   component: function AppLayout() {
     const locationHref = useLocation({ select: (location) => location.href });
-    const { me, scope, queryClient } = appRoute.useRouteContext();
+    const { scope, queryClient } = appRoute.useRouteContext();
     const router = useRouter();
     // Subscribed, so the header shows the project's name once the list arrives.
     const scopes = useQuery(scopesQuery).data;
     const label = scopes?.find((s) => `${s.company_id}/${s.project_id}` === scope.scope)?.label;
-    const compact = useMediaQuery(COMPACT_QUERY);
-    const unread = useUnreadNotifications(scope.scope);
     const projectLabel = label || scope.project_id;
     // Colour meanings of the project; until known the labels use their plain names.
     const settings = useQuery(projectSettingsQuery(scope.scope)).data ?? null;
@@ -330,21 +304,6 @@ const appRoute = createRoute({
                   await router.invalidate();
                 }}
               />
-            }
-            account={
-              <AccountMenu
-                key={`account/${locationHref}`}
-                me={me}
-                project={projectLabel}
-                unread={compact ? unread : 0}
-                links={compact ? <AccountLinks /> : null}
-                onSignedOut={async () => {
-                  queryClient.clear();
-                  await router.navigate({ to: '/login', search: {} });
-                }}
-              >
-                {compact ? <NotificationList scope={scope.scope} /> : null}
-              </AccountMenu>
             }
           >
             <Suspense fallback={<p role="status">Cargando sección…</p>}>

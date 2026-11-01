@@ -219,7 +219,7 @@ describe('wide layout: tools live in the sidebar, not in the top bar', () => {
   });
 });
 
-describe('compact layout keeps its top bar', () => {
+describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)', () => {
   beforeEach(() => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(max-width: 60rem)',
@@ -230,19 +230,56 @@ describe('compact layout keeps its top bar', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('has no sidebar and still offers search, project and account in the bar', async () => {
+  it('keeps only the menu button and the title in the top bar, with no bottom bar', async () => {
     api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
     at('/');
     render(<App />);
-    const heading = await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
-    expect(document.querySelector('aside')).toBeNull();
+    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
     const bar = document.querySelector('header');
     if (!bar) throw new Error('Missing top bar');
-    expect(within(bar).getByRole('button', { name: /^Buscar/ })).toBeVisible();
-    expect(within(bar).getByRole('button', { name: /^Cuenta de Persona Sintética/ })).toBeVisible();
-    expect(within(bar).getByRole('button', { name: /Cambiar de proyecto/ })).toBeVisible();
-    expect(heading).toBeVisible();
-    expect(screen.queryByRole('menu')).toBeNull();
+    expect(
+      within(bar)
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['Abrir menú']);
+    expect(within(bar).getByRole('heading', { level: 1 })).toHaveTextContent('Dashboard ejecutivo');
+    expect(screen.queryByRole('navigation', { name: 'Navegación principal' })).toBeNull();
+    expect(document.querySelector('aside')).toBeNull();
+  });
+
+  it('opens the sidebar in a drawer, navigates from it and returns focus when closed', async () => {
+    api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+    const open = screen.getByRole('button', { name: 'Abrir menú' });
+    expect(open).toHaveAttribute('aria-haspopup', 'dialog');
+    await user.click(open);
+    const drawer = screen.getByRole('dialog', { name: 'Menú' });
+    expect(open).toHaveAttribute('aria-expanded', 'true');
+    const nav = within(drawer).getByRole('navigation', { name: 'Secciones' });
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveFocus();
+    expect(within(drawer).getByLabelText('Proyecto activo')).toBeVisible();
+    expect(within(drawer).getByRole('button', { name: /^Buscar/ })).toBeVisible();
+    expect(
+      within(drawer).getByRole('button', { name: /^Cuenta de Persona Sintética/ }),
+    ).toBeVisible();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Menú' })).toBeNull();
+    expect(open).toHaveFocus();
+
+    await user.click(open);
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Menú' })).getByRole('link', { name: 'Bandeja' }),
+    );
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bandeja' })).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'Menú' })).toBeNull();
   });
 });
 

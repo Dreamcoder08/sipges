@@ -58,25 +58,26 @@ export const signIn = async (page: Page, credentials: Credentials, otp?: string)
 /**
  * Signs in and makes `scope` the active project: through the selection screen when the account
  * has several projects and none is selected, otherwise through the project selector (in the
- * sidebar on wide screens, in the project sheet on phones).
+ * sidebar on wide screens, in the menu drawer on phones and tablets).
  */
 export const signInToProject = async (page: Page, credentials: Credentials, scope: string) => {
   await signIn(page, credentials);
   const switcher = page.getByLabel('Proyecto activo');
   const chooser = page.getByRole('heading', { name: 'Seleccione un proyecto' });
-  // Phones keep the selector in a sheet opened from the project context (docs/adr/0015).
-  const context = page.getByRole('button', { name: /Cambiar de proyecto/ });
-  await expect(switcher.or(chooser).or(context)).toBeVisible();
+  // Phones and tablets keep the selector in the menu drawer (docs/adr/0015, addendum 2026-11-01).
+  const menu = page.getByRole('button', { name: 'Abrir menú' });
+  await expect(switcher.or(chooser).or(menu)).toBeVisible();
   if (await chooser.isVisible()) {
     await page.getByRole('button', { name: new RegExp(scope.replace('/', '\\/')) }).click();
-    await expect(switcher.or(context)).toBeVisible();
+    await expect(switcher.or(menu)).toBeVisible();
   }
-  if (await context.isVisible()) {
-    await context.click();
-    const sheet = page.getByRole('dialog', { name: 'Cambiar de proyecto' });
+  if (await menu.isVisible()) {
+    await menu.click();
+    const drawer = page.getByRole('dialog', { name: 'Menú' });
+    // A completed switch closes the drawer by itself.
     if ((await switcher.inputValue()) !== scope) await switcher.selectOption(scope);
     else await page.keyboard.press('Escape');
-    await expect(sheet).toBeHidden();
+    await expect(drawer).toBeHidden();
     return;
   }
   if ((await switcher.inputValue()) !== scope) await switcher.selectOption(scope);
@@ -84,15 +85,14 @@ export const signInToProject = async (page: Page, credentials: Credentials, scop
 };
 
 /**
- * Signs out through the account menu, where the action lives on every viewport: the sidebar
- * menu on wide screens, the account sheet on phones.
+ * Signs out through the account menu at the foot of the sidebar, which phones and tablets open
+ * from the menu drawer.
  */
 export const signOut = async (page: Page) => {
+  const menu = page.getByRole('button', { name: 'Abrir menú' });
+  if (await menu.isVisible()) await menu.click();
   await page.getByRole('button', { name: /^Cuenta de / }).click();
-  await page
-    .getByRole('menuitem', { name: 'Cerrar sesión' })
-    .or(page.getByRole('dialog', { name: 'Cuenta' }).getByRole('button', { name: 'Cerrar sesión' }))
-    .click();
+  await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click();
 };
 
 /** Creates a synthetic account through the admin API and grants it the given scopes. */

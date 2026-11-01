@@ -25,11 +25,11 @@ const inboxQuery = (scope: string) => ({
 });
 
 /** Unread notifications, for a badge outside the inbox (the phone account avatar). */
-export const useUnreadNotifications = (scope: string): number =>
+const useUnreadNotifications = (scope: string): number =>
   useQuery(inboxQuery(scope)).data?.unread ?? 0;
 
 /** Inbox list with "mark all as read" and the device push switch (ADR 0014). */
-export const NotificationList = ({ scope }: { scope: string }) => {
+const NotificationList = ({ scope }: { scope: string }) => {
   const client = useQueryClient();
   const inbox = useQuery(inboxQuery(scope));
   const markAll = useMutation({

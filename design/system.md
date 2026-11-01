@@ -8,7 +8,7 @@ Read-only sync of the web app's design tokens and components. Every value below 
 | --- | --- |
 | `apps/web/src/app/styles/tokens.css` | All tokens: `:root` (light), `@media (prefers-color-scheme: dark)` (device dark) and `:root[data-theme='dark']` (picked dark). The two dark blocks carry identical values. |
 | `apps/web/src/app/styles/global.css` | Resets, form control base, focus ring, scrollbars, reduced-motion rule |
-| `apps/web/src/app/layout/AppShell.module.css` | Current sidebar, top bar, bottom tab bar, "Más" sheet rows |
+| `apps/web/src/app/layout/AppShell.module.css` | Current sidebar, top bar and phone menu button |
 | `apps/web/src/app/layout/AppShell.tsx` | Current sidebar structure (`aside > nav[aria-label=Secciones]` with 4 `NAV_GROUPS`) |
 | `apps/web/src/app/navigation.ts` | 26 screens, `NAV_GROUPS`, `SCREEN_ICONS`, `MOBILE_TABS`, `MORE_GROUPS` |
 | `apps/web/src/shared/ui/` | Button, Badges, Card, ChipRow, SegmentedControl, Sheet, Icon, icons.ts, Field, Alert, EmptyState, Skeleton… |
@@ -79,7 +79,7 @@ Source: `apps/web/src/app/styles/tokens.css`
 | `--color-hairline` | `#ececec` | `#1c1c1f` | Dividers and card borders |
 | `--color-hairline-strong` | `#d9d9d9` | `#323236` | Secondary button border, kbd border |
 | `--color-scrim` | `rgb(0 0 0 / 0.35)` | `rgb(0 0 0 / 0.7)` | Modal backdrop |
-| `--color-chrome` | `rgb(255 255 255 / 0.85)` | `rgb(0 0 0 / 0.78)` | Translucent top bar and tab bar |
+| `--color-chrome` | `rgb(255 255 255 / 0.85)` | `rgb(0 0 0 / 0.78)` | Translucent top bar |
 | `--color-scrollbar` | `rgb(0 0 0 / 0.18)` | `rgb(255 255 255 / 0.16)` | Scrollbar thumb |
 | `--color-scrollbar-hover` | `rgb(0 0 0 / 0.32)` | `rgb(255 255 255 / 0.3)` |  |
 
@@ -334,11 +334,9 @@ Source: `apps/web/src/app/styles/tokens.css`
 | `--touch-target` | `2.75rem` | Coarse-pointer minimum (WCAG 2.5.5) |
 | `--focus-ring` | `3px solid var(--color-focus)` | Global :focus-visible outline (offset 2px) |
 | `--z-sticky` | `20` | Stacking layer |
-| `--z-tabbar` | `25` | Stacking layer |
 | `--z-popover` | `40` | Stacking layer |
 | `--z-modal` | `60` | Stacking layer |
 | `--z-skip` | `70` | Stacking layer |
-| `--tabbar-height` | `4rem` | Phone bottom bar |
 | `--sidebar-width` | `15.5rem` | Desktop sidebar column |
 
 ## Components
@@ -394,8 +392,7 @@ Source: `apps/web/src/app/styles/global.css`: `:focus-visible { outline: var(--f
 
 ### Mobile navigation (context for the desktop work)
 Source: `apps/web/src/app/layout/AppShell.module.css`, `apps/web/src/app/navigation.ts`
-- Bottom tab bar (`--tabbar-height`): Inicio → `/`, Monitoreo → `/eventos`, Alertas → `/alertas`, Territorio → `/mapa`, plus "Más".
-- "Más" sheet groups (`MORE_GROUPS`): **Investigar** (5), **Gestionar** (6), **Analizar** (6), **Sistema** (5). This task-oriented regrouping already exists in the product.
+- Phones and tablets (≤ 60rem): a menu button opens the same sidebar in a drawer from the left (ADR 0015, addendum 2026-11-01); there is no bottom tab bar.
 
 ## Navigation
 

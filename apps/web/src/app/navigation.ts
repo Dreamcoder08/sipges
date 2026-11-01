@@ -251,32 +251,6 @@ export const iconFor = (path: NavPath): IconName =>
     ? SCREEN_ICONS[path as ScreenPath]
     : (DESTINATIONS.find((hub) => hub.path === path)?.icon ?? 'layers');
 
-/**
- * Phone and tablet bottom bar (docs/adr/0015): four destinations; the rest is in the "Más" sheet.
- */
-export const MOBILE_TABS = [
-  { path: '/inicio', label: 'Inicio' },
-  { path: '/registros', label: 'Registros' },
-  { path: '/bandeja', label: 'Bandeja' },
-  { path: '/territorio', label: 'Territorio' },
-] as const satisfies readonly { path: DestinationPath; label: string }[];
-
-/** "Más" sheet: the destination without a tab, then Sistema; hubs reach their old screens. */
-export const MORE_GROUPS = [
-  { label: 'Destinos', paths: ['/analisis'] },
-  { label: 'Sistema', paths: SYSTEM_PATHS },
-] as const satisfies readonly { label: string; paths: readonly NavPath[] }[];
-
-/**
- * Splits a project label such as "Proyecto Sechura (Migración)" into a short name and a detail
- * line for the phone header; labels without parentheses keep a generic detail.
- */
-export const projectParts = (label: string): { name: string; detail: string } => {
-  const match = /^(?:Proyecto\s+)?(.+?)\s*\(([^)]+)\)\s*$/i.exec(label.trim());
-  if (match?.[1] && match[2]) return { name: match[1], detail: match[2] };
-  return { name: label.trim().replace(/^Proyecto\s+/i, '') || label, detail: 'Proyecto activo' };
-};
-
 export const titleFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.title ??
   DESTINATIONS.find((hub) => hub.path === path)?.label ??

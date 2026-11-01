@@ -100,30 +100,9 @@
   letter-spacing: 0.04em;
   color: var(--color-info);
 }
-/* Phones and tablets: an icon button; the dialog becomes a top sheet. */
+/* Phones and tablets: the trigger stays a pill inside the menu drawer, without the keyboard
+   shortcut; the dialog becomes a top sheet. */
 @media (max-width: 60rem) {
-  .trigger {
-    min-width: 0;
-    width: 2.75rem;
-    height: 2.75rem;
-    padding: 0;
-    justify-content: center;
-    border: 0;
-    background: transparent;
-    font-size: var(--text-xl);
-  }
-  .trigger :global(svg) {
-    font-size: var(--text-xl);
-  }
-  /* Clipped, not display:none, so the icon button keeps its accessible name. */
-  .label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
   .trigger kbd {
     display: none;
   }

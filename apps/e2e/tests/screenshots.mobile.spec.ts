@@ -67,17 +67,16 @@ test('capture the mobile shell', async ({ page, admin, adminApi }) => {
     await page.waitForTimeout(800);
     await shot(page, `movil-inicio${suffix}`);
     await page.screenshot({ path: `${dir}/movil-hoy-completo${suffix}.png`, fullPage: true });
-    await page.getByRole('button', { name: /^Más/ }).click();
+    await page.getByRole('button', { name: 'Abrir menú' }).click();
     await page.waitForTimeout(400);
-    await shot(page, `movil-mas${suffix}`);
-    await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: /^Cuenta de / }).click();
+    await shot(page, `movil-menu${suffix}`);
+    await page
+      .getByRole('dialog', { name: 'Menú' })
+      .getByRole('button', { name: /^Cuenta de / })
+      .click();
     await page.waitForTimeout(400);
     await shot(page, `movil-cuenta${suffix}`);
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: /Cambiar de proyecto/ }).click();
-    await page.waitForTimeout(400);
-    await shot(page, `movil-proyecto${suffix}`);
     await page.keyboard.press('Escape');
     await page.goto('/alertas');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();

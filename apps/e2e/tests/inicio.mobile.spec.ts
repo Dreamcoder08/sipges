@@ -11,7 +11,7 @@ const box = async (locator: Locator) => {
 /**
  * Inicio on a phone reads like a chat app (ChatGPT, Claude): the greeting centred in the free
  * space, the briefing as one-line rows, the suggestions in one swipeable strip and the composer
- * resting just above the bottom bar.
+ * resting at the bottom of the screen.
  */
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`Inicio on a phone is a chat-style home (${colorScheme})`, async ({ page, admin }) => {
@@ -20,7 +20,6 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.goto('/inicio');
 
     const composer = page.locator('form').filter({ has: page.getByLabel('Pregunta a SIPGES') });
-    const bar = page.getByRole('navigation', { name: 'Navegación principal' });
     await expect(composer).toBeVisible();
     await expect(page.getByRole('heading', { name: /^Hola/ })).toBeVisible();
 
@@ -29,11 +28,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(date).toHaveCount(1);
     await expect(date).toBeHidden();
 
-    // The composer sits right above the bottom bar without scrolling.
+    // The composer rests at the bottom of the screen without scrolling (no bottom bar).
     const composerBox = await box(composer);
-    const barBox = await box(bar);
-    expect(composerBox.y + composerBox.height).toBeLessThanOrEqual(barBox.y);
-    expect(barBox.y - (composerBox.y + composerBox.height)).toBeLessThanOrEqual(24);
+    const height = page.viewportSize()?.height ?? 0;
+    expect(composerBox.y + composerBox.height).toBeLessThanOrEqual(height);
+    expect(height - (composerBox.y + composerBox.height)).toBeLessThanOrEqual(24);
 
     // Briefing cards collapse to one tappable row each.
     const cards = page.getByRole('region', { name: /Alertas activas|Registros nuevos|Riesgo/ });

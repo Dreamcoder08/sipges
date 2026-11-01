@@ -59,3 +59,19 @@ visible choices, no frequency-based priority and a heavy navy panel.
 Apple Human Interface Guidelines (tab bars, sheets), Material 3 (navigation bar, bottom sheets),
 WAI-ARIA Authoring Practices (dialog modal), WCAG 2.2 (2.5.8 target size, 2.4.11 focus not
 obscured).
+
+## Addendum (2026-11-01): menu drawer instead of the bottom bar
+
+The owner asked to move the top bar icons into a mobile sidebar «asi como lo hace chat gpt mobile y claude mobile»
+and chose to remove the bottom bar (`odd/tasks/mobile-drawer-shell.md`). This replaces R1–R6 above for phones and
+tablets (≤ 60rem):
+
+- The top bar holds only a menu button («Abrir menú», 44 px) and the page title (`h1`).
+- The button opens the wide-screen `Sidebar` in a modal drawer from the left edge (`Sheet side="start"`): project
+  selector, search, notifications, the five destinations, Integraciones, Recientes and the account menu. One
+  navigation component serves every width.
+- Focus moves to the current destination; Escape and the backdrop close the drawer and return focus to the button;
+  navigating or switching project closes it.
+- No bottom bar, no «Más» sheet and no phone-only account sheet (`AccountMenu` removed). Destinations cost one more
+  tap; in exchange the content keeps the whole screen, as in ChatGPT and Claude mobile.
+
