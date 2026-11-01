@@ -56,11 +56,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // The narrowest supported phone (360 px) keeps the composer, its send button included, inside the width.
     // A long project name stands in for wider fonts (CI renders with DejaVu Sans).
     await page.setViewportSize({ width: 360, height: 780 });
-    await composer
-      .getByText(/^Registros de /)
-      .evaluate((node) => {
-        node.lastChild!.textContent = 'Registros de Proyecto con un nombre muy largo (migración)';
-      });
+    await composer.getByText(/^Registros de /).evaluate((node) => {
+      node.lastChild!.textContent = 'Registros de Proyecto con un nombre muy largo (migración)';
+    });
     const narrow = await page.evaluate(() => ({
       scroll: document.documentElement.scrollWidth,
       view: document.documentElement.clientWidth,
