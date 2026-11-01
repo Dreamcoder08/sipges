@@ -35,6 +35,8 @@ type Props = {
   role: Role;
   /** When set, «Ver» hands the record to the caller (the Registros hub's sheet) instead of this page's own panel. */
   onView?: (id: string) => void;
+  /** Open with the new-record form or the CSV import already showing (the hub's «Nuevo registro» / «Importar»). */
+  start?: 'create' | 'import' | undefined;
 };
 const message = (error: unknown) =>
   !error
@@ -82,16 +84,26 @@ const facetValue = (row: ModuleRecord, module: RecordModule, key: string) => {
   return field ? fieldValue(row, field).trim() : '';
 };
 
-const RecordsWorkspace = ({ module, scope, projectId, projectLabel, role, onView }: Props) => {
+const RecordsWorkspace = ({
+  module,
+  scope,
+  projectId,
+  projectLabel,
+  role,
+  onView,
+  start,
+}: Props) => {
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [facets, setFacets] = useState<Record<string, string>>({});
   const [pageIndex, setPageIndex] = useState(0);
-  const [panel, setPanel] = useState<Panel>({ kind: 'list' });
+  const [panel, setPanel] = useState<Panel>(
+    start === 'create' && canWriteRecords(role) ? { kind: 'create' } : { kind: 'list' },
+  );
   const [deleting, setDeleting] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [uploadBusy, setUploadBusy] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [importing, setImporting] = useState(start === 'import');
   // Where focus returns when a record panel closes (the row's own «Ver»/«Editar» button).
   const returnTo = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
