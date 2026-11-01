@@ -14,3 +14,13 @@ export const VerificationChip = ({ letter }: { letter: VerificationLetter | unde
   ) : (
     <span className={styles.muted}>—</span>
   );
+
+/** The status text is the meaning; the tone only helps. Unknown wordings stay neutral. */
+export const ValidationChip = ({ state }: { state: string }) =>
+  state ? (
+    <span className={styles.status} data-validation={state}>
+      {state}
+    </span>
+  ) : (
+    <span className={styles.muted}>—</span>
+  );

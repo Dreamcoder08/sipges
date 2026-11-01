@@ -2,7 +2,7 @@ import type { Role } from '@sipges/contracts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../../../test/records-api.ts';
 import { resetApi } from '../../../test/server.ts';
 import { RegistrosHub } from './RegistrosHub.tsx';
@@ -182,6 +182,93 @@ it('keeps density per tab in sessionStorage and nothing in localStorage', async 
     'aria-pressed',
     'true',
   );
+});
+
+it('puts search, A–E, validation, density and the count in one toolbar, with no card around the table', async () => {
+  renderHub('todos');
+  const toolbar = await screen.findByRole('group', { name: 'Filtros de registros' });
+  expect(within(toolbar).getByRole('searchbox', { name: 'Buscar en registros' })).toBeVisible();
+  expect(within(toolbar).getByRole('group', { name: 'Verificación A a E' })).toBeVisible();
+  expect(within(toolbar).getByRole('group', { name: 'Validación' })).toBeVisible();
+  expect(within(toolbar).getByRole('group', { name: 'Densidad de filas' })).toBeVisible();
+  expect(await within(toolbar).findByRole('status')).toHaveTextContent('4 de 4 registros');
+  expect(screen.queryByRole('heading', { name: 'Todos los registros' })).not.toBeInTheDocument();
+});
+
+it('shows the type with its icon, verification as a toned letter and validation as a status chip', async () => {
+  renderHub('todos');
+  const event = await screen.findByRole('row', { name: /E-2/ });
+  const type = within(event).getByText('Eventos', { selector: '[data-type-chip]' });
+  expect(type.querySelector('svg')).not.toBeNull();
+  expect(within(event).getByText('E', { selector: '[data-verification="E"]' })).toBeInTheDocument();
+  expect(within(event).getByText('Preliminar')).toHaveAttribute('data-validation', 'Preliminar');
+  const actor = screen.getByRole('row', { name: /A-1/ });
+  expect(within(actor).getAllByText('—').length).toBeGreaterThanOrEqual(3);
+  expect(actor.querySelector('[data-validation]')).toBeNull();
+});
+
+it('offers Importar and Nuevo registro on Todos through a type picker, reusing the type screen', async () => {
+  const user = userEvent.setup();
+  const onTipo = vi.fn();
+  const view = renderHub('todos', onTipo);
+  const props = {
+    onTipo,
+    scope: SCOPE,
+    projectId: 'P1',
+    projectLabel: 'Proyecto Uno',
+    role: 'admin' as Role,
+  };
+  const create = await screen.findByRole('button', { name: 'Nuevo registro' });
+  expect(screen.getByRole('button', { name: 'Importar' })).toBeInTheDocument();
+  await user.click(create);
+  const picker = screen.getByRole('menu', { name: 'Tipo del nuevo registro' });
+  await user.click(within(picker).getByRole('menuitem', { name: 'Eventos' }));
+  expect(onTipo).toHaveBeenCalledWith('eventos');
+  view.rerender(
+    <QueryClientProvider client={new QueryClient()}>
+      <RegistrosHub tipo="eventos" {...props} />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole('button', { name: 'Guardar registro' })).toBeInTheDocument();
+});
+
+it('hides the Todos write actions from read-only roles', async () => {
+  renderHub('todos', vi.fn(), 'consulta');
+  await screen.findByRole('table');
+  expect(screen.queryByRole('button', { name: 'Nuevo registro' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument();
+});
+
+describe('at 1280 px or wider', () => {
+  const original = window.matchMedia;
+  beforeEach(() => {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('min-width: 80rem'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    window.matchMedia = original;
+  });
+
+  it('docks the record sheet beside a list that stays usable; Esc closes and returns focus', async () => {
+    const user = userEvent.setup();
+    renderHub('todos');
+    const first = await screen.findByRole('button', { name: /Abrir E-1/ });
+    await user.click(first);
+    const sheet = await screen.findByRole('dialog', { name: /E-1/ });
+    expect(sheet).toHaveAttribute('aria-modal', 'false');
+    expect(document.body.querySelector('[inert]')).toBeNull();
+    expect(document.body.style.overflow).not.toBe('hidden');
+    // The list is still live: another record replaces the one in the sheet.
+    await user.click(screen.getByRole('button', { name: /Abrir E-2/ }));
+    expect(await screen.findByRole('dialog', { name: /E-2/ })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Abrir E-2/ })).toHaveFocus();
+  });
 });
 
 it('keeps write actions off the type screen for read-only roles', async () => {

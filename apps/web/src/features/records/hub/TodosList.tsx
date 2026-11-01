@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
-import { ChipRow } from '../../../shared/ui/ChipRow.tsx';
 import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
 import { Field } from '../../../shared/ui/Field.tsx';
 import { MODULES } from '../modules.ts';
@@ -12,7 +11,8 @@ import {
   VERIFICATION_LETTERS,
   type VerificationLetter,
 } from './summary.ts';
-import { VerificationChip } from './VerificationChip.tsx';
+import { TypeChip } from './TypeChip.tsx';
+import { ValidationChip, VerificationChip } from './VerificationChip.tsx';
 
 const matches = (row: RecordSummary, query: string) =>
   !query ||
@@ -24,9 +24,15 @@ const matches = (row: RecordSummary, query: string) =>
 export const TodosList = ({
   rows,
   onOpen,
+  density,
+  narrow,
 }: {
   rows: readonly RecordSummary[];
   onOpen: (record: OpenRecord) => void;
+  /** The density control, drawn at the right end of the toolbar. */
+  density: ReactNode;
+  /** A docked sheet is open: the optional columns give way to it. */
+  narrow: boolean;
 }) => {
   const [query, setQuery] = useState('');
   const [letter, setLetter] = useState<VerificationLetter | null>(null);
@@ -41,14 +47,17 @@ export const TodosList = ({
     set(current === next ? null : next);
   return (
     <>
-      <div className={styles.filters}>
-        <Field
-          label="Buscar en registros"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        <ChipRow label="Verificación A a E">
+      <div role="group" aria-label="Filtros de registros" className={styles.toolbar}>
+        <div className={styles.search}>
+          <Field
+            label="Buscar en registros"
+            type="search"
+            placeholder="Buscar por ID o título…"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <div role="group" aria-label="Verificación A a E" className={styles.chips}>
           {VERIFICATION_LETTERS.map((item) => (
             <Button
               key={item}
@@ -61,8 +70,8 @@ export const TodosList = ({
               {item}
             </Button>
           ))}
-        </ChipRow>
-        <ChipRow label="Validación">
+        </div>
+        <div role="group" aria-label="Validación" className={styles.chips}>
           {VALIDATION_STATES.map((item) => (
             <Button
               key={item}
@@ -74,14 +83,18 @@ export const TodosList = ({
               {item}
             </Button>
           ))}
-        </ChipRow>
+        </div>
+        <div className={styles.toolbarEnd}>
+          {density}
+          <p className={styles.shown} role="status">
+            {visible.length} de {rows.length} registros
+          </p>
+        </div>
       </div>
-      <p className={styles.muted} role="status">
-        {visible.length} de {rows.length} registro(s) mostrados
-      </p>
       {visible.length ? (
         <div
           className={styles.tableWrap}
+          data-narrow={narrow}
           tabIndex={0}
           role="region"
           aria-label="Tabla de registros"
@@ -95,16 +108,24 @@ export const TodosList = ({
                 <th scope="col">ID</th>
                 <th scope="col">Registro</th>
                 <th scope="col">Tipo</th>
-                <th scope="col">Territorio</th>
-                <th scope="col">Fecha</th>
-                <th scope="col">Verif.</th>
-                <th scope="col">Validación</th>
+                <th scope="col" className={styles.optional}>
+                  Territorio
+                </th>
+                <th scope="col" className={styles.optional}>
+                  Fecha
+                </th>
+                <th scope="col">
+                  <span title="A = mayor confianza, E = menor">Verif.</span>
+                </th>
+                <th scope="col" className={styles.optional}>
+                  Validación
+                </th>
               </tr>
             </thead>
             <tbody>
               {visible.map((row) => (
                 <tr key={`${row.module}/${row.id}`}>
-                  <td>{row.id}</td>
+                  <td className={styles.id}>{row.id}</td>
                   <td>
                     <button
                       type="button"
@@ -116,14 +137,20 @@ export const TodosList = ({
                       {row.title}
                     </button>
                   </td>
-                  <td>{MODULES[row.module].label}</td>
-                  <td>{row.territory || '—'}</td>
-                  <td>{row.date || '—'}</td>
+                  <td>
+                    <TypeChip module={row.module} />
+                  </td>
+                  <td className={styles.optional}>
+                    {row.territory || <span className={styles.muted}>—</span>}
+                  </td>
+                  <td className={styles.optional}>
+                    {row.date || <span className={styles.muted}>—</span>}
+                  </td>
                   <td>
                     <VerificationChip letter={row.verification} />
                   </td>
-                  <td>
-                    {row.validation ? <span className={styles.pill}>{row.validation}</span> : '—'}
+                  <td className={styles.optional}>
+                    <ValidationChip state={row.validation} />
                   </td>
                 </tr>
               ))}
