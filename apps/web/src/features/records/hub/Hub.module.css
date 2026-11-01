@@ -70,8 +70,10 @@
 .layout[data-docked='true'] {
   grid-template-columns: minmax(0, 1fr) 27rem;
 }
+/* Same clamp as .hub: with rows loaded, an auto track grows to the table's min-content. */
 .main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
   min-width: 0;
 }
