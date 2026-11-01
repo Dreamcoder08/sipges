@@ -13,7 +13,7 @@ Related documents: [workspace and configuration](../migration/workspace.md),
 [legacy data migration runbook](../migration/data-migration.md),
 [secure cookies](../secure-cookies.md), [web delivery and CSP](../migration/web.md),
 [ADRs](../adr/README.md) and the original
-[secure public deployment plan](../../odd/tasks/secure-mascli-public-deployment.md).
+[secure public deployment plan](../../odd/archive/secure-mascli-public-deployment.md).
 
 ## Hosting direction: Cloudflare Workers is the only host
 

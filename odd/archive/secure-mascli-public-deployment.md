@@ -1,5 +1,7 @@
 # Secure MASCLI GitHub and Deployment — ODD Tasks
 
+> Archivado el 2026-11-01: superado por el monorepo TypeScript y su despliegue en Cloudflare Workers ([ADR 0009](../../docs/adr/0009-internet-exposure-hardening.md), [ADR 0028](../../docs/adr/0028-cloudflare-workers-hosting.md), [ADR 0029](../../docs/adr/0029-retire-vercel-host.md)). Exportación por tenant, MFA obligatorio por defecto, almacenamiento PostgreSQL/R2 y HTTPS/health se entregaron allí. Las tareas abiertas no se retoman; la única brecha vigente, un smoke autenticado en producción (login, MFA, aislamiento) con credenciales del operador, queda como bloqueo externo.
+
 ## Goal
 Current authorized slice: upload the existing MASCLI project to a user-owned PRIVATE GitHub repository without changing its stack or deploying it. Hosting/migration work is paused pending a later decision. Never publish original business/territorial records or credentials to a public repository. This source import is not a production-ready release.
 
