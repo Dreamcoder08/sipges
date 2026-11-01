@@ -29,6 +29,7 @@ const accountButton = () => screen.getByRole('button', { name: /^Cuenta de / });
 beforeEach(() => resetApi());
 afterEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   document.documentElement.removeAttribute('data-theme');
 });
 
@@ -107,7 +108,9 @@ describe('desktop sidebar', () => {
         'IRSA-SIPGES',
       ]),
     );
-    expect(JSON.parse(window.localStorage.getItem('sipges.recents') ?? '[]')).toHaveLength(4);
+    // Recents last for the tab only: nothing persists on the device (03-tenancy checks localStorage).
+    expect(JSON.parse(window.sessionStorage.getItem('sipges.recents') ?? '[]')).toHaveLength(4);
+    expect(window.localStorage.getItem('sipges.recents')).toBeNull();
     expect(recents().getByRole('link', { name: 'Registros · Demandas' })).toHaveAttribute(
       'href',
       '/registros?tipo=demandas',

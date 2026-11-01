@@ -24,7 +24,7 @@ visible choices, no frequency-based priority and a heavy navy panel.
   the shell, so the top bar keeps the project eyebrow and the title only: brand, the project
   selector, the search composer («Ctrl K») with the notification bell, the five destinations,
   «Integraciones» (Automatizaciones for now), «Recientes» (the last four screens or hub tabs
-  opened, kept in localStorage on the device, never sent to the server) and, at the foot, an
+  opened, kept in sessionStorage for the browser tab only, never sent to the server) and, at the foot, an
   account row. There are no collapsible groups. The Sistema screens, the appearance choice and
   sign-out live in the account menu (menu button pattern: Enter, Space or arrows open it, arrows,
   Home and End move, Escape closes and returns focus). The tools are the same components as on
