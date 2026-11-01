@@ -7,6 +7,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 ### Plataforma
 
 - Cloudflare Workers (Hyperdrive + Neon, R2) es el único host de SIPGES: se elimina el adaptador `apps/hosting` y las dependencias `@vercel/*`, y la documentación vigente deja de describir la demo de Vercel como publicada ([ADR 0029](docs/adr/0029-retire-vercel-host.md)). El endpoint HTTP de cron y `SIPGES_CRON_SECRET`/`CRON_SECRET` no cambian. La base `neondb` de la demo anterior se conserva en Neon como respaldo, sin migrar datos.
+- Migración `0031_remove_mascli_tenant`: elimina el proyecto `MASCLI/PRJ-SECHURA` que el Worker anterior volvió a crear tras el cambio de nombre y que hacía aparecer Sechura dos veces al elegir proyecto. Si no tiene datos se borra con sus permisos; si los tiene, pasan a `SIPGES/<proyecto>` y, ante una clave repetida, la migración falla y revierte sin borrar nada. También renombra el nombre visible «Administración MASCLI Workers» a «Administración SIPGES» (solo coincidencia exacta).
 
 ## [1.0.0] - 2026-10-15
 

@@ -30,6 +30,7 @@ import m26 from '../../api/src/platform/database/migrations/0027_action_decision
 import m27 from '../../api/src/platform/database/migrations/0028_alert_four_eyes.sql';
 import m28 from '../../api/src/platform/database/migrations/0029_action_blockers.sql';
 import m29 from '../../api/src/platform/database/migrations/0030_rename_to_sipges.sql';
+import m30 from '../../api/src/platform/database/migrations/0031_remove_mascli_tenant.sql';
 
 export const MIGRATIONS: readonly Migration[] = [
   { version: '0001_identity', sql: m0 },
@@ -62,4 +63,5 @@ export const MIGRATIONS: readonly Migration[] = [
   { version: '0028_alert_four_eyes', sql: m27 },
   { version: '0029_action_blockers', sql: m28 },
   { version: '0030_rename_to_sipges', sql: m29 },
+  { version: '0031_remove_mascli_tenant', sql: m30 },
 ];
