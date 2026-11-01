@@ -335,7 +335,7 @@
   }
 
   .more::before {
-    content: '›';
+    content: '›' / '';
     font-size: var(--text-xl);
   }
 

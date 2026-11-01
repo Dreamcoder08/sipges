@@ -25,7 +25,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('heading', { name: /^Hola/ })).toBeVisible();
 
     // The date line is desktop chrome; the header already names the project.
-    await expect(page.getByText(/de \d{4}/)).toBeHidden();
+    const date = page.getByText(/^\S+, \d{1,2} de \S+ de \d{4}/);
+    await expect(date).toHaveCount(1);
+    await expect(date).toBeHidden();
 
     // The composer sits right above the bottom bar without scrolling.
     const composerBox = await box(composer);
