@@ -1,7 +1,7 @@
 import { GeographyPolygon, type GeographyResult } from '@mascli/contracts';
 import type { Extent } from './BaseMap.tsx';
 
-export { LEGEND, legendOf } from './legend.ts';
+export { LEGEND, legendOf, legendRgb } from './legend.ts';
 
 type Position = [number, number];
 type Ring = Position[];

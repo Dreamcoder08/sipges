@@ -88,9 +88,9 @@ it('frames the selected concession and draws it with explicit fills', async () =
   expect(-(concession?.centroid.latitude ?? 0)).toBeLessThan(y + h);
   const selected = screen.getByRole('button', { name: 'Seleccionar BAYOVAR N° 6' });
   expect(selected).toHaveAttribute('aria-pressed', 'true');
-  expect(selected).toHaveAttribute('fill', '#e6b54a');
+  expect(selected).toHaveAttribute('fill', 'var(--map-selected)');
   for (const path of map.querySelectorAll('path[role="button"]'))
-    expect(path.getAttribute('fill')).toMatch(/^#/);
+    expect(path.getAttribute('fill')).toMatch(/^var\(--map-/);
 });
 
 it('reports concessions whose geometry cannot be drawn', async () => {

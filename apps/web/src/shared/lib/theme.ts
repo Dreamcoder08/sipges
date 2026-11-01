@@ -14,6 +14,7 @@ export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[]
 ];
 
 const KEY = 'mascli.theme';
+// The browser chrome cannot read CSS tokens; these must match the theme-color metas in index.html.
 const CHROME = { light: '#ffffff', dark: '#000000' } as const;
 const listeners = new Set<() => void>();
 

@@ -234,8 +234,8 @@ const MapReference = ({
                       }
                     }}
                     d={ringsPath(c.geometry.coordinates)}
-                    fill={c.code === selection ? '#e6b54a' : '#669bb5'}
-                    stroke="#243b53"
+                    fill={c.code === selection ? 'var(--map-selected)' : 'var(--map-concession)'}
+                    stroke="var(--map-ink)"
                     fillRule="evenodd"
                     strokeWidth={(map.span / 400) * UNITS_PER_DEGREE}
                   />
