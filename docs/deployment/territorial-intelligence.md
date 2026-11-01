@@ -69,8 +69,8 @@ Fuentes oficiales consultadas el 17 de octubre de 2026:
 
 ## Verificación del despliegue del 18 de octubre de 2026
 
-El [PR #53](https://github.com/Dreamcoder08/mascli/pull/53) se integró como `6754923`.
-La [CI del código](https://github.com/Dreamcoder08/mascli/actions/runs/39087996497) aprobó
+El [PR #53](https://github.com/Dreamcoder08/sipges/pull/53) se integró como `6754923`.
+La [CI del código](https://github.com/Dreamcoder08/sipges/actions/runs/39087996497) aprobó
 651 pruebas API, 218 UI, 6 hosting, contratos/herramientas, tipos, lint, build y referencia Python.
 Chromium aprobó 89 pruebas (una omisión existente) y WebKit las 9 de su suite complementaria.
 El flujo persistido se comprobó en PostgreSQL aislado; las pruebas con adaptadores no demuestran
