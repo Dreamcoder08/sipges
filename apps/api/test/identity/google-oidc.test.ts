@@ -9,7 +9,7 @@ const CONFIG = { clientId: 'client.apps.example', clientSecret: 'synthetic-secre
 const AT = new Date('2026-10-14T12:00:00Z');
 const NOW = Math.floor(AT.getTime() / 1000);
 const REQUEST = {
-  redirectUri: 'https://mascli.example/auth/google/callback',
+  redirectUri: 'https://sipges.example/auth/google/callback',
   state: 's'.repeat(43),
   nonce: 'n'.repeat(43),
   codeVerifier: 'v'.repeat(43),
@@ -28,7 +28,7 @@ const CLAIMS = {
 const segment = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
 const idToken = (claims: object) => `${segment({ alg: 'RS256' })}.${segment(claims)}.c2lnbmF0dXJl`;
 
-/** Fake token endpoint; `calls` keeps what MASCLI sent to it. */
+/** Fake token endpoint; `calls` keeps what SIPGES sent to it. */
 const tokenEndpoint = (answer: () => Response | Promise<Response>) => {
   const calls: { url: string; body: URLSearchParams }[] = [];
   const fetcher = (async (url: string | URL | Request, init?: RequestInit) => {

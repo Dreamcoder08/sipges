@@ -1,4 +1,4 @@
-import { roundHalfEven } from '@mascli/kernel';
+import { roundHalfEven } from '@sipges/kernel';
 
 /** Preventive action plans that follow verified alerts (app.py:2133-2216, RC 2.7). */
 
@@ -20,14 +20,14 @@ export type ActionLogEntry = {
   readonly receipt: DecisionReceipt | null;
 };
 
-/** MASCLI 4.0 (docs/adr/0023): the evidence file behind a decision, frozen with its hash. */
+/** SIPGES (docs/adr/0023): the evidence file behind a decision, frozen with its hash. */
 export type DecisionReceipt = {
   readonly attachmentId: string;
   readonly fileName: string;
   readonly sha256: string;
 };
 
-/** MASCLI 4.0 situation room: who an action is waiting on (docs/adr/0024 §2). */
+/** SIPGES situation room: who an action is waiting on (docs/adr/0024 §2). */
 export const BLOCKERS = ['Comunidad', 'Autoridad', 'Área interna', 'Contratista', 'Otro'] as const;
 export type Blocker = (typeof BLOCKERS)[number];
 export const isBlocker = (value: string): value is Blocker =>
@@ -61,9 +61,9 @@ export type ActionUpdate = {
   readonly progress: number;
   readonly note: string;
   readonly evidenceUrl: string;
-  /** Attached evidence file id; '' when none. Only read with MASCLI 4.0 on. */
+  /** Attached evidence file id; '' when none. Only read with SIPGES on. */
   readonly evidenceAttachmentId: string;
-  /** Who the action waits on; '' clears it, undefined leaves it. Only read with MASCLI 4.0 on. */
+  /** Who the action waits on; '' clears it, undefined leaves it. Only read with SIPGES on. */
   readonly blockedBy?: string | undefined;
   readonly blockedReason?: string | undefined;
 };
@@ -108,7 +108,7 @@ export const checkTransition = (
 };
 
 /**
- * MASCLI 4.0: completing a plan claims the risk was addressed, so it needs a receipt (an
+ * SIPGES: completing a plan claims the risk was addressed, so it needs a receipt (an
  * attached evidence file). Progress and cancellation stay as they were.
  */
 export const checkReceipt = (status: ActionStatus, attachmentId: string): UpdateRejection | null =>
@@ -159,7 +159,7 @@ export const isCalendarDate = (value: string) => {
 };
 
 /**
- * MASCLI 4.0 situation room: active plans that wait on someone, overdue ones and the count of
+ * SIPGES situation room: active plans that wait on someone, overdue ones and the count of
  * those moving normally, so nobody has to ask for a status report.
  */
 export const situationRoom = (actions: readonly PreventiveAction[], today: string) => {

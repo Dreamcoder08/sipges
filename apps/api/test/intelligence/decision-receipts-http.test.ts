@@ -69,7 +69,7 @@ const closing = async (res: Response) =>
     (h) => h.status === 'Completada',
   );
 
-describe('Decision receipts on preventive actions (MASCLI 4.0)', () => {
+describe('Decision receipts on preventive actions (SIPGES)', () => {
   it('requires an attached file to complete a plan and binds the decision to its sha256', async () => {
     const { t, patch, json, attachmentId } = await setup();
     const missing = await patch(COMPLETE);

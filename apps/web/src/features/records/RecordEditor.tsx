@@ -1,4 +1,4 @@
-import { ClassifierResponse, type ModuleRecord } from '@mascli/contracts';
+import { ClassifierResponse, type ModuleRecord } from '@sipges/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';

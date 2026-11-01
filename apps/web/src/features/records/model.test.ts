@@ -1,4 +1,4 @@
-import { recordDueDate } from '@mascli/kernel';
+import { recordDueDate } from '@sipges/kernel';
 import { describe, expect, it } from 'vitest';
 import { isCompactField, safePublicUrl, recordPayload, initialValues } from './model.ts';
 import { MODULES } from './modules.ts';
@@ -15,7 +15,7 @@ describe('isCompactField', () => {
 
 describe('safePublicUrl', () => {
   it('rejects reserved .invalid hosts', () => {
-    expect(safePublicUrl('https://example.invalid/mascli/1')).toBeNull();
+    expect(safePublicUrl('https://example.invalid/sipges/1')).toBeNull();
     expect(safePublicUrl('https://example.org/x')).toBe('https://example.org/x');
   });
 });

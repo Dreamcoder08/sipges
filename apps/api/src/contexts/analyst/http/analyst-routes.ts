@@ -1,4 +1,4 @@
-import { type AnalystProposal, type Briefing, ProposalDecisionIn } from '@mascli/contracts';
+import { type AnalystProposal, type Briefing, ProposalDecisionIn } from '@sipges/contracts';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { isoSeconds } from '../../../platform/http/time.ts';

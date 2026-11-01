@@ -35,44 +35,44 @@ export const createMetrics = (startedAt = Date.now()) => {
 
     render(now = Date.now()): string {
       const lines = [
-        '# HELP mascli_http_requests_total HTTP requests by method, route and status class.',
-        '# TYPE mascli_http_requests_total counter',
+        '# HELP sipges_http_requests_total HTTP requests by method, route and status class.',
+        '# TYPE sipges_http_requests_total counter',
       ];
       for (const [key, value] of [...requests].sort()) {
         const [method = '', route = '', status = ''] = key.split('\u0000');
         lines.push(
-          `mascli_http_requests_total{method="${escapeLabel(method)}",route="${escapeLabel(route)}",status="${status}"} ${value}`,
+          `sipges_http_requests_total{method="${escapeLabel(method)}",route="${escapeLabel(route)}",status="${status}"} ${value}`,
         );
       }
       lines.push(
-        '# HELP mascli_http_request_duration_seconds HTTP request duration.',
-        '# TYPE mascli_http_request_duration_seconds histogram',
+        '# HELP sipges_http_request_duration_seconds HTTP request duration.',
+        '# TYPE sipges_http_request_duration_seconds histogram',
       );
       for (const [key, series] of [...durations].sort(([a], [b]) => a.localeCompare(b))) {
         const [method = '', route = ''] = key.split('\u0000');
         const labels = `method="${escapeLabel(method)}",route="${escapeLabel(route)}"`;
         BUCKETS.forEach((bound, index) =>
           lines.push(
-            `mascli_http_request_duration_seconds_bucket{${labels},le="${bound}"} ${series.buckets[index] ?? 0}`,
+            `sipges_http_request_duration_seconds_bucket{${labels},le="${bound}"} ${series.buckets[index] ?? 0}`,
           ),
         );
         lines.push(
-          `mascli_http_request_duration_seconds_bucket{${labels},le="+Inf"} ${series.count}`,
-          `mascli_http_request_duration_seconds_sum{${labels}} ${series.sum.toFixed(6)}`,
-          `mascli_http_request_duration_seconds_count{${labels}} ${series.count}`,
+          `sipges_http_request_duration_seconds_bucket{${labels},le="+Inf"} ${series.count}`,
+          `sipges_http_request_duration_seconds_sum{${labels}} ${series.sum.toFixed(6)}`,
+          `sipges_http_request_duration_seconds_count{${labels}} ${series.count}`,
         );
       }
       const memory = process.memoryUsage();
       lines.push(
-        '# HELP mascli_process_uptime_seconds Seconds since the API started.',
-        '# TYPE mascli_process_uptime_seconds gauge',
-        `mascli_process_uptime_seconds ${((now - startedAt) / 1000).toFixed(3)}`,
-        '# HELP mascli_process_resident_memory_bytes Resident set size.',
-        '# TYPE mascli_process_resident_memory_bytes gauge',
-        `mascli_process_resident_memory_bytes ${memory.rss}`,
-        '# HELP mascli_process_heap_used_bytes V8 heap in use.',
-        '# TYPE mascli_process_heap_used_bytes gauge',
-        `mascli_process_heap_used_bytes ${memory.heapUsed}`,
+        '# HELP sipges_process_uptime_seconds Seconds since the API started.',
+        '# TYPE sipges_process_uptime_seconds gauge',
+        `sipges_process_uptime_seconds ${((now - startedAt) / 1000).toFixed(3)}`,
+        '# HELP sipges_process_resident_memory_bytes Resident set size.',
+        '# TYPE sipges_process_resident_memory_bytes gauge',
+        `sipges_process_resident_memory_bytes ${memory.rss}`,
+        '# HELP sipges_process_heap_used_bytes V8 heap in use.',
+        '# TYPE sipges_process_heap_used_bytes gauge',
+        `sipges_process_heap_used_bytes ${memory.heapUsed}`,
       );
       return `${lines.join('\n')}\n`;
     },

@@ -1,4 +1,4 @@
-import { CurrentScope, ScopeSummary } from '@mascli/contracts';
+import { CurrentScope, ScopeSummary } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { request, requestJson } from '../../shared/api/client.ts';

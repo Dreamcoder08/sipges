@@ -1,10 +1,10 @@
 # Secure session and project cookies by default
 
-Both `mascli_session` (login) and `mascli_scope` (project selection) now use a single, strict startup policy. This is a bounded security correction, **not production readiness or deployment approval**.
+Both `sipges_session` (login) and `sipges_scope` (project selection) now use a single, strict startup policy. This is a bounded security correction, **not production readiness or deployment approval**.
 
 ## Choose the transport before starting
 
-| `MASCLI_COOKIE_SECURE` | Result |
+| `SIPGES_COOKIE_SECURE` | Result |
 |---|---|
 | Unset | `Secure` enabled; use HTTPS |
 | Exactly `1` | `Secure` enabled; use HTTPS |
@@ -15,26 +15,26 @@ The policy is evaluated once at import. Restart the process after changing it; r
 
 ## Local HTTP quick path
 
-The four loopback launchers in `reference/python/` (`start_mascli.bat`, `INICIAR_MASCLI_FINAL.bat`, `start_mascli.sh`, `iniciar_mascli_final.sh`; run them from there, since `app:app` only resolves in that directory) supply `0` **only when the variable is absent**. They preserve explicit `1` and invalid values. An explicit `1` on their HTTP listener prevents normal authenticated follow-up; choose HTTPS or intentionally set `0` for local testing.
+The four loopback launchers in `reference/python/` (`start_sipges.bat`, `INICIAR_SIPGES_FINAL.bat`, `start_sipges.sh`, `iniciar_sipges_final.sh`; run them from there, since `app:app` only resolves in that directory) supply `0` **only when the variable is absent**. They preserve explicit `1` and invalid values. An explicit `1` on their HTTP listener prevents normal authenticated follow-up; choose HTTPS or intentionally set `0` for local testing.
 
 For direct local commands, set the override yourself and run from `reference/python/`:
 
 ```powershell
-$env:MASCLI_COOKIE_SECURE="0"
+$env:SIPGES_COOKIE_SECURE="0"
 python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
 ```bash
-MASCLI_COOKIE_SECURE=0 python3 -m uvicorn app:app --host 127.0.0.1 --port 8000
+SIPGES_COOKIE_SECURE=0 python3 -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 
 ### Empty environment values
 
-Bash distinguishes unset from empty using `${MASCLI_COOKIE_SECURE+x}`; an exported empty value is preserved and rejected by the app. `cmd.exe` normally removes a variable with `set "MASCLI_COOKIE_SECURE="`, and `IF DEFINED` cannot reliably distinguish an inherited empty value. The batch launchers therefore use Python's `os.environ.setdefault` inside the child process, not `IF DEFINED`: an inherited empty value that reaches Python is preserved and rejected. If the calling shell/OS has already removed it, it is absent and receives the local override. Shells/PowerShell versions may differ in whether they retain empty environment entries; use exact `0` or `1`, not empty as a configuration choice.
+Bash distinguishes unset from empty using `${SIPGES_COOKIE_SECURE+x}`; an exported empty value is preserved and rejected by the app. `cmd.exe` normally removes a variable with `set "SIPGES_COOKIE_SECURE="`, and `IF DEFINED` cannot reliably distinguish an inherited empty value. The batch launchers therefore use Python's `os.environ.setdefault` inside the child process, not `IF DEFINED`: an inherited empty value that reaches Python is preserved and rejected. If the calling shell/OS has already removed it, it is absent and receives the local override. Shells/PowerShell versions may differ in whether they retain empty environment entries; use exact `0` or `1`, not empty as a configuration choice.
 
 ## Cookie contract and verification
 
-Names, eight-hour Max-Age, `/` path, HttpOnly, SameSite=Strict and host-only behavior remain unchanged. Logout behavior is unchanged. Secure cookies are not transported over HTTP by the synthetic client; tests deliberately avoid browser-specific loopback exceptions. Scope selection tests authenticate and follow up using cookies alone, without `X-MASCLI-Scope`.
+Names, eight-hour Max-Age, `/` path, HttpOnly, SameSite=Strict and host-only behavior remain unchanged. Logout behavior is unchanged. Secure cookies are not transported over HTTP by the synthetic client; tests deliberately avoid browser-specific loopback exceptions. Scope selection tests authenticate and follow up using cookies alone, without `X-SIPGES-Scope`.
 
 `tests/test_secure_cookies.py` uses synthetic temporary databases, seed/config paths and HTTP/HTTPS TestClient URLs. It covers default/explicit policies, both headers, authenticated follow-up, scope switching, HTTP non-transport, denied selections, startup-static configuration and invalid-config rejection before initialization. Existing synthetic HTTP tests still explicitly select `0`.
 

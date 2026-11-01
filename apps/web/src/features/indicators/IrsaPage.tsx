@@ -1,4 +1,4 @@
-import { IrsaConfigResponse, IrsaSnapshotResponse, type IrsaConfig } from '@mascli/contracts';
+import { IrsaConfigResponse, IrsaSnapshotResponse, type IrsaConfig } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';

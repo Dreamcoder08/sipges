@@ -34,7 +34,7 @@ it('refreshes the project queries when activity arrives, sending the project hea
   let scopeHeader: string | null = null;
   server.use(
     http.get('/system/events', ({ request }) => {
-      scopeHeader = request.headers.get('X-MASCLI-Scope');
+      scopeHeader = request.headers.get('X-SIPGES-Scope');
       return new HttpResponse(
         'event: ready\nid: 7\ndata: {}\n\nevent: activity\nid: 8\ndata: {"module":"Demandas","action":"CREATE"}\n\n',
         { headers: { 'content-type': 'text/event-stream' } },

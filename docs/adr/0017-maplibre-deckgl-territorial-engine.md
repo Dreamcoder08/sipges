@@ -14,7 +14,7 @@ cientos de nodos del DOM. La API ya consulta INGEMMET con destinos fijos y lími
 ## Decisión
 
 El mapa territorial usa MapLibre GL JS 6 para el mapa base raster (OSM o Sentinel-2 de EOX, los
-mismos servicios) y deck.gl 9 (`MapboxOverlay`, no intercalado) para lo que dibuja MASCLI:
+mismos servicios) y deck.gl 9 (`MapboxOverlay`, no intercalado) para lo que dibuja SIPGES:
 distritos, concesiones (`GeoJsonLayer`) y registros (`ScatterplotLayer`). Es un adaptador de
 `features/geography/engine`: recibe datos ya preparados y devuelve clics y la vista asentada; el
 dominio, los contratos, Hono y TanStack Query no cambian.
@@ -27,7 +27,7 @@ dominio, los contratos, Hono y TanStack Query no cambian.
 - Sin WebGL 2, o si el motor falla o pierde el contexto, se dibuja el renderizador SVG anterior con
   las mismas capas y acciones.
 - Las concesiones de la vista (máximo 2,5° y 200 por consulta) se piden a la API existente; los
-  anillos Esri se convierten a GeoJSON en el cliente. La relación con registros MASCLI sigue
+  anillos Esri se convierten a GeoJSON en el cliente. La relación con registros SIPGES sigue
   siendo la del servidor: coordenadas explícitas o referencia documentada al código. Un polígono
   oficial que excede el contrato no se simplifica.
 - Los estados de información Observado, Estimado y Escenario hipotético se derivan del registro

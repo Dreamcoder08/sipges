@@ -4,7 +4,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [1.0.0] - 2026-10-15
 
-Primera versión publicada de MASCLI en TypeScript, desplegada en Vercel desde `main`.
+Primera versión publicada de SIPGES en TypeScript, desplegada en Vercel desde `main`.
 
 ### Plataforma
 
@@ -29,6 +29,6 @@ Primera versión publicada de MASCLI en TypeScript, desplegada en Vercel desde `
 
 ## Pre-1.0 — Python prototype
 
-Antes de v1.0.0 MASCLI fue un prototipo FastAPI + SQLite (RC 1.3 → 3.0 y v0.4 → v0.5.1). Su historial está resumido en [docs/history/python-prototype.md](docs/history/python-prototype.md); las notas originales se conservan en [`reference/python/history/`](reference/python/history/).
+Antes de v1.0.0 SIPGES fue un prototipo FastAPI + SQLite (RC 1.3 → 3.0 y v0.4 → v0.5.1). Su historial está resumido en [docs/history/python-prototype.md](docs/history/python-prototype.md); las notas originales se conservan en [`reference/python/history/`](reference/python/history/).
 
 [1.0.0]: https://github.com/Dreamcoder08/mascli/releases/tag/v1.0.0

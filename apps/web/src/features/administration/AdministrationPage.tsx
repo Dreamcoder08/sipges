@@ -9,7 +9,7 @@ import {
   ScopeCreated,
   TotpEnabled,
   TotpSetupResponse,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
@@ -134,7 +134,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
           });
           return 'MFA activado.';
         case 'export':
-          await downloadFile(scope, '/system/export', 'mascli-tenant.json');
+          await downloadFile(scope, '/system/export', 'sipges-tenant.json');
           return 'Exportación descargada.';
       }
     },

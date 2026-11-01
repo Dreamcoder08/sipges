@@ -29,8 +29,8 @@ describe('POST /login', () => {
     expect(cookie).toContain('Path=/');
   });
 
-  it('omits Secure only when MASCLI_COOKIE_SECURE=0', async () => {
-    const t = await createTestApp({ MASCLI_COOKIE_SECURE: '0' });
+  it('omits Secure only when SIPGES_COOKIE_SECURE=0', async () => {
+    const t = await createTestApp({ SIPGES_COOKIE_SECURE: '0' });
     const { res } = await t.login(ADMIN.username, ADMIN.password);
     expect(res.headers.get('set-cookie')).not.toContain('Secure');
   });
@@ -146,7 +146,7 @@ describe('sessions', () => {
     const t = await createTestApp();
     const res = await t.request('/system/auth/accounts');
     expect(res.status).toBe(401);
-    expect(await json(res)).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+    expect(await json(res)).toEqual({ detail: 'Inicie sesión para acceder a SIPGES' });
   });
 
   it('expires sessions after exactly 8 hours', async () => {
@@ -165,10 +165,10 @@ describe('sessions', () => {
     expect(res.status).toBe(200);
     expect(await json(res)).toEqual({ ok: true });
     const cleared = res.headers.getSetCookie();
-    expect(cleared.some((c) => c.startsWith('mascli_session=;') && c.includes('Max-Age=0'))).toBe(
+    expect(cleared.some((c) => c.startsWith('sipges_session=;') && c.includes('Max-Age=0'))).toBe(
       true,
     );
-    expect(cleared.some((c) => c.startsWith('mascli_scope=;') && c.includes('Max-Age=0'))).toBe(
+    expect(cleared.some((c) => c.startsWith('sipges_scope=;') && c.includes('Max-Age=0'))).toBe(
       true,
     );
     expect((await t.request('/system/auth/accounts', { headers: { cookie } })).status).toBe(401);
@@ -380,13 +380,13 @@ describe('TOTP enrollment and login', () => {
 
 describe('bootstrap admin', () => {
   it('refuses to start an empty installation without a strong admin password', async () => {
-    await expect(createTestApp({ MASCLI_ADMIN_PASSWORD: 'short' })).rejects.toThrow(
-      'Configure MASCLI_ADMIN_PASSWORD (mínimo 12 caracteres)',
+    await expect(createTestApp({ SIPGES_ADMIN_PASSWORD: 'short' })).rejects.toThrow(
+      'Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)',
     );
   });
 
-  it('uses MASCLI_ADMIN_FULL_NAME instead of a hard-coded personal name (ADR 0008 #13)', async () => {
-    const t = await createTestApp({ MASCLI_ADMIN_FULL_NAME: 'Mesa de Control' });
+  it('uses SIPGES_ADMIN_FULL_NAME instead of a hard-coded personal name (ADR 0008 #13)', async () => {
+    const t = await createTestApp({ SIPGES_ADMIN_FULL_NAME: 'Mesa de Control' });
     const { res } = await t.login(ADMIN.username, ADMIN.password);
     expect(await json(res)).toEqual({ ok: true, name: 'Mesa de Control', role: 'admin' });
   });

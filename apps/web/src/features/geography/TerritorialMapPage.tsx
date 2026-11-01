@@ -1,4 +1,4 @@
-import { GeographyCatalogue, GeographyResult } from '@mascli/contracts';
+import { GeographyCatalogue, GeographyResult } from '@sipges/contracts';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
@@ -681,7 +681,7 @@ const TerritorialWorkspace = ({
             svgMap
           )}
           <BasemapPicker value={basemap} onChange={setBasemap} />
-          <ul className={styles.legendInline} aria-label="Dimensiones MASCLI">
+          <ul className={styles.legendInline} aria-label="Dimensiones SIPGES">
             {DIMENSIONS.map((d) => (
               <li key={d}>
                 <DimensionBadge code={d} /> {DIMENSION_NAMES[d]}

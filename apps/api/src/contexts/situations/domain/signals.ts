@@ -96,8 +96,8 @@ export const MODULE_SPECS: Readonly<Record<string, ModuleSpec>> = {
 
 export const TERRITORY_FIELDS = ['Territorio', 'Comunidad', 'Localidad', 'Distrito'] as const;
 
-/** Alerts that MASCLI 4.0 itself suggested never feed new situations (no self-reinforcement). */
-export const GENERATED_ORIGIN = 'MASCLI 4.0';
+/** Alerts that SIPGES itself suggested never feed new situations (no self-reinforcement). */
+export const GENERATED_ORIGIN = 'SIPGES';
 
 /** A short, visible keyword list; a record's own topic field always counts as well. */
 export const TOPIC_KEYWORDS: Readonly<Record<string, readonly string[]>> = {

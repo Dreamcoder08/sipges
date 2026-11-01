@@ -19,7 +19,7 @@ import type { Scope } from '../../src/contexts/tenancy/application/index.ts';
 import type { AppEnv } from '../../src/platform/http/env.ts';
 
 const DATA: Record<string, Record<string, StoredRecord[]>> = {
-  'MASCLI/PRJ-SECHURA': {
+  'SIPGES/PRJ-SECHURA': {
     Eventos: [{ id: 'e1', payload: { Territorio: 'Sechura' } }],
     Alertas: [
       { id: 'a1', payload: { Estado: 'Abierta', Nivel_Preliminar: 'Rojo' } },
@@ -61,7 +61,7 @@ const setup = (scope: Scope) => {
   return { app, requested };
 };
 
-const SECHURA = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+const SECHURA = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 
 describe('analytics HTTP routes', () => {
   it('GET /api/dashboard counts the scope records like app.py', async () => {
@@ -139,28 +139,28 @@ const docxText = async (res: Response) => {
 };
 
 describe('analytics DOCX reports', () => {
-  const sechura: Scope = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+  const sechura: Scope = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 
   it.each([
     [
       '/system/situational-report.docx',
-      'MASCLI_Analisis_Situacional.docx',
+      'SIPGES_Analisis_Situacional.docx',
       'INFORME DE ANÁLISIS SITUACIONAL',
     ],
     [
       '/system/strategic-report.docx',
-      'MASCLI_Informe_Estrategico.docx',
-      'MASCLI | Informe estratégico territorial',
+      'SIPGES_Informe_Estrategico.docx',
+      'SIPGES | Informe estratégico territorial',
     ],
     [
       '/system/integrated-analysis.docx',
-      'MASCLI_RC19_Analisis_Integrado.docx',
-      'MASCLI | Análisis integrado RC 1.9',
+      'SIPGES_RC19_Analisis_Integrado.docx',
+      'SIPGES | Análisis integrado RC 1.9',
     ],
     [
       '/system/consensus-engine.docx',
-      'MASCLI_Motor_Valor_Consenso.docx',
-      'MASCLI | Motor de valor y consenso',
+      'SIPGES_Motor_Valor_Consenso.docx',
+      'SIPGES | Motor de valor y consenso',
     ],
   ])('%s downloads %s', async (path, fileName, heading) => {
     const res = await setup(sechura).app.request(path);

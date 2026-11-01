@@ -31,12 +31,12 @@ describe('theme preference', () => {
 
     setTheme('system');
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
-    expect(window.localStorage.getItem('mascli.theme')).toBeNull();
+    expect(window.localStorage.getItem('sipges.theme')).toBeNull();
     expect([light.content, dark.content]).toEqual(['#ffffff', '#000000']);
   });
 
   it('ignores an unknown stored value', () => {
-    window.localStorage.setItem('mascli.theme', 'sepia');
+    window.localStorage.setItem('sipges.theme', 'sepia');
     expect(readTheme()).toBe('system');
   });
 });

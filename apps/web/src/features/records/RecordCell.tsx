@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { fieldValue, isCompactField } from './model.ts';
 import type { RecordField, RecordModule } from './modules.ts';
 import styles from './Records.module.css';

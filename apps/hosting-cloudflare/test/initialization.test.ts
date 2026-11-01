@@ -24,12 +24,12 @@ vi.mock('../../api/src/contexts/identity/infrastructure/portable-password-hasher
 }));
 
 /** The bindings and variables a deployed Worker has; synthetic values only. */
-const syntheticEnv = (vars: Record<string, string> = { MASCLI_ALLOWED_HOSTS: 'localhost' }) =>
+const syntheticEnv = (vars: Record<string, string> = { SIPGES_ALLOWED_HOSTS: 'localhost' }) =>
   ({
     HYPERDRIVE: {
       connectionString: 'postgresql://synthetic:synthetic@binding.hyperdrive.local:5432/synthetic',
     },
-    MASCLI_DATA_KEY: Buffer.alloc(32).toString('base64'),
+    SIPGES_DATA_KEY: Buffer.alloc(32).toString('base64'),
     EVIDENCE: {},
     ASSETS: {},
     ...vars,
@@ -58,7 +58,7 @@ describe('Worker initialization through fetch', () => {
     vi.restoreAllMocks();
   });
 
-  it('answers 503 without touching the database while MASCLI_ALLOWED_HOSTS is missing, then retries', async () => {
+  it('answers 503 without touching the database while SIPGES_ALLOWED_HOSTS is missing, then retries', async () => {
     const worker = await freshWorker();
 
     const failed = await worker.fetch(request(), syntheticEnv({}), ctx);

@@ -29,16 +29,16 @@ test('web app-local Vitest registers setup hooks in the active runner', () => {
   assert.doesNotMatch(result.stdout + result.stderr, /Vitest failed to find|no tests|\d+ skipped/);
 });
 const fixture = (run) => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'mascli-tooling-'));
+  const dir = mkdtempSync(path.join(tmpdir(), 'sipges-tooling-'));
   try {
     run(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 };
-test('Codex discovers four recurring MASCLI skills and the explicitly requested Neon skills', () => {
+test('Codex discovers four recurring SIPGES skills and the explicitly requested Neon skills', () => {
   const dir = path.join(root, '.agents/skills');
-  const expected = ['mascli-archify', 'mascli-odd-task', 'mascli-task-pr', 'mascli-verify'];
+  const expected = ['sipges-archify', 'sipges-odd-task', 'sipges-task-pr', 'sipges-verify'];
   const vendor = ['neon', 'neon-postgres'];
   const gentle = [
     'chained-pr',
@@ -92,7 +92,7 @@ test('verification never starts a service or guesses a database connection and p
     }))
       writeFileSync(path.join(bin, name), '#!/bin/sh\n' + script + '\n', { mode: 0o755 });
     const env = { ...process.env, PATH: bin + ':' + process.env.PATH };
-    delete env.MASCLI_TEST_DATABASE_URL;
+    delete env.SIPGES_TEST_DATABASE_URL;
     const result = spawnSync('bash', [path.join(root, 'scripts/verify.sh')], {
       env,
       encoding: 'utf8',
@@ -205,12 +205,12 @@ test('Engram wrapper never installs outside the cloud and keeps MCP stdout clean
       { mode: 0o755 },
     );
     const mcp = spawnSync(process.execPath, [script, 'mcp'], {
-      env: { ...base, MASCLI_ENGRAM_BIN: engram },
+      env: { ...base, SIPGES_ENGRAM_BIN: engram },
       encoding: 'utf8',
     });
     assert.equal(mcp.status, 0);
     assert.equal(mcp.stdout, '');
-    assert.equal(readFileSync(calls, 'utf8'), 'mascli sync --import\nmascli mcp --tools=agent\n');
+    assert.equal(readFileSync(calls, 'utf8'), 'sipges sync --import\nsipges mcp --tools=agent\n');
   }));
 test('Claude Code and Codex start Engram through the wrapper and deny real data reads', () => {
   const mcp = JSON.parse(readFileSync(path.join(root, '.mcp.json'), 'utf8'));

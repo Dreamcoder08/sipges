@@ -13,7 +13,7 @@ export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[]
   { value: 'dark', label: 'Oscuro' },
 ];
 
-const KEY = 'mascli.theme';
+const KEY = 'sipges.theme';
 // The browser chrome cannot read CSS tokens; these must match the theme-color metas in index.html.
 const CHROME = { light: '#ffffff', dark: '#000000' } as const;
 const listeners = new Set<() => void>();

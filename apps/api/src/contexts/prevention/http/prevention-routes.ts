@@ -44,9 +44,9 @@ const UpdateBody = z.object({
   progress: z.number().int().min(0).max(100),
   note: z.string().max(2000).default(''),
   evidence_url: z.string().max(2000).default(''),
-  /** MASCLI 4.0 decision receipt: the evidence file behind a closing. */
+  /** SIPGES decision receipt: the evidence file behind a closing. */
   evidence_attachment_id: z.string().max(120).default(''),
-  /** MASCLI 4.0 situation room: who the plan waits on ('' clears). */
+  /** SIPGES situation room: who the plan waits on ('' clears). */
   blocked_by: z.string().max(40).optional(),
   blocked_reason: z.string().max(500).optional(),
 });

@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { foldText, type Level } from '../../../shared/lib/text.ts';
 import { alertTerritory, LEVEL_ORDER, MISSING_TERRITORY, recordedLevel } from './alert-heatmap.ts';
 

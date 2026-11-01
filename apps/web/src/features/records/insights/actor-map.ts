@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { foldText } from '../../../shared/lib/text.ts';
 
 export const INFLUENCE_BANDS = ['Alta', 'Media-alta', 'Media', 'Media-baja', 'Baja'] as const;

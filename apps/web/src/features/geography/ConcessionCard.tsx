@@ -1,4 +1,4 @@
-import type { GeographyResult } from '@mascli/contracts';
+import type { GeographyResult } from '@sipges/contracts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { foldText } from '../../shared/lib/text.ts';
 import { Button } from '../../shared/ui/Button.tsx';
@@ -40,7 +40,7 @@ export type Relation = {
 
 /**
  * Contextual sheet of one official concession: what INGEMMET publishes about it and which
- * MASCLI records are tied to it by explicit coordinates or a documented code reference. Names
+ * SIPGES records are tied to it by explicit coordinates or a documented code reference. Names
  * and approximate localities never relate a record to a concession.
  */
 export const ConcessionCard = ({
@@ -132,7 +132,7 @@ export const ConcessionCard = ({
         </Button>
       </div>
 
-      <h5 className={styles.subhead}>Registros MASCLI vinculados</h5>
+      <h5 className={styles.subhead}>Registros SIPGES vinculados</h5>
       <div className={styles.filter}>
         <label htmlFor={`influence-${concession.code}`}>Área de influencia</label>
         <select

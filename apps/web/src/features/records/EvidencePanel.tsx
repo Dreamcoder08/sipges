@@ -1,4 +1,4 @@
-import type { Attachment } from '@mascli/contracts';
+import type { Attachment } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { isApiError } from '../../shared/api/client.ts';

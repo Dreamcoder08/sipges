@@ -1,4 +1,4 @@
-import { limaToday } from '@mascli/kernel';
+import { limaToday } from '@sipges/kernel';
 import type { Scope } from '../../tenancy/application/index.ts';
 import { commitmentsOf, managementCsv, managementOverview } from '../domain/index.ts';
 import type { Clock, ManagementSources } from './ports.ts';

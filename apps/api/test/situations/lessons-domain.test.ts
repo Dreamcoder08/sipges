@@ -24,7 +24,7 @@ const lesson = (id: string, payload: Record<string, unknown>) => ({
   payload,
 });
 
-describe('Territorial lessons (MASCLI 4.0)', () => {
+describe('Territorial lessons (SIPGES)', () => {
   it('is a records module with its own prefix', () => {
     expect(moduleForSlug('lecciones')).toBe('Lecciones_Territoriales');
   });

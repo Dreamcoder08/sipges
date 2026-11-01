@@ -4,7 +4,7 @@ import type {
   ConditionIn,
   RuleIn,
   RuleOut,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
@@ -142,7 +142,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
     <div className={styles.page}>
       <p>
         Reglas que reaccionan solas a lo que ocurre en <strong>{projectLabel || scope}</strong>:
-        cuando se crea, cambia o revisa un registro que cumple las condiciones, MASCLI avisa en la
+        cuando se crea, cambia o revisa un registro que cumple las condiciones, SIPGES avisa en la
         bandeja y envía mensajes a los canales configurados. Las reglas nuevas solo miran eventos
         posteriores a su creación.
       </p>
@@ -411,7 +411,7 @@ export const AutomationPage = ({ scope, projectLabel, role }: FeatureContext) =>
                             )
                           }
                         >
-                          <option value="notify">Aviso en la bandeja de MASCLI</option>
+                          <option value="notify">Aviso en la bandeja de SIPGES</option>
                           {rule.module === 'Narrativas' && (
                             <option value="evaluate">Evaluar narrativa registrada</option>
                           )}

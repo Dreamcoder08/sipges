@@ -1,4 +1,4 @@
-import { LinkEdge } from '@mascli/contracts';
+import { LinkEdge } from '@sipges/contracts';
 import { describe, expect, it } from 'vitest';
 import { createTestApp } from '../support/test-app.ts';
 
@@ -12,7 +12,7 @@ const setup = async () => {
       method,
       headers: {
         cookie,
-        'x-mascli-scope': 'MASCLI/PRJ-SECHURA',
+        'x-sipges-scope': 'SIPGES/PRJ-SECHURA',
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -243,10 +243,10 @@ describe('ontology catalog and typed links', () => {
       can_delete: boolean;
       forced: boolean;
     }>(
-      `SELECT has_table_privilege('mascli_tenant', 'link_evidence_history', 'INSERT') AS can_insert,
-        has_table_privilege('mascli_tenant', 'link_evidence_history', 'SELECT') AS can_read,
-        has_table_privilege('mascli_tenant', 'link_evidence_history', 'UPDATE') AS can_update,
-        has_table_privilege('mascli_tenant', 'link_evidence_history', 'DELETE') AS can_delete,
+      `SELECT has_table_privilege('sipges_tenant', 'link_evidence_history', 'INSERT') AS can_insert,
+        has_table_privilege('sipges_tenant', 'link_evidence_history', 'SELECT') AS can_read,
+        has_table_privilege('sipges_tenant', 'link_evidence_history', 'UPDATE') AS can_update,
+        has_table_privilege('sipges_tenant', 'link_evidence_history', 'DELETE') AS can_delete,
         relrowsecurity AND relforcerowsecurity AS forced FROM pg_class WHERE relname = 'link_evidence_history'`,
     );
     expect(permissions).toEqual({
@@ -259,9 +259,9 @@ describe('ontology catalog and typed links', () => {
     await expect(
       s.t.sql.transaction(async (tx) => {
         await tx.query(
-          "SELECT set_config('app.tenant_id', 'MASCLI/PRJ-SECHURA', true), set_config('app.actor', 'admin', true)",
+          "SELECT set_config('app.tenant_id', 'SIPGES/PRJ-SECHURA', true), set_config('app.actor', 'admin', true)",
         );
-        await tx.exec('SET LOCAL ROLE mascli_tenant');
+        await tx.exec('SET LOCAL ROLE sipges_tenant');
         await tx.query(
           "INSERT INTO link_evidence_history (tenant_id, link_id, previous_source_id, next_source_id, actor, at) VALUES ('OTHER/TENANT', $1, NULL, NULL, 'admin', $2)",
           [id, s.t.clock.now()],
@@ -271,8 +271,8 @@ describe('ontology catalog and typed links', () => {
     expect(await history()).toHaveLength(3);
     await expect(
       s.t.sql.transaction(async (tx) => {
-        await tx.query("SELECT set_config('app.tenant_id', 'MASCLI/PRJ-SECHURA', true)");
-        await tx.exec('SET LOCAL ROLE mascli_tenant');
+        await tx.query("SELECT set_config('app.tenant_id', 'SIPGES/PRJ-SECHURA', true)");
+        await tx.exec('SET LOCAL ROLE sipges_tenant');
         await tx.query('SELECT * FROM link_evidence_history');
       }),
     ).rejects.toThrow(/permission denied/);
@@ -280,7 +280,7 @@ describe('ontology catalog and typed links', () => {
     await s.t.sql.transaction(async (tx) => {
       await tx.exec('CREATE ROLE evidence_history_operator NOLOGIN NOSUPERUSER NOBYPASSRLS');
       await tx.exec('ALTER TABLE link_evidence_history OWNER TO evidence_history_operator');
-      await tx.query("SELECT set_config('app.tenant_id', 'MASCLI/PRJ-SECHURA', true)");
+      await tx.query("SELECT set_config('app.tenant_id', 'SIPGES/PRJ-SECHURA', true)");
       await tx.exec('SET LOCAL ROLE evidence_history_operator');
       expect(await tx.query('SELECT id FROM link_evidence_history')).toHaveLength(3);
       await tx.query("SELECT set_config('app.tenant_id', 'OTHER/TENANT', true)");
@@ -346,7 +346,7 @@ describe('ontology catalog and typed links', () => {
       method: 'POST',
       headers: {
         cookie: s.admin.cookie,
-        'x-mascli-scope': 'OTRA/PRJ-B',
+        'x-sipges-scope': 'OTRA/PRJ-B',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
@@ -365,7 +365,7 @@ describe('ontology catalog and typed links', () => {
       method: 'PUT',
       headers: {
         cookie: s.admin.cookie,
-        'x-mascli-scope': 'OTRA/PRJ-B',
+        'x-sipges-scope': 'OTRA/PRJ-B',
         'content-type': 'application/json',
       },
       body: JSON.stringify({ evidence: null }),
@@ -579,7 +579,7 @@ describe('ontology catalog and typed links', () => {
       username: 'admin',
     });
     const other = await s.t.request('/system/links?module=actores&id=A-1', {
-      headers: { cookie: s.admin.cookie, 'x-mascli-scope': 'OTRA/PRJ-B' },
+      headers: { cookie: s.admin.cookie, 'x-sipges-scope': 'OTRA/PRJ-B' },
     });
     expect(other.status).toBe(404);
   });

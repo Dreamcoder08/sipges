@@ -1,4 +1,4 @@
-import type { OntologyCatalog, RecordLinks } from '@mascli/contracts';
+import type { OntologyCatalog, RecordLinks } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useId, useState } from 'react';
 import { isApiError } from '../../shared/api/client.ts';

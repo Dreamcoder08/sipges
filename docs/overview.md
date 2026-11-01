@@ -1,6 +1,6 @@
-# MASCLI: stack y estado
+# SIPGES: stack y estado
 
-Qué tecnología usa MASCLI, qué módulos están implementados y cómo se arranca en local. Para el diagrama de componentes, consulta [la guía de arquitectura](ARQUITECTURA.md).
+Qué tecnología usa SIPGES, qué módulos están implementados y cómo se arranca en local. Para el diagrama de componentes, consulta [la guía de arquitectura](ARQUITECTURA.md).
 
 ## Stack implementado
 
@@ -8,7 +8,7 @@ Qué tecnología usa MASCLI, qué módulos están implementados y cómo se arran
 | ------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | Frontend                 | React 19, Vite, TanStack Router y Query, CSS Modules y tokens                                              |
 | Backend                  | Node.js y Hono; arquitectura hexagonal por contextos                                                       |
-| Contratos                | Zod y tipos TypeScript compartidos en `@mascli/contracts`                                                  |
+| Contratos                | Zod y tipos TypeScript compartidos en `@sipges/contracts`                                                  |
 | Persistencia             | PostgreSQL con postgres.js, SQL explícito y migraciones; RLS por tenant                                    |
 | Desarrollo y pruebas SQL | PGlite; PostgreSQL real para integración opcional                                                          |
 | Evidencias               | Puerto ObjectStorage con adaptadores local y compatible S3                                                 |
@@ -39,13 +39,13 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm check
 ```
 
-Antes de arrancar la API, configura `MASCLI_DATA_KEY` (base64 de 32 bytes) y `MASCLI_ADMIN_PASSWORD` (mínimo 12 caracteres para una instalación vacía). Para desarrollo HTTP local, establece `MASCLI_COOKIE_SECURE=0`. Conserva la clave de cifrado entre reinicios. Variables y comandos en [la guía del workspace](migration/workspace.md).
+Antes de arrancar la API, configura `SIPGES_DATA_KEY` (base64 de 32 bytes) y `SIPGES_ADMIN_PASSWORD` (mínimo 12 caracteres para una instalación vacía). Para desarrollo HTTP local, establece `SIPGES_COOKIE_SECURE=0`. Conserva la clave de cifrado entre reinicios. Variables y comandos en [la guía del workspace](migration/workspace.md).
 
 En dos terminales, con la configuración de entorno preparada:
 
 ```bash
-corepack pnpm --filter @mascli/api dev
-corepack pnpm --filter @mascli/web dev
+corepack pnpm --filter @sipges/api dev
+corepack pnpm --filter @sipges/web dev
 ```
 
-La API escucha por defecto en <http://127.0.0.1:8000> y Vite en <http://127.0.0.1:5173>, con proxy de las llamadas a la API. Sin `MASCLI_DATABASE_URL`, el modo desarrollo usa PGlite; producción requiere PostgreSQL. La [guía web](migration/web.md) explica cómo compilar la SPA y servirla mediante `MASCLI_WEB_DIR`.
+La API escucha por defecto en <http://127.0.0.1:8000> y Vite en <http://127.0.0.1:5173>, con proxy de las llamadas a la API. Sin `SIPGES_DATABASE_URL`, el modo desarrollo usa PGlite; producción requiere PostgreSQL. La [guía web](migration/web.md) explica cómo compilar la SPA y servirla mediante `SIPGES_WEB_DIR`.

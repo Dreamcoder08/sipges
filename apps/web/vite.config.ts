@@ -48,7 +48,7 @@ const cesiumStatic = (): Plugin => {
   };
   let outDir = 'dist';
   return {
-    name: 'mascli-cesium-static',
+    name: 'sipges-cesium-static',
     transform(code, id) {
       const patch = CSP_PATCHES.find((p) => id.replaceAll('\\', '/').endsWith(p.file));
       if (!patch) return null;

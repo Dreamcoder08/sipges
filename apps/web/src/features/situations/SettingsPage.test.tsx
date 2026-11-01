@@ -91,11 +91,11 @@ it('shows the colour alone until the settings load, then colour with meaning, wi
   expect(screen.getByText('Naranja – Requiere intervención preventiva')).toBeInTheDocument();
 });
 
-it('presents the project as MASCLI 4.0 with no switch to turn it on or off', async () => {
+it('presents the project as SIPGES with no switch to turn it on or off', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('admin');
-  expect(await screen.findByRole('heading', { name: 'MASCLI 4.0' })).toBeInTheDocument();
-  expect(screen.queryByText(/MASCLI 3\.0/)).not.toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+  expect(screen.queryByText(/SIPGES 3\.0/)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Activar|Volver a/ })).not.toBeInTheDocument();
   expect(screen.getByText('Significado de cada color')).toBeInTheDocument();
   expect(screen.getByText('Fase del proyecto')).toBeInTheDocument();

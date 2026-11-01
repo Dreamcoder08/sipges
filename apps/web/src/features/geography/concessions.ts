@@ -1,4 +1,4 @@
-import { GeographyPolygon, type GeographyResult } from '@mascli/contracts';
+import { GeographyPolygon, type GeographyResult } from '@sipges/contracts';
 import type { Extent } from './BaseMap.tsx';
 
 export { LEGEND, legendOf, legendRgb } from './legend.ts';
@@ -128,7 +128,7 @@ export const concessionsOf = (features: GeographyResult['features']): Concession
 };
 
 /**
- * The polygon sent to relate MASCLI records: the largest part of the concession, as long as it
+ * The polygon sent to relate SIPGES records: the largest part of the concession, as long as it
  * fits the API contract (500 vertices per ring, 16 rings). Larger shapes are not simplified,
  * since a simplified boundary would relate records the official one does not contain.
  */

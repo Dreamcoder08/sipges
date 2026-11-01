@@ -1,4 +1,4 @@
-import { AutomationRuntimeState } from '@mascli/contracts';
+import { AutomationRuntimeState } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 import { Card } from '../../shared/ui/Card.tsx';

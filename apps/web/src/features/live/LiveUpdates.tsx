@@ -43,7 +43,7 @@ export const LiveUpdates = ({ scope }: { scope: string }) => {
       );
     };
     const listen = async () => {
-      const headers = new Headers({ accept: 'text/event-stream', 'X-MASCLI-Scope': scope });
+      const headers = new Headers({ accept: 'text/event-stream', 'X-SIPGES-Scope': scope });
       if (lastId) headers.set('Last-Event-ID', lastId);
       const response = await fetch('/system/events', {
         credentials: 'same-origin',

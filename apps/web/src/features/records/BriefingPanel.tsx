@@ -1,4 +1,4 @@
-import type { Briefing } from '@mascli/contracts';
+import type { Briefing } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';

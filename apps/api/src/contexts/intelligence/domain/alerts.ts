@@ -45,14 +45,14 @@ export type TerritorialAlert = {
   readonly analystNote: string;
   readonly reviewerNote: string | null;
   readonly reviewedAt: Date | null;
-  /** MASCLI 4.0: who validated a high-priority alert first, awaiting a second person. */
+  /** SIPGES: who validated a high-priority alert first, awaiting a second person. */
   readonly firstValidator?: string | null;
 };
 
 export type FourEyesOutcome = 'apply' | 'first' | 'same_person';
 
 /**
- * MASCLI 4.0 (docs/adr/0024): moving a high-priority alert into an actionable state needs two
+ * SIPGES (docs/adr/0024): moving a high-priority alert into an actionable state needs two
  * different people; the first validation is only recorded. Medium and low alerts, discarding,
  * changes between actionable states stay with one person.
  */

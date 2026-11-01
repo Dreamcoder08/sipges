@@ -1,11 +1,11 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import styles from './Records.module.css';
 
-/** Payload keys an alert created from a MASCLI 4.0 situation carries (docs/adr/0020 §4). */
+/** Payload keys an alert created from a SIPGES situation carries (docs/adr/0020 §4). */
 export const EXPLANATION_KEYS = ['Origen', 'Situacion', 'Explicacion', 'Registros_Relacionados'];
 
-export const isExplainedAlert = (record: ModuleRecord) => record.Origen === 'MASCLI 4.0';
+export const isExplainedAlert = (record: ModuleRecord) => record.Origen === 'SIPGES';
 
 /** Why the alert was raised: the engine's reasons and links to the records behind them. */
 export const AlertExplanation = ({ record }: { record: ModuleRecord }) => {
@@ -18,9 +18,7 @@ export const AlertExplanation = ({ record }: { record: ModuleRecord }) => {
   return (
     <section aria-labelledby={`why-${record._id}`} className={styles.evidence}>
       <h4 id={`why-${record._id}`}>Por qué se generó esta alerta</h4>
-      <p>
-        Sugerida por MASCLI 4.0 a partir de registros relacionados y confirmada por una persona.
-      </p>
+      <p>Sugerida por SIPGES a partir de registros relacionados y confirmada por una persona.</p>
       <ul>
         {reasons.map((reason) => (
           <li key={reason}>{reason}</li>

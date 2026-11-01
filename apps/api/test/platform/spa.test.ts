@@ -12,7 +12,7 @@ import {
 } from '../../src/platform/http/spa.ts';
 import { createTestApp } from '../support/test-app.ts';
 
-const SHELL = '<!doctype html><title>MASCLI</title><div id="root"></div>';
+const SHELL = '<!doctype html><title>SIPGES</title><div id="root"></div>';
 
 const memoryWeb: WebAssets = {
   index: async () => SHELL,
@@ -128,7 +128,7 @@ describe('single-page app delivery', () => {
   });
 
   it('reads a Vite build directory', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'mascli-web-'));
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-web-'));
     await mkdir(join(dir, 'assets'));
     await writeFile(join(dir, 'index.html'), SHELL);
     await writeFile(join(dir, 'assets', 'app-1.css'), 'body{}');

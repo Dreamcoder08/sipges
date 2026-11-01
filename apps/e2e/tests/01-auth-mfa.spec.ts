@@ -34,7 +34,7 @@ test.describe('sign-in (S7, ADR 0004)', () => {
     );
     await signIn(page, admin);
     const setCookie = (await (await login).headerValue('set-cookie')) ?? '';
-    expect(setCookie).toMatch(/^mascli_session=[0-9a-f]{64};/);
+    expect(setCookie).toMatch(/^sipges_session=[0-9a-f]{64};/);
     expect(setCookie).toContain('Max-Age=28800');
     expect(setCookie).toContain('Path=/');
     expect(setCookie).toContain('HttpOnly');
@@ -42,10 +42,10 @@ test.describe('sign-in (S7, ADR 0004)', () => {
     expect(setCookie).toContain('SameSite=Strict');
     await expect(dashboard(page)).toBeVisible();
 
-    const session = (await context.cookies()).find((c) => c.name === 'mascli_session');
+    const session = (await context.cookies()).find((c) => c.name === 'sipges_session');
     expect(session).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Strict' });
     // HttpOnly: the SPA's JavaScript cannot read the session.
-    expect(await page.evaluate(() => document.cookie)).not.toContain('mascli_session');
+    expect(await page.evaluate(() => document.cookie)).not.toContain('sipges_session');
   });
 
   test('returns to the requested screen after sign-in and ignores foreign redirects', async ({
@@ -76,9 +76,9 @@ test.describe('sign-in (S7, ADR 0004)', () => {
   test('signs out and revokes the session server-side', async ({ page, admin }) => {
     await signIn(page, admin);
     await expect(dashboard(page)).toBeVisible();
-    const token = (await page.context().cookies()).find((c) => c.name === 'mascli_session');
+    const token = (await page.context().cookies()).find((c) => c.name === 'sipges_session');
     await signOut(page);
-    await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI 4.0' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ingresar a SIPGES' })).toBeVisible();
 
     // Replaying the old token must not authenticate any more.
     await page.context().addCookies([{ ...(token ?? { name: '', value: '', url: '' }) }]);
@@ -106,7 +106,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     const secret = (await page.locator('code').first().textContent())?.trim() ?? '';
     expect(secret).toMatch(/^[A-Z2-7]{32}$/);
     await page.getByText('URI para la aplicación autenticadora').click();
-    await expect(page.getByText(/^otpauth:\/\/totp\/MASCLI:/)).toBeVisible();
+    await expect(page.getByText(/^otpauth:\/\/totp\/SIPGES:/)).toBeVisible();
 
     await page.getByLabel('Código TOTP').fill('000000' === totpCode(secret) ? '111111' : '000000');
     await page.getByRole('button', { name: 'Activar MFA' }).click();
@@ -127,7 +127,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     expect(body).not.toContain('secret');
 
     await signOut(page);
-    await expect(page.getByRole('heading', { name: 'Ingresar a MASCLI 4.0' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ingresar a SIPGES' })).toBeVisible();
 
     // Password alone is no longer enough: the form asks for the second factor.
     await signIn(page, analyst);

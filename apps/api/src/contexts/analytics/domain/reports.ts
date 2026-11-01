@@ -1,4 +1,4 @@
-import { type ReportDocument, bullet, heading, paragraph, title } from '@mascli/kernel';
+import { type ReportDocument, bullet, heading, paragraph, title } from '@sipges/kernel';
 import type { ConsensusReport } from './consensus.ts';
 import type { IntegratedAnalysis } from './integrated.ts';
 import { pyGet, pyStr, pyTruthy } from './python.ts';
@@ -13,10 +13,10 @@ import type { StrategicAssessment } from './strategic.ts';
  */
 
 export const REPORT_FILENAMES = {
-  situational: 'MASCLI_Analisis_Situacional.docx',
-  integrated: 'MASCLI_RC19_Analisis_Integrado.docx',
-  consensus: 'MASCLI_Motor_Valor_Consenso.docx',
-  strategic: 'MASCLI_Informe_Estrategico.docx',
+  situational: 'SIPGES_Analisis_Situacional.docx',
+  integrated: 'SIPGES_RC19_Analisis_Integrado.docx',
+  consensus: 'SIPGES_Motor_Valor_Consenso.docx',
+  strategic: 'SIPGES_Informe_Estrategico.docx',
 } as const;
 
 const source = (x: Readonly<Record<string, unknown>>) =>
@@ -27,7 +27,7 @@ export const situationalReport = (data: SituationalAnalysis): ReportDocument => 
     title('INFORME DE ANÁLISIS SITUACIONAL'),
     paragraph(`${pyStr(data.project_name)} | Corte: ${data.generated_at}`),
     paragraph(
-      'Documento generado automáticamente por MASCLI. BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN.',
+      'Documento generado automáticamente por SIPGES (Sistema Inteligente de Predicción y GEStión Social). BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN.',
     ),
     heading(1, '1. Resumen ejecutivo'),
     paragraph(
@@ -56,14 +56,14 @@ export const situationalReport = (data: SituationalAnalysis): ReportDocument => 
     heading(1, '8. Alcances y limitaciones'),
     ...data.limitations.map(bullet),
     paragraph(
-      'Preparado por: Sistema MASCLI | Revisión técnica: __________________ | Fecha de validación: ______________',
+      'Preparado por: Sistema SIPGES | Revisión técnica: __________________ | Fecha de validación: ______________',
     ),
   ],
 });
 
 export const integratedReport = (d: IntegratedAnalysis): ReportDocument => ({
   blocks: [
-    title('MASCLI | Análisis integrado RC 1.9'),
+    title('SIPGES | Análisis integrado RC 1.9'),
     paragraph(`Proyecto ${d.project_id} · Corte ${d.generated_at}`),
     paragraph(
       'DOCUMENTO AUTOMÁTICO EN BORRADOR. Los vínculos no están confirmados; requiere revisión profesional y contrastación de fuentes.',
@@ -111,7 +111,7 @@ const CONSENSUS_FIELDS = [
 
 export const consensusReport = (report: ConsensusReport): ReportDocument => ({
   blocks: [
-    title('MASCLI | Motor de valor y consenso'),
+    title('SIPGES | Motor de valor y consenso'),
     paragraph(`Proyecto: ${report.project_id} · Corte: ${report.generated_at}`),
     paragraph(
       'BORRADOR AUTOMATIZADO: recomendaciones basadas en registros y reglas. REVISIÓN OBLIGATORIA.',
@@ -160,7 +160,7 @@ export const strategicReport = (
   situation: SituationalAnalysis,
 ): ReportDocument => ({
   blocks: [
-    title('MASCLI | Informe estratégico territorial'),
+    title('SIPGES | Informe estratégico territorial'),
     paragraph(`${pyStr(situation.project_name)} | Corte: ${report.generated_at}`),
     paragraph(
       'BORRADOR AUTOMATIZADO — REQUIERE REVISIÓN Y APROBACIÓN. No sustituye decisiones institucionales.',

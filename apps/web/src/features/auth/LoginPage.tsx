@@ -19,7 +19,7 @@ const GOOGLE_ERRORS: Record<GoogleSignInError, string> = {
   expired: 'El ingreso con Google caducó. Inténtelo de nuevo.',
   failed: 'Google no confirmó la identidad. Inténtelo de nuevo.',
   not_linked:
-    'Esa cuenta de Google no está autorizada en MASCLI. Pida al administrador que la vincule.',
+    'Esa cuenta de Google no está autorizada en SIPGES. Pida al administrador que la vincule.',
 };
 
 /** Sign-in form (app.py POST /login). The OTP is asked only after the server requires it. */
@@ -55,16 +55,16 @@ export const LoginPage = ({
     ? null
     : isApiError(error)
       ? error.detail
-      : 'No se pudo conectar con MASCLI. Revise su conexión.';
+      : 'No se pudo conectar con SIPGES. Revise su conexión.';
 
   return (
     <main className={styles.page}>
       <form className={styles.card} onSubmit={submit} aria-labelledby={titleId} noValidate>
         <div className={styles.brand} aria-hidden="true">
-          M
+          S
         </div>
-        <h1 id={titleId}>Ingresar a MASCLI 4.0</h1>
-        <p className={styles.lead}>Gestión del riesgo socioambiental.</p>
+        <h1 id={titleId}>Ingresar a SIPGES</h1>
+        <p className={styles.lead}>Sistema Inteligente de Predicción y GEStión Social.</p>
         {message ? <Alert tone="error">{message}</Alert> : null}
         {googleError && !message ? <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert> : null}
         {providers.data?.google ? (

@@ -9,7 +9,7 @@ describe('bundled migration index', () => {
     const index = await readFile(new URL('../src/migrations.ts', import.meta.url), 'utf8');
     const versions = [...index.matchAll(/version: '([^']+)'/g)].map((m) => m[1]);
     expect(files.length).toBeGreaterThan(0);
-    // Out of date? Run `pnpm --filter @mascli/hosting-cloudflare migrations`.
+    // Out of date? Run `pnpm --filter @sipges/hosting-cloudflare migrations`.
     expect(versions).toEqual(files.map((f) => f.replace(/\.sql$/, '')));
   });
 });

@@ -1,5 +1,5 @@
 import { accountDisplayName } from '../../shared/ui/account-name.ts';
-import type { Me } from '@mascli/contracts';
+import type { Me } from '@sipges/contracts';
 import { useMutation } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { THEME_OPTIONS, setTheme, useThemePreference } from '../../shared/lib/theme.ts';

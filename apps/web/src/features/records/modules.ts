@@ -374,12 +374,12 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
         type: 'tel',
         aliases: ['Celular', 'Número de contacto', 'Número de celular', 'Telefono / celular'],
       },
-      { key: 'Tipo_Actor', label: 'Tipo de actor', aliases: ['Tipo de actor MASCLI'] },
+      { key: 'Tipo_Actor', label: 'Tipo de actor', aliases: ['Tipo de actor SIPGES'] },
       {
         key: 'Prioridad',
         label: 'Prioridad',
         options: priority,
-        aliases: ['Prioridad MASCLI propuesta'],
+        aliases: ['Prioridad SIPGES propuesta'],
       },
       {
         key: 'Estado_Verificacion',

@@ -1,4 +1,4 @@
-import { GeographyPolygon, type GeographyResult } from '@mascli/contracts';
+import { GeographyPolygon, type GeographyResult } from '@sipges/contracts';
 import { intersects, pointInPolygon } from '../domain/geometry.ts';
 type Point = readonly [number, number];
 const coordinate = (v: unknown) =>

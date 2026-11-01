@@ -18,9 +18,9 @@ export const BENCHMARK_HTTP_PATHS = [
 /** Shared by the runner and its public-HTTP regression, on an isolated migrated database. */
 export const createBenchmarkSession = async (sql: SqlClient, embeddings: EmbeddingProvider) => {
   const config = loadConfig({
-    MASCLI_DATA_KEY: Buffer.alloc(32, 7).toString('base64'),
-    MASCLI_ADMIN_PASSWORD: 'synthetic-bench-password',
-    MASCLI_COOKIE_SECURE: '0',
+    SIPGES_DATA_KEY: Buffer.alloc(32, 7).toString('base64'),
+    SIPGES_ADMIN_PASSWORD: 'synthetic-bench-password',
+    SIPGES_COOKIE_SECURE: '0',
   });
   const container = await buildContainer({
     config,
@@ -35,7 +35,7 @@ export const createBenchmarkSession = async (sql: SqlClient, embeddings: Embeddi
     headers: { host: 'localhost', origin: 'http://localhost' },
     body: new URLSearchParams({ username: 'admin', password: 'synthetic-bench-password', otp: '' }),
   });
-  const sessionCookie = /mascli_session=[^;]*/.exec(login.headers.get('set-cookie') ?? '')?.[0];
+  const sessionCookie = /sipges_session=[^;]*/.exec(login.headers.get('set-cookie') ?? '')?.[0];
   if (login.status !== 200 || !sessionCookie)
     throw new Error(`Benchmark login failed: ${login.status}`);
   const headers = { host: 'localhost', origin: 'http://localhost', cookie: sessionCookie };
@@ -60,9 +60,9 @@ export const createBenchmarkSession = async (sql: SqlClient, embeddings: Embeddi
   const selected = await app.request('/select-project', {
     method: 'POST',
     headers,
-    body: new URLSearchParams({ scope: 'MASCLI/PRJ-SECHURA' }),
+    body: new URLSearchParams({ scope: 'SIPGES/PRJ-SECHURA' }),
   });
-  const scopeCookie = /mascli_scope=[^;]*/.exec(selected.headers.get('set-cookie') ?? '')?.[0];
+  const scopeCookie = /sipges_scope=[^;]*/.exec(selected.headers.get('set-cookie') ?? '')?.[0];
   if (selected.status !== 303 || !scopeCookie)
     throw new Error(`Benchmark project selection failed: ${selected.status}`);
   const cookie = `${sessionCookie}; ${scopeCookie}`;

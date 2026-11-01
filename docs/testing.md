@@ -7,8 +7,8 @@ Run `pnpm verify` from the repository root for the full local gate: lint, format
 | Goal             | Command                                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Full gate        | `pnpm verify`                                                                                                      |
-| One API area     | `timeout 60s pnpm --filter @mascli/api exec vitest run <files> --reporter=verbose`                                 |
-| One browser flow | `pnpm --filter @mascli/web build`, then `pnpm --filter @mascli/e2e exec playwright test <file> --project=chromium` |
+| One API area     | `timeout 60s pnpm --filter @sipges/api exec vitest run <files> --reporter=verbose`                                 |
+| One browser flow | `pnpm --filter @sipges/web build`, then `pnpm --filter @sipges/e2e exec playwright test <file> --project=chromium` |
 | Tooling tests    | `pnpm test:tooling`                                                                                                |
 
 Use explicit package `exec vitest` file filters; arguments forwarded through `pnpm test --` may not select the intended files. Always inspect the final file and test counts.
@@ -18,7 +18,7 @@ Use explicit package `exec vitest` file filters; arguments forwarded through `pn
 Tested with the normal cached runner:
 
 ```sh
-timeout 60s pnpm --filter @mascli/api exec vitest run test/situations/lessons-domain.test.ts test/records/records-http.test.ts --reporter=verbose
+timeout 60s pnpm --filter @sipges/api exec vitest run test/situations/lessons-domain.test.ts test/records/records-http.test.ts --reporter=verbose
 ```
 
 If a cache issue is a specific hypothesis, compare with a bounded cache-bypass diagnostic; it is not the default fix. The earlier example and its limits are in [mature UI evidence](../odd/evidence/mature-ui/README.md); the current selection is in [reliable verification evidence](../odd/evidence/reliable-verification/README.md).
@@ -30,8 +30,8 @@ API HTTP fixtures migrate a synthetic PGlite template per test file, clone it pe
 Build the web app first so Playwright exercises the intended build:
 
 ```sh
-pnpm --filter @mascli/web build
-pnpm --filter @mascli/e2e exec playwright test tests/09-ontology-intelligence.spec.ts --project=chromium
+pnpm --filter @sipges/web build
+pnpm --filter @sipges/e2e exec playwright test tests/09-ontology-intelligence.spec.ts --project=chromium
 ```
 
 The final Dialog build and the single Chromium search/360-degree flow passed, including browser hygiene under the strict CSP; matching source snapshots close the stale-build proof gap for that flow only ([command, output and snapshots](../odd/evidence/reliable-verification/README.md)). A single file is not the full browser suite.

@@ -1,4 +1,4 @@
-import { AuthProviders, LoginResponse, type LoginForm, Me } from '@mascli/contracts';
+import { AuthProviders, LoginResponse, type LoginForm, Me } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { request, requestJson } from '../../shared/api/client.ts';
 

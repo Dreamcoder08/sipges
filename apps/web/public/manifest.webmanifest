@@ -1,6 +1,6 @@
 {
-  "name": "MASCLI — Gestión socioambiental",
-  "short_name": "MASCLI",
+  "name": "SIPGES — Sistema Inteligente de Predicción y GEStión Social",
+  "short_name": "SIPGES",
   "description": "Sistema de alerta temprana para la gestión del riesgo socioambiental.",
   "lang": "es",
   "start_url": "/",

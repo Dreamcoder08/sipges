@@ -31,7 +31,7 @@ test('CSV imports refresh the cached dashboard and uploaded evidence refreshes t
   expect(
     (
       await page.request.post('/api/fuentes', {
-        headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+        headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
         data: { payload: { ID_Fuente: id, Archivo_Fuente: 'Documento de prueba del contador' } },
       })
     ).ok(),
@@ -64,7 +64,7 @@ test('directory pagination reaches a stored contact beyond the API first page', 
   const city = `Ciudad paginada ${stamp}`;
   const name = `Contacto paginado ${stamp}`;
   const created = await page.request.post('/api/directorio', {
-    headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+    headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
     data: {
       payload: { Nombre: name, Ciudad: city, Cargo: 'Cargo de prueba', Telefono: '000 000 000' },
     },
@@ -76,7 +76,7 @@ test('directory pagination reaches a stored contact beyond the API first page', 
     Ciudad: city,
   }));
   const response = await page.request.post('/system/import/directorio', {
-    headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+    headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
     data: { rows, dry_run: false, source: 'pagination-test.csv' },
   });
   expect(response.ok()).toBe(true);

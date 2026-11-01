@@ -1,4 +1,4 @@
-import type { MarkingIn } from '@mascli/contracts';
+import type { MarkingIn } from '@sipges/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useId } from 'react';
 import { isApiError } from '../../shared/api/client.ts';

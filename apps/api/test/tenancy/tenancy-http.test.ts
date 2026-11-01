@@ -15,7 +15,7 @@ const NORTE = {
   username: 'ana.perez',
 };
 const SECHURA = {
-  company_id: 'MASCLI',
+  company_id: 'SIPGES',
   project_id: 'PRJ-SECHURA',
   label: 'Proyecto Sechura (migración)',
 };
@@ -47,7 +47,7 @@ describe('bootstrap', () => {
     const t = await createTestApp();
     const res = await t.request('/system/auth/scopes');
     expect(res.status).toBe(401);
-    expect(await json(res)).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+    expect(await json(res)).toEqual({ detail: 'Inicie sesión para acceder a SIPGES' });
   });
 });
 
@@ -70,7 +70,7 @@ describe('POST /system/auth/scopes', () => {
   it.each([
     [{ ...NORTE, company_id: 'A' }, 422, 'IDs inválidos'],
     [{ ...NORTE, project_id: 'has space' }, 422, 'IDs inválidos'],
-    [{ ...NORTE, company_id: 'MASCLI', project_id: 'PRJ-SECHURA' }, 409, 'Proyecto reservado'],
+    [{ ...NORTE, company_id: 'SIPGES', project_id: 'PRJ-SECHURA' }, 409, 'Proyecto reservado'],
     [{ ...NORTE, username: 'nobody' }, 404, 'Usuario no existe'],
   ])('rejects invalid creation and stores nothing', async (body, status, detail) => {
     const { t, admin } = await setup();
@@ -120,7 +120,7 @@ describe('POST /system/auth/grants', () => {
 
   it.each([
     [
-      { username: 'nobody', company_id: 'MASCLI', project_id: 'PRJ-SECHURA' },
+      { username: 'nobody', company_id: 'SIPGES', project_id: 'PRJ-SECHURA' },
       'Usuario inexistente',
     ],
     [{ username: 'ana.perez', company_id: 'NO', project_id: 'PE' }, 'Proyecto inexistente'],
@@ -146,7 +146,7 @@ describe('POST /system/auth/grants', () => {
       headers: { cookie: ana.cookie, 'content-type': 'application/json' },
       body: JSON.stringify({
         username: 'ana.perez',
-        company_id: 'MASCLI',
+        company_id: 'SIPGES',
         project_id: 'PRJ-SECHURA',
       }),
     });
@@ -169,9 +169,9 @@ describe('scope resolution middleware (app.py enforce_auth steps 4-7)', () => {
       headers: { cookie: admin.cookie },
     });
     expect(await json(res)).toEqual({
-      company_id: 'MASCLI',
+      company_id: 'SIPGES',
       project_id: 'PRJ-SECHURA',
-      scope: 'MASCLI/PRJ-SECHURA',
+      scope: 'SIPGES/PRJ-SECHURA',
     });
   });
 
@@ -183,15 +183,15 @@ describe('scope resolution middleware (app.py enforce_auth steps 4-7)', () => {
     expect(res.status).toBe(403);
     const body = (await json(res)) as { detail: string; projects: string[] };
     expect(body.detail).toBe(
-      'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project',
+      'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project',
     );
-    expect(body.projects.sort()).toEqual(['ACME/NORTE', 'MASCLI/PRJ-SECHURA']);
+    expect(body.projects.sort()).toEqual(['ACME/NORTE', 'SIPGES/PRJ-SECHURA']);
   });
 
-  it('honours X-MASCLI-Scope and rejects scopes that are not granted', async () => {
+  it('honours X-SIPGES-Scope and rejects scopes that are not granted', async () => {
     const { t, admin } = await multiScopeAdmin();
     const ok = await t.request('/system/auth/current-scope', {
-      headers: { cookie: admin.cookie, 'x-mascli-scope': 'ACME/NORTE' },
+      headers: { cookie: admin.cookie, 'x-sipges-scope': 'ACME/NORTE' },
     });
     expect(await json(ok)).toEqual({
       company_id: 'ACME',
@@ -199,7 +199,7 @@ describe('scope resolution middleware (app.py enforce_auth steps 4-7)', () => {
       scope: 'ACME/NORTE',
     });
     const denied = await t.request('/system/auth/current-scope', {
-      headers: { cookie: admin.cookie, 'x-mascli-scope': 'EVIL/CORP' },
+      headers: { cookie: admin.cookie, 'x-sipges-scope': 'EVIL/CORP' },
     });
     expect(denied.status).toBe(403);
   });
@@ -215,7 +215,7 @@ describe('scope resolution middleware (app.py enforce_auth steps 4-7)', () => {
     });
     expect(res.status).toBe(403);
     expect(await json(res)).toEqual({
-      detail: 'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project',
+      detail: 'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project',
       projects: [],
     });
   });
@@ -286,7 +286,7 @@ describe('/select-project', () => {
     expect(html).toContain(
       '<option value="ACME/NORTE">&lt;script&gt;alert(1)&lt;/script&gt; (ACME/NORTE)</option>',
     );
-    expect(html).toContain('<option value="MASCLI/PRJ-SECHURA">');
+    expect(html).toContain('<option value="SIPGES/PRJ-SECHURA">');
     expect(html).not.toContain('<script>');
   });
 
@@ -301,7 +301,7 @@ describe('/select-project', () => {
     expect(res.status).toBe(303);
     expect(res.headers.get('location')).toBe('/');
     const cookie = res.headers.get('set-cookie') ?? '';
-    expect(cookie).toMatch(/^mascli_scope=/);
+    expect(cookie).toMatch(/^sipges_scope=/);
     for (const flag of ['HttpOnly', 'SameSite=Strict', 'Secure', 'Max-Age=28800', 'Path=/']) {
       expect(cookie).toContain(flag);
     }
@@ -332,7 +332,7 @@ describe('/select-project', () => {
     const t = await createTestApp();
     const res = await t.request('/select-project', {
       method: 'POST',
-      body: t.form({ scope: 'MASCLI/PRJ-SECHURA' }),
+      body: t.form({ scope: 'SIPGES/PRJ-SECHURA' }),
     });
     expect(res.status).toBe(401);
     expect(await json(res)).toEqual({ detail: 'Unauthorized' });
@@ -343,7 +343,7 @@ describe('/select-project', () => {
     const res = await t.request('/select-project', {
       method: 'POST',
       headers: { cookie: admin.cookie, origin: 'https://evil.example' },
-      body: t.form({ scope: 'MASCLI/PRJ-SECHURA' }),
+      body: t.form({ scope: 'SIPGES/PRJ-SECHURA' }),
     });
     expect(res.status).toBe(403);
   });

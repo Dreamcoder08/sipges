@@ -17,7 +17,7 @@ const conceptEmbeddings = (log: string[] = []): EmbeddingProvider => ({
 });
 
 const setup = async (embeddings: EmbeddingProvider, semantic = '1') => {
-  const t = await createTestApp({ MASCLI_SEMANTIC_SEARCH: semantic }, { embeddings });
+  const t = await createTestApp({ SIPGES_SEMANTIC_SEARCH: semantic }, { embeddings });
   const admin = await t.login('admin', 'admin-password-123');
   const call = async (method: string, path: string, body?: unknown) => {
     const res = await t.request(path, {

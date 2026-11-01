@@ -1,4 +1,4 @@
-import { MediaFeedPreview, MediaMonitorState } from '@mascli/contracts';
+import { MediaFeedPreview, MediaMonitorState } from '@sipges/contracts';
 import { describe, expect, it } from 'vitest';
 import type { FeedGateway } from '../../src/contexts/integration/application/media-monitor.ts';
 import { checkRoleAccess } from '../../src/contexts/identity/domain/access-policy.ts';
@@ -42,7 +42,7 @@ const setup = async () => {
       return parseFeed(RSS);
     },
   };
-  const t = await createTestApp({ MASCLI_CRON_SECRET: CRON_SECRET }, { feedGateway });
+  const t = await createTestApp({ SIPGES_CRON_SECRET: CRON_SECRET }, { feedGateway });
   const admin = await t.login('admin', 'admin-password-123');
   const call = async (method: string, path: string, body?: unknown) => {
     const res = await t.request(path, {

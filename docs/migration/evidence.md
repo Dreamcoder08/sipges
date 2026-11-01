@@ -20,7 +20,7 @@ The attachment JSON keeps the Python field names (`original_name`, `size_bytes`,
 - **Validation:** extension allow-list (PDF, DOC/DOCX, XLS/XLSX, CSV, TXT, JPG/PNG/WEBP) plus
   a magic-number check per extension; CSV and TXT must be UTF-8. File names are reduced to
   `[A-Za-z0-9._-]`.
-- **Size:** `MASCLI_MAX_UPLOAD_BYTES` (1 byte to 100 MiB, default 10 MiB). Bodies larger than
+- **Size:** `SIPGES_MAX_UPLOAD_BYTES` (1 byte to 100 MiB, default 10 MiB). Bodies larger than
   the limit plus 64 KiB of multipart overhead are refused before they are read.
 - **Linking:** the upload appends `{id, archivo, tipo, verificacion}` to the record's `Adjuntos`
   and sets `Evidencia/Resultado` (eventos) or `Archivo_Fuente` (fuentes), in the same transaction
@@ -35,7 +35,7 @@ The attachment JSON keeps the Python field names (`original_name`, `size_bytes`,
 
 ## Storage adapters
 
-`MASCLI_STORAGE=local` (default) writes to `MASCLI_UPLOAD_DIR` (default `.data/uploads`)
-with an atomic rename. `MASCLI_STORAGE=s3` speaks the S3 API with SigV4 signing on
+`SIPGES_STORAGE=local` (default) writes to `SIPGES_UPLOAD_DIR` (default `.data/uploads`)
+with an atomic rename. `SIPGES_STORAGE=s3` speaks the S3 API with SigV4 signing on
 `node:crypto` and path-style URLs, so it works with Cloudflare R2, MinIO or AWS S3. The signer
 is checked against the AWS documentation test vector.

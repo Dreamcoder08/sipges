@@ -13,7 +13,7 @@ const renderPage = () =>
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <GeographyPage
-        scope="MASCLI/PRJ-SECHURA"
+        scope="SIPGES/PRJ-SECHURA"
         projectId="PRJ-SECHURA"
         projectLabel="Sechura"
         role="consulta"
@@ -26,7 +26,7 @@ it('renders scoped geometry, lets the reader select and zoom, and shows its prov
   let scope: string | null = null;
   server.use(
     http.get('/system/project-coordinates', ({ request }) => {
-      scope = request.headers.get('X-MASCLI-Scope');
+      scope = request.headers.get('X-SIPGES-Scope');
       return HttpResponse.json({
         available: true,
         data: coordinates,
@@ -36,7 +36,7 @@ it('renders scoped geometry, lets the reader select and zoom, and shows its prov
   );
   renderPage();
   expect(await screen.findByText('GeoCatMin')).toBeVisible();
-  expect(scope).toBe('MASCLI/PRJ-SECHURA');
+  expect(scope).toBe('SIPGES/PRJ-SECHURA');
   const map = screen.getByLabelText('Geometría de referencia');
   const before = map.getAttribute('viewBox');
   await userEvent.click(screen.getByRole('button', { name: 'Acercar' }));

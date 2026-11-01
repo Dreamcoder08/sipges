@@ -21,7 +21,7 @@ it('shows the unread count, links to the record and marks everything read', asyn
   let marked: unknown = null;
   server.use(
     http.get('*/system/notifications', ({ request }) => {
-      expect(request.headers.get('X-MASCLI-Scope')).toBe('ACME/P1');
+      expect(request.headers.get('X-SIPGES-Scope')).toBe('ACME/P1');
       return HttpResponse.json({
         unread,
         items: [

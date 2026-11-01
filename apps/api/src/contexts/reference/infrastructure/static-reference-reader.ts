@@ -1,10 +1,10 @@
-import { CanonicalEntities, ProjectCoordinates } from '@mascli/contracts';
+import { CanonicalEntities, ProjectCoordinates } from '@sipges/contracts';
 import type { ReferenceReader } from '../application/index.ts';
 
 type Scope = { companyId: string; projectId: string };
 /** Trusted repository references are registered to one tenant, never used as a fallback. */
 export const isRegisteredReferenceScope = (scope: Scope) =>
-  scope.companyId === 'MASCLI' && scope.projectId === 'PRJ-SECHURA';
+  scope.companyId === 'SIPGES' && scope.projectId === 'PRJ-SECHURA';
 
 /**
  * The repository references from data already in memory, for runtimes without a filesystem

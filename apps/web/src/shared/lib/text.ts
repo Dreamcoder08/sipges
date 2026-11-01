@@ -32,7 +32,7 @@ export const severityLevel = (value: unknown): Level => {
   return 'Verde';
 };
 
-/** First letter as a MASCLI dimension, if it is one (app.js dimensionCode). */
+/** First letter as a SIPGES dimension, if it is one (app.js dimensionCode). */
 export const dimensionOf = (value: unknown): DimensionCode | null => {
   const code = String(value ?? '')
     .trim()

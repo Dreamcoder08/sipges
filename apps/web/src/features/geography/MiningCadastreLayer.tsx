@@ -1,4 +1,4 @@
-import { GeographyServiceId } from '@mascli/contracts';
+import { GeographyServiceId } from '@sipges/contracts';
 import { useEffect, useState } from 'react';
 import { type Extent, svgX, svgY, UNITS_PER_DEGREE } from './BaseMap.tsx';
 

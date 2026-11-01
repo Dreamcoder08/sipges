@@ -18,7 +18,7 @@ const SHA256 = {
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const exe = process.platform === 'win32' ? 'engram.exe' : 'engram';
 const localBin = () => path.join(homedir(), '.local', 'bin');
-const env = { ...process.env, ENGRAM_PROJECT: process.env.ENGRAM_PROJECT || 'mascli' };
+const env = { ...process.env, ENGRAM_PROJECT: process.env.ENGRAM_PROJECT || 'sipges' };
 const log = (text) => process.stderr.write(`engram: ${text}\n`);
 const fail = (text) => {
   log(text);
@@ -32,7 +32,7 @@ const LOCAL_STEPS = `Engram is not installed. On your machine run one of:
 See docs/agents/gentle-ai.md.`;
 
 export function findEngram() {
-  if (process.env.MASCLI_ENGRAM_BIN) return process.env.MASCLI_ENGRAM_BIN;
+  if (process.env.SIPGES_ENGRAM_BIN) return process.env.SIPGES_ENGRAM_BIN;
   const dirs = (process.env.PATH ?? '').split(path.delimiter).filter(Boolean);
   for (const dir of [...dirs, localBin()]) {
     const candidate = path.join(dir, exe);

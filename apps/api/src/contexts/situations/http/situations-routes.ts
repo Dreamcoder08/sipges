@@ -1,4 +1,4 @@
-import { ProjectSettingsIn } from '@mascli/contracts';
+import { ProjectSettingsIn } from '@sipges/contracts';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { parseJson } from '../../../platform/http/validation.ts';
@@ -10,7 +10,7 @@ import {
   type SituationsService,
 } from '../application/index.ts';
 
-/** MASCLI 4.0 endpoints (docs/adr/0020). Writing settings is admin-only (Identity). */
+/** SIPGES endpoints (docs/adr/0020). Writing settings is admin-only (Identity). */
 export const situationsRoutes = (situations: SituationsService) => {
   const settingsJson = (s: ProjectSettings) => ({
     level_meanings: s.levelMeanings,

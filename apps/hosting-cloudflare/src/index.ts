@@ -46,17 +46,17 @@ const stringsOf = (env: Env) =>
 const initialize = async (env: Env): Promise<Backend> => {
   const vars = stringsOf(env);
   // Never derived from the request: its Host header is client-controlled.
-  const allowedHosts = parseAllowedHosts(vars.MASCLI_ALLOWED_HOSTS ?? '');
-  if (allowedHosts.length === 0) throw new Error('MASCLI_ALLOWED_HOSTS is required');
+  const allowedHosts = parseAllowedHosts(vars.SIPGES_ALLOWED_HOSTS ?? '');
+  if (allowedHosts.length === 0) throw new Error('SIPGES_ALLOWED_HOSTS is required');
   const config = loadConfig({
     ...vars,
     NODE_ENV: 'production',
-    MASCLI_DATABASE_URL: env.HYPERDRIVE.connectionString,
-    MASCLI_ALLOWED_HOSTS: allowedHosts.join(','),
+    SIPGES_DATABASE_URL: env.HYPERDRIVE.connectionString,
+    SIPGES_ALLOWED_HOSTS: allowedHosts.join(','),
     // Evidence files go to R2 through the injected port; this directory is never used.
-    MASCLI_UPLOAD_DIR: '/unused',
+    SIPGES_UPLOAD_DIR: '/unused',
     // Cron Triggers run scheduled automation; an isolate has no long-lived timer.
-    MASCLI_AUTOMATION_INTERVAL: '0',
+    SIPGES_AUTOMATION_INTERVAL: '0',
   });
   // Migrations run at deploy time (migrate.mjs); a request never takes the lock or runs DDL.
   const pending = await pendingMigrations(sql.client, MIGRATIONS);
@@ -81,7 +81,7 @@ const initialize = async (env: Env): Promise<Backend> => {
     web: workerWebAssets(env.ASSETS),
     eventAutomation: true,
     defer: (task) => deferred.getStore()?.push(task),
-    cronSchedule: vars.MASCLI_CRON_SCHEDULE ?? '*/15 * * * *',
+    cronSchedule: vars.SIPGES_CRON_SCHEDULE ?? '*/15 * * * *',
   });
   return { container, app };
 };
@@ -139,11 +139,11 @@ const observeEnd = (response: Response) => {
 const unavailable = (error: unknown) => {
   // Only the error class and pending versions are logged: other messages may contain
   // connection strings or data.
-  console.error('MASCLI initialization failed', {
+  console.error('SIPGES initialization failed', {
     kind: error instanceof Error ? error.name : typeof error,
     ...(error instanceof PendingMigrationsError ? { pending: error.pending } : {}),
   });
-  return new Response(JSON.stringify({ detail: 'MASCLI no está disponible temporalmente' }), {
+  return new Response(JSON.stringify({ detail: 'SIPGES no está disponible temporalmente' }), {
     status: 503,
     headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import { type Scope, formatScope } from '../../tenancy/application/index.ts';
 import {
   ANALYSIS_MODES,

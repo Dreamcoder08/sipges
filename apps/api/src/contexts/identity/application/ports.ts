@@ -106,7 +106,7 @@ export type SessionTokens = {
 
 export type Clock = { now(): Date };
 
-/** Claims MASCLI needs from a Google ID token that was already validated (ADR 0010). */
+/** Claims SIPGES needs from a Google ID token that was already validated (ADR 0010). */
 export type GoogleProfile = { readonly email: string; readonly name: string };
 
 export type GoogleAuthRequest = {

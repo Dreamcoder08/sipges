@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { expect, it } from 'vitest';
 import { RecordDetail } from './RecordDetail.tsx';
 
-it('shows why a MASCLI 4.0 alert was raised, with links to its records', () => {
+it('shows why a SIPGES alert was raised, with links to its records', () => {
   render(
     <RecordDetail
       module="alertas"
@@ -10,7 +10,7 @@ it('shows why a MASCLI 4.0 alert was raised, with links to its records', () => {
         _id: 'AL-7',
         Causa: 'Naranja – Requiere intervención preventiva: existen 3 registros…',
         Nivel_Preliminar: 'Naranja',
-        Origen: 'MASCLI 4.0',
+        Origen: 'SIPGES',
         Situacion: 'tema:empleo local',
         Explicacion:
           '3 registros relacionados con el tema «Empleo local» en 5 día(s).\nParticipan Comunidad Norte.',

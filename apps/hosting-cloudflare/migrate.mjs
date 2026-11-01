@@ -1,13 +1,13 @@
 // Applies the API's SQL migrations to the production database. Run by the deploy workflow
 // before `wrangler deploy`; the Worker only checks that nothing is pending (see src/index.ts).
-// Needs MASCLI_MIGRATION_DATABASE_URL: the direct (not Hyperdrive) URL with sslmode=require.
+// Needs SIPGES_MIGRATION_DATABASE_URL: the direct (not Hyperdrive) URL with sslmode=require.
 // Node must run TypeScript natively (22.18+), like the API's own scripts.
 import { loadMigrations, migrate } from '../api/src/platform/database/migrator.ts';
 import { postgresClient } from '../api/src/platform/database/postgres.ts';
 
-const url = process.env.MASCLI_MIGRATION_DATABASE_URL;
+const url = process.env.SIPGES_MIGRATION_DATABASE_URL;
 if (!url) {
-  console.error('MASCLI_MIGRATION_DATABASE_URL is required');
+  console.error('SIPGES_MIGRATION_DATABASE_URL is required');
   process.exit(1);
 }
 

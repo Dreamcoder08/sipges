@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  * colours, both dark-theme blocks stay identical, and the text pairs every screen relies on
  * keep WCAG AA contrast in light and dark.
  */
-// Vitest runs from the package directory (`pnpm --filter @mascli/web test`).
+// Vitest runs from the package directory (`pnpm --filter @sipges/web test`).
 const SRC = join(process.cwd(), 'src/');
 const sheets = Object.fromEntries(
   readdirSync(SRC, { recursive: true, encoding: 'utf8' })

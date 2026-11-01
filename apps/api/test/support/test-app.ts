@@ -29,13 +29,13 @@ export const TEST_DATA_KEY = Buffer.from(Array.from({ length: 32 }, (_, i) => i)
 );
 
 export const TEST_ENV = {
-  MASCLI_DATA_KEY: TEST_DATA_KEY,
-  MASCLI_ADMIN_USERNAME: 'admin',
-  MASCLI_ADMIN_PASSWORD: 'admin-password-123',
+  SIPGES_DATA_KEY: TEST_DATA_KEY,
+  SIPGES_ADMIN_USERNAME: 'admin',
+  SIPGES_ADMIN_PASSWORD: 'admin-password-123',
   // Most suites exercise features, not enrollment; MFA enforcement has its own tests.
-  MASCLI_REQUIRE_MFA: '0',
+  SIPGES_REQUIRE_MFA: '0',
   // Access logs are covered by their own test; keep the other suites' output readable.
-  MASCLI_ACCESS_LOG: '0',
+  SIPGES_ACCESS_LOG: '0',
 } as const;
 
 export const ORIGIN = 'http://localhost';
@@ -165,8 +165,8 @@ export const createTestApp = async (
       body: form({ username, password, otp }),
     });
     const cookie = res.headers.get('set-cookie') ?? '';
-    const token = /mascli_session=([^;]*)/.exec(cookie)?.[1] ?? '';
-    return { res, token, cookie: `mascli_session=${token}` };
+    const token = /sipges_session=([^;]*)/.exec(cookie)?.[1] ?? '';
+    return { res, token, cookie: `sipges_session=${token}` };
   };
 
   const createAccount = async (
@@ -179,7 +179,7 @@ export const createTestApp = async (
       body: JSON.stringify(account),
     });
 
-  const grant = async (adminCookie: string, username: string, scope = 'MASCLI/PRJ-SECHURA') => {
+  const grant = async (adminCookie: string, username: string, scope = 'SIPGES/PRJ-SECHURA') => {
     const [company_id, project_id] = scope.split('/');
     const res = await request('/system/auth/grants', {
       method: 'POST',

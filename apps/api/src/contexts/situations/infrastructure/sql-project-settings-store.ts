@@ -29,7 +29,7 @@ export const createSqlProjectSettingsStore = (sql: SqlClient): ProjectSettingsSt
         [tenantId, JSON.stringify(stored), updatedBy, at.toISOString()],
       );
       await appendAudit(tx, {
-        module: 'MASCLI 4.0',
+        module: 'SIPGES',
         recordId: null,
         action: 'CONFIG_UPDATE',
         detail: auditDetail,

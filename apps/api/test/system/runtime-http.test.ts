@@ -3,7 +3,7 @@ import { createApp } from '../../src/app.ts';
 import { createSqlAutomationRuntimeStore } from '../../src/contexts/system/infrastructure/sql-automation-runtime.ts';
 import { createTestApp } from '../support/test-app.ts';
 const SECRET = 'synthetic-runtime-cron-secret-123';
-const SCOPE = 'MASCLI/PRJ-SECHURA';
+const SCOPE = 'SIPGES/PRJ-SECHURA';
 const narrative = (id: string) => ({
   payload: {
     ID_Narrativa: id,
@@ -13,7 +13,7 @@ const narrative = (id: string) => ({
   },
 });
 const setup = async () => {
-  const t = await createTestApp({ MASCLI_CRON_SECRET: SECRET });
+  const t = await createTestApp({ SIPGES_CRON_SECRET: SECRET });
   const admin = await t.login('admin', 'admin-password-123');
   const app = createApp(t.container, { eventAutomation: true });
   const call = async (method: string, path: string, body?: unknown, scope = SCOPE) => {
@@ -23,7 +23,7 @@ const setup = async () => {
         host: 'localhost',
         origin: 'http://localhost',
         cookie: admin.cookie,
-        'x-mascli-scope': scope,
+        'x-sipges-scope': scope,
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
@@ -89,16 +89,16 @@ describe('SQL-backed event automation lifecycle', () => {
     ).toBeGreaterThanOrEqual(400);
     expect((await t.call('GET', '/system/automations/runtime')).body.latest_attempt).toEqual(prior);
     await t.createScope((await t.login('admin', 'admin-password-123')).cookie, {
-      company_id: 'MASCLI',
+      company_id: 'SIPGES',
       project_id: 'SYN-RUNTIME',
       label: 'Synthetic runtime isolation',
       username: 'admin',
     });
     expect(
-      (await t.call('GET', '/system/notifications', undefined, 'MASCLI/SYN-RUNTIME')).body.items,
+      (await t.call('GET', '/system/notifications', undefined, 'SIPGES/SYN-RUNTIME')).body.items,
     ).toHaveLength(0);
     expect(
-      (await t.call('GET', '/system/automations/runtime', undefined, 'MASCLI/SYN-RUNTIME')).body
+      (await t.call('GET', '/system/automations/runtime', undefined, 'SIPGES/SYN-RUNTIME')).body
         .latest_attempt,
     ).toBeNull();
   }, 60_000);

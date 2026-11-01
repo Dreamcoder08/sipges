@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 it('accepts the exact Vercel branch and deployment hosts while rejecting unrelated hosts', async () => {
-  vi.stubEnv('MASCLI_ALLOWED_HOSTS', undefined);
+  vi.stubEnv('SIPGES_ALLOWED_HOSTS', undefined);
   vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'project.vercel.app');
   vi.stubEnv('VERCEL_URL', 'deployment-123.vercel.app');
   vi.stubEnv('VERCEL_BRANCH_URL', 'project-git-feature-team.vercel.app');
@@ -24,7 +24,7 @@ it('accepts the exact Vercel branch and deployment hosts while rejecting unrelat
 });
 
 it('preserves an explicit allowlist even when Vercel supplies a branch alias', async () => {
-  vi.stubEnv('MASCLI_ALLOWED_HOSTS', 'locked.example.test');
+  vi.stubEnv('SIPGES_ALLOWED_HOSTS', 'locked.example.test');
   vi.stubEnv('VERCEL_BRANCH_URL', 'project-git-feature-team.vercel.app');
   const { default: app } = await import('../src/index.ts');
   for (const [host, status] of [
@@ -37,7 +37,7 @@ it('preserves an explicit allowlist even when Vercel supplies a branch alias', a
   }
 });
 it('rejects foreign hosts before serving the public shell or initializing SQL', async () => {
-  vi.stubEnv('MASCLI_ALLOWED_HOSTS', 'demo.example.test');
+  vi.stubEnv('SIPGES_ALLOWED_HOSTS', 'demo.example.test');
   const { default: app } = await import('../src/index.ts');
   for (const path of ['/login', '/assets/example.js', '/health']) {
     const response = await app.request(`http://evil.example.test${path}`, {

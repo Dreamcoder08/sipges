@@ -22,7 +22,7 @@ for (const mobile of [false, true]) {
     const sourceUrl = `https://example.test/synthetic/${stamp}`;
     const territory = `Territorio documentado sintético ${stamp}`;
     const noticeTitle = `Señal sintética ${stamp}`;
-    const headers = { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+    const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
     const rules: number[] = [];
     const payload = {
       ID_Narrativa: narrativeId,

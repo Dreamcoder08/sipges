@@ -1,6 +1,6 @@
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
-const scoped = { 'X-MASCLI-Scope': DEFAULT_SCOPE };
+const scoped = { 'X-SIPGES-Scope': DEFAULT_SCOPE };
 
 test('360° view: inferred links, cited briefing, history, search and chronology', async ({
   page,

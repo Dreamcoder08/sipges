@@ -16,7 +16,7 @@ test('events with a known locality appear on the territorial map with their deta
 
   await page.goto('/mapa');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Mapa territorial MASCLI' }),
+    page.getByRole('heading', { level: 1, name: 'Mapa territorial SIPGES' }),
   ).toBeVisible();
   // MapLibre GL JS + deck.gl where WebGL 2 exists, the SVG renderer otherwise (ADR 0017).
   const map = page.getByLabel('Mapa territorial de la provincia de Sechura');

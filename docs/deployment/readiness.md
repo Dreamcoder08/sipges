@@ -1,8 +1,8 @@
 # Deployment readiness (T14)
 
-Registro histórico de la demo, 2026-10-14: el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `MASCLI_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](../history/public-demo-verification.md).
+Registro histórico de la demo, 2026-10-14: el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `SIPGES_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](../history/public-demo-verification.md).
 
-This is the checklist for putting the TypeScript MASCLI (`apps/api` serving the built
+This is the checklist for putting the TypeScript SIPGES (`apps/api` serving the built
 `apps/web`) in front of users. Dated demo evidence, current local candidate checks and
 institutional acceptance are separate. The documented demo used Vercel, private Blob and the
 owner's Neon integration with synthetic data only; it is not evidence that this candidate is
@@ -23,7 +23,7 @@ The published demo stays on the existing Node/Vercel path. The
 plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
 verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
 Hyperdrive connection and migrations already passed after a binding-only TLS correction.
-A Worker now runs at `https://mascli.dreamcoder-dev08.workers.dev` against a separate, empty Neon database
+A Worker now runs at `https://sipges.dreamcoder-dev08.workers.dev` against a separate, empty Neon database
 (ODD L22); it holds no real data and the published demo was not switched. The end-to-end suite against `wrangler dev`
 (T4) now passes locally (93 passed, 1 optional skip; L20) and the steps are in the
 [Workers deployment guide](cloudflare-workers.md) (ADR 0028).
@@ -31,7 +31,7 @@ A Worker now runs at `https://mascli.dreamcoder-dev08.workers.dev` against a sep
 The existing serial Node/Chromium E2E suite (`pnpm e2e`, job-6) completed with exit 0:
 **93 passed, 1 skipped**. It built the SPA and used isolated synthetic PGlite state, with
 temporary files inside the repository. The skipped case is the optional mobile screenshot
-capture (`MASCLI_E2E_SCREENSHOT_DIR` was unset). Local ignored evidence:
+capture (`SIPGES_E2E_SCREENSHOT_DIR` was unset). Local ignored evidence:
 `odd/evidence/cloudflare-workers/node-readiness-U8eOId1G/node-e2e.log` and its adjacent
 `node-e2e.exit`; these artifacts are not distributed with a fresh clone.
 The run started from HEAD `f582ebb` with uncommitted Worker diagnostics; unrelated UI and
@@ -66,23 +66,23 @@ code slice `4a4b5f0` → `2ba2b5a` and [its synthetic HTTP differential](../../o
 
 | Gate | Command | Covers |
 | --- | --- | --- |
-| Static checks and unit/HTTP tests | `pnpm check` (CI job `typescript`) | Lint, format, architecture boundaries, types, API/web/kernel tests; optional real-PostgreSQL integration when `MASCLI_TEST_DATABASE_URL` is set |
+| Static checks and unit/HTTP tests | `pnpm check` (CI job `typescript`) | Lint, format, architecture boundaries, types, API/web/kernel tests; optional real-PostgreSQL integration when `SIPGES_TEST_DATABASE_URL` is set |
 | End-to-end parity | `pnpm e2e` (CI job `e2e`) | Real API + built SPA in headless Chromium against a throwaway database, see below |
-| Data migration rehearsal | `pnpm --filter @mascli/api migrate:legacy` dry run / verify | Synthetic fixture in tests; a real dry run is a deploy-day step |
+| Data migration rehearsal | `pnpm --filter @sipges/api migrate:legacy` dry run / verify | Synthetic fixture in tests; a real dry run is a deploy-day step |
 
 ### End-to-end suite (`apps/e2e`)
 
 `pnpm e2e` builds the SPA and runs Playwright (pinned `@playwright/test`, Chromium only). The
-global setup starts `apps/api/src/main.ts` with `MASCLI_WEB_DIR=apps/web/dist`, a fresh PGlite
-directory (or, when `MASCLI_E2E_DATABASE_URL` names a PostgreSQL server, a database it creates and
+global setup starts `apps/api/src/main.ts` with `SIPGES_WEB_DIR=apps/web/dist`, a fresh PGlite
+directory (or, when `SIPGES_E2E_DATABASE_URL` names a PostgreSQL server, a database it creates and
 drops) and an admin password and data key generated for that run. No credential is committed or
 written to disk. Every test fails on any CSP violation, page error or unexpected console error.
 
 | Spec | Behaviour (S7 parity unless noted) |
 | --- | --- |
 | `01-auth-mfa` | Wrong/right password; HttpOnly + Secure + SameSite=Strict 8 h session cookie; same-app redirect after sign-in and foreign redirect ignored; sign-out revokes the token server-side; TOTP enrollment from the UI with an independent RFC 6238 authenticator, wrong code refused, **re-enrollment refused with 409** (enrollment guard), password-only login then asks for the code, next code accepted, replayed code refused |
-| `02-cookie-policy` | `MASCLI_COOKIE_SECURE` unset and `1` send `Secure` and Chromium keeps **no** session over plain HTTP on a non-loopback name; exactly `0` drops `Secure` on both session and project cookies; `''`, `true`, `yes`, `01`, ` 1`, `2` stop startup before any resource opens |
-| `03-tenancy` | Second tenant created from the admin screen; project switch is server-side (cookie-only request sees the new scope, survives reload, no `localStorage`); records never cross projects in the UI; foreign record/attachment ids give **404** in another granted tenant; a user without the grant gets **403** for header scope, query `project_id`, body `project_id`/`Proyecto_ID`, `/select-project` and export; **`mascli-tenant.json`** export contains only the active tenant and no identity material (S8) |
+| `02-cookie-policy` | `SIPGES_COOKIE_SECURE` unset and `1` send `Secure` and Chromium keeps **no** session over plain HTTP on a non-loopback name; exactly `0` drops `Secure` on both session and project cookies; `''`, `true`, `yes`, `01`, ` 1`, `2` stop startup before any resource opens |
+| `03-tenancy` | Second tenant created from the admin screen; project switch is server-side (cookie-only request sees the new scope, survives reload, no `localStorage`); records never cross projects in the UI; foreign record/attachment ids give **404** in another granted tenant; a user without the grant gets **403** for header scope, query `project_id`, body `project_id`/`Proyecto_ID`, `/select-project` and export; **`sipges-tenant.json`** export contains only the active tenant and no identity material (S8) |
 | `04-records-evidence` | Fuentes CRUD (create, view, edit keeping evidence links, delete with cancel/confirm), evidence upload and byte-identical download, event creation and search, demands/commitments toggle |
 | `05-analysis-management` | IRSA snapshot saved to history; situational, strategic, consensus and integrated DOCX downloads (ZIP signature); document lab analysis (SHA-256 shown), DOCX report and candidates sent to the review inbox; management CSV scoped to the project |
 | `06-csp-screens` | SPA CSP header has no `unsafe-*`; shell has no inline script/style/handlers; injected inline script and inline handler are blocked and reported; all 18 screens render with no CSP report |
@@ -93,9 +93,9 @@ strict CSP reports as a `script-src` violation. `apps/web/src/shared/config/zod.
 jitless parsing before any schema runs.
 
 Local run: `pnpm install --frozen-lockfile`, then `pnpm e2e`. If the browser is missing, run
-`pnpm --filter @mascli/e2e exec playwright install chromium` once. To use PostgreSQL, set
-`MASCLI_E2E_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres`. The role must be
-able to create databases. A database named `mascli_e2e_<random>` is created and dropped.
+`pnpm --filter @sipges/e2e exec playwright install chromium` once. To use PostgreSQL, set
+`SIPGES_E2E_DATABASE_URL=postgres://<user>:<password>@127.0.0.1:5432/postgres`. The role must be
+able to create databases. A database named `sipges_e2e_<random>` is created and dropped.
 
 ## Pre-deployment checklist
 
@@ -103,13 +103,13 @@ able to create databases. A database named `mascli_e2e_<random>` is created and 
 
 - [ ] Node.js 22 or later on the host. Node 24 is recommended. The API runs `.ts` files directly
       with type stripping, so it has no build step: `node apps/api/src/main.ts`.
-- [ ] `pnpm install --frozen-lockfile` and `pnpm --filter @mascli/web build`. Then
-      `MASCLI_WEB_DIR` points at `apps/web/dist`.
-- [ ] `NODE_ENV=production`. With it, the API refuses to start without `MASCLI_DATABASE_URL`, so
+- [ ] `pnpm install --frozen-lockfile` and `pnpm --filter @sipges/web build`. Then
+      `SIPGES_WEB_DIR` points at `apps/web/dist`.
+- [ ] `NODE_ENV=production`. With it, the API refuses to start without `SIPGES_DATABASE_URL`, so
       embedded PGlite can never be used by mistake.
 - [x] Los archivos de arranque Python históricos se han trasladado a `reference/python`; no se usan para desplegar el runtime TypeScript.
 
-La primera URL es una demo académica/personal con datos sintéticos: Vercel Hobby y el subdominio gratuito del proveedor sustituyen la necesidad inicial de dominio o túnel Cloudflare. No se migran datos reales. Los créditos de DOCX conservan la identificación neutral MASCLI; no se atribuyen autores sin indicación del usuario.
+La primera URL es una demo académica/personal con datos sintéticos: Vercel Hobby y el subdominio gratuito del proveedor sustituyen la necesidad inicial de dominio o túnel Cloudflare. No se migran datos reales. Los créditos de DOCX conservan la identificación neutral SIPGES; no se atribuyen autores sin indicación del usuario.
 
 ### 2. Environment variables and secrets
 
@@ -117,41 +117,41 @@ Names only. Values live in the host's secret store or a root-only env file, neve
 
 | Variable | Kind | Required | Notes |
 | --- | --- | --- | --- |
-| `MASCLI_DATA_KEY` | **secret** | yes | Base64 of 32 random bytes. It encrypts TOTP secrets, and losing it locks every MFA user out. Back it up separately from the database. |
-| `MASCLI_DATABASE_URL` | **secret** | yes (production) | URL for the application role (§3). TLS is required unless the host is loopback. |
-| `MASCLI_ADMIN_USERNAME` / `MASCLI_ADMIN_FULL_NAME` | config | first start | Bootstrap administrator on an empty installation only |
-| `MASCLI_ADMIN_PASSWORD` | **secret** | first start only | At least 12 characters. Remove it from the environment after the first start. |
-| `MASCLI_COOKIE_SECURE` | config | no | Leave unset or set `1`. **Never `0` on a public service.** |
-| `MASCLI_HOST` / `MASCLI_PORT` | config | no | Bind to `127.0.0.1` behind the tunnel (default `127.0.0.1:8000`) |
-| `MASCLI_TRUST_PROXY` | config | behind a proxy | Exactly `1` only when a trusted proxy sets `X-Forwarded-For`; it feeds login throttling per IP |
-| `MASCLI_WEB_DIR` | config | yes | Built SPA directory |
-| `MASCLI_MAX_UPLOAD_BYTES` | config | no | Default 10 MiB, ceiling 100 MiB |
-| `MASCLI_STORAGE` | config | yes | `s3` for production; `local` only with a backed-up persistent disk |
-| `MASCLI_UPLOAD_DIR` | config | `local` | Persistent directory outside the repository |
-| `MASCLI_S3_ENDPOINT` / `MASCLI_S3_REGION` / `MASCLI_S3_BUCKET` | config | `s3` | HTTPS endpoint |
-| `MASCLI_S3_ACCESS_KEY_ID` / `MASCLI_S3_SECRET_ACCESS_KEY` | **secret** | `s3` | Key scoped to this bucket only |
-| `MASCLI_OLLAMA_URL` / `MASCLI_OLLAMA_EMBED_MODEL` | config | no | Semantic analysis. Without it, automatic mode falls back to rules. |
-| `MASCLI_ANALYST_PROVIDER` / `MASCLI_ANALYST_MODEL` / `ANTHROPIC_API_KEY` | config + secret | no | Optional prose for analyst briefings (ADR 0013). Off by default; sends non-restricted briefing text to Anthropic, so enable only with the data owner's approval. Without it, briefings stay extractive. |
+| `SIPGES_DATA_KEY` | **secret** | yes | Base64 of 32 random bytes. It encrypts TOTP secrets, and losing it locks every MFA user out. Back it up separately from the database. |
+| `SIPGES_DATABASE_URL` | **secret** | yes (production) | URL for the application role (§3). TLS is required unless the host is loopback. |
+| `SIPGES_ADMIN_USERNAME` / `SIPGES_ADMIN_FULL_NAME` | config | first start | Bootstrap administrator on an empty installation only |
+| `SIPGES_ADMIN_PASSWORD` | **secret** | first start only | At least 12 characters. Remove it from the environment after the first start. |
+| `SIPGES_COOKIE_SECURE` | config | no | Leave unset or set `1`. **Never `0` on a public service.** |
+| `SIPGES_HOST` / `SIPGES_PORT` | config | no | Bind to `127.0.0.1` behind the tunnel (default `127.0.0.1:8000`) |
+| `SIPGES_TRUST_PROXY` | config | behind a proxy | Exactly `1` only when a trusted proxy sets `X-Forwarded-For`; it feeds login throttling per IP |
+| `SIPGES_WEB_DIR` | config | yes | Built SPA directory |
+| `SIPGES_MAX_UPLOAD_BYTES` | config | no | Default 10 MiB, ceiling 100 MiB |
+| `SIPGES_STORAGE` | config | yes | `s3` for production; `local` only with a backed-up persistent disk |
+| `SIPGES_UPLOAD_DIR` | config | `local` | Persistent directory outside the repository |
+| `SIPGES_S3_ENDPOINT` / `SIPGES_S3_REGION` / `SIPGES_S3_BUCKET` | config | `s3` | HTTPS endpoint |
+| `SIPGES_S3_ACCESS_KEY_ID` / `SIPGES_S3_SECRET_ACCESS_KEY` | **secret** | `s3` | Key scoped to this bucket only |
+| `SIPGES_OLLAMA_URL` / `SIPGES_OLLAMA_EMBED_MODEL` | config | no | Semantic analysis. Without it, automatic mode falls back to rules. |
+| `SIPGES_ANALYST_PROVIDER` / `SIPGES_ANALYST_MODEL` / `ANTHROPIC_API_KEY` | config + secret | no | Optional prose for analyst briefings (ADR 0013). Off by default; sends non-restricted briefing text to Anthropic, so enable only with the data owner's approval. Without it, briefings stay extractive. |
 | `NODE_ENV` | config | yes | `production` |
 
-ADR 0009 está integrado: configura `MASCLI_ALLOWED_HOSTS` con el host público. `MASCLI_REQUIRE_MFA` está activado por defecto; el administrador puede inscribir el autenticador en el primer acceso. Cada escritura exige `Origin` o `Referer`. La suite de paridad/cookies usa explícitamente MFA opcional; `03-mfa-required` comprueba por separado el alta obligatoria y el siguiente inicio de sesión.
+ADR 0009 está integrado: configura `SIPGES_ALLOWED_HOSTS` con el host público. `SIPGES_REQUIRE_MFA` está activado por defecto; el administrador puede inscribir el autenticador en el primer acceso. Cada escritura exige `Origin` o `Referer`. La suite de paridad/cookies usa explícitamente MFA opcional; `03-mfa-required` comprueba por separado el alta obligatoria y el siguiente inicio de sesión.
 
 ### 3. PostgreSQL with a least-privilege role
 
 PostgreSQL 16 or later. CI uses 17, and local verification used 16. Run this as a DBA once:
 
 ```sql
-CREATE ROLE mascli_app LOGIN PASSWORD '<from secret store>'
+CREATE ROLE sipges_app LOGIN PASSWORD '<from secret store>'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
-CREATE ROLE mascli_tenant NOLOGIN NOINHERIT;      -- the migrations expect this name
-GRANT mascli_tenant TO mascli_app WITH ADMIN OPTION;
-CREATE DATABASE mascli OWNER mascli_app;
+CREATE ROLE sipges_tenant NOLOGIN NOINHERIT;      -- the migrations expect this name
+GRANT sipges_tenant TO sipges_app WITH ADMIN OPTION;
+CREATE DATABASE sipges OWNER sipges_app;
 ```
 
 - The application must **not** be a superuser or have `BYPASSRLS`. Either one would bypass the
   forced row-level security that isolates tenants (ADR 0003). Tenant queries run as
-  `mascli_tenant` through `SET LOCAL ROLE` inside `withTenant`.
-- Creating `mascli_tenant` up front means the application role never needs `CREATEROLE`.
+  `sipges_tenant` through `SET LOCAL ROLE` inside `withTenant`.
+- Creating `sipges_tenant` up front means the application role never needs `CREATEROLE`.
   Verified on PostgreSQL 16: a non-superuser role provisioned this way ran every migration and
   served `/health`.
 - Require TLS to a managed or remote server. The adapter sets `ssl: 'require'` for non-loopback
@@ -162,7 +162,7 @@ CREATE DATABASE mascli OWNER mascli_app;
 Hand-written SQL migrations in `apps/api/src/platform/database/migrations/` run automatically at
 API startup. A migration lock makes concurrent starts safe (real-PostgreSQL integration test).
 There is no separate migrate command. The first start against an empty database creates the
-schema, the bootstrap admin and the default tenant `MASCLI/PRJ-SECHURA`.
+schema, the bootstrap admin and the default tenant `SIPGES/PRJ-SECHURA`.
 
 ### 5. Legacy data migration (future institutional deployment)
 
@@ -179,7 +179,7 @@ No aplica a la demo académica: usa únicamente datos sintéticos. Para una futu
    another timezone (for example America/Lima, UTC−5), decide whether to shift them before
    applying. That decision is recorded in the runbook.
 5. Sessions are not migrated. Every user signs in again, and migrated TOTP secrets keep working
-   with the same `MASCLI_DATA_KEY`.
+   with the same `SIPGES_DATA_KEY`.
 6. Start the API only after verify passes.
 
 ### 6. Object storage
@@ -204,11 +204,11 @@ solo aplican si se elige posteriormente esa alternativa.
       an IdP group, a short session duration, and no bypass rules for `/`, `/api/*` or `/system/*`.
 - [ ] Keep the public `Host` header (the cloudflared default). The API compares `Origin` with
       `Host` on writes.
-- [ ] Set `MASCLI_TRUST_PROXY=1` only if cloudflared's `X-Forwarded-For` is confirmed during the
+- [ ] Set `SIPGES_TRUST_PROXY=1` only if cloudflared's `X-Forwarded-For` is confirmed during the
       rehearsal. Otherwise every client appears as `127.0.0.1` and shares one throttle bucket.
 - [ ] HTTPS ends at Cloudflare's edge, so the browser sees HTTPS and the default Secure cookies
-      work. Keep `MASCLI_COOKIE_SECURE` unset or `1`.
-- [ ] Access is an extra layer on top of MASCLI's own sign-in and MFA. It does not replace them.
+      work. Keep `SIPGES_COOKIE_SECURE` unset or `1`.
+- [ ] Access is an extra layer on top of SIPGES's own sign-in and MFA. It does not replace them.
 
 ### 8. Backups and restore
 
@@ -216,10 +216,10 @@ solo aplican si se elige posteriormente esa alternativa.
       the host, and keep it for a set period.
 - [ ] Object storage: use bucket versioning or a replicated copy. Database rows and objects must
       be restorable to the same point, so take both backups in the same window.
-- [ ] `MASCLI_DATA_KEY` and the role passwords go in a password manager or vault, separate from
+- [ ] `SIPGES_DATA_KEY` and the role passwords go in a password manager or vault, separate from
       the dumps.
 - [ ] **Restore drill before go-live:** restore into an empty database and bucket, start the API,
-      and sign in with MFA. Then download an attachment and compare a `mascli-tenant.json` export.
+      and sign in with MFA. Then download an attachment and compare a `sipges-tenant.json` export.
       This has not been done yet.
 
 ### 9. Health checks and monitoring
@@ -235,7 +235,7 @@ solo aplican si se elige posteriormente esa alternativa.
 
 - The API logs to stdout/stderr: the start line, the PGlite warning in development and
   unexpected errors (`console.error` in the error handler, with a generic 500 for the client).
-  Structured per-request access logging is enabled by `MASCLI_ACCESS_LOG` (default on),
+  Structured per-request access logging is enabled by `SIPGES_ACCESS_LOG` (default on),
   through `platform/http/observability.ts`. It records method, matched route, request path,
   status and duration, without query strings, request bodies or cookies. A path can contain
   record identifiers: restrict log access and retention. Edge-provider logs are separate and
@@ -262,7 +262,7 @@ solo aplican si se elige posteriormente esa alternativa.
 | --- | --- |
 | Cloudflare account, zone and hostname | No requerido para la demo: se usa el subdominio gratuito de Vercel. |
 | Alojamiento de la demo | Vercel Hobby, proyecto `mascli-demo-academica`, adaptador `apps/hosting`. |
-| Créditos DOCX | Identificación neutral MASCLI, sin nombres personales inventados. |
+| Créditos DOCX | Identificación neutral SIPGES, sin nombres personales inventados. |
 | Controles ADR 0009 | Integrados en la consolidación TypeScript. |
 | Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
 | Recursos de demo | Vercel y Blob privado creados; PostgreSQL Neon vinculado por el propietario. Cuenta bootstrap persistida. |

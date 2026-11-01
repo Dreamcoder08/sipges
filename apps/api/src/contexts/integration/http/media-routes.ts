@@ -1,4 +1,4 @@
-import { MediaFeedIn } from '@mascli/contracts';
+import { MediaFeedIn } from '@sipges/contracts';
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AppEnv } from '../../../platform/http/env.ts';

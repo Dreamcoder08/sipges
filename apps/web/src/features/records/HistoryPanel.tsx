@@ -1,4 +1,4 @@
-import type { RecordVersion } from '@mascli/contracts';
+import type { RecordVersion } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { historyQuery } from './api.ts';

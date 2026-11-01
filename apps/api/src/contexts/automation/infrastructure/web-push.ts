@@ -64,7 +64,7 @@ export type VapidKeys = {
 const vapidSigner = (keys: VapidKeys): KeyObject => {
   const pub = unb64(keys.publicKey);
   if (pub.length !== 65 || pub[0] !== 4)
-    throw new Error('MASCLI_VAPID_PUBLIC_KEY must be an uncompressed P-256 key');
+    throw new Error('SIPGES_VAPID_PUBLIC_KEY must be an uncompressed P-256 key');
   return createPrivateKey({
     key: {
       kty: 'EC',

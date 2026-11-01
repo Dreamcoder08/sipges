@@ -5,7 +5,7 @@ import {
   IrsaReport,
   ModelStatus,
   ValidationTemplate,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 export const irsaQuery = (scope: string) =>

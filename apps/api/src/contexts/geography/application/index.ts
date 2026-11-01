@@ -3,7 +3,7 @@ import {
   type GeographyCatalogue,
   type GeographyPolygon,
   type GeographyResult,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import type { Scope } from '../../tenancy/application/index.ts';
 import { relateRecords, type GeographyRecords } from './relations.ts';
 export type GeographyGateway = {

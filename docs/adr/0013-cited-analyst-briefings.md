@@ -23,9 +23,9 @@ territorial data to an external service is a decision for the data owner, not a 
    the tenant transaction, so a `consulta` user never sees, counts or cites restricted records
    (ADR 0012).
 3. **Optional narration behind a port.** A `Narrator` may rewrite the extractive text as prose.
-   The Claude adapter is enabled only with `MASCLI_ANALYST_PROVIDER=anthropic` and
+   The Claude adapter is enabled only with `SIPGES_ANALYST_PROVIDER=anthropic` and
    `ANTHROPIC_API_KEY` (read by the SDK from the environment; never stored or logged); the model
-   defaults to `claude-opus-5-5` (`MASCLI_ANALYST_MODEL`) at low effort with server-side refusal
+   defaults to `claude-opus-5-5` (`SIPGES_ANALYST_MODEL`) at low effort with server-side refusal
    fallbacks.
 4. **What the model sees.** Only the briefing text, rebuilt without restricted neighbours; a
    restricted subject is never narrated. The prompt marks the text as material, not
@@ -38,7 +38,7 @@ territorial data to an external service is a decision for the data owner, not a 
 
 ## Consequences
 
-- Without configuration MASCLI makes no external calls and still provides a useful briefing.
+- Without configuration SIPGES makes no external calls and still provides a useful briefing.
 - Enabling narration sends non-restricted record text to Anthropic; deployment docs flag it as
   needing the data owner's approval.
 - Signals are heuristics over free-form fields (`Estado`, `Nivel_Preliminar`, `Plazo`, …); they

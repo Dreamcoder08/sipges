@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { expect, it } from 'vitest';
 import * as followup from './followup.ts';
 

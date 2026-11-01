@@ -1,4 +1,4 @@
-# Documentación de MASCLI
+# Documentación de SIPGES
 
 Un índice, una línea por página: qué pregunta responde cada una. Las guías viven en esta carpeta; los planes de trabajo, en [`odd/tasks`](../odd/tasks).
 
@@ -6,7 +6,7 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 
 | Página                                                                                   | Responde                                                                                          |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| [overview.md](overview.md)                                                               | ¿Qué stack usa MASCLI, qué módulos existen y cómo arranco en local?                               |
+| [overview.md](overview.md)                                                               | ¿Qué stack usa SIPGES, qué módulos existen y cómo arranco en local?                               |
 | [migration/workspace.md](migration/workspace.md)                                         | ¿Qué comandos, variables de entorno y pruebas de base de datos tiene el workspace?                |
 | [escenarios/irsa.md](escenarios/irsa.md), [escenarios/alertas.md](escenarios/alertas.md) | ¿Qué puntajes del IRSA y qué prioridades de alertas espera el equipo? (los ejecuta `pnpm verify`) |
 

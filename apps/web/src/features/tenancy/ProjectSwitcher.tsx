@@ -1,4 +1,4 @@
-import type { CurrentScope } from '@mascli/contracts';
+import type { CurrentScope } from '@sipges/contracts';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useId } from 'react';
 import { scopeKey, scopesQuery, selectProject } from './api.ts';

@@ -144,7 +144,7 @@ describe('automation channels', () => {
     expect(
       validateChannel('email', {
         api_key: 're_synthetic_key_123',
-        from: 'MASCLI <avisos@example.org>',
+        from: 'SIPGES <avisos@example.org>',
         to: 'ana@example.org, luis@example.org',
       }),
     ).toMatchObject({ targetHint: 'an…@example.org y 1 más' });

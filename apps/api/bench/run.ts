@@ -2,7 +2,7 @@
  * T12 benchmarks of the processing hotspots (ADR 0005, behavior contract §7).
  *
  *   node bench/run.ts                 # engines + documents + semantic + HTTP (embedded PGlite)
- *   MASCLI_BENCH_DATABASE_URL=postgres://… node bench/run.ts   # HTTP against real PostgreSQL
+ *   SIPGES_BENCH_DATABASE_URL=postgres://… node bench/run.ts   # HTTP against real PostgreSQL
  *   node bench/run.ts --quick --out results.json
  *
  * Synthetic data only (bench/synthetic.ts). Results go to docs/benchmarks/.
@@ -204,7 +204,7 @@ await record(
   '8 embeddings',
   () =>
     intelligence().semanticAnalyze(
-      { companyId: 'MASCLI', projectId: PROJECT },
+      { companyId: 'SIPGES', projectId: PROJECT },
       { text, sourceUrl: '', mode: 'semantic' },
     ),
   { runs: quick ? 3 : 10, warmup: 1 },
@@ -215,14 +215,14 @@ await record(
   '1 embedding',
   () =>
     warm.semanticAnalyze(
-      { companyId: 'MASCLI', projectId: PROJECT },
+      { companyId: 'SIPGES', projectId: PROJECT },
       { text, sourceUrl: '', mode: 'semantic' },
     ),
   { runs: RUNS },
 );
 
 // 4. End to end over HTTP: records read from the database, engine, JSON response.
-const databaseUrl = process.env.MASCLI_BENCH_DATABASE_URL;
+const databaseUrl = process.env.SIPGES_BENCH_DATABASE_URL;
 const openDatabase = async (): Promise<{
   sql: SqlClient;
   close: () => Promise<void>;
@@ -230,7 +230,7 @@ const openDatabase = async (): Promise<{
 }> => {
   if (databaseUrl) {
     const admin = postgresClient(databaseUrl);
-    const name = `mascli_bench_${Date.now()}`;
+    const name = `sipges_bench_${Date.now()}`;
     await admin.client.exec(`CREATE DATABASE ${name}`);
     const url = new URL(databaseUrl);
     url.pathname = `/${name}`;
@@ -255,7 +255,7 @@ try {
   const session = await createBenchmarkSession(database.sql, slowModel);
   const httpScale = quick ? 10 : 10;
   const records = syntheticRecords(httpScale);
-  const tenant = 'MASCLI/PRJ-SECHURA';
+  const tenant = 'SIPGES/PRJ-SECHURA';
   for (const [module, rows] of Object.entries(records)) {
     for (let i = 0; i < rows.length; i += 500) {
       const batch = rows.slice(i, i + 500);

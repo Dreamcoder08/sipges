@@ -4,7 +4,7 @@ import {
   AuthorizedSourceImportIn,
   type AuthorizedSourceState,
   type OfficialSourcePost,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 export type OfficialSourceGateway = {
   preview(query: string): Promise<OfficialSourcePost[]>;
   get(id: number): Promise<OfficialSourcePost>;

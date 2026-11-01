@@ -1,13 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
-/** MASCLI 4.0 end to end with synthetic records (docs/adr/0020, 0027): situation, alert. */
-test('MASCLI 4.0 relates recent records, explains the colour and lets a person raise the alert', async ({
+/** SIPGES end to end with synthetic records (docs/adr/0020, 0027): situation, alert. */
+test('SIPGES relates recent records, explains the colour and lets a person raise the alert', async ({
   page,
   admin,
 }) => {
   await signInToProject(page, admin, DEFAULT_SCOPE);
-  const headers = { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+  const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
   const stamp = Date.now();
   const topic = `Tema de prueba ${stamp}`;
   const day = (ago: number) => new Date(Date.now() - ago * 86_400_000).toISOString().slice(0, 10);

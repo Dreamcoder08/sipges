@@ -76,11 +76,11 @@ These tests establish behavior, not latency.
 - Semantic analysis uses a model double that answers after 40 ms, so it measures orchestration
   and not model speed.
 - HTTP scenarios go through the full Hono app with the session and tenancy middleware, reading
-  4,840 records from **real PostgreSQL 16** (`MASCLI_BENCH_DATABASE_URL`). Without that
+  4,840 records from **real PostgreSQL 16** (`SIPGES_BENCH_DATABASE_URL`). Without that
   variable the harness uses embedded PGlite, whose queries run on the event loop.
 - The HTTP fixture (`apps/api/bench/http-session.ts`) creates a disposable synthetic admin,
   logs in, enrolls TOTP through the public setup/enable endpoints, and selects the granted
-  `MASCLI/PRJ-SECHURA` project through `/select-project`. Both session and scope cookies are
+  `SIPGES/PRJ-SECHURA` project through `/select-project`. Both session and scope cookies are
   carried on measurements. MFA, role and tenant middleware remain enabled; enrollment and
   project selection are setup costs, outside the timed GETs. Secrets and cookies are not
   printed. Any non-200 GET aborts the run rather than counting a denial as latency.
@@ -91,9 +91,9 @@ These tests establish behavior, not latency.
   Node 22.22.0.
 
 ```bash
-corepack pnpm --filter @mascli/api bench                     # full run, embedded PGlite
-MASCLI_BENCH_DATABASE_URL=postgres://… corepack pnpm --filter @mascli/api bench -- --out r.json
-corepack pnpm --filter @mascli/api bench -- --quick          # 1× and 10× only, fewer runs
+corepack pnpm --filter @sipges/api bench                     # full run, embedded PGlite
+SIPGES_BENCH_DATABASE_URL=postgres://… corepack pnpm --filter @sipges/api bench -- --out r.json
+corepack pnpm --filter @sipges/api bench -- --quick          # 1× and 10× only, fewer runs
 ```
 
 Raw results: `results/2026-10-13-baseline.json` (before) and `results/2026-10-13-after.json`.

@@ -1,4 +1,4 @@
-import { Timeline } from '@mascli/contracts';
+import { Timeline } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 

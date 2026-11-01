@@ -15,7 +15,7 @@ import { createHostedApp } from './lazy-app.ts';
 
 /** Vercel entrypoint; the normal API remains the only source of business behavior. */
 const allowedHosts = parseAllowedHosts(
-  process.env.MASCLI_ALLOWED_HOSTS ??
+  process.env.SIPGES_ALLOWED_HOSTS ??
     [
       process.env.VERCEL_PROJECT_PRODUCTION_URL,
       process.env.VERCEL_URL,
@@ -50,13 +50,13 @@ const app = new Hono()
         const config = loadConfig({
           ...process.env,
           NODE_ENV: 'production',
-          MASCLI_DATABASE_URL:
-            process.env.MASCLI_DATABASE_URL ?? process.env.DATABASE_URL ?? process.env.POSTGRES_URL,
-          MASCLI_ALLOWED_HOSTS: allowedHosts.join(','),
-          MASCLI_WEB_DIR: `${process.cwd()}/public`,
-          MASCLI_UPLOAD_DIR: '/tmp/mascli-demo-uploads',
-          MASCLI_MAX_UPLOAD_BYTES: '3145728',
-          MASCLI_AUTOMATION_INTERVAL: '0',
+          SIPGES_DATABASE_URL:
+            process.env.SIPGES_DATABASE_URL ?? process.env.DATABASE_URL ?? process.env.POSTGRES_URL,
+          SIPGES_ALLOWED_HOSTS: allowedHosts.join(','),
+          SIPGES_WEB_DIR: `${process.cwd()}/public`,
+          SIPGES_UPLOAD_DIR: '/tmp/sipges-demo-uploads',
+          SIPGES_MAX_UPLOAD_BYTES: '3145728',
+          SIPGES_AUTOMATION_INTERVAL: '0',
         });
         stage = 'database';
         const database = await openDatabase(config);
@@ -85,7 +85,7 @@ const app = new Hono()
         }
       } catch (error) {
         // Only log the stage; error details may contain credentials or private data.
-        console.error('MASCLI demo initialization stage', { stage });
+        console.error('SIPGES demo initialization stage', { stage });
         throw error;
       }
     }),

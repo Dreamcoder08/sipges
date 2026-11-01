@@ -11,7 +11,7 @@ import {
   OntologyCatalog,
   RecordGraph,
   RecordLinks,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 

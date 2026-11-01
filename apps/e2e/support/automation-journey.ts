@@ -30,7 +30,7 @@ export const automationJourney = async (page: Page, stamp: string) => {
   const channel = `Canal E2E ${stamp}`;
   await page.getByLabel('Tipo de canal').selectOption('webhook');
   await page.getByLabel('Nombre del canal').fill(channel);
-  await page.getByLabel('URL https del receptor').fill('https://hooks.example.org/mascli');
+  await page.getByLabel('URL https del receptor').fill('https://hooks.example.org/sipges');
   await page.getByLabel('Secreto de firma').fill(`secreto-sintetico-${stamp}-largo`);
   await page.getByRole('button', { name: 'Crear canal' }).click();
   await expect(notice('Canal creado.')).toBeInViewport();

@@ -6,8 +6,8 @@ import { loadConfig } from '../../api/src/platform/config.ts';
 
 it.each([
   [{}, 'ERR_CONFIG_DATA_KEY_MISSING'],
-  [{ MASCLI_DATA_KEY: 'invalid-private-key' }, 'ERR_CONFIG_DATA_KEY_INVALID'],
-  [{ MASCLI_DATA_KEY: Buffer.alloc(32).toString('base64') }, 'ERR_CONFIG_DATABASE_URL_MISSING'],
+  [{ SIPGES_DATA_KEY: 'invalid-private-key' }, 'ERR_CONFIG_DATA_KEY_INVALID'],
+  [{ SIPGES_DATA_KEY: Buffer.alloc(32).toString('base64') }, 'ERR_CONFIG_DATABASE_URL_MISSING'],
 ])(
   'identifies configuration failures without returning environment values (%s)',
   async (env, code) => {
@@ -18,7 +18,7 @@ it.each([
     });
     const response = await hosted.request('/health');
     expect(response.status).toBe(503);
-    expect(logs).toHaveBeenCalledWith('MASCLI demo initialization failed', { code });
+    expect(logs).toHaveBeenCalledWith('SIPGES demo initialization failed', { code });
     expect(await response.json()).toEqual({ detail: 'La demo no está disponible temporalmente' });
     expect(JSON.stringify(logs.mock.calls)).not.toContain('invalid-private-key');
   },

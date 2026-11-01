@@ -102,7 +102,7 @@ describe('POST /system/uploads', () => {
   });
 
   it('answers each rejection with app.py status codes and stores nothing', async () => {
-    const { t, upload, event } = await setup({ MASCLI_MAX_UPLOAD_BYTES: '1048576' });
+    const { t, upload, event } = await setup({ SIPGES_MAX_UPLOAD_BYTES: '1048576' });
     await event('EV-1');
     const cases: [Fields, { name: string; bytes: Uint8Array } | null, number][] = [
       [{ ...LINK, linked_module: 'planetas' }, undefined as never, 400],
@@ -193,7 +193,7 @@ describe('GET /system/uploads', () => {
         })
       ).status,
     ).toBe(200);
-    const north = { 'x-mascli-scope': 'ACME/NORTE' };
+    const north = { 'x-sipges-scope': 'ACME/NORTE' };
     expect(await (await json('GET', '/system/uploads', undefined, north)).json()).toEqual([]);
     expect((await json('GET', `/system/uploads/${first?.id}`, undefined, north)).status).toBe(404);
     expect(

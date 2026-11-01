@@ -19,9 +19,9 @@ const MODULES = {
   oportunidades: 'Oportunidades',
   hechos: 'Hechos_Compartidos',
   aarc: 'Evaluaciones_AARC',
-  // MASCLI 4.0 complaints, reports, questions and suggestions (docs/adr/0020).
+  // SIPGES complaints, reports, questions and suggestions (docs/adr/0020).
   buzon: 'Buzon',
-  // MASCLI 4.0 lessons learned per territory, topic or actor (docs/adr/0024 §4).
+  // SIPGES lessons learned per territory, topic or actor (docs/adr/0024 §4).
   lecciones: 'Lecciones_Territoriales',
 } as const;
 

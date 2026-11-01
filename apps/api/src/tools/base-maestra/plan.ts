@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { RecordIn } from '@mascli/contracts';
+import { RecordIn } from '@sipges/contracts';
 import {
   type ModuleName,
   type Payload,

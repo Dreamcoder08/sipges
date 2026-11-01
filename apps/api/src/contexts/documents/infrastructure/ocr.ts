@@ -16,7 +16,7 @@ const OCR_TIMEOUT_MS = 5 * 60_000;
  */
 export const ocrmypdfRecognizer = (languages: string): TextRecognizer => ({
   async recognizePdf(bytes) {
-    const dir = await mkdtemp(join(tmpdir(), 'mascli-ocr-'));
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-ocr-'));
     try {
       const input = join(dir, 'in.pdf');
       const sidecar = join(dir, 'text.txt');

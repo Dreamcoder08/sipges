@@ -6,7 +6,7 @@ import {
   RecordCreated,
   RecordIn,
   RecordVersion,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { isApiError, requestJson } from '../../shared/api/client.ts';

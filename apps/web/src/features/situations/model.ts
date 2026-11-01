@@ -1,8 +1,8 @@
-import type { Situation } from '@mascli/contracts';
+import type { Situation } from '@sipges/contracts';
 import { objectHref } from '../../shared/lib/navigation.tsx';
 
 /** Alerts created from a situation carry this origin; the engine never counts them again. */
-export const GENERATED_ORIGIN = 'MASCLI 4.0';
+export const GENERATED_ORIGIN = 'SIPGES';
 
 /** Stored module name → screen slug ("Demandas" → "demandas", "Buzon" → "buzon"). */
 export const citationHref = (module: string, id: string) => objectHref(module.toLowerCase(), id);

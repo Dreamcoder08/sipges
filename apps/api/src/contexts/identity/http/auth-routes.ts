@@ -5,7 +5,7 @@ import {
   type LoginResponse,
   type Me,
   TotpEnableRequest,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { Hono } from 'hono';
 import { getCookie } from 'hono/cookie';
 import {

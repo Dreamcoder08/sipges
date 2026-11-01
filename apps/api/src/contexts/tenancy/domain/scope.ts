@@ -1,10 +1,10 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 
 /** A company/project pair; one tenant. */
 export type Scope = { readonly companyId: string; readonly projectId: string };
 
 /** Legacy project of the Python installation (app.py bootstrap). */
-export const DEFAULT_SCOPE: Scope = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+export const DEFAULT_SCOPE: Scope = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 export const DEFAULT_SCOPE_LABEL = 'Proyecto Sechura (migración)';
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{2,64}$/;
@@ -23,7 +23,7 @@ export const sameScope = (a: Scope, b: Scope) =>
   a.companyId === b.companyId && a.projectId === b.projectId;
 
 /**
- * app.py enforce_auth step 4: the X-MASCLI-Scope header, then the scope cookie, then the
+ * app.py enforce_auth step 4: the X-SIPGES-Scope header, then the scope cookie, then the
  * only grant when nothing was requested. Anything not granted resolves to null.
  */
 export const resolveScope = (input: {

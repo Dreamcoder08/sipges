@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AttachmentPreview } from '@mascli/contracts';
+import { AttachmentPreview } from '@sipges/contracts';
 import { renderEvidence } from '../support/evidence-documents.ts';
 import { createTestApp, memoryStorage } from '../support/test-app.ts';
 

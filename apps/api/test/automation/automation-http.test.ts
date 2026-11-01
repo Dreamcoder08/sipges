@@ -9,7 +9,7 @@ type Json = Record<string, any>;
 const CRON_SECRET = 'cron-secret-synthetic-0123456789';
 
 const setup = async (options: { channelSender?: ChannelSender } = {}) => {
-  const t = await createTestApp({ MASCLI_CRON_SECRET: CRON_SECRET }, options);
+  const t = await createTestApp({ SIPGES_CRON_SECRET: CRON_SECRET }, options);
   const admin = await t.login('admin', 'admin-password-123');
   const call = async (method: string, path: string, body?: unknown, cookie = admin.cookie) => {
     const res = await t.request(path, {
@@ -34,7 +34,7 @@ const setup = async (options: { channelSender?: ChannelSender } = {}) => {
       await call('POST', '/system/automations/channels', {
         kind: 'webhook',
         name: 'Sistema externo',
-        settings: { url: 'https://receiver.example.org/mascli', secret: 's'.repeat(32) },
+        settings: { url: 'https://receiver.example.org/sipges', secret: 's'.repeat(32) },
       })
     ).body.id as number;
   const alertRule = async (channelId: number) =>
@@ -70,12 +70,12 @@ describe('automations', () => {
     const [sent] = t.sent;
     expect(sent?.config).toMatchObject({
       kind: 'webhook',
-      url: 'https://receiver.example.org/mascli',
+      url: 'https://receiver.example.org/sipges',
     });
     expect(sent?.message).toMatchObject({
       title: 'Alerta alta AL-1',
       event: {
-        type: 'mascli.alertas.create',
+        type: 'sipges.alertas.create',
         module: 'Alertas',
         record_id: 'AL-1',
         record: { ID_Alerta: 'AL-1', Nivel: 'Alto' },
@@ -256,6 +256,6 @@ describe('automations', () => {
     const channelId = await t.webhook();
     const res = await t.call('POST', `/system/automations/channels/${channelId}/test`, {});
     expect(res.status).toBe(200);
-    expect(t.sent[0]?.message.title).toBe('Prueba de MASCLI');
+    expect(t.sent[0]?.message.title).toBe('Prueba de SIPGES');
   });
 });

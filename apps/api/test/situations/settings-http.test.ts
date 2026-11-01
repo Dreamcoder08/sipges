@@ -1,4 +1,4 @@
-import { ProjectSettings, SituationsReport } from '@mascli/contracts';
+import { ProjectSettings, SituationsReport } from '@sipges/contracts';
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 import { createSituationsService } from '../../src/contexts/situations/application/index.ts';
@@ -10,7 +10,7 @@ import { checkRoleAccess } from '../../src/contexts/identity/domain/access-polic
 import type { AppEnv } from '../../src/platform/http/env.ts';
 import { createTestApp } from '../support/test-app.ts';
 
-const SECHURA = 'MASCLI/PRJ-SECHURA';
+const SECHURA = 'SIPGES/PRJ-SECHURA';
 const NORTE = 'ACME/NORTE';
 
 const setup = async () => {
@@ -41,7 +41,7 @@ const setup = async () => {
   return { t, request, put };
 };
 
-describe('MASCLI 4.0 project settings', () => {
+describe('SIPGES project settings', () => {
   it('starts with the preliminary colour meanings and no version switch', async () => {
     const { request } = await setup();
     const res = await request('/system/v4/settings');
@@ -99,12 +99,12 @@ describe('MASCLI 4.0 project settings', () => {
     });
     expect(
       await t.sql.query(
-        "SELECT tenant_id, module, action, detail FROM audit WHERE module = 'MASCLI 4.0'",
+        "SELECT tenant_id, module, action, detail FROM audit WHERE module = 'SIPGES'",
       ),
     ).toEqual([
       {
         tenant_id: SECHURA,
-        module: 'MASCLI 4.0',
+        module: 'SIPGES',
         action: 'CONFIG_UPDATE',
         detail: 'Campos: levelMeanings',
       },
@@ -142,13 +142,13 @@ describe('MASCLI 4.0 project settings', () => {
     expect((await put({ recommendations: { otra: 'x' } })).status).toBe(422);
     await t.sql.exec(`
       INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at) VALUES
-        ('MASCLI/PRJ-SECHURA', 'Demandas', 'D-1',
+        ('SIPGES/PRJ-SECHURA', 'Demandas', 'D-1',
           '{"Fecha_Registro":"2026-10-11","Tema":"Empleo local","Actor/Grupo":"Comunidad Norte","Prioridad":"Alta"}', now(), now()),
-        ('MASCLI/PRJ-SECHURA', 'Narrativas', 'N-1',
+        ('SIPGES/PRJ-SECHURA', 'Narrativas', 'N-1',
           '{"Fecha_Inicio":"2026-10-09","Tema":"Trabajo","Actor_Relacionado":"Frente de Defensa"}', now(), now()),
-        ('MASCLI/PRJ-SECHURA', 'Eventos', 'EV-1',
+        ('SIPGES/PRJ-SECHURA', 'Eventos', 'EV-1',
           '{"Fecha":"2026-10-07","Descripcion_Hecho":"Reunión sobre empleo","Actor_Principal":"Comunidad Norte"}', now(), now()),
-        ('MASCLI/PRJ-SECHURA', 'Eventos', 'EV-2', '{"Descripcion_Hecho":"Sin fecha"}', now(), now()),
+        ('SIPGES/PRJ-SECHURA', 'Eventos', 'EV-2', '{"Descripcion_Hecho":"Sin fecha"}', now(), now()),
         ('ACME/NORTE', 'Demandas', 'D-9', '{"Fecha_Registro":"2026-10-11","Tema":"Empleo"}', now(), now()),
         ('ACME/NORTE', 'Demandas', 'D-8', '{"Fecha_Registro":"2026-10-10","Tema":"Empleo"}', now(), now());
     `);

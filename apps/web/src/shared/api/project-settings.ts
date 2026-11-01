@@ -1,4 +1,4 @@
-import { ProjectSettings } from '@mascli/contracts';
+import { ProjectSettings } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from './client.ts';
 

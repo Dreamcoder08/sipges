@@ -1,5 +1,5 @@
 /**
- * The MASCLI ontology (docs/adr/0011): which territorial records are objects, how they are
+ * The SIPGES ontology (docs/adr/0011): which territorial records are objects, how they are
  * named, and which typed links may join them. Payloads stay free-form; this catalog is the
  * semantic layer every view (links, search, graph, briefings) reads.
  */

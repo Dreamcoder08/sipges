@@ -6,7 +6,7 @@ it('bounds source and geography requests before tenancy parses JSON and preserve
   const headers = {
     cookie: admin.cookie,
     'content-type': 'application/json',
-    'x-mascli-scope': 'MASCLI/PRJ-SECHURA',
+    'x-sipges-scope': 'SIPGES/PRJ-SECHURA',
   };
   const query = vi.spyOn(t.container.geography, 'query').mockResolvedValue({
     features: [],
@@ -22,7 +22,7 @@ it('bounds source and geography requests before tenancy parses JSON and preserve
   });
   expect(response.status).toBe(200);
   expect(query).toHaveBeenCalledWith(
-    expect.objectContaining({ companyId: 'MASCLI', projectId: 'PRJ-SECHURA' }),
+    expect.objectContaining({ companyId: 'SIPGES', projectId: 'PRJ-SECHURA' }),
     expect.objectContaining({ layerId: 0 }),
   );
   const config = await t.request('/system/intelligence/sources/defensoria/config', {

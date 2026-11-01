@@ -83,7 +83,7 @@ export const AppShell = ({
   }
 
   useEffect(() => {
-    document.title = `${title} | MASCLI 4.0`;
+    document.title = `${title} | SIPGES`;
     if (first.current) {
       first.current = false;
       return;
@@ -127,12 +127,12 @@ export const AppShell = ({
       </a>
       {compact ? null : (
         <aside className={styles.sidebar}>
-          <div className={styles.brand}>
+          <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
             <span className={styles.mark} aria-hidden="true">
-              M
+              S
             </span>
             <span>
-              <b>MASCLI 4.0</b>
+              <b>SIPGES</b>
               <small>Gestión socioambiental</small>
             </span>
           </div>
@@ -166,7 +166,7 @@ export const AppShell = ({
                 onClick={() => setSheet('project')}
               >
                 <span className={styles.mark} aria-hidden="true">
-                  M
+                  S
                 </span>
                 <span className={styles.contextText}>
                   <b>{project.name}</b> <small>{project.detail}</small>

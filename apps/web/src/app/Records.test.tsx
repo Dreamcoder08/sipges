@@ -207,7 +207,7 @@ it('pins a pending write to its original project while the selection changes', a
   let writeScope: string | null = null;
   server.use(
     http.post('/api/eventos', async ({ request }) => {
-      writeScope = request.headers.get('X-MASCLI-Scope');
+      writeScope = request.headers.get('X-SIPGES-Scope');
       const body = (await request.json()) as { payload: Record<string, unknown> };
       started = true;
       await new Promise<void>((resolve) => {

@@ -1,4 +1,4 @@
-# Integraciones de MASCLI
+# Integraciones de SIPGES
 
 Guía de las automatizaciones, los canales de salida, las claves de API y el servidor MCP
 (decisiones en [ADR 0014](../adr/0014-automation-and-integration.md)). Todo se configura
@@ -29,7 +29,7 @@ después queda como fallida con el error.
 
 | Hospedaje | Cómo |
 | --- | --- |
-| Servidor Node (`pnpm --filter @mascli/api start`) | Solo, cada `MASCLI_AUTOMATION_INTERVAL` segundos (30 por defecto, `0` lo apaga). |
+| Servidor Node (`pnpm --filter @sipges/api start`) | Solo, cada `SIPGES_AUTOMATION_INTERVAL` segundos (30 por defecto, `0` lo apaga). |
 | Serverless (Vercel) | Un cron llama `GET /system/automations/cron` con `Authorization: Bearer $CRON_SECRET`. Vercel envía esa cabecera si defines la variable `CRON_SECRET` (24 caracteres o más). En el plan Hobby el cron mínimo es diario; para minutos hace falta un plan Pro o un cron externo. |
 | Manual | Botón **Ejecutar ahora** en la pantalla. |
 
@@ -51,7 +51,7 @@ Ejemplo de `vercel.json` (solo en planes que admiten crons por minuto):
 | Telegram | Token del bot y id del chat o `@canal` | El bot debe estar en el chat. |
 | Correo | Clave de Resend, remitente verificado y hasta 20 destinatarios | |
 
-Los secretos se cifran con `MASCLI_DATA_KEY` y no vuelven a mostrarse. Solo se aceptan
+Los secretos se cifran con `SIPGES_DATA_KEY` y no vuelven a mostrarse. Solo se aceptan
 destinos `https` públicos (sin `localhost`, IP privadas ni nombres internos). De los registros
 **restringidos** solo sale el módulo y el id, nunca su contenido.
 
@@ -76,7 +76,7 @@ const verify = (secret, headers, body) => {
 
 Rechaza los envíos con más de 5 minutos de antigüedad y usa `webhook-id` para descartar
 duplicados: un reintento repite el mismo id. El cuerpo JSON trae `type`
-(`mascli.<módulo>.<acción>`), `module`, `record_id`, `action`, `detail`, `marking` y `record`
+(`sipges.<módulo>.<acción>`), `module`, `record_id`, `action`, `detail`, `marking` y `record`
 (los campos del registro, o `null` si está restringido).
 
 ## Avisos en el dispositivo
@@ -90,14 +90,14 @@ rol consulta.
 Para activarlo, genera un par de claves VAPID una vez y guárdalo como variables del servidor:
 
 ```bash
-pnpm --filter @mascli/api vapid:keys
+pnpm --filter @sipges/api vapid:keys
 ```
 
 | Variable | Valor |
 | --- | --- |
-| `MASCLI_VAPID_PUBLIC_KEY` | Clave pública (87 caracteres). |
-| `MASCLI_VAPID_PRIVATE_KEY` | Clave privada (43 caracteres). Secreta. |
-| `MASCLI_VAPID_SUBJECT` | `mailto:` de contacto o URL `https` del responsable. |
+| `SIPGES_VAPID_PUBLIC_KEY` | Clave pública (87 caracteres). |
+| `SIPGES_VAPID_PRIVATE_KEY` | Clave privada (43 caracteres). Secreta. |
+| `SIPGES_VAPID_SUBJECT` | `mailto:` de contacto o URL `https` del responsable. |
 
 Sin estas variables el interruptor no aparece. Cambiar las claves invalida las suscripciones
 existentes: cada persona debe volver a activarlo. Los dispositivos dados de baja por el
@@ -157,10 +157,10 @@ reaccionar a esas decisiones con el origen **Propuestas del analista**.
 
 ## Búsqueda semántica
 
-Con `MASCLI_SEMANTIC_SEARCH=1` la búsqueda (Ctrl/⌘+K y la herramienta MCP `search_records`)
+Con `SIPGES_SEMANTIC_SEARCH=1` la búsqueda (Ctrl/⌘+K y la herramienta MCP `search_records`)
 también encuentra registros por significado: "agua" encuentra un "conflicto hídrico" aunque no
 compartan palabras. Usa el modelo de embeddings de Ollama ya configurado
-(`MASCLI_OLLAMA_URL`, `MASCLI_OLLAMA_EMBED_MODEL`).
+(`SIPGES_OLLAMA_URL`, `SIPGES_OLLAMA_EMBED_MODEL`).
 
 - Los vectores se guardan en la base de datos y se calculan poco a poco: cada búsqueda
   procesa hasta 16 registros nuevos o modificados antes de responder.
@@ -178,7 +178,7 @@ evento lleva solo el módulo y la acción, nunca el id ni el contenido de un reg
 Vercel cada conexión dura menos de 60 s y se reanuda sola con `Last-Event-ID`.
 
 Cada respuesta trae `traceresponse` ([W3C Trace Context](https://www.w3.org/TR/trace-context/)).
-Si la petición llega con `traceparent`, MASCLI continúa esa traza; si no, empieza una. Los logs
+Si la petición llega con `traceparent`, SIPGES continúa esa traza; si no, empieza una. Los logs
 JSON incluyen `trace_id` y `span_id`, y las llamadas salientes a webhooks firmados, Ollama y
 S3 llevan `traceparent` con la misma traza, para seguir una operación de punta a punta en
 Grafana, Datadog, Honeycomb o cualquier visor compatible con OpenTelemetry.
@@ -191,8 +191,8 @@ en la misma máquina; el documento no sale del servidor.
 
 | Variable | Valor |
 | --- | --- |
-| `MASCLI_OCR` | `ocrmypdf` para activarlo. |
-| `MASCLI_OCR_LANGUAGES` | Idiomas de Tesseract, por defecto `spa+eng`. |
+| `SIPGES_OCR` | `ocrmypdf` para activarlo. |
+| `SIPGES_OCR_LANGUAGES` | Idiomas de Tesseract, por defecto `spa+eng`. |
 
 No está disponible en Vercel (no hay binarios de OCR); úsalo en un servidor Node o un
 contenedor con `ocrmypdf` y los paquetes de idioma.
@@ -217,7 +217,7 @@ contenedor con `ocrmypdf` y los paquetes de idioma.
 Claude Code:
 
 ```bash
-claude mcp add --transport http mascli https://<tu-dominio>/mcp \
+claude mcp add --transport http sipges https://<tu-dominio>/mcp \
   --header "Authorization: Bearer mscli_..."
 ```
 
@@ -228,11 +228,11 @@ Otros clientes (Claude Desktop, VS Code, Cursor) aceptan la misma URL y la cabec
 
 | Variable | Para qué | Por defecto |
 | --- | --- | --- |
-| `MASCLI_AUTOMATION_INTERVAL` | Segundos entre revisiones de reglas en un servidor Node (`0` las apaga). | `30` |
-| `MASCLI_CRON_SECRET` o `CRON_SECRET` | Secreto del cron de `/system/automations/cron` (24+ caracteres). | sin cron |
-| `MASCLI_VAPID_PUBLIC_KEY`, `MASCLI_VAPID_PRIVATE_KEY`, `MASCLI_VAPID_SUBJECT` | Avisos en el dispositivo (`pnpm --filter @mascli/api vapid:keys`). | apagado |
-| `MASCLI_SEMANTIC_SEARCH` | `1` activa la búsqueda semántica con Ollama. | `0` |
-| `MASCLI_OCR`, `MASCLI_OCR_LANGUAGES` | OCR local de PDF escaneados con `ocrmypdf`. | apagado |
+| `SIPGES_AUTOMATION_INTERVAL` | Segundos entre revisiones de reglas en un servidor Node (`0` las apaga). | `30` |
+| `SIPGES_CRON_SECRET` o `CRON_SECRET` | Secreto del cron de `/system/automations/cron` (24+ caracteres). | sin cron |
+| `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Avisos en el dispositivo (`pnpm --filter @sipges/api vapid:keys`). | apagado |
+| `SIPGES_SEMANTIC_SEARCH` | `1` activa la búsqueda semántica con Ollama. | `0` |
+| `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | OCR local de PDF escaneados con `ocrmypdf`. | apagado |
 
 En Vercel, define las variables en el proyecto (Settings → Environment Variables) y vuelve a
 desplegar. Las conexiones de tiempo real duran menos que el límite de 60 s de la función y se

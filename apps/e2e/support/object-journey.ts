@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { DEFAULT_SCOPE, expect } from './fixtures.ts';
 
-const scoped = { 'X-MASCLI-Scope': DEFAULT_SCOPE };
+const scoped = { 'X-SIPGES-Scope': DEFAULT_SCOPE };
 
 /**
  * The 360° view's own actions: approve an analyst proposal (a text mention becomes a link),

@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import {
   DEFAULT_IRSA_CONFIG,
   INDICATOR_CONFIG,
@@ -73,7 +73,7 @@ export const createIndicatorsService = (deps: {
       phase: { id: phase.phase, label: phase.label },
       notes: [
         ...result.notes,
-        `Pesos de la fase ${phase.label} del proyecto (MASCLI 4.0), preliminares hasta su validación.`,
+        `Pesos de la fase ${phase.label} del proyecto (SIPGES), preliminares hasta su validación.`,
       ],
     };
   };

@@ -1,4 +1,4 @@
-import { ProjectSettings } from '@mascli/contracts';
+import { ProjectSettings } from '@sipges/contracts';
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 import { createIndicatorsService } from '../../src/contexts/indicators/application/index.ts';
@@ -33,7 +33,7 @@ const setup = async () => {
   });
   const app = new Hono<AppEnv>()
     .use('*', async (c, next) => {
-      c.set('scope', { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' });
+      c.set('scope', { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' });
       c.set('identity', { username: 'admin', fullName: 'Admin', role: 'admin' });
       await next();
     })
@@ -72,7 +72,7 @@ describe('Project phase and phase IRSA weights (ADR 0021 §4)', () => {
     expect(
       (
         await t.sql.query<{ detail: string }>(
-          "SELECT detail FROM audit WHERE module = 'MASCLI 4.0' ORDER BY id",
+          "SELECT detail FROM audit WHERE module = 'SIPGES' ORDER BY id",
         )
       ).map((r) => r.detail),
     ).toEqual([

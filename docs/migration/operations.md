@@ -26,7 +26,7 @@ management overview with its CSV report (RC 2.8). Three contexts:
 | `PATCH /system/prevention/actions/{id}` `{status, progress, note?, evidence_url?}` | `{ok, action}` | 404, 409 reactivating a cancelled action, 422 rules below |
 | `GET /system/prevention/summary` | totals, overdue, average progress | |
 | `GET /system/management/overview` | `version: "2.8"` metrics, critical actions, responsibles | |
-| `GET /system/management/report.csv` | `mascli_rc28_reporte_gerencial.csv` (UTF-8 BOM, CRLF) | |
+| `GET /system/management/report.csv` | `sipges_rc28_reporte_gerencial.csv` (UTF-8 BOM, CRLF) | |
 
 Analysis POSTs are read-only and open to every role (ADR 0008 #3). Creating or deciding alerts
 and creating or updating actions need a writing role. Every write records an audit row in the
@@ -47,8 +47,8 @@ JSON export.
 
 | Variable | Meaning | Default |
 | --- | --- | --- |
-| `MASCLI_OLLAMA_URL` | http(s) base URL of the Ollama server used for embeddings | `http://127.0.0.1:11434` |
-| `MASCLI_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
+| `SIPGES_OLLAMA_URL` | http(s) base URL of the Ollama server used for embeddings | `http://127.0.0.1:11434` |
+| `SIPGES_OLLAMA_EMBED_MODEL` | embedding model | `nomic-embed-text` |
 
 Only the configured URL is contacted (12 s timeout, no redirects, 1.5 MB response cap); the
 request's `source_url` is never fetched. Without a reachable model, `automatic` mode falls back

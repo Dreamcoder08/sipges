@@ -1,4 +1,4 @@
-import { ProjectCoordinatesResponse, type ProjectCoordinates } from '@mascli/contracts';
+import { ProjectCoordinatesResponse, type ProjectCoordinates } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';

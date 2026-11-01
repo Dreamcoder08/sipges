@@ -1,4 +1,4 @@
-import { AuditEntry } from '@mascli/contracts';
+import { AuditEntry } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';

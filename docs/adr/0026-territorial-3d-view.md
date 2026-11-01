@@ -36,7 +36,7 @@ CSP estricta: sin estilos en línea, sin `eval` y sin compilar WebAssembly.
   (`vercel.json`). La CSP solo añade `https://s3.amazonaws.com` a `connect-src`.
 - Para cumplir la CSP sin relajarla, `vite.config.ts` cambia dos líneas de Cesium. Una prueba de
   capacidades fija un estilo con atributo y ahora lo hace por el CSSOM; la hoja de estilo que
-  inyecta el bloque de créditos se omite. Además, `meshoptimizer` (glTF comprimido, que MASCLI no
+  inyecta el bloque de créditos se omite. Además, `meshoptimizer` (glTF comprimido, que SIPGES no
   carga) se sustituye por un decodificador inerte, porque compilaba WebAssembly al importarse.
   Si una versión de Cesium mueve esas líneas, la compilación falla.
 

@@ -69,7 +69,7 @@ it('searches every object type with Ctrl+K and opens the chosen record', async (
       const url = new URL(request.url);
       queries.push({
         q: url.searchParams.get('q'),
-        scope: request.headers.get('X-MASCLI-Scope'),
+        scope: request.headers.get('X-SIPGES-Scope'),
       });
       return HttpResponse.json({
         query: url.searchParams.get('q'),

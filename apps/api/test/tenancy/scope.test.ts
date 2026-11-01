@@ -7,7 +7,7 @@ import {
   validateNewTenant,
 } from '../../src/contexts/tenancy/domain/scope.ts';
 
-const sechura = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+const sechura = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 const norte = { companyId: 'ACME', projectId: 'NORTE' };
 
 describe('scope text', () => {
@@ -26,14 +26,14 @@ describe('scope text', () => {
 describe('resolveScope (app.py enforce_auth step 4)', () => {
   const grants = [sechura, norte];
 
-  it('prefers the X-MASCLI-Scope header over the cookie', () => {
-    expect(resolveScope({ header: 'ACME/NORTE', cookie: 'MASCLI/PRJ-SECHURA', grants })).toEqual(
+  it('prefers the X-SIPGES-Scope header over the cookie', () => {
+    expect(resolveScope({ header: 'ACME/NORTE', cookie: 'SIPGES/PRJ-SECHURA', grants })).toEqual(
       norte,
     );
   });
 
   it('falls back to the scope cookie', () => {
-    expect(resolveScope({ header: undefined, cookie: 'MASCLI/PRJ-SECHURA', grants })).toEqual(
+    expect(resolveScope({ header: undefined, cookie: 'SIPGES/PRJ-SECHURA', grants })).toEqual(
       sechura,
     );
   });
@@ -78,7 +78,7 @@ describe('validateNewTenant (app.py:355-361)', () => {
   });
 
   it('reserves the legacy default scope', () => {
-    expect(validateNewTenant({ ...input, companyId: 'MASCLI', projectId: 'PRJ-SECHURA' })).toEqual({
+    expect(validateNewTenant({ ...input, companyId: 'SIPGES', projectId: 'PRJ-SECHURA' })).toEqual({
       ok: false,
       error: 'reserved',
     });

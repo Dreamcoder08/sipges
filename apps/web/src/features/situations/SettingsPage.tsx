@@ -1,4 +1,4 @@
-import { ProjectSettings, type ProjectSettingsIn } from '@mascli/contracts';
+import { ProjectSettings, type ProjectSettingsIn } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
@@ -24,14 +24,14 @@ const FEATURES = [
   'Fase del proyecto con pesos IRSA propios y monitoreo de medios regionales por RSS.',
 ];
 
-/** MASCLI 4.0 configuration of the active project: colour meanings, phase, feeds (docs/adr/0020). */
+/** SIPGES configuration of the active project: colour meanings, phase, feeds (docs/adr/0020). */
 export const SettingsPage = ({ scope, role }: FeatureContext) => {
   const settings = useQuery(projectSettingsQuery(scope));
   // Kept here: the form remounts with the saved settings, which would drop the message.
   const [notice, setNotice] = useState('');
   return (
     <div className={styles.page}>
-      <QueryState query={settings} label="la configuración de MASCLI 4.0">
+      <QueryState query={settings} label="la configuración de SIPGES">
         {(data) => (
           <SettingsForm
             key={data.updated_at ?? 'default'}
@@ -90,8 +90,8 @@ const SettingsForm = ({
   };
   return (
     <>
-      <Card eyebrow="Proyecto" title="MASCLI 4.0">
-        <p>Este proyecto funciona con MASCLI 4.0. Estas son sus funciones:</p>
+      <Card eyebrow="Proyecto" title="SIPGES">
+        <p>Este proyecto funciona con SIPGES. Estas son sus funciones:</p>
         <ul>
           {FEATURES.map((feature) => (
             <li key={feature}>{feature}</li>

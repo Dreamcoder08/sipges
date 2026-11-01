@@ -1,10 +1,10 @@
 import type { Context } from 'hono';
 import { deleteCookie, setCookie } from 'hono/cookie';
 
-export const SESSION_COOKIE = 'mascli_session';
-export const SCOPE_COOKIE = 'mascli_scope';
+export const SESSION_COOKIE = 'sipges_session';
+export const SCOPE_COOKIE = 'sipges_scope';
 
-/** HttpOnly, SameSite=Strict, Path=/, 8 h; Secure per MASCLI_COOKIE_SECURE (ADR 0004). */
+/** HttpOnly, SameSite=Strict, Path=/, 8 h; Secure per SIPGES_COOKIE_SECURE (ADR 0004). */
 export const setAuthCookie = (
   c: Context,
   name: string,

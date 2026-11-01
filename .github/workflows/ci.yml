@@ -26,9 +26,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint && pnpm boundaries && pnpm typecheck
-      # `pnpm check` minus @mascli/api, which runs sharded in the api job below.
-      - run: pnpm -r --workspace-concurrency=1 --filter '!@mascli/api' run test && pnpm test:tooling
-      - run: pnpm --filter @mascli/web build
+      # `pnpm check` minus @sipges/api, which runs sharded in the api job below.
+      - run: pnpm -r --workspace-concurrency=1 --filter '!@sipges/api' run test && pnpm test:tooling
+      - run: pnpm --filter @sipges/web build
 
   api:
     name: API tests (shard ${{ matrix.shard }}/3)
@@ -49,7 +49,7 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
-      MASCLI_TEST_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:55432/postgres
+      SIPGES_TEST_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:55432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -59,7 +59,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Each shard has its own PostgreSQL service, so shards share no database state.
-      - run: pnpm --filter @mascli/api exec vitest run --shard=${{ matrix.shard }}/3
+      - run: pnpm --filter @sipges/api exec vitest run --shard=${{ matrix.shard }}/3
 
   e2e:
     name: End-to-end parity (Playwright, ${{ matrix.browser }} ${{ matrix.shard }})
@@ -84,7 +84,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       # The suite creates and drops its own throwaway database on this server.
-      MASCLI_E2E_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:55432/postgres
+      SIPGES_E2E_DATABASE_URL: postgres://postgres:ci-only-password@127.0.0.1:55432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -94,12 +94,12 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Browser revision follows the @playwright/test version pinned in apps/e2e (lockfile).
-      - run: pnpm --filter @mascli/e2e exec playwright install --with-deps ${{ matrix.browser }}
-      - run: pnpm --filter @mascli/web build
+      - run: pnpm --filter @sipges/e2e exec playwright install --with-deps ${{ matrix.browser }}
+      - run: pnpm --filter @sipges/web build
       - if: matrix.browser == 'chromium'
-        run: pnpm --filter @mascli/e2e exec playwright test --shard=${{ matrix.shard }}
+        run: pnpm --filter @sipges/e2e exec playwright test --shard=${{ matrix.shard }}
       - if: matrix.browser == 'webkit'
-        run: pnpm --filter @mascli/e2e exec playwright test --config playwright.webkit.config.ts
+        run: pnpm --filter @sipges/e2e exec playwright test --config playwright.webkit.config.ts
       - if: failure()
         uses: actions/upload-artifact@v4
         with:

@@ -1,4 +1,4 @@
-import { NotificationInbox } from '@mascli/contracts';
+import { NotificationInbox } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useId, useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
