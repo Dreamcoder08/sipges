@@ -101,7 +101,7 @@ export const portablePasswordHasher: PasswordHasher = {
     } catch (error) {
       // Malformed hashes already returned false; this is an infrastructure fault (for example an
       // allocation failure). Fail closed, but leave a trace with the error class only.
-      console.error('MASCLI password verification failed', {
+      console.error('SIPGES password verification failed', {
         kind: error instanceof Error ? error.name : typeof error,
       });
       return false;

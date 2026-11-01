@@ -120,7 +120,7 @@ describe('portable hasher Argon2id concurrency gate', () => {
         await portablePasswordHasher.verify('gate-password-five', phc('gate-password-five')),
       ).toBe(false);
       expect(log).toHaveBeenCalledTimes(1);
-      expect(log).toHaveBeenCalledWith('MASCLI password verification failed', { kind: 'Error' });
+      expect(log).toHaveBeenCalledWith('SIPGES password verification failed', { kind: 'Error' });
       expect(JSON.stringify(log.mock.calls)).not.toContain('gate-password-five');
 
       log.mockClear();
