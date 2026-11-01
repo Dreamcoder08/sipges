@@ -1,4 +1,4 @@
-# MASCLI Python Behavior Contract (migration reference)
+# SIPGES Python Behavior Contract (migration reference)
 
 Source of truth for the TypeScript rewrite (`odd/tasks/typescript-hexagonal-migration.md`, T1, S6–S7).
 Baseline: commit `c7fec1b`. `app.py:N` refers to the Python source. No real record values were read; `data/seed.json` and `.db` files are described by shape only.
@@ -13,9 +13,9 @@ Auth: **A** anonymous/exempt from middleware, **S** any session, **Adm** admin. 
 | GET / | 621 | S | HTML | 303→/login, 303→/select-project |
 | GET /login | 262 | A | HTML (inline form + script) | |
 | POST /login (form: username, password, otp) | 266 | A | JSON + Set-Cookie | 401 bad creds/inactive/bad TOTP |
-| POST /logout | 281 | A | JSON, deletes `mascli_session` | |
+| POST /logout | 281 | A | JSON, deletes `sipges_session` | |
 | GET /select-project | 315 | S (self-check) | HTML | 303→/login |
-| POST /select-project (form: scope) | 324 | S (self-check) | 303 + Set-Cookie `mascli_scope` | 401, 403 |
+| POST /select-project (form: scope) | 324 | S (self-check) | 303 + Set-Cookie `sipges_scope` | 401, 403 |
 | GET /system/auth/me | 288 | A | JSON identity or null | |
 | GET /system/auth/current-scope | 337 | S | JSON | |
 | GET /system/auth/scopes | 342 | A (self-check) | JSON list | 401 |
@@ -25,7 +25,7 @@ Auth: **A** anonymous/exempt from middleware, **S** any session, **Adm** admin. 
 | POST /system/auth/accounts | 298 | Adm | JSON | 409, 422 (password < 12) |
 | POST /system/auth/totp/setup | 394 | S (analista and admin) | JSON secret + otpauth URI | 409 MFA already enabled |
 | POST /system/auth/totp/enable | 412 | S | JSON | 422 |
-| GET /system/export | 1329 | Adm | octet-stream `mascli.db` (scoped) | 403 no scope |
+| GET /system/export | 1329 | Adm | octet-stream `sipges.db` (scoped) | 403 no scope |
 | GET /system/audit?limit | 1324 | Adm | JSON | |
 | GET /system/irsa | 1011 | S | JSON | |
 | GET /system/irsa/config | 1015 | S | JSON | |
@@ -70,7 +70,7 @@ Auth: **A** anonymous/exempt from middleware, **S** any session, **Adm** admin. 
 
 - **Passwords** (`:162-173`): PBKDF2-HMAC-SHA256, 310,000 iterations, 16-byte salt, 32-byte digest; format `pbkdf2_sha256$310000$<saltHex>$<digestHex>`; constant-time compare; malformed → false. Minimum 12 chars at creation/bootstrap.
 - **Sessions**: `token_hex(32)`; only SHA-256 hex stored in `auth_sessions`; 8 h absolute lifetime; no sliding refresh; no purge.
-- **Cookies**: `mascli_session` and `mascli_scope`: HttpOnly, SameSite=Strict, Path=/, Max-Age 8 h, Secure per policy. Logout deletes only the session.
+- **Cookies**: `sipges_session` and `sipges_scope`: HttpOnly, SameSite=Strict, Path=/, Max-Age 8 h, Secure per policy. Logout deletes only the session.
 - **Secure policy** (`:10-18`): unset or `"1"` → Secure; `"0"` → not Secure; anything else fails at startup before resource init.
 - **TOTP** (`:175-185`, `:394-420`): SHA-1, 6 digits, 30 s, ±1 step window, `\d{6}`. 20-byte base32 secret stored in plaintext. Setup only while `totp_enabled=0` (else 409) and regenerates the secret. Enable sets the flag and deletes the user's other sessions. No replay protection.
 - **Roles**: `admin, analista, coordinador, consulta`.
@@ -78,20 +78,20 @@ Auth: **A** anonymous/exempt from middleware, **S** any session, **Adm** admin. 
   1. Exempt (all methods): `/health`, `/login`, `/logout`, `/select-project`, `/system/auth/me`, `/system/auth/scopes`.
   2. Session → identity; missing → 303 for `GET /`, else 401.
   3. Non-GET with `Origin` netloc ≠ `Host` → 403.
-  4. Scope: `X-MASCLI-Scope` header → `mascli_scope` cookie → sole grant. Not granted → 403 (303 for `GET /`).
+  4. Scope: `X-SIPGES-Scope` header → `sipges_scope` cookie → sole grant. Not granted → 403 (303 for `GET /`).
   5. Scoped DB missing → 503.
   6. Query `project_id` ≠ scope → 403.
   7. JSON body `project_id` / `payload.Proyecto_ID` ≠ scope on POST/PUT/PATCH under `/api/` or `/system/` → 403.
   8. Role gates: accounts/export/audit/non-GET irsa config → admin; `/api/usuarios`, `/api/roles` → admin; non-GET `/api/proyectos` → admin; non-GET: `consulta` 403; `coordinador` 403 except `/system/prevention/*` and `/system/intelligence/territorial-alerts*`.
   9. Handler; scope reset in `finally`.
   10. Headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store`. No CSP, no HSTS.
-- **Environment**: `MASCLI_COOKIE_SECURE`, `MASCLI_DB_PATH`, `MASCLI_UPLOAD_DIR`, `MASCLI_MAX_UPLOAD_BYTES` (default 10 MiB, unchecked), `MASCLI_AUTH_DB_PATH`, `MASCLI_TENANT_DIR`, `MASCLI_ADMIN_USERNAME` (default `admin`), `MASCLI_ADMIN_PASSWORD` (required ≥ 12 when no users), `MASCLI_OLLAMA_EMBED_MODEL` (default `nomic-embed-text`; Ollama URL hard-coded `127.0.0.1:11434`).
+- **Environment**: `SIPGES_COOKIE_SECURE`, `SIPGES_DB_PATH`, `SIPGES_UPLOAD_DIR`, `SIPGES_MAX_UPLOAD_BYTES` (default 10 MiB, unchecked), `SIPGES_AUTH_DB_PATH`, `SIPGES_TENANT_DIR`, `SIPGES_ADMIN_USERNAME` (default `admin`), `SIPGES_ADMIN_PASSWORD` (required ≥ 12 when no users), `SIPGES_OLLAMA_EMBED_MODEL` (default `nomic-embed-text`; Ollama URL hard-coded `127.0.0.1:11434`).
 
 ## 3. Tenancy
 
 - `auth_global.db`: `auth_users(username PK, full_name, password_hash, role, active, created_at, totp_secret, totp_enabled)`, `auth_sessions(token_hash PK, username, expires_at, created_at)`, `tenant_projects(company_id, project_id, label)`, `access_grants(username, company_id, project_id)`.
-- Legacy migration copies `auth_users` from default DB without TOTP fields. Bootstrap creates `MASCLI/PRJ-SECHURA` and grants it to all admins.
-- Tenant DB: `MASCLI/PRJ-SECHURA` → `data/mascli.db`; others → `TENANT_DIR/<sha256("company/project")[:24]>.db`.
+- Legacy migration copies `auth_users` from default DB without TOTP fields. Bootstrap creates `SIPGES/PRJ-SECHURA` and grants it to all admins.
+- Tenant DB: `SIPGES/PRJ-SECHURA` → `data/sipges.db`; others → `TENANT_DIR/<sha256("company/project")[:24]>.db`.
 - Scoped settings copied on first use to `TENANT_DIR/<stem>_settings/`; uploads under `UPLOAD_DIR/<hash>/` for non-default scopes.
 - Records without `Proyecto_ID` count as `PRJ-SECHURA` in analysis filters; generic CRUD isolates only by DB file.
 - Grants many-to-many; `POST /system/auth/scopes` copies schema (no data), seeds one `Proyectos` record and grants the user. No revoke.

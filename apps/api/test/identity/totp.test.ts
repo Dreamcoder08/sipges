@@ -46,7 +46,7 @@ describe('totp.generateSecret', () => {
 
   it('builds the same otpauth URI format as Python', () => {
     expect(totp.uri('ana.perez', SECRET)).toBe(
-      `otpauth://totp/MASCLI:ana.perez?secret=${SECRET}&issuer=MASCLI&algorithm=SHA1&digits=6&period=30`,
+      `otpauth://totp/SIPGES:ana.perez?secret=${SECRET}&issuer=SIPGES&algorithm=SHA1&digits=6&period=30`,
     );
   });
 });

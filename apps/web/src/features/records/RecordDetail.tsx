@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { AlertExplanation, EXPLANATION_KEYS, isExplainedAlert } from './AlertExplanation.tsx';
 import { displayValue, extraFields, fieldValue, safePublicUrl } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';

@@ -1,4 +1,4 @@
-import { ApiKeyIn, type ApiKeyCreated, type ApiKeyOut } from '@mascli/contracts';
+import { ApiKeyIn, type ApiKeyCreated, type ApiKeyOut } from '@sipges/contracts';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';

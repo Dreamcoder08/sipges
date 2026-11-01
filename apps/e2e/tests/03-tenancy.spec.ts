@@ -11,7 +11,7 @@ import {
 } from '../support/fixtures.ts';
 
 /**
- * Two synthetic tenants (S7, S8): the bootstrap MASCLI/PRJ-SECHURA and a second project created
+ * Two synthetic tenants (S7, S8): the bootstrap SIPGES/PRJ-SECHURA and a second project created
  * through the administration screen. The specs build on each other, so they run serially.
  */
 test.describe.configure({ mode: 'serial' });
@@ -20,7 +20,7 @@ const NORTE = 'E2E/PRJ-NORTE';
 const NORTE_LABEL = 'Proyecto Norte E2E';
 const MARKER = { sechura: `marca-sechura-${Date.now()}`, norte: `marca-norte-${Date.now()}` };
 
-const scoped = (scope: string) => ({ 'X-MASCLI-Scope': scope });
+const scoped = (scope: string) => ({ 'X-SIPGES-Scope': scope });
 
 const createEvent = async (api: APIRequestContext, scope: string, description: string) => {
   const response = await api.post('/api/eventos', {
@@ -57,14 +57,14 @@ test('an administrator creates a second project and switches to it server-side',
   await switchProject(page, NORTE);
   await expect(page.getByText(`Proyecto activo: ${NORTE_LABEL} (${NORTE})`)).toBeVisible();
 
-  // The server owns the selection: a cookie-only request (no X-MASCLI-Scope) sees the new scope.
+  // The server owns the selection: a cookie-only request (no X-SIPGES-Scope) sees the new scope.
   const current = await page.request.get('/system/auth/current-scope');
   expect(await current.json()).toEqual({
     company_id: 'E2E',
     project_id: 'PRJ-NORTE',
     scope: NORTE,
   });
-  const cookie = (await page.context().cookies()).find((c) => c.name === 'mascli_scope');
+  const cookie = (await page.context().cookies()).find((c) => c.name === 'sipges_scope');
   expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Strict' });
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 
@@ -183,7 +183,7 @@ test('cross-tenant access is refused with 403 (scope) and 404 (foreign ids)', as
   ]);
 });
 
-test('the export downloads mascli-tenant.json with the active project only', async ({
+test('the export downloads sipges-tenant.json with the active project only', async ({
   page,
   admin,
 }) => {
@@ -192,7 +192,7 @@ test('the export downloads mascli-tenant.json with the active project only', asy
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exportar JSON del proyecto' }).click();
   const download = await downloading;
-  expect(download.suggestedFilename()).toBe('mascli-tenant.json');
+  expect(download.suggestedFilename()).toBe('sipges-tenant.json');
   await expect(page.getByText('Exportación descargada.')).toBeVisible();
 
   const text = await readFile((await download.path()) ?? '', 'utf8');
@@ -202,14 +202,14 @@ test('the export downloads mascli-tenant.json with the active project only', asy
     scope: unknown;
     data: { module_records: { payload: Record<string, unknown> }[] };
   };
-  expect(exported.format).toBe('mascli.tenant-export');
+  expect(exported.format).toBe('sipges.tenant-export');
   expect(exported.version).toBe(1);
   expect(exported.scope).toEqual({ company_id: 'E2E', project_id: 'PRJ-NORTE' });
   expect(text).toContain(MARKER.norte);
   expect(text).not.toContain(MARKER.sechura);
   expect(text).not.toContain('PRJ-SECHURA');
   // No identity material: hashes, TOTP secrets, sessions or the admin password.
-  expect(text).not.toMatch(/password|pbkdf2|argon2|totp|mascli_session|token_hash/i);
+  expect(text).not.toMatch(/password|pbkdf2|argon2|totp|sipges_session|token_hash/i);
   expect(text).not.toContain(admin.password);
 
   // Switching changes what is exported: the default tenant has its own marker only.

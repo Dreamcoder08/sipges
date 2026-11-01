@@ -10,9 +10,9 @@ export const MCP_PATH = '/mcp';
 /** Newest first; a client asking for another version gets the newest (MCP lifecycle). */
 export const MCP_VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26'] as const;
 
-const SERVER_INFO = { name: 'mascli', title: 'MASCLI', version: '1.0.0' };
+const SERVER_INFO = { name: 'sipges', title: 'SIPGES', version: '1.0.0' };
 const INSTRUCTIONS =
-  'MASCLI es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, ' +
+  'SIPGES es una plataforma de gestión socioambiental territorial. Empieza con list_object_types, ' +
   'busca con search_records y profundiza con get_links, get_timeline y get_briefing. Cita los ' +
   'identificadores de los registros en tus respuestas.';
 
@@ -118,7 +118,7 @@ export const mcpRoutes = (deps: { keys: ApiKeyService; services: ToolServices })
             log('error', 'mcp_tool_failed', { tool: name, error });
             return c.json(
               rpcResult(id, {
-                content: [{ type: 'text', text: 'Error interno de MASCLI' }],
+                content: [{ type: 'text', text: 'Error interno de SIPGES' }],
                 isError: true,
               }),
             );

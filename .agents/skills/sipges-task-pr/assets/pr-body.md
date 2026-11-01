@@ -1,6 +1,6 @@
 ## Qué cambia
 
-Antes: <lo que veía o podía hacer quien usa MASCLI>.
+Antes: <lo que veía o podía hacer quien usa SIPGES>.
 
 Después: <lo que ve o puede hacer ahora>.
 

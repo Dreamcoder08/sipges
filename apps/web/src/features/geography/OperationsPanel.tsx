@@ -1,4 +1,4 @@
-import { RecordNeighbourhood } from '@mascli/contracts';
+import { RecordNeighbourhood } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';

@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import { log } from '../../../platform/observability/logger.ts';
 import {
   type Briefing,

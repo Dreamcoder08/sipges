@@ -10,7 +10,7 @@ const setup = async () => {
     (await t.createScope(admin.cookie, { ...north, label: 'North', username: 'admin' })).status,
   ).toBe(200);
   for (const [scope, id, name] of [
-    ['MASCLI/PRJ-SECHURA', 'a', 'Sechura-only'],
+    ['SIPGES/PRJ-SECHURA', 'a', 'Sechura-only'],
     ['ACME/NORTE', 'b', 'North-only'],
   ] as const) {
     const res = await t.request('/api/eventos', {
@@ -18,7 +18,7 @@ const setup = async () => {
       headers: {
         cookie: admin.cookie,
         'content-type': 'application/json',
-        'x-mascli-scope': scope,
+        'x-sipges-scope': scope,
       },
       body: JSON.stringify({ payload: { ID_Evento: id, name } }),
     });
@@ -38,15 +38,15 @@ const exportRequest = (
   scope?: string,
 ) =>
   t.request('/system/export', {
-    headers: { cookie, ...(scope ? { 'x-mascli-scope': scope } : {}) },
+    headers: { cookie, ...(scope ? { 'x-sipges-scope': scope } : {}) },
   });
 const expected = (
-  company = 'MASCLI',
+  company = 'SIPGES',
   project = 'PRJ-SECHURA',
   id = 'a',
   name = 'Sechura-only',
 ) => ({
-  format: 'mascli.tenant-export',
+  format: 'sipges.tenant-export',
   version: 1,
   scope: { company_id: company, project_id: project },
   exported_at: '2026-10-12T12:00:00Z',
@@ -108,7 +108,7 @@ describe('GET /system/export versioned tenant JSON', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('application/json; charset=UTF-8');
     expect(res.headers.get('content-disposition')).toBe(
-      'attachment; filename="mascli-tenant.json"',
+      'attachment; filename="sipges-tenant.json"',
     );
     expect(res.headers.get('cache-control')).toBe('no-store');
     const text = await res.text();
@@ -129,7 +129,7 @@ describe('GET /system/export versioned tenant JSON', () => {
     const { t, admin } = await setup();
     await t.grant(admin.cookie, 'admin', 'ACME/NORTE');
     for (const [scope, label] of [
-      ['MASCLI/PRJ-SECHURA', 'Synthetic source A'],
+      ['SIPGES/PRJ-SECHURA', 'Synthetic source A'],
       ['ACME/NORTE', 'Synthetic source B'],
     ] as const) {
       await t.container.authorizedSources.configure(
@@ -149,7 +149,7 @@ describe('GET /system/export versioned tenant JSON', () => {
       headers: {
         cookie: admin.cookie,
         'content-type': 'application/json',
-        'x-mascli-scope': 'MASCLI/PRJ-SECHURA',
+        'x-sipges-scope': 'SIPGES/PRJ-SECHURA',
       },
       body: JSON.stringify({
         text: 'Exigimos agua limpia: habrá paro y bloqueo. Convocatoria a asamblea.',
@@ -167,17 +167,17 @@ describe('GET /system/export versioned tenant JSON', () => {
       headers: {
         cookie: admin.cookie,
         'content-type': 'application/json',
-        'x-mascli-scope': 'MASCLI/PRJ-SECHURA',
+        'x-sipges-scope': 'SIPGES/PRJ-SECHURA',
       },
       body: JSON.stringify({ status: 'Corroborado', reviewer_note: 'Synthetic human review' }),
     });
     expect(reviewed.status).toBe(200);
-    const response = await exportRequest(t, admin.cookie, 'MASCLI/PRJ-SECHURA');
+    const response = await exportRequest(t, admin.cookie, 'SIPGES/PRJ-SECHURA');
     expect(response.status).toBe(200);
     const exported = (await response.json()) as { data: Record<string, Record<string, unknown>[]> };
     expect(exported.data.source_import_settings).toEqual([
       expect.objectContaining({
-        tenant_id: 'MASCLI/PRJ-SECHURA',
+        tenant_id: 'SIPGES/PRJ-SECHURA',
         source_id: 'defensoria',
         enabled: false,
         query: 'Synthetic source A',
@@ -240,7 +240,7 @@ describe('GET /system/export versioned tenant JSON', () => {
     const north = await exportRequest(t, admin.cookie, 'ACME/NORTE');
     expect(north.status).toBe(200);
     expect(await north.json()).toEqual(expected('ACME', 'NORTE', 'b', 'North-only'));
-    const south = await exportRequest(t, admin.cookie, 'MASCLI/PRJ-SECHURA');
+    const south = await exportRequest(t, admin.cookie, 'SIPGES/PRJ-SECHURA');
     expect(await south.json()).toEqual(expected());
     const me = await t.request('/system/auth/me', { headers: { cookie: admin.cookie } });
     expect(me.status).toBe(200);
@@ -251,7 +251,7 @@ describe('GET /system/export versioned tenant JSON', () => {
     const { t, admin } = await setup();
     const anon = await t.request('/system/export');
     expect(anon.status).toBe(401);
-    expect(await anon.json()).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+    expect(await anon.json()).toEqual({ detail: 'Inicie sesión para acceder a SIPGES' });
     expect(
       (
         await t.createAccount(admin.cookie, {
@@ -275,8 +275,8 @@ describe('GET /system/export versioned tenant JSON', () => {
     const ungranted = await exportRequest(t, admin.cookie, 'OTHER/SECRET');
     expect(ungranted.status).toBe(403);
     expect(await ungranted.json()).toEqual({
-      detail: 'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project',
-      projects: ['MASCLI/PRJ-SECHURA'],
+      detail: 'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project',
+      projects: ['SIPGES/PRJ-SECHURA'],
     });
     const mismatch = await t.request('/system/export?project_id=NORTE', {
       headers: { cookie: admin.cookie },
@@ -314,7 +314,7 @@ describe('GET /system/export versioned tenant JSON', () => {
 
   it('fails closed on missing table privileges without returning partial data', async () => {
     const { t, admin } = await setup();
-    await t.sql.exec('REVOKE SELECT ON audit FROM mascli_tenant');
+    await t.sql.exec('REVOKE SELECT ON audit FROM sipges_tenant');
     const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     try {
       const res = await exportRequest(t, admin.cookie);

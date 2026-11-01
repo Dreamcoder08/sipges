@@ -7,7 +7,7 @@ import { server } from '../../test/server.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { IrsaPage, MethodologyPage, ValidationPage } from './index.ts';
 import { validationCsv } from './ValidationPage.tsx';
-import { ValidationTemplate } from '@mascli/contracts';
+import { ValidationTemplate } from '@sipges/contracts';
 
 const numbers = { G: 15, A: 20, D: 0, N: 0, E: 0, I: 0 };
 const dimensions = { G: [], A: [], D: [], N: [], E: [], I: [] };
@@ -52,7 +52,7 @@ const report = {
   notes: ['Datos insuficientes se excluyen.'],
 };
 const context: FeatureContext = {
-  scope: 'MASCLI/PRJ-SECHURA',
+  scope: 'SIPGES/PRJ-SECHURA',
   projectId: 'PRJ-SECHURA',
   projectLabel: 'Proyecto sintético',
   role: 'admin',
@@ -131,7 +131,7 @@ beforeEach(() => {
     http.post('*/system/irsa/snapshot', async ({ request }) => {
       calls.push({
         path: 'snapshot',
-        scope: request.headers.get('X-MASCLI-Scope'),
+        scope: request.headers.get('X-SIPGES-Scope'),
         body: await request.json(),
       });
       return HttpResponse.json({ ok: true, id: 2, ...report });
@@ -139,7 +139,7 @@ beforeEach(() => {
     http.post('*/system/irsa/config', async ({ request }) => {
       calls.push({
         path: 'config',
-        scope: request.headers.get('X-MASCLI-Scope'),
+        scope: request.headers.get('X-SIPGES-Scope'),
         body: await request.json(),
       });
       return HttpResponse.json({ ok: true, config });
@@ -226,7 +226,7 @@ describe('Indicadores e IRSA', () => {
       http.post('*/system/irsa/snapshot', async ({ request }) => {
         calls.push({
           path: 'snapshot',
-          scope: request.headers.get('X-MASCLI-Scope'),
+          scope: request.headers.get('X-SIPGES-Scope'),
           body: await request.json(),
         });
         await gate;

@@ -1,4 +1,4 @@
-import { SituationalAnalysisResponse } from '@mascli/contracts';
+import { SituationalAnalysisResponse } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
@@ -42,7 +42,7 @@ export const SituationalPage = (context: FeatureContext) => {
         <ReportDownload
           scope={context.scope}
           path="/system/situational-report.docx"
-          filename="MASCLI_Analisis_Situacional.docx"
+          filename="SIPGES_Analisis_Situacional.docx"
           label="Descargar informe situacional"
         />
       </div>

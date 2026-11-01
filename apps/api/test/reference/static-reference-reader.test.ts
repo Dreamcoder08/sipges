@@ -11,7 +11,7 @@ it('serves the bundled references exactly like the file reader, without a filesy
     coordinates: await json('project_coordinates.json'),
     entities: await json('canonical_entities.json'),
   });
-  const registered = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+  const registered = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
   expect(await reader.coordinates(registered)).toEqual(
     await fileReferenceReader.coordinates(registered),
   );
@@ -25,7 +25,7 @@ it('keeps the references registered to their one tenant', async () => {
   });
   for (const scope of [
     { companyId: 'OTHER', projectId: 'PRJ-SECHURA' },
-    { companyId: 'MASCLI', projectId: 'OTHER' },
+    { companyId: 'SIPGES', projectId: 'OTHER' },
   ]) {
     expect(await reader.coordinates(scope)).toBeNull();
     expect(await reader.entities(scope)).toBeNull();
@@ -34,7 +34,7 @@ it('keeps the references registered to their one tenant', async () => {
 
 it('rejects bundled data that does not match the reference contracts', async () => {
   const reader = staticReferenceReader({ coordinates: { wrong: true }, entities: [] });
-  const registered = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+  const registered = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
   await expect(reader.coordinates(registered)).rejects.toThrow();
   await expect(reader.entities(registered)).rejects.toThrow();
 });

@@ -1,5 +1,5 @@
 /**
- * `pnpm --filter @mascli/api import:base-maestra -- --seed <file> [--scope C/P] [--apply]`
+ * `pnpm --filter @sipges/api import:base-maestra -- --seed <file> [--scope C/P] [--apply]`
  * Loads the prototype's Base Maestra (seed.json) into one tenant. Dry run unless --apply.
  * Output holds module names, counts and positions only — never record values.
  * Runbook: docs/migration/base-maestra.md.
@@ -15,15 +15,15 @@ import { pgliteClient } from '../../platform/database/pglite.ts';
 import { postgresClient } from '../../platform/database/postgres.ts';
 import { importBaseMaestra } from './run.ts';
 
-const USAGE = `Usage: node src/tools/base-maestra/cli.ts --seed <file> [--scope MASCLI/PRJ-SECHURA] [--apply]
-Target database: MASCLI_DATABASE_URL or MASCLI_PGLITE_DIR (the API configuration).`;
+const USAGE = `Usage: node src/tools/base-maestra/cli.ts --seed <file> [--scope SIPGES/PRJ-SECHURA] [--apply]
+Target database: SIPGES_DATABASE_URL or SIPGES_PGLITE_DIR (the API configuration).`;
 
 export const main = async (argv: readonly string[]) => {
   const { values } = parseArgs({
     args: [...argv].filter((arg) => arg !== '--'),
     options: {
       seed: { type: 'string' },
-      scope: { type: 'string', default: 'MASCLI/PRJ-SECHURA' },
+      scope: { type: 'string', default: 'SIPGES/PRJ-SECHURA' },
       apply: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },

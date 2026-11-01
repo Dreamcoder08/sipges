@@ -1,4 +1,4 @@
-import type { Role } from '@mascli/contracts';
+import type { Role } from '@sipges/contracts';
 
 /** App composition supplies identity and authorized tenant; features never import each other. */
 export type FeatureContext = {

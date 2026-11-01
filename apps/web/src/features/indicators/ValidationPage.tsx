@@ -1,4 +1,4 @@
-import type { ValidationTemplate } from '@mascli/contracts';
+import type { ValidationTemplate } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { saveBlob } from '../../shared/api/download.ts';

@@ -18,7 +18,7 @@ const setup = async () => {
       headers: {
         cookie: options.cookie ?? admin.cookie,
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
-        ...(options.scope ? { 'x-mascli-scope': options.scope } : {}),
+        ...(options.scope ? { 'x-sipges-scope': options.scope } : {}),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
@@ -219,7 +219,7 @@ describe('/api/{module} generic records', () => {
       ).status,
     ).toBe(200);
     const north = { scope: 'ACME/NORTE' };
-    const south = { scope: 'MASCLI/PRJ-SECHURA' };
+    const south = { scope: 'SIPGES/PRJ-SECHURA' };
     await create('eventos', { ID_Evento: 'EV-N', Titulo: 'Norte' }, north);
 
     expect(await (await call('GET', '/api/eventos', undefined, south)).json()).toEqual([]);

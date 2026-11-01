@@ -1,4 +1,4 @@
-import type { RecordVersion } from '@mascli/contracts';
+import type { RecordVersion } from '@sipges/contracts';
 import { expect, it } from 'vitest';
 import { traceability } from './HistoryPanel.tsx';
 

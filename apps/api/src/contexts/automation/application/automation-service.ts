@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import {
   type ChannelConfig,
   type ChannelError,
@@ -66,7 +66,7 @@ export const planRuns = (events: readonly AuditEvent[], rules: readonly Rule[]):
 
 /** The webhook body: the event, and the record only when it is not restricted (ADR 0014 §5). */
 const eventBody = (tenantId: string, event: AuditEvent) => ({
-  type: `mascli.${event.module.toLowerCase()}.${event.action.toLowerCase()}`,
+  type: `sipges.${event.module.toLowerCase()}.${event.action.toLowerCase()}`,
   tenant: tenantId,
   audit_id: event.auditId,
   at: event.at.toISOString(),
@@ -322,11 +322,11 @@ export const createAutomationService = (deps: {
       try {
         await sender.send(config, {
           id: `msg_test_${id}_${clock.now().getTime()}`,
-          title: 'Prueba de MASCLI',
-          text: 'Este canal recibirá los avisos de las automatizaciones de MASCLI.',
+          title: 'Prueba de SIPGES',
+          text: 'Este canal recibirá los avisos de las automatizaciones de SIPGES.',
           tenantId,
           at: clock.now(),
-          event: { type: 'mascli.test', tenant: tenantId },
+          event: { type: 'sipges.test', tenant: tenantId },
         });
         return ok(true);
       } catch (error) {
@@ -391,7 +391,7 @@ export const createAutomationService = (deps: {
             (await push.sender.send(
               target,
               {
-                title: 'Prueba de MASCLI',
+                title: 'Prueba de SIPGES',
                 body: 'Prueba solicitada por tu usuario. Confirma la recepción en este dispositivo.',
                 url: '/',
               },

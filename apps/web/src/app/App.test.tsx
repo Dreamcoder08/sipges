@@ -20,7 +20,7 @@ describe('sign-in', () => {
     await user.type(await screen.findByLabelText('Usuario'), 'persona');
     await user.type(screen.getByLabelText('Contraseña'), 'synthetic-pass-123');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'IRSA-MASCLI' })).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'IRSA-SIPGES' })).toBeVisible();
     expect(window.location.pathname).toBe('/irsa');
     expect(api.requests).toContain('POST /login');
   });
@@ -68,7 +68,7 @@ describe('sign-in', () => {
     at('/login?google=not_linked');
     const { unmount } = render(<App />);
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Esa cuenta de Google no está autorizada en MASCLI',
+      'Esa cuenta de Google no está autorizada en SIPGES',
     );
     unmount();
 
@@ -93,7 +93,7 @@ describe('sign-in', () => {
     signIn();
     server.use(
       http.get('/api/dashboard', () =>
-        HttpResponse.json({ detail: 'Inicie sesión para acceder a MASCLI' }, { status: 401 }),
+        HttpResponse.json({ detail: 'Inicie sesión para acceder a SIPGES' }, { status: 401 }),
       ),
     );
     at('/');
@@ -209,10 +209,10 @@ describe('dashboard and navigation', () => {
       'page',
     );
     expect(screen.queryByText('En migración')).toBeNull();
-    expect(document.title).toBe('Auditoría | MASCLI 4.0');
+    expect(document.title).toBe('Auditoría | SIPGES');
   });
 
-  it('shows the MASCLI 4.0 screens in the menu of every project, with no switch', async () => {
+  it('shows the SIPGES screens in the menu of every project, with no switch', async () => {
     signIn();
     at('/');
     render(<App />);

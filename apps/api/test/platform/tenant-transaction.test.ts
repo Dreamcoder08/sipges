@@ -14,8 +14,8 @@ const setupProbeTable = async (t: Awaited<ReturnType<typeof createTestApp>>) => 
     CREATE POLICY tenant_isolation ON rls_probe
       USING (tenant_id = current_setting('app.tenant_id', true))
       WITH CHECK (tenant_id = current_setting('app.tenant_id', true));
-    GRANT SELECT, INSERT, UPDATE, DELETE ON rls_probe TO mascli_tenant;
-    INSERT INTO rls_probe VALUES ('ACME/NORTE', 'north'), ('MASCLI/PRJ-SECHURA', 'sechura');
+    GRANT SELECT, INSERT, UPDATE, DELETE ON rls_probe TO sipges_tenant;
+    INSERT INTO rls_probe VALUES ('ACME/NORTE', 'north'), ('SIPGES/PRJ-SECHURA', 'sechura');
   `);
 };
 
@@ -26,7 +26,7 @@ describe('withTenant', () => {
     const read = (tenant: string) =>
       withTenant(t.sql, tenant, (tx) => tx.query<{ value: string }>('SELECT value FROM rls_probe'));
     expect(await read('ACME/NORTE')).toEqual([{ value: 'north' }]);
-    expect(await read('MASCLI/PRJ-SECHURA')).toEqual([{ value: 'sechura' }]);
+    expect(await read('SIPGES/PRJ-SECHURA')).toEqual([{ value: 'sechura' }]);
     expect(await read('OTHER/X')).toEqual([]);
   });
 
@@ -35,12 +35,12 @@ describe('withTenant', () => {
     await setupProbeTable(t);
     await expect(
       withTenant(t.sql, 'ACME/NORTE', (tx) =>
-        tx.query("INSERT INTO rls_probe VALUES ('MASCLI/PRJ-SECHURA', 'intruder')"),
+        tx.query("INSERT INTO rls_probe VALUES ('SIPGES/PRJ-SECHURA', 'intruder')"),
       ),
     ).rejects.toThrow(/row-level security/);
     const updated = await withTenant(t.sql, 'ACME/NORTE', (tx) =>
       tx.query(
-        "UPDATE rls_probe SET value = 'hijacked' WHERE tenant_id = 'MASCLI/PRJ-SECHURA' RETURNING 1",
+        "UPDATE rls_probe SET value = 'hijacked' WHERE tenant_id = 'SIPGES/PRJ-SECHURA' RETURNING 1",
       ),
     );
     expect(updated).toEqual([]);
@@ -61,7 +61,7 @@ describe('withTenant', () => {
     const [row] = await t.sql.query<{ role: string; tenant: string | null }>(
       "SELECT current_user AS role, current_setting('app.tenant_id', true) AS tenant",
     );
-    expect(row?.role).not.toBe('mascli_tenant');
+    expect(row?.role).not.toBe('sipges_tenant');
     expect(row?.tenant ?? '').toBe('');
   });
 

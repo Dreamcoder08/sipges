@@ -4,7 +4,7 @@ import { expect } from './fixtures.ts';
 /**
  * The digital-signal workflow end to end (Inteligencia de redes → Centro gerencial): analyse a
  * publication, register it as an alert, corroborate it after human review, open a preventive
- * plan and record its progress until it is completed with an attached evidence file (MASCLI 4.0
+ * plan and record its progress until it is completed with an attached evidence file (SIPGES
  * decision receipt, ADR 0023/0027).
  */
 export const preventionJourney = async (page: Page, stamp: string, scope: string) => {
@@ -30,7 +30,7 @@ export const preventionJourney = async (page: Page, stamp: string, scope: string
 
   // The synthetic receipt that will back the closing: a record and its file, both created
   // through the public endpoints.
-  const headers = { 'X-MASCLI-Scope': scope, Origin: new URL(page.url()).origin };
+  const headers = { 'X-SIPGES-Scope': scope, Origin: new URL(page.url()).origin };
   const eventId = `EV-CIERRE-${stamp}`;
   const event = await page.request.post('/api/eventos', {
     headers,

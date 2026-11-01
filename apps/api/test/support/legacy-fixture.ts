@@ -1,5 +1,5 @@
 /**
- * Builds a SYNTHETIC legacy MASCLI installation (SQLite + JSON + uploads) in a temporary
+ * Builds a SYNTHETIC legacy SIPGES installation (SQLite + JSON + uploads) in a temporary
  * directory. The table definitions are extracted from the legacy `app.py` CREATE statements,
  * so the fixture cannot drift from the schema it claims to migrate. No real or operational
  * data is read: every value here is invented for tests.
@@ -78,13 +78,13 @@ const exec = (db: DatabaseSync, statements: readonly string[]) => {
 };
 
 export const buildLegacyFixture = async (): Promise<LegacyFixture> => {
-  const root = await mkdtemp(join(tmpdir(), 'mascli-legacy-'));
+  const root = await mkdtemp(join(tmpdir(), 'sipges-legacy-'));
   const data = join(root, 'data');
   const tenantDir = join(data, 'tenants');
   const uploadDir = join(data, 'uploads');
   const password = 'synthetic-password-123';
   const totpSecret = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
-  const defaultTenant = 'MASCLI/PRJ-SECHURA';
+  const defaultTenant = 'SIPGES/PRJ-SECHURA';
   const otherTenant = 'ACME/PRJ-NORTE';
   const otherDigest = scopeDirectory(otherTenant);
   await mkdir(tenantDir, { recursive: true });
@@ -120,14 +120,14 @@ export const buildLegacyFixture = async (): Promise<LegacyFixture> => {
     .prepare('INSERT INTO auth_sessions(token_hash,username,expires_at,created_at) VALUES(?,?,?,?)')
     .run('f'.repeat(64), 'legacy.admin', 4_102_444_800, now);
   const project = auth.prepare('INSERT INTO tenant_projects VALUES(?,?,?)');
-  project.run('MASCLI', 'PRJ-SECHURA', 'Proyecto Sechura (migración)');
+  project.run('SIPGES', 'PRJ-SECHURA', 'Proyecto Sechura (migración)');
   project.run('ACME', 'PRJ-NORTE', 'Proyecto Norte sintético');
   const grant = auth.prepare('INSERT INTO access_grants VALUES(?,?,?)');
-  grant.run('legacy.admin', 'MASCLI', 'PRJ-SECHURA');
-  grant.run('legacy.analyst', 'MASCLI', 'PRJ-SECHURA');
+  grant.run('legacy.admin', 'SIPGES', 'PRJ-SECHURA');
+  grant.run('legacy.analyst', 'SIPGES', 'PRJ-SECHURA');
   grant.run('legacy.admin', 'ACME', 'PRJ-NORTE');
   // Rejected on purpose: grant for an account that does not exist.
-  grant.run('legacy.missing', 'MASCLI', 'PRJ-NORTE');
+  grant.run('legacy.missing', 'SIPGES', 'PRJ-NORTE');
   auth.close();
 
   // ---- tenant databases --------------------------------------------------
@@ -198,7 +198,7 @@ export const buildLegacyFixture = async (): Promise<LegacyFixture> => {
     return id;
   };
 
-  const defaultDb = buildTenantDb(join(data, 'mascli.db'));
+  const defaultDb = buildTenantDb(join(data, 'sipges.db'));
   seedCommon(defaultDb, 'default');
   // Rejected on purpose: payload is not valid JSON.
   defaultDb

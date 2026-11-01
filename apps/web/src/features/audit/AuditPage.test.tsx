@@ -25,7 +25,7 @@ it('loads active tenant audit and filters detail/module/action locally', async (
   const user = userEvent.setup();
   server.use(
     http.get('*/system/audit', ({ request }) => {
-      expect(request.headers.get('X-MASCLI-Scope')).toBe('ACME/P1');
+      expect(request.headers.get('X-SIPGES-Scope')).toBe('ACME/P1');
       return HttpResponse.json([
         {
           id: 1,

@@ -4,7 +4,7 @@ import {
   type DocumentReviewItem,
   DocumentReviewResponse,
   DocumentReviewStatus,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';

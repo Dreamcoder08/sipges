@@ -16,7 +16,7 @@ describe('local object storage', () => {
     await Promise.all(dirs.splice(0).map((d) => rm(d, { recursive: true, force: true })));
   });
   const storage = async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'mascli-objects-'));
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-objects-'));
     dirs.push(dir);
     return { dir, storage: createLocalObjectStorage(dir) };
   };
@@ -93,7 +93,7 @@ describe('S3 object storage', () => {
       storage: createS3ObjectStorage({
         endpoint: 'https://acct.r2.cloudflarestorage.com',
         region: 'auto',
-        bucket: 'mascli-evidence',
+        bucket: 'sipges-evidence',
         credentials: { accessKeyId: 'AK', secretAccessKey: 'SK' },
         fetch,
         now: () => new Date('2026-10-13T12:00:00Z'),
@@ -109,7 +109,7 @@ describe('S3 object storage', () => {
     expect(await storage.get(KEY)).toBeNull();
 
     const put = calls[0];
-    expect(put?.url).toBe(`https://acct.r2.cloudflarestorage.com/mascli-evidence/${KEY}`);
+    expect(put?.url).toBe(`https://acct.r2.cloudflarestorage.com/sipges-evidence/${KEY}`);
     expect(put?.headers.get('authorization')).toMatch(
       /^AWS4-HMAC-SHA256 Credential=AK\/20261013\/auto\/s3\/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date, Signature=[0-9a-f]{64}$/,
     );

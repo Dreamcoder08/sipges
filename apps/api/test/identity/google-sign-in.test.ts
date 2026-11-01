@@ -18,7 +18,7 @@ const COUSIN = {
   role: 'consulta',
 };
 const COUSIN_EMAIL = 'prima.sintetica@example.com';
-const MFA_ON = { MASCLI_REQUIRE_MFA: '1' };
+const MFA_ON = { SIPGES_REQUIRE_MFA: '1' };
 
 /** Stands in for Google: records each exchange and answers with the profile the test sets. */
 const fakeGoogle = () => {
@@ -77,7 +77,7 @@ const start = async (t: TestApp) => {
   const res = await t.request('/auth/google');
   expect(res.status).toBe(302);
   const location = new URL(res.headers.get('location') ?? '');
-  const flowCookie = res.headers.getSetCookie().find((c) => c.startsWith('mascli_google_flow='));
+  const flowCookie = res.headers.getSetCookie().find((c) => c.startsWith('sipges_google_flow='));
   return {
     res,
     location,
@@ -91,8 +91,8 @@ const callback = (t: TestApp, query: Record<string, string>, cookie: string) =>
   t.request(`/auth/google/callback?${new URLSearchParams(query)}`, { headers: { cookie } });
 
 const sessionCookie = (res: Response) => {
-  const token = /mascli_session=([0-9a-f]{64})/.exec(res.headers.getSetCookie().join('\n'))?.[1];
-  return token ? `mascli_session=${token}` : '';
+  const token = /sipges_session=([0-9a-f]{64})/.exec(res.headers.getSetCookie().join('\n'))?.[1];
+  return token ? `sipges_session=${token}` : '';
 };
 
 describe('Google sign-in availability', () => {
@@ -109,24 +109,24 @@ describe('Google sign-in availability', () => {
   });
 
   it('requires both client values and a client for the bootstrap address', () => {
-    const base = { MASCLI_DATA_KEY: TEST_ENV.MASCLI_DATA_KEY };
+    const base = { SIPGES_DATA_KEY: TEST_ENV.SIPGES_DATA_KEY };
     expect(loadConfig(base).google).toBeUndefined();
     expect(
       loadConfig({
         ...base,
-        MASCLI_GOOGLE_CLIENT_ID: 'client.apps.example',
-        MASCLI_GOOGLE_CLIENT_SECRET: 'synthetic-secret',
+        SIPGES_GOOGLE_CLIENT_ID: 'client.apps.example',
+        SIPGES_GOOGLE_CLIENT_SECRET: 'synthetic-secret',
       }).google,
     ).toEqual({
       clientId: 'client.apps.example',
       clientSecret: 'synthetic-secret',
       adminEmail: undefined,
     });
-    expect(() => loadConfig({ ...base, MASCLI_GOOGLE_CLIENT_ID: 'client.apps.example' })).toThrow(
-      'Set both MASCLI_GOOGLE_CLIENT_ID and MASCLI_GOOGLE_CLIENT_SECRET, or neither',
+    expect(() => loadConfig({ ...base, SIPGES_GOOGLE_CLIENT_ID: 'client.apps.example' })).toThrow(
+      'Set both SIPGES_GOOGLE_CLIENT_ID and SIPGES_GOOGLE_CLIENT_SECRET, or neither',
     );
-    expect(() => loadConfig({ ...base, MASCLI_GOOGLE_ADMIN_EMAIL: COUSIN_EMAIL })).toThrow(
-      'MASCLI_GOOGLE_ADMIN_EMAIL requires a Google OAuth client',
+    expect(() => loadConfig({ ...base, SIPGES_GOOGLE_ADMIN_EMAIL: COUSIN_EMAIL })).toThrow(
+      'SIPGES_GOOGLE_ADMIN_EMAIL requires a Google OAuth client',
     );
   });
 });
@@ -157,7 +157,7 @@ describe('Google sign-in flow', () => {
     expect(exchanges[0]?.request.state).toBe(flow.state);
     expect(exchanges[0]?.request.redirectUri).toBe('https://localhost/auth/google/callback');
     // The flow cookie is single-use: the callback clears it.
-    expect(done.headers.getSetCookie().join('\n')).toMatch(/mascli_google_flow=;/);
+    expect(done.headers.getSetCookie().join('\n')).toMatch(/sipges_google_flow=;/);
 
     const cookie = sessionCookie(done);
     expect(cookie).not.toBe('');
@@ -286,11 +286,11 @@ describe('Google account links', () => {
     expect(refused.headers.get('location')).toBe('/login?google=not_linked');
   });
 
-  it('links the bootstrap administrator from MASCLI_GOOGLE_ADMIN_EMAIL without overriding', async () => {
+  it('links the bootstrap administrator from SIPGES_GOOGLE_ADMIN_EMAIL without overriding', async () => {
     const env = {
-      MASCLI_GOOGLE_CLIENT_ID: 'client.apps.example',
-      MASCLI_GOOGLE_CLIENT_SECRET: 'synthetic-secret',
-      MASCLI_GOOGLE_ADMIN_EMAIL: 'Admin.Sintetico@Example.com',
+      SIPGES_GOOGLE_CLIENT_ID: 'client.apps.example',
+      SIPGES_GOOGLE_CLIENT_SECRET: 'synthetic-secret',
+      SIPGES_GOOGLE_ADMIN_EMAIL: 'Admin.Sintetico@Example.com',
     };
     const { t, answer } = await setup({ ...env, ...MFA_ON });
     answer({ email: 'admin.sintetico@example.com', name: 'Admin' });

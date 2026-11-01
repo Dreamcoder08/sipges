@@ -7,7 +7,7 @@ it('downloads scoped binary bytes and cleans the temporary URL', async () => {
   let scope: string | null = null;
   server.use(
     http.get('/export.bin', ({ request }) => {
-      scope = request.headers.get('X-MASCLI-Scope');
+      scope = request.headers.get('X-SIPGES-Scope');
       return new HttpResponse('synthetic bytes');
     }),
   );

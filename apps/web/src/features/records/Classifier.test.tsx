@@ -36,7 +36,7 @@ it('classifies the current draft within scope and applies the suggestion only on
   let scope: string | null = null;
   server.use(
     http.post('/system/analyze', ({ request }) => {
-      scope = request.headers.get('X-MASCLI-Scope');
+      scope = request.headers.get('X-SIPGES-Scope');
       return HttpResponse.json(result);
     }),
   );

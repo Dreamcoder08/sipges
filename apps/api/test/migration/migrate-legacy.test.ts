@@ -368,7 +368,7 @@ describe('legacy SQLite → PostgreSQL migration', () => {
       await symlink(join(uploads, otherFolder, 'ajeno.txt'), join(uploads, 'enlace.txt'));
       const source = createSqliteLegacySource(legacyLayout(own.root));
       const reader = await source.openTenant({
-        companyId: 'MASCLI',
+        companyId: 'SIPGES',
         projectId: 'PRJ-SECHURA',
         label: '',
       });

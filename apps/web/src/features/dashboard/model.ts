@@ -30,7 +30,7 @@ export const alertsByLevel = (alerts: readonly ModuleRecord[], projectId: string
   return counts;
 };
 
-/** Events of the active project by their main MASCLI dimension. */
+/** Events of the active project by their main SIPGES dimension. */
 export const eventsByDimension = (events: readonly ModuleRecord[], projectId: string) => {
   const counts = Object.fromEntries(DIMENSIONS.map((d) => [d, 0])) as Record<DimensionCode, number>;
   for (const event of events) {

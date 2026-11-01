@@ -15,7 +15,7 @@ const ANALYST = {
   password: 'analyst-pass-123',
   role: 'analista',
 };
-const MFA_ON = { MASCLI_REQUIRE_MFA: '1' };
+const MFA_ON = { SIPGES_REQUIRE_MFA: '1' };
 
 type TestApp = Awaited<ReturnType<typeof createTestApp>>;
 
@@ -41,24 +41,24 @@ const enrolledAdmin = async (t: TestApp) => {
 };
 
 describe('configuration', () => {
-  const base = { MASCLI_DATA_KEY: TEST_ENV.MASCLI_DATA_KEY };
+  const base = { SIPGES_DATA_KEY: TEST_ENV.SIPGES_DATA_KEY };
 
-  it('requires MFA unless MASCLI_REQUIRE_MFA is exactly "0"', () => {
+  it('requires MFA unless SIPGES_REQUIRE_MFA is exactly "0"', () => {
     expect(loadConfig(base).requireMfa).toBe(true);
-    expect(loadConfig({ ...base, MASCLI_REQUIRE_MFA: '0' }).requireMfa).toBe(false);
-    expect(() => loadConfig({ ...base, MASCLI_REQUIRE_MFA: 'no' })).toThrow(
-      "MASCLI_REQUIRE_MFA must be unset or exactly '0' or '1'",
+    expect(loadConfig({ ...base, SIPGES_REQUIRE_MFA: '0' }).requireMfa).toBe(false);
+    expect(() => loadConfig({ ...base, SIPGES_REQUIRE_MFA: 'no' })).toThrow(
+      "SIPGES_REQUIRE_MFA must be unset or exactly '0' or '1'",
     );
   });
 
   it('parses the host allowlist and rejects malformed names', () => {
     expect(loadConfig(base).allowedHosts).toEqual([]);
     expect(
-      loadConfig({ ...base, MASCLI_ALLOWED_HOSTS: ' Mascli.Example.org , localhost ' })
+      loadConfig({ ...base, SIPGES_ALLOWED_HOSTS: ' Sipges.Example.org , localhost ' })
         .allowedHosts,
-    ).toEqual(['mascli.example.org', 'localhost']);
-    expect(() => loadConfig({ ...base, MASCLI_ALLOWED_HOSTS: 'evil.example:443' })).toThrow(
-      'MASCLI_ALLOWED_HOSTS has an invalid host name',
+    ).toEqual(['sipges.example.org', 'localhost']);
+    expect(() => loadConfig({ ...base, SIPGES_ALLOWED_HOSTS: 'evil.example:443' })).toThrow(
+      'SIPGES_ALLOWED_HOSTS has an invalid host name',
     );
   });
 });
@@ -77,11 +77,11 @@ describe('security headers', () => {
 
 describe('host allowlist', () => {
   it('rejects unexpected Host headers when configured', async () => {
-    const t = await createTestApp({ MASCLI_ALLOWED_HOSTS: 'mascli.example.org' });
+    const t = await createTestApp({ SIPGES_ALLOWED_HOSTS: 'sipges.example.org' });
     const evil = await t.request('/health', { headers: { host: 'evil.example' } });
     expect(evil.status).toBe(400);
     expect(await evil.json()).toEqual({ detail: 'Host no permitido' });
-    const good = await t.request('/health', { headers: { host: 'mascli.example.org:443' } });
+    const good = await t.request('/health', { headers: { host: 'sipges.example.org:443' } });
     expect(good.status).toBe(200);
   });
 
@@ -167,7 +167,7 @@ describe('mandatory MFA', () => {
     expect((await t.request('/system/auth/me', { headers: { cookie } })).status).toBe(200);
   });
 
-  it('is off when MASCLI_REQUIRE_MFA=0', async () => {
+  it('is off when SIPGES_REQUIRE_MFA=0', async () => {
     const t = await createTestApp();
     const { cookie } = await t.login(ADMIN.username, ADMIN.password);
     expect((await t.request('/api/eventos', { headers: { cookie } })).status).toBe(200);

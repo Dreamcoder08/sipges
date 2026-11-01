@@ -1,5 +1,5 @@
 /**
- * `pnpm --filter @mascli/api migrate:legacy` — SQLite → PostgreSQL migration CLI.
+ * `pnpm --filter @sipges/api migrate:legacy` — SQLite → PostgreSQL migration CLI.
  * Runbook: docs/migration/data-migration.md. The legacy installation is only ever read.
  *
  * Output is a summary plus an optional JSON report; both contain counts, problem codes and
@@ -29,11 +29,11 @@ Modes (default: dry-run)
   --verify                 Compare source and target counts, checksums and attachment bytes.
 
 Options
-  --legacy-root <dir>      Legacy MASCLI checkout (expects <dir>/data/...).
-  --auth-db <file>         Override auth_global.db (MASCLI_AUTH_DB_PATH).
-  --default-db <file>      Override the default tenant database (MASCLI_DB_PATH).
-  --tenant-dir <dir>       Override the tenant directory (MASCLI_TENANT_DIR).
-  --upload-dir <dir>       Override the upload root (MASCLI_UPLOAD_DIR).
+  --legacy-root <dir>      Legacy SIPGES checkout (expects <dir>/data/...).
+  --auth-db <file>         Override auth_global.db (SIPGES_AUTH_DB_PATH).
+  --default-db <file>      Override the default tenant database (SIPGES_DB_PATH).
+  --tenant-dir <dir>       Override the tenant directory (SIPGES_TENANT_DIR).
+  --upload-dir <dir>       Override the upload root (SIPGES_UPLOAD_DIR).
   --config-dir <dir>       Override the JSON configuration directory (<root>/data).
   --only <company/project> Restrict the run to one scope (repeatable).
   --allow-non-empty        Write even though the target already holds data.
@@ -41,7 +41,7 @@ Options
   --help                   Show this message.
 
 Environment: the target database, data key and object storage come from the API configuration
-(MASCLI_DATABASE_URL or MASCLI_PGLITE_DIR, MASCLI_DATA_KEY, MASCLI_STORAGE...).`;
+(SIPGES_DATABASE_URL or SIPGES_PGLITE_DIR, SIPGES_DATA_KEY, SIPGES_STORAGE...).`;
 
 const Options = z
   .object({

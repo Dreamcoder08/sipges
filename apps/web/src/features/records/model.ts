@@ -1,5 +1,5 @@
-import { recordDueDate } from '@mascli/kernel';
-import type { ModuleRecord, Role } from '@mascli/contracts';
+import { recordDueDate } from '@sipges/kernel';
+import type { ModuleRecord, Role } from '@sipges/contracts';
 import { MODULES, type RecordField, type RecordModule } from './modules.ts';
 
 export const canWriteRecords = (role: Role) => role === 'admin' || role === 'analista';

@@ -1,4 +1,4 @@
-import type { RecordNeighbourhood } from '@mascli/contracts';
+import type { RecordNeighbourhood } from '@sipges/contracts';
 import { foldText, type Level, severityLevel } from '../../shared/lib/text.ts';
 import { type Evidence, evidenceOf } from './evidence.ts';
 

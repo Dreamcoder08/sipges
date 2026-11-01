@@ -1,4 +1,4 @@
-import type { PhaseWeights, ProjectSettings, ProjectSettingsIn } from '@mascli/contracts';
+import type { PhaseWeights, ProjectSettings, ProjectSettingsIn } from '@sipges/contracts';
 import { useState } from 'react';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';

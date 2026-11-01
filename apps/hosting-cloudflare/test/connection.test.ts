@@ -38,8 +38,8 @@ const syntheticEnv = () =>
     HYPERDRIVE: {
       connectionString: 'postgresql://synthetic:synthetic@binding.hyperdrive.local:5432/synthetic',
     },
-    MASCLI_ALLOWED_HOSTS: 'localhost',
-    MASCLI_DATA_KEY: Buffer.alloc(32).toString('base64'),
+    SIPGES_ALLOWED_HOSTS: 'localhost',
+    SIPGES_DATA_KEY: Buffer.alloc(32).toString('base64'),
     EVIDENCE: {},
     ASSETS: {},
   }) as unknown as Env;
@@ -118,7 +118,7 @@ describe('Worker Hyperdrive connection', () => {
       { referenceReader?: { coordinates: (scope: unknown) => Promise<unknown> } } | undefined;
     expect(deps?.referenceReader).toBeDefined();
     await expect(
-      deps?.referenceReader?.coordinates({ companyId: 'MASCLI', projectId: 'PRJ-SECHURA' }),
+      deps?.referenceReader?.coordinates({ companyId: 'SIPGES', projectId: 'PRJ-SECHURA' }),
     ).resolves.toMatchObject({ crs: { geometry: 'EPSG:4326' } });
   });
 

@@ -62,7 +62,7 @@ it('creates real identity accounts with scope header and clears password', async
   server.use(
     http.post('*/system/auth/accounts', async ({ request }) => {
       sent = await request.json();
-      scope = request.headers.get('X-MASCLI-Scope');
+      scope = request.headers.get('X-SIPGES-Scope');
       return HttpResponse.json({ ok: true, username: 'new-user', role: 'consulta' });
     }),
   );
@@ -129,7 +129,7 @@ it('enables own MFA and removes its secret after success', async () => {
     http.post('*/system/auth/totp/setup', () =>
       HttpResponse.json({
         secret: 'SYNTHETICSECRET',
-        otpauth_uri: 'otpauth://totp/MASCLI:admin?secret=SYNTHETICSECRET',
+        otpauth_uri: 'otpauth://totp/SIPGES:admin?secret=SYNTHETICSECRET',
         instruction: 'Use una aplicación TOTP.',
       }),
     ),
@@ -157,7 +157,7 @@ it('creates a project with explicit initial access and refreshes authorized cata
       return HttpResponse.json([{ company_id: 'ACME', project_id: 'P1', label: 'Proyecto Uno' }]);
     }),
     http.post('*/system/auth/scopes', async ({ request }) => {
-      expect(request.headers.get('X-MASCLI-Scope')).toBe('ACME/P1');
+      expect(request.headers.get('X-SIPGES-Scope')).toBe('ACME/P1');
       sent = await request.json();
       return HttpResponse.json({ ok: true, scope: 'ACME/P2' });
     }),

@@ -37,9 +37,9 @@ it('the real benchmark session reaches every declared HTTP scenario with existin
     const scope = await session.app.request('/system/auth/current-scope', { headers });
     expect(scope.status).toBe(200);
     expect(await scope.json()).toEqual({
-      company_id: 'MASCLI',
+      company_id: 'SIPGES',
       project_id: 'PRJ-SECHURA',
-      scope: 'MASCLI/PRJ-SECHURA',
+      scope: 'SIPGES/PRJ-SECHURA',
     });
     // The fixture enrolls MFA rather than disabling the middleware for benchmarks.
     const setup = await session.app.request('/system/auth/totp/setup', {
@@ -54,7 +54,7 @@ it('the real benchmark session reaches every declared HTTP scenario with existin
       headers: { host: 'localhost' },
     });
     expect(anonymous.status).toBe(401);
-    expect(await anonymous.json()).toEqual({ detail: 'Inicie sesión para acceder a MASCLI' });
+    expect(await anonymous.json()).toEqual({ detail: 'Inicie sesión para acceder a SIPGES' });
     const forbidden = await session.app.request('/api/dashboard?project_id=PRJ-OTHER', { headers });
     expect(forbidden.status).toBe(403);
     expect(await forbidden.json()).toEqual({ detail: 'Proyecto fuera de alcance' });

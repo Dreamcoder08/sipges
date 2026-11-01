@@ -23,7 +23,7 @@ const setup = async (options: { embeddings?: EmbeddingProvider } = {}) => {
       headers: {
         cookie: extra.cookie ?? admin.cookie,
         ...(body === undefined ? {} : { 'content-type': 'application/json' }),
-        ...(extra.scope ? { 'x-mascli-scope': extra.scope } : {}),
+        ...(extra.scope ? { 'x-sipges-scope': extra.scope } : {}),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
@@ -314,7 +314,7 @@ describe('territorial alerts and preventive plans', () => {
     expect(csv.status).toBe(200);
     expect(csv.headers.get('content-type')).toBe('text/csv; charset=utf-8');
     expect(csv.headers.get('content-disposition')).toBe(
-      'attachment; filename="mascli_rc28_reporte_gerencial.csv"',
+      'attachment; filename="sipges_rc28_reporte_gerencial.csv"',
     );
     const bytes = new Uint8Array(await csv.arrayBuffer());
     expect([...bytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);

@@ -130,7 +130,7 @@ export const analysisJourney = async (page: Page, stamp: string) => {
     ['demandas', { Fecha_Registro: '2026-03-03', Descripcion: `Demanda cronología ${stamp}` }],
   ] as const) {
     const created = await page.request.post(`/api/${module}`, {
-      headers: { Origin: new URL(page.url()).origin, 'X-MASCLI-Scope': DEFAULT_SCOPE },
+      headers: { Origin: new URL(page.url()).origin, 'X-SIPGES-Scope': DEFAULT_SCOPE },
       data: { payload },
     });
     expect(created.status(), await created.text()).toBe(200);

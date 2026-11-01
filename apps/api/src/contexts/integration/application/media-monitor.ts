@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { MediaFeed, MediaFeedIn } from '@mascli/contracts';
+import type { MediaFeed, MediaFeedIn } from '@sipges/contracts';
 import {
   type FeedItem,
   MAX_FEED_KEYWORDS,

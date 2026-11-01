@@ -4,7 +4,7 @@ import {
   type MediaFeedIn,
   MediaMonitorState,
   MediaPollReport,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { request, requestJson } from '../../shared/api/client.ts';
@@ -104,7 +104,7 @@ export const MediaMonitorCard = ({ scope, admin }: { scope: string; admin: boole
   return (
     <Card eyebrow="Monitoreo de medios" title="Fuentes RSS regionales">
       <p>
-        MASCLI consulta cada fuente cada 30 minutos y crea una narrativa por cada noticia nueva que
+        SIPGES consulta cada fuente cada 30 minutos y crea una narrativa por cada noticia nueva que
         menciona alguna palabra clave (o todas, si no hay palabras clave). Las reglas de
         automatización, incluida «evaluar narrativa», se aplican a cada una. Solo fuentes públicas
         con https, sin cuentas ni servicios pagos.

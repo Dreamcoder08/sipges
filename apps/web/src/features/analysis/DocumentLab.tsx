@@ -2,7 +2,7 @@ import {
   DocumentAnalysisResponse,
   DocumentComparisonResponse,
   DocumentReviewImportResponse,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
@@ -46,7 +46,7 @@ export const DocumentLab = (context: FeatureContext) => {
       downloadFile(
         context.scope,
         '/system/document-lab/report.docx',
-        'MASCLI_RC20_Lectura_Documental.docx',
+        'SIPGES_RC20_Lectura_Documental.docx',
         { method: 'POST', body: { multipart: fileForm(context.projectId, { file: selected }) } },
       ),
   });

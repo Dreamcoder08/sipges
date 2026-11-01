@@ -89,19 +89,19 @@ describe('GET /api/{module}/{id}/history', () => {
     });
     expect(created.status).toBe(200);
     const other = await t.request('/api/eventos/EV-9/history', {
-      headers: { cookie: admin.cookie, 'x-mascli-scope': 'OTRA/PRJ-B' },
+      headers: { cookie: admin.cookie, 'x-sipges-scope': 'OTRA/PRJ-B' },
     });
     expect(other.status).toBe(404);
 
     await expect(
       t.sql.transaction(async (tx) => {
-        await tx.query("SELECT set_config('app.tenant_id', 'MASCLI/PRJ-SECHURA', true)");
-        await tx.exec('SET LOCAL ROLE mascli_tenant');
+        await tx.query("SELECT set_config('app.tenant_id', 'SIPGES/PRJ-SECHURA', true)");
+        await tx.exec('SET LOCAL ROLE sipges_tenant');
         await tx.exec("UPDATE record_versions SET actor = 'intruder'");
       }),
     ).rejects.toThrow(/permission denied/);
     const own = await t.request('/api/eventos/EV-9/history', {
-      headers: { cookie: admin.cookie, 'x-mascli-scope': 'MASCLI/PRJ-SECHURA' },
+      headers: { cookie: admin.cookie, 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
     });
     expect(((await own.json()) as Version[])[0]?.actor).toBe('admin');
   });

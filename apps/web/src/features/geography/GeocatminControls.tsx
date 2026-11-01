@@ -1,4 +1,4 @@
-import { GeographyCatalogue, GeographyResult, type GeographyPolygon } from '@mascli/contracts';
+import { GeographyCatalogue, GeographyResult, type GeographyPolygon } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
@@ -154,7 +154,7 @@ export const GeocatminControls = ({
             Consultar intersecciones de la concesión
           </button>
           <p>
-            Consulta la primera capa seleccionada. Relaciones MASCLI: coordenadas/GeoJSON WGS84
+            Consulta la primera capa seleccionada. Relaciones SIPGES: coordenadas/GeoJSON WGS84
             explícitos o código de concesión con fuente documentada; no se deducen de nombres.
           </p>
         </>
@@ -177,7 +177,7 @@ export const GeocatminControls = ({
               </pre>
             </details>
           ))}
-          <p>Registros MASCLI relacionados ({result.data.related.length})</p>
+          <p>Registros SIPGES relacionados ({result.data.related.length})</p>
           <ul>
             {result.data.related.map((r) => (
               <li key={`${r.module}:${r.id}`}>

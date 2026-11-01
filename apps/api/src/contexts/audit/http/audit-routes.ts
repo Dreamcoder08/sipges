@@ -1,4 +1,4 @@
-import type { AuditEntry } from '@mascli/contracts';
+import type { AuditEntry } from '@sipges/contracts';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { isoSeconds } from '../../../platform/http/time.ts';

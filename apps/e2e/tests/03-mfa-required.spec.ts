@@ -14,13 +14,13 @@ test('mandatory MFA enrolls before dashboard and requires a code on the next log
     const api = await startApi({
       hostname: 'localhost',
       env: {
-        MASCLI_REQUIRE_MFA: '1',
-        MASCLI_DATA_KEY: secrets.dataKey,
-        MASCLI_ADMIN_USERNAME: 'mfa-admin',
-        MASCLI_ADMIN_PASSWORD: secrets.adminPassword,
-        MASCLI_PGLITE_DIR: path.join(scratch.dir, 'pglite'),
-        MASCLI_UPLOAD_DIR: path.join(scratch.dir, 'uploads'),
-        MASCLI_WEB_DIR: webDist,
+        SIPGES_REQUIRE_MFA: '1',
+        SIPGES_DATA_KEY: secrets.dataKey,
+        SIPGES_ADMIN_USERNAME: 'mfa-admin',
+        SIPGES_ADMIN_PASSWORD: secrets.adminPassword,
+        SIPGES_PGLITE_DIR: path.join(scratch.dir, 'pglite'),
+        SIPGES_UPLOAD_DIR: path.join(scratch.dir, 'uploads'),
+        SIPGES_WEB_DIR: webDist,
       },
     });
     register(api.stop);

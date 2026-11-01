@@ -1,4 +1,4 @@
-import type { MediaFeed } from '@mascli/contracts';
+import type { MediaFeed } from '@sipges/contracts';
 import { appendAudit } from '../../../platform/database/audit-trail.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';

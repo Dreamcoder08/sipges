@@ -97,7 +97,7 @@ describe('GET /system/search', () => {
       username: 'admin',
     });
     const res = await t.request('/system/search?q=agua', {
-      headers: { cookie: admin.cookie, 'x-mascli-scope': 'OTRA/PRJ-B' },
+      headers: { cookie: admin.cookie, 'x-sipges-scope': 'OTRA/PRJ-B' },
     });
     expect(((await res.json()) as { hits: Hit[] }).hits).toEqual([]);
   });

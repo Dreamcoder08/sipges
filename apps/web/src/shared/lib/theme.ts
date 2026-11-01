@@ -13,7 +13,7 @@ export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[]
   { value: 'dark', label: 'Oscuro' },
 ];
 
-const KEY = 'mascli.theme';
+const KEY = 'sipges.theme';
 const CHROME = { light: '#ffffff', dark: '#000000' } as const;
 const listeners = new Set<() => void>();
 

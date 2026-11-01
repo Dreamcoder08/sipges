@@ -105,7 +105,7 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
   async deactivateUser(username) {
     return sql.transaction(async (tx) => {
       await tx.query(
-        "SELECT pg_advisory_xact_lock(hashtextextended('mascli:account-deactivation', 0))",
+        "SELECT pg_advisory_xact_lock(hashtextextended('sipges:account-deactivation', 0))",
       );
       const [user] = await tx.query<{ role: Role; active: boolean }>(
         'SELECT role, active FROM users WHERE username = $1 FOR UPDATE',

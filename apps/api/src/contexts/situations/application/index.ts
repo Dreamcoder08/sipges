@@ -52,7 +52,7 @@ const LIMITATIONS = [
   'No modifica el IRSA. Umbrales y significados son preliminares y configurables.',
 ];
 
-/** MASCLI 4.0 use cases (docs/adr/0020). */
+/** SIPGES use cases (docs/adr/0020). */
 export const createSituationsService = (deps: {
   settings: ProjectSettingsStore;
   records: SituationRecordReader;

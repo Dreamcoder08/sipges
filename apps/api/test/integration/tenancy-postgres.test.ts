@@ -10,9 +10,9 @@ import { postgresClient } from '../../src/platform/database/postgres.ts';
 import { withTenant } from '../../src/platform/database/tenant-transaction.ts';
 import { TEST_ENV, TestClock } from '../support/test-app.ts';
 
-const adminUrl = process.env.MASCLI_TEST_DATABASE_URL;
+const adminUrl = process.env.SIPGES_TEST_DATABASE_URL;
 describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
-  const name = `mascli_tenant_test_${randomBytes(6).toString('hex')}`;
+  const name = `sipges_tenant_test_${randomBytes(6).toString('hex')}`;
   let admin: postgres.Sql;
   let pool: ReturnType<typeof postgresClient>;
   let other: ReturnType<typeof postgresClient>;
@@ -24,12 +24,12 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
     pool = postgresClient(parsed.toString());
     other = postgresClient(parsed.toString());
     await migrate(pool.client, await loadMigrations());
-    // Real 0004 schema (forced RLS); rows inserted as the owner, read back as mascli_tenant.
+    // Real 0004 schema (forced RLS); rows inserted as the owner, read back as sipges_tenant.
     await pool.client.exec(`
       INSERT INTO tenants (company_id, project_id, label) VALUES
-        ('MASCLI','PRJ-SECHURA','South'), ('ACME','NORTE','North') ON CONFLICT DO NOTHING;
+        ('SIPGES','PRJ-SECHURA','South'), ('ACME','NORTE','North') ON CONFLICT DO NOTHING;
       INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at) VALUES
-        ('MASCLI/PRJ-SECHURA','Eventos','south','{"name":"south"}', now(), now()),
+        ('SIPGES/PRJ-SECHURA','Eventos','south','{"name":"south"}', now(), now()),
         ('ACME/NORTE','Eventos','north','{"name":"north"}', now(), now());
     `);
   });
@@ -46,7 +46,7 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
       const north = i % 2 === 0;
       return withTenant(
         i % 3 ? pool.client : other.client,
-        north ? 'ACME/NORTE' : 'MASCLI/PRJ-SECHURA',
+        north ? 'ACME/NORTE' : 'SIPGES/PRJ-SECHURA',
         async (tx) => {
           await tx.query('SELECT pg_sleep(0.01)');
           expect(await tx.query('SELECT id FROM module_records')).toEqual([
@@ -62,7 +62,7 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
     await expect(
       withTenant(pool.client, 'ACME/NORTE', (tx) =>
         tx.query(
-          "INSERT INTO module_records VALUES ('MASCLI/PRJ-SECHURA','Eventos','intruder','{}',now(),now())",
+          "INSERT INTO module_records VALUES ('SIPGES/PRJ-SECHURA','Eventos','intruder','{}',now(),now())",
         ),
       ),
     ).rejects.toThrow(/row-level security/);
@@ -75,7 +75,7 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
           const [row] = await sql.query<{ role: string; tenant: string | null }>(
             "SELECT current_user AS role, current_setting('app.tenant_id', true) AS tenant",
           );
-          expect(row?.role).not.toBe('mascli_tenant');
+          expect(row?.role).not.toBe('sipges_tenant');
           expect(row?.tenant ?? '').toBe('');
         }),
       );
@@ -95,12 +95,12 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
       Array.from({ length: 20 }, async (_, i) => {
         const north = i % 2 === 0;
         const data = await readers[i % 2]?.read({
-          companyId: north ? 'ACME' : 'MASCLI',
+          companyId: north ? 'ACME' : 'SIPGES',
           projectId: north ? 'NORTE' : 'PRJ-SECHURA',
         });
         expect(data?.module_records).toEqual([
           expect.objectContaining({
-            tenant_id: north ? 'ACME/NORTE' : 'MASCLI/PRJ-SECHURA',
+            tenant_id: north ? 'ACME/NORTE' : 'SIPGES/PRJ-SECHURA',
             id: north ? 'north' : 'south',
             payload: { name: north ? 'north' : 'south' },
           }),
@@ -114,7 +114,7 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
       /forced tenant row-level security/,
     );
     const [role] = await pool.client.query<{ role: string }>('SELECT current_user AS role');
-    expect(role?.role).not.toBe('mascli_tenant');
+    expect(role?.role).not.toBe('sipges_tenant');
     await pool.client.exec('ALTER TABLE audit FORCE ROW LEVEL SECURITY');
   });
 

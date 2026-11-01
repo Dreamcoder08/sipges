@@ -1,4 +1,4 @@
-import { GoogleLinkRequest, type AuthProviders } from '@mascli/contracts';
+import { GoogleLinkRequest, type AuthProviders } from '@sipges/contracts';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
@@ -16,7 +16,7 @@ export const GOOGLE_CALLBACK_PATH = '/auth/google/callback';
  * Holds state, nonce and PKCE verifier between the redirect to Google and its return. Google
  * sends the browser back cross-site, so this cookie is SameSite=Lax (the session stays Strict).
  */
-const FLOW_COOKIE = 'mascli_google_flow';
+const FLOW_COOKIE = 'sipges_google_flow';
 const FLOW_SECONDS = 600;
 const RANDOM = /^[A-Za-z0-9_-]{43}$/;
 

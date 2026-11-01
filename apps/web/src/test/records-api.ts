@@ -6,7 +6,7 @@ export const installRecordsApi = (initial: Record<string, Row[]> = {}) => {
   const rows: Record<string, Row[]> = structuredClone(initial);
   const payloads: Record<string, unknown>[] = [];
   const key = (request: Request, module: string) =>
-    `${request.headers.get('X-MASCLI-Scope') ?? api.scope}/${module}`;
+    `${request.headers.get('X-SIPGES-Scope') ?? api.scope}/${module}`;
   server.use(
     http.get('/api/:module', ({ request, params }) => {
       const q = new URL(request.url).searchParams.get('q')?.toLowerCase() ?? '';

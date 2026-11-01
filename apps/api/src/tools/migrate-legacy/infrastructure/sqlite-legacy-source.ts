@@ -1,5 +1,5 @@
 /**
- * Read-only adapter over a legacy MASCLI installation: SQLite databases (opened with
+ * Read-only adapter over a legacy SIPGES installation: SQLite databases (opened with
  * `node:sqlite` in read-only mode), the JSON settings files and the upload directory.
  * Nothing here writes to the legacy installation.
  */
@@ -12,16 +12,16 @@ import { legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
 import type { LegacyGrantRow, LegacySource, LegacyTenantReader } from '../application/ports.ts';
 
 /** Default scope of a legacy installation (app.py:61, :444). */
-export const DEFAULT_SCOPE = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' } as const;
+export const DEFAULT_SCOPE = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' } as const;
 
 export type LegacyLayout = {
-  /** `auth_global.db` (MASCLI_AUTH_DB_PATH). */
+  /** `auth_global.db` (SIPGES_AUTH_DB_PATH). */
   readonly authDb: string;
-  /** Default tenant database (MASCLI_DB_PATH). */
+  /** Default tenant database (SIPGES_DB_PATH). */
   readonly defaultDb: string;
-  /** Directory of non-default tenant databases and their copied settings (MASCLI_TENANT_DIR). */
+  /** Directory of non-default tenant databases and their copied settings (SIPGES_TENANT_DIR). */
   readonly tenantDir: string;
-  /** Upload root (MASCLI_UPLOAD_DIR). */
+  /** Upload root (SIPGES_UPLOAD_DIR). */
   readonly uploadDir: string;
   /** Directory of the default scope's JSON configuration (`<root>/data`). */
   readonly configDir: string;
@@ -33,7 +33,7 @@ export const legacyLayout = (root: string, overrides: Partial<LegacyLayout> = {}
   const data = join(base, 'data');
   return {
     authDb: overrides.authDb ?? join(data, 'auth_global.db'),
-    defaultDb: overrides.defaultDb ?? join(data, 'mascli.db'),
+    defaultDb: overrides.defaultDb ?? join(data, 'sipges.db'),
     tenantDir: overrides.tenantDir ?? join(data, 'tenants'),
     uploadDir: overrides.uploadDir ?? join(data, 'uploads'),
     configDir: overrides.configDir ?? data,

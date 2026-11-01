@@ -28,7 +28,7 @@ const database = async () => {
   const sql = pgliteClient(db);
   await migrate(sql, await loadMigrations());
   await sql.query(
-    "INSERT INTO tenants (company_id, project_id, label, created_at) VALUES ('MASCLI', 'PRJ-T', 'Prueba', now())",
+    "INSERT INTO tenants (company_id, project_id, label, created_at) VALUES ('SIPGES', 'PRJ-T', 'Prueba', now())",
   );
   return { sql, store: createSqlRecordStore(sql) };
 };
@@ -57,7 +57,7 @@ describe('Base Maestra import', () => {
 
   it('dry-runs by default, then inserts only missing records with an audit entry', async () => {
     const { sql, store } = await database();
-    const dry = await importBaseMaestra(store, 'MASCLI/PRJ-T', SEED, {
+    const dry = await importBaseMaestra(store, 'SIPGES/PRJ-T', SEED, {
       apply: false,
       source: 'seed.json',
       now,
@@ -70,20 +70,20 @@ describe('Base Maestra import', () => {
     ]);
     expect(await sql.query('SELECT 1 FROM module_records')).toHaveLength(0);
 
-    const applied = await importBaseMaestra(store, 'MASCLI/PRJ-T', SEED, {
+    const applied = await importBaseMaestra(store, 'SIPGES/PRJ-T', SEED, {
       apply: true,
       source: 'seed.json',
       now,
     });
     expect(applied.applied).toBe(true);
-    const contacts = await store.list('MASCLI/PRJ-T', 'Directorio_Territorial', {
+    const contacts = await store.list('SIPGES/PRJ-T', 'Directorio_Territorial', {
       limit: 10,
       q: null,
     });
     expect(contacts.map((r) => r.payload)).toEqual(
       expect.arrayContaining([expect.objectContaining({ Celular: '000 000 000' })]),
     );
-    expect(await store.list('MASCLI/PRJ-T', 'Usuarios', { limit: 10, q: null })).toEqual([]);
+    expect(await store.list('SIPGES/PRJ-T', 'Usuarios', { limit: 10, q: null })).toEqual([]);
     const audit = await sql.query<{ action: string; detail: string }>(
       "SELECT action, detail FROM audit WHERE module = 'Directorio_Territorial'",
     );
@@ -92,17 +92,17 @@ describe('Base Maestra import', () => {
     ]);
 
     // A person edits a demand; re-running the import must not touch it.
-    const [demand] = await store.list('MASCLI/PRJ-T', 'Demandas', { limit: 1, q: null });
+    const [demand] = await store.list('SIPGES/PRJ-T', 'Demandas', { limit: 1, q: null });
     await sql.query(
       'UPDATE module_records SET payload = payload || \'{"Estado":"Cerrada"}\' WHERE id = \'D-T1\'',
     );
-    const again = await importBaseMaestra(store, 'MASCLI/PRJ-T', SEED, {
+    const again = await importBaseMaestra(store, 'SIPGES/PRJ-T', SEED, {
       apply: true,
       source: 'seed.json',
       now,
     });
     expect(again.modules.every((m) => m.nuevos === 0)).toBe(true);
-    const [after] = await store.list('MASCLI/PRJ-T', 'Demandas', { limit: 1, q: null });
+    const [after] = await store.list('SIPGES/PRJ-T', 'Demandas', { limit: 1, q: null });
     expect(demand?.payload.Estado).toBe('Nueva');
     expect(after?.payload.Estado).toBe('Cerrada');
   });
@@ -111,7 +111,7 @@ describe('Base Maestra import', () => {
     const { sql, store } = await database();
     const report = await importBaseMaestra(
       store,
-      'MASCLI/PRJ-T',
+      'SIPGES/PRJ-T',
       { ...SEED, Desconocido: [] },
       { apply: true, source: 'seed.json', now },
     );
@@ -142,11 +142,11 @@ it('keeps a concurrent insert intact instead of merging the seed over it', async
   };
   const report = await importBaseMaestra(
     target,
-    'MASCLI/PRJ-T',
+    'SIPGES/PRJ-T',
     { Demandas: SEED.Demandas },
     { apply: true, source: 'seed.json', now },
   );
-  expect((await store.get('MASCLI/PRJ-T', 'Demandas', 'D-T1'))?.payload.Estado).toBe('Cerrada');
+  expect((await store.get('SIPGES/PRJ-T', 'Demandas', 'D-T1'))?.payload.Estado).toBe('Cerrada');
   expect(report.modules[0]).toMatchObject({ nuevos: 0, ya_existentes: 1 });
   expect(await sql.query("SELECT 1 FROM audit WHERE detail LIKE 'Base Maestra:%'")).toHaveLength(0);
 });

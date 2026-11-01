@@ -25,7 +25,7 @@ const snapshot = async (t: Fixture, cookie: string) => {
   return state;
 };
 
-const grant = { username: 'admin', company_id: 'MASCLI', project_id: 'PRJ-SECHURA' };
+const grant = { username: 'admin', company_id: 'SIPGES', project_id: 'PRJ-SECHURA' };
 const scope = {
   username: 'admin',
   company_id: 'ACME',
@@ -83,6 +83,6 @@ it('preserves valid scope creation, grant issuance and deletion', async () => {
   const scopes = await t.request('/system/auth/scopes', { headers: { cookie: admin.cookie } });
   expect(scopes.status).toBe(200);
   expect(await scopes.json()).toEqual([
-    { company_id: 'MASCLI', project_id: 'PRJ-SECHURA', label: 'Proyecto Sechura (migración)' },
+    { company_id: 'SIPGES', project_id: 'PRJ-SECHURA', label: 'Proyecto Sechura (migración)' },
   ]);
 });

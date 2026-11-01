@@ -1,4 +1,4 @@
-import type { ReportDocument } from '@mascli/kernel';
+import type { ReportDocument } from '@sipges/kernel';
 import type { DocxContent, ReviewItem, ReviewStatus } from '../domain/index.ts';
 
 export type Clock = { now(): Date };

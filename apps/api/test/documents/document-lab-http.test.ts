@@ -1,7 +1,7 @@
 import { strFromU8, unzipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
 import { docxRenderer } from '../../src/contexts/documents/infrastructure/index.ts';
-import { heading, paragraph, table } from '@mascli/kernel';
+import { heading, paragraph, table } from '@sipges/kernel';
 import { createTestApp } from '../support/test-app.ts';
 import { SAMPLE_TEXT, minimalPdf, utf8 } from './fixtures.ts';
 
@@ -110,7 +110,7 @@ describe('POST /system/document-lab/analyze', () => {
   });
 
   it('maps every rejection to app.py status codes', async () => {
-    const { post } = await setup({ MASCLI_MAX_UPLOAD_BYTES: '1048576' });
+    const { post } = await setup({ SIPGES_MAX_UPLOAD_BYTES: '1048576' });
     const analyze = (name: string, bytes: Uint8Array) =>
       post('/system/document-lab/analyze', [{ name, bytes }]);
     const cases: [string, Uint8Array, number, string][] = [
@@ -177,7 +177,7 @@ describe('POST /system/document-lab/report.docx', () => {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     );
     expect(res.headers.get('content-disposition')).toBe(
-      'attachment; filename="MASCLI_RC20_Lectura_Documental.docx"',
+      'attachment; filename="SIPGES_RC20_Lectura_Documental.docx"',
     );
     const xml = strFromU8(
       unzipSync(new Uint8Array(await res.arrayBuffer()))['word/document.xml'] ?? new Uint8Array(),
@@ -394,7 +394,7 @@ describe('document review inbox', () => {
         })
       ).status,
     ).toBe(200);
-    const north = { 'x-mascli-scope': 'ACME/NORTE' };
+    const north = { 'x-sipges-scope': 'ACME/NORTE' };
     const southBatch = {
       filename: 'norte.txt',
       sha256: 'b'.repeat(64),
@@ -411,7 +411,7 @@ describe('document review inbox', () => {
     expect(norte.total).toBe(1);
     expect(norte.themes).toEqual({ 'Tema Norte': 1 });
     expect(norte.items.map((i) => i.theme)).toEqual(['Tema Norte']);
-    const sechura = await read({ 'x-mascli-scope': 'MASCLI/PRJ-SECHURA' });
+    const sechura = await read({ 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' });
     expect(sechura.total).toBe(5);
     expect(sechura.themes).toEqual({ 'Tema A': 3, 'Tema B': 2 });
   });
@@ -457,7 +457,7 @@ describe('document review inbox', () => {
         })
       ).status,
     ).toBe(200);
-    const north = { 'x-mascli-scope': 'ACME/NORTE' };
+    const north = { 'x-sipges-scope': 'ACME/NORTE' };
     const listed = (await (
       await json('GET', '/system/document-lab/review', undefined, north)
     ).json()) as {

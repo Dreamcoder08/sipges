@@ -22,7 +22,7 @@ export const authenticateKey = async (
 ): Promise<MachineAuth> => {
   const principal = await keys.authenticate(bearerToken(c.req.header('authorization')));
   if (!principal) {
-    c.header('WWW-Authenticate', 'Bearer realm="mascli"');
+    c.header('WWW-Authenticate', 'Bearer realm="sipges"');
     return {
       ok: false,
       response: c.json({ detail: 'Clave de API no válida o revocada' }, 401),

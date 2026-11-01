@@ -1,4 +1,4 @@
-// Operator commands run on the server with the same MASCLI_* environment as the API.
+// Operator commands run on the server with the same SIPGES_* environment as the API.
 //   node src/admin-cli.ts reset-mfa <username>
 // Recovers an account (including the last administrator) whose authenticator was lost; the
 // HTTP route refuses self-reset, so this is the only path for a sole admin (ADR 0009).

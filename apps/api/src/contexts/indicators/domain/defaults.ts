@@ -234,7 +234,7 @@ export const DEFAULT_IRSA_CONFIG: IrsaConfig = {
 };
 
 export const MODEL_STATUS: Readonly<Record<string, unknown>> = {
-  version: 'MASCLI · Prototipo final de tesis | Motor V0.5.1',
+  version: 'SIPGES · Prototipo final de tesis | Motor V0.5.1',
   content_validation: 'Pendiente de juicio de expertos',
   aiken_status: 'Sin resultados todavía',
   indicator_count: 32,

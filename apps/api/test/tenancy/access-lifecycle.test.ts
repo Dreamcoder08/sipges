@@ -1,4 +1,4 @@
-import { AccountSummary } from '@mascli/contracts';
+import { AccountSummary } from '@sipges/contracts';
 import { describe, expect, it, vi } from 'vitest';
 import { passwordHasher } from '../../src/contexts/identity/infrastructure/password-hasher.ts';
 import { createTestApp } from '../support/test-app.ts';
@@ -25,7 +25,7 @@ const revoke = (
   t.request('/system/auth/grants', {
     method: 'DELETE',
     headers: { cookie, 'content-type': 'application/json' },
-    body: JSON.stringify({ username, company_id: 'MASCLI', project_id: 'PRJ-SECHURA' }),
+    body: JSON.stringify({ username, company_id: 'SIPGES', project_id: 'PRJ-SECHURA' }),
   });
 const deactivate = (
   t: Awaited<ReturnType<typeof createTestApp>>,
@@ -52,7 +52,7 @@ describe('administrator access lifecycle', () => {
     });
     expect(denied.status).toBe(403);
     expect(await denied.json()).toEqual({
-      detail: 'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project',
+      detail: 'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project',
       projects: [],
     });
     const me = await t.request('/system/auth/me', { headers: { cookie: user.cookie } });

@@ -64,7 +64,7 @@ export const DashboardPage = ({
             <p className={styles.kicker}>Monitoreo preventivo · G-A-D-N-E-I</p>
             <h2 id="hero-title">Riesgo socioambiental con evidencia y trazabilidad.</h2>
             <p>
-              MASCLI integra información territorial, actores, demandas, narrativas, ambiente e
+              SIPGES integra información territorial, actores, demandas, narrativas, ambiente e
               institucionalidad para priorizar señales y orientar acciones preventivas.
             </p>
           </section>
@@ -155,7 +155,7 @@ export const DashboardPage = ({
       </Card>
 
       <div className={styles.grid}>
-        <Card eyebrow="Índice de riesgo socioambiental" title="IRSA-MASCLI">
+        <Card eyebrow="Índice de riesgo socioambiental" title="IRSA-SIPGES">
           <QueryState query={irsa} label="el IRSA">
             {(data) => (
               <>

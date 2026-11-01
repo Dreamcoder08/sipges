@@ -7,9 +7,9 @@ import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts
 import { postgresClient } from '../../src/platform/database/postgres.ts';
 import { withTenant } from '../../src/platform/database/tenant-transaction.ts';
 
-const adminUrl = process.env.MASCLI_TEST_DATABASE_URL;
+const adminUrl = process.env.SIPGES_TEST_DATABASE_URL;
 describe.skipIf(!adminUrl)('digital evidence on real PostgreSQL connections', () => {
-  const name = `mascli_digital_test_${randomBytes(6).toString('hex')}`;
+  const name = `sipges_digital_test_${randomBytes(6).toString('hex')}`;
   let admin: postgres.Sql;
   let pool: ReturnType<typeof postgresClient>;
   beforeAll(async () => {

@@ -33,7 +33,7 @@ describe('secret cipher (AES-256-GCM)', () => {
 
   it('requires a 32-byte key', () => {
     expect(() => createSecretCipher(randomBytes(16))).toThrow(
-      'MASCLI_DATA_KEY must decode to 32 bytes',
+      'SIPGES_DATA_KEY must decode to 32 bytes',
     );
   });
 });

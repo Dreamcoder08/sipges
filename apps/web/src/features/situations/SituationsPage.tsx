@@ -3,7 +3,7 @@ import {
   type Situation,
   type SituationsReport as Report,
   SituationsReport,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
@@ -46,7 +46,7 @@ export const SituationsPage = ({ scope, projectId, projectLabel, role }: Feature
   return (
     <div className={styles.page}>
       <p>
-        MASCLI relaciona registros que comparten tema, actor o territorio registrado en fechas
+        SIPGES relaciona registros que comparten tema, actor o territorio registrado en fechas
         cercanas. Lo reciente pesa más. Cada situación muestra por qué tiene su color y qué acciones
         podrían tomarse; la decisión es siempre suya.
       </p>

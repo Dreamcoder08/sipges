@@ -1,4 +1,4 @@
-import type { ModuleRecord } from '@mascli/contracts';
+import type { ModuleRecord } from '@sipges/contracts';
 import { DIMENSIONS, foldText, type Level } from '../../../shared/lib/text.ts';
 
 export const MISSING_TERRITORY = 'Sin territorio registrado';

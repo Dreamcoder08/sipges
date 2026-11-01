@@ -98,7 +98,7 @@ const requestFor = (
           from: config.from,
           to: config.to,
           subject: message.title,
-          text: `${message.text}\n\n— Automatización de MASCLI`,
+          text: `${message.text}\n\n— Automatización de SIPGES`,
         }),
       };
   }
@@ -114,7 +114,7 @@ export const createHttpChannelSender = (fetchImpl: Fetch = fetch): ChannelSender
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'user-agent': 'MASCLI-Automation/1',
+          'user-agent': 'SIPGES-Automation/1',
           // Own systems behind a signed webhook can join the trace; chat services cannot use it.
           ...(config.kind === 'webhook' ? outboundTraceHeaders() : {}),
           ...request.headers,

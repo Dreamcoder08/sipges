@@ -1,4 +1,4 @@
-# Gentle AI y Engram en MASCLI
+# Gentle AI y Engram en SIPGES
 
 Fuente: [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) v4.2.0 y
 [Engram](https://github.com/Gentleman-Programming/engram) v3.4.0, revisados el 2026-10-19. Adoptado a petición
@@ -8,12 +8,12 @@ explícita del dueño del repositorio.
 
 | Pieza | Dónde | Efecto |
 | --- | --- | --- |
-| Memoria Engram (MCP) | `.mcp.json`, `.codex/config.toml` | Claude Code y Codex arrancan `node scripts/agents/engram.mjs mcp`: importa `.engram/` y sirve `engram mcp --tools=agent` con el proyecto fijo `mascli`. |
+| Memoria Engram (MCP) | `.mcp.json`, `.codex/config.toml` | Claude Code y Codex arrancan `node scripts/agents/engram.mjs mcp`: importa `.engram/` y sirve `engram mcp --tools=agent` con el proyecto fijo `sipges`. |
 | Memoria compartida | `.engram/manifest.json`, `.engram/chunks/` | Fragmentos comprimidos que solo se añaden; viajan en git entre máquinas y sesiones en la nube. |
 | Engram en la nube | `scripts/agents/engram.mjs` | Solo si `CLAUDE_CODE_REMOTE=true` descarga la versión fijada, comprueba su sha256 y la deja en `~/.local/bin`. En una máquina personal nunca instala nada: indica los pasos. |
 | Guardarraíles de permisos | `.claude/settings.json` | Equivalente al componente `permissions` de Gentle AI: se niega leer `data/seed.json`, `data/*.db`, `.env*`, claves y `~/.ssh`. |
 | Skills de Gentle AI | `.agents/skills/` | `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver` (gentle-ai v4.2.0, copia renderizada por `install --scope workspace`) y `typescript`, `zod-4` (Gentleman-Skills `curated/`). Procedencia y sha256 de cada `SKILL.md` en `skills-lock.json`. |
-| ODD | `odd/tasks/`, skill `mascli-odd-task` | El ODD del repo ya sigue *Organic Driven Development*: trabajo pequeño en línea, trabajo grande con un documento recuperable. |
+| ODD | `odd/tasks/`, skill `sipges-odd-task` | El ODD del repo ya sigue *Organic Driven Development*: trabajo pequeño en línea, trabajo grande con un documento recuperable. |
 
 Comandos (`pnpm engram <comando>`, equivalente a `node scripts/agents/engram.mjs <comando>`):
 

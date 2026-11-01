@@ -1,10 +1,10 @@
-import { DashboardResponse, IrsaSummary, ModelStatus } from '@mascli/contracts';
+import { DashboardResponse, IrsaSummary, ModelStatus } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { fetchModuleRecords } from '../../shared/api/module-records.ts';
 import { requestJson } from '../../shared/api/client.ts';
 
 /** A module record as `/api/{module}` lists it: free-form payload plus `_id`. */
-export type { ModuleRecord } from '@mascli/contracts';
+export type { ModuleRecord } from '@sipges/contracts';
 
 export const dashboardQuery = (scope: string) =>
   queryOptions({

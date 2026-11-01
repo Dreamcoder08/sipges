@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * End-to-end parity suite (ODD T14, specs S3/S7). One synthetic MASCLI instance is started by
+ * End-to-end parity suite (ODD T14, specs S3/S7). One synthetic SIPGES instance is started by
  * global-setup.ts; specs share it, so they run in one worker in file order.
  */
 export default defineConfig({

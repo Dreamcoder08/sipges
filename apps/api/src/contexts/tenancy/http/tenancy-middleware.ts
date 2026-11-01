@@ -43,13 +43,13 @@ export const tenancyMiddleware =
 
     const resolution = await tenancy.resolve({
       username: identity.username,
-      header: c.req.header('x-mascli-scope'),
+      header: c.req.header('x-sipges-scope'),
       cookie: getCookie(c, SCOPE_COOKIE),
     });
     if (!resolution.ok) {
       return c.json(
         {
-          detail: 'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project',
+          detail: 'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project',
           projects: resolution.projects,
         },
         403,

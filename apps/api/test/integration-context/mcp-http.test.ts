@@ -138,7 +138,7 @@ describe('MCP server', () => {
     expect(init.body.result).toMatchObject({
       protocolVersion: '2025-06-18',
       capabilities: { tools: { listChanged: false } },
-      serverInfo: { name: 'mascli' },
+      serverInfo: { name: 'sipges' },
     });
     expect(
       (await t.rpc(token, 'initialize', { protocolVersion: '1999-01-01' })).body.result

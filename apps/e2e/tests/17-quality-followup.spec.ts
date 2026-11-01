@@ -13,7 +13,7 @@ for (const mobile of [false, true]) {
     const actor = `A-QUALITY-${stamp}`;
     const source = `F-QUALITY-${stamp}`;
     const commitment = `C-QUALITY-${stamp}`;
-    const headers = { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+    const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
     const post = async (module: string, payload: Record<string, unknown>) => {
       const response = await page.request.post(`/api/${module}`, { headers, data: { payload } });
       expect(response.status()).toBe(200);

@@ -15,10 +15,10 @@ import {
 export const ADMIN_USERNAME = 'e2e-admin';
 
 /**
- * Boots one isolated MASCLI instance for the suite: the real API (apps/api/src/main.ts) serving
+ * Boots one isolated SIPGES instance for the suite: the real API (apps/api/src/main.ts) serving
  * the built SPA, a fresh synthetic database and generated credentials. The database is PGlite in
  * a temporary directory, or a throwaway database on the PostgreSQL server named by
- * MASCLI_E2E_DATABASE_URL (created here, dropped in the returned teardown).
+ * SIPGES_E2E_DATABASE_URL (created here, dropped in the returned teardown).
  * Credentials reach the tests only through this process's environment, never through files.
  */
 export default async function globalSetup() {
@@ -28,10 +28,10 @@ export default async function globalSetup() {
     const secrets = syntheticSecrets();
     register(scratch.remove);
 
-    let database: Record<string, string> = { MASCLI_PGLITE_DIR: path.join(scratch.dir, 'pglite') };
-    const serverUrl = process.env.MASCLI_E2E_DATABASE_URL;
+    let database: Record<string, string> = { SIPGES_PGLITE_DIR: path.join(scratch.dir, 'pglite') };
+    const serverUrl = process.env.SIPGES_E2E_DATABASE_URL;
     if (serverUrl) {
-      const name = `mascli_e2e_${randomBytes(6).toString('hex')}`;
+      const name = `sipges_e2e_${randomBytes(6).toString('hex')}`;
       const admin = postgres(serverUrl, { max: 1, onnotice: () => undefined });
       register(() => admin.end());
       await admin.unsafe(`CREATE DATABASE ${name}`);
@@ -40,26 +40,26 @@ export default async function globalSetup() {
       });
       const url = new URL(serverUrl);
       url.pathname = `/${name}`;
-      database = { MASCLI_DATABASE_URL: url.toString() };
+      database = { SIPGES_DATABASE_URL: url.toString() };
     }
 
     const shared = {
       // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
-      MASCLI_REQUIRE_MFA: '0',
+      SIPGES_REQUIRE_MFA: '0',
       // Explicit opt-in for synthetic browser suites running on intentional local HTTP.
       // The default suite still tests Secure cookies and leaves this unset.
-      MASCLI_COOKIE_SECURE: process.env.MASCLI_E2E_COOKIE_SECURE,
-      MASCLI_DATA_KEY: secrets.dataKey,
-      MASCLI_ADMIN_USERNAME: ADMIN_USERNAME,
-      MASCLI_ADMIN_PASSWORD: secrets.adminPassword,
-      MASCLI_ADMIN_FULL_NAME: 'Administración E2E',
+      SIPGES_COOKIE_SECURE: process.env.SIPGES_E2E_COOKIE_SECURE,
+      SIPGES_DATA_KEY: secrets.dataKey,
+      SIPGES_ADMIN_USERNAME: ADMIN_USERNAME,
+      SIPGES_ADMIN_PASSWORD: secrets.adminPassword,
+      SIPGES_ADMIN_FULL_NAME: 'Administración E2E',
       // No embedding server in the suite: semantic analysis falls back to rules.
-      MASCLI_OLLAMA_URL: 'http://127.0.0.1:9',
+      SIPGES_OLLAMA_URL: 'http://127.0.0.1:9',
     };
-    // MASCLI_E2E_RUNTIME=workers runs the suite against the Cloudflare adapter (wrangler dev).
-    const workers = process.env.MASCLI_E2E_RUNTIME === 'workers';
-    if (workers && !database.MASCLI_DATABASE_URL) {
-      throw new Error('MASCLI_E2E_RUNTIME=workers needs MASCLI_E2E_DATABASE_URL (no PGlite there)');
+    // SIPGES_E2E_RUNTIME=workers runs the suite against the Cloudflare adapter (wrangler dev).
+    const workers = process.env.SIPGES_E2E_RUNTIME === 'workers';
+    if (workers && !database.SIPGES_DATABASE_URL) {
+      throw new Error('SIPGES_E2E_RUNTIME=workers needs SIPGES_E2E_DATABASE_URL (no PGlite there)');
     }
     if (workers) assertWorkerBuilt();
     // `localhost` is a potentially trustworthy origin, so Chromium stores the default Secure
@@ -67,24 +67,24 @@ export default async function globalSetup() {
     const api = workers
       ? await startWorker({
           hostname: 'localhost',
-          databaseUrl: database.MASCLI_DATABASE_URL ?? '',
+          databaseUrl: database.SIPGES_DATABASE_URL ?? '',
           stateDir: scratch.dir,
-          env: { ...shared, MASCLI_ALLOWED_HOSTS: 'localhost' },
+          env: { ...shared, SIPGES_ALLOWED_HOSTS: 'localhost' },
         })
       : await startApi({
           hostname: 'localhost',
           env: {
             ...database,
             ...shared,
-            MASCLI_UPLOAD_DIR: path.join(scratch.dir, 'uploads'),
-            MASCLI_WEB_DIR: webDist,
+            SIPGES_UPLOAD_DIR: path.join(scratch.dir, 'uploads'),
+            SIPGES_WEB_DIR: webDist,
           },
         });
     register(api.stop);
 
-    process.env.MASCLI_E2E_BASE_URL = api.url;
-    process.env.MASCLI_E2E_ADMIN_USERNAME = ADMIN_USERNAME;
-    process.env.MASCLI_E2E_ADMIN_PASSWORD = secrets.adminPassword;
-    process.env.MASCLI_E2E_DATA_KEY = secrets.dataKey;
+    process.env.SIPGES_E2E_BASE_URL = api.url;
+    process.env.SIPGES_E2E_ADMIN_USERNAME = ADMIN_USERNAME;
+    process.env.SIPGES_E2E_ADMIN_PASSWORD = secrets.adminPassword;
+    process.env.SIPGES_E2E_DATA_KEY = secrets.dataKey;
   });
 }

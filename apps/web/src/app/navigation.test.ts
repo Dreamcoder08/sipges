@@ -22,7 +22,7 @@ describe('navigation', () => {
     expect(SCREENS).toHaveLength(26);
     expect(new Set(SCREENS.map((s) => s.path)).size).toBe(26);
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
-    expect(titleFor('/nope')).toBe('MASCLI');
+    expect(titleFor('/nope')).toBe('SIPGES');
   });
 
   it('groups every screen once, in menu order', () => {

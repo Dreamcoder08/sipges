@@ -1,7 +1,7 @@
 /** Python behaviors the ported engines depend on for identical results. */
 
 /** Python `round`, shared with other contexts through the kernel. */
-export { roundHalfEven as pyRound } from '@mascli/kernel';
+export { roundHalfEven as pyRound } from '@sipges/kernel';
 
 /** Python string length and slicing count code points. */
 export const codePoints = (text: string) => Array.from(text);

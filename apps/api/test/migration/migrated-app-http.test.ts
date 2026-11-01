@@ -59,7 +59,7 @@ describe('migrated installation through the HTTP app', () => {
     scope?: string,
   ) =>
     t.request(path, {
-      headers: { cookie, ...(scope ? { 'x-mascli-scope': scope } : {}) },
+      headers: { cookie, ...(scope ? { 'x-sipges-scope': scope } : {}) },
     });
 
   it('lets a migrated user sign in with the legacy password and read their records', async () => {
@@ -154,7 +154,7 @@ describe('migrated installation through the HTTP app', () => {
       scope: { company_id: string; project_id: string };
       data: Record<string, unknown[]>;
     };
-    expect(body.scope).toEqual({ company_id: 'MASCLI', project_id: 'PRJ-SECHURA' });
+    expect(body.scope).toEqual({ company_id: 'SIPGES', project_id: 'PRJ-SECHURA' });
     expect(body.data['module_records']).toHaveLength(2);
     expect(body.data['attachments']).toHaveLength(1);
     expect(body.data['document_review']).toHaveLength(1);

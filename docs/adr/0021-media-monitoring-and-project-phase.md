@@ -6,10 +6,10 @@
 
 ## Context
 
-The client expects MASCLI to watch regional media on its own and to weigh risk differently in
+The client expects SIPGES to watch regional media on its own and to weigh risk differently in
 exploration, construction, operation and closure. Until now narratives arrive by hand, by
 webhook or from the Defensoría connector (ADR 0014), and IRSA has one weight set per project.
-MASCLI 3.0 must stay unchanged (ADR 0020) and no paid service or credential may be connected
+SIPGES 3.0 must stay unchanged (ADR 0020) and no paid service or credential may be connected
 without the data owner.
 
 ## Decision
@@ -26,7 +26,7 @@ without the data owner.
    `Fecha_Observacion`, so situations count them.
 3. **Polled by the existing cron.** The automation cron (`CRON_SECRET`) polls due feeds of
    each tenant before its tick, at most every 30 minutes per feed and 20 items per feed.
-   Feeds of a project with MASCLI 4.0 off are never fetched.
+   Feeds of a project with SIPGES off are never fetched.
 4. **Phase in the 4.0 settings.** `project_settings` gains `phase` (exploración, construcción,
    operación, cierre or none) and optional per-phase weights over the six IRSA dimensions,
    summing to 1 ± 0.02. Preliminary suggestions are shown, never applied automatically. When

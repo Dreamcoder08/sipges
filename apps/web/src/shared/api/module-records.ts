@@ -1,4 +1,4 @@
-import { ModuleRecord } from '@mascli/contracts';
+import { ModuleRecord } from '@sipges/contracts';
 import { z } from 'zod';
 import { requestJson } from './client.ts';
 

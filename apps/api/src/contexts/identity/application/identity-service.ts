@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@mascli/kernel';
+import { type Result, err, ok } from '@sipges/kernel';
 import { checkRoleAccess } from '../domain/access-policy.ts';
 import { THROTTLE, ipSubject, throttleDecision, userSubject } from '../domain/login-throttle.ts';
 import {
@@ -70,7 +70,7 @@ export const createIdentityService = ({
     try {
       return cipher.open(sealed);
     } catch {
-      console.error('Unreadable sealed TOTP secret; check MASCLI_DATA_KEY');
+      console.error('Unreadable sealed TOTP secret; check SIPGES_DATA_KEY');
       return '';
     }
   };
@@ -80,7 +80,7 @@ export const createIdentityService = ({
     async bootstrapAdmin(admin: BootstrapAdmin): Promise<void> {
       if (await store.hasUsers()) return;
       if (admin.password.length < PASSWORD_MIN) {
-        throw new Error('Configure MASCLI_ADMIN_PASSWORD (mínimo 12 caracteres)');
+        throw new Error('Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)');
       }
       await store.createUser(
         {
@@ -160,17 +160,17 @@ export const createIdentityService = ({
     },
 
     /**
-     * Links the bootstrap administrator to MASCLI_GOOGLE_ADMIN_EMAIL so a fresh installation can
+     * Links the bootstrap administrator to SIPGES_GOOGLE_ADMIN_EMAIL so a fresh installation can
      * be reached with Google alone. It never replaces an address an administrator already set.
      */
     async bootstrapGoogleAdmin(rawUsername: string, rawEmail: string): Promise<void> {
       const username = normalizeUsername(rawUsername);
       const email = normalizeGoogleEmail(rawEmail);
-      if (!email.ok) throw new Error('MASCLI_GOOGLE_ADMIN_EMAIL is not a valid address');
+      if (!email.ok) throw new Error('SIPGES_GOOGLE_ADMIN_EMAIL is not a valid address');
       const user = await store.findUser(username);
       if (!user || user.role !== 'admin' || user.googleEmail !== null) return;
       if ((await store.setGoogleEmail(username, email.value)) === 'taken') {
-        console.error('MASCLI_GOOGLE_ADMIN_EMAIL is already linked to another account');
+        console.error('SIPGES_GOOGLE_ADMIN_EMAIL is already linked to another account');
       }
     },
 

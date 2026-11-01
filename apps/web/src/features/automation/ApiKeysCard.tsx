@@ -1,4 +1,4 @@
-import { ApiKeyCreated, ApiKeyOut, type ApiKeyIn } from '@mascli/contracts';
+import { ApiKeyCreated, ApiKeyOut, type ApiKeyIn } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -54,7 +54,7 @@ export const ApiKeysCard = ({ scope }: { scope: string }) => {
       <p>
         Conecta Claude, ChatGPT, Copilot, Gemini u otros agentes compatibles con el Model Context
         Protocol a <code>{endpoint}</code> usando una clave de API. Las claves de escritura permiten
-        además crear registros y vínculos, y alimentar MASCLI desde n8n, Zapier o Make.
+        además crear registros y vínculos, y alimentar SIPGES desde n8n, Zapier o Make.
       </p>
       {mutation.error && <Alert tone="error">{errorDetail(mutation.error)}</Alert>}
       {token && (

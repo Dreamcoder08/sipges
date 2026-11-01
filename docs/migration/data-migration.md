@@ -1,6 +1,6 @@
 # Legacy data migration (T13)
 
-Tooling that moves a legacy MASCLI RC 3.0 installation (SQLite + JSON + upload files) into the
+Tooling that moves a legacy SIPGES RC 3.0 installation (SQLite + JSON + upload files) into the
 TypeScript API's PostgreSQL schema. The legacy installation is only ever **read**; the tool opens
 every SQLite file read-only and never writes to the old data directory.
 
@@ -9,18 +9,18 @@ ODD forbids doing so without an explicit user decision.
 
 - Code: `apps/api/src/tools/migrate-legacy/` (`domain/` pure mapping, `application/` use case
   and ports, `infrastructure/` SQLite reader and PostgreSQL writer, `cli.ts`).
-- Command: `pnpm --filter @mascli/api migrate:legacy -- --legacy-root <dir> [...]`.
+- Command: `pnpm --filter @sipges/api migrate:legacy -- --legacy-root <dir> [...]`.
 - Tests: `apps/api/test/migration/*`, `apps/api/test/integration/migration-postgres.test.ts`.
 
 ## What the tool reads
 
 | Legacy source | Target |
 | --- | --- |
-| `auth_global.db` → `auth_users` | `users` (password hash kept as legacy PBKDF2; TOTP secret sealed with `MASCLI_DATA_KEY`) |
+| `auth_global.db` → `auth_users` | `users` (password hash kept as legacy PBKDF2; TOTP secret sealed with `SIPGES_DATA_KEY`) |
 | `auth_global.db` → `tenant_projects` | `tenants` |
 | `auth_global.db` → `access_grants` | `grants` |
 | `auth_global.db` → `auth_sessions` | **not migrated** (counted only) |
-| `data/mascli.db` (scope `MASCLI/PRJ-SECHURA`) and `TENANT_DIR/<sha256("company/project")[:24]>.db` | the tenant's business tables |
+| `data/sipges.db` (scope `SIPGES/PRJ-SECHURA`) and `TENANT_DIR/<sha256("company/project")[:24]>.db` | the tenant's business tables |
 | `records` | `module_records` (ids, timestamps and the full payload, unknown fields included) |
 | `audit` | `audit` (ts, module, record id, action, detail) |
 | `irsa_snapshots` | `irsa_snapshots` |
@@ -65,33 +65,33 @@ never writes to the legacy side, but a backup is what makes the rollback below t
 ### 2. Configure the target
 
 Run the migration **before the API starts for the first time**, against an empty database. On
-its first start the API bootstraps an `admin` account (`MASCLI_ADMIN_USERNAME`), the default
+its first start the API bootstraps an `admin` account (`SIPGES_ADMIN_USERNAME`), the default
 tenant and that account's grant; a later migration cannot replace them (see step 4). If the API
 has already started, restore the empty backup (or drop and re-create the database) first.
 
-The tool uses the API configuration: `MASCLI_DATABASE_URL` (or `MASCLI_PGLITE_DIR` for a local
-trial), `MASCLI_DATA_KEY` (the same key the API runs with — it seals migrated TOTP secrets) and
-the object storage settings (`MASCLI_STORAGE`, `MASCLI_UPLOAD_DIR` or the S3 variables). Pending
+The tool uses the API configuration: `SIPGES_DATABASE_URL` (or `SIPGES_PGLITE_DIR` for a local
+trial), `SIPGES_DATA_KEY` (the same key the API runs with — it seals migrated TOTP secrets) and
+the object storage settings (`SIPGES_STORAGE`, `SIPGES_UPLOAD_DIR` or the S3 variables). Pending
 schema migrations are applied before anything is read.
 
 ### 3. Dry run
 
 ```
-pnpm --filter @mascli/api migrate:legacy -- --legacy-root /srv/mascli-legacy
+pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy
 ```
 
 Nothing is written. The summary gives per tenant `source / mapped / written / target` row counts
 and the copied/verified object counts, followed by the problem codes. Resolve or accept every
 problem before applying; the process exits non-zero while any error-level problem remains.
 
-Useful flags: `--only MASCLI/PRJ-SECHURA` (repeatable), `--report report.json`, and the path
+Useful flags: `--only SIPGES/PRJ-SECHURA` (repeatable), `--report report.json`, and the path
 overrides `--auth-db`, `--default-db`, `--tenant-dir`, `--upload-dir`, `--config-dir` for
-installations that used the matching `MASCLI_*` environment variables.
+installations that used the matching `SIPGES_*` environment variables.
 
 ### 4. Apply
 
 ```
-pnpm --filter @mascli/api migrate:legacy -- --legacy-root /srv/mascli-legacy --apply --report apply.json
+pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy --apply --report apply.json
 ```
 
 Global rows (tenants, users, grants) are written in one transaction; each tenant's business
@@ -127,7 +127,7 @@ what proves the result.
 ### 5. Verify
 
 ```
-pnpm --filter @mascli/api migrate:legacy -- --legacy-root /srv/mascli-legacy --verify --report verify.json
+pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy --verify --report verify.json
 ```
 
 Verify re-reads the legacy installation and compares, per tenant: row counts per table, an
@@ -183,7 +183,7 @@ accounts (one with TOTP), uploads on disk and deliberately broken rows.
   PBKDF2 hash (and the migrated TOTP enrolment), scoped record lists, tenant isolation 403/404
   (S7), attachment download byte-for-byte, IRSA config/history and `GET /system/export`.
 - `test/integration/migration-postgres.test.ts` — the same migration against a real PostgreSQL
-  server (opt-in with `MASCLI_TEST_DATABASE_URL`).
+  server (opt-in with `SIPGES_TEST_DATABASE_URL`).
 
 ## Driver note (fixed here)
 

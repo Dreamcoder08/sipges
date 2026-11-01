@@ -1,4 +1,4 @@
-import type { IndicatorReportItem } from '@mascli/contracts';
+import type { IndicatorReportItem } from '@sipges/contracts';
 import styles from './Indicators.module.css';
 export const IndicatorTable = ({ items }: { items: IndicatorReportItem[] }) => (
   <div className={styles.table} tabIndex={0} role="region" aria-label="Detalle de indicadores">

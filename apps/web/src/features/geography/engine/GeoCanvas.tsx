@@ -63,7 +63,7 @@ const PAINT = {
   },
 } as const;
 
-/** Raster basemap only; everything MASCLI draws lives in deck.gl layers above it. */
+/** Raster basemap only; everything SIPGES draws lives in deck.gl layers above it. */
 export const styleFor = (basemap: Basemap, theme: Theme = 'light'): StyleSpecification => ({
   version: 8,
   sources:
@@ -180,7 +180,7 @@ const GeoCanvas = ({
       const b = instance.getBounds();
       handlers.current.onView([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
     };
-    // A basemap tile that fails (offline, blocked host) leaves the background and the MASCLI
+    // A basemap tile that fails (offline, blocked host) leaves the background and the SIPGES
     // layers; MapLibre would otherwise log every failed tile as a console error.
     instance.on('error', () => undefined);
     instance.on('load', report);

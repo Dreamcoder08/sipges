@@ -50,14 +50,14 @@ const encode = (body: RequestBody | undefined): { body?: BodyInit; type?: string
 };
 
 /**
- * Same-origin call to the MASCLI API. The session and project live in HttpOnly cookies, so
+ * Same-origin call to the SIPGES API. The session and project live in HttpOnly cookies, so
  * the client never handles tokens; every failure becomes an ApiError.
  */
 export const request = async (path: string, options: RequestOptions = {}) => {
   const { body, type } = encode(options.body);
   const headers = new Headers({ accept: 'application/json' });
   if (type) headers.set('content-type', type);
-  if (options.scope) headers.set('X-MASCLI-Scope', options.scope);
+  if (options.scope) headers.set('X-SIPGES-Scope', options.scope);
   const response = await fetch(path, {
     method: options.method ?? 'GET',
     credentials: 'same-origin',

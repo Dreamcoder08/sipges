@@ -19,7 +19,7 @@ describe('observability', () => {
   });
 
   it('writes one JSON access line per request with route pattern and actor', async () => {
-    const t = await createTestApp({ MASCLI_ACCESS_LOG: '1' });
+    const t = await createTestApp({ SIPGES_ACCESS_LOG: '1' });
     const admin = await t.login('admin', 'admin-password-123');
     const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     await t.request('/api/eventos/EV-404?secret=1', { headers: { cookie: admin.cookie } });
@@ -39,7 +39,7 @@ describe('observability', () => {
       }),
     ]);
     expect(JSON.stringify(lines)).not.toContain('secret');
-    expect(JSON.stringify(lines)).not.toContain('mascli_session');
+    expect(JSON.stringify(lines)).not.toContain('sipges_session');
   });
 
   it('serves Prometheus metrics to administrators only', async () => {
@@ -51,9 +51,9 @@ describe('observability', () => {
     expect(res.headers.get('content-type')).toContain('text/plain; version=0.0.4');
     const text = await res.text();
     expect(text).toContain(
-      'mascli_http_requests_total{method="GET",route="/api/:module",status="2xx"} 1',
+      'sipges_http_requests_total{method="GET",route="/api/:module",status="2xx"} 1',
     );
-    expect(text).toContain('mascli_process_uptime_seconds');
+    expect(text).toContain('sipges_process_uptime_seconds');
     await t.createAccount(admin.cookie, {
       username: 'reader',
       full_name: 'Reader',
@@ -75,15 +75,15 @@ describe('createMetrics', () => {
     metrics.observe('GET', '/x', 200, 0.02);
     metrics.observe('GET', '/x', 503, 3);
     const text = metrics.render(5000);
-    expect(text).toContain('mascli_http_requests_total{method="GET",route="/x",status="2xx"} 1');
-    expect(text).toContain('mascli_http_requests_total{method="GET",route="/x",status="5xx"} 1');
+    expect(text).toContain('sipges_http_requests_total{method="GET",route="/x",status="2xx"} 1');
+    expect(text).toContain('sipges_http_requests_total{method="GET",route="/x",status="5xx"} 1');
     expect(text).toContain(
-      'mascli_http_request_duration_seconds_bucket{method="GET",route="/x",le="0.025"} 1',
+      'sipges_http_request_duration_seconds_bucket{method="GET",route="/x",le="0.025"} 1',
     );
     expect(text).toContain(
-      'mascli_http_request_duration_seconds_bucket{method="GET",route="/x",le="5"} 2',
+      'sipges_http_request_duration_seconds_bucket{method="GET",route="/x",le="5"} 2',
     );
-    expect(text).toContain('mascli_http_request_duration_seconds_count{method="GET",route="/x"} 2');
-    expect(text).toContain('mascli_process_uptime_seconds 5.000');
+    expect(text).toContain('sipges_http_request_duration_seconds_count{method="GET",route="/x"} 2');
+    expect(text).toContain('sipges_process_uptime_seconds 5.000');
   });
 });

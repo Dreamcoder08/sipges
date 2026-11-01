@@ -13,7 +13,7 @@ test('counters follow records and every record opens, edits and shows its report
   const api = (method: 'POST' | 'PUT', path: string, payload: Record<string, unknown>) =>
     page.request.fetch(path, {
       method,
-      headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+      headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
       data: { payload },
     });
   const realId = `D-E2E-${stamp}`;
@@ -53,7 +53,7 @@ test('counters follow records and every record opens, edits and shows its report
   await page.getByRole('button', { name: 'Guardar registro' }).click();
   await expect(page.getByText(`Registro ${realId} guardado.`, { exact: false })).toBeVisible();
   const stored = await page.request.get(`/api/demandas/${realId}`, {
-    headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE },
+    headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
   });
   expect(await stored.json()).toMatchObject({
     Respuesta_Empresa: 'Respuesta actualizada E2E',
@@ -107,7 +107,7 @@ test('the geospatial view frames a concession and the directory lists contacts',
 
   // Error 07: directory contacts with position, place and phone, filterable by place.
   const created = await page.request.post('/api/directorio', {
-    headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+    headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
     data: {
       payload: {
         Nombre: `Contacto E2E ${stamp}`,
@@ -142,7 +142,7 @@ test('narratives show their trend per day and category', async ({ page, admin })
     ['2026-10-03', `Demanda de empleo local ${stamp}`],
   ]) {
     const created = await page.request.post('/api/narrativas', {
-      headers: { 'X-MASCLI-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
+      headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin },
       data: { payload: { Fecha_Inicio: day, Tema: topic, Descripcion: `Publicación ${stamp}` } },
     });
     expect(created.ok()).toBe(true);

@@ -45,24 +45,24 @@ describe('Claude narrator', () => {
 
   it('is configured only explicitly and with a key', () => {
     expect(loadConfig(TEST_ENV).analyst).toBeUndefined();
-    expect(() => loadConfig({ ...TEST_ENV, MASCLI_ANALYST_PROVIDER: 'anthropic' })).toThrow(
+    expect(() => loadConfig({ ...TEST_ENV, SIPGES_ANALYST_PROVIDER: 'anthropic' })).toThrow(
       /ANTHROPIC_API_KEY/,
     );
-    expect(() => loadConfig({ ...TEST_ENV, MASCLI_ANALYST_PROVIDER: 'otro' })).toThrow();
+    expect(() => loadConfig({ ...TEST_ENV, SIPGES_ANALYST_PROVIDER: 'otro' })).toThrow();
     expect(
       loadConfig({
         ...TEST_ENV,
-        MASCLI_ANALYST_PROVIDER: 'anthropic',
+        SIPGES_ANALYST_PROVIDER: 'anthropic',
         ANTHROPIC_API_KEY: 'synthetic-test-value',
       }).analyst,
     ).toEqual({ provider: 'anthropic', model: 'claude-opus-5-5' });
     expect(() =>
       loadConfig({
         ...TEST_ENV,
-        MASCLI_ANALYST_PROVIDER: 'anthropic',
+        SIPGES_ANALYST_PROVIDER: 'anthropic',
         ANTHROPIC_API_KEY: 'synthetic-test-value',
-        MASCLI_ANALYST_MODEL: 'Bad Model!',
+        SIPGES_ANALYST_MODEL: 'Bad Model!',
       }),
-    ).toThrow(/MASCLI_ANALYST_MODEL/);
+    ).toThrow(/SIPGES_ANALYST_MODEL/);
   });
 });

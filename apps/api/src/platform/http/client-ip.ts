@@ -1,6 +1,6 @@
 /**
  * Client address for throttling. Forwarded headers are spoofable, so they are read only
- * when MASCLI_TRUST_PROXY=1; then the right-most X-Forwarded-For entry is the one the
+ * when SIPGES_TRUST_PROXY=1; then the right-most X-Forwarded-For entry is the one the
  * trusted proxy appended for the connection it received.
  */
 export const resolveClientIp = (input: {

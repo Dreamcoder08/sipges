@@ -1,5 +1,5 @@
 {
-  "name": "mascli",
+  "name": "sipges",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@12.11.2",
@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "boundaries": "node scripts/check-boundaries.mjs",
     "check": "pnpm lint && pnpm boundaries && pnpm typecheck && pnpm test",
-    "e2e": "pnpm --filter @mascli/web build && pnpm --filter @mascli/e2e run e2e",
+    "e2e": "pnpm --filter @sipges/web build && pnpm --filter @sipges/e2e run e2e",
     "verify": "bash scripts/verify.sh",
     "odd:close": "node scripts/odd-close-task.mjs",
     "odd:status": "node scripts/odd-status.mjs",

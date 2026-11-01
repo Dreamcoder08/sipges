@@ -1,4 +1,4 @@
-import type { GeographyPolygon } from '@mascli/contracts';
+import type { GeographyPolygon } from '@sipges/contracts';
 import { log } from '../../../platform/observability/logger.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { distanceToPolygon } from '../domain/distance.ts';

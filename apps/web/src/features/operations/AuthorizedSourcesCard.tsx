@@ -4,7 +4,7 @@ import {
   AuthorizedSourcesCatalog,
   OfficialSourcePost,
   type AuthorizedSourceState,
-} from '@mascli/contracts';
+} from '@sipges/contracts';
 import { z } from 'zod';
 import { request, requestJson } from '../../shared/api/client.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';

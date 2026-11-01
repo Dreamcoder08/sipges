@@ -37,7 +37,9 @@ const setupTables = async (sql: SqlClient) => {
       'utf8',
     ),
   );
+  // Migration 0024 predates the rename and grants to mascli_tenant; withTenant uses the new name.
   await sql.exec(`
+    ALTER ROLE mascli_tenant RENAME TO sipges_tenant;
     ALTER TABLE tenants OWNER TO source_owner;
     ALTER TABLE audit OWNER TO source_owner;
     ALTER TABLE automation_cursors OWNER TO source_owner;

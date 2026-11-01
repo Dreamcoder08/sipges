@@ -6,11 +6,11 @@
 
 ## Context
 
-MASCLI records, links and analyses territorial information, but every reaction is manual:
+SIPGES records, links and analyses territorial information, but every reaction is manual:
 nothing fires when an alert is created or a commitment changes, no message reaches anyone,
 and other systems and AI agents cannot read or feed it. Current agent and workflow platforms
 (event-triggered automations, the Model Context Protocol, signed webhooks, chat and e-mail
-channels) treat these as table stakes. MASCLI must add them without weakening tenant isolation,
+channels) treat these as table stakes. SIPGES must add them without weakening tenant isolation,
 classification markings (ADR 0012) or the append-only audit.
 
 ## Decision
@@ -29,13 +29,13 @@ classification markings (ADR 0012) or the append-only audit.
    outside the transaction and records the outcome. Failures retry with exponential backoff
    (1, 4, 16, 64 minutes) and stop as `failed` after five attempts.
 4. **Two ways to tick.** A long-running server ticks in-process every
-   `MASCLI_AUTOMATION_INTERVAL` seconds (default 30, `0` disables). Serverless hosting calls
-   `POST /system/automations/tick` with `Authorization: Bearer <MASCLI_CRON_SECRET>` (Vercel Cron
+   `SIPGES_AUTOMATION_INTERVAL` seconds (default 30, `0` disables). Serverless hosting calls
+   `POST /system/automations/tick` with `Authorization: Bearer <SIPGES_CRON_SECRET>` (Vercel Cron
    sends `CRON_SECRET` this way); administrators can tick their own project from the screen.
 5. **Nothing leaves without an administrator's destination.** Outbound actions go to channels an
    administrator created: generic signed webhooks (Standard Webhooks headers, HMAC-SHA256),
    Slack, Microsoft Teams, Discord, Google Chat, Telegram and e-mail through Resend. Channel
-   secrets (URLs, tokens, keys) are sealed with `MASCLI_DATA_KEY` like TOTP secrets and never
+   secrets (URLs, tokens, keys) are sealed with `SIPGES_DATA_KEY` like TOTP secrets and never
    returned by the API. Destinations must be `https` and must not name a loopback or private
    address. Restricted records (`restringido`) are announced by reference only, never by content.
 6. **API keys for machines, not people.** Keys are random, shown once, stored as SHA-256,

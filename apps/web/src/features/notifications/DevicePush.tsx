@@ -1,4 +1,4 @@
-import { PushConfig } from '@mascli/contracts';
+import { PushConfig } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -45,7 +45,7 @@ export const DevicePush = ({ scope }: { scope: string }) => {
   });
   const guidance = (
     <p>
-      En iPhone o iPad (iOS 16.4 o posterior), añade MASCLI a la pantalla de inicio desde Compartir
+      En iPhone o iPad (iOS 16.4 o posterior), añade SIPGES a la pantalla de inicio desde Compartir
       y ábrelo desde allí. En Android, permite las notificaciones del sitio.{' '}
       <a
         href="https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/"

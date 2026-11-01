@@ -30,7 +30,7 @@ export type AlertStore = {
     tenantId: string,
     decision: { id: string; status: AlertState; note: string; at: Date },
   ): Promise<boolean>;
-  /** MASCLI 4.0: records the first of two validations without changing the status. */
+  /** SIPGES: records the first of two validations without changing the status. */
   recordFirstValidation(
     tenantId: string,
     validation: { id: string; actor: string; note: string; at: Date },

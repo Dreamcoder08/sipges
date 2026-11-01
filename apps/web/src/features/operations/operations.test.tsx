@@ -45,7 +45,7 @@ describe('operational pages', () => {
         }),
       ),
       http.post('*/system/intelligence/semantic-analyze', async ({ request }) => {
-        expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+        expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
         sent = await request.json();
         return HttpResponse.json({
           version: '2.5',
@@ -197,7 +197,7 @@ const attachmentFixture = {
   project_name: 'Demo',
   created_at: '2026-10-19T12:00:00Z',
 };
-// The plan page always reads the evidence files and the situation room (MASCLI 4.0).
+// The plan page always reads the evidence files and the situation room (SIPGES).
 const receiptHandlers = [
   http.get('*/system/uploads', () => HttpResponse.json([])),
   http.get('*/system/prevention/situation-room', () =>
@@ -236,12 +236,12 @@ it('coordinador creates plans only from verified alerts and saves scoped transit
   server.use(
     http.get('*/system/uploads', () => HttpResponse.json([attachmentFixture])),
     http.post('*/system/prevention/actions', async ({ request }) => {
-      expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+      expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
       created = await request.json();
       return HttpResponse.json({ action: actionFixture, irsa_modified: false });
     }),
     http.patch('*/system/prevention/actions/action-1', async ({ request }) => {
-      expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+      expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
       updated = await request.json();
       return HttpResponse.json({
         action: { ...actionFixture, status: 'Completada', progress: 100 },
@@ -332,7 +332,7 @@ it('reviews a territorial alert in active scope and preserves the IRSA separatio
       }),
     ),
     http.patch('*/system/intelligence/territorial-alerts/review-me', async ({ request }) => {
-      expect(request.headers.get('X-MASCLI-Scope')).toBe(context.scope);
+      expect(request.headers.get('X-SIPGES-Scope')).toBe(context.scope);
       body = await request.json();
       return HttpResponse.json({
         ok: true,
@@ -406,7 +406,7 @@ it('opens notification deep links with documented territory and source provenanc
 });
 
 const SHA = '7a0610ad8ab6ac06e61aa4e05ea56a8bf5d85a6b6d419cd756c56d5321a78aee';
-it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its receipt', async () => {
+it('with SIPGES a plan closes with an attached evidence file and shows its receipt', async () => {
   installManagement();
   let updated: unknown;
   let stored: unknown = actionFixture;
@@ -458,7 +458,7 @@ it('with MASCLI 4.0 a plan closes with an attached evidence file and shows its r
     ),
   ).toBeVisible();
 });
-it('MASCLI 4.0 plan form offers the evidence receipt and blocker with no project switch', async () => {
+it('SIPGES plan form offers the evidence receipt and blocker with no project switch', async () => {
   installManagement();
   mount(<ManagementPage {...context} role="coordinador" />);
   const user = userEvent.setup();
@@ -467,7 +467,7 @@ it('MASCLI 4.0 plan form offers the evidence receipt and blocker with no project
   expect(screen.getByLabelText('Evidencia adjunta (recibo)')).toBeVisible();
   expect(screen.getByLabelText('Bloqueado por')).toBeVisible();
 });
-it('MASCLI 4.0 shows that a high-priority alert waits for a second person', async () => {
+it('SIPGES shows that a high-priority alert waits for a second person', async () => {
   server.use(
     http.get('*/system/intelligence/territorial-alerts', () =>
       HttpResponse.json([
@@ -506,7 +506,7 @@ it('MASCLI 4.0 shows that a high-priority alert waits for a second person', asyn
     await screen.findByText('Primera validación registrada; otra persona debe confirmarla.'),
   ).toBeVisible();
 });
-it('MASCLI 4.0 situation room shows who each plan waits on and records a blocker', async () => {
+it('SIPGES situation room shows who each plan waits on and records a blocker', async () => {
   installManagement();
   let updated: unknown;
   server.use(

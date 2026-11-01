@@ -1,4 +1,4 @@
-import { IrsaConfigUpdate, IrsaHistoryQuery, IrsaSnapshotCreate } from '@mascli/contracts';
+import { IrsaConfigUpdate, IrsaHistoryQuery, IrsaSnapshotCreate } from '@sipges/contracts';
 import { Hono } from 'hono';
 import type { AppEnv } from '../../../platform/http/env.ts';
 import { parseJson } from '../../../platform/http/validation.ts';

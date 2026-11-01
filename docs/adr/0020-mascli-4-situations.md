@@ -1,4 +1,4 @@
-# ADR 0020 — MASCLI 4.0: related situations, explained alerts and a grievance mailbox
+# ADR 0020 — SIPGES: related situations, explained alerts and a grievance mailbox
 
 - Status: Accepted; §1 (per-project switch) superseded by [ADR 0027](0027-mascli-4-only.md)
 - Date: 2026-10-19
@@ -6,9 +6,9 @@
 
 ## Context
 
-The client wants MASCLI to relate facts, notice when a situation is growing, raise explained
+The client wants SIPGES to relate facts, notice when a situation is growing, raise explained
 alerts and suggest preventive actions, plus a mailbox for complaints and a visible audit trail.
-MASCLI 3.0 (everything on `main` up to `046bb1a`) must keep working unchanged, the colour
+SIPGES 3.0 (everything on `main` up to `046bb1a`) must keep working unchanged, the colour
 meanings are preliminary, and sending territorial text to an external model needs the data
 owner's approval (ADR 0013).
 
@@ -16,7 +16,7 @@ owner's approval (ADR 0013).
 
 1. **A per-project switch.** `project_settings` holds, per tenant, `version4` (default off), the
    four colour meanings and the situation thresholds and recommendation texts. Reading is open
-   to every role of the project; changing it is admin-only and audited (`MASCLI 4.0`,
+   to every role of the project; changing it is admin-only and audited (`SIPGES`,
    `CONFIG_UPDATE`). With the switch off the web app shows exactly the 3.0 screens.
 2. **Deterministic engine in its own context.** `situations` turns dated records (Eventos,
    Demandas, Compromisos, Narrativas, Alertas, Dialogos, Buzon) into signals and groups those

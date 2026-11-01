@@ -69,7 +69,7 @@ export const TerritorialAlert = z.object({
   analyst_note: z.string(),
   reviewer_note: z.string().nullable(),
   reviewed_at: z.string().nullable(),
-  /** MASCLI 4.0: first of two validations of a high-priority alert (ADR 0024). */
+  /** SIPGES: first of two validations of a high-priority alert (ADR 0024). */
   first_validator: z.string().nullable().optional(),
   themes: z.array(z.object({ tema: z.string() })),
   signals: z.array(z.unknown()),
@@ -115,7 +115,7 @@ export const PreventiveAction = z.object({
   progress: z.number(),
   created_at: z.string(),
   updated_at: z.string(),
-  /** MASCLI 4.0 situation room: who the plan waits on (ADR 0024 §2). */
+  /** SIPGES situation room: who the plan waits on (ADR 0024 §2). */
   blocked: z
     .object({ by: z.string(), reason: z.string(), since: z.string() })
     .nullable()
@@ -129,7 +129,7 @@ export const PreventiveAction = z.object({
       progress: z.number(),
       note: z.string(),
       evidence_url: z.string().nullable(),
-      /** MASCLI 4.0 decision receipt: the evidence file behind the decision (ADR 0023). */
+      /** SIPGES decision receipt: the evidence file behind the decision (ADR 0023). */
       receipt: z
         .object({
           attachment_id: z.string(),
