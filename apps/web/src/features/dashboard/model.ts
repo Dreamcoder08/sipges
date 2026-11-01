@@ -114,3 +114,21 @@ export const recentEvents = (
     }))
     .sort((x, y) => y.date.localeCompare(x.date))
     .slice(0, limit);
+
+/**
+ * Events of the active project dated in the last seven days (today included), newest first.
+ * `total` counts all of them; `items` keeps the first `limit` for the briefing.
+ */
+export const eventsThisWeek = (
+  events: readonly ModuleRecord[],
+  projectId: string,
+  now: Date,
+  limit = 3,
+) => {
+  const from = new Date(now.getTime() - 7 * 86_400_000).toISOString().slice(0, 10);
+  const to = new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10);
+  const week = recentEvents(events, projectId, Number.POSITIVE_INFINITY).filter(
+    (event) => event.date.slice(0, 10) >= from && event.date.slice(0, 10) <= to,
+  );
+  return { total: week.length, items: week.slice(0, limit) };
+};

@@ -37,7 +37,7 @@ describe('navigation', () => {
       '/bandeja',
       '/analisis',
     ]);
-    expect(DESTINATIONS.map((hub) => hub.tabs.length)).toEqual([2, 7, 3, 5, 5]);
+    expect(DESTINATIONS.map((hub) => hub.tabs.length)).toEqual([3, 7, 3, 5, 5]);
     expect(SYSTEM_PATHS).toEqual([
       '/administracion',
       '/automatizaciones',
@@ -50,7 +50,8 @@ describe('navigation', () => {
       ...SYSTEM_PATHS,
       '/integraciones',
     ];
-    expect(reachable).toHaveLength(SCREENS.length);
+    // The Inicio tab shares «/» with the Dashboard tab.
+    expect(new Set(reachable).size).toBe(SCREENS.length);
     expect(new Set(reachable)).toEqual(new Set(SCREENS.map((s) => s.path)));
   });
 
@@ -75,6 +76,11 @@ describe('navigation', () => {
     expect(visitFor('/registros', '')).toEqual({
       href: '/registros',
       label: 'Registros · Eventos',
+    });
+    expect(visitFor('/inicio', '')).toEqual({ href: '/inicio', label: 'Inicio' });
+    expect(visitFor('/inicio', '?vista=gerencial')).toEqual({
+      href: '/inicio?vista=gerencial',
+      label: 'Inicio · Centro gerencial',
     });
     expect(visitFor('/objeto/eventos/EV-1', '')).toBeNull();
     expect(visitFor('/integraciones', '')).toBeNull();

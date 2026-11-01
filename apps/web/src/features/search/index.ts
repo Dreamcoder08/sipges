@@ -1,1 +1,1 @@
-export { SearchPalette } from './SearchPalette.tsx';
+export { SearchPalette, openSearch } from './SearchPalette.tsx';

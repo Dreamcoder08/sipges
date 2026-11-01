@@ -23,7 +23,7 @@ import { ProjectSettingsProvider } from '../shared/lib/project-settings.tsx';
 import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
-import { DashboardPage } from '../features/dashboard/index.ts';
+import { DashboardPage, InicioPage } from '../features/dashboard/index.ts';
 import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
@@ -41,7 +41,7 @@ import {
 } from '../features/tenancy/index.ts';
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
-import { SearchPalette } from '../features/search/index.ts';
+import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
 import {
   NotificationBell,
@@ -384,6 +384,16 @@ const DashboardScreen = (context: FeatureContext) => (
   />
 );
 
+const InicioScreen = (context: FeatureContext) => (
+  <InicioPage
+    scope={context.scope}
+    projectId={context.projectId}
+    projectLabel={context.projectLabel}
+    fullName={context.fullName}
+    onAsk={openSearch}
+  />
+);
+
 const dashboardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/',
@@ -571,7 +581,7 @@ const hubRoute = (hub: Destination) => {
           />
         );
       const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
-      const Screen = screenFor(tab.screen);
+      const Screen = tab.value === 'inicio' ? InicioScreen : screenFor(tab.screen);
       return (
         <>
           <ChipRow label={hub.label}>
@@ -586,7 +596,7 @@ const hubRoute = (hub: Destination) => {
               </Button>
             ))}
           </ChipRow>
-          <Screen key={`${context.scope}/${tab.screen}`} {...context} />
+          <Screen key={`${context.scope}/${tab.value}`} {...context} />
         </>
       );
     },
