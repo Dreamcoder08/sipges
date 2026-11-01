@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones con [SemVer](https://semver.org/lang/es/).
 
+## [Sin publicar]
+
+### Plataforma
+
+- Cloudflare Workers (Hyperdrive + Neon, R2) es el único host de SIPGES: se elimina el adaptador `apps/hosting` y las dependencias `@vercel/*`, y la documentación vigente deja de describir la demo de Vercel como publicada ([ADR 0029](docs/adr/0029-retire-vercel-host.md)). El endpoint HTTP de cron y `SIPGES_CRON_SECRET`/`CRON_SECRET` no cambian. La base `neondb` de la demo anterior se conserva en Neon como respaldo, sin migrar datos.
+
 ## [1.0.0] - 2026-10-15
 
 Primera versión publicada de SIPGES en TypeScript, desplegada en Vercel desde `main`.

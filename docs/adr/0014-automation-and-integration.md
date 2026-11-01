@@ -1,5 +1,7 @@
 # ADR 0014 — Automation and integration
 
+> Hosting note: the Vercel host this ADR mentions was retired; Cloudflare Workers is the only host ([ADR 0029](0029-retire-vercel-host.md)). The text below is kept as written.
+
 - Status: Accepted
 - Date: 2026-10-14
 - Task: `odd/tasks/automation-integration-platform.md` T1

@@ -1,5 +1,7 @@
 # ADR 0026: terreno 3D con CesiumJS y elevación abierta
 
+> Nota de hosting: el host Vercel que menciona este ADR se retiró; Cloudflare Workers es el único host ([ADR 0029](0029-retire-vercel-host.md)). El texto siguiente se conserva como se escribió.
+
 - Estado: aceptada
 - Fecha: 2026-10-20
 - ODD: `odd/tasks/territorial-3d.md`

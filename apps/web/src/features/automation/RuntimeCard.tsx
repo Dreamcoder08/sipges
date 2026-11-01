@@ -27,7 +27,7 @@ export const RuntimeCard = ({ scope }: { scope: string }) => {
           <p>
             Respaldo programado:{' '}
             {query.data.cron_configured && query.data.cron_schedule
-              ? `${query.data.cron_schedule} (UTC); Vercel Hobby puede ejecutarlo dentro de esa hora.`
+              ? `${query.data.cron_schedule} (UTC); el programador del servidor lo dispara sin garantía de latencia.`
               : 'sin programador diario verificado en este servidor'}
             .
           </p>

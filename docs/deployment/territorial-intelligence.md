@@ -19,18 +19,18 @@ Telegram/correo requieren sus propios canales autorizados; no reciben la prueba 
 
 ## Ejecución y reintentos
 
-Las mutaciones correctas despiertan el motor; Vercel conserva su ejecución con waitUntil.
+Las mutaciones correctas despiertan el motor; Cloudflare Workers conserva su ejecución con waitUntil.
 Una caída del motor no revierte registros ya confirmados. Los cursores y entregas conservan
 trabajo pendiente, con límites de tiempo/cantidad por ciclo. El panel muestra el último intento
 del proyecto, no una garantía de puntualidad o recepción. Una escritura concurrente solicita
 un nuevo barrido; los trabajadores aplican su propio contexto de seguridad y los permisos
 vigentes de cada destinatario.
 
-Respaldo nativo: GET /system/automations/cron a las **04:15 UTC diariamente**. Vercel Hobby puede
-ejecutarlo dentro de esa hora. Configurar CRON_SECRET; si existe SIPGES_CRON_SECRET, deben
-coincidir porque SIPGES le da precedencia. Sin secreto válido, el endpoint rechaza la petición.
-Un ejecutor externo autorizado puede llamar al mismo endpoint mediante Bearer para mayor
-frecuencia. No se instala un cron frecuente en el repositorio privado ni se contratan servicios.
+Respaldo programado: el Worker ejecuta un Cron Trigger de Cloudflare (`*/15 * * * *` por defecto,
+`SIPGES_CRON_SCHEDULE`) sin garantía de latencia. El endpoint GET/POST /system/automations/cron
+sigue disponible como entrada genérica para cualquier programador externo autorizado. Configurar
+SIPGES_CRON_SECRET (o CRON_SECRET); si existen ambos, SIPGES da precedencia a SIPGES_CRON_SECRET.
+Sin secreto válido, el endpoint rechaza la petición. No se contratan servicios adicionales.
 El servidor persistente utiliza el mismo coordinador con SIPGES_AUTOMATION_INTERVAL.
 
 Los reintentos se atienden al despertar el motor. El cron diario no garantiza detección oportuna
@@ -64,10 +64,11 @@ Fuentes oficiales consultadas el 17 de octubre de 2026:
 
 - <https://geocatmin.ingemmet.gob.pe/arcgis/rest/services>
 - <https://www.defensoria.gob.pe/wp-json/wp/v2/posts>
-- <https://vercel.com/docs/cron-jobs/usage-and-pricing>
-- <https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package>
+- <https://developers.cloudflare.com/workers/configuration/cron-triggers/>
 
 ## Verificación del despliegue del 18 de octubre de 2026
+
+Registro histórico: describe el host Vercel, retirado después ([ADR 0029](../adr/0029-retire-vercel-host.md)).
 
 El [PR #53](https://github.com/Dreamcoder08/sipges/pull/53) se integró como `6754923`.
 La [CI del código](https://github.com/Dreamcoder08/sipges/actions/runs/39087996497) aprobó
