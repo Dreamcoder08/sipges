@@ -24,6 +24,7 @@ import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
+import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
   LoginPage,
@@ -49,6 +50,7 @@ import {
 } from '../features/notifications/index.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../shared/lib/media.ts';
 import { AppShell } from './layout/AppShell.tsx';
+import { useQualityReview } from './pending-quality.ts';
 
 import {
   DESTINATIONS,
@@ -61,6 +63,9 @@ import {
 
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
+);
+const RegistrosHub = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.RegistrosHub })),
 );
 const AlertOverview = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.AlertOverview })),
@@ -277,6 +282,24 @@ const selectProjectRoute = createRoute({
 });
 
 /** Every signed-in screen: needs a session and an active project. */
+/** Phone account sheet links, the same screens as the desktop account menu. */
+const AccountLinks = () => (
+  <>
+    <Link to="/version-4" activeOptions={{ exact: true }}>
+      Configuración
+    </Link>
+    <Link to="/administracion" activeOptions={{ exact: true }}>
+      Administración
+    </Link>
+    <Link to="/auditoria" activeOptions={{ exact: true }}>
+      Auditoría
+    </Link>
+    <Link to="/metodologia" activeOptions={{ exact: true }}>
+      Ayuda y metodología
+    </Link>
+  </>
+);
+
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'app',
@@ -330,6 +353,7 @@ const appRoute = createRoute({
                 me={me}
                 project={projectLabel}
                 unread={compact ? unread : 0}
+                links={compact ? <AccountLinks /> : null}
                 onSignedOut={async () => {
                   queryClient.clear();
                   await router.navigate({ to: '/login', search: {} });
@@ -465,7 +489,11 @@ const IntegrationsScreen = (context: FeatureContext) => (
     }
   />
 );
+const PendingScreen = (context: FeatureContext) => (
+  <DecisionInbox {...context} useQuality={useQualityReview} />
+);
 const featurePages = {
+  '/pendientes': PendingScreen,
   '/situaciones': SituationsScreen,
   '/buzon': MailboxScreen,
   '/lecciones': LessonsScreen,
@@ -533,6 +561,15 @@ const hubRoute = (hub: Destination) => {
       const context = useFeatureContext();
       const navigate = useNavigate();
       const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      if (hub.path === '/registros')
+        return (
+          <RegistrosHub
+            key={context.scope}
+            tipo={asked}
+            onTipo={(tipo) => void navigate({ href: hubHref(hub, tipo) })}
+            {...context}
+          />
+        );
       const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
       const Screen = screenFor(tab.screen);
       return (

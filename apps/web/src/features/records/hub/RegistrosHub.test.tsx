@@ -1,0 +1,192 @@
+import type { Role } from '@sipges/contracts';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { installRecordsApi } from '../../../test/records-api.ts';
+import { resetApi } from '../../../test/server.ts';
+import { RegistrosHub } from './RegistrosHub.tsx';
+
+const SCOPE = 'ACME/P1';
+const rows = {
+  [`${SCOPE}/eventos`]: [
+    {
+      _id: 'E-1',
+      Fecha: '2026-10-28',
+      Territorio: 'Bayóvar',
+      Descripcion_Hecho: 'Bloqueo del muelle',
+      Nivel_Verificacion: 'B - Corroborada',
+      Estado_Validacion: 'Validado',
+    },
+    {
+      _id: 'E-2',
+      Fecha: '2026-10-30',
+      Territorio: 'Bernal',
+      Descripcion_Hecho: 'Mancha en la playa',
+      Nivel_Verificacion: 'E - No verificada',
+      Estado_Validacion: 'Preliminar',
+    },
+  ],
+  [`${SCOPE}/actores`]: [{ _id: 'A-1', 'Nombre_Actor/Organizacion': 'Federación de Pescadores' }],
+  [`${SCOPE}/demandas`]: [{ _id: 'D-1', Descripcion: 'Revisar la zona de exclusión' }],
+};
+
+const renderHub = (tipo: string | undefined, onTipo = vi.fn(), role: Role = 'admin') =>
+  render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <RegistrosHub
+        tipo={tipo}
+        onTipo={onTipo}
+        scope={SCOPE}
+        projectId="P1"
+        projectLabel="Proyecto Uno"
+        role={role}
+      />
+    </QueryClientProvider>,
+  );
+
+beforeEach(() => {
+  resetApi();
+  installRecordsApi(rows);
+  sessionStorage.clear();
+});
+afterEach(() => sessionStorage.clear());
+
+it('shows a chip per record type with its count, and Todos as the sum', async () => {
+  renderHub(undefined);
+  const types = screen.getByRole('group', { name: 'Tipo de registro' });
+  expect(await within(types).findByRole('button', { name: 'Todos 4' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  for (const name of [
+    'Eventos 2',
+    'Actores 1',
+    'Directorio territorial 0',
+    'Demandas 1',
+    'Narrativas 0',
+    'Fuentes 0',
+    'Buzón 0',
+  ])
+    expect(await within(types).findByRole('button', { name })).toBeInTheDocument();
+});
+
+it('lists every type together under Todos, with verification and validation as chips', async () => {
+  renderHub('todos');
+  const table = await screen.findByRole('table');
+  expect(await within(table).findByText('Bloqueo del muelle')).toBeInTheDocument();
+  expect(within(table).getByText('Federación de Pescadores')).toBeInTheDocument();
+  const bayovar = within(table).getByRole('row', { name: /E-1/ });
+  expect(within(bayovar).getByText('B', { selector: '[data-verification]' })).toBeInTheDocument();
+  expect(within(bayovar).getByText('Validado')).toBeInTheDocument();
+});
+
+it('filters Todos by verification letter and by validation state', async () => {
+  const user = userEvent.setup();
+  renderHub('todos');
+  await screen.findByText('Bloqueo del muelle');
+  await user.click(
+    within(screen.getByRole('group', { name: 'Verificación A a E' })).getByRole('button', {
+      name: 'E',
+    }),
+  );
+  expect(screen.queryByText('Bloqueo del muelle')).not.toBeInTheDocument();
+  expect(screen.getByText('Mancha en la playa')).toBeInTheDocument();
+  await user.click(
+    within(screen.getByRole('group', { name: 'Validación' })).getByRole('button', {
+      name: 'Validado',
+    }),
+  );
+  expect(screen.getByText(/Ningún registro coincide/)).toBeInTheDocument();
+});
+
+it('asks for the chosen type through ?tipo= and renders the type screen with its actions', async () => {
+  const user = userEvent.setup();
+  const onTipo = vi.fn();
+  renderHub('todos', onTipo);
+  await user.click(await screen.findByRole('button', { name: 'Eventos 2' }));
+  expect(onTipo).toHaveBeenCalledWith('eventos');
+});
+
+it('renders the existing records screen for a type, unknown values fall back to Todos', async () => {
+  const typed = renderHub('eventos');
+  expect(await screen.findByRole('button', { name: 'Nuevo registro' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Importar CSV' })).toBeInTheDocument();
+  expect(await screen.findByRole('button', { name: 'Eventos 2' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  typed.unmount();
+  renderHub('inexistente');
+  expect(await screen.findByRole('button', { name: /^Todos/ })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+it('opens a record in a side sheet with links and history, and Esc returns focus', async () => {
+  const user = userEvent.setup();
+  renderHub('todos');
+  const open = await screen.findByRole('button', { name: /Abrir E-1/ });
+  await user.click(open);
+  const sheet = await screen.findByRole('dialog', { name: /E-1/ });
+  expect(within(sheet).getByText('Bloqueo del muelle', { selector: 'dd' })).toBeInTheDocument();
+  expect(await within(sheet).findByText('Historial de cambios')).toBeInTheDocument();
+  expect(within(sheet).getByRole('link', { name: 'Abrir ficha completa' })).toHaveAttribute(
+    'href',
+    '/objeto/eventos/E-1',
+  );
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(open).toHaveFocus();
+});
+
+it('opens «Ver» of a type screen in the sheet instead of replacing the list', async () => {
+  const user = userEvent.setup();
+  renderHub('eventos');
+  await user.click(await screen.findByRole('button', { name: 'Ver E-1' }));
+  const sheet = await screen.findByRole('dialog', { name: /E-1/ });
+  expect(within(sheet).getByRole('link', { name: 'Abrir ficha completa' })).toBeInTheDocument();
+  expect(screen.getByRole('table')).toBeInTheDocument();
+});
+
+it('keeps density per tab in sessionStorage and nothing in localStorage', async () => {
+  const user = userEvent.setup();
+  localStorage.clear();
+  const first = renderHub('todos');
+  const density = await screen.findByRole('group', { name: 'Densidad de filas' });
+  expect(within(density).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await user.click(within(density).getByRole('button', { name: 'Compacta' }));
+  expect(within(density).getByRole('button', { name: 'Compacta' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(sessionStorage.length).toBe(1);
+  expect(localStorage.length).toBe(0);
+  first.unmount();
+  const second = renderHub('eventos');
+  const other = await screen.findByRole('group', { name: 'Densidad de filas' });
+  expect(within(other).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  second.unmount();
+  renderHub('todos');
+  const again = await screen.findByRole('group', { name: 'Densidad de filas' });
+  expect(within(again).getByRole('button', { name: 'Compacta' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+it('keeps write actions off the type screen for read-only roles', async () => {
+  renderHub('eventos', vi.fn(), 'consulta');
+  expect(await screen.findByRole('button', { name: 'Ver E-1' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Nuevo registro' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Editar E-1' })).not.toBeInTheDocument();
+});

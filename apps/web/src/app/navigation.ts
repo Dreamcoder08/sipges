@@ -34,6 +34,7 @@ export const SCREENS = [
     ready: true,
   },
   { path: '/alertas', label: 'Alertas', title: 'Centro de alertas', ready: true },
+  { path: '/pendientes', label: 'Pendientes', title: 'Pendientes de decisión', ready: true },
   { path: '/situaciones', label: 'Situaciones', title: 'Situaciones relacionadas', ready: true },
   { path: '/buzon', label: 'Buzón', title: 'Buzón de quejas y sugerencias', ready: true },
   { path: '/lecciones', label: 'Lecciones', title: 'Lecciones territoriales', ready: true },
@@ -154,6 +155,7 @@ export const DESTINATIONS = [
     icon: 'inbox',
     param: 'vista',
     tabs: tabs(
+      ['pendientes', '/pendientes'],
       ['alertas', '/alertas'],
       ['validacion', '/validacion'],
       ['calidad', '/calidad'],
@@ -219,6 +221,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/gerencia': 'gauge',
   '/inteligencia-redes': 'network',
   '/alertas': 'bell',
+  '/pendientes': 'inbox',
   '/situaciones': 'layers',
   '/buzon': 'message',
   '/lecciones': 'layers',

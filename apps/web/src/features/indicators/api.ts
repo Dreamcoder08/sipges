@@ -4,7 +4,6 @@ import {
   IrsaHistory,
   IrsaReport,
   ModelStatus,
-  ValidationTemplate,
 } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
@@ -34,9 +33,4 @@ export const modelQuery = (scope: string) =>
     queryKey: ['indicators', scope, 'model'],
     queryFn: ({ signal }) => requestJson('/system/model-status', ModelStatus, { scope, signal }),
   });
-export const templateQuery = (scope: string) =>
-  queryOptions({
-    queryKey: ['indicators', scope, 'template'],
-    queryFn: ({ signal }) =>
-      requestJson('/system/validation-template', ValidationTemplate, { scope, signal }),
-  });
+export { templateQuery } from '../../shared/api/validation-template.ts';

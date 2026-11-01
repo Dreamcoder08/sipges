@@ -2,9 +2,10 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { installRecordsApi } from '../../test/records-api.ts';
 import { api, resetApi, server } from '../../test/server.ts';
 import { App } from '../App.tsx';
-import { DESTINATIONS, SCREENS, SYSTEM_PATHS } from '../navigation.ts';
+import { DESTINATIONS, SCREENS } from '../navigation.ts';
 
 const at = (path: string) => window.history.replaceState(null, '', path);
 const names = (items: HTMLElement[]) => items.map((item) => item.textContent);
@@ -17,12 +18,8 @@ const renderAt = async (path: string) => {
   return { nav, user: userEvent.setup() };
 };
 
-/** Every item of a menu in reading order, whatever its menuitem role. */
-const menuItems = (menu: HTMLElement) =>
-  [
-    ...within(menu).queryAllByRole('menuitem'),
-    ...within(menu).queryAllByRole('menuitemradio'),
-  ].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+/** Every item of a menu in reading order. */
+const menuItems = (menu: HTMLElement) => within(menu).queryAllByRole('menuitem');
 
 const accountButton = () => screen.getByRole('button', { name: /^Cuenta de / });
 
@@ -120,27 +117,42 @@ describe('desktop sidebar', () => {
     );
   });
 
-  it('reaches all 27 screens: hub tabs, the Integraciones link or the account menu', async () => {
+  it('reaches all 28 screens: hub tabs, the Integraciones link or the account menu', async () => {
+    installRecordsApi();
     const { nav, user } = await renderAt('/');
     const reached = new Set<string>();
     for (const hub of DESTINATIONS) {
       await user.click(within(nav).getByRole('link', { name: hub.label }));
-      const tabs = await screen.findByRole('group', { name: hub.label });
+      // Registros shows its types as chips with a count (and Todos first), not as plain tabs.
+      const records = hub.path === '/registros';
+      const tabs = await screen.findByRole('group', {
+        name: records ? 'Tipo de registro' : hub.label,
+      });
       for (const tab of hub.tabs) {
-        expect(within(tabs).getByRole('button', { name: tab.label })).toBeVisible();
+        expect(
+          within(tabs).getByRole('button', {
+            name: records ? new RegExp(`^${tab.label}\\b`) : tab.label,
+          }),
+        ).toBeVisible();
         reached.add(tab.screen);
       }
     }
     await user.click(accountButton());
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
-    for (const path of SYSTEM_PATHS) {
-      const label = SCREENS.find((item) => item.path === path)?.label ?? path;
+    // Automatizaciones is reached from the Integraciones link, checked below.
+    for (const [label, path] of [
+      ['Configuración', '/version-4'],
+      ['Administración', '/administracion'],
+      ['Auditoría', '/auditoria'],
+      ['Ayuda y metodología', '/metodologia'],
+    ] as const) {
       expect(within(menu).getByRole('menuitem', { name: label })).toHaveAttribute('href', path);
       reached.add(path);
     }
     const integrations = within(nav).getByRole('link', { name: 'Integraciones' });
     expect(integrations).toHaveAttribute('href', '/integraciones');
     reached.add('/integraciones');
+    reached.add('/automatizaciones');
     expect(reached).toEqual(new Set(SCREENS.map((item) => item.path)));
   });
 
@@ -240,7 +252,7 @@ describe('account menu in the sidebar', () => {
   it('names the row with the person and what the menu holds', async () => {
     await renderAt('/');
     const trigger = accountButton();
-    expect(trigger).toHaveAccessibleName(/Persona Sintética\s*Sistema, tema y sesión/);
+    expect(trigger).toHaveAccessibleName(/Persona Sintética\s*Configuración y sesión/);
     expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('menu')).toBeNull();
@@ -255,16 +267,15 @@ describe('account menu in the sidebar', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     const items = menuItems(menu);
     expect(names(items)).toEqual([
+      'ConfiguraciónCtrl+,',
       'Administración',
-      'Automatizaciones',
-      'Metodología',
       'Auditoría',
-      'Configuración',
-      'Sistema',
-      'Claro',
-      'Oscuro',
+      'Ayuda y metodología',
       'Cerrar sesión',
     ]);
+    expect(within(menu).queryByRole('menuitem', { name: 'Automatizaciones' })).toBeNull();
+    expect(within(menu).queryByText('Tema')).toBeNull();
+    expect(within(menu).queryByRole('menuitemradio')).toBeNull();
     expect(items[0]).toHaveFocus();
     await user.keyboard('{ArrowDown}');
     expect(items[1]).toHaveFocus();
@@ -301,44 +312,77 @@ describe('account menu in the sidebar', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('links to the five Sistema screens and marks the current one', async () => {
+  it('links to the screens it keeps and marks the current one', async () => {
     server.use(http.get('/system/audit', () => HttpResponse.json([])));
     const { user } = await renderAt('/auditoria');
     const trigger = accountButton();
     expect(trigger).toHaveAttribute('data-current', 'true');
     await user.click(trigger);
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
-    const system = within(menu).getByRole('group', { name: 'Sistema' });
-    const links = within(system).getAllByRole('menuitem');
+    const links = within(menu)
+      .getAllByRole('menuitem')
+      .filter((item) => item.hasAttribute('href'));
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/administracion',
-      '/automatizaciones',
-      '/metodologia',
-      '/auditoria',
       '/version-4',
+      '/administracion',
+      '/auditoria',
+      '/metodologia',
     ]);
-    expect(within(system).getByRole('menuitem', { name: 'Auditoría' })).toHaveAttribute(
+    expect(within(menu).getByRole('menuitem', { name: 'Auditoría' })).toHaveAttribute(
       'aria-current',
       'page',
     );
-    await user.click(within(system).getByRole('menuitem', { name: 'Metodología' }));
+    await user.click(within(menu).getByRole('menuitem', { name: 'Ayuda y metodología' }));
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Metodología SIPGES' }),
     ).toBeVisible();
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('chooses the theme and shows which one is on', async () => {
+  it('heads the menu with the full name and the username, and hints the Configuración shortcut', async () => {
     const { user } = await renderAt('/');
     await user.click(accountButton());
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
-    expect(within(menu).getByRole('menuitemradio', { name: 'Sistema' })).toBeChecked();
-    await user.click(within(menu).getByRole('menuitemradio', { name: 'Oscuro' }));
+    expect(within(menu).getByText('Persona Sintética')).toBeVisible();
+    expect(within(menu).getByText('persona')).toBeVisible();
+    const settings = within(menu).getByRole('menuitem', { name: 'Configuración' });
+    expect(within(settings).getByText('Ctrl+,')).toBeVisible();
+    expect(settings).toHaveAttribute('aria-keyshortcuts', 'Control+, Meta+,');
+  });
+
+  it('opens Configuración with Ctrl+, and Cmd+, from anywhere', async () => {
+    const { user } = await renderAt('/');
+    await user.keyboard('{Control>},{/Control}');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+    ).toBeVisible();
+    at('/');
+    cleanup();
+    const second = await renderAt('/');
+    await second.user.keyboard('{Meta>},{/Meta}');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+    ).toBeVisible();
+  });
+
+  it('ignores Ctrl+, while typing in a text field', async () => {
+    const { user } = await renderAt('/');
+    const field = document.createElement('input');
+    document.body.append(field);
+    field.focus();
+    await user.keyboard('{Control>},{/Control}');
+    expect(window.location.pathname).toBe('/');
+    field.remove();
+  });
+
+  it('reaches Apariencia from the account menu and changes the theme there', async () => {
+    const { user } = await renderAt('/');
+    await user.click(accountButton());
+    await user.click(screen.getByRole('menuitem', { name: 'Configuración' }));
+    const group = await screen.findByRole('group', { name: 'Tema' });
+    await user.click(within(group).getByRole('radio', { name: 'Oscuro' }));
     expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
-    expect(within(menu).getByRole('menuitemradio', { name: 'Oscuro' })).toBeChecked();
-    expect(within(menu).getByRole('menuitemradio', { name: 'Sistema' })).not.toBeChecked();
-    await user.click(within(menu).getByRole('menuitemradio', { name: 'Claro' }));
-    expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+    expect(window.localStorage.getItem('sipges.theme')).toBe('dark');
   });
 
   it('signs out with the existing sign-out request', async () => {

@@ -12,6 +12,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { AppearanceSection } from './AppearanceSection.tsx';
 import { MediaMonitorCard } from './MediaMonitorCard.tsx';
 import { PhaseCard } from './PhaseCard.tsx';
 import styles from './Situations.module.css';
@@ -31,6 +32,7 @@ export const SettingsPage = ({ scope, role }: FeatureContext) => {
   const [notice, setNotice] = useState('');
   return (
     <div className={styles.page}>
+      <AppearanceSection />
       <QueryState query={settings} label="la configuración de SIPGES">
         {(data) => (
           <SettingsForm
