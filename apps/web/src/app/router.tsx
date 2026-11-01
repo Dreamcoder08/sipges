@@ -64,6 +64,9 @@ import {
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
 );
+const RegistrosHub = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.RegistrosHub })),
+);
 const AlertOverview = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.AlertOverview })),
 );
@@ -510,6 +513,15 @@ const hubRoute = (hub: Destination) => {
       const context = useFeatureContext();
       const navigate = useNavigate();
       const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      if (hub.path === '/registros')
+        return (
+          <RegistrosHub
+            key={context.scope}
+            tipo={asked}
+            onTipo={(tipo) => void navigate({ href: hubHref(hub, tipo) })}
+            {...context}
+          />
+        );
       const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
       const Screen = screenFor(tab.screen);
       return (
