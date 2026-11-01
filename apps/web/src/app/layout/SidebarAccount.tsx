@@ -5,7 +5,7 @@ import { THEME_OPTIONS, setTheme, useThemePreference } from '../../shared/lib/th
 import { accountDisplayName, accountInitials } from '../../shared/ui/account-name.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { logout, meQuery } from '../../features/auth/index.ts';
-import { SYSTEM_PATHS, groupLabelFor } from '../navigation.ts';
+import { SYSTEM_PATHS } from '../navigation.ts';
 import { NavLink } from './NavLink.tsx';
 import styles from './SidebarAccount.module.css';
 
@@ -102,7 +102,7 @@ export const SidebarAccount = ({
         ref={trigger}
         type="button"
         className={styles.row}
-        data-current={groupLabelFor(pathname) === 'Sistema'}
+        data-current={(SYSTEM_PATHS as readonly string[]).includes(pathname)}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}

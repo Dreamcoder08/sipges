@@ -3,13 +3,16 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { Sheet } from '../../shared/ui/Sheet.tsx';
+import { recordVisit } from '../../shared/lib/recents.ts';
 import {
   MOBILE_TABS,
   MORE_GROUPS,
-  SCREEN_ICONS,
+  destinationFor,
+  iconFor,
   labelFor,
   projectParts,
   titleFor,
+  visitFor,
 } from '../navigation.ts';
 import styles from './AppShell.module.css';
 import { NavLink } from './NavLink.tsx';
@@ -22,7 +25,7 @@ const MORE_PATHS: ReadonlySet<string> = new Set(MORE_GROUPS.flatMap((group) => g
  * main region. Focus moves to the heading after each navigation so screen readers announce it.
  * Wide screens keep a persistent sidebar, which holds the project, search, inbox and account,
  * and a top bar with the title only. Phones and tablets get a context bar
- * (project, search, account), the title under it, a five-item bottom bar and sheets for the
+ * (project, search, account), the title under it, a bottom bar of four destinations and «Más» and sheets for the
  * project selector and the remaining sections.
  */
 export const AppShell = ({
@@ -44,6 +47,7 @@ export const AppShell = ({
   children: ReactNode;
 }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const searchStr = useRouterState({ select: (state) => state.location.searchStr });
   const compact = useMediaQuery(COMPACT_QUERY);
   const [sheet, setSheet] = useState<'project' | 'more' | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -51,7 +55,8 @@ export const AppShell = ({
   const title = titleFor(pathname);
   const first = useRef(true);
   const project = projectParts(projectLabel);
-  const inMore = MORE_PATHS.has(pathname);
+  const destination = destinationFor(pathname)?.path;
+  const inMore = MORE_PATHS.has(pathname) || (destination ? MORE_PATHS.has(destination) : false);
   // A completed project switch closes the project sheet.
   const [shownLabel, setShownLabel] = useState(projectLabel);
   if (shownLabel !== projectLabel) {
@@ -67,6 +72,11 @@ export const AppShell = ({
     }
     heading.current?.focus();
   }, [pathname, title]);
+
+  useEffect(() => {
+    const visit = visitFor(pathname, searchStr);
+    if (visit) recordVisit(visit);
+  }, [pathname, searchStr]);
 
   // Focused fields scroll clear of the sticky top bar (scroll-padding in global.css).
   useEffect(() => {
@@ -160,9 +170,10 @@ export const AppShell = ({
                     className={styles.tab}
                     activeOptions={{ exact: true }}
                     activeProps={{ 'aria-current': 'page' }}
+                    {...(destination === tab.path ? { 'aria-current': 'page' as const } : {})}
                   >
                     <span className={styles.pill}>
-                      <Icon name={SCREEN_ICONS[tab.path]} />
+                      <Icon name={iconFor(tab.path)} />
                     </span>
                     {tab.label}
                   </Link>
@@ -199,7 +210,12 @@ export const AppShell = ({
                   <ul>
                     {group.paths.map((path) => (
                       <li key={path}>
-                        <NavLink path={path} className={styles.row} onNavigate={close}>
+                        <NavLink
+                          path={path}
+                          current={destination === path}
+                          className={styles.row}
+                          onNavigate={close}
+                        >
                           <Icon name="chevronRight" className={styles.rowChevron} />
                         </NavLink>
                       </li>

@@ -10,7 +10,7 @@ import { watchNetwork } from '../support/network.ts';
  */
 test.use({ viewport: { width: 1440, height: 900 } });
 
-test('the sidebar fits without scrolling with «Gestión y alertas» open', async ({
+test('the sidebar lists five destinations and Integraciones and fits without scrolling', async ({
   page,
   admin,
 }) => {
@@ -18,9 +18,21 @@ test('the sidebar fits without scrolling with «Gestión y alertas» open', asyn
   await page.goto('/gerencia');
   const sidebar = page.locator('aside').first();
   const nav = sidebar.getByRole('navigation', { name: 'Secciones' });
-  const largest = nav.getByRole('button', { name: /^Gestión y alertas/ });
-  await expect(largest).toHaveAttribute('aria-expanded', 'true');
-  await expect(nav.getByRole('link', { name: 'Ubicación geoespacial' })).toBeVisible();
+  for (const name of [
+    'Inicio',
+    'Registros',
+    'Territorio',
+    'Bandeja',
+    'Análisis',
+    'Integraciones',
+  ]) {
+    await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
+  }
+  // Centro gerencial is a tab of Inicio, so Inicio is the current destination.
+  await expect(nav.getByRole('link', { name: 'Inicio', exact: true })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
 
   const overflow = await page.evaluate(() =>
     ['aside', 'aside nav'].map((selector) => {
