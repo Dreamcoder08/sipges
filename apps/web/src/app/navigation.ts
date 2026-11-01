@@ -78,6 +78,7 @@ export const SCREENS = [
     title: 'Automatizaciones e integraciones',
     ready: true,
   },
+  { path: '/integraciones', label: 'Integraciones', title: 'Integraciones', ready: true },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología SIPGES', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
   { path: '/version-4', label: 'Configuración', title: 'Configuración del proyecto', ready: true },
@@ -90,7 +91,7 @@ export const SCREENS = [
 
 export type ScreenPath = (typeof SCREENS)[number]['path'];
 
-/** Sistema screens, reached from the account menu (and Automatizaciones also as Integraciones). */
+/** Sistema screens, reached from the account menu; Integraciones has its own sidebar link. */
 export const SYSTEM_PATHS = [
   '/administracion',
   '/automatizaciones',
@@ -194,6 +195,8 @@ export const hubHref = (hub: Destination, value: string) =>
 
 /** What the «Recientes» list stores for a screen or hub tab; null for routes outside the menu. */
 export const visitFor = (path: string, search: string): { href: string; label: string } | null => {
+  // Integraciones has its own sidebar link, so listing it under «Recientes» would repeat it.
+  if (path === '/integraciones') return null;
   const hub = DESTINATIONS.find((item) => item.path === path);
   if (!hub) {
     return SCREENS.some((screen) => screen.path === path)
@@ -230,6 +233,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/fuentes': 'file',
   '/administracion': 'sliders',
   '/automatizaciones': 'zap',
+  '/integraciones': 'plug',
   '/metodologia': 'bookOpen',
   '/auditoria': 'shield',
   '/version-4': 'layers',
@@ -252,7 +256,7 @@ export const MOBILE_TABS = [
 
 /** "Más" sheet: the destination without a tab, then Sistema; hubs reach their old screens. */
 export const MORE_GROUPS = [
-  { label: 'Destinos', paths: ['/analisis'] },
+  { label: 'Destinos', paths: ['/analisis', '/integraciones'] },
   { label: 'Sistema', paths: SYSTEM_PATHS },
 ] as const satisfies readonly { label: string; paths: readonly NavPath[] }[];
 

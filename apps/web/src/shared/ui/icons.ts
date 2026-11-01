@@ -37,6 +37,8 @@ export const ICON_PATHS = {
   minus: 'M5 12h14',
   landmark: 'M3 21h18M5 21v-9M10 21v-9M14 21v-9M19 21v-9M2 10l10-7 10 7z',
   inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z',
+  alert: 'M12 3 2 20h20zM12 10v4M12 17.5h.01',
+  chevronLeft: 'M15 18l-6-6 6-6',
   plug: 'M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5',
   briefcase: 'M3 7h18v13H3zM9 7V4h6v3M3 13h18',
 } as const;

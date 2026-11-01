@@ -102,6 +102,22 @@ const AdministrationPage = lazy(() =>
 const AutomationPage = lazy(() =>
   import('../features/automation/index.ts').then((module) => ({ default: module.AutomationPage })),
 );
+const IntegrationsPage = lazy(() =>
+  import('../features/automation/index.ts').then((module) => ({
+    default: module.IntegrationsPage,
+  })),
+);
+// The sources' own management UI lives in their features; the shell composes it into the page.
+const AuthorizedSourcesCard = lazy(() =>
+  import('../features/operations/AuthorizedSourcesCard.tsx').then((module) => ({
+    default: module.AuthorizedSourcesCard,
+  })),
+);
+const MediaMonitorCard = lazy(() =>
+  import('../features/situations/MediaMonitorCard.tsx').then((module) => ({
+    default: module.MediaMonitorCard,
+  })),
+);
 const AuditPage = lazy(() =>
   import('../features/audit/index.ts').then((module) => ({ default: module.AuditPage })),
 );
@@ -437,6 +453,18 @@ const MailboxScreen = (context: FeatureContext) => (
 const LessonsScreen = (context: FeatureContext) => (
   <RecordsPage key={`${context.scope}/lecciones`} module="lecciones" {...context} />
 );
+const IntegrationsScreen = (context: FeatureContext) => (
+  <IntegrationsPage
+    {...context}
+    renderSource={(source) =>
+      source === 'defensoria' ? (
+        <AuthorizedSourcesCard context={context} />
+      ) : (
+        <MediaMonitorCard scope={context.scope} admin={context.role === 'admin'} />
+      )
+    }
+  />
+);
 const featurePages = {
   '/situaciones': SituationsScreen,
   '/buzon': MailboxScreen,
@@ -456,6 +484,7 @@ const featurePages = {
   '/metodologia': MethodologyPage,
   '/auditoria': AuditPage,
   '/automatizaciones': AutomationPage,
+  '/integraciones': IntegrationsScreen,
   '/version-4': SettingsPage,
 } as const;
 const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePages>).map((path) =>

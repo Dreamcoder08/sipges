@@ -22,8 +22,9 @@ describe('navigation', () => {
   });
 
   it('lists every screen once with a title', () => {
-    expect(SCREENS).toHaveLength(26);
-    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(26);
+    expect(SCREENS).toHaveLength(27);
+    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(27);
+    expect(titleFor('/integraciones')).toBe('Integraciones');
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
     expect(titleFor('/nope')).toBe('SIPGES');
   });
@@ -47,6 +48,7 @@ describe('navigation', () => {
     const reachable = [
       ...DESTINATIONS.flatMap((hub) => hub.tabs.map((t) => t.screen)),
       ...SYSTEM_PATHS,
+      '/integraciones',
     ];
     expect(reachable).toHaveLength(SCREENS.length);
     expect(new Set(reachable)).toEqual(new Set(SCREENS.map((s) => s.path)));
@@ -73,6 +75,7 @@ describe('navigation', () => {
       label: 'Registros · Eventos',
     });
     expect(visitFor('/objeto/eventos/EV-1', '')).toBeNull();
+    expect(visitFor('/integraciones', '')).toBeNull();
   });
 
   it('reaches every screen from the bottom bar, the "Más" sheet or a hub tab', () => {

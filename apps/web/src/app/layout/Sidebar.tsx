@@ -61,10 +61,9 @@ export const Sidebar = ({
         <ul className={styles.apart}>
           <li>
             <NavLink
-              path="/automatizaciones"
-              label="Integraciones"
-              icon="plug"
+              path="/integraciones"
               className={styles.link}
+              current={pathname === '/integraciones' || pathname === '/automatizaciones'}
             />
           </li>
         </ul>

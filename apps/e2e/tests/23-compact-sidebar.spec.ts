@@ -28,6 +28,10 @@ test('the sidebar lists five destinations and Integraciones and fits without scr
   ]) {
     await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
   }
+  await expect(nav.getByRole('link', { name: 'Integraciones', exact: true })).toHaveAttribute(
+    'href',
+    '/integraciones',
+  );
   // Centro gerencial is a tab of Inicio, so Inicio is the current destination.
   await expect(nav.getByRole('link', { name: 'Inicio', exact: true })).toHaveAttribute(
     'aria-current',

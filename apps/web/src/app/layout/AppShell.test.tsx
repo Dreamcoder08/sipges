@@ -51,7 +51,7 @@ describe('desktop sidebar', () => {
       '/territorio',
       '/bandeja',
       '/analisis',
-      '/automatizaciones',
+      '/integraciones',
     ]);
     expect(within(nav).queryByRole('button')).toBeNull();
     expect(within(nav).queryByText('Fijados')).toBeNull();
@@ -83,13 +83,16 @@ describe('desktop sidebar', () => {
     );
   });
 
-  it('marks Integraciones, not a destination, on the automations screen', async () => {
-    const { nav } = await renderAt('/automatizaciones');
-    expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(within(nav).getAllByRole('link', { current: 'page' })).toHaveLength(1);
+  it('marks Integraciones, not a destination, on its page and on the old automations deep link', async () => {
+    for (const path of ['/integraciones', '/automatizaciones']) {
+      const { nav } = await renderAt(path);
+      expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
+        'aria-current',
+        'page',
+      );
+      expect(within(nav).getAllByRole('link', { current: 'page' })).toHaveLength(1);
+      cleanup();
+    }
   });
 
   it('lists the last four visited screens and tabs under «Recientes», newest first', async () => {
@@ -117,7 +120,7 @@ describe('desktop sidebar', () => {
     );
   });
 
-  it('reaches all 26 screens: hub tabs, the Integraciones link or the account menu', async () => {
+  it('reaches all 27 screens: hub tabs, the Integraciones link or the account menu', async () => {
     const { nav, user } = await renderAt('/');
     const reached = new Set<string>();
     for (const hub of DESTINATIONS) {
@@ -135,11 +138,10 @@ describe('desktop sidebar', () => {
       expect(within(menu).getByRole('menuitem', { name: label })).toHaveAttribute('href', path);
       reached.add(path);
     }
+    const integrations = within(nav).getByRole('link', { name: 'Integraciones' });
+    expect(integrations).toHaveAttribute('href', '/integraciones');
+    reached.add('/integraciones');
     expect(reached).toEqual(new Set(SCREENS.map((item) => item.path)));
-    expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
-      'href',
-      '/automatizaciones',
-    );
   });
 
   it('opens the existing search palette from the composer', async () => {

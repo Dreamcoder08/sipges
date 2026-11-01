@@ -67,3 +67,37 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
   expect(mcp.status(), await mcp.text()).toBe(200);
   expect(JSON.stringify(await mcp.json())).toContain(cause);
 });
+
+/** S4: one Integraciones page, reached from the sidebar, with filters and the synthetic-data warning (S7). */
+test('Integraciones: sidebar link, kind filters and the MCP card opens its keys', async ({
+  page,
+  admin,
+}) => {
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/inicio');
+  await page
+    .getByRole('navigation', { name: 'Secciones' })
+    .getByRole('link', { name: 'Integraciones', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/integraciones$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Integraciones' })).toBeVisible();
+
+  const mcp = page
+    .getByRole('listitem')
+    .filter({ has: page.getByRole('heading', { name: 'Claude vía MCP' }) });
+  await expect(
+    mcp.getByText('Datos sintéticos hasta aprobar política de datos (Ley 29733)'),
+  ).toBeVisible();
+
+  const kinds = page.getByRole('group', { name: 'Filtrar por tipo' });
+  await kinds.getByRole('button', { name: /^Skills/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: /^Skills/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Claude vía MCP' })).toHaveCount(0);
+  await kinds.getByRole('button', { name: /^Todos/ }).click();
+
+  await page.getByRole('button', { name: 'Claude vía MCP', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Claude vía MCP' })).toBeFocused();
+  await expect(page.getByLabel(/Nombre de la clave/)).toBeVisible();
+  await page.getByRole('button', { name: 'Integraciones', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Filtrar por tipo' })).toBeVisible();
+});

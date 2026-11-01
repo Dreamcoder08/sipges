@@ -1,5 +1,8 @@
 import {
+  ApiKeyOut,
   AutomationOverview,
+  type RuleOut,
+  AutomationRuntimeState,
   type ChannelIn,
   type ChannelKind,
   type RuleIn,
@@ -14,6 +17,22 @@ export const overviewQuery = (scope: string) =>
     queryKey: ['automation', scope],
     queryFn: ({ signal }) =>
       requestJson('/system/automations', AutomationOverview, { scope, signal }),
+  });
+
+/** Machine access keys of the project (MCP and inbound webhooks), read by Integraciones too. */
+export const apiKeysQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['automation', scope, 'api-keys'],
+    queryFn: ({ signal }) =>
+      requestJson('/system/integrations/api-keys', ApiKeyOut.array(), { scope, signal }),
+  });
+
+export const runtimeQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['automation-runtime', scope],
+    queryFn: ({ signal }) =>
+      requestJson('/system/automations/runtime', AutomationRuntimeState, { scope, signal }),
+    refetchInterval: 30000,
   });
 
 const Saved = z.object({ ok: z.literal(true), id: z.number().int().optional() });
@@ -121,4 +140,32 @@ export const ACTION_LABELS: Record<string, string> = {
   REVIEW: 'Revisión',
   SNAPSHOT: 'Corte IRSA',
   CONFIG_UPDATE: 'Cambio de configuración',
+};
+
+/** One sentence that reads a rule back in plain language. */
+export const describeRule = (rule: RuleOut, overview: AutomationOverview) => {
+  const source =
+    rule.module === '*'
+      ? 'cualquier módulo'
+      : (overview.sources.find((s) => s.module === rule.module)?.label ?? rule.module);
+  const when = rule.actions
+    .map((a) => ACTION_LABELS[a] ?? a)
+    .join(', ')
+    .toLocaleLowerCase('es');
+  const conditions = rule.conditions
+    .map(
+      (c) =>
+        `${c.field} ${OPERATOR_LABELS[c.op] ?? c.op}${c.op === 'present' || c.op === 'absent' ? '' : ` «${c.value}»`}`,
+    )
+    .join(' y ');
+  const steps = rule.steps
+    .map((s) =>
+      s.kind === 'evaluate'
+        ? `evaluar narrativa (mínimo ${s.minimum_level})`
+        : s.kind === 'notify'
+          ? 'aviso en la bandeja'
+          : `mensaje a ${overview.channels.find((c) => c.id === s.channel_id)?.name ?? 'canal eliminado'}`,
+    )
+    .join(' + ');
+  return `Cuando hay ${when} en ${source}${conditions ? ` y ${conditions}` : ''}: ${steps}.`;
 };
