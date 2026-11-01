@@ -115,7 +115,15 @@
   .trigger :global(svg) {
     font-size: var(--text-xl);
   }
-  .label,
+  /* Clipped, not display:none, so the icon button keeps its accessible name. */
+  .label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
   .trigger kbd {
     display: none;
   }

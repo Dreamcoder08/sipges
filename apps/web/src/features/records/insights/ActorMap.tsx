@@ -41,20 +41,23 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 6;
 
 /** Splits a name into at most two lines that fit an actor card. */
+/**
+ * Up to two lines of whole words, so the visible text stays part of the accessible name
+ * (WCAG 2.5.3); words that do not fit are replaced by a trailing ellipsis.
+ */
 const lines = (text: string, limit = 20) => {
-  const words = text.split(/\s+/);
-  const out: string[] = [''];
-  for (const word of words) {
-    const current = out[out.length - 1] ?? '';
-    if (!current || (current + ' ' + word).length <= limit) {
-      out[out.length - 1] = current ? `${current} ${word}` : word;
-    } else if (out.length < 2) out.push(word);
-    else {
-      out[1] = `${out[1]} ${word}`;
-      break;
+  const out: string[] = [];
+  const words = text.split(/\s+/).filter(Boolean);
+  let index = 0;
+  while (index < words.length && out.length < 2) {
+    let line = words[index++] ?? '';
+    while (index < words.length && `${line} ${words[index]}`.length <= limit) {
+      line = `${line} ${words[index++]}`;
     }
+    out.push(line);
   }
-  return out.map((line) => (line.length > limit ? line.slice(0, limit - 1) + '…' : line));
+  if (index < words.length) out[out.length - 1] = `${out[out.length - 1]} …`;
+  return [out[0] ?? '', out[1]] as const;
 };
 
 /** Where a line from the centre to a card enters the card's border. */
@@ -489,8 +492,9 @@ export const ActorMap = ({
                       >
                         <rect width={CARD.width} height={CARD.height} rx={6} />
                         <circle cx={11} cy={CARD.height / 2} r={4.5} className={map.dot} />
+                        {/* The trailing space keeps the two lines readable as one visible label (WCAG 2.5.3). */}
                         <text x={TEXT_START} y={second ? 14 : 20}>
-                          {first}
+                          {second ? `${first} ` : first}
                         </text>
                         {second ? (
                           <text x={TEXT_START} y={27}>

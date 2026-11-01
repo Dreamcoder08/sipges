@@ -121,7 +121,13 @@
     padding-right: 0.125rem;
   }
 
+  /* Clipped, not display:none, so the trigger keeps its accessible name (WCAG 2.5.3). */
   .copy {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }

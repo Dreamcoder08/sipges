@@ -58,7 +58,6 @@ export const AccountMenu = ({
         className={styles.trigger}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={`Cuenta de ${name}${unread > 0 ? `, ${unread} notificaciones sin leer` : ''}`}
         onClick={() => setOpen(true)}
       >
         <span className={styles.avatar} aria-hidden="true">
@@ -66,9 +65,11 @@ export const AccountMenu = ({
           {unread > 0 && <span className={styles.dot} />}
         </span>
         <span className={styles.copy}>
+          <span className="visually-hidden">Cuenta de </span>
           <b>{name}</b>
           <span>{ROLE_LABELS[me.role]}</span>
         </span>
+        {unread > 0 && <span className="visually-hidden">, {unread} notificaciones sin leer</span>}
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Cuenta">
         <div className={styles.profile}>
