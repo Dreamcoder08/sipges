@@ -1,5 +1,6 @@
 import { type Result, err, ok } from '@sipges/kernel';
 import { log } from '../../../platform/observability/logger.ts';
+import type { EgressGuard, EgressSession } from '../../privacy/application/index.ts';
 import {
   type Briefing,
   type Sentence,
@@ -8,6 +9,7 @@ import {
   citedRefs,
 } from '../domain/briefing.ts';
 import { type Proposal, followUpProposals, mentionProposal } from '../domain/proposals.ts';
+import type { Connection, Subject } from '../domain/briefing.ts';
 import type { BriefingSource, Clock, Narrator, ProposalActions, ProposalStore } from './ports.ts';
 
 export type DecideError = 'missing' | 'decided' | 'failed';
@@ -21,6 +23,8 @@ export type BriefingResult = Briefing & {
   readonly narrative: Sentence | null;
   readonly engine: 'extractivo' | 'asistido';
   readonly notice: string | null;
+  /** An outside reader's briefing of a restricted record: the guard kept it back whole. */
+  readonly withheld?: boolean;
 };
 
 const NARRATION_FAILED =
@@ -28,9 +32,62 @@ const NARRATION_FAILED =
 const NARRATION_WITHHELD =
   'El registro está restringido; el resumen asistido no se genera para información restringida.';
 
+/**
+ * The briefing as an outside reader may see it (docs/adr/0030): only allowlisted fields, with
+ * names replaced by pseudonyms. Record ids stay, since citations need them; the session scrubs
+ * every string again when it releases the text.
+ */
+const sanitisedView = (
+  session: EgressSession,
+  found: { subject: Subject; connections: readonly Connection[] },
+) => {
+  const records = new Map<string, Subject>();
+  for (const s of [found.subject, ...found.connections.map((c) => c.other)])
+    records.set(`${s.slug}\u0000${s.id}`, s);
+  const unique = [...records.entries()];
+  const cleaned = session.records(
+    unique.map(([, s]) => ({
+      module: s.slug,
+      id: s.id,
+      title: s.title,
+      date: s.date,
+      marking: s.marking,
+      fields: s.fields,
+    })),
+  );
+  const withheld = new Set(unique.filter((_, i) => cleaned[i]?.withheld).map(([k]) => k));
+  const view = new Map<string, Subject>(
+    unique.map(([key, s], i) => {
+      const clean = cleaned[i];
+      return [
+        key,
+        {
+          ...s,
+          title: clean?.title ?? s.id,
+          date: clean?.date ?? null,
+          fields: Object.fromEntries(
+            Object.entries(clean?.fields ?? {}).map(([field, value]) => [field, String(value)]),
+          ),
+        },
+      ];
+    }),
+  );
+  const of = (s: Subject) => view.get(`${s.slug}\u0000${s.id}`) ?? s;
+  return {
+    subjectWithheld: withheld.has(`${found.subject.slug}\u0000${found.subject.id}`),
+    subject: of(found.subject),
+    // Restricted neighbours are left out whole; the guard has counted them as withheld.
+    connections: found.connections
+      .filter((c) => !withheld.has(`${c.other.slug}\u0000${c.other.id}`))
+      .map((c) => ({ ...c, other: of(c.other) })),
+  };
+};
+
 export const createAnalystService = (deps: {
   source: BriefingSource;
   narrator: Narrator | null;
+  /** Clears what the narrator and any outside reader of a briefing receive (docs/adr/0030). */
+  egress: EgressGuard;
   clock: Clock;
   proposals?: { store: ProposalStore; actions: ProposalActions };
 }) => {
@@ -104,32 +161,52 @@ export const createAnalystService = (deps: {
       return saved ? ok({ result }) : err('decided');
     },
 
-    async briefing(tenantId: string, slug: string, id: string): Promise<BriefingResult | null> {
+    /**
+     * With `session` (an outside client such as MCP) the briefing itself is built from
+     * sanitised records; without it the signed-in team sees the real ones.
+     */
+    async briefing(
+      tenantId: string,
+      slug: string,
+      id: string,
+      options: { session?: EgressSession } = {},
+    ): Promise<BriefingResult | null> {
       const found = await deps.source.neighbours(tenantId, slug, id);
       if (!found) return null;
       const now = deps.clock.now();
       const today = now.toISOString().slice(0, 10);
-      const briefing = buildBriefing(found.subject, found.connections, today);
+      const seen = options.session ? sanitisedView(options.session, found) : found;
+      const subjectWithheld = 'subjectWithheld' in seen && seen.subjectWithheld;
+      const briefing = buildBriefing(seen.subject, seen.connections, today);
       const extractive = {
         ...briefing,
         generatedAt: now,
         narrative: null,
         engine: 'extractivo' as const,
       };
+      if (subjectWithheld) return { ...extractive, notice: null, withheld: true };
       const narrator = deps.narrator;
       if (!narrator) return { ...extractive, notice: null };
       if (found.subject.marking === 'restringido')
         return { ...extractive, notice: NARRATION_WITHHELD };
 
-      // Restricted neighbours never leave the platform: the model sees a briefing without them.
-      const shared = buildBriefing(
-        found.subject,
-        found.connections.filter((c) => c.other.marking !== 'restringido'),
-        today,
-      );
+      const opened = await deps.egress.open({
+        tenantId,
+        channel: 'analyst',
+        purpose: 'briefing',
+      });
+      if (!opened.ok) return { ...extractive, notice: NARRATION_FAILED };
+
+      // Restricted neighbours never leave the platform, and the rest only as the guard allows:
+      // the model sees a sanitised briefing without them.
+      const sharedView = sanitisedView(opened.session, found);
+      const shared = buildBriefing(sharedView.subject, sharedView.connections, today);
       try {
         const prose = (
-          await narrator.narrate(briefingText(shared), AbortSignal.timeout(NARRATION_TIMEOUT_MS))
+          await narrator.narrate(
+            await opened.session.release(briefingText(shared)),
+            AbortSignal.timeout(NARRATION_TIMEOUT_MS),
+          )
         )
           .trim()
           .slice(0, MAX_NARRATIVE_CHARS);

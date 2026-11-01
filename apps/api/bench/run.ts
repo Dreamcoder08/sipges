@@ -179,6 +179,7 @@ await record(
 );
 const MODEL_DELAY_MS = 40;
 const slowModel = {
+  egress: 'local' as const,
   model: 'synthetic',
   embed: (input: string) =>
     new Promise<number[]>((resolve) =>
@@ -195,6 +196,8 @@ const intelligence = () =>
   createIntelligenceService({
     narratives: { read: async () => narratives },
     embeddings: slowModel,
+    // The benchmark model is local, so the guard is never asked.
+    egress: { open: async () => ({ ok: false, reason: 'disabled' }) },
     alerts: {} as never,
     clock: { now: () => new Date(GENERATED_AT) },
     randomHex: () => '000000000000',

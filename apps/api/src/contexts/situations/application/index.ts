@@ -65,6 +65,9 @@ export const createSituationsService = (deps: {
     /** Phase weights IRSA uses instead of the general ones, once the current phase has some saved. */
     phaseWeights: async (tenantId: string) =>
       activePhaseWeights(withDefaults(await settings.load(tenantId))),
+    /** Whether the project allows data to go to an external model or client (default off). */
+    externalAiEnabled: async (tenantId: string) =>
+      withDefaults(await settings.load(tenantId)).externalAi.enabled,
     /** Every condition of the catalogue with the project's wording or the default. */
     recommendationCatalogue: (current: ProjectSettings) =>
       RECOMMENDATION_IDS.map((id) => ({

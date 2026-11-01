@@ -10,6 +10,7 @@ type Json = Record<string, any>;
 const CONCEPTS = [/agua|hídric|riego/i, /carretera|vía|bloqueo/i, /minería|mina/i];
 const conceptEmbeddings = (log: string[] = []): EmbeddingProvider => ({
   model: 'toy-concepts',
+  egress: 'local',
   embed: async (text) => {
     log.push(text);
     return [...CONCEPTS.map((c) => (c.test(text) ? 1 : 0)), 0.01, 0, 0, 0, 0];
@@ -65,6 +66,7 @@ describe('hybrid search', () => {
   it('falls back to lexical search when the model is down or semantic search is off', async () => {
     const down = await setup({
       model: 'down',
+      egress: 'local',
       embed: () => Promise.reject(new Error('offline')),
     });
     expect(await down.search('bloqueo')).toEqual(['EV-2']);

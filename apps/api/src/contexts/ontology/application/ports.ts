@@ -1,3 +1,5 @@
+import type { SanitisedPayload } from '../../privacy/application/index.ts';
+
 /** A record by stored module name and id. */
 export type NodeRef = { readonly module: string; readonly id: string };
 
@@ -101,6 +103,7 @@ export type Clock = { now(): Date };
 /** A record with its text, ready to embed. */
 export type EmbeddingSource = NodeRef & {
   readonly payload: Readonly<Record<string, unknown>>;
+  readonly marking: string;
   /** Opaque version of the payload, stored with the vector to detect changes. */
   readonly hash: string;
 };
@@ -129,5 +132,7 @@ export type EmbeddingIndex = {
 
 export type Embedder = {
   readonly model: string;
-  embed(text: string): Promise<number[]>;
+  /** `local`: loopback, not egress. Anything else goes through the egress guard first. */
+  readonly egress: 'local' | 'external';
+  embed(text: SanitisedPayload<string>): Promise<number[]>;
 };

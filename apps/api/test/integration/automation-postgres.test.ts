@@ -175,6 +175,7 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
       clientIp: () => '203.0.113.75',
       embeddings: {
         model: 'toy-pg',
+        egress: 'local',
         embed: async (text) => [/agua|hídric/i.test(text) ? 1 : 0, 0.01, 0, 0, 0, 0, 0, 0],
       },
     });

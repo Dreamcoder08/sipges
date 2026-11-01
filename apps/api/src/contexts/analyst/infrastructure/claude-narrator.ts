@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import type { SanitisedPayload } from '../../privacy/application/index.ts';
 import type { Narrator } from '../application/index.ts';
 
 const SYSTEM = [
@@ -22,7 +23,7 @@ export const createClaudeNarrator = (config: {
   const client = config.client ?? new Anthropic({ maxRetries: 1 });
   return {
     name: `claude:${config.model}`,
-    async narrate(briefing, signal) {
+    async narrate(briefing: SanitisedPayload<string>, signal) {
       const response = await client.beta.messages.create(
         {
           model: config.model,

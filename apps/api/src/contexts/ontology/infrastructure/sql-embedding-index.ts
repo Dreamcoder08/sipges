@@ -11,8 +11,14 @@ const vectorOf = (value: unknown): number[] =>
 export const createSqlEmbeddingIndex = (sql: SqlClient): EmbeddingIndex => ({
   stale: (tenantId, model, limit) =>
     withTenant(sql, tenantId, (tx) =>
-      tx.query<{ module: string; id: string; payload: Record<string, unknown>; hash: string }>(
-        `SELECT r.module, r.id, r.payload, md5(r.payload::text) AS hash FROM module_records r
+      tx.query<{
+        module: string;
+        id: string;
+        payload: Record<string, unknown>;
+        marking: string;
+        hash: string;
+      }>(
+        `SELECT r.module, r.id, r.payload, r.marking, md5(r.payload::text) AS hash FROM module_records r
          LEFT JOIN record_embeddings e
            ON e.tenant_id = r.tenant_id AND e.module = r.module AND e.id = r.id
          WHERE r.marking <> 'restringido'
