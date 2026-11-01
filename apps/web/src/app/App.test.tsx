@@ -197,7 +197,7 @@ describe('dashboard and navigation', () => {
     render(<App />);
     const user = userEvent.setup();
     const nav = await screen.findByRole('navigation', { name: 'Secciones' });
-    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -216,17 +216,24 @@ describe('dashboard and navigation', () => {
     expect(document.title).toBe('Auditoría | SIPGES');
   });
 
-  it('shows the SIPGES screens in the menu of every project, with no switch', async () => {
+  it('reaches the SIPGES screens from the hub tabs of every project, with no switch', async () => {
     signIn();
-    at('/');
+    at('/bandeja');
     render(<App />);
-    const nav = await screen.findByRole('navigation', { name: 'Secciones' });
-    // Only the current section starts open: «Gestión y alertas» holds these three.
-    await userEvent.click(within(nav).getByRole('button', { name: /^Gestión y alertas/ }));
-    expect(await within(nav).findByRole('link', { name: 'Situaciones' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Buzón' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Lecciones' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    const user = userEvent.setup();
+    const tabs = await screen.findByRole('group', { name: 'Bandeja' });
+    expect(within(tabs).getByRole('button', { name: 'Situaciones' })).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole('navigation', { name: 'Secciones' })).getByRole('link', {
+        name: 'Análisis',
+      }),
+    );
+    expect(
+      within(await screen.findByRole('group', { name: 'Análisis' })).getByRole('button', {
+        name: 'Lecciones',
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
     expect(screen.getByRole('menuitem', { name: 'Configuración' })).toBeInTheDocument();
   });
 
@@ -269,7 +276,7 @@ describe('phone shell', () => {
       within(bar)
         .getAllByRole('listitem')
         .map((item) => item.textContent),
-    ).toEqual(['Inicio', 'Monitoreo', 'Alertas', 'Territorio', 'Más']);
+    ).toEqual(['Inicio', 'Registros', 'Bandeja', 'Territorio', 'Más']);
     expect(within(bar).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
       'aria-current',
       'page',
@@ -285,7 +292,7 @@ describe('phone shell', () => {
     await user.click(more);
     const sheet = screen.getByRole('dialog', { name: 'Más secciones' });
     const nav = within(sheet).getByRole('navigation', { name: 'Secciones' });
-    expect(within(nav).getByRole('link', { name: 'Actores' })).toHaveFocus();
+    expect(within(nav).getByRole('link', { name: 'Análisis' })).toHaveFocus();
     expect(screen.getByRole('main', { hidden: true }).closest('[inert]')).not.toBeNull();
     expect(document.body.style.overflow).toBe('hidden');
     await user.keyboard('{Escape}');
@@ -342,5 +349,13 @@ describe('phone shell', () => {
     const account = screen.getByRole('dialog', { name: 'Cuenta' });
     expect(within(account).getByText('Notificaciones')).toBeVisible();
     expect(within(account).getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+    const links = within(within(account).getByRole('navigation', { name: 'Cuenta y ajustes' }));
+    expect(links.getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Configuración',
+      'Administración',
+      'Auditoría',
+      'Ayuda y metodología',
+    ]);
+    expect(within(account).queryByRole('radio')).toBeNull();
   });
 });

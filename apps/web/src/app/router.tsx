@@ -16,14 +16,15 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
 import { ProjectSettingsProvider } from '../shared/lib/project-settings.tsx';
 import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
-import { DashboardPage } from '../features/dashboard/index.ts';
+import { DashboardPage, InicioPage } from '../features/dashboard/index.ts';
+import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
   LoginPage,
@@ -40,7 +41,7 @@ import {
 } from '../features/tenancy/index.ts';
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
-import { SearchPalette } from '../features/search/index.ts';
+import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
 import {
   NotificationBell,
@@ -49,11 +50,22 @@ import {
 } from '../features/notifications/index.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../shared/lib/media.ts';
 import { AppShell } from './layout/AppShell.tsx';
+import { useQualityReview } from './pending-quality.ts';
 
-import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
+import {
+  DESTINATIONS,
+  type Destination,
+  SCREENS,
+  type ScreenPath,
+  hubHref,
+  safeRedirect,
+} from './navigation.ts';
 
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
+);
+const RegistrosHub = lazy(() =>
+  import('../features/records/index.ts').then((module) => ({ default: module.RegistrosHub })),
 );
 const AlertOverview = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.AlertOverview })),
@@ -254,6 +266,24 @@ const selectProjectRoute = createRoute({
 });
 
 /** Every signed-in screen: needs a session and an active project. */
+/** Phone account sheet links, the same screens as the desktop account menu. */
+const AccountLinks = () => (
+  <>
+    <Link to="/version-4" activeOptions={{ exact: true }}>
+      Configuración
+    </Link>
+    <Link to="/administracion" activeOptions={{ exact: true }}>
+      Administración
+    </Link>
+    <Link to="/auditoria" activeOptions={{ exact: true }}>
+      Auditoría
+    </Link>
+    <Link to="/metodologia" activeOptions={{ exact: true }}>
+      Ayuda y metodología
+    </Link>
+  </>
+);
+
 const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'app',
@@ -307,6 +337,7 @@ const appRoute = createRoute({
                 me={me}
                 project={projectLabel}
                 unread={compact ? unread : 0}
+                links={compact ? <AccountLinks /> : null}
                 onSignedOut={async () => {
                   queryClient.clear();
                   await router.navigate({ to: '/login', search: {} });
@@ -328,19 +359,30 @@ const appRoute = createRoute({
 
 const isScreen = (to: string): to is ScreenPath => SCREENS.some((s) => s.path === to);
 
+const DashboardScreen = (context: FeatureContext) => (
+  <DashboardPage
+    key={context.scope}
+    scope={context.scope}
+    projectId={context.projectId}
+    renderLink={(to, children) => <Link to={isScreen(to) ? to : '/'}>{children}</Link>}
+  />
+);
+
+const InicioScreen = (context: FeatureContext) => (
+  <InicioPage
+    scope={context.scope}
+    projectId={context.projectId}
+    projectLabel={context.projectLabel}
+    fullName={context.fullName}
+    onAsk={openSearch}
+  />
+);
+
 const dashboardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/',
   component: function DashboardRoute() {
-    const { scope } = appRoute.useRouteContext();
-    return (
-      <DashboardPage
-        key={scope.scope}
-        scope={scope.scope}
-        projectId={scope.project_id}
-        renderLink={(to, children) => <Link to={isScreen(to) ? to : '/'}>{children}</Link>}
-      />
-    );
+    return <DashboardScreen {...useFeatureContext()} />;
   },
 });
 
@@ -429,7 +471,11 @@ const MailboxScreen = (context: FeatureContext) => (
 const LessonsScreen = (context: FeatureContext) => (
   <RecordsPage key={`${context.scope}/lecciones`} module="lecciones" {...context} />
 );
+const PendingScreen = (context: FeatureContext) => (
+  <DecisionInbox {...context} useQuality={useQualityReview} />
+);
 const featurePages = {
+  '/pendientes': PendingScreen,
   '/situaciones': SituationsScreen,
   '/buzon': MailboxScreen,
   '/lecciones': LessonsScreen,
@@ -475,11 +521,72 @@ const objectRoute = createRoute({
   },
 });
 
+/** The screen of every path a hub shows as a tab; the old routes render the same functions. */
+const screenFor = (path: ScreenPath): ((context: FeatureContext) => ReactNode) => {
+  if (path === '/') return DashboardScreen;
+  const module = recordModules.find((item) => `/${item}` === path);
+  if (module)
+    return (context) => (
+      <RecordsPage key={`${context.scope}/${module}`} module={module} {...context} />
+    );
+  return featurePages[path as keyof typeof featurePages];
+};
+
+/** A destination: tabs in the URL search (`?vista=`), each tab one of today's screens. */
+const hubRoute = (hub: Destination) => {
+  const route = createRoute({
+    getParentRoute: () => appRoute,
+    path: hub.path,
+    validateSearch: z.object({ [hub.param]: z.string().optional().catch(undefined) }),
+    component: function HubRoute() {
+      const context = useFeatureContext();
+      const navigate = useNavigate();
+      const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      if (hub.path === '/registros')
+        return (
+          <RegistrosHub
+            key={context.scope}
+            tipo={asked}
+            onTipo={(tipo) => void navigate({ href: hubHref(hub, tipo) })}
+            {...context}
+          />
+        );
+      const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
+      const Screen = tab.value === 'inicio' ? InicioScreen : screenFor(tab.screen);
+      return (
+        <>
+          <ChipRow label={hub.label}>
+            {hub.tabs.map((item) => (
+              <Button
+                key={item.value}
+                variant={item.value === tab.value ? 'primary' : 'secondary'}
+                aria-pressed={item.value === tab.value}
+                onClick={() => void navigate({ href: hubHref(hub, item.value) })}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </ChipRow>
+          <Screen key={`${context.scope}/${tab.value}`} {...context} />
+        </>
+      );
+    },
+  });
+  return route;
+};
+const hubRoutes = DESTINATIONS.map(hubRoute);
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   mfaRoute,
   selectProjectRoute,
-  appRoute.addChildren([dashboardRoute, objectRoute, ...recordRoutes, ...featureRoutes]),
+  appRoute.addChildren([
+    dashboardRoute,
+    objectRoute,
+    ...hubRoutes,
+    ...recordRoutes,
+    ...featureRoutes,
+  ]),
 ]);
 
 export const createAppRouter = (queryClient: QueryClient) =>

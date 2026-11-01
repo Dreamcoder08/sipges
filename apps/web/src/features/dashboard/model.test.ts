@@ -4,6 +4,7 @@ import {
   criticalAlerts,
   eventsByDimension,
   eventsByMonth,
+  eventsThisWeek,
   recentEvents,
 } from './model.ts';
 
@@ -122,5 +123,22 @@ describe('dashboard model', () => {
       ['3', null],
     ]);
     expect(items[2]?.title).toBe('Evento sin descripción');
+  });
+});
+
+describe('eventsThisWeek', () => {
+  const now = new Date('2026-11-01T15:00:00Z');
+  const events = [
+    { _id: 'a', Descripcion_Hecho: 'Hoy', Fecha: '2026-11-01', Proyecto_ID: 'P' },
+    { _id: 'b', Descripcion_Hecho: 'Hace seis días', Fecha: '2026-10-26', Proyecto_ID: 'P' },
+    { _id: 'c', Descripcion_Hecho: 'Hace un mes', Fecha: '2026-10-01', Proyecto_ID: 'P' },
+    { _id: 'd', Descripcion_Hecho: 'Sin fecha', Proyecto_ID: 'P' },
+    { _id: 'e', Descripcion_Hecho: 'Otro proyecto', Fecha: '2026-11-01', Proyecto_ID: 'Q' },
+  ];
+
+  it('counts the last seven days of the active project, newest first', () => {
+    const week = eventsThisWeek(events, 'P', now, 1);
+    expect(week.total).toBe(2);
+    expect(week.items.map((item) => item.id)).toEqual(['a']);
   });
 });

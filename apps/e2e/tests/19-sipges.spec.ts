@@ -16,11 +16,6 @@ test('SIPGES relates recent records, explains the colour and lets a person raise
       (await page.request.post(`/api/${module}`, { headers, data: { payload } })).status(),
     ).toBe(200);
   await page.goto('/');
-  const nav = page.getByRole('navigation', { name: 'Secciones' });
-  // Only the section of the current screen starts open; «Situaciones» sits in the next one.
-  await nav.getByRole('button', { name: /^Gestión y alertas/ }).click();
-  await expect(nav.getByRole('link', { name: 'Situaciones', exact: true })).toBeVisible();
-
   await post('demandas', {
     ID_Demanda: `D-${stamp}`,
     Fecha_Registro: day(1),
@@ -43,7 +38,12 @@ test('SIPGES relates recent records, explains the colour and lets a person raise
     Actor_Principal: 'Comunidad de prueba',
   });
 
-  await nav.getByRole('link', { name: 'Situaciones', exact: true }).click();
+  // «Situaciones» is a tab of Bandeja.
+  await page
+    .getByRole('navigation', { name: 'Secciones' })
+    .getByRole('link', { name: 'Bandeja', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Situaciones', exact: true }).click();
   const card = page.getByRole('listitem').filter({ hasText: topic }).first();
   await expect(card.getByText(/^Naranja – Requiere intervención preventiva/).first()).toBeVisible();
   await expect(card.getByRole('link', { name: new RegExp(`D-${stamp}`) }).first()).toBeVisible();

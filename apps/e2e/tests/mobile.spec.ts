@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { SCREENS } from '../../web/src/app/navigation.ts';
+import { DESTINATIONS, SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
@@ -32,6 +32,8 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   page,
   admin,
 }) => {
+  // Every screen and hub is visited at two widths; the loop outgrew the default 60 s as screens were added.
+  test.setTimeout(120_000);
   await page.goto('/login');
   await expectNoHorizontalPageScroll(page);
   const settled = watchNetwork(page);
@@ -45,12 +47,12 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   await expect(page.getByRole('button', { name: 'Salir' })).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Secciones' })).toHaveCount(0);
 
-  // R2: five destinations at the bottom, each at least 44 px square.
+  // R2: four destinations and «Más» at the bottom, each at least 44 px square.
   const bar = page.getByRole('navigation', { name: 'Navegación principal' });
   await expect(bar.getByRole('listitem')).toHaveText([
     'Inicio',
-    'Monitoreo',
-    'Alertas',
+    'Registros',
+    'Bandeja',
     'Territorio',
     'Más',
   ]);
@@ -61,16 +63,16 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
     expect(box?.height).toBeGreaterThanOrEqual(44);
   }
   await expect(bar.getByRole('link', { name: 'Inicio' })).toHaveAttribute('aria-current', 'page');
-  await bar.getByRole('link', { name: 'Alertas' }).tap();
-  await expect(page.getByRole('heading', { level: 1, name: 'Centro de alertas' })).toBeFocused();
-  await expect(bar.getByRole('link', { name: 'Alertas' })).toHaveAttribute('aria-current', 'page');
+  await bar.getByRole('link', { name: 'Bandeja' }).tap();
+  await expect(page.getByRole('heading', { level: 1, name: 'Bandeja' })).toBeFocused();
+  await expect(bar.getByRole('link', { name: 'Bandeja' })).toHaveAttribute('aria-current', 'page');
 
   // R3/R4: "Más" opens a sheet; Escape closes it and focus returns to the tab.
   const more = bar.getByRole('button', { name: 'Más' });
   await more.tap();
   const sheet = page.getByRole('dialog', { name: 'Más secciones' });
   const nav = sheet.getByRole('navigation', { name: 'Secciones' });
-  await expect(nav.getByRole('link', { name: 'Actores' })).toBeFocused();
+  await expect(nav.getByRole('link', { name: 'Análisis' })).toBeFocused();
   await expectAccessible(page, 'the "Más" sheet');
   await page.keyboard.press('Escape');
   await expect(sheet).toBeHidden();
@@ -82,12 +84,10 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   await expect(sheet).toBeHidden();
 
   await more.tap();
-  await nav.getByRole('link', { name: 'Demandas' }).tap();
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Demandas y compromisos' }),
-  ).toBeFocused();
+  await nav.getByRole('link', { name: 'Análisis' }).tap();
+  await expect(page.getByRole('heading', { level: 1, name: 'Análisis' })).toBeFocused();
   await expect(sheet).toBeHidden();
-  await expect(bar.getByRole('button', { name: /^Más.*Demandas/ })).toHaveAttribute(
+  await expect(bar.getByRole('button', { name: /^Más.*Análisis/ })).toHaveAttribute(
     'data-active',
     'true',
   );
@@ -97,6 +97,8 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   const account = page.getByRole('dialog', { name: 'Cuenta' });
   await expect(account.getByText('Notificaciones', { exact: true })).toBeVisible();
   await expect(account.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+  await expect(account.getByRole('link', { name: 'Configuración' })).toBeVisible();
+  await expect(account.getByRole('radio')).toHaveCount(0);
   await expectAccessible(page, 'the account sheet');
   await page.keyboard.press('Escape');
 
@@ -115,6 +117,12 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
       await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
       await settled();
       await expectNoHorizontalPageScroll(page, `${screen.path} at ${width}px`);
+    }
+    for (const hub of DESTINATIONS) {
+      await page.goto(hub.path);
+      await expect(page.getByRole('heading', { level: 1, name: hub.label })).toBeVisible();
+      await settled();
+      await expectNoHorizontalPageScroll(page, `${hub.path} at ${width}px`);
     }
   }
 });
