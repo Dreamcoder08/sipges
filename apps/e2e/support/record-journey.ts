@@ -72,7 +72,7 @@ export const recordJourney = async (
 
   // Search narrows the list to it.
   await page.getByLabel('Buscar registros').fill(stamp);
-  await page.getByRole('button', { name: 'Buscar', exact: true }).click();
+  await page.locator('#contenido').getByRole('button', { name: 'Buscar', exact: true }).click();
   await expect(page.getByRole('button', { name: `Ver ${id}` })).toBeVisible();
 
   // Read, then edit from the card.
