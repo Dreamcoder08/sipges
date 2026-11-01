@@ -166,6 +166,9 @@ export const MCP_TOOLS = [
         input.query,
         input.modules ?? null,
         input.limit,
+        // A hit must be explained by a field that may leave; otherwise it reveals what a dropped
+        // field (a stance, a health note, a complainant) holds.
+        call.egress.allows,
       );
       const summarise = sanitiseSummaries(call.egress, hits);
       // The matching excerpt is a field value too: it passes the same allowlist.
@@ -236,6 +239,9 @@ export const MCP_TOOLS = [
         found.record,
         ...found.neighbours.map((n) => n.other),
       ]);
+      // A restricted record's links say who it touches: only a stub leaves, as in get_record.
+      if (summarise.isWithheld(found.record))
+        return done({ module: input.module, id: input.id, withheld: true });
       return done({
         record: summarise(found.record),
         links: found.neighbours

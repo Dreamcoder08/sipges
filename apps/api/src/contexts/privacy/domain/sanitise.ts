@@ -1,5 +1,5 @@
 /** Records as the egress guard releases them: allowed fields only, names replaced. Pure. */
-import { type FieldPolicy, TITLE_FIELDS, policyFor } from './allowlist.ts';
+import { type FieldPolicy, LIST_SEPARATOR, TITLE_FIELDS, policyFor } from './allowlist.ts';
 import type { Pseudonymiser } from './pseudonyms.ts';
 
 /** A record as the owning context holds it, before the guard looks at it. */
@@ -36,7 +36,6 @@ export type EgressReport = {
   readonly droppedFields: readonly string[];
 };
 
-const LIST_SEPARATOR = /\s*(?:[,;\n/&]|\s+y\s+|\s+e\s+)\s*/iu;
 /** The only markings that may leave; `restringido` and anything unknown never do. */
 const OPEN_MARKINGS: readonly string[] = ['publico', 'interno'];
 

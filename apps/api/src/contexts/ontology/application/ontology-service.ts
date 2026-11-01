@@ -568,6 +568,12 @@ export const createOntologyService = (deps: {
       raw: string,
       slugs: readonly string[] | null,
       limit: number,
+      /**
+       * Only these fields may explain a hit: the excerpt comes from them, and a record found
+       * only through other fields (or only by meaning) is left out, so a hit never reveals
+       * what a field the caller may not see holds.
+       */
+      visibleField?: (slug: string, field: string) => boolean,
     ): Promise<SearchHit[]> {
       const terms = searchTerms(raw);
       const query = toPrefixQuery(terms);
@@ -607,16 +613,17 @@ export const createOntologyService = (deps: {
         const row = rows.get(k);
         const objectType = row && objectTypeForModule(row.module);
         if (!row || !objectType) return [];
-        return [
-          {
-            ...summarize(objectType, row),
-            match: matchExcerpt(row.payload, terms, [
-              objectType.titleField,
-              ...objectType.summaryFields,
-            ]),
-            semantic: semanticKeys.has(k),
-          },
-        ];
+        const payload = visibleField
+          ? Object.fromEntries(
+              Object.entries(row.payload).filter(([field]) => visibleField(objectType.slug, field)),
+            )
+          : row.payload;
+        const match = matchExcerpt(payload, terms, [
+          objectType.titleField,
+          ...objectType.summaryFields,
+        ]);
+        if (visibleField && !match) return [];
+        return [{ ...summarize(objectType, row), match, semantic: semanticKeys.has(k) }];
       });
     },
 

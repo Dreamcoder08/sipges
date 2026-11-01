@@ -292,15 +292,38 @@ export const policyFor = (slug: string, field: string): FieldPolicy | null => {
   return Object.hasOwn(fields, field) ? (fields[field] as FieldPolicy) : null;
 };
 
-/** Where the project's own people and organisations are written, to find them in free text. */
-export const NAME_SOURCES: readonly {
-  readonly module: string;
+/** How a `names` field separates its people: commas, semicolons, slashes, «y»/«e». */
+export const LIST_SEPARATOR = /\s*(?:[,;\n/&]|\s+y\s+|\s+e\s+)\s*/iu;
+
+/** Person fields never sent, but whose names must still be replaced inside free text. */
+const DROPPED_NAME_FIELDS: Readonly<Record<string, PseudonymKind>> = {
+  Remitente: 'Persona',
+};
+
+export type NameSource = {
   readonly field: string;
   readonly entity: PseudonymKind;
-}[] = Object.entries(FIELD_POLICIES).flatMap(([slug, fields]) =>
-  Object.entries(fields).flatMap(([field, policy]) =>
-    policy.kind === 'name' && policy.entity
-      ? [{ module: STORED_MODULES[slug] ?? slug, field, entity: policy.entity }]
-      : [],
-  ),
-);
+  /** The field holds several people, split with `LIST_SEPARATOR`. */
+  readonly list: boolean;
+};
+
+/**
+ * Where the project's own people and organisations are written, to find them in free text. A
+ * person field has the same name in every module, so a source is read in all of them, also in
+ * modules and fields that are never sent: a name stored anywhere in SIPGES is a known name.
+ */
+export const NAME_SOURCES: readonly NameSource[] = [
+  ...new Map<string, NameSource>([
+    ...Object.values(FIELD_POLICIES).flatMap((fields) =>
+      Object.entries(fields).flatMap(([field, policy]): [string, NameSource][] =>
+        (policy.kind === 'name' || policy.kind === 'names') && policy.entity
+          ? [[field, { field, entity: policy.entity, list: policy.kind === 'names' }]]
+          : [],
+      ),
+    ),
+    ...Object.entries(DROPPED_NAME_FIELDS).map(([field, entity]): [string, NameSource] => [
+      field,
+      { field, entity, list: false },
+    ]),
+  ]).values(),
+];

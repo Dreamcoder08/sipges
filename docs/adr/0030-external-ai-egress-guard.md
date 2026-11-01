@@ -47,10 +47,15 @@ One guard, `contexts/privacy`, in front of every egress path.
    `Persona-…`, `Org-…`): HMAC-SHA256 of the kind and the folded name under a key derived from
    `SIPGES_DATA_KEY` and the project, so the same name maps to the same token inside a project and
    to another in a different project. Nothing is stored or returned: the mapping is recomputable
-   only inside SIPGES. Known names of the project (actors, contacts, responsible people, read
+   only inside SIPGES. Known names of the project (every person or organisation field in any
+   module, participant lists split into people, and fields never sent such as `Remitente`, read
    with full clearance) are also replaced inside free text, whatever the case or accents, including
    half a name cut by the ontology's `…`. Emails, phone numbers (Peruvian formats) and DNI (eight
    digits next to the word that names it) become `[correo]`, `[teléfono]`, `[DNI]`.
+   Search over MCP matches only fields that may leave: a record found only through a dropped
+   field (a stance, a health note, a complainant) or only by meaning is not returned, so a hit
+   never reveals what such a field holds. A restricted record asked for by id (`get_record`,
+   `get_links`, `get_briefing`) answers with a `withheld` stub.
 5. **Access log.** Every release writes one row in the append-only audit (module «IA externa»,
    action `EGRESS`): channel, tool or purpose, actor (user name, or API key name and id), record
    ids, fields sent and dropped, characters. Never values. It shows in Auditoría. The log is

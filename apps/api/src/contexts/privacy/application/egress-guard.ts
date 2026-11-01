@@ -1,5 +1,6 @@
 import { currentRequestContext } from '../../../platform/request-context.ts';
 import { log } from '../../../platform/observability/logger.ts';
+import { policyFor } from '../domain/allowlist.ts';
 import { createPseudonymiser } from '../domain/pseudonyms.ts';
 import { type RawRecord, type SanitisedRecord, sanitiseRecords } from '../domain/sanitise.ts';
 import { type SanitisedPayload, sealPayload } from '../domain/sanitised.ts';
@@ -22,6 +23,8 @@ export type EgressRequest = {
 export type EgressSession = {
   /** Keeps allowed fields only, with names replaced by pseudonyms. */
   records(records: readonly RawRecord[]): SanitisedRecord[];
+  /** Whether `field` of module `slug` may be sent at all; matching on any other leaks it. */
+  allows(slug: string, field: string): boolean;
   /** Free text without contact data or any name the project knows. */
   text(value: string): string;
   /** Scrubs every string of `data`, writes the access log and seals the payload (once). */
@@ -139,6 +142,7 @@ export const createEgressGuard = (deps: {
         for (const field of out.report.droppedFields) droppedFields.add(field);
         return out.records;
       },
+      allows: (slug, field) => policyFor(slug, field) !== null,
       text: (value) => pseudonymiser.scrub(value),
       release: async <T>(data: T) => (await finish([data]))[0] as SanitisedPayload<T>,
       releaseMany: finish,
