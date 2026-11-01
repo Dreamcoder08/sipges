@@ -9,11 +9,22 @@ visible choices, no frequency-based priority and a heavy navy panel.
 
 ## Decision
 - **Two navigation shapes from one model.** `app/navigation.ts` stays the single source of
-  screens. Above 60rem the persistent sidebar keeps the four legacy groups in menu order. At
-  60rem and below a bottom bar shows five destinations — Inicio, Monitoreo, Alertas, Territorio,
+  screens. Above 60rem the persistent sidebar is compact (see below). At 60rem and below a bottom bar shows five destinations — Inicio, Monitoreo, Alertas, Territorio,
   Más — and "Más" opens a sheet that groups the remaining screens by intent (Investigar,
   Gestionar, Analizar, Sistema). A unit test proves every screen is reachable exactly once on
   each shape. There is no drawer at any width.
+- **Compact sidebar above 60rem** (`odd/tasks/compact-sidebar.md`, S1–S5). It holds every tool of
+  the shell, so the top bar keeps the project eyebrow and the title only: brand, the project
+  selector, the search composer («Ctrl K») with the notification bell, «Fijados» (Dashboard,
+  Eventos, Alertas, Mapa territorial, Validación), three collapsible sections (Monitoreo, Gestión
+  y alertas, Análisis) and, at the foot, an account row. Only the section that owns the current
+  screen starts open (it also does when the current screen is pinned; a Sistema screen leaves all
+  closed), the person can open or close any, and a pinned screen is never listed again in its
+  section, so the counts match the rows. The Sistema screens, the appearance choice and sign-out
+  live in the account menu (menu button pattern: Enter, Space or arrows open it, arrows, Home and
+  End move, Escape closes and returns focus). The tools are the same components as on phones
+  (`search`, `notifications`, `projectSwitcher` slots), so labels and requests do not change; the
+  phone layout is untouched. Only the navigation scrolls, and at 1440×900 it does not need to.
 - **Context before chrome.** The phone header holds only the project context, search and the
   account avatar; the screen title is the `h1` under it. The project selector, notification
   inbox and sign-out move into sheets. The selector keeps its accessible name ("Proyecto

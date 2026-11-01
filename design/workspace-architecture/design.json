@@ -1,0 +1,35 @@
+{
+  "title": "Arquitectura del espacio de trabajo",
+  "brief": "Cinco destinos (Inicio, Registros, Territorio, Bandeja, Análisis) más una página de Integraciones, con todo lo global en la barra lateral y la barra superior solo con título y acciones de página. Direcciones para Inicio, la lista unificada de Registros, la Bandeja de decisiones y Integraciones.",
+  "feature": "odd/tasks/workspace-architecture.md",
+  "artboards": [
+    {
+      "file": "01-inicio-composer.html",
+      "title": "Inicio con compositor",
+      "tradeoff": "Estilo Claude: «Preguntale a SIPGES» al centro (S5) y un briefing tranquilo debajo. Hace de la consulta con citas la puerta de entrada; a cambio, las decisiones pendientes quedan bajo el compositor y la experiencia depende de que las respuestas citen bien. Absorbe Dashboard y Centro gerencial.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-registros-unificado.html",
+      "title": "Registros unificado",
+      "tradeoff": "Una sola lista con chips de tipo, vistas guardadas y panel lateral con vínculos y auditoría; los siete módulos antiguos pasan a ser filtros. Quita siete pantallas, pero la tabla mezcla tipos con campos distintos: lo específico vive en el panel. Absorbe Eventos, Actores, Directorio, Demandas, Narrativas, Fuentes y Buzón.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "04-bandeja.html",
+      "title": "Bandeja",
+      "tradeoff": "Una bandeja de decisiones con teclado primero (J/K, Enter, A, R) y la regla de cuatro ojos visible en cada ítem. Acelera el trabajo diario; mezcla tareas con reglas distintas, por eso el detalle dice quién propuso y quién puede aprobar. Absorbe Alertas, Validación, Calidad de datos y Situaciones.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "05-integraciones.html",
+      "title": "Integraciones",
+      "tradeoff": "Una página con chips de filtro, no pestañas, y «Tuyos» frente a «Descubrir» con las mismas tarjetas; el detalle de Claude vía MCP exige datos sintéticos hasta aprobar la política (S7). Reduce tres pantallas a una; conectores, skills y programadas tienen ciclos de vida distintos. Absorbe Automatizaciones y las claves MCP y webhooks de Administración.",
+      "width": 1440,
+      "height": 900
+    }
+  ]
+}

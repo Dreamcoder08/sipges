@@ -3,8 +3,12 @@ import {
   MOBILE_TABS,
   MORE_GROUPS,
   NAV_GROUPS,
+  PINNED_PATHS,
   SCREEN_ICONS,
   SCREENS,
+  SIDEBAR_SECTIONS,
+  SYSTEM_PATHS,
+  groupLabelFor,
   projectParts,
   safeRedirect,
   titleFor,
@@ -27,6 +31,37 @@ describe('navigation', () => {
 
   it('groups every screen once, in menu order', () => {
     expect(NAV_GROUPS.flatMap((group) => group.paths)).toEqual(SCREENS.map((s) => s.path));
+  });
+
+  it('pins five screens and lists the rest once, in groups or under Sistema', () => {
+    expect(PINNED_PATHS).toEqual(['/', '/eventos', '/alertas', '/mapa', '/validacion']);
+    expect(SIDEBAR_SECTIONS.map((group) => [group.label, group.paths.length])).toEqual([
+      ['Monitoreo', 4],
+      ['Gestión y alertas', 6],
+      ['Análisis', 6],
+    ]);
+    expect(SYSTEM_PATHS).toEqual([
+      '/administracion',
+      '/automatizaciones',
+      '/metodologia',
+      '/auditoria',
+      '/version-4',
+    ]);
+    const reachable = [
+      ...PINNED_PATHS,
+      ...SIDEBAR_SECTIONS.flatMap((g) => g.paths),
+      ...SYSTEM_PATHS,
+    ];
+    expect(reachable).toHaveLength(SCREENS.length);
+    expect(new Set(reachable)).toEqual(new Set(SCREENS.map((s) => s.path)));
+  });
+
+  it('finds the group that owns a path, pinned or not', () => {
+    expect(groupLabelFor('/eventos')).toBe('Monitoreo');
+    expect(groupLabelFor('/mapa')).toBe('Gestión y alertas');
+    expect(groupLabelFor('/irsa')).toBe('Análisis');
+    expect(groupLabelFor('/auditoria')).toBe('Sistema');
+    expect(groupLabelFor('/objeto/eventos/EV-1')).toBeNull();
   });
 
   it('reaches every screen exactly once from the bottom bar or the "Más" sheet', () => {

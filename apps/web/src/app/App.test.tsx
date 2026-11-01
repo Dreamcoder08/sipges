@@ -107,10 +107,11 @@ describe('sign-in', () => {
     at('/');
     render(<App />);
     const user = userEvent.setup();
+    // Wide screens keep the account in a sidebar menu (docs/adr/0015); phones use the sheet.
     await user.click(await screen.findByRole('button', { name: /^Cuenta de Persona Sintética/ }));
-    const sheet = screen.getByRole('dialog', { name: 'Cuenta' });
-    expect(within(sheet).getByText('Persona Sintética')).toBeVisible();
-    await user.click(within(sheet).getByRole('button', { name: 'Cerrar sesión' }));
+    const menu = screen.getByRole('menu', { name: 'Cuenta' });
+    expect(within(menu).getByText('Persona Sintética')).toBeVisible();
+    await user.click(within(menu).getByRole('menuitem', { name: 'Cerrar sesión' }));
     expect(await screen.findByLabelText('Usuario')).toBeVisible();
     expect(api.requests).toContain('POST /logout');
   });
@@ -201,10 +202,13 @@ describe('dashboard and navigation', () => {
       'page',
     );
     server.use(http.get('/system/audit', () => HttpResponse.json([])));
-    await user.click(within(nav).getByRole('link', { name: 'Auditoría' }));
+    // Sistema screens live in the account menu of the sidebar.
+    await user.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'Auditoría' }));
     const heading = await screen.findByRole('heading', { level: 1, name: 'Auditoría' });
     await waitFor(() => expect(heading).toHaveFocus());
-    expect(within(nav).getByRole('link', { name: 'Auditoría' })).toHaveAttribute(
+    await user.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    expect(screen.getByRole('menuitem', { name: 'Auditoría' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -217,10 +221,13 @@ describe('dashboard and navigation', () => {
     at('/');
     render(<App />);
     const nav = await screen.findByRole('navigation', { name: 'Secciones' });
+    // Only the current section starts open: «Gestión y alertas» holds these three.
+    await userEvent.click(within(nav).getByRole('button', { name: /^Gestión y alertas/ }));
     expect(await within(nav).findByRole('link', { name: 'Situaciones' })).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: 'Buzón' })).toBeInTheDocument();
     expect(within(nav).getByRole('link', { name: 'Lecciones' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Configuración' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    expect(screen.getByRole('menuitem', { name: 'Configuración' })).toBeInTheDocument();
   });
 
   it('offers a skip link and keeps sign-out out of the desktop top bar', async () => {

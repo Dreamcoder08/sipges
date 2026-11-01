@@ -1,0 +1,28 @@
+{
+  "title": "Sidebar compacto",
+  "brief": "hay algo que quiero que corrijas el sidebar se ve muy largo inspirate en el sidebar de chat gpt , claude y mas sorftwart de vanguardia de esta semana , mes de octubre 2026 enfocado en el buen diseño Ui & Ux",
+  "artboards": [
+    {
+      "file": "01-collapsible-focus.html",
+      "title": "Colapsable con foco",
+      "tradeoff": "Estilo Claude/ChatGPT: Fijados siempre a mano y un solo grupo abierto. Cabe en 900 px sin scroll y conserva etiquetas; ver otro grupo cuesta un clic y Sistema queda dentro del menú de cuenta.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "02-rail-flyout.html",
+      "title": "Riel con panel flotante",
+      "tradeoff": "Estilo Linear/Arc: riel de 64 px con 5 áreas y panel de 240 px bajo demanda (hover, clic o fijado). El contenido gana ancho; las pantallas quedan a un gesto de distancia y la agrupación en 5 áreas cambia la actual de 4.",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "03-workspace-command.html",
+      "title": "Espacio de trabajo y comandos",
+      "tradeoff": "Command-first: 6 destinos, recientes y «Más herramientas» con filtro al escribir; Ctrl K es el camino al resto. Sidebar mínima, pero depende de que la gente busque en vez de recorrer.",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "feature": "odd/tasks/compact-sidebar.md"
+}

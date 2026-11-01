@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Interfaz
+
+- Barra lateral compacta en pantallas anchas ([ADR 0015](docs/adr/0015-mobile-first-shell.md)): «Fijados» (Dashboard, Eventos, Alertas, Mapa territorial, Validación) y tres secciones plegables de las que solo se abre la de la pantalla actual, sin repetir pantallas fijadas. La búsqueda (Ctrl K), las notificaciones y el selector de proyecto pasan de la barra superior a la barra lateral; las pantallas de Sistema, el tema y «Cerrar sesión» quedan en el menú de la cuenta, al pie. En el teléfono no cambia nada.
+
 ### Plataforma
 
 - Cloudflare Workers (Hyperdrive + Neon, R2) es el único host de SIPGES: se elimina el adaptador `apps/hosting` y las dependencias `@vercel/*`, y la documentación vigente deja de describir la demo de Vercel como publicada ([ADR 0029](docs/adr/0029-retire-vercel-host.md)). El endpoint HTTP de cron y `SIPGES_CRON_SECRET`/`CRON_SECRET` no cambian. La base `neondb` de la demo anterior se conserva en Neon como respaldo, sin migrar datos.

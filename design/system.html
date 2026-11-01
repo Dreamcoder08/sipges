@@ -1,0 +1,665 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sistema de diseño SIPGES | design sync</title>
+<style>
+:root {
+  color-scheme: light;
+  --color-brand: #17365d;
+  --color-brand-strong: #0f2541;
+  --color-brand-text: #17365d;
+  --color-on-brand: #ffffff;
+  --color-primary: #0d0d0d;
+  --color-primary-hover: #333333;
+  --color-on-primary: #ffffff;
+  --color-text: #0d0d0d;
+  --color-muted: #5d5d5d;
+  --color-subtle: #6b6b6b;
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9f9f9;
+  --color-surface-raised: #ffffff;
+  --color-sidebar: #f9f9f9;
+  --color-border: #e3e3e3;
+  --color-track: #ececec;
+  --color-focus: #0b62d6;
+  --color-accent: #0b62d6;
+  --color-accent-tint: #e8f0fd;
+  --color-accent-text: #0a4aa3;
+  --color-fill: #f4f4f4;
+  --color-fill-hover: #ececec;
+  --color-hairline: #ececec;
+  --color-hairline-strong: #d9d9d9;
+  --color-scrim: rgb(0 0 0 / 0.35);
+  --color-chrome: rgb(255 255 255 / 0.85);
+  --color-scrollbar: rgb(0 0 0 / 0.18);
+  --color-scrollbar-hover: rgb(0 0 0 / 0.32);
+  --color-danger: #c53030;
+  --color-danger-strong: #8a1f1f;
+  --color-danger-soft: #fdecec;
+  --color-info: #2b6cb0;
+  --color-info-soft: #e8f1fb;
+  --color-success: #2f855a;
+  --color-success-soft: #e6f5ec;
+  --tone-positive-bg: #d7ebdf;
+  --tone-positive-fg: #195238;
+  --tone-positive-solid: #247b55;
+  --tone-negative-bg: #f7dde0;
+  --tone-negative-fg: #832434;
+  --tone-negative-solid: #b03546;
+  --tone-info-bg: #dce7f6;
+  --tone-info-fg: #244e86;
+  --tone-info-solid: #3567aa;
+  --tone-warning-bg: #f8ebc6;
+  --tone-warning-fg: #6d4c0b;
+  --tone-warning-solid: #8a6115;
+  --tone-neutral-bg: #e9edf3;
+  --tone-neutral-fg: #485265;
+  --tone-neutral-solid: #68758b;
+  --tone-on-solid: #ffffff;
+  --color-on-strong: #ffffff;
+  --level-green: #2f855a;
+  --level-yellow: #d69e2e;
+  --level-orange: #dd6b20;
+  --level-red: #c53030;
+  --level-green-soft: #e6f5ec;
+  --level-yellow-soft: #fdf6e3;
+  --level-orange-soft: #fdeee2;
+  --level-red-soft: #fdecec;
+  --level-green-text: #1f5c3e;
+  --level-yellow-text: #7a5410;
+  --level-orange-text: #8a3f0d;
+  --level-red-text: #8a1f1f;
+  --heat-green: #6fc28f;
+  --heat-green-on: #0d3520;
+  --heat-yellow: #f6d55c;
+  --heat-yellow-on: #3d2e05;
+  --heat-orange: #f4a259;
+  --heat-orange-on: #3d1a05;
+  --heat-red: #c4343d;
+  --heat-red-on: #ffffff;
+  --dim-g: #2b6cb0;
+  --dim-a: #6b46c1;
+  --dim-d: #b7791f;
+  --dim-n: #c05621;
+  --dim-e: #2f855a;
+  --dim-i: #4a5568;
+  --trend-e: #2f9e44;
+  --trend-g: #6741d9;
+  --trend-d: #f08c00;
+  --trend-a: #1c7ed6;
+  --trend-n: #d6336c;
+  --trend-i: #495057;
+  --viz-1: #2b6cb0;
+  --viz-2: #2f855a;
+  --viz-3: #dd6b20;
+  --viz-4: #805ad5;
+  --viz-5: #c53030;
+  --viz-6: #d69e2e;
+  --viz-7: #319795;
+  --viz-8: #5b6673;
+  --ink-strong: #14243a;
+  --ink: #1d2b3f;
+  --ink-soft: #5b6b84;
+  --ink-faint: #68758b;
+  --canvas: #fcfcfc;
+  --canvas-node: #f4f4f4;
+  --canvas-halo: #ffffff;
+  --map-bg: #e9eef3;
+  --map-sea: #d6e8f3;
+  --map-land: #f6f3ea;
+  --map-line: #9aa8b4;
+  --map-label-sea: #335a73;
+  --map-label-area: #8a7d5c;
+  --map-ink: #243b53;
+  --map-text: #17212b;
+  --map-halo: rgb(255 255 255 / 0.85);
+  --map-point: #ffffff;
+  --map-concession: #669bb5;
+  --map-selected: #e6b54a;
+  --map-alert: #c34040;
+  --map-heat-1: #fde7c4;
+  --map-heat-2: #f8c27a;
+  --map-heat-3: #ee8f44;
+  --map-heat-4: #cf5a2a;
+  --map-outline-selected: #0f2541;
+  --map-district-line: #17365d;
+  --map-point-halo: #ffffff;
+  --map-relief-1: #eef0e2;
+  --map-relief-2: #d6e2b8;
+  --map-relief-3: #e3d39c;
+  --map-relief-4: #c9a477;
+  --map-relief-5: #94714f;
+  --map-filter-streets: none;
+  --map-filter-satellite: none;
+  --map-cadastre-1: #2f5fd0;
+  --map-cadastre-2: #3a9d3a;
+  --map-cadastre-3: #222222;
+  --map-outline-imagery: #fffaf0;
+  --map-marker-on: #ffffff;
+  --map-marker-active: #17212b;
+  --map-concession-fill: rgb(23 54 93 / 0.08);
+  --map-concession-fill-active: rgb(23 54 93 / 0.28);
+  --map-concession-fill-focus: rgb(43 108 176 / 0.3);
+  --space-0: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+  --text-2xs: 0.625rem;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-body: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.625rem);
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+  --tracking-caps: 0.06em;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.35rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.18);
+  --shadow-raised: 0 -1px 0 rgb(0 0 0 / 0.03), 0 16px 48px rgb(0 0 0 / 0.16);
+  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.12);
+  --shadow-composer: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 12px rgb(0 0 0 / 0.06);
+  --motion-fast: 120ms;
+  --motion-medium: 220ms;
+  --motion-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --control-sm: 2rem;
+  --control-md: 2.5rem;
+  --touch-target: 2.75rem;
+  --focus-ring: 3px solid var(--color-focus);
+  --z-sticky: 20;
+  --z-tabbar: 25;
+  --z-popover: 40;
+  --z-modal: 60;
+  --z-skip: 70;
+  --tabbar-height: 4rem;
+  --sidebar-width: 15.5rem;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-brand: #2f6bd6;
+  --color-brand-strong: #2559b8;
+  --color-brand-text: #9cc0ff;
+  --color-on-brand: #ffffff;
+  --color-primary: #f4f4f5;
+  --color-primary-hover: #d4d4d8;
+  --color-on-primary: #0d0d0d;
+  --color-text: #ececec;
+  --color-muted: #a3a3a3;
+  --color-subtle: #8f8f8f;
+  --color-bg: #000000;
+  --color-surface: #0c0c0d;
+  --color-surface-alt: #111113;
+  --color-surface-raised: #161618;
+  --color-sidebar: #000000;
+  --color-border: #2a2a2d;
+  --color-track: #232326;
+  --color-focus: #7cacf8;
+  --color-accent: #7cacf8;
+  --color-accent-tint: rgb(124 172 248 / 0.16);
+  --color-accent-text: #b5d0ff;
+  --color-fill: #161618;
+  --color-fill-hover: #1f1f22;
+  --color-hairline: #1c1c1f;
+  --color-hairline-strong: #323236;
+  --color-scrim: rgb(0 0 0 / 0.7);
+  --color-chrome: rgb(0 0 0 / 0.78);
+  --color-scrollbar: rgb(255 255 255 / 0.16);
+  --color-scrollbar-hover: rgb(255 255 255 / 0.3);
+  --color-danger: #f07178;
+  --color-danger-strong: #ffb4b8;
+  --color-danger-soft: rgb(240 113 120 / 0.14);
+  --color-info: #7cacf8;
+  --color-info-soft: rgb(124 172 248 / 0.14);
+  --color-success: #5fd39a;
+  --color-success-soft: rgb(95 211 154 / 0.14);
+  --tone-positive-bg: rgb(95 211 154 / 0.16);
+  --tone-positive-fg: #9ee6c0;
+  --tone-positive-solid: #3fae7a;
+  --tone-negative-bg: rgb(240 113 120 / 0.16);
+  --tone-negative-fg: #ffb4b8;
+  --tone-negative-solid: #e0606a;
+  --tone-info-bg: rgb(124 172 248 / 0.16);
+  --tone-info-fg: #b5d0ff;
+  --tone-info-solid: #5f93e6;
+  --tone-warning-bg: rgb(240 190 90 / 0.16);
+  --tone-warning-fg: #f3d58f;
+  --tone-warning-solid: #c99a3a;
+  --tone-neutral-bg: rgb(163 163 163 / 0.14);
+  --tone-neutral-fg: #d4d4d4;
+  --tone-neutral-solid: #8f8f8f;
+  --tone-on-solid: #000000;
+  --level-green-soft: rgb(95 211 154 / 0.16);
+  --level-yellow-soft: rgb(240 190 90 / 0.16);
+  --level-orange-soft: rgb(240 150 90 / 0.16);
+  --level-red-soft: rgb(240 113 120 / 0.16);
+  --level-green-text: #9ee6c0;
+  --level-yellow-text: #f3d58f;
+  --level-orange-text: #f8c29a;
+  --level-red-text: #ffb4b8;
+  --viz-8: #8f8f8f;
+  --trend-i: #a3a3a3;
+  --ink-strong: #ececec;
+  --ink: #d4d4d4;
+  --ink-soft: #8f8f8f;
+  --ink-faint: #7a7a7a;
+  --canvas: #050505;
+  --canvas-node: #161618;
+  --canvas-halo: #000000;
+  --map-bg: #0b0d10;
+  --map-sea: #0d1822;
+  --map-land: #16181b;
+  --map-line: #3d4652;
+  --map-label-sea: #7fa3bd;
+  --map-label-area: #ab9f80;
+  --map-ink: #c9d4df;
+  --map-text: #ececec;
+  --map-halo: rgb(0 0 0 / 0.8);
+  --map-point: #16181b;
+  --map-concession: #4f8db0;
+  --map-selected: #e6b54a;
+  --map-alert: #f07178;
+  --map-heat-1: #3a2a14;
+  --map-heat-2: #6b4518;
+  --map-heat-3: #a35a22;
+  --map-heat-4: #d0612c;
+  --map-outline-selected: #ffffff;
+  --map-district-line: #c9d4df;
+  --map-point-halo: #000000;
+  --map-relief-1: #14211a;
+  --map-relief-2: #27402c;
+  --map-relief-3: #4a4a2c;
+  --map-relief-4: #5e4630;
+  --map-relief-5: #7a5c44;
+  --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+  --map-filter-satellite: brightness(0.8) saturate(0.9);
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+  --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+  --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+
+
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+html { font-family: var(--font-sans); color: var(--color-text); background: var(--color-bg); line-height: var(--leading-normal); -webkit-font-smoothing: antialiased; text-size-adjust: 100%; scrollbar-color: var(--color-scrollbar) transparent; }
+* { scrollbar-width: thin; }
+body { margin: 0; background: var(--color-bg); }
+h1, h2, h3, h4 { text-wrap: balance; }
+p { text-wrap: pretty; }
+table, time { font-variant-numeric: tabular-nums; }
+kbd, code { font-family: var(--font-mono); }
+::selection { background: var(--color-accent-tint); color: var(--color-accent-text); }
+input, select { max-width: 100%; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: inherit; }
+input::placeholder { color: var(--color-subtle); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ic { width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.skip { position: absolute; left: var(--space-2); top: -3rem; z-index: var(--z-skip); padding: var(--space-2) var(--space-3); background: var(--color-surface); border-radius: var(--radius-md); }
+.skip:focus { top: var(--space-2); }
+
+/* shell frame */
+.app { height: 100vh; min-height: 0; }
+.body { min-width: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.main { padding: var(--space-6); min-width: 0; }
+.main:focus { outline: none; }
+
+/* brand (AppShell.module.css .brand/.mark) */
+.mark { flex: none; width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-on-primary); font-weight: 800; font-size: var(--text-sm); }
+.brand { display: flex; gap: var(--space-3); align-items: center; }
+.brand span:last-child { display: grid; line-height: 1.2; }
+.brand b { font-size: var(--text-md); letter-spacing: 0.02em; }
+.brand small { color: var(--color-muted); font-size: var(--text-xs); }
+
+/* sidebar link (AppShell.module.css .link) */
+.link { position: relative; display: flex; align-items: center; gap: var(--space-3); min-height: 2.25rem; padding: 0.375rem var(--space-3); border-radius: var(--radius-md); color: var(--color-muted); text-decoration: none; font-size: var(--text-sm); font-weight: 500; transition: background var(--motion-fast) ease, color var(--motion-fast) ease; }
+.link .ic { font-size: var(--text-lg); }
+.link .text { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link[aria-current='page'] { background: var(--color-fill-hover); color: var(--color-text); font-weight: var(--weight-semibold); }
+.link[aria-current='page'] .ic { color: var(--color-text); }
+@media (hover: hover) { .link:not([aria-current]):hover { background: var(--color-fill); color: var(--color-text); } }
+ul.list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.groupLabel { margin: 0 0 var(--space-1); padding: 0 var(--space-3); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+
+/* top bar (AppShell.module.css .topbar/.heading/.tools) */
+.topbar { position: sticky; top: 0; z-index: var(--z-sticky); display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-6); background: var(--color-chrome); backdrop-filter: saturate(1.6) blur(14px); border-bottom: 1px solid var(--color-hairline); }
+.heading { flex: 1; min-width: 12rem; }
+.heading h1 { margin: 0; font-size: var(--text-xl); font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; }
+.heading h1:focus { outline: none; }
+.eyebrow { margin: 0 0 0.125rem; font-size: var(--text-xs); letter-spacing: 0.04em; color: var(--color-muted); font-weight: 600; }
+.tools { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+/* search composer (SearchPalette.module.css .trigger) */
+.composer { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 13rem; height: 2.5rem; padding: 0 var(--space-2) 0 var(--space-4); border: 0; border-radius: var(--radius-pill); background: var(--color-surface-raised); box-shadow: var(--shadow-composer); color: var(--color-muted); font-size: var(--text-sm); cursor: pointer; transition: background var(--motion-fast) ease; }
+.composer:hover { background: var(--color-fill-hover); }
+.composer .ic { font-size: var(--text-lg); }
+.composer .label { flex: 1; text-align: left; }
+kbd { font: inherit; font-family: var(--font-mono); font-size: var(--text-xs); padding: 0.1rem 0.4rem; border: 1px solid var(--color-hairline-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-muted); }
+/* bell (NotificationBell.module.css) */
+.bell { position: relative; display: inline-grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--color-muted); font-size: var(--text-xl); cursor: pointer; transition: background var(--motion-fast) ease; }
+.bell:hover { background: var(--color-fill); color: var(--color-text); }
+.bell .badge { position: absolute; top: -0.1rem; right: -0.15rem; min-width: 1.2rem; padding: 0 0.3rem; border-radius: 999px; background: var(--level-red); color: var(--color-on-strong); font-size: var(--text-xs); font-weight: 700; line-height: 1.2rem; box-shadow: 0 0 0 2px var(--color-surface); text-align: center; }
+/* project picker (ProjectSwitcher.module.css) */
+.switcher { display: grid; gap: 0.15rem; font-size: var(--text-sm); }
+.switcher label { color: var(--color-muted); font-weight: 600; font-size: var(--text-xs); letter-spacing: 0.02em; }
+.switcher select { min-width: 12rem; border-color: var(--color-hairline); }
+/* account (AccountMenu.module.css) */
+.account-trigger { display: flex; align-items: center; gap: var(--space-2); min-height: 2.75rem; padding: 0.125rem; padding-right: var(--space-3); border: 0; border-radius: var(--radius-pill); background: transparent; text-align: left; cursor: pointer; transition: background var(--motion-fast) ease; }
+.account-trigger:hover, .account-trigger[aria-expanded='true'] { background: var(--color-fill); }
+.avatar { flex: none; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border-radius: 50%; background: var(--color-accent-tint); color: var(--color-accent-text); font-weight: 700; font-size: var(--text-sm); letter-spacing: 0.02em; }
+.avatar.large { width: 3rem; height: 3rem; font-size: var(--text-md); }
+.copy { display: grid; line-height: 1.2; font-size: var(--text-sm); min-width: 0; }
+.copy b { font-weight: var(--weight-semibold); }
+.copy span { color: var(--color-muted); font-size: var(--text-xs); }
+.menu-root { position: relative; }
+
+/* popover menu (sheet/panel look: raised surface, hairline, shadow) */
+.menu { position: absolute; z-index: var(--z-popover); min-width: 16rem; padding: var(--space-2); background: var(--color-surface-raised); border: 1px solid var(--color-hairline); border-radius: var(--radius-lg); box-shadow: var(--shadow-raised); animation: pop var(--motion-medium) var(--ease-out); }
+.menu.down { top: calc(100% + var(--space-2)); right: 0; }
+.menu.up { bottom: calc(100% + var(--space-2)); left: 0; right: 0; min-width: 0; }
+.menu-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-2) var(--space-3); }
+.who { display: grid; gap: 0.125rem; min-width: 0; }
+.who b { font-size: var(--text-md); }
+.who span { color: var(--color-muted); font-size: var(--text-xs); }
+.menu hr { margin: var(--space-2) 0; border: 0; border-top: 1px solid var(--color-hairline); }
+.menu-label { margin: var(--space-1) 0 var(--space-1); padding: 0 var(--space-3); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+.menu-item { display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: 2.25rem; padding: 0.375rem var(--space-3); border: 0; border-radius: var(--radius-md); background: transparent; color: var(--color-text); text-decoration: none; text-align: left; font-size: var(--text-sm); font-weight: 500; cursor: pointer; }
+.menu-item .ic { font-size: var(--text-lg); color: var(--color-muted); }
+.menu-item:hover, .menu-item:focus-visible { background: var(--color-fill); }
+.menu-item:focus-visible { outline-offset: -3px; }
+.menu-item[aria-current='page'] { background: var(--color-fill-hover); font-weight: var(--weight-semibold); }
+.menu-item.danger, .menu-item.danger .ic { color: var(--color-danger); }
+.menu-item.danger:hover { background: var(--color-danger-soft); }
+.dot-slot { flex: none; width: 1.125rem; height: 1.125rem; display: grid; place-items: center; }
+[aria-checked='true'] > .dot-slot::before { content: ''; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--color-primary); }
+@keyframes pop { from { opacity: 0; transform: translateY(-0.25rem); } }
+
+/* buttons (Button.module.css) */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--control-md); padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill); border: 1px solid transparent; font-size: var(--text-base); font-weight: var(--weight-semibold); line-height: var(--leading-tight); text-align: center; cursor: pointer; transition: background var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out), color var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out); }
+.btn .ic { font-size: 1.125em; }
+.btn:active { transform: scale(0.98); }
+.btn.sm { min-height: var(--control-sm); padding: var(--space-1) var(--space-3); font-size: var(--text-sm); }
+.btn.primary { background: var(--color-primary); color: var(--color-on-primary); }
+.btn.primary:hover { background: var(--color-primary-hover); }
+.btn.secondary { background: var(--color-surface); border-color: var(--color-hairline-strong); color: var(--color-text); }
+.btn.secondary:hover { background: var(--color-fill); }
+.btn.secondary[aria-pressed='true'] { background: var(--color-primary); border-color: var(--color-primary); color: var(--color-on-primary); }
+.btn .n { font-weight: var(--weight-regular); opacity: 0.8; font-variant-numeric: tabular-nums; }
+
+/* page: Eventos (Records.module.css) */
+.page { display: grid; gap: var(--space-4); min-width: 0; }
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); }
+.lede { margin: 0; color: var(--color-muted); font-size: var(--text-base); max-width: 40rem; }
+.muted { color: var(--color-muted); font-size: var(--text-base); }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.toolbar .field { flex: 0 1 20rem; min-width: min(16rem, 100%); }
+.toolbar input { width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.tableWrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.table { width: 100%; border-collapse: collapse; font-size: var(--text-base); }
+.table th { text-align: left; background: var(--color-brand-strong); color: var(--color-on-brand); font-weight: 600; }
+.table th, .table td { padding: var(--space-3); border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+.table td.what { max-width: 24rem; overflow-wrap: anywhere; }
+.table td.compact { white-space: nowrap; }
+.table tr:last-child td { border-bottom: 0; }
+.pill { display: inline-block; padding: var(--space-0) var(--space-3); border-radius: var(--radius-pill); font-weight: var(--weight-bold); font-size: var(--text-sm); line-height: var(--leading-snug); white-space: nowrap; }
+.pill[data-tone='positive'] { background: var(--tone-positive-bg); color: var(--tone-positive-fg); }
+.pill[data-tone='warning'] { background: var(--tone-warning-bg); color: var(--tone-warning-fg); }
+.pill[data-tone='info'] { background: var(--tone-info-bg); color: var(--tone-info-fg); }
+.pill[data-tone='negative'] { background: var(--tone-negative-bg); color: var(--tone-negative-fg); }
+.pill[data-tone='neutral'] { background: var(--tone-neutral-bg); color: var(--tone-neutral-fg); }
+.dim { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: var(--radius-sm); color: var(--color-on-strong); font-weight: var(--weight-heavy); font-size: var(--text-sm); text-decoration: none; }
+.dim.G { background: var(--dim-g); } .dim.A { background: var(--dim-a); } .dim.D { background: var(--dim-d); } .dim.N { background: var(--dim-n); } .dim.E { background: var(--dim-e); } .dim.I { background: var(--dim-i); }
+.stub { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-6); border: 1px solid var(--color-hairline); border-radius: var(--radius-xl); background: var(--color-surface); max-width: 36rem; }
+.stub-title { margin: 0; font-size: var(--text-xl); letter-spacing: var(--tracking-tight); }
+.eyebrow-caps { margin: 0; font-size: var(--text-xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-muted); font-weight: var(--weight-semibold); }
+
+/* palette (SearchPalette.module.css) */
+.palette-layer { position: fixed; inset: 0; z-index: var(--z-modal); }
+.scrim { position: absolute; inset: 0; background: var(--color-scrim); }
+.p-dialog { position: absolute; top: 10vh; left: 50%; transform: translateX(-50%); width: min(40rem, calc(100% - 2 * var(--space-4))); max-height: 75vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: var(--radius-xl); box-shadow: var(--shadow-raised); overflow: hidden; animation: pop var(--motion-medium) var(--ease-out); }
+.p-input { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4); border-bottom: 1px solid var(--color-border); font-size: var(--text-xl); color: var(--color-muted); }
+.p-input input { flex: 1; min-width: 0; border: 0; border-radius: 0; background: transparent; padding: var(--space-4) 0; font-size: var(--text-lg); }
+.p-input input:focus-visible { outline: none; }
+#p-list { overflow-y: auto; padding: var(--space-2); }
+.p-group { margin: 0; padding: var(--space-2) var(--space-3) var(--space-1); font-size: var(--text-xs); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-muted); }
+.p-opt { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); font-size: var(--text-base); cursor: pointer; }
+.p-opt .ic { font-size: var(--text-lg); color: var(--color-muted); }
+.p-opt .meta { margin-left: auto; font-size: var(--text-xs); color: var(--color-muted); }
+.p-opt[aria-selected='true'] { background: var(--color-accent-tint); }
+.p-empty { margin: 0; padding: var(--space-6) var(--space-4); text-align: center; color: var(--color-muted); font-size: var(--text-sm); }
+.p-foot { display: flex; gap: var(--space-4); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-hairline); font-size: var(--text-xs); color: var(--color-muted); background: var(--color-surface-alt); }
+.p-foot kbd { margin-right: 0.15rem; }
+
+/* annotation chrome (not product UI) */
+.note { position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: var(--z-skip); width: min(22rem, calc(100% - 2 * var(--space-4))); display: grid; gap: var(--space-3); padding: var(--space-4); background: var(--color-surface-raised); border: 1px solid var(--color-hairline-strong); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); font-size: var(--text-sm); }
+.note-kicker { margin: 0 0 var(--space-1); font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-muted); }
+.note-text { margin: 0; color: var(--color-text); line-height: var(--leading-snug); }
+.note-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.seg { display: grid; grid-auto-flow: column; gap: var(--space-0); padding: var(--space-0); border-radius: var(--radius-md); background: var(--color-fill); }
+.seg button { min-height: var(--control-sm); padding: 0 var(--space-3); border: 0; border-radius: calc(var(--radius-md) - var(--space-0)); background: transparent; color: var(--color-muted); font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; }
+.seg button[aria-pressed='true'] { background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-chip); }
+.note-toggle { border: 0; background: none; color: var(--color-brand-text); font-size: var(--text-sm); cursor: pointer; text-decoration: underline; text-underline-offset: 0.18em; }
+.note .btn { width: 100%; margin-top: var(--space-3); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+body { width: 1440px; margin: 0 auto; padding: var(--space-8); }
+.wrap { display: grid; gap: var(--space-10); }
+.hd { display: flex; align-items: end; justify-content: space-between; gap: var(--space-4); }
+.hd h1 { margin: 0; font-size: var(--text-2xl); letter-spacing: var(--tracking-tight); }
+.hd p { margin: var(--space-1) 0 0; color: var(--color-muted); font-size: var(--text-sm); max-width: 48rem; }
+.sec > h2 { margin: 0 0 var(--space-4); padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-hairline); font-size: var(--text-lg); letter-spacing: var(--tracking-tight); }
+.sec > h2 small, .blk h3 small { color: var(--color-muted); font-weight: var(--weight-regular); font-size: var(--text-sm); margin-left: var(--space-2); }
+.src { margin: 0 0 var(--space-3); font-size: var(--text-xs); color: var(--color-muted); font-family: var(--font-mono); }
+.blk { margin-bottom: var(--space-5); }
+.blk h3 { margin: 0 0 var(--space-3); font-size: var(--text-md); }
+.swgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); }
+.sw { display: grid; grid-template-columns: 2.5rem 1fr; grid-template-rows: auto auto; column-gap: var(--space-3); align-items: center; min-width: 0; }
+.sw .chip { grid-row: 1 / 3; width: 2.5rem; height: 2.5rem; border-radius: var(--radius-md); border: 1px solid var(--color-hairline-strong); }
+.sw-n { font-family: var(--font-mono); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sw-v { font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-8); }
+.type-row { display: grid; grid-template-columns: 9rem 6rem 1fr; align-items: baseline; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--color-hairline); }
+.type-row code { font-size: var(--text-xs); color: var(--color-muted); }
+.sp-row { display: grid; grid-template-columns: 6rem 4rem 1fr; align-items: center; gap: var(--space-3); padding: var(--space-1) 0; font-size: var(--text-xs); }
+.sp-bar { height: 0.75rem; background: var(--color-primary); border-radius: var(--radius-xs); }
+.boxes { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.box { width: 8.5rem; height: 5rem; display: grid; place-items: center; background: var(--color-surface-raised); border: 1px solid var(--color-hairline); font-size: var(--text-xs); text-align: center; padding: var(--space-2); }
+.motion { display: grid; gap: var(--space-2); }
+.m-row { display: grid; grid-template-columns: 10rem 1fr; align-items: center; gap: var(--space-3); font-size: var(--text-xs); }
+.m-track { position: relative; height: 1.5rem; background: var(--color-fill); border-radius: var(--radius-pill); }
+.m-dot { position: absolute; left: var(--space-1); top: var(--space-1); width: 1rem; height: 1rem; border-radius: 50%; background: var(--color-primary); }
+.demo { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--color-hairline); border-radius: var(--radius-lg); background: var(--color-surface); }
+.stack { display: grid; gap: var(--space-4); }
+.lbl { margin: 0 0 var(--space-2); font-size: var(--text-xs); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-muted); }
+.frame { border: 1px solid var(--color-hairline); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-bg); }
+.frame .topbar { position: static; }
+.states { width: 15.5rem; padding: var(--space-3); background: var(--color-sidebar); border-radius: var(--radius-md); border: 1px solid var(--color-hairline); display: grid; gap: var(--space-1); }
+.link.is-hover { background: var(--color-fill); color: var(--color-text); }
+.cur-sb { width: var(--sidebar-width); height: 56.25rem; overflow-y: auto; padding: var(--space-4) var(--space-3) var(--space-6); background: var(--color-sidebar); border: 1px solid var(--color-hairline); border-radius: var(--radius-md); }
+.cur-sb .brand { padding: var(--space-2) var(--space-2) var(--space-5); }
+.cur-nav { display: grid; gap: var(--space-5); }
+.layout { display: grid; grid-template-columns: var(--sidebar-width) 1fr; gap: var(--space-6); align-items: start; }
+.seg-demo { width: 20rem; }
+.seg-demo .seg { width: 100%; grid-auto-columns: 1fr; }
+.menu.static { position: static; width: 18rem; animation: none; }
+.card { display: grid; gap: var(--space-3); padding: var(--space-5); border-radius: var(--radius-xl); background: var(--color-surface); border: 1px solid var(--color-hairline); width: 20rem; }
+.card .eb { margin: 0; font-size: var(--text-xs); letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--color-muted); font-weight: var(--weight-semibold); }
+.card .tt { margin: 0; font-size: var(--text-lg); font-weight: var(--weight-semibold); letter-spacing: var(--tracking-tight); line-height: var(--leading-tight); }
+.icons { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: var(--space-3); }
+.icons div { display: grid; justify-items: center; gap: var(--space-1); font-size: var(--text-xs); color: var(--color-muted); }
+.icons .ic { font-size: var(--text-xl); color: var(--color-text); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol><symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></symbol><symbol id="i-grid" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol><symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5zM4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M9 3h6v4H9zM9 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3M9 14l2 2 4-4"/></symbol><symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol><symbol id="i-network" viewBox="0 0 24 24"><path d="M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></symbol><symbol id="i-gauge" viewBox="0 0 24 24"><path d="M12 14l4-4M3.34 19a10 10 0 1 1 17.32 0"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 6v6l4 2"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/></symbol><symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7zM3 7l9 5 9-5M12 12v10"/></symbol><symbol id="i-compass" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M16.2 7.8l-2.1 6.3-6.3 2.1 2.1-6.3z"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4"/></symbol><symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></symbol><symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></symbol><symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol><symbol id="i-bookOpen" viewBox="0 0 24 24"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2zM22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></symbol><symbol id="i-chevronRight" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></symbol><symbol id="i-chevronDown" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol><symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol><symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><path d="M3 21h18M5 21v-9M10 21v-9M14 21v-9M19 21v-9M2 10l10-7 10 7z"/></symbol><symbol id="i-briefcase" viewBox="0 0 24 24"><path d="M3 7h18v13H3zM9 7V4h6v3M3 13h18"/></symbol></defs></svg>
+<div class="wrap">
+  <header class="hd">
+    <div>
+      <h1>Sistema de diseño SIPGES</h1>
+      <p>Sincronizado de solo lectura desde apps/web/src/app/styles/tokens.css, apps/web/src/app/layout/AppShell.module.css, apps/web/src/shared/ui/ y apps/web/src/app/navigation.ts. 197 tokens claros en 12 grupos; 102 se redefinen en oscuro. Detalle y rutas fuente en design/system.md.</p>
+    </div>
+    <div class="seg" role="group" aria-label="Tema"><button type="button" data-theme-set="light" aria-pressed="true">Claro</button><button type="button" data-theme-set="dark" aria-pressed="false">Oscuro</button></div>
+  </header>
+
+  <section class="sec" aria-labelledby="s-colors"><h2 id="s-colors">Colores <small>136 tokens</small></h2>
+    <p class="src">apps/web/src/app/styles/tokens.css · :root / :root[data-theme='dark']</p>
+    <section class="blk" aria-labelledby="c-Brandandtext"><h3 id="c-Brandandtext">Brand and text <small>10</small></h3><div class="swgrid"><div class="sw"><span class="chip" style="background:var(--color-brand)"></span><span class="sw-n">--color-brand</span><span class="sw-v">#17365d · dark #2f6bd6</span></div><div class="sw"><span class="chip" style="background:var(--color-brand-strong)"></span><span class="sw-n">--color-brand-strong</span><span class="sw-v">#0f2541 · dark #2559b8</span></div><div class="sw"><span class="chip" style="background:var(--color-brand-text)"></span><span class="sw-n">--color-brand-text</span><span class="sw-v">#17365d · dark #9cc0ff</span></div><div class="sw"><span class="chip" style="background:var(--color-on-brand)"></span><span class="sw-n">--color-on-brand</span><span class="sw-v">#ffffff · dark #ffffff</span></div><div class="sw"><span class="chip" style="background:var(--color-primary)"></span><span class="sw-n">--color-primary</span><span class="sw-v">#0d0d0d · dark #f4f4f5</span></div><div class="sw"><span class="chip" style="background:var(--color-primary-hover)"></span><span class="sw-n">--color-primary-hover</span><span class="sw-v">#333333 · dark #d4d4d8</span></div><div class="sw"><span class="chip" style="background:var(--color-on-primary)"></span><span class="sw-n">--color-on-primary</span><span class="sw-v">#ffffff · dark #0d0d0d</span></div><div class="sw"><span class="chip" style="background:var(--color-text)"></span><span class="sw-n">--color-text</span><span class="sw-v">#0d0d0d · dark #ececec</span></div><div class="sw"><span class="chip" style="background:var(--color-muted)"></span><span class="sw-n">--color-muted</span><span class="sw-v">#5d5d5d · dark #a3a3a3</span></div><div class="sw"><span class="chip" style="background:var(--color-subtle)"></span><span class="sw-n">--color-subtle</span><span class="sw-v">#6b6b6b · dark #8f8f8f</span></div></div></section><section class="blk" aria-labelledby="c-Surfaces"><h3 id="c-Surfaces">Surfaces <small>19</small></h3><div class="swgrid"><div class="sw"><span class="chip" style="background:var(--color-bg)"></span><span class="sw-n">--color-bg</span><span class="sw-v">#ffffff · dark #000000</span></div><div class="sw"><span class="chip" style="background:var(--color-surface)"></span><span class="sw-n">--color-surface</span><span class="sw-v">#ffffff · dark #0c0c0d</span></div><div class="sw"><span class="chip" style="background:var(--color-surface-alt)"></span><span class="sw-n">--color-surface-alt</span><span class="sw-v">#f9f9f9 · dark #111113</span></div><div class="sw"><span class="chip" style="background:var(--color-surface-raised)"></span><span class="sw-n">--color-surface-raised</span><span class="sw-v">#ffffff · dark #161618</span></div><div class="sw"><span class="chip" style="background:var(--color-sidebar)"></span><span class="sw-n">--color-sidebar</span><span class="sw-v">#f9f9f9 · dark #000000</span></div><div class="sw"><span class="chip" style="background:var(--color-border)"></span><span class="sw-n">--color-border</span><span class="sw-v">#e3e3e3 · dark #2a2a2d</span></div><div class="sw"><span class="chip" style="background:var(--color-track)"></span><span class="sw-n">--color-track</span><span class="sw-v">#ececec · dark #232326</span></div><div class="sw"><span class="chip" style="background:var(--color-focus)"></span><span class="sw-n">--color-focus</span><span class="sw-v">#0b62d6 · dark #7cacf8</span></div><div class="sw"><span class="chip" style="background:var(--color-accent)"></span><span class="sw-n">--color-accent</span><span class="sw-v">#0b62d6 · dark #7cacf8</span></div><div class="sw"><span class="chip" style="background:var(--color-accent-tint)"></span><span class="sw-n">--color-accent-tint</span><span class="sw-v">#e8f0fd · dark rgb(124 172 248 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--color-accent-text)"></span><span class="sw-n">--color-accent-text</span><span class="sw-v">#0a4aa3 · dark #b5d0ff</span></div><div class="sw"><span class="chip" style="background:var(--color-fill)"></span><span class="sw-n">--color-fill</span><span class="sw-v">#f4f4f4 · dark #161618</span></div><div class="sw"><span class="chip" style="background:var(--color-fill-hover)"></span><span class="sw-n">--color-fill-hover</span><span class="sw-v">#ececec · dark #1f1f22</span></div><div class="sw"><span class="chip" style="background:var(--color-hairline)"></span><span class="sw-n">--color-hairline</span><span class="sw-v">#ececec · dark #1c1c1f</span></div><div class="sw"><span class="chip" style="background:var(--color-hairline-strong)"></span><span class="sw-n">--color-hairline-strong</span><span class="sw-v">#d9d9d9 · dark #323236</span></div><div class="sw"><span class="chip" style="background:var(--color-scrim)"></span><span class="sw-n">--color-scrim</span><span class="sw-v">rgb(0 0 0 / 0.35) · dark rgb(0 0 0 / 0.7)</span></div><div class="sw"><span class="chip" style="background:var(--color-chrome)"></span><span class="sw-n">--color-chrome</span><span class="sw-v">rgb(255 255 255 / 0.85) · dark rgb(0 0 0 / 0.78)</span></div><div class="sw"><span class="chip" style="background:var(--color-scrollbar)"></span><span class="sw-n">--color-scrollbar</span><span class="sw-v">rgb(0 0 0 / 0.18) · dark rgb(255 255 255 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--color-scrollbar-hover)"></span><span class="sw-n">--color-scrollbar-hover</span><span class="sw-v">rgb(0 0 0 / 0.32) · dark rgb(255 255 255 / 0.3)</span></div></div></section><section class="blk" aria-labelledby="c-Tones"><h3 id="c-Tones">Tones <small>24</small></h3><div class="swgrid"><div class="sw"><span class="chip" style="background:var(--color-danger)"></span><span class="sw-n">--color-danger</span><span class="sw-v">#c53030 · dark #f07178</span></div><div class="sw"><span class="chip" style="background:var(--color-danger-strong)"></span><span class="sw-n">--color-danger-strong</span><span class="sw-v">#8a1f1f · dark #ffb4b8</span></div><div class="sw"><span class="chip" style="background:var(--color-danger-soft)"></span><span class="sw-n">--color-danger-soft</span><span class="sw-v">#fdecec · dark rgb(240 113 120 / 0.14)</span></div><div class="sw"><span class="chip" style="background:var(--color-info)"></span><span class="sw-n">--color-info</span><span class="sw-v">#2b6cb0 · dark #7cacf8</span></div><div class="sw"><span class="chip" style="background:var(--color-info-soft)"></span><span class="sw-n">--color-info-soft</span><span class="sw-v">#e8f1fb · dark rgb(124 172 248 / 0.14)</span></div><div class="sw"><span class="chip" style="background:var(--color-success)"></span><span class="sw-n">--color-success</span><span class="sw-v">#2f855a · dark #5fd39a</span></div><div class="sw"><span class="chip" style="background:var(--color-success-soft)"></span><span class="sw-n">--color-success-soft</span><span class="sw-v">#e6f5ec · dark rgb(95 211 154 / 0.14)</span></div><div class="sw"><span class="chip" style="background:var(--tone-positive-bg)"></span><span class="sw-n">--tone-positive-bg</span><span class="sw-v">#d7ebdf · dark rgb(95 211 154 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--tone-positive-fg)"></span><span class="sw-n">--tone-positive-fg</span><span class="sw-v">#195238 · dark #9ee6c0</span></div><div class="sw"><span class="chip" style="background:var(--tone-positive-solid)"></span><span class="sw-n">--tone-positive-solid</span><span class="sw-v">#247b55 · dark #3fae7a</span></div><div class="sw"><span class="chip" style="background:var(--tone-negative-bg)"></span><span class="sw-n">--tone-negative-bg</span><span class="sw-v">#f7dde0 · dark rgb(240 113 120 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--tone-negative-fg)"></span><span class="sw-n">--tone-negative-fg</span><span class="sw-v">#832434 · dark #ffb4b8</span></div><div class="sw"><span class="chip" style="background:var(--tone-negative-solid)"></span><span class="sw-n">--tone-negative-solid</span><span class="sw-v">#b03546 · dark #e0606a</span></div><div class="sw"><span class="chip" style="background:var(--tone-info-bg)"></span><span class="sw-n">--tone-info-bg</span><span class="sw-v">#dce7f6 · dark rgb(124 172 248 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--tone-info-fg)"></span><span class="sw-n">--tone-info-fg</span><span class="sw-v">#244e86 · dark #b5d0ff</span></div><div class="sw"><span class="chip" style="background:var(--tone-info-solid)"></span><span class="sw-n">--tone-info-solid</span><span class="sw-v">#3567aa · dark #5f93e6</span></div><div class="sw"><span class="chip" style="background:var(--tone-warning-bg)"></span><span class="sw-n">--tone-warning-bg</span><span class="sw-v">#f8ebc6 · dark rgb(240 190 90 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--tone-warning-fg)"></span><span class="sw-n">--tone-warning-fg</span><span class="sw-v">#6d4c0b · dark #f3d58f</span></div><div class="sw"><span class="chip" style="background:var(--tone-warning-solid)"></span><span class="sw-n">--tone-warning-solid</span><span class="sw-v">#8a6115 · dark #c99a3a</span></div><div class="sw"><span class="chip" style="background:var(--tone-neutral-bg)"></span><span class="sw-n">--tone-neutral-bg</span><span class="sw-v">#e9edf3 · dark rgb(163 163 163 / 0.14)</span></div><div class="sw"><span class="chip" style="background:var(--tone-neutral-fg)"></span><span class="sw-n">--tone-neutral-fg</span><span class="sw-v">#485265 · dark #d4d4d4</span></div><div class="sw"><span class="chip" style="background:var(--tone-neutral-solid)"></span><span class="sw-n">--tone-neutral-solid</span><span class="sw-v">#68758b · dark #8f8f8f</span></div><div class="sw"><span class="chip" style="background:var(--tone-on-solid)"></span><span class="sw-n">--tone-on-solid</span><span class="sw-v">#ffffff · dark #000000</span></div><div class="sw"><span class="chip" style="background:var(--color-on-strong)"></span><span class="sw-n">--color-on-strong</span><span class="sw-v">#ffffff</span></div></div></section><section class="blk" aria-labelledby="c-Risklevels"><h3 id="c-Risklevels">Risk levels <small>20</small></h3><div class="swgrid"><div class="sw"><span class="chip" style="background:var(--level-green)"></span><span class="sw-n">--level-green</span><span class="sw-v">#2f855a</span></div><div class="sw"><span class="chip" style="background:var(--level-yellow)"></span><span class="sw-n">--level-yellow</span><span class="sw-v">#d69e2e</span></div><div class="sw"><span class="chip" style="background:var(--level-orange)"></span><span class="sw-n">--level-orange</span><span class="sw-v">#dd6b20</span></div><div class="sw"><span class="chip" style="background:var(--level-red)"></span><span class="sw-n">--level-red</span><span class="sw-v">#c53030</span></div><div class="sw"><span class="chip" style="background:var(--level-green-soft)"></span><span class="sw-n">--level-green-soft</span><span class="sw-v">#e6f5ec · dark rgb(95 211 154 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--level-yellow-soft)"></span><span class="sw-n">--level-yellow-soft</span><span class="sw-v">#fdf6e3 · dark rgb(240 190 90 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--level-orange-soft)"></span><span class="sw-n">--level-orange-soft</span><span class="sw-v">#fdeee2 · dark rgb(240 150 90 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--level-red-soft)"></span><span class="sw-n">--level-red-soft</span><span class="sw-v">#fdecec · dark rgb(240 113 120 / 0.16)</span></div><div class="sw"><span class="chip" style="background:var(--level-green-text)"></span><span class="sw-n">--level-green-text</span><span class="sw-v">#1f5c3e · dark #9ee6c0</span></div><div class="sw"><span class="chip" style="background:var(--level-yellow-text)"></span><span class="sw-n">--level-yellow-text</span><span class="sw-v">#7a5410 · dark #f3d58f</span></div><div class="sw"><span class="chip" style="background:var(--level-orange-text)"></span><span class="sw-n">--level-orange-text</span><span class="sw-v">#8a3f0d · dark #f8c29a</span></div><div class="sw"><span class="chip" style="background:var(--level-red-text)"></span><span class="sw-n">--level-red-text</span><span class="sw-v">#8a1f1f · dark #ffb4b8</span></div><div class="sw"><span class="chip" style="background:var(--heat-green)"></span><span class="sw-n">--heat-green</span><span class="sw-v">#6fc28f</span></div><div class="sw"><span class="chip" style="background:var(--heat-green-on)"></span><span class="sw-n">--heat-green-on</span><span class="sw-v">#0d3520</span></div><div class="sw"><span class="chip" style="background:var(--heat-yellow)"></span><span class="sw-n">--heat-yellow</span><span class="sw-v">#f6d55c</span></div><div class="sw"><span class="chip" style="background:var(--heat-yellow-on)"></span><span class="sw-n">--heat-yellow-on</span><span class="sw-v">#3d2e05</span></div><div class="sw"><span class="chip" style="background:var(--heat-orange)"></span><span class="sw-n">--heat-orange</span><span class="sw-v">#f4a259</span></div><div class="sw"><span class="chip" style="background:var(--heat-orange-on)"></span><span class="sw-n">--heat-orange-on</span><span class="sw-v">#3d1a05</span></div><div class="sw"><span class="chip" style="background:var(--heat-red)"></span><span class="sw-n">--heat-red</span><span class="sw-v">#c4343d</span></div><div class="sw"><span class="chip" style="background:var(--heat-red-on)"></span><span class="sw-n">--heat-red-on</span><span class="sw-v">#ffffff</span></div></div></section><section class="blk" aria-labelledby="c-Datavisualisation"><h3 id="c-Datavisualisation">Data visualisation <small>27</small></h3><div class="swgrid"><div class="sw"><span class="chip" style="background:var(--dim-g)"></span><span class="sw-n">--dim-g</span><span class="sw-v">#2b6cb0</span></div><div class="sw"><span class="chip" style="background:var(--dim-a)"></span><span class="sw-n">--dim-a</span><span class="sw-v">#6b46c1</span></div><div class="sw"><span class="chip" style="background:var(--dim-d)"></span><span class="sw-n">--dim-d</span><span class="sw-v">#b7791f</span></div><div class="sw"><span class="chip" style="background:var(--dim-n)"></span><span class="sw-n">--dim-n</span><span class="sw-v">#c05621</span></div><div class="sw"><span class="chip" style="background:var(--dim-e)"></span><span class="sw-n">--dim-e</span><span class="sw-v">#2f855a</span></div><div class="sw"><span class="chip" style="background:var(--dim-i)"></span><span class="sw-n">--dim-i</span><span class="sw-v">#4a5568</span></div><div class="sw"><span class="chip" style="background:var(--trend-e)"></span><span class="sw-n">--trend-e</span><span class="sw-v">#2f9e44</span></div><div class="sw"><span class="chip" style="background:var(--trend-g)"></span><span class="sw-n">--trend-g</span><span class="sw-v">#6741d9</span></div><div class="sw"><span class="chip" style="background:var(--trend-d)"></span><span class="sw-n">--trend-d</span><span class="sw-v">#f08c00</span></div><div class="sw"><span class="chip" style="background:var(--trend-a)"></span><span class="sw-n">--trend-a</span><span class="sw-v">#1c7ed6</span></div><div class="sw"><span class="chip" style="background:var(--trend-n)"></span><span class="sw-n">--trend-n</span><span class="sw-v">#d6336c</span></div><div class="sw"><span class="chip" style="background:var(--trend-i)"></span><span class="sw-n">--trend-i</span><span class="sw-v">#495057 · dark #a3a3a3</span></div><div class="sw"><span class="chip" style="background:var(--viz-1)"></span><span class="sw-n">--viz-1</span><span class="sw-v">#2b6cb0</span></div><div class="sw"><span class="chip" style="background:var(--viz-2)"></span><span class="sw-n">--viz-2</span><span class="sw-v">#2f855a</span></div><div class="sw"><span class="chip" style="background:var(--viz-3)"></span><span class="sw-n">--viz-3</span><span class="sw-v">#dd6b20</span></div><div class="sw"><span class="chip" style="background:var(--viz-4)"></span><span class="sw-n">--viz-4</span><span class="sw-v">#805ad5</span></div><div class="sw"><span class="chip" style="background:var(--viz-5)"></span><span class="sw-n">--viz-5</span><span class="sw-v">#c53030</span></div><div class="sw"><span class="chip" style="background:var(--viz-6)"></span><span class="sw-n">--viz-6</span><span class="sw-v">#d69e2e</span></div><div class="sw"><span class="chip" style="background:var(--viz-7)"></span><span class="sw-n">--viz-7</span><span class="sw-v">#319795</span></div><div class="sw"><span class="chip" style="background:var(--viz-8)"></span><span class="sw-n">--viz-8</span><span class="sw-v">#5b6673 · dark #8f8f8f</span></div><div class="sw"><span class="chip" style="background:var(--ink-strong)"></span><span class="sw-n">--ink-strong</span><span class="sw-v">#14243a · dark #ececec</span></div><div class="sw"><span class="chip" style="background:var(--ink)"></span><span class="sw-n">--ink</span><span class="sw-v">#1d2b3f · dark #d4d4d4</span></div><div class="sw"><span class="chip" style="background:var(--ink-soft)"></span><span class="sw-n">--ink-soft</span><span class="sw-v">#5b6b84 · dark #8f8f8f</span></div><div class="sw"><span class="chip" style="background:var(--ink-faint)"></span><span class="sw-n">--ink-faint</span><span class="sw-v">#68758b · dark #7a7a7a</span></div><div class="sw"><span class="chip" style="background:var(--canvas)"></span><span class="sw-n">--canvas</span><span class="sw-v">#fcfcfc · dark #050505</span></div><div class="sw"><span class="chip" style="background:var(--canvas-node)"></span><span class="sw-n">--canvas-node</span><span class="sw-v">#f4f4f4 · dark #161618</span></div><div class="sw"><span class="chip" style="background:var(--canvas-halo)"></span><span class="sw-n">--canvas-halo</span><span class="sw-v">#ffffff · dark #000000</span></div></div></section><section class="blk" aria-labelledby="c-Cartography"><h3 id="c-Cartography">Cartography <small>36</small></h3><div class="swgrid"><div class="sw"><span class="chip" style="background:var(--map-bg)"></span><span class="sw-n">--map-bg</span><span class="sw-v">#e9eef3 · dark #0b0d10</span></div><div class="sw"><span class="chip" style="background:var(--map-sea)"></span><span class="sw-n">--map-sea</span><span class="sw-v">#d6e8f3 · dark #0d1822</span></div><div class="sw"><span class="chip" style="background:var(--map-land)"></span><span class="sw-n">--map-land</span><span class="sw-v">#f6f3ea · dark #16181b</span></div><div class="sw"><span class="chip" style="background:var(--map-line)"></span><span class="sw-n">--map-line</span><span class="sw-v">#9aa8b4 · dark #3d4652</span></div><div class="sw"><span class="chip" style="background:var(--map-label-sea)"></span><span class="sw-n">--map-label-sea</span><span class="sw-v">#335a73 · dark #7fa3bd</span></div><div class="sw"><span class="chip" style="background:var(--map-label-area)"></span><span class="sw-n">--map-label-area</span><span class="sw-v">#8a7d5c · dark #ab9f80</span></div><div class="sw"><span class="chip" style="background:var(--map-ink)"></span><span class="sw-n">--map-ink</span><span class="sw-v">#243b53 · dark #c9d4df</span></div><div class="sw"><span class="chip" style="background:var(--map-text)"></span><span class="sw-n">--map-text</span><span class="sw-v">#17212b · dark #ececec</span></div><div class="sw"><span class="chip" style="background:var(--map-halo)"></span><span class="sw-n">--map-halo</span><span class="sw-v">rgb(255 255 255 / 0.85) · dark rgb(0 0 0 / 0.8)</span></div><div class="sw"><span class="chip" style="background:var(--map-point)"></span><span class="sw-n">--map-point</span><span class="sw-v">#ffffff · dark #16181b</span></div><div class="sw"><span class="chip" style="background:var(--map-concession)"></span><span class="sw-n">--map-concession</span><span class="sw-v">#669bb5 · dark #4f8db0</span></div><div class="sw"><span class="chip" style="background:var(--map-selected)"></span><span class="sw-n">--map-selected</span><span class="sw-v">#e6b54a · dark #e6b54a</span></div><div class="sw"><span class="chip" style="background:var(--map-alert)"></span><span class="sw-n">--map-alert</span><span class="sw-v">#c34040 · dark #f07178</span></div><div class="sw"><span class="chip" style="background:var(--map-heat-1)"></span><span class="sw-n">--map-heat-1</span><span class="sw-v">#fde7c4 · dark #3a2a14</span></div><div class="sw"><span class="chip" style="background:var(--map-heat-2)"></span><span class="sw-n">--map-heat-2</span><span class="sw-v">#f8c27a · dark #6b4518</span></div><div class="sw"><span class="chip" style="background:var(--map-heat-3)"></span><span class="sw-n">--map-heat-3</span><span class="sw-v">#ee8f44 · dark #a35a22</span></div><div class="sw"><span class="chip" style="background:var(--map-heat-4)"></span><span class="sw-n">--map-heat-4</span><span class="sw-v">#cf5a2a · dark #d0612c</span></div><div class="sw"><span class="chip" style="background:var(--map-outline-selected)"></span><span class="sw-n">--map-outline-selected</span><span class="sw-v">#0f2541 · dark #ffffff</span></div><div class="sw"><span class="chip" style="background:var(--map-district-line)"></span><span class="sw-n">--map-district-line</span><span class="sw-v">#17365d · dark #c9d4df</span></div><div class="sw"><span class="chip" style="background:var(--map-point-halo)"></span><span class="sw-n">--map-point-halo</span><span class="sw-v">#ffffff · dark #000000</span></div><div class="sw"><span class="chip" style="background:var(--map-relief-1)"></span><span class="sw-n">--map-relief-1</span><span class="sw-v">#eef0e2 · dark #14211a</span></div><div class="sw"><span class="chip" style="background:var(--map-relief-2)"></span><span class="sw-n">--map-relief-2</span><span class="sw-v">#d6e2b8 · dark #27402c</span></div><div class="sw"><span class="chip" style="background:var(--map-relief-3)"></span><span class="sw-n">--map-relief-3</span><span class="sw-v">#e3d39c · dark #4a4a2c</span></div><div class="sw"><span class="chip" style="background:var(--map-relief-4)"></span><span class="sw-n">--map-relief-4</span><span class="sw-v">#c9a477 · dark #5e4630</span></div><div class="sw"><span class="chip" style="background:var(--map-relief-5)"></span><span class="sw-n">--map-relief-5</span><span class="sw-v">#94714f · dark #7a5c44</span></div><div class="sw"><span class="chip" style="background:var(--map-cadastre-1)"></span><span class="sw-n">--map-cadastre-1</span><span class="sw-v">#2f5fd0</span></div><div class="sw"><span class="chip" style="background:var(--map-cadastre-2)"></span><span class="sw-n">--map-cadastre-2</span><span class="sw-v">#3a9d3a</span></div><div class="sw"><span class="chip" style="background:var(--map-cadastre-3)"></span><span class="sw-n">--map-cadastre-3</span><span class="sw-v">#222222</span></div><div class="sw"><span class="chip" style="background:var(--map-outline-imagery)"></span><span class="sw-n">--map-outline-imagery</span><span class="sw-v">#fffaf0</span></div><div class="sw"><span class="chip" style="background:var(--map-marker-on)"></span><span class="sw-n">--map-marker-on</span><span class="sw-v">#ffffff</span></div><div class="sw"><span class="chip" style="background:var(--map-marker-active)"></span><span class="sw-n">--map-marker-active</span><span class="sw-v">#17212b</span></div><div class="sw"><span class="chip" style="background:var(--map-concession-fill)"></span><span class="sw-n">--map-concession-fill</span><span class="sw-v">rgb(23 54 93 / 0.08)</span></div><div class="sw"><span class="chip" style="background:var(--map-concession-fill-active)"></span><span class="sw-n">--map-concession-fill-active</span><span class="sw-v">rgb(23 54 93 / 0.28)</span></div><div class="sw"><span class="chip" style="background:var(--map-concession-fill-focus)"></span><span class="sw-n">--map-concession-fill-focus</span><span class="sw-v">rgb(43 108 176 / 0.3)</span></div></div></section>
+  </section>
+
+  <section class="sec" aria-labelledby="s-type"><h2 id="s-type">Tipografía <small>22 tokens</small></h2>
+    <p class="src">apps/web/src/app/styles/tokens.css · apps/web/src/app/styles/global.css</p>
+    <div class="cols"><div>
+      <div class="type-row"><code>--text-2xs</code><code>10px</code><span style="font-size:var(--text-2xs)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-xs</code><code>11px</code><span style="font-size:var(--text-xs)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-sm</code><code>13px</code><span style="font-size:var(--text-sm)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-base</code><code>14px</code><span style="font-size:var(--text-base)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-md</code><code>15px</code><span style="font-size:var(--text-md)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-body</code><code>16px</code><span style="font-size:var(--text-body)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-lg</code><code>18px</code><span style="font-size:var(--text-lg)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-xl</code><code>22px</code><span style="font-size:var(--text-xl)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-2xl</code><code>fluid</code><span style="font-size:var(--text-2xl)">Sechura, Piura — Monitoreo territorial</span></div><div class="type-row"><code>--text-3xl</code><code>fluid</code><span style="font-size:var(--text-3xl)">Sechura, Piura — Monitoreo territorial</span></div>
+    </div><div>
+      <p class="lbl">Familias</p>
+      <p style="font-family:var(--font-sans)"><code>--font-sans</code> — system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif</p>
+      <p style="font-family:var(--font-mono)"><code>--font-mono</code> — ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace</p>
+      <p class="lbl">Pesos</p>
+      <div class="type-row"><code>--weight-regular</code><code>400</code><span style="font-weight:var(--weight-regular)">Alertas y compromisos</span></div><div class="type-row"><code>--weight-medium</code><code>500</code><span style="font-weight:var(--weight-medium)">Alertas y compromisos</span></div><div class="type-row"><code>--weight-semibold</code><code>600</code><span style="font-weight:var(--weight-semibold)">Alertas y compromisos</span></div><div class="type-row"><code>--weight-bold</code><code>700</code><span style="font-weight:var(--weight-bold)">Alertas y compromisos</span></div><div class="type-row"><code>--weight-heavy</code><code>800</code><span style="font-weight:var(--weight-heavy)">Alertas y compromisos</span></div>
+      <p class="lbl">Interlineado y tracking</p>
+      <p style="margin:0"><code>--leading-tight: 1.2 · --leading-snug: 1.35 · --leading-normal: 1.5 · --tracking-tight: -0.015em · --tracking-caps: 0.06em</code></p>
+    </div></div>
+  </section>
+
+  <section class="sec" aria-labelledby="s-space"><h2 id="s-space">Espaciado, forma y elevación</h2>
+    <p class="src">apps/web/src/app/styles/tokens.css</p>
+    <div class="cols"><div>
+      <p class="lbl">Espaciado (10)</p>
+      <div class="sp-row"><code>--space-0</code><span>2px</span><span class="sp-bar" style="width:var(--space-0)"></span></div><div class="sp-row"><code>--space-1</code><span>4px</span><span class="sp-bar" style="width:var(--space-1)"></span></div><div class="sp-row"><code>--space-2</code><span>8px</span><span class="sp-bar" style="width:var(--space-2)"></span></div><div class="sp-row"><code>--space-3</code><span>12px</span><span class="sp-bar" style="width:var(--space-3)"></span></div><div class="sp-row"><code>--space-4</code><span>16px</span><span class="sp-bar" style="width:var(--space-4)"></span></div><div class="sp-row"><code>--space-5</code><span>20px</span><span class="sp-bar" style="width:var(--space-5)"></span></div><div class="sp-row"><code>--space-6</code><span>24px</span><span class="sp-bar" style="width:var(--space-6)"></span></div><div class="sp-row"><code>--space-8</code><span>32px</span><span class="sp-bar" style="width:var(--space-8)"></span></div><div class="sp-row"><code>--space-10</code><span>40px</span><span class="sp-bar" style="width:var(--space-10)"></span></div><div class="sp-row"><code>--space-12</code><span>48px</span><span class="sp-bar" style="width:var(--space-12)"></span></div>
+    </div><div>
+      <p class="lbl">Radio (6)</p>
+      <div class="boxes"><div class="box" style="border-radius:var(--radius-xs)">--radius-xs<br />0.1875rem</div><div class="box" style="border-radius:var(--radius-sm)">--radius-sm<br />0.35rem</div><div class="box" style="border-radius:var(--radius-md)">--radius-md<br />0.625rem</div><div class="box" style="border-radius:var(--radius-lg)">--radius-lg<br />1rem</div><div class="box" style="border-radius:var(--radius-xl)">--radius-xl<br />1.5rem</div><div class="box" style="border-radius:var(--radius-pill)">--radius-pill<br />999px</div></div>
+      <p class="lbl" style="margin-top:var(--space-5)">Sombras (6)</p>
+      <div class="boxes"><div class="box" style="border-radius:var(--radius-md);box-shadow:var(--shadow-sm)">--shadow-sm</div><div class="box" style="border-radius:var(--radius-md);box-shadow:var(--shadow-md)">--shadow-md</div><div class="box" style="border-radius:var(--radius-md);box-shadow:var(--shadow-lg)">--shadow-lg</div><div class="box" style="border-radius:var(--radius-md);box-shadow:var(--shadow-raised)">--shadow-raised</div><div class="box" style="border-radius:var(--radius-md);box-shadow:var(--shadow-chip)">--shadow-chip</div><div class="box" style="border-radius:var(--radius-md);box-shadow:var(--shadow-composer)">--shadow-composer</div></div>
+    </div></div>
+  </section>
+
+  <section class="sec" aria-labelledby="s-motion"><h2 id="s-motion">Movimiento y controles</h2>
+    <p class="src">apps/web/src/app/styles/tokens.css · apps/web/src/app/styles/global.css (prefers-reduced-motion)</p>
+    <div class="cols"><div class="motion">
+      <button type="button" class="btn secondary sm" id="play" style="justify-self:start">Reproducir</button>
+      <div class="m-row"><code>--motion-fast 120ms</code><div class="m-track"><span class="m-dot" data-d="--motion-fast"></span></div></div><div class="m-row"><code>--motion-medium 220ms</code><div class="m-track"><span class="m-dot" data-d="--motion-medium"></span></div></div><div class="m-row"><code>--motion-slow 360ms</code><div class="m-track"><span class="m-dot" data-d="--motion-slow"></span></div></div>
+      <p class="muted">Curvas: <code>--ease-out</code> · <code>--ease-in-out</code> · <code>--ease-sheet</code>. Con movimiento reducido las transiciones se anulan.</p>
+    </div><div>
+      <p class="lbl">Controles y capas (11)</p>
+      <div class="type-row"><code>--control-sm</code><code>2rem</code><span class="muted">Small control height</span></div><div class="type-row"><code>--control-md</code><code>2.5rem</code><span class="muted">Default control height</span></div><div class="type-row"><code>--touch-target</code><code>2.75rem</code><span class="muted">Coarse-pointer minimum (WCAG 2.5.5)</span></div><div class="type-row"><code>--focus-ring</code><code>3px solid var(--color-focus)</code><span class="muted">Global :focus-visible outline (offset 2px)</span></div><div class="type-row"><code>--z-sticky</code><code>20</code><span class="muted">Stacking layer</span></div><div class="type-row"><code>--z-tabbar</code><code>25</code><span class="muted">Stacking layer</span></div><div class="type-row"><code>--z-popover</code><code>40</code><span class="muted">Stacking layer</span></div><div class="type-row"><code>--z-modal</code><code>60</code><span class="muted">Stacking layer</span></div><div class="type-row"><code>--z-skip</code><code>70</code><span class="muted">Stacking layer</span></div><div class="type-row"><code>--tabbar-height</code><code>4rem</code><span class="muted">Phone bottom bar</span></div><div class="type-row"><code>--sidebar-width</code><code>15.5rem</code><span class="muted">Desktop sidebar column</span></div>
+    </div></div>
+  </section>
+
+  <section class="sec" aria-labelledby="s-comp"><h2 id="s-comp">Componentes núcleo</h2>
+    <p class="src">apps/web/src/app/layout/AppShell.module.css · apps/web/src/shared/ui/ · apps/web/src/features/search/SearchPalette.module.css · apps/web/src/features/notifications/NotificationBell.module.css · apps/web/src/features/auth/AccountMenu.module.css · apps/web/src/features/tenancy/ProjectSwitcher.module.css · apps/web/src/features/records/Records.module.css</p>
+    <div class="stack">
+      <div><p class="lbl">Top bar existente</p>
+        <div class="frame"><header class="topbar">
+          <div class="heading"><p class="eyebrow">Proyecto Sechura (migración)</p><h1>Eventos</h1></div>
+          <div class="tools">
+            <button type="button" class="composer"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-search"/></svg><span class="label">Buscar</span><kbd>Ctrl K</kbd></button>
+            <button type="button" class="bell" aria-label="Notificaciones, 3 sin leer"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-bell"/></svg><span class="badge" aria-hidden="true">3</span></button>
+            <div class="switcher"><label for="s-proj">Proyecto activo</label><select id="s-proj"><option>Proyecto Sechura (migración)</option></select></div>
+            <button type="button" class="account-trigger"><span class="avatar" aria-hidden="true">AS</span><span class="copy"><b>Administración SIPGES</b><span>Administración</span></span></button>
+          </div>
+        </header></div>
+      </div>
+      <div class="layout">
+        <div><p class="lbl">Sidebar actual (26 enlaces, 4 grupos abiertos)</p>
+<aside class="cur-sb" aria-label="Sidebar actual (referencia)">
+  <div class="brand"><span class="mark" aria-hidden="true">S</span><span><b>SIPGES</b><small>Gestión socioambiental</small></span></div>
+  <nav aria-label="Secciones (referencia)" class="cur-nav">
+    <div><p class="groupLabel" aria-hidden="true">Monitoreo</p><ul class="list"><li><a class="link" href="#/"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span class="text">Dashboard</span></a></li><li><a class="link" href="#/eventos" aria-current="page"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-pulse"/></svg><span class="text">Eventos</span></a></li><li><a class="link" href="#/actores"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span class="text">Actores</span></a></li><li><a class="link" href="#/directorio"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-book"/></svg><span class="text">Directorio territorial</span></a></li><li><a class="link" href="#/demandas"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-clipboard"/></svg><span class="text">Demandas</span></a></li><li><a class="link" href="#/narrativas"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-message"/></svg><span class="text">Narrativas</span></a></li></ul></div><div><p class="groupLabel" aria-hidden="true">Gestión y alertas</p><ul class="list"><li><a class="link" href="#/gerencia"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-gauge"/></svg><span class="text">Centro gerencial</span></a></li><li><a class="link" href="#/inteligencia-redes"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-network"/></svg><span class="text">Inteligencia de redes</span></a></li><li><a class="link" href="#/alertas"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-bell"/></svg><span class="text">Alertas</span></a></li><li><a class="link" href="#/situaciones"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-layers"/></svg><span class="text">Situaciones</span></a></li><li><a class="link" href="#/buzon"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-message"/></svg><span class="text">Buzón</span></a></li><li><a class="link" href="#/lecciones"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-layers"/></svg><span class="text">Lecciones</span></a></li><li><a class="link" href="#/mapa"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-map"/></svg><span class="text">Mapa territorial</span></a></li><li><a class="link" href="#/ubicacion"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-pin"/></svg><span class="text">Ubicación geoespacial</span></a></li></ul></div><div><p class="groupLabel" aria-hidden="true">Análisis</p><ul class="list"><li><a class="link" href="#/cronologia"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-clock"/></svg><span class="text">Cronología</span></a></li><li><a class="link" href="#/situacion"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-compass"/></svg><span class="text">Análisis situacional</span></a></li><li><a class="link" href="#/estrategia"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-target"/></svg><span class="text">Inteligencia estratégica</span></a></li><li><a class="link" href="#/irsa"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-chart"/></svg><span class="text">IRSA-SIPGES</span></a></li><li><a class="link" href="#/validacion"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-check"/></svg><span class="text">Validación</span></a></li><li><a class="link" href="#/calidad"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-check"/></svg><span class="text">Calidad de datos</span></a></li><li><a class="link" href="#/fuentes"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-file"/></svg><span class="text">Fuentes</span></a></li></ul></div><div><p class="groupLabel" aria-hidden="true">Sistema</p><ul class="list"><li><a class="link" href="#/administracion"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-sliders"/></svg><span class="text">Administración</span></a></li><li><a class="link" href="#/automatizaciones"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-zap"/></svg><span class="text">Automatizaciones</span></a></li><li><a class="link" href="#/metodologia"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-bookOpen"/></svg><span class="text">Metodología</span></a></li><li><a class="link" href="#/auditoria"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-shield"/></svg><span class="text">Auditoría</span></a></li><li><a class="link" href="#/version-4"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-layers"/></svg><span class="text">Configuración</span></a></li></ul></div>
+  </nav>
+</aside></div>
+        <div class="stack">
+          <div><p class="lbl">Enlace de sidebar: reposo · hover · actual · foco</p>
+            <div class="states">
+              <a class="link" href="#x"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span class="text">Actores</span></a>
+              <a class="link is-hover" href="#x"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span class="text">Actores (hover)</span></a>
+              <a class="link" href="#x" aria-current="page"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-pulse"/></svg><span class="text">Eventos (actual)</span></a>
+              <a class="link" href="#x" style="outline:var(--focus-ring);outline-offset:2px"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-bell"/></svg><span class="text">Alertas (foco)</span></a>
+            </div>
+          </div>
+          <div class="demo">
+            <button type="button" class="btn primary"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-plus"/></svg>Nuevo evento</button>
+            <button type="button" class="btn secondary">Secundario</button>
+            <button type="button" class="btn secondary sm" aria-pressed="true">Validados <span class="n">2</span></button>
+            <button type="button" class="btn secondary sm" aria-pressed="false">En revisión <span class="n">2</span></button>
+            <span class="pill" data-tone="positive">Validado</span><span class="pill" data-tone="warning">En revisión</span><span class="pill" data-tone="info">Info</span><span class="pill" data-tone="negative">Rechazado</span><span class="pill" data-tone="neutral">Preliminar</span>
+          </div>
+          <div class="demo">
+            <abbr class="dim G" title="G">G</abbr><abbr class="dim A" title="A">A</abbr><abbr class="dim D" title="D">D</abbr><abbr class="dim N" title="N">N</abbr><abbr class="dim E" title="E">E</abbr><abbr class="dim I" title="I">I</abbr>
+            <span class="pill" style="background:var(--level-green-soft);color:var(--level-green-text)">Verde</span><span class="pill" style="background:var(--level-yellow-soft);color:var(--level-yellow-text)">Amarillo</span><span class="pill" style="background:var(--level-orange-soft);color:var(--level-orange-text)">Naranja</span><span class="pill" style="background:var(--level-red-soft);color:var(--level-red-text)">Rojo</span>
+          </div>
+          <div class="demo" style="align-items:start">
+            <div class="card"><p class="eb">Alertas</p><p class="tt">Centro de alertas</p><span class="muted">Tarjeta con radio xl, borde hairline.</span></div>
+            <div class="menu static" role="presentation" aria-label="Ejemplo de popover"><div class="menu-head"><span class="avatar large" aria-hidden="true">AS</span><span class="who"><b>Administración SIPGES</b><span>Proyecto Sechura (migración)</span></span></div><hr /><div class="menu-item"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-sliders"/></svg><span>Administración</span></div><div class="menu-item" style="background:var(--color-fill-hover);font-weight:var(--weight-semibold)"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-shield"/></svg><span>Auditoría</span></div><div class="menu-item danger"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-logout"/></svg><span>Cerrar sesión</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div><p class="lbl">Tabla de Eventos y paleta (opción seleccionada)</p>
+        <div class="tableWrap"><table class="table"><thead><tr><th>Fecha</th><th>Descripción del hecho</th><th>Territorio</th><th>Dim.</th><th>Validación</th></tr></thead><tbody><tr><td>29 oct 2026</td><td>Asamblea comunal acuerda mesa de diálogo</td><td>Vice</td><td><abbr class="dim G" title="Gobernanza">G</abbr></td><td><span class="pill" data-tone="positive">Validado</span></td></tr></tbody></table></div>
+        <div role="listbox" aria-label="Ejemplo de opción seleccionada" style="margin-top:var(--space-3);width:24rem"><div role="option" class="p-opt" aria-selected="true"><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-map"/></svg><span>Mapa territorial</span><span class="meta">Gestión y alertas</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="s-icons"><h2 id="s-icons">Iconos <small>33</small></h2>
+    <p class="src">apps/web/src/shared/ui/icons.ts · 24 unidades, trazo 1.75, redondeado, currentColor</p>
+    <div class="icons"><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-home"/></svg><span>home</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-pulse"/></svg><span>pulse</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-bell"/></svg><span>bell</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-map"/></svg><span>map</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-grid"/></svg><span>grid</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>users</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-book"/></svg><span>book</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-clipboard"/></svg><span>clipboard</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-message"/></svg><span>message</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-network"/></svg><span>network</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-gauge"/></svg><span>gauge</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-clock"/></svg><span>clock</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-pin"/></svg><span>pin</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-cube"/></svg><span>cube</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-compass"/></svg><span>compass</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-target"/></svg><span>target</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-chart"/></svg><span>chart</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-check"/></svg><span>check</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-file"/></svg><span>file</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-sliders"/></svg><span>sliders</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-zap"/></svg><span>zap</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-layers"/></svg><span>layers</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-bookOpen"/></svg><span>bookOpen</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-shield"/></svg><span>shield</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-search"/></svg><span>search</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-chevronRight"/></svg><span>chevronRight</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-chevronDown"/></svg><span>chevronDown</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-logout"/></svg><span>logout</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-close"/></svg><span>close</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-plus"/></svg><span>plus</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-minus"/></svg><span>minus</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-landmark"/></svg><span>landmark</span></div><div><svg class="ic " aria-hidden="true" focusable="false"><use href="#i-briefcase"/></svg><span>briefcase</span></div></div>
+  </section>
+</div>
+<script>
+(() => {
+  document.querySelectorAll('[data-theme-set]').forEach((b) => b.addEventListener('click', () => {
+    document.documentElement.setAttribute('data-theme', b.dataset.themeSet);
+    document.querySelectorAll('[data-theme-set]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+  const dots = document.querySelectorAll('.m-dot');
+  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let out = false;
+  document.getElementById('play').addEventListener('click', () => {
+    out = !out;
+    dots.forEach((d) => {
+      d.style.transition = reduce() ? 'none' : 'transform var(' + d.dataset.d + ') var(--ease-out)';
+      d.style.transform = out ? 'translateX(12rem)' : 'none';
+    });
+  });
+})();
+</script>
+</body>
+</html>
