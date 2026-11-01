@@ -71,3 +71,59 @@ test('events with a known locality appear on the territorial map with their deta
   ).toBeAttached();
   await expect(location.locator('image[href^="https://tiles.maps.eox.at/"]')).toHaveCount(0);
 });
+
+test('SVG map shapes resolve their var() fill attribute without the module class', async ({
+  page,
+  admin,
+}) => {
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/ubicacion');
+  const location = page.getByLabel('Geometría de referencia');
+  await expect(location).toBeVisible();
+  // The attribute is the backstop when the CSS module class is missing; strip the class so only
+  // the attribute paints, then compare the computed colour with the token on screen.
+  const painted = () =>
+    page.evaluate(() => {
+      const hexToRgb = (hex: string) => {
+        const n = Number.parseInt(hex.trim().slice(1), 16);
+        return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+      };
+      const root = getComputedStyle(document.documentElement);
+      const read = (selector: string, property: 'fill' | 'stroke') => {
+        const shape = document.querySelector(selector);
+        if (!shape) throw new Error(`Missing ${selector}`);
+        shape.removeAttribute('class');
+        return getComputedStyle(shape)[property];
+      };
+      return {
+        sea: {
+          computed: read('rect[fill="var(--map-sea)"]', 'fill'),
+          token: hexToRgb(root.getPropertyValue('--map-sea')),
+        },
+        land: {
+          computed: read('path[fill="var(--map-land)"]', 'fill'),
+          token: hexToRgb(root.getPropertyValue('--map-land')),
+        },
+        line: {
+          computed: read('path[stroke="var(--map-line)"]', 'stroke'),
+          token: hexToRgb(root.getPropertyValue('--map-line')),
+        },
+      };
+    });
+
+  const seaByTheme: string[] = [];
+  for (const theme of ['light', 'dark'] as const) {
+    await page.evaluate(
+      (value) => document.documentElement.setAttribute('data-theme', value),
+      theme,
+    );
+    const shapes = await painted();
+    for (const [name, { computed, token }] of Object.entries(shapes)) {
+      expect(computed, `${theme} ${name}`).toBe(token);
+      expect(computed, `${theme} ${name}`).not.toBe('rgb(0, 0, 0)');
+    }
+    seaByTheme.push(shapes.sea.computed);
+  }
+  // The attribute follows the theme instead of freezing the first value.
+  expect(seaByTheme[0]).not.toBe(seaByTheme[1]);
+});
