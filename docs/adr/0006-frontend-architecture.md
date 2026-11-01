@@ -1,5 +1,7 @@
 # 0006 — Frontend architecture
 
+> Hosting note: the Vercel host this ADR mentions was retired; Cloudflare Workers is the only host ([ADR 0029](0029-retire-vercel-host.md)). The text below is kept as written.
+
 ## Context
 `static/app.js` and `index.html` (1,141 lines) use inline event handlers, string-built HTML (attribute-context injection at `app.js:223`, `:278`), client-only project switching and raw error toasts.
 

@@ -139,7 +139,7 @@ export const automationRoutes = (
   options?: { runCron?: () => Promise<TickReport> },
 ) =>
   new Hono<AppEnv>()
-    // Vercel Cron calls with GET; other schedulers usually POST.
+    // Some schedulers call with GET, others with POST.
     .on(['GET', 'POST'], AUTOMATION_CRON_PATH, async (c) => {
       if (!bearerMatches(c.req.header('authorization'), cronSecret)) {
         return c.json({ detail: 'Credencial de cron no válida' }, 401);

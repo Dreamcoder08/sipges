@@ -214,7 +214,7 @@ const parseAutomation = (env: Env): AppConfig['automation'] => {
   if (!Number.isInteger(interval) || (interval !== 0 && (interval < 5 || interval > 3600))) {
     throw new Error('SIPGES_AUTOMATION_INTERVAL must be 0 (off) or between 5 and 3600 seconds');
   }
-  // Vercel Cron sends CRON_SECRET as a bearer token; SIPGES_CRON_SECRET takes precedence.
+  // Schedulers send the secret as a bearer token; SIPGES_CRON_SECRET takes precedence over CRON_SECRET.
   const cronSecret = (env.SIPGES_CRON_SECRET || env.CRON_SECRET || '').trim() || undefined;
   if (cronSecret !== undefined && cronSecret.length < 24) {
     throw new Error('SIPGES_CRON_SECRET (or CRON_SECRET) must be at least 24 characters');

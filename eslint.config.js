@@ -8,7 +8,6 @@ export default tseslint.config(
     ignores: [
       '**/node_modules/**',
       '**/dist/**',
-      'apps/hosting/public/**',
       'apps/hosting-cloudflare/public/**',
       '**/.wrangler/**',
       '**/coverage/**',

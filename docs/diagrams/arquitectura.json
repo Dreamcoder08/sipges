@@ -220,7 +220,7 @@
       "id": "storage",
       "type": "database",
       "label": "Objetos de evidencia",
-      "sublabel": "Local / S3 / Blob privado",
+      "sublabel": "Local / S3 / R2 privado",
       "pos": [
         985,
         40
@@ -230,12 +230,6 @@
         70
       ],
       "sources": [
-        {
-          "path": "apps/hosting/src/blob-storage.ts",
-          "line": 1,
-          "end_line": 31,
-          "label": "Evidencias persistentes privadas en la demo"
-        },
         {
           "path": "apps/api/src/contexts/evidence/infrastructure/local-object-storage.ts",
           "line": 14,
@@ -494,12 +488,6 @@
           "line": 1,
           "end_line": 30,
           "label": "Mutaciones correctas despiertan el motor"
-        },
-        {
-          "path": "apps/hosting/src/index.ts",
-          "line": 60,
-          "end_line": 70,
-          "label": "Ciclo de vida Vercel con waitUntil"
         }
       ]
     },
@@ -528,12 +516,6 @@
           "line": 48,
           "end_line": 122,
           "label": "Autorización por proyecto y deduplicación"
-        },
-        {
-          "path": "apps/hosting/vercel.json",
-          "line": 77,
-          "end_line": 82,
-          "label": "Cron diario de respaldo"
         }
       ],
       "tag": "OPT-IN / DISPONIBILIDAD"
@@ -676,7 +658,7 @@
       "dot": "violet",
       "title": "Adaptadores y procesamiento",
       "items": [
-        "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y Blob privado en el adaptador de demo Vercel, con descarga autorizada por SIPGES.",
+        "PostgreSQL vía postgres.js; PGlite solo para desarrollo/pruebas. ObjectStorage admite local/S3 y R2 privado en el adaptador de Cloudflare Workers, con descarga autorizada por SIPGES.",
         "DocumentReader usa unpdf/pdf.js y fflate; ReportRenderer usa docx. No requieren Python ni adaptadores Go/Rust.",
         "Ollama para inteligencia y, con SIPGES_SEMANTIC_SEARCH=1, búsqueda híbrida con vectores real[] sin restringidos. Claude es opcional (ADR 0013) y nunca ve registros restringidos. OCR local opcional con ocrmypdf.",
         "Canales salientes (webhook firmado, Slack, Teams, Discord, Google Chat, Telegram, Resend) con secretos sellados y destinos https públicos; Web Push propio; traceparent hacia webhooks, Ollama y S3.",
@@ -690,7 +672,7 @@
         "Fuente publicada: revisión 1fdad42. ODD y ADRs guían el desarrollo; no son servicios del runtime.",
         "El nuevo ODD territorial añade catálogo/intersecciones, evaluación de narrativas por reglas existentes y señales pendientes de verificación humana. evaluate no requiere IA de pago ni modifica IRSA. La entrega Web Push requiere consentimiento; aceptación del proveedor no prueba recepción humana.",
         "Stack actual: pnpm, TS 7 por paquete / TS 6 para herramientas, ESLint/Prettier y dependency-cruiser. Drizzle, Turborepo y Biome se descartaron en las enmiendas. Python queda en reference/python como referencia congelada, no dependencia de este runtime.",
-        "En Vercel, las mutaciones correctas despachan el motor mediante waitUntil; un cron autenticado diario (04:15 UTC) ofrece respaldo compatible con Hobby. Presupuesto y estado se registran por tenant; no hay SLA de latencia ni ejecutor frecuente contratado. Fuentes y recepción real en teléfono pendientes cuando faltan disponibilidad o suscripción verificable."
+        "En Cloudflare Workers, las mutaciones correctas despachan el motor mediante waitUntil; un Cron Trigger (cada 15 minutos) y el endpoint de cron autenticado ofrecen respaldo. Presupuesto y estado se registran por tenant; no hay SLA de latencia ni ejecutor frecuente contratado. Fuentes y recepción real en teléfono pendientes cuando faltan disponibilidad o suscripción verificable."
       ]
     }
   ]

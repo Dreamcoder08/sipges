@@ -1,8 +1,7 @@
 # Deploying SIPGES on Cloudflare Workers
 
-How to publish SIPGES with the Workers adapter (`apps/hosting-cloudflare`, ADR 0028). Nothing
-here has been run against a Cloudflare account: every step below needs the owner's account and
-explicit go-ahead. The local verification it relies on is in `odd/tasks/cloudflare-workers.md`
+How to publish SIPGES with the Workers adapter (`apps/hosting-cloudflare`, ADR 0028). Every
+step below needs the owner's Cloudflare account and explicit go-ahead. The local verification it relies on is in `odd/tasks/cloudflare-workers.md`
 (L17, L20).
 
 ## Before you start
@@ -96,6 +95,8 @@ must stay compatible with the version still serving while the deploy finishes.
 
 ## Rolling back
 
-Point the domain back to the Vercel deployment; both runtimes share the database and schema,
-so no data step is needed. Evidence uploaded to R2 while Workers served traffic must be copied
-to the Node storage before switching back.
+Vercel was retired (ADR 0029), so there is no second host to point the domain back to. Roll back by
+redeploying the previous Worker version (`wrangler rollback`) or by running the Node build
+(`pnpm --filter @sipges/api start`) against the same database; migrations must stay compatible
+with the version being restored. Evidence uploaded to R2 must be copied to the Node storage
+before serving from Node.

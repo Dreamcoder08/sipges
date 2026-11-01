@@ -18,9 +18,6 @@ playwright-report/
 test-results/
 .data/
 
-# Generated hosting frontend
-apps/hosting/public/
-
 # Engram working database (memories are shared through .engram/chunks)
 .engram/*.db*
 

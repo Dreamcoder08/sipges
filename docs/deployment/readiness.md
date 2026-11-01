@@ -1,10 +1,10 @@
 # Deployment readiness (T14)
 
-Registro histórico de la demo, 2026-10-14: el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `SIPGES_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](../history/public-demo-verification.md).
+Registro histórico de la demo, 2026-10-14 (el host Vercel se retiró; véase [ADR 0029](../adr/0029-retire-vercel-host.md)): el propietario solicitó acceso sencillo con datos sintéticos. La configuración documentada de Vercel usaba `SIPGES_REQUIRE_MFA=0`; se comprobaron login con contraseña, dashboard, administración, recarga y logout. Esa actualización sustituyó la inscripción MFA pendiente de la prueba anterior, solo para esa demo. El smoke público de CRUD/Blob/PDF/DOCX seguía pendiente. No se repitieron solicitudes públicas ni se consultó la configuración desplegada para esta candidata. Véase [la comprobación fechada](../history/public-demo-verification.md).
 
 This is the checklist for putting the TypeScript SIPGES (`apps/api` serving the built
 `apps/web`) in front of users. Dated demo evidence, current local candidate checks and
-institutional acceptance are separate. The documented demo used Vercel, private Blob and the
+institutional acceptance are separate. The documented demo used Vercel (since retired, ADR 0029), private Blob and the
 owner's Neon integration with synthetic data only; it is not evidence that this candidate is
 deployed or approved for real data. Institutional MFA recommendations and the runtime's
 secure default remain unchanged. No real-data migration or newly acquired domain is claimed.
@@ -15,18 +15,19 @@ Related documents: [workspace and configuration](../migration/workspace.md),
 [ADRs](../adr/README.md) and the original
 [secure public deployment plan](../../odd/tasks/secure-mascli-public-deployment.md).
 
-## Hosting direction: Node/Vercel published, Workers deployed with synthetic data
+## Hosting direction: Cloudflare Workers is the only host
 
-The published demo stays on the existing Node/Vercel path. The
+Cloudflare Workers is the only SIPGES host (ADR 0028; the Vercel host was retired in
+[ADR 0029](../adr/0029-retire-vercel-host.md)). The
 [Workers investigation](../../odd/tasks/cloudflare-workers.md) was deferred (L14) because
 `hash-wasm` compiles WebAssembly at run time, which workerd rejects, and then resumed (L16) with a
 plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
 verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
 Hyperdrive connection and migrations already passed after a binding-only TLS correction.
-A Worker now runs at `https://sipges.dreamcoder-dev08.workers.dev` against a separate, empty Neon database
-(ODD L22); it holds no real data and the published demo was not switched. The end-to-end suite against `wrangler dev`
-(T4) now passes locally (93 passed, 1 optional skip; L20) and the steps are in the
-[Workers deployment guide](cloudflare-workers.md) (ADR 0028).
+The Worker runs at `https://sipges.dreamcoder-dev08.workers.dev` against a Neon database through
+Hyperdrive and holds no real data (ODD L22). The end-to-end suite against `wrangler dev`
+(T4) passes locally (93 passed, 1 optional skip; L20) and the steps are in the
+[Workers deployment guide](cloudflare-workers.md).
 
 The existing serial Node/Chromium E2E suite (`pnpm e2e`, job-6) completed with exit 0:
 **93 passed, 1 skipped**. It built the SPA and used isolated synthetic PGlite state, with
@@ -109,7 +110,7 @@ able to create databases. A database named `sipges_e2e_<random>` is created and 
       embedded PGlite can never be used by mistake.
 - [x] Los archivos de arranque Python históricos se han trasladado a `reference/python`; no se usan para desplegar el runtime TypeScript.
 
-La primera URL es una demo académica/personal con datos sintéticos: Vercel Hobby y el subdominio gratuito del proveedor sustituyen la necesidad inicial de dominio o túnel Cloudflare. No se migran datos reales. Los créditos de DOCX conservan la identificación neutral SIPGES; no se atribuyen autores sin indicación del usuario.
+La primera URL es una demo académica/personal con datos sintéticos: el subdominio gratuito `workers.dev` de Cloudflare sustituye la necesidad inicial de un dominio propio o un túnel Cloudflare. No se migran datos reales. Los créditos de DOCX conservan la identificación neutral SIPGES; no se atribuyen autores sin indicación del usuario.
 
 ### 2. Environment variables and secrets
 
@@ -193,8 +194,8 @@ No aplica a la demo académica: usa únicamente datos sintéticos. Para una futu
 
 ### 7. Network exposure: Cloudflare Tunnel and Access
 
-Esta alternativa queda para un futuro alojamiento institucional. La demo actual usa Vercel
-y su URL gratuita; no requiere cuenta, dominio ni túnel Cloudflare. Los pasos siguientes
+Esta alternativa queda para un futuro alojamiento institucional. La demo actual usa Cloudflare Workers
+y su URL `workers.dev`; no requiere dominio ni túnel Cloudflare. Los pasos siguientes
 solo aplican si se elige posteriormente esa alternativa.
 
 - [ ] **Solo para esa alternativa futura:** elegir cuenta Cloudflare y zona/hostname.
@@ -260,12 +261,12 @@ solo aplican si se elige posteriormente esa alternativa.
 
 | Item | Status |
 | --- | --- |
-| Cloudflare account, zone and hostname | No requerido para la demo: se usa el subdominio gratuito de Vercel. |
-| Alojamiento de la demo | Vercel Hobby, proyecto `mascli-demo-academica`, adaptador `apps/hosting`. |
+| Cloudflare zone and hostname | No requerido para la demo: se usa el subdominio `workers.dev`. |
+| Alojamiento de la demo | Cloudflare Workers (Hyperdrive + Neon, R2), adaptador `apps/hosting-cloudflare`. Vercel se retiró (ADR 0029). |
 | Créditos DOCX | Identificación neutral SIPGES, sin nombres personales inventados. |
 | Controles ADR 0009 | Integrados en la consolidación TypeScript. |
 | Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
-| Recursos de demo | Vercel y Blob privado creados; PostgreSQL Neon vinculado por el propietario. Cuenta bootstrap persistida. |
+| Recursos de demo | Worker, Hyperdrive y R2 privado; PostgreSQL Neon vinculado por el propietario. La base `neondb` de la demo Vercel se conserva en Neon como respaldo, sin migrar. |
 | Restore drill and an E2E run against the deployed URL | Not done |
 | Operator inputs for the remaining gates | Not authorizations by themselves: (1) an explicitly synthetic, least-privilege PostgreSQL connection for the server integration run; (2) a disposable restore environment with coordinated database/object backups and key scope; (3) institutional identity, storage and monitoring owners, plus the external-acceptance owners already named in the [production-candidate ODD](../../odd/tasks/production-candidate.md); (4) a separate delivery/activation decision. No gate in these rows is closed and the candidate is not declared production-ready. |
 | Publicación de demo | Evidencia histórica del 2026-10-14: acceso sin inscripción MFA obligatoria por decisión del propietario; no es una excepción institucional. Smoke público CRUD/Blob/PDF/DOCX pendiente en esa evidencia. No se verificó de nuevo ni se publicó esta candidata. |

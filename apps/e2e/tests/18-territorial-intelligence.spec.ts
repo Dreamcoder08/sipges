@@ -93,7 +93,7 @@ for (const mobile of [false, true]) {
         data: { payload },
       });
       expect(updated.status(), await updated.text()).toBe(200);
-      // Vercel and Workers finish event automation after the response (waitUntil); only the
+      // Workers finishes event automation after the response (waitUntil); only the
       // local Node server awaits it, so wait for the attempt instead of reading it once.
       await expect
         .poll(async () =>

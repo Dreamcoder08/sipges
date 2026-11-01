@@ -30,14 +30,8 @@ después queda como fallida con el error.
 | Hospedaje | Cómo |
 | --- | --- |
 | Servidor Node (`pnpm --filter @sipges/api start`) | Solo, cada `SIPGES_AUTOMATION_INTERVAL` segundos (30 por defecto, `0` lo apaga). |
-| Serverless (Vercel) | Un cron llama `GET /system/automations/cron` con `Authorization: Bearer $CRON_SECRET`. Vercel envía esa cabecera si defines la variable `CRON_SECRET` (24 caracteres o más). En el plan Hobby el cron mínimo es diario; para minutos hace falta un plan Pro o un cron externo. |
+| Cloudflare Workers | Un Cron Trigger (`*/15 * * * *` por defecto) ejecuta el trabajo programado dentro del Worker. Para otra frecuencia o un programador externo, llama `GET` o `POST /system/automations/cron` con `Authorization: Bearer $SIPGES_CRON_SECRET` (24 caracteres o más; `CRON_SECRET` también se acepta). |
 | Manual | Botón **Ejecutar ahora** en la pantalla. |
-
-Ejemplo de `vercel.json` (solo en planes que admiten crons por minuto):
-
-```json
-{ "crons": [{ "path": "/system/automations/cron", "schedule": "* * * * *" }] }
-```
 
 ## Canales de salida
 
@@ -175,7 +169,7 @@ compartan palabras. Usa el modelo de embeddings de Ollama ya configurado
 Las pantallas abiertas se actualizan solas: el navegador escucha `GET /system/events`
 (*server-sent events*) y, cuando hay actividad en el proyecto, vuelve a pedir sus datos. Cada
 evento lleva solo el módulo y la acción, nunca el id ni el contenido de un registro. En
-Vercel cada conexión dura menos de 60 s y se reanuda sola con `Last-Event-ID`.
+Cloudflare Workers cada conexión puede cortarse y se reanuda sola con `Last-Event-ID`.
 
 Cada respuesta trae `traceresponse` ([W3C Trace Context](https://www.w3.org/TR/trace-context/)).
 Si la petición llega con `traceparent`, SIPGES continúa esa traza; si no, empieza una. Los logs
@@ -194,7 +188,7 @@ en la misma máquina; el documento no sale del servidor.
 | `SIPGES_OCR` | `ocrmypdf` para activarlo. |
 | `SIPGES_OCR_LANGUAGES` | Idiomas de Tesseract, por defecto `spa+eng`. |
 
-No está disponible en Vercel (no hay binarios de OCR); úsalo en un servidor Node o un
+No está disponible en Cloudflare Workers (no hay binarios de OCR); úsalo en un servidor Node o un
 contenedor con `ocrmypdf` y los paquetes de idioma.
 
 ## Servidor MCP
@@ -234,6 +228,6 @@ Otros clientes (Claude Desktop, VS Code, Cursor) aceptan la misma URL y la cabec
 | `SIPGES_SEMANTIC_SEARCH` | `1` activa la búsqueda semántica con Ollama. | `0` |
 | `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | OCR local de PDF escaneados con `ocrmypdf`. | apagado |
 
-En Vercel, define las variables en el proyecto (Settings → Environment Variables) y vuelve a
-desplegar. Las conexiones de tiempo real duran menos que el límite de 60 s de la función y se
-reanudan solas.
+En Cloudflare Workers, define las variables en `wrangler.jsonc` o como secretos del Worker
+(`wrangler secret put`) y vuelve a desplegar, según [la guía de Workers](../deployment/cloudflare-workers.md).
+Las conexiones de tiempo real pueden cortarse y se reanudan solas.
