@@ -16,7 +16,7 @@ test('scrollbars are thin and quiet, and the sidebar hides its bar until it is u
   page,
   admin,
 }) => {
-  await page.setViewportSize({ width: 1440, height: 600 });
+  await page.setViewportSize({ width: 1440, height: 520 });
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await page.goto('/eventos');
   const sidebar = page.locator('aside').first();
@@ -39,10 +39,10 @@ test('scrollbars are thin and quiet, and the sidebar hides its bar until it is u
   const used = await page.evaluate(chrome, 'aside nav');
   expect(used.colour).toBe(root.colour);
 
-  // Open every section so the list outgrows a 600px screen, then scroll it to the end.
-  for (const section of ['Monitoreo', 'Gestión y alertas', 'Análisis']) {
-    const toggle = nav.getByRole('button', { name: new RegExp(`^${section}`) });
-    if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+  // Visit four more screens so «Recientes» outgrows a 520px screen, then scroll the list to the end.
+  for (const name of ['Territorio', 'Bandeja', 'Análisis']) {
+    await nav.getByRole('link', { name, exact: true }).click();
+    await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
   }
   const brand = sidebar.getByTitle('Sistema Inteligente de Predicción y GEStión Social');
   const account = sidebar.getByRole('button', { name: /^Cuenta de / });
@@ -58,5 +58,5 @@ test('scrollbars are thin and quiet, and the sidebar hides its bar until it is u
   expect(brandAfter.y).toBe(brandBefore.y);
   expect(brandAfter.y - sidebarBox.y).toBeLessThanOrEqual(24);
   await expect(account).toBeInViewport();
-  await expect(nav.getByRole('link', { name: 'Fuentes' })).toBeInViewport();
+  await expect(nav.getByRole('link', { name: 'Territorio · Mapa territorial' })).toBeInViewport();
 });

@@ -1,10 +1,10 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api, resetApi, server } from '../../test/server.ts';
 import { App } from '../App.tsx';
-import { SCREENS } from '../navigation.ts';
+import { DESTINATIONS, SCREENS, SYSTEM_PATHS } from '../navigation.ts';
 
 const at = (path: string) => window.history.replaceState(null, '', path);
 const names = (items: HTMLElement[]) => items.map((item) => item.textContent);
@@ -16,9 +16,6 @@ const renderAt = async (path: string) => {
   const nav = await screen.findByRole('navigation', { name: 'Secciones' });
   return { nav, user: userEvent.setup() };
 };
-
-const groupButton = (nav: HTMLElement, label: string) =>
-  within(nav).getByRole('button', { name: new RegExp(`^${label}`) });
 
 /** Every item of a menu in reading order, whatever its menuitem role. */
 const menuItems = (menu: HTMLElement) =>
@@ -36,95 +33,110 @@ afterEach(() => {
 });
 
 describe('desktop sidebar', () => {
-  it('pins the five screens people open most under «Fijados»', async () => {
-    const { nav } = await renderAt('/');
-    const pinned = within(nav).getByRole('region', { name: 'Fijados' });
-    expect(names(within(pinned).getAllByRole('link'))).toEqual([
-      'Dashboard',
-      'Eventos',
-      'Alertas',
-      'Mapa territorial',
-      'Validación',
+  it('lists the five destinations, then Integraciones, with no collapsible groups', async () => {
+    const { nav } = await renderAt('/inicio');
+    const links = within(nav).getAllByRole('link');
+    expect(names(links.slice(0, 6))).toEqual([
+      'Inicio',
+      'Registros',
+      'Territorio',
+      'Bandeja',
+      'Análisis',
+      'Integraciones',
     ]);
+    expect(links.slice(0, 6).map((link) => link.getAttribute('href'))).toEqual([
+      '/inicio',
+      '/registros',
+      '/territorio',
+      '/bandeja',
+      '/analisis',
+      '/automatizaciones',
+    ]);
+    expect(within(nav).queryByRole('button')).toBeNull();
+    expect(within(nav).queryByText('Fijados')).toBeNull();
   });
 
-  it('opens only the group of the current page and counts what it lists', async () => {
-    const { nav } = await renderAt('/irsa');
-    expect(groupButton(nav, 'Monitoreo')).toHaveAttribute('aria-expanded', 'false');
-    expect(groupButton(nav, 'Gestión y alertas')).toHaveAttribute('aria-expanded', 'false');
-    const analysis = groupButton(nav, 'Análisis');
-    expect(analysis).toHaveAttribute('aria-expanded', 'true');
-    expect(analysis).toHaveAccessibleName('Análisis 6 pantallas');
-    expect(groupButton(nav, 'Monitoreo')).toHaveAccessibleName('Monitoreo 4 pantallas');
-    expect(groupButton(nav, 'Gestión y alertas')).toHaveAccessibleName(
-      'Gestión y alertas 6 pantallas',
+  it('marks a hub as current, and also the old screens it absorbs', async () => {
+    const hub = await renderAt('/registros?tipo=actores');
+    expect(within(hub.nav).getByRole('link', { name: 'Registros' })).toHaveAttribute(
+      'aria-current',
+      'page',
     );
-    const open = document.getElementById(analysis.getAttribute('aria-controls') ?? '');
-    expect(names(within(open as HTMLElement).getAllByRole('link'))).toEqual([
-      'Cronología',
-      'Análisis situacional',
-      'Inteligencia estratégica',
-      'IRSA-SIPGES',
-      'Calidad de datos',
-      'Fuentes',
-    ]);
-    expect(within(nav).queryByRole('link', { name: 'Actores' })).toBeNull();
-    expect(within(nav).getByRole('link', { name: 'IRSA-SIPGES' })).toHaveAttribute(
+    expect(within(hub.nav).getByRole('link', { name: 'Inicio' })).not.toHaveAttribute(
+      'aria-current',
+    );
+    cleanup();
+    const old = await renderAt('/alertas');
+    expect(within(old.nav).getByRole('link', { name: 'Bandeja' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(within(old.nav).getByRole('link', { name: 'Registros' })).not.toHaveAttribute(
+      'aria-current',
+    );
+    cleanup();
+    const home = await renderAt('/');
+    expect(within(home.nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
       'aria-current',
       'page',
     );
   });
 
-  it('opens the owning group when the current page is pinned, without repeating it', async () => {
-    const { nav } = await renderAt('/');
-    expect(groupButton(nav, 'Monitoreo')).toHaveAttribute('aria-expanded', 'true');
-    expect(within(nav).getAllByRole('link', { name: 'Dashboard' })).toHaveLength(1);
-    expect(within(nav).getAllByRole('link', { name: 'Eventos' })).toHaveLength(1);
-    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+  it('marks Integraciones, not a destination, on the automations screen', async () => {
+    const { nav } = await renderAt('/automatizaciones');
+    expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
       'aria-current',
       'page',
     );
+    expect(within(nav).getAllByRole('link', { current: 'page' })).toHaveLength(1);
   });
 
-  it('leaves every group closed on a Sistema screen', async () => {
-    server.use(http.get('/system/audit', () => HttpResponse.json([])));
-    const { nav } = await renderAt('/auditoria');
-    for (const label of ['Monitoreo', 'Gestión y alertas', 'Análisis']) {
-      expect(groupButton(nav, label)).toHaveAttribute('aria-expanded', 'false');
+  it('lists the last four visited screens and tabs under «Recientes», newest first', async () => {
+    const { nav } = await renderAt('/registros?tipo=actores');
+    const recents = () => within(within(nav).getByRole('region', { name: 'Recientes' }));
+    for (const href of ['/irsa', '/registros?tipo=demandas', '/alertas', '/mapa']) {
+      window.history.pushState(null, '', href);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+      await screen.findByRole('heading', { level: 1 });
     }
-    expect(within(nav).queryByRole('link', { name: 'Auditoría' })).toBeNull();
+    await waitFor(() =>
+      expect(names(recents().getAllByRole('link'))).toEqual([
+        'Mapa territorial',
+        'Alertas',
+        'Registros · Demandas',
+        'IRSA-SIPGES',
+      ]),
+    );
+    expect(JSON.parse(window.localStorage.getItem('sipges.recents') ?? '[]')).toHaveLength(4);
+    expect(recents().getByRole('link', { name: 'Registros · Demandas' })).toHaveAttribute(
+      'href',
+      '/registros?tipo=demandas',
+    );
   });
 
-  it('lets the person open and close any group', async () => {
+  it('reaches all 26 screens: hub tabs, the Integraciones link or the account menu', async () => {
     const { nav, user } = await renderAt('/');
-    expect(within(nav).queryByRole('link', { name: 'Situaciones' })).toBeNull();
-    await user.click(groupButton(nav, 'Gestión y alertas'));
-    expect(groupButton(nav, 'Gestión y alertas')).toHaveAttribute('aria-expanded', 'true');
-    expect(within(nav).getByRole('link', { name: 'Situaciones' })).toBeVisible();
-    // Opening one does not close the others.
-    expect(within(nav).getByRole('link', { name: 'Actores' })).toBeVisible();
-    await user.click(groupButton(nav, 'Monitoreo'));
-    expect(groupButton(nav, 'Monitoreo')).toHaveAttribute('aria-expanded', 'false');
-    expect(within(nav).queryByRole('link', { name: 'Actores' })).toBeNull();
-  });
-
-  it('keeps a screen in a single place and reaches all 26 from the sidebar', async () => {
-    const { nav, user } = await renderAt('/');
-    for (const label of ['Gestión y alertas', 'Análisis']) {
-      await user.click(groupButton(nav, label));
+    const reached = new Set<string>();
+    for (const hub of DESTINATIONS) {
+      await user.click(within(nav).getByRole('link', { name: hub.label }));
+      const tabs = await screen.findByRole('group', { name: hub.label });
+      for (const tab of hub.tabs) {
+        expect(within(tabs).getByRole('button', { name: tab.label })).toBeVisible();
+        reached.add(tab.screen);
+      }
     }
     await user.click(accountButton());
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
-    const sidebar = nav.closest('aside');
-    if (!sidebar) throw new Error('Missing sidebar');
-    // Screens are links in the list and menu items in the account menu.
-    for (const screenItem of SCREENS) {
-      const places = [
-        ...within(sidebar).queryAllByRole('link', { name: screenItem.label }),
-        ...within(menu).queryAllByRole('menuitem', { name: screenItem.label }),
-      ];
-      expect(places, screenItem.label).toHaveLength(1);
+    for (const path of SYSTEM_PATHS) {
+      const label = SCREENS.find((item) => item.path === path)?.label ?? path;
+      expect(within(menu).getByRole('menuitem', { name: label })).toHaveAttribute('href', path);
+      reached.add(path);
     }
+    expect(reached).toEqual(new Set(SCREENS.map((item) => item.path)));
+    expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
+      'href',
+      '/automatizaciones',
+    );
   });
 
   it('opens the existing search palette from the composer', async () => {

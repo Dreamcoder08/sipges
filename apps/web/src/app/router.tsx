@@ -16,7 +16,7 @@ import {
   useRouter,
 } from '@tanstack/react-router';
 import { z } from 'zod';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import type { FeatureContext } from '../shared/api/feature-context.ts';
 import { NavigateProvider } from '../shared/lib/navigation.tsx';
 import { ProjectSettingsProvider } from '../shared/lib/project-settings.tsx';
@@ -50,7 +50,14 @@ import {
 import { COMPACT_QUERY, useMediaQuery } from '../shared/lib/media.ts';
 import { AppShell } from './layout/AppShell.tsx';
 
-import { SCREENS, type ScreenPath, safeRedirect } from './navigation.ts';
+import {
+  DESTINATIONS,
+  type Destination,
+  SCREENS,
+  type ScreenPath,
+  hubHref,
+  safeRedirect,
+} from './navigation.ts';
 
 const RecordsPage = lazy(() =>
   import('../features/records/index.ts').then((module) => ({ default: module.RecordsPage })),
@@ -328,19 +335,20 @@ const appRoute = createRoute({
 
 const isScreen = (to: string): to is ScreenPath => SCREENS.some((s) => s.path === to);
 
+const DashboardScreen = (context: FeatureContext) => (
+  <DashboardPage
+    key={context.scope}
+    scope={context.scope}
+    projectId={context.projectId}
+    renderLink={(to, children) => <Link to={isScreen(to) ? to : '/'}>{children}</Link>}
+  />
+);
+
 const dashboardRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/',
   component: function DashboardRoute() {
-    const { scope } = appRoute.useRouteContext();
-    return (
-      <DashboardPage
-        key={scope.scope}
-        scope={scope.scope}
-        projectId={scope.project_id}
-        renderLink={(to, children) => <Link to={isScreen(to) ? to : '/'}>{children}</Link>}
-      />
-    );
+    return <DashboardScreen {...useFeatureContext()} />;
   },
 });
 
@@ -475,11 +483,63 @@ const objectRoute = createRoute({
   },
 });
 
+/** The screen of every path a hub shows as a tab; the old routes render the same functions. */
+const screenFor = (path: ScreenPath): ((context: FeatureContext) => ReactNode) => {
+  if (path === '/') return DashboardScreen;
+  const module = recordModules.find((item) => `/${item}` === path);
+  if (module)
+    return (context) => (
+      <RecordsPage key={`${context.scope}/${module}`} module={module} {...context} />
+    );
+  return featurePages[path as keyof typeof featurePages];
+};
+
+/** A destination: tabs in the URL search (`?vista=`), each tab one of today's screens. */
+const hubRoute = (hub: Destination) => {
+  const route = createRoute({
+    getParentRoute: () => appRoute,
+    path: hub.path,
+    validateSearch: z.object({ [hub.param]: z.string().optional().catch(undefined) }),
+    component: function HubRoute() {
+      const context = useFeatureContext();
+      const navigate = useNavigate();
+      const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
+      const Screen = screenFor(tab.screen);
+      return (
+        <>
+          <ChipRow label={hub.label}>
+            {hub.tabs.map((item) => (
+              <Button
+                key={item.value}
+                variant={item.value === tab.value ? 'primary' : 'secondary'}
+                aria-pressed={item.value === tab.value}
+                onClick={() => void navigate({ href: hubHref(hub, item.value) })}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </ChipRow>
+          <Screen key={`${context.scope}/${tab.screen}`} {...context} />
+        </>
+      );
+    },
+  });
+  return route;
+};
+const hubRoutes = DESTINATIONS.map(hubRoute);
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   mfaRoute,
   selectProjectRoute,
-  appRoute.addChildren([dashboardRoute, objectRoute, ...recordRoutes, ...featureRoutes]),
+  appRoute.addChildren([
+    dashboardRoute,
+    objectRoute,
+    ...hubRoutes,
+    ...recordRoutes,
+    ...featureRoutes,
+  ]),
 ]);
 
 export const createAppRouter = (queryClient: QueryClient) =>

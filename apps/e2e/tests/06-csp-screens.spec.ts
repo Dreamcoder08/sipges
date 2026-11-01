@@ -1,4 +1,9 @@
-import { SCREENS, SYSTEM_PATHS } from '../../web/src/app/navigation.ts';
+import {
+  DESTINATIONS,
+  SCREENS,
+  SYSTEM_PATHS,
+  destinationFor,
+} from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
@@ -68,7 +73,7 @@ test('every screen renders without CSP violations or script errors', async ({ pa
     await page.goto(screen.path);
     await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
     await expect(page).toHaveTitle(new RegExp(screen.title));
-    // The sidebar lists the screen (pinned, or in its open group); Sistema screens sit in the
+    // The sidebar marks the destination that owns the screen; Sistema screens sit in the
     // account menu instead.
     if ((SYSTEM_PATHS as readonly string[]).includes(screen.path)) {
       await page.getByRole('button', { name: /^Cuenta de / }).click();
@@ -78,12 +83,18 @@ test('every screen renders without CSP violations or script errors', async ({ pa
       );
       await page.keyboard.press('Escape');
     } else {
-      const link = page
-        .getByRole('navigation', { name: 'Secciones' })
-        .getByRole('link', { name: screen.label, exact: true });
+      const link = page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', {
+        name: destinationFor(screen.path)?.label ?? screen.label,
+        exact: true,
+      });
       await expect(link).toHaveAttribute('aria-current', 'page');
     }
     // Let lazy chunks and their queries settle before moving on.
+    await settled();
+  }
+  for (const hub of DESTINATIONS) {
+    await page.goto(hub.path);
+    await expect(page.getByRole('heading', { level: 1, name: hub.label })).toBeVisible();
     await settled();
   }
 });

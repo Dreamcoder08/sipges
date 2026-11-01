@@ -6,6 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Interfaz
 
+- Cinco destinos en la navegación ([ADR 0015](docs/adr/0015-mobile-first-shell.md)): Inicio, Registros, Territorio, Bandeja y Análisis agrupan las pantallas actuales como pestañas enlazables (`?tipo=`, `?vista=`); la barra lateral añade «Integraciones» y «Recientes» y el móvil muestra Inicio, Registros, Bandeja y Territorio. Las rutas anteriores siguen funcionando; sin cambios de datos ni permisos.
 - Barra lateral compacta en pantallas anchas ([ADR 0015](docs/adr/0015-mobile-first-shell.md)): «Fijados» (Dashboard, Eventos, Alertas, Mapa territorial, Validación) y tres secciones plegables de las que solo se abre la de la pantalla actual, sin repetir pantallas fijadas. La búsqueda (Ctrl K), las notificaciones y el selector de proyecto pasan de la barra superior a la barra lateral; las pantallas de Sistema, el tema y «Cerrar sesión» quedan en el menú de la cuenta, al pie. En el teléfono no cambia nada.
 
 ### Plataforma
