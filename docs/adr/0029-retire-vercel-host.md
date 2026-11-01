@@ -33,3 +33,8 @@ synthetic academic data.
 - The Vercel-specific rollback path (pointing the domain back) no longer exists; see
   [the Workers guide](../deployment/cloudflare-workers.md#rolling-back).
 - Nothing is lost: the synthetic demo data was not needed, and the backup database is preserved.
+- The Neon project `neon-aero-brush` (both `neondb` and the Workers database) was created through
+  Vercel's Neon Marketplace integration and is billed via Vercel. Deleting the Vercel project did
+  not touch it, but the Vercel account and its Neon integration must stay: removing either would
+  take the production database with it. The private Blob store `mascli-demo-synthetic-evidence`
+  (synthetic evidence) also remains, unconnected.
