@@ -24,6 +24,7 @@ import { projectSettingsQuery } from '../shared/api/project-settings.ts';
 import { Button } from '../shared/ui/Button.tsx';
 import { ChipRow } from '../shared/ui/ChipRow.tsx';
 import { DashboardPage } from '../features/dashboard/index.ts';
+import { DecisionInbox } from '../features/bandeja/index.ts';
 import {
   GoogleSignInError,
   LoginPage,
@@ -49,6 +50,7 @@ import {
 } from '../features/notifications/index.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../shared/lib/media.ts';
 import { AppShell } from './layout/AppShell.tsx';
+import { useQualityReview } from './pending-quality.ts';
 
 import {
   DESTINATIONS,
@@ -437,7 +439,11 @@ const MailboxScreen = (context: FeatureContext) => (
 const LessonsScreen = (context: FeatureContext) => (
   <RecordsPage key={`${context.scope}/lecciones`} module="lecciones" {...context} />
 );
+const PendingScreen = (context: FeatureContext) => (
+  <DecisionInbox {...context} useQuality={useQualityReview} />
+);
 const featurePages = {
+  '/pendientes': PendingScreen,
   '/situaciones': SituationsScreen,
   '/buzon': MailboxScreen,
   '/lecciones': LessonsScreen,

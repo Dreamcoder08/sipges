@@ -1,15 +1,14 @@
-import {
-  RecordCreated,
-  type Situation,
-  type SituationsReport as Report,
-  SituationsReport,
-} from '@sipges/contracts';
+import { RecordCreated, type Situation, type SituationsReport as Report } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
-import { fetchModuleRecords } from '../../shared/api/module-records.ts';
+import {
+  raisedSituations,
+  situationAlertsQuery,
+  situationsReportQuery,
+} from '../../shared/api/situations.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { LevelPill } from '../../shared/ui/Badges.tsx';
@@ -17,7 +16,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
-import { situationAlertPayload, citationHref, GENERATED_ORIGIN } from './model.ts';
+import { situationAlertPayload, citationHref } from './model.ts';
 import styles from './Situations.module.css';
 
 const KIND: Readonly<Record<Situation['kind'], string>> = {
@@ -28,21 +27,10 @@ const KIND: Readonly<Record<Situation['kind'], string>> = {
 
 /** Related records, their trend and suggested actions (docs/adr/0020). */
 export const SituationsPage = ({ scope, projectId, projectLabel, role }: FeatureContext) => {
-  const report = useQuery({
-    queryKey: ['situations', scope],
-    queryFn: ({ signal }) =>
-      requestJson('/system/v4/situations', SituationsReport, { scope, signal }),
-  });
+  const report = useQuery(situationsReportQuery(scope));
   // Alerts already created from a situation, so the same one is not raised twice.
-  const alerts = useQuery({
-    queryKey: ['situations', scope, 'alerts'],
-    queryFn: ({ signal }) => fetchModuleRecords('alertas', scope, '', signal),
-  });
-  const raised = new Map(
-    (alerts.data ?? [])
-      .filter((row) => row.Origen === GENERATED_ORIGIN && typeof row.Situacion === 'string')
-      .map((row) => [String(row.Situacion), row._id]),
-  );
+  const alerts = useQuery(situationAlertsQuery(scope));
+  const raised = raisedSituations(alerts.data ?? []);
   return (
     <div className={styles.page}>
       <p>
