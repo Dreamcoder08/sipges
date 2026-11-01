@@ -16,6 +16,14 @@ const sheets = Object.fromEntries(
     .map((path) => [`/${path.replaceAll('\\', '/')}`, readFileSync(`${SRC}${path}`, 'utf8')]),
 );
 const tokens = sheets['/app/styles/tokens.css'] ?? '';
+/** Map paint written in TypeScript: it must read the --map-* tokens too (see engine/paint.ts). */
+const mapSources = Object.fromEntries(
+  readdirSync(SRC, { recursive: true, encoding: 'utf8' })
+    .map((path) => path.replaceAll('\\', '/'))
+    .filter((path) => path.startsWith('features/geography/') && /\.tsx?$/.test(path))
+    .filter((path) => !/\.test\.tsx?$/.test(path))
+    .map((path) => [`/${path}`, readFileSync(`${SRC}${path}`, 'utf8')]),
+);
 
 /** Only token definitions hold raw colours; map paint uses named --map-* tokens too. */
 const RAW_COLOUR_ALLOWED = new Set(['/app/styles/tokens.css']);
@@ -31,6 +39,24 @@ const rawColourOffenders = (entries: [string, string][]) =>
         .filter(({ line }) => RAW_COLOUR.test(line) && !line.trim().startsWith('/*'))
         .map(({ line, index }) => `${path}:${index + 1} ${line.trim()}`),
     );
+
+/** Hex, rgb()/hsl() and Cesium `Color.WHITE`-style constants; `token-exempt: <reason>` allows a line. */
+const RAW_PAINT = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?)\(/i;
+const CESIUM_COLOUR = /\bColor\.[A-Z]{3,}\b/;
+const PAINT_EXEMPT = /\/\/ token-exempt: \S/;
+
+const rawPaintOffenders = (entries: [string, string][]) =>
+  entries.flatMap(([path, source]) =>
+    source
+      .split('\n')
+      .map((line, index) => ({ line, index }))
+      .filter(({ line }) => !/^\s*(\/\/|\/?\*)/.test(line))
+      .filter(
+        ({ line }) =>
+          (RAW_PAINT.test(line) || CESIUM_COLOUR.test(line)) && !PAINT_EXEMPT.test(line),
+      )
+      .map(({ line, index }) => `${path}:${index + 1} ${line.trim()}`),
+  );
 
 const block = (pattern: RegExp) => {
   const match = pattern.exec(tokens);
@@ -176,6 +202,33 @@ describe('design tokens', () => {
         ['/features/geography/Controls.module.css', '.control { color: var(--color-text); }'],
       ]),
     ).toEqual([]);
+  });
+
+  it('keeps raw colours out of map paint written in TypeScript', () => {
+    expect(Object.keys(mapSources).length).toBeGreaterThan(10);
+    expect(rawPaintOffenders(Object.entries(mapSources))).toEqual([]);
+  });
+
+  it('allows a raw colour in map TypeScript only with a stated reason', () => {
+    expect(
+      rawPaintOffenders([
+        [
+          '/features/geography/x.tsx',
+          [
+            "const a = '#abc';",
+            "const b = 'rgb(1 2 3)'; // token-exempt: official legend colour",
+            "const c = 'rgba(1, 2, 3, 1)'; // token-exempt:",
+            'const d = Color.WHITE;',
+            "// const e = '#abc'",
+            "const f = 'var(--map-bg)';",
+          ].join('\n'),
+        ],
+      ]),
+    ).toEqual([
+      "/features/geography/x.tsx:1 const a = '#abc';",
+      "/features/geography/x.tsx:3 const c = 'rgba(1, 2, 3, 1)'; // token-exempt:",
+      '/features/geography/x.tsx:4 const d = Color.WHITE;',
+    ]);
   });
 
   it('defines the device dark theme and the picked dark theme with the same values', () => {
