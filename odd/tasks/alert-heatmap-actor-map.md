@@ -2,7 +2,7 @@
 
 ## Especificación
 
-- S1 (2026-10-15): las referencias facilitadas por el titular muestran una matriz de calor por dimensión MASCLI y comunidad, y un mapa circular de actores con agrupaciones y anillos. Implementar estas visualizaciones en las pantallas existentes, manteniendo las tablas y fichas.
+- S1 (2026-10-15): las referencias facilitadas por el titular muestran una matriz de calor por dimensión SIPGES y comunidad, y un mapa circular de actores con agrupaciones y anillos. Implementar estas visualizaciones en las pantallas existentes, manteniendo las tablas y fichas.
 - S2: usar los registros del proyecto activo y sus filtros. No crear ubicaciones, relaciones, niveles, porcentajes o series temporales para imitar los valores de las imágenes.
 - S3: la matriz muestra el nivel máximo documentado por dimensión y territorio entre alertas activas. Cerradas y descartadas permanecen consultables en la tabla. Sin registros es «Sin datos»; registros sin nivel son «Sin nivel». Un territorio se toma del campo de la alerta o de una referencia exacta a un evento accesible del mismo proyecto. Una referencia ambigua o narrativa no asigna territorio.
 - S4: el diagrama agrupa por tipo e influencia almacenados. La distancia representa las categorías ordinales Alta, Media-alta, Media, Media-baja y Baja; no son coordenadas geográficas ni puntajes nuevos. El color interpreta posiciones explícitas conocidas; los valores no clasificables permanecen visibles en sus fichas. Los grupos permiten abrir los registros y consultar sus relaciones documentadas.

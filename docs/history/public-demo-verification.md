@@ -2,7 +2,7 @@
 
 ## Actualización de acceso: 2026-10-14
 
-El propietario solicitó simplificar el ingreso de la demo académica. Vercel producción usa `MASCLI_REQUIRE_MFA=0`, con despliegue `dpl_A46t3io9oYwH1WZT2dcYn9Sudk8L` READY sobre `b19cd6b70d40b97614a5f052f915649b81d00286`. Se comprobó en Chromium que usuario y contraseña válidos llevan directamente al dashboard, administración responde 200, la sesión persiste tras recargar y logout la revoca. Cookie Secure/HttpOnly/SameSite=Strict, salud 200, CSP y vista móvil comprobados; sin errores de página. No se inscribió un autenticador ni se restableció MFA de cuentas existentes. La inscripción deja de ser requisito de la demo; las cuentas que activen TOTP voluntariamente conservan su verificación.
+El propietario solicitó simplificar el ingreso de la demo académica. Vercel producción usa `SIPGES_REQUIRE_MFA=0`, con despliegue `dpl_A46t3io9oYwH1WZT2dcYn9Sudk8L` READY sobre `b19cd6b70d40b97614a5f052f915649b81d00286`. Se comprobó en Chromium que usuario y contraseña válidos llevan directamente al dashboard, administración responde 200, la sesión persiste tras recargar y logout la revoca. Cookie Secure/HttpOnly/SameSite=Strict, salud 200, CSP y vista móvil comprobados; sin errores de página. No se inscribió un autenticador ni se restableció MFA de cuentas existentes. La inscripción deja de ser requisito de la demo; las cuentas que activen TOTP voluntariamente conservan su verificación.
 
 Este resultado sustituye el bloqueo previo a MFA y la inscripción pendiente de la comprobación histórica siguiente. CRUD/Blob/PDF/DOCX en la URL pública siguen pendientes de su smoke; no se declaran comprobados por esta prueba de acceso.
 

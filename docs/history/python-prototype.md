@@ -1,6 +1,6 @@
 # Python prototype history (RC 1.7 → 3.0, v0.4 → v0.5.1)
 
-Before the TypeScript rewrite (v1.0.0, see the [CHANGELOG](../../CHANGELOG.md)), MASCLI was a FastAPI + SQLite prototype. Its code is frozen in [`reference/python`](../../reference/python/README.md); its raw release notes and test results live in [`reference/python/history/`](../../reference/python/history/). This page is the short index. Dates are October 2026.
+Before the TypeScript rewrite (v1.0.0, see the [CHANGELOG](../../CHANGELOG.md)), SIPGES was a FastAPI + SQLite prototype. Its code is frozen in [`reference/python`](../../reference/python/README.md); its raw release notes and test results live in [`reference/python/history/`](../../reference/python/history/). This page is the short index. Dates are October 2026.
 
 ## Release candidates (RC 1.7 → 3.0)
 

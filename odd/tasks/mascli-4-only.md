@@ -1,6 +1,6 @@
-# MASCLI 4.0 as the only behaviour
+# SIPGES as the only behaviour
 
-Retire the per-project MASCLI 3.0/4.0 switch (ADR 0020 §1) so every project runs MASCLI 4.0.
+Retire the per-project 3.0/4.0 switch (ADR 0020 §1) so every project runs SIPGES.
 Supersedes S10 of [mascli-4-situations](mascli-4-situations.md). Branch `feat/mascli-4-only`,
 stacked on `feat/production-candidate-dashboard` (`f512d8d`).
 
@@ -8,7 +8,7 @@ stacked on `feat/production-candidate-dashboard` (`f512d8d`).
 
 - S1 — «te autorizo todo y avanza de forma autonoma , se supone que ahora todo debe decir MASCLI 4.0 , verdad ??»
 - S2 — «quiero que todo este en 4.0 , objetivo actualizar todo , eliminar redundancia objetivo estar en la vanguardia»
-- S3 — Replaces mascli-4-situations S10 («lo que funciona en MASCLI 3.0 se mantiene. Las mejoras forman MASCLI 4.0, activable por proyecto y desactivada por defecto»): every project behaves as MASCLI 4.0; the switch and the 3.0-only branches are removed (S2).
+- S3 — Replaces mascli-4-situations S10 («lo que funciona en MASCLI 3.0 se mantiene. Las mejoras forman MASCLI 4.0, activable por proyecto y desactivada por defecto»): every project behaves as SIPGES; the switch and the 3.0-only branches are removed (S2).
 
 ## Interpretation of S2 (engineering consequences, not new product requirements)
 
@@ -22,7 +22,7 @@ stacked on `feat/production-candidate-dashboard` (`f512d8d`).
   No migration is needed.
 - Per-project configuration that is not the switch stays: colour meanings, thresholds,
   recommendation catalogue, phase and phase weights, RSS feeds.
-- Visible branding names the product MASCLI 4.0. The `/system/v4/settings` path stays (no
+- Visible branding names the product SIPGES. The `/system/v4/settings` path stays (no
   extra route churn); its contract drops `version4`.
 - Deployment, production activation and real data still need the owner's separate word.
 
@@ -30,7 +30,7 @@ stacked on `feat/production-candidate-dashboard` (`f512d8d`).
 
 - T1 [x] S2,S3 — ADR 0027 superseding ADR 0020 §1; update ADR index, mascli-4-situations S10/T8 and media-monitoring S5 with verbatim log entries; route: inline docs; commit: pending
 - T2 [x] S2,S3 — API + contracts: switch removed from settings, ports, compose and routes; 4.0 rules unconditional; API tests updated; route: worker (cancelled mid-run) + parent readback; commit: same as T3 (contracts and web compile together)
-- T3 [x] S1,S2,S3 — Web + E2E: 3.0 branches and toggle removed; MASCLI 4.0 in title, document title, sidebar brand and login heading; web and E2E tests updated; route: worker + parent branding edits; commit: with T2
+- T3 [x] S1,S2,S3 — Web + E2E: 3.0 branches and toggle removed; SIPGES in title, document title, sidebar brand and login heading; web and E2E tests updated; route: worker + parent branding edits; commit: with T2
 - T4 [x] S2 — Verified: types/lint/boundaries 0, API 694/14 skipped, web 282, E2E 93 passed/1 skipped, independent static review; no HTTP differential against `f512d8d` (the contract change is intended, covered by tests); route: serial checks + verifier; commit: with T2/T3
 - T5 [x] S1,S2 — Closed: evidence index, ODD log, draft PR #81 stacked on #80; route: inline; commit: `eb51a10`, follow-up `acc9783`
 
@@ -54,4 +54,4 @@ No database migration and no stored-record rewrite.
 - L8 — First full E2E: 89 passed, 4 failed. Workflow journeys (desktop, phone) still closed plans without a file (3.0 flow); fixed in the shared journey, which now asserts the refusal and closes with an uploaded synthetic receipt. Heatmap phone and mobile viewport failed on a real overflow (475 px in a 390 px page) from `nowrap` level labels that now carry meaning; fixed separately in `3bd65d5`. Two intermediate workflow reruns failed on harness mistakes (receipt linked to an intelligence-alert id → 404; `id` read instead of `attachment.id`), retained in evidence. Final `pnpm lint && pnpm e2e`: exit 0, 93 passed, 1 skipped.
 - L9 — Git hygiene: `5c8a955` ignores raw run output under `odd/evidence` (none was tracked), so status is clean apart from the owner's `.pi/`. Commit order: `5c8a955` chore, `3bd65d5` fix (valid on its own), then the `feat!` unit (API, contracts, web and E2E compile only together) with a `BREAKING CHANGE` footer.
 - L10 — Native review: the whole branch (`b2ad4f9`→HEAD) exceeded the reviewer context budget (`lens_context_budget_exceeded`), so slices were assessed apart. This unit (`f512d8d`→`934fbb9`, lenses risk + reliability, tier high from the login heading) was approved and acknowledged (`review-b082ae718ab3f9a5`, authority burned). The #80 and #79 slices, assessed from temporary detached worktrees removed afterwards, were not due (`under_budget`, medium). Advisory findings handled as follow-up: R1 (ADR 0027 claimed a data-neutral rollback; corrected — saves drop the stored key, so a rollback reads the old default) and R3 (stored `version4: true` was untested; the legacy-key test now covers both values, 8/8 in that file). No meaningful RED: behaviour was already correct.
-- L11 — Closure: draft PR https://github.com/Dreamcoder08/mascli/pull/81 (base `feat/production-candidate-dashboard`). Remote CI blocked by GitHub account billing (jobs not started), so only local proof exists. Inherited tasks mascli-4-situations T8 and media-monitoring T5 closed on the same evidence. Deployment needs the owner's separate word.
+- L11 — Closure: draft PR https://github.com/Dreamcoder08/sipges/pull/81 (base `feat/production-candidate-dashboard`). Remote CI blocked by GitHub account billing (jobs not started), so only local proof exists. Inherited tasks mascli-4-situations T8 and media-monitoring T5 closed on the same evidence. Deployment needs the owner's separate word.

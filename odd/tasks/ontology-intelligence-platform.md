@@ -1,6 +1,6 @@
 # Ontology and Intelligence Platform
 
-Close the gap between MASCLI and state-of-the-art analysis platforms (Palantir-style ontology, link analysis, search, provenance, AI assistance) on top of the TypeScript monorepo on `main`. Branch `claude/project-thread-yqrjlu` from `main` 86aba17. Synthetic data only; no deployment, real-data migration or paid service activation without the user's word.
+Close the gap between SIPGES and state-of-the-art analysis platforms (Palantir-style ontology, link analysis, search, provenance, AI assistance) on top of the TypeScript monorepo on `main`. Branch `claude/project-thread-yqrjlu` from `main` 86aba17. Synthetic data only; no deployment, real-data migration or paid service activation without the user's word.
 
 ## Specs
 - S1: "que el falta para que tenga la calidad de palantir y otros software de vanguardia??"
