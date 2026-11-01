@@ -19,6 +19,9 @@ updates:
       # jsdom 30 stalls the NotificationBell test; upgrade it on its own with the fix.
       - dependency-name: jsdom
         update-types: ['version-update:semver-major']
+      # WebKit in Playwright 1.64 reports CSP violations for any native <select>; 1.63 does not.
+      - dependency-name: '@playwright/test'
+        versions: ['1.64.x']
   - package-ecosystem: github-actions
     directory: /
     target-branch: main
