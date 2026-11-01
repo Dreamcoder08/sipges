@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, readdirSync, rmSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  readlinkSync,
+  writeFileSync,
+  readdirSync,
+  rmSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -36,9 +44,20 @@ const fixture = (run) => {
     rmSync(dir, { recursive: true, force: true });
   }
 };
-test('Codex discovers four recurring SIPGES skills and the explicitly requested Neon skills', () => {
+const sipgesSkills = [
+  'sipges-archify',
+  'sipges-ci-triage',
+  'sipges-code-quality',
+  'sipges-odd-task',
+  'sipges-phone-check',
+  'sipges-self-improve',
+  'sipges-sync-main',
+  'sipges-task-pr',
+  'sipges-verify',
+];
+test('Codex discovers the recurring SIPGES skills and the explicitly requested Neon skills', () => {
   const dir = path.join(root, '.agents/skills');
-  const expected = ['sipges-archify', 'sipges-odd-task', 'sipges-task-pr', 'sipges-verify'];
+  const expected = sipgesSkills;
   const vendor = ['neon', 'neon-postgres'];
   const gentle = [
     'chained-pr',
@@ -229,3 +248,47 @@ test('Claude Code and Codex start Engram through the wrapper and deny real data 
   const manifest = JSON.parse(readFileSync(path.join(root, '.engram/manifest.json'), 'utf8'));
   assert.ok(manifest.chunks.length > 0);
 });
+
+test('Claude Code discovers the SIPGES and Neon skills through links to .agents/skills', () => {
+  const dir = path.join(root, '.claude/skills');
+  const linked = [...sipgesSkills, 'neon', 'neon-postgres'];
+  assert.deepEqual(readdirSync(dir).sort(), [...linked].sort());
+  for (const name of linked) {
+    assert.equal(readlinkSync(path.join(dir, name)), `../../.agents/skills/${name}`);
+    assert.match(
+      readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8'),
+      new RegExp(`^---\\nname: ${name}\\n`),
+    );
+  }
+});
+test('the main-merge helper keeps main first and renumbers the branch ODD log entry', () =>
+  fixture((dir) => {
+    mkdirSync(path.join(dir, 'odd/tasks'), { recursive: true });
+    const log = 'odd/tasks/demo.md';
+    writeFileSync(
+      path.join(dir, log),
+      '## Log\n- L1 start\n<<<<<<< HEAD\n- L2 branch work\n=======\n- L2 main work\n- L3 more main\n>>>>>>> origin/main\n',
+    );
+    writeFileSync(
+      path.join(dir, 'CHANGELOG.md'),
+      '# Changelog\n<<<<<<< HEAD\n- branch entry\n=======\n- main entry\n>>>>>>> origin/main\n- older\n',
+    );
+    const script = path.join(
+      root,
+      '.agents/skills/sipges-sync-main/scripts/resolve-doc-conflicts.py',
+    );
+    const result = spawnSync('python3', [script, log, 'CHANGELOG.md'], {
+      cwd: dir,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, `${log} 1\nCHANGELOG.md 1\n`);
+    assert.equal(
+      readFileSync(path.join(dir, log), 'utf8'),
+      '## Log\n- L1 start\n- L2 main work\n- L3 more main\n- L4 branch work\n',
+    );
+    assert.equal(
+      readFileSync(path.join(dir, 'CHANGELOG.md'), 'utf8'),
+      '# Changelog\n- main entry\n- branch entry\n- older\n',
+    );
+  }));
