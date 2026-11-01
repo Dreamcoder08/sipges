@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "chosen": "01-collapsible-focus.html",
+  "handoffs": {
+    "01-collapsible-focus.html": {
+      "status": "in_progress",
+      "queued": false,
+      "sentAt": "2026-11-01T07:20:53.413Z",
+      "startedAt": "2026-11-01T07:21:11.007Z",
+      "implementedAt": null,
+      "note": "Implementando en AppShell (React) con tokens reales; sin duplicar fijados."
+    }
+  }
+}
