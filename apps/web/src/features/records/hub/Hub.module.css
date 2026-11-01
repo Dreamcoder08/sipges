@@ -1,0 +1,98 @@
+.hub {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.count {
+  margin-left: var(--space-1);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.filters {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.muted {
+  color: var(--color-muted);
+  font-size: var(--text-base);
+}
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-base);
+}
+.table th {
+  text-align: left;
+  background: var(--color-brand-strong);
+  color: var(--color-on-brand);
+  font-weight: 600;
+}
+.table th,
+.table td {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+.open {
+  all: unset;
+  cursor: pointer;
+  color: var(--color-brand-text);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.open:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.pill,
+.typeChip {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-fill);
+  font-size: var(--text-sm);
+}
+.ver {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-info-soft);
+  color: var(--color-info);
+  font-weight: 700;
+}
+.ver[data-verification='A'],
+.ver[data-verification='B'] {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+.ver[data-verification='D'],
+.ver[data-verification='E'] {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-strong);
+}
+.sheetBody {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5) var(--space-5);
+}
+.sheetLead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+}
+/* Compact rows apply to the cross-type list and to every type screen under the hub. */
+.density[data-density='compact'] :global(td),
+.density[data-density='compact'] :global(th) {
+  padding-block: var(--space-1);
+}
