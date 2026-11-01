@@ -5,7 +5,7 @@ SIPGES is a pnpm TypeScript monorepo (`apps/api` Hono + PostgreSQL, `apps/web` R
 in one feature document per feature under `odd/tasks/` (`pnpm odd:status` lists the open tasks; superseded plans
 move to `odd/archive/`); decisions live in `docs/adr/`.
 
-## Skills de Codex (`.agents/skills/`)
+## Skills (`.agents/skills/`, linked for Claude Code from `.claude/skills/`)
 
 | Skill | Use it to |
 | --- | --- |
@@ -13,6 +13,11 @@ move to `odd/archive/`); decisions live in `docs/adr/`.
 | `sipges-odd-task` | Pick and close ODD tasks; append log entries with `pnpm odd:close`. |
 | `sipges-task-pr` | Commit, push and resume or open a stacked draft PR with the repo conventions. |
 | `sipges-archify` | Refresh the TypeScript architecture viewer and pinned ODD evidence. |
+| `sipges-sync-main` | Merge `main` into a feature branch and resolve CHANGELOG/ODD log conflicts. |
+| `sipges-ci-triage` | Diagnose failing or stuck CI checks: infrastructure rerun vs. code fix. |
+| `sipges-phone-check` | Check layouts at 360/412 px with the PGlite e2e and catch overflow. |
+| `sipges-self-improve` | Refresh skills, docs and workflows against current official sources, with evidence. |
+| `sipges-code-quality` | Review architecture, modularity, patterns, performance and tests against the ADRs. |
 
 Skills require at least three independent uses evidenced in [docs/agents/skills.md](docs/agents/skills.md). Benchmarking has only two archived runs and remains a documented procedure. Load only the matching SKILL.md; repository skills do not grant permissions.
 
