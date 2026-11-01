@@ -169,13 +169,16 @@ describe('MCP server', () => {
 
   it('answers searches, records, links, timelines and briefings within the key clearance', async () => {
     const t = await setup();
+    // Reads are external AI: they answer once the project switched it on (ADR 0030).
+    await t.call('PUT', '/system/v4/settings', { external_ai: { enabled: true } });
     const { token } = await t.key('Agente');
     const search = await t.tool(token, 'search_records', { query: 'comunidad' });
     expect(search.isError).toBe(false);
     expect(search.structuredContent.hits[0]).toMatchObject({
       module: 'actores',
       id: 'A-1',
-      title: 'Comunidad Norte',
+      // The actor's name never leaves; its pseudonym does.
+      title: expect.stringMatching(/^Actor-[0-9A-F]{6}$/),
     });
 
     const record = await t.tool(token, 'get_record', { module: 'eventos', id: 'EV-1' });
@@ -194,7 +197,8 @@ describe('MCP server', () => {
       subject: { id: 'A-1' },
     });
 
-    // A limited key never sees restricted records; a full-clearance key does.
+    // A limited key never sees restricted records; a full-clearance key gets only a stub,
+    // because restricted records never leave to external AI (ADR 0030).
     expect((await t.tool(token, 'get_record', { module: 'actores', id: 'A-2' })).isError).toBe(
       true,
     );
@@ -204,9 +208,7 @@ describe('MCP server', () => {
     const full = await t.key('Analista total', 'read', 'full');
     expect(
       (await t.tool(full.token, 'get_record', { module: 'actores', id: 'A-2' })).structuredContent,
-    ).toMatchObject({
-      marking: 'restringido',
-    });
+    ).toEqual({ module: 'actores', id: 'A-2', withheld: true });
 
     const invalid = await t.tool(token, 'get_record', { module: 'actores' });
     expect(invalid).toMatchObject({ isError: true });

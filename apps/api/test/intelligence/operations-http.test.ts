@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { EmbeddingProvider } from '../../src/contexts/intelligence/application/index.ts';
 import { createOllamaEmbeddings } from '../../src/contexts/intelligence/infrastructure/index.ts';
+import { exemptPayload } from '../../src/contexts/privacy/application/index.ts';
 import { createTestApp } from '../support/test-app.ts';
 
 type Fixture = Awaited<ReturnType<typeof createTestApp>>;
@@ -59,6 +60,7 @@ const fakeEmbeddings = (): EmbeddingProvider & { calls: string[] } => {
   ];
   return {
     model: 'fake-embed',
+    egress: 'local',
     calls,
     async embed(text) {
       calls.push(text);
@@ -390,7 +392,7 @@ describe('Ollama embeddings adapter', () => {
       model: 'nomic-embed-text',
       fetch: respond({ embeddings: [[1, 2, 3, 4, 5, 6, 7, 8]] }),
     });
-    expect(await ok.embed('hola')).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(await ok.embed(exemptPayload('hola', 'loopback'))).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
     expect(requests[0]).toEqual({
       url: 'http://127.0.0.1:11434/api/embed',
       body: { model: 'nomic-embed-text', input: 'hola' },
@@ -400,13 +402,13 @@ describe('Ollama embeddings adapter', () => {
       model: 'm',
       fetch: respond({ embeddings: [[1, 2]] }),
     });
-    await expect(short.embed('x')).rejects.toThrow();
+    await expect(short.embed(exemptPayload('x', 'loopback'))).rejects.toThrow();
     const failing = createOllamaEmbeddings({
       baseUrl: 'http://127.0.0.1:11434',
       model: 'm',
       fetch: respond({}, 500),
     });
-    await expect(failing.embed('x')).rejects.toThrow();
+    await expect(failing.embed(exemptPayload('x', 'loopback'))).rejects.toThrow();
   });
 });
 

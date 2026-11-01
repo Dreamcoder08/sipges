@@ -33,6 +33,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0027](0027-mascli-4-only.md) | SIPGES is the only behaviour: the per-project switch is retired | Accepted |
 | [0028](0028-cloudflare-workers-hosting.md) | Cloudflare Workers as the host, through Hyperdrive to PostgreSQL | Accepted |
 | [0029](0029-retire-vercel-host.md) | Retire the Vercel host: Workers is the only host | Accepted |
+| [0030](0030-external-ai-egress-guard.md) | External AI egress guard: switch, allowlists, pseudonyms and access log | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 

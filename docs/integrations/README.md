@@ -163,6 +163,9 @@ compartan palabras. Usa el modelo de embeddings de Ollama ya configurado
 - Los registros **restringidos** nunca se envían al modelo; siguen apareciendo en la búsqueda
   de texto para quien puede verlos.
 - Si el modelo no responde, la búsqueda sigue funcionando solo por texto.
+- Si `SIPGES_OLLAMA_URL` no es de esta máquina, los textos salen seudonimizados y solo con el
+  interruptor «Envío a IA externa» encendido; con un Ollama local nada cambia (ver
+  [Privacidad](#privacidad-qué-sale-hacia-una-ia-externa)).
 
 ## Tiempo real y trazas
 
@@ -217,6 +220,38 @@ claude mcp add --transport http sipges https://<tu-dominio>/mcp \
 
 Otros clientes (Claude Desktop, VS Code, Cursor) aceptan la misma URL y la cabecera
 `Authorization` en su configuración de servidores MCP remotos.
+
+### Privacidad: qué sale hacia una IA externa
+
+Un agente MCP, el resumen asistido (`SIPGES_ANALYST_PROVIDER=anthropic`) y unos embeddings en
+una URL que no sea de esta máquina son **IA externa**. Pasan por una sola guarda
+([ADR 0030](../adr/0030-external-ai-egress-guard.md)); es apoyo técnico para cumplir la
+Ley 29733, no una decisión legal.
+
+- **Interruptor por proyecto.** *Configuración → IA externa → Envío a IA externa*, solo
+  administradores y **apagado por defecto**. Apagado, las herramientas de lectura de MCP
+  responden «El envío a IA externa está desactivado para este proyecto», el resumen asistido no
+  se genera (queda el informe extractivo) y los embeddings a una URL no local se rechazan. Siguen
+  funcionando `list_object_types`, `create_record`, `link_records` y los embeddings de un Ollama
+  en `localhost`/`127.0.0.1`/`[::1]`.
+- **Seudónimos.** Encendido, los nombres de actores, personas y organizaciones salen como
+  `Actor-7F3A1C`, `Persona-…` u `Org-…`: el mismo nombre da el mismo seudónimo dentro del proyecto
+  y otro distinto en otro proyecto. Los nombres conocidos también se reemplazan dentro de textos
+  libres (sin importar mayúsculas ni tildes), y correos, teléfonos y DNI quedan como `[correo]`,
+  `[teléfono]` y `[DNI]`. La equivalencia no se guarda ni se devuelve.
+- **Registros restringidos.** Un registro marcado `restringido` nunca sale hacia una IA externa, sea cual sea la autorización de la clave o del usuario: se omite de las listas y en Auditoría aparece su id como «retenidos», sin contenido.
+- **Solo campos permitidos.** Cada módulo declara qué campos pueden salir
+  (`apps/api/src/contexts/privacy/domain/allowlist.ts`, con el motivo de cada uno); lo demás se
+  descarta. Nunca salen la posición frente al proyecto, el origen étnico, la salud, la religión,
+  la afiliación sindical, los ingresos, datos biométricos ni datos de contacto (teléfono, correo,
+  remitente del buzón).
+- **Registro de accesos.** Cada envío deja una fila en **Auditoría** (módulo «IA externa», acción
+  `EGRESS`): canal (`mcp`, `analyst` o `embeddings`), herramienta o propósito, quién (usuario, o
+  nombre e id de la clave de API), ids de los registros y cuántos campos se enviaron y
+  descartaron. Nunca los valores.
+- **Límites.** Un texto libre se limpia de nombres conocidos y de patrones de contacto, no se
+  interpreta: un nombre que nadie registró puede pasar. Los datos seudonimizados siguen siendo datos
+  personales: el interruptor no reemplaza el consentimiento ni la revisión legal.
 
 ## Variables de entorno
 

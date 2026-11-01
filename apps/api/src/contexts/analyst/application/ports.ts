@@ -1,3 +1,4 @@
+import type { SanitisedPayload } from '../../privacy/application/index.ts';
 import type { Connection, Subject } from '../domain/briefing.ts';
 import type { MentionFound, ProposedLink, ProposedRecord } from '../domain/proposals.ts';
 
@@ -45,11 +46,12 @@ export type ProposalStore = {
 
 /**
  * Rewrites an extractive briefing as prose (docs/adr/0013). It receives only the briefing text,
- * never raw records, and must cite with the briefing's [n] markers.
+ * never raw records, and only after the egress guard cleared it (docs/adr/0030); it must cite
+ * with the briefing's [n] markers.
  */
 export type Narrator = {
   readonly name: string;
-  narrate(briefing: string, signal: AbortSignal): Promise<string>;
+  narrate(briefing: SanitisedPayload<string>, signal: AbortSignal): Promise<string>;
 };
 
 export type Clock = { now(): Date };

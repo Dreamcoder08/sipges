@@ -22,7 +22,10 @@ export type AppConfig = {
   readonly maxUploadBytes: number;
   /** Where evidence file bytes live (docs/migration/evidence.md). */
   readonly storage: StorageConfig;
-  /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
+  /**
+   * Embedding service for semantic text analysis (docs/migration/operations.md). A URL that is
+   * not loopback is external AI: its texts leave only through the egress guard (docs/adr/0030).
+   */
   readonly ollama: { readonly baseUrl: string; readonly model: string };
   /** Hybrid search with stored embeddings from the Ollama model (SIPGES_SEMANTIC_SEARCH=1). */
   readonly semanticSearch: boolean;

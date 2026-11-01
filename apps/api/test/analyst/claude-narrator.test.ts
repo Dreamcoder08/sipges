@@ -1,6 +1,7 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, it } from 'vitest';
 import { createClaudeNarrator } from '../../src/contexts/analyst/infrastructure/claude-narrator.ts';
+import { exemptPayload } from '../../src/contexts/privacy/application/index.ts';
 import { loadConfig } from '../../src/platform/config.ts';
 import { TEST_ENV } from '../support/test-app.ts';
 
@@ -24,7 +25,9 @@ describe('Claude narrator', () => {
     const narrator = createClaudeNarrator({ model: 'claude-opus-5-5', client });
     const signal = new AbortController().signal;
     expect(narrator.name).toBe('claude:claude-opus-5-5');
-    expect(await narrator.narrate('- Hecho. [1]', signal)).toBe('Párrafo [1].');
+    expect(await narrator.narrate(exemptPayload('- Hecho. [1]', 'constant'), signal)).toBe(
+      'Párrafo [1].',
+    );
     const [params, options] = calls[0] as [Record<string, unknown>, Record<string, unknown>];
     expect(params).toMatchObject({
       model: 'claude-opus-5-5',
@@ -39,7 +42,9 @@ describe('Claude narrator', () => {
     for (const stop_reason of ['refusal', 'max_tokens']) {
       const { client } = fakeClient({ stop_reason, content: [{ type: 'text', text: 'x [1]' }] });
       const narrator = createClaudeNarrator({ model: 'claude-opus-5-5', client });
-      await expect(narrator.narrate('b', new AbortController().signal)).rejects.toThrow();
+      await expect(
+        narrator.narrate(exemptPayload('b', 'constant'), new AbortController().signal),
+      ).rejects.toThrow();
     }
   });
 

@@ -65,6 +65,7 @@ describe('SIPGES project settings', () => {
         },
       ]),
       phase: null,
+      external_ai: { enabled: false },
       phases: expect.arrayContaining([
         {
           id: 'operacion',

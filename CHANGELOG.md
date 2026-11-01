@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Privacidad
+
+- Guarda de envío a IA externa ([ADR 0030](docs/adr/0030-external-ai-egress-guard.md)): el servidor MCP, el resumen asistido y los embeddings a una URL no local pasan por una sola guarda. Interruptor por proyecto «Envío a IA externa» (apagado por defecto, solo administradores, en Configuración); apagado, las herramientas de lectura de MCP responden con error, el resumen asistido no se genera y esos embeddings se rechazan. Encendido, solo salen los campos permitidos de cada módulo, con seudónimos estables por proyecto en lugar de nombres, y correos, teléfonos y DNI quedan tapados. Los registros restringidos nunca salen, ni con una clave de autorización plena. Cada envío deja una fila en Auditoría (módulo «IA externa») con ids y conteos, sin valores. Los embeddings de un Ollama local no cambian. Los proveedores de embeddings deben declarar `egress: 'local' | 'external'`. Sin migración: el ajuste vive en `project_settings`.
+
 ### Interfaz
 
 - Cinco destinos en la navegación ([ADR 0015](docs/adr/0015-mobile-first-shell.md)): Inicio, Registros, Territorio, Bandeja y Análisis agrupan las pantallas actuales como pestañas enlazables (`?tipo=`, `?vista=`); la barra lateral añade «Integraciones» y «Recientes» y el móvil muestra Inicio, Registros, Bandeja y Territorio. Las rutas anteriores siguen funcionando; sin cambios de datos ni permisos.

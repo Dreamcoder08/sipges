@@ -4,7 +4,7 @@ import { createTestApp } from '../support/test-app.ts';
 
 type Json = Record<string, unknown>;
 
-const setup = async (narrator: Narrator | null = null) => {
+const setup = async (narrator: Narrator | null = null, externalAi = false) => {
   const t = await createTestApp({}, { narrator });
   const admin = await t.login('admin', 'admin-password-123');
   const call = async (method: string, path: string, body?: unknown) => {
@@ -47,6 +47,8 @@ const setup = async (narrator: Narrator | null = null) => {
     note: '',
   });
   await call('PUT', '/system/marking', { module: 'fuentes', id: 'F-2', marking: 'restringido' });
+  // The narrator is external AI: it only runs once the project switched it on (ADR 0030).
+  if (externalAi) await call('PUT', '/system/v4/settings', { external_ai: { enabled: true } });
   return { call };
 };
 
@@ -101,10 +103,13 @@ describe('GET /system/briefing', () => {
       (text) =>
         `La comunidad [1] se opone y participó en la asamblea [${text.includes('[2] Evento') ? 2 : 9}].`,
     );
-    const { call } = await setup(narrator);
+    const { call } = await setup(narrator, true);
     const { body } = await call('GET', '/system/briefing?module=actores&id=A-1');
     expect(seen).toHaveLength(1);
-    expect(seen[0]).toContain('Comunidad Norte');
+    // The model sees the actor as a pseudonym, never by name, and not its stance either.
+    expect(seen[0]).not.toContain('Comunidad Norte');
+    expect(seen[0]).toMatch(/Actor «Actor-[0-9A-F]{6}»/);
+    expect(seen[0]).not.toContain('En contra');
     expect(seen[0]).not.toContain('Informe reservado');
     expect(seen[0]).not.toContain('restringida');
     expect(body).toMatchObject({
@@ -127,7 +132,7 @@ describe('GET /system/briefing', () => {
       () => 'Afirmación sin fuente.',
       () => 'Dato inventado [7].',
     ]) {
-      const { call } = await setup(recording(answer).narrator);
+      const { call } = await setup(recording(answer).narrator, true);
       const { body } = await call('GET', '/system/briefing?module=actores&id=A-1');
       expect(body).toMatchObject({
         engine: 'extractivo',
