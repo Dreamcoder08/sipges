@@ -111,4 +111,25 @@ describe('portable hasher Argon2id concurrency gate', () => {
     expect(state.order.slice(2)).toEqual(passwords.slice(2));
     expect(state.order.slice(0, 2).sort()).toEqual(passwords.slice(0, 2));
   });
+
+  it('logs a failed computation by error class only, but not a malformed stored hash', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      state.failNext = 1;
+      expect(
+        await portablePasswordHasher.verify('gate-password-five', phc('gate-password-five')),
+      ).toBe(false);
+      expect(log).toHaveBeenCalledTimes(1);
+      expect(log).toHaveBeenCalledWith('MASCLI password verification failed', { kind: 'Error' });
+      expect(JSON.stringify(log.mock.calls)).not.toContain('gate-password-five');
+
+      log.mockClear();
+      expect(await portablePasswordHasher.verify('gate-password-five', '$argon2id$broken')).toBe(
+        false,
+      );
+      expect(log).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
+  });
 });

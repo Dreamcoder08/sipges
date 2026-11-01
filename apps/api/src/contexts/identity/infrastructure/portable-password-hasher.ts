@@ -98,7 +98,12 @@ export const portablePasswordHasher: PasswordHasher = {
       if (!parsed) return false;
       const candidate = await argon2id(password, parsed.salt, parsed, parsed.digest.length);
       return sameDigest(candidate, parsed.digest);
-    } catch {
+    } catch (error) {
+      // Malformed hashes already returned false; this is an infrastructure fault (for example an
+      // allocation failure). Fail closed, but leave a trace with the error class only.
+      console.error('MASCLI password verification failed', {
+        kind: error instanceof Error ? error.name : typeof error,
+      });
       return false;
     }
   },
