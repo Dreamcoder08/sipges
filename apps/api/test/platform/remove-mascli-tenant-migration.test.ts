@@ -42,7 +42,8 @@ const database = async () => {
     INSERT INTO project_settings (tenant_id, settings, updated_by, updated_at)
       VALUES ('${NEW}', '{}', 'ana', now());
   `);
-  return { db, all };
+  // Later migrations are out of scope here: `migrate` must apply exactly the one under test.
+  return { db, all: all.filter((m) => m.version <= VERSION) };
 };
 
 /** The MASCLI tenant the old Worker re-created, granted to the administrator. */
