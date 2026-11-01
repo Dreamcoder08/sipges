@@ -120,6 +120,8 @@ export const SearchPalette = ({ scope }: { scope: string }) => {
           className={styles.trigger}
           aria-haspopup="dialog"
           aria-keyshortcuts="Control+K Meta+K"
+          // Starts with the visible «Buscar» (WCAG 2.5.3) yet differs from list search buttons.
+          aria-label="Buscar en todo MASCLI"
         >
           <Icon name="search" />
           <span className={styles.label}>Buscar</span>
