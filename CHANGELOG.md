@@ -31,4 +31,4 @@ Primera versión publicada de SIPGES en TypeScript, desplegada en Vercel desde `
 
 Antes de v1.0.0 SIPGES fue un prototipo FastAPI + SQLite (RC 1.3 → 3.0 y v0.4 → v0.5.1). Su historial está resumido en [docs/history/python-prototype.md](docs/history/python-prototype.md); las notas originales se conservan en [`reference/python/history/`](reference/python/history/).
 
-[1.0.0]: https://github.com/Dreamcoder08/mascli/releases/tag/v1.0.0
+[1.0.0]: https://github.com/Dreamcoder08/sipges/releases/tag/v1.0.0
