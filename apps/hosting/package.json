@@ -10,7 +10,7 @@
   "dependencies": {
     "@mascli/api": "workspace:*",
     "@vercel/blob": "2.8.2",
-    "@vercel/functions": "3.10.1",
+    "@vercel/functions": "3.10.4",
     "hono": "^4.13.13"
   },
   "devDependencies": {
