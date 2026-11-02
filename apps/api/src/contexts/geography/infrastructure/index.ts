@@ -54,9 +54,11 @@ export const createIngemmetGateway = (
   // Only a settled catalogue is shared. On Workers a lookup still in flight belongs to the request
   // that started it: if that request is cancelled it never settles, and a caller awaiting it would
   // hang. Concurrent cold callers repeat the lookup, which is cheaper than that wait.
-  let cached: { expires: number; data: GeographyCatalogue } | undefined;
+  let cached: { lookup: number; expires: number; data: GeographyCatalogue } | undefined,
+    lookups = 0;
   const catalogue = async (): Promise<GeographyCatalogue> => {
     if (cached && cached.expires > Date.now()) return cached.data;
+    const lookup = ++lookups;
     const layers: GeographyCatalogue['layers'] = [],
       services: GeographyCatalogue['services'] = [],
       checkedAt = new Date().toISOString();
@@ -114,7 +116,9 @@ export const createIngemmetGateway = (
       layers,
       ...(layers.length ? {} : { error: 'No fue posible verificar el catálogo oficial.' }),
     };
-    cached = { expires: Date.now() + (layers.length ? 300_000 : 30_000), data };
+    // A slower lookup that started earlier must not replace a newer answer.
+    if (!cached || cached.lookup < lookup)
+      cached = { lookup, expires: Date.now() + (layers.length ? 300_000 : 30_000), data };
     return data;
   };
   return {

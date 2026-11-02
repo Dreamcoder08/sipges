@@ -92,4 +92,33 @@ describe('embedder probe across requests', () => {
     expect(await status(t, cookie)).toMatchObject({ available: true, reason: null });
     expect(Date.now() - started).toBeLessThan(1_000);
   });
+
+  it('keeps the newer probe answer when an older probe finishes later', async () => {
+    let calls = 0,
+      failOld: (() => void) | undefined;
+    const embeddings: EmbeddingProvider = {
+      model: 'fake-embed',
+      egress: 'local',
+      embed: () => {
+        calls += 1;
+        if (calls === 1)
+          return new Promise<number[]>((_, reject) => {
+            failOld = () => reject(new Error('offline'));
+          });
+        return Promise.resolve([1, 0, 0]);
+      },
+    };
+    const t = await createTestApp(
+      { SIPGES_OLLAMA_URL: 'http://127.0.0.1:11434', SIPGES_SEMANTIC_SEARCH: '1' },
+      { embeddings },
+    );
+    const { cookie } = await t.login('admin', 'admin-password-123');
+    const older = t.request('/system/intelligence/embedder', { headers: { cookie } });
+    t.clock.advance(1);
+    expect(await status(t, cookie)).toMatchObject({ available: true });
+    failOld?.();
+    await older;
+    expect(await status(t, cookie)).toMatchObject({ available: true, reason: null });
+    expect(calls).toBe(2);
+  });
 });

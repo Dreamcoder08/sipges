@@ -105,10 +105,12 @@ export const createIntelligenceService = (deps: {
   // Only settled answers are shared between requests. On Workers a probe or embedding still in
   // flight belongs to the request that started it; if that request is cancelled it never settles
   // and every caller awaiting it would hang. Concurrent callers repeat the work instead.
-  let probe: { at: number; reachable: boolean } | undefined;
+  let probe: { attempt: number; at: number; reachable: boolean } | undefined,
+    probes = 0;
   const reachable = async () => {
     const now = clock.now().getTime();
     if (probe && now - probe.at < PROBE_TTL_MS) return probe.reachable;
+    const attemptNumber = ++probes;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<boolean>((resolve) => {
       timer = setTimeout(() => resolve(false), PROBE_TIMEOUT_MS);
@@ -118,7 +120,9 @@ export const createIntelligenceService = (deps: {
       () => false,
     );
     const answer = await Promise.race([attempt, timeout]).finally(() => clearTimeout(timer));
-    probe = { at: now, reachable: answer };
+    // A slower probe that started earlier must not replace a newer answer.
+    if (!probe || probe.attempt < attemptNumber)
+      probe = { attempt: attemptNumber, at: now, reachable: answer };
     return answer;
   };
 
