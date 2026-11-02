@@ -19,6 +19,7 @@ import styles from './Sidebar.module.css';
 export const Sidebar = ({
   pathname,
   projectLabel,
+  projectKey,
   projectSwitcher,
   search,
   unread = 0,
@@ -26,6 +27,8 @@ export const Sidebar = ({
 }: {
   pathname: string;
   projectLabel: string;
+  /** Scope of the active project: «Recientes» are kept per project. */
+  projectKey: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
   /** Unread avisos, counted on the bell that opens Bandeja › Avisos. */
@@ -33,7 +36,7 @@ export const Sidebar = ({
   inDrawer?: boolean;
 }) => {
   const ids = useId();
-  const recents = useRecents();
+  const recents = useRecents(projectKey);
 
   return (
     <aside className={styles.sidebar} data-drawer={inDrawer}>
