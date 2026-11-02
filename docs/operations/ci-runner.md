@@ -29,7 +29,7 @@ scripts/self-hosted-runner.sh status
 scripts/self-hosted-runner.sh stop     # removes the container and unregisters the runner
 ```
 
-The runner is the official `ghcr.io/actions/actions-runner` image (Ubuntu, so `playwright install --with-deps`
+The runner is the official `ghcr.io/actions/actions-runner` image plus Node 22 (`scripts/self-hosted-runner.Dockerfile`; Ubuntu, so `playwright install --with-deps`
 works). It uses the host network and the host Docker daemon, so service containers (PostgreSQL) publish their ports on
 `127.0.0.1` exactly as on GitHub-hosted runners.
 

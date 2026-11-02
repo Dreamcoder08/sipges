@@ -6,7 +6,8 @@ set -euo pipefail
 
 REPO="${SIPGES_RUNNER_REPO:-Dreamcoder08/sipges}"
 NAME="sipges-runner"
-IMAGE="ghcr.io/actions/actions-runner:2.338.0"
+IMAGE="sipges-runner:local"
+DOCKERFILE="$(dirname "$0")/self-hosted-runner.Dockerfile"
 LABELS="sipges-local"
 VOLUME="sipges-runner-work"
 
@@ -16,6 +17,7 @@ start() {
     return
   fi
   docker rm -f "$NAME" >/dev/null 2>&1 || true
+  docker build -q -t "$IMAGE" -f "$DOCKERFILE" "$(dirname "$DOCKERFILE")" >/dev/null
   token="$(gh api -X POST "repos/$REPO/actions/runners/registration-token" --jq .token)"
   docker_gid="$(stat -c %g /var/run/docker.sock)"
   # --network host: job steps reach service containers on 127.0.0.1:<mapped port>, as on GitHub-hosted runners.
