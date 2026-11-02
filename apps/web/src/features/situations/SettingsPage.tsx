@@ -14,6 +14,7 @@ import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { AppearanceSection } from './AppearanceSection.tsx';
 import { ExternalAiCard } from './ExternalAiCard.tsx';
+import { LocationCard } from './LocationCard.tsx';
 import { MediaMonitorCard } from './MediaMonitorCard.tsx';
 import { PhaseCard } from './PhaseCard.tsx';
 import { type SettingsSection, settingsHref } from './sections.ts';
@@ -144,13 +145,15 @@ const SettingsForm = ({
       onSaved(
         body.external_ai
           ? `Envío a IA externa ${body.external_ai.enabled ? 'activado' : 'desactivado'}.`
-          : body.phase !== undefined
-            ? 'Fase del proyecto guardada.'
-            : body.phase_weights
-              ? 'Pesos de la fase guardados.'
-              : body.recommendations
-                ? 'Acciones sugeridas guardadas.'
-                : 'Significados guardados.',
+          : body.location !== undefined
+            ? `Ubicación del proyecto ${body.location ? 'guardada' : 'quitada'}.`
+            : body.phase !== undefined
+              ? 'Fase del proyecto guardada.'
+              : body.phase_weights
+                ? 'Pesos de la fase guardados.'
+                : body.recommendations
+                  ? 'Acciones sugeridas guardadas.'
+                  : 'Significados guardados.',
       );
       await cache.invalidateQueries({ queryKey: ['project-settings', scope] });
     },
@@ -243,6 +246,7 @@ const SettingsForm = ({
           ) : null}
         </form>
       </Card>
+      <LocationCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
       <PhaseCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
       <MediaMonitorCard scope={scope} admin={admin} />
       {error}

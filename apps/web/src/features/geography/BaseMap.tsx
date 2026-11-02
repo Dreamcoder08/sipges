@@ -156,28 +156,30 @@ export const BaseMap = ({
           </g>
         ) : null}
         {children}
-        <g aria-hidden="true" display={showBase && (!background || imagery) ? undefined : 'none'}>
-          {SECHURA_PLACES.map((place) => (
-            <g key={place.name}>
-              <circle
-                className={place.kind === 'port' ? styles.port : styles.town}
-                cx={svgX(place.at[0])}
-                cy={svgY(place.at[1])}
-                r={unit * 0.9}
-                strokeWidth={unit * 0.3}
-              />
-              <text
-                className={styles.placeLabel}
-                x={svgX(place.at[0]) + unit * 1.4}
-                y={svgY(place.at[1]) + unit * 1}
-                fontSize={unit * 2.8}
-                strokeWidth={unit * 0.5}
-              >
-                {place.name}
-              </text>
-            </g>
-          ))}
-        </g>
+        {showBase ? (
+          <g aria-hidden="true" display={!background || imagery ? undefined : 'none'}>
+            {SECHURA_PLACES.map((place) => (
+              <g key={place.name}>
+                <circle
+                  className={place.kind === 'port' ? styles.port : styles.town}
+                  cx={svgX(place.at[0])}
+                  cy={svgY(place.at[1])}
+                  r={unit * 0.9}
+                  strokeWidth={unit * 0.3}
+                />
+                <text
+                  className={styles.placeLabel}
+                  x={svgX(place.at[0]) + unit * 1.4}
+                  y={svgY(place.at[1]) + unit * 1}
+                  fontSize={unit * 2.8}
+                  strokeWidth={unit * 0.5}
+                >
+                  {place.name}
+                </text>
+              </g>
+            ))}
+          </g>
+        ) : null}
       </g>
       <g aria-hidden="true" className={styles.furniture}>
         <path

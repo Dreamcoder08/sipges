@@ -30,6 +30,12 @@ export const PHASE_WEIGHT_SUGGESTIONS: Readonly<Record<Phase, PhaseWeights>> = {
   cierre: { G: 0.15, A: 0.1, D: 0.25, N: 0.1, E: 0.25, I: 0.15 },
 };
 
+/** Where the project is (T19): place label and WGS 84 [west, south, east, north]. */
+export type ProjectLocation = {
+  readonly place: string;
+  readonly extent: readonly [number, number, number, number];
+};
+
 export type ProjectSettings = {
   /** Preliminary meanings, to be reviewed with the client's methodology owner. */
   readonly levelMeanings: Readonly<Record<Level, string>>;
@@ -50,6 +56,8 @@ export type ProjectSettings = {
    * to an external model or client. Off until an admin turns it on.
    */
   readonly externalAi: { readonly enabled: boolean };
+  /** Null until an admin sets it: the maps keep opening on the Sechura province. */
+  readonly location: ProjectLocation | null;
   readonly updatedBy: string;
   readonly updatedAt: Date | null;
 };
@@ -61,7 +69,8 @@ type Editable =
   | 'thresholds'
   | 'recommendations'
   | 'phase'
-  | 'externalAi';
+  | 'externalAi'
+  | 'location';
 /**
  * Fields left undefined keep their current value. Phase weights merge by phase; null removes
  * a phase's weights so it falls back to the general ones.
@@ -84,6 +93,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   phase: null,
   phaseWeights: {},
   externalAi: { enabled: false },
+  location: null,
   updatedBy: '',
   updatedAt: null,
 };
@@ -104,6 +114,7 @@ export const withDefaults = (stored: Partial<ProjectSettings> | null): ProjectSe
   phase: stored?.phase ?? null,
   phaseWeights: { ...stored?.phaseWeights },
   externalAi: { enabled: stored?.externalAi?.enabled === true },
+  location: stored?.location ?? null,
 });
 
 /** The weights IRSA should use instead of the general ones, or null to leave IRSA as is. */
@@ -154,5 +165,6 @@ export const changedFields = (before: ProjectSettings, after: ProjectSettings) =
       'phase',
       'phaseWeights',
       'externalAi',
+      'location',
     ] as const
   ).filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
