@@ -171,8 +171,8 @@ describe('MCP data tools with the switch on', () => {
     const agent = await t.key('Agente');
     await t.tool(agent.token, 'get_record', { module: 'actores', id: 'A-1' });
     const [row] = await t.egressRows();
-    // Posicion_Proyecto, Interes and Telefono never leave.
-    expect(row?.detail).toMatch(/descartados: 3/);
+    // Posicion_Proyecto, Interes, Telefono and the stamped Proyecto_ID never leave.
+    expect(row?.detail).toMatch(/descartados: 4/);
     expect(row?.detail).toContain('Posicion_Proyecto');
   });
 });

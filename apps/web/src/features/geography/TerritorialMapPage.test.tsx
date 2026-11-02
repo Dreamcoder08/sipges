@@ -408,3 +408,22 @@ it(
     expect(await screen.findByText('Concesión CONCESION SINTETICA y 3 km alrededor')).toBeVisible();
   },
 );
+
+// Regression (functional-closure S13): the map reads every page like Inicio instead of one
+// `limit=-1` request the API caps at 500 rows under the cache entry Inicio also fills.
+it('reads every page of each layer instead of one capped request', async () => {
+  serve();
+  const asked: string[] = [];
+  const page = Array.from({ length: 500 }, (_, index) => ({ _id: `EV-P${index}` }));
+  server.use(
+    http.get('/api/eventos', ({ request }) => {
+      const url = new URL(request.url);
+      asked.push(url.search);
+      return HttpResponse.json(url.searchParams.get('offset') === '0' ? page : EVENTS);
+    }),
+  );
+  renderPage();
+  const list = await screen.findByRole('list', { name: 'Registros del periodo' });
+  expect(within(list).getByText('Observado')).toBeVisible();
+  expect(asked).toEqual(['?limit=500&offset=0&q=', '?limit=500&offset=500&q=']);
+});

@@ -42,6 +42,9 @@ export const createTenancyService = (deps: {
       for (const admin of await users.adminUsernames()) await store.grant(admin, DEFAULT_SCOPE, at);
     },
 
+    /** The project's display label, for other contexts that name the active project. */
+    label: (scope: Scope) => store.tenantLabel(scope),
+
     async exportData(actor: Actor, scope: Scope) {
       if (
         actor.role !== 'admin' ||

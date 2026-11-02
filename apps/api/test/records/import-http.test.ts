@@ -55,6 +55,7 @@ describe('POST /system/import/{module}', () => {
     const a1 = (await call('GET', '/api/actores/A-1')).body;
     expect(a1).toEqual({
       ID_Actor: 'A-1',
+      Proyecto_ID: 'PRJ-SECHURA',
       'Nombre_Actor/Organizacion': 'Comunidad Norte',
       Tipo_Actor: 'Comunal',
       Influencia: 'Alta',

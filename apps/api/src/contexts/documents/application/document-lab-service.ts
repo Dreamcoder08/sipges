@@ -143,6 +143,7 @@ export const createDocumentLabService = (deps: {
     tenantId: string,
     items: readonly ReviewItem[],
     dryRun: boolean,
+    tolerant = false,
   ): Promise<BulkModule[]> => {
     const byModule = new Map<string, ReviewItem[]>();
     for (const item of items) {
@@ -153,7 +154,7 @@ export const createDocumentLabService = (deps: {
     const counts: BulkModule[] = [];
     for (const [module, group] of [...byModule].sort(([a], [b]) => a.localeCompare(b))) {
       const target = reviewTarget(group[0]?.theme ?? '');
-      const result = await records.createMissing(
+      const write = records.createMissing(
         tenantId,
         module,
         group.map((item) => ({
@@ -162,6 +163,14 @@ export const createDocumentLabService = (deps: {
         })),
         { dryRun, source: REVIEW_SOURCE },
       );
+      // In bulk, one module's failure is reported and the other modules keep their counts.
+      const result = tolerant
+        ? await write.catch(() => ({
+            created: 0,
+            existing: 0,
+            problems: [`${group.length} hallazgos decididos sin registro: use review:materialize`],
+          }))
+        : await write;
       counts.push({
         ...target,
         created: result.created,
@@ -415,7 +424,6 @@ export const createDocumentLabService = (deps: {
       };
       const decision = { status: checked.status, reviewer, note, at: clock.now() };
       const totals = new Map<string, BulkModule>();
-      const failures: string[] = [];
       let decided = 0;
       if (input.dryRun) {
         const items = await reviews.pending(tenantId, selector, MAX_BULK_DECISION);
@@ -442,22 +450,15 @@ export const createDocumentLabService = (deps: {
             limit,
           );
           decided += batch.length;
-          // Decisions commit first; a failed record write is reported, and approving again or
-          // the review:materialize backfill creates it under the same id.
-          try {
-            addCounts(totals, await writeRecords(tenantId, batch, false));
-          } catch {
-            failures.push(
-              `${batch.length} hallazgos decididos sin registro: use review:materialize`,
-            );
-          }
+          // Decisions commit first; a failed module write is reported per module, and the
+          // review:materialize backfill creates the missing records under the same ids.
+          addCounts(totals, await writeRecords(tenantId, batch, false, true));
           if (!chunks && batch.length < limit) break;
         }
       }
       const modules = [...totals.values()];
       const problems = [
         ...modules.flatMap((m) => m.problems.map((problem) => `${m.module}: ${problem}`)),
-        ...failures,
       ];
       const pendingLeft = ids ? 0 : await reviews.countPending(tenantId, selector);
       return ok({

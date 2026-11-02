@@ -201,24 +201,16 @@ describe('conflict-risk prediction', () => {
     expect(['media', 'alta']).toContain(top?.confidence);
   });
 
-  it('ignores alerts SIPGES generated itself and records of another project', () => {
+  it('ignores alerts SIPGES generated itself', () => {
     const report = conflictRisk(
-      input(
-        [
-          rec('Alertas', {
-            Territorio: 'Pampa Alta',
-            Fecha: addDays(TODAY, -3),
-            Nivel_Preliminar: 'Rojo',
-            Origen: 'SIPGES',
-          }),
-          rec('Demandas', {
-            Territorio: 'Otra Tierra',
-            Fecha_Registro: addDays(TODAY, -3),
-            Proyecto_ID: 'OTRO',
-          }),
-        ],
-        { projectId: 'PRJ-SECHURA' },
-      ),
+      input([
+        rec('Alertas', {
+          Territorio: 'Pampa Alta',
+          Fecha: addDays(TODAY, -3),
+          Nivel_Preliminar: 'Rojo',
+          Origen: 'SIPGES',
+        }),
+      ]),
     );
     expect(report.status).toBe('sin datos suficientes');
   });

@@ -77,6 +77,7 @@ describe('/api/{module} generic records', () => {
     expect(await (await call('GET', '/api/eventos/EV-1')).json()).toEqual({
       ID_Evento: 'EV-1',
       Titulo: 'Bloqueo',
+      Proyecto_ID: 'PRJ-SECHURA',
       _id: 'EV-1',
     });
 
@@ -102,6 +103,7 @@ describe('/api/{module} generic records', () => {
     expect(rows[0]).toEqual({
       ID_Actor: 'A-2',
       Nombre: 'Gremio Pesquero',
+      Proyecto_ID: 'PRJ-SECHURA',
       _id: 'A-2',
       _updated_at: '2026-10-12T12:01:00Z',
     });
@@ -140,6 +142,7 @@ describe('/api/{module} generic records', () => {
     expect(await put.json()).toEqual({ ok: true });
     expect(await (await call('GET', '/api/demandas/D-1')).json()).toEqual({
       Estado: 'Cerrada',
+      Proyecto_ID: 'PRJ-SECHURA',
       _id: 'D-1',
     });
     const [listed] = (await (await call('GET', '/api/demandas')).json()) as {
@@ -235,6 +238,7 @@ describe('/api/{module} generic records', () => {
     expect(await (await call('GET', '/api/eventos/EV-N', undefined, north)).json()).toEqual({
       ID_Evento: 'EV-N',
       Titulo: 'Norte',
+      Proyecto_ID: 'NORTE',
       _id: 'EV-N',
     });
     expect(((await audit('', north)) as unknown[]).length).toBe(1);

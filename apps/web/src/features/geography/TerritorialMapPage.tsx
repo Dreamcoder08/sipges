@@ -1,9 +1,9 @@
 import { GeographyCatalogue, GeographyResult } from '@sipges/contracts';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { lazy, Suspense, useId, useMemo, useRef, useState } from 'react';
-import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
 import { saveBlob } from '../../shared/api/download.ts';
+import { moduleRecordsQuery } from '../../shared/api/module-records.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { useProjectSettings } from '../../shared/lib/project-settings.tsx';
@@ -64,7 +64,6 @@ import styles from './TerritorialMap.module.css';
 const GeoCanvas = lazy(() => import('./engine/GeoCanvas.tsx'));
 const CesiumCanvas = lazy(() => import('./engine/CesiumCanvas.tsx'));
 
-const Records = z.array(z.looseObject({ _id: z.string() }));
 const CLOSED = new Set(['cerrada', 'cerrado', 'descartada', 'descartado']);
 /** Widest view (degrees) for which the cadastre is requested; wider views ask to zoom in. */
 export const MAX_CONCESSION_SPAN = 2.5;
@@ -83,11 +82,8 @@ const DIMENSION_RGB: Readonly<Record<DimensionCode, readonly [number, number, nu
   I: [74, 85, 104],
 };
 
-const useLayer = (slug: string, scope: string) =>
-  useQuery({
-    queryKey: ['records', scope, slug, 'all'],
-    queryFn: ({ signal }) => requestJson(`/api/${slug}?limit=-1`, Records, { scope, signal }),
-  });
+/** Every page of a layer, in the cache entry Inicio and Registros also read. */
+const useLayer = (slug: string, scope: string) => useQuery(moduleRecordsQuery(slug, scope));
 
 const csvCell = (value: unknown) =>
   `"${String(value)
