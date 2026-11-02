@@ -379,3 +379,60 @@ it('shows the switch to everyone else read-only', async () => {
   expect(toggle).toBeChecked();
   expect(toggle).toBeDisabled();
 });
+
+it('lets an administrator save and clear the project location the maps open on', async () => {
+  const user = userEvent.setup();
+  const sent: unknown[] = [];
+  let current: Record<string, unknown> = settings();
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(current)),
+    http.put('*/system/v4/settings', async ({ request }) => {
+      const body = (await request.json()) as { location?: unknown };
+      sent.push(body);
+      current = {
+        ...current,
+        location: body.location,
+        updated_at: `2026-10-19T12:0${sent.length}:00Z`,
+      };
+      return HttpResponse.json(current);
+    }),
+  );
+  renderPage('admin');
+  const locationCard = async () =>
+    (await screen.findByRole('heading', { name: 'Ubicación del proyecto' })).closest(
+      'section',
+    ) as HTMLElement;
+  const card = await locationCard();
+  expect(within(card).getByText(/Sin ubicación guardada/)).toBeInTheDocument();
+  await user.type(within(card).getByLabelText('Lugar'), 'Tambogrande, Piura');
+  await user.type(within(card).getByLabelText('Oeste (longitud)'), '-80.548');
+  await user.type(within(card).getByLabelText('Sur (latitud)'), '-5.057');
+  await user.type(within(card).getByLabelText('Este (longitud)'), '-80.218');
+  await user.type(within(card).getByLabelText('Norte (latitud)'), '-4.880');
+  await user.click(within(card).getByRole('button', { name: 'Guardar ubicación' }));
+  expect(await screen.findByText('Ubicación del proyecto guardada.')).toBeInTheDocument();
+  expect(sent[0]).toEqual({
+    location: { place: 'Tambogrande, Piura', extent: [-80.548, -5.057, -80.218, -4.88] },
+  });
+  // The form remounts with the saved settings.
+  const saved = await locationCard();
+  expect(within(saved).getByText(/Guardada: Tambogrande, Piura/)).toBeInTheDocument();
+  await user.click(within(saved).getByRole('button', { name: 'Quitar ubicación' }));
+  expect(await screen.findByText('Ubicación del proyecto quitada.')).toBeInTheDocument();
+  expect(sent[1]).toEqual({ location: null });
+});
+
+it('shows the project location read-only to other roles', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({
+        ...settings(),
+        location: { place: 'Tambogrande, Piura', extent: [-80.548, -5.057, -80.218, -4.88] },
+      }),
+    ),
+  );
+  renderPage('consulta');
+  expect(await screen.findByLabelText('Lugar')).toHaveValue('Tambogrande, Piura');
+  expect(screen.getByLabelText('Lugar')).toHaveAttribute('readonly');
+  expect(screen.queryByRole('button', { name: 'Guardar ubicación' })).toBeNull();
+});
