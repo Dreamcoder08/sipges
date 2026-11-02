@@ -83,7 +83,7 @@ export const createApp = (
   app.use('*', roleGate(identity));
   if (options.eventAutomation) app.use('*', automationWakeup(container.runtime, options.defer));
 
-  app.route('/', healthRoutes());
+  app.route('/', healthRoutes({ ready: container.ready }));
   app.route(
     '/',
     runtimeRoutes(container.runtime, {

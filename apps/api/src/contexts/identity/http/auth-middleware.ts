@@ -10,6 +10,7 @@ import { GOOGLE_CALLBACK_PATH, GOOGLE_START_PATH } from './google-routes.ts';
 /** Routes reachable without a session (app.py enforce_auth exemptions, minus ADR 0008 #4). */
 const PUBLIC_PATHS = new Set([
   '/health',
+  '/health/ready',
   '/login',
   '/logout',
   '/select-project',
