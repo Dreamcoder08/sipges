@@ -46,8 +46,7 @@ it('enrolls MFA before requiring a project, even for a consultation account', as
   await user.clear(screen.getByLabelText('Código del autenticador'));
   await user.type(screen.getByLabelText('Código del autenticador'), '123456');
   await user.click(screen.getByRole('button', { name: 'Activar y continuar' }));
-  expect(
-    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-  ).toBeVisible();
+  expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
+  expect(window.location.pathname).toBe('/inicio');
   expect(screen.queryByText('TEST-SYNTHETIC-TOTP')).toBeNull();
 });

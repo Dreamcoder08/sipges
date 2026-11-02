@@ -14,8 +14,9 @@ describe('navigation', () => {
   it('keeps post-login redirects inside the app', () => {
     expect(safeRedirect('/irsa?x=1')).toBe('/irsa?x=1');
     for (const value of ['//evil.example', '/\\evil.example', 'https://evil.example', 'irsa', 3]) {
-      expect(safeRedirect(value)).toBe('/');
+      expect(safeRedirect(value)).toBe('/inicio');
     }
+    expect(safeRedirect(undefined)).toBe('/inicio');
   });
 
   it('lists every screen once with a title', () => {
@@ -74,7 +75,9 @@ describe('navigation', () => {
       href: '/registros',
       label: 'Registros · Eventos',
     });
-    expect(visitFor('/inicio', '')).toEqual({ href: '/inicio', label: 'Inicio' });
+    // Inicio is where sign-in lands and it already has its own link: no «Recientes» copy.
+    expect(visitFor('/inicio', '')).toBeNull();
+    expect(visitFor('/inicio', '?vista=inicio')).toBeNull();
     expect(visitFor('/inicio', '?vista=gerencial')).toEqual({
       href: '/inicio?vista=gerencial',
       label: 'Inicio · Centro gerencial',
@@ -86,5 +89,10 @@ describe('navigation', () => {
   it('gives every screen an icon', () => {
     expect(Object.keys(SCREEN_ICONS).sort()).toEqual(SCREENS.map((s) => s.path).sort());
     for (const hub of DESTINATIONS) expect(hub.icon).toBeTruthy();
+  });
+
+  it('gives each screen its own icon', () => {
+    const icons = Object.values(SCREEN_ICONS);
+    expect(new Set(icons).size).toBe(icons.length);
   });
 });

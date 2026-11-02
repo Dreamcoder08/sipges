@@ -52,6 +52,7 @@ import {
   SCREENS,
   type ScreenPath,
   hubHref,
+  HOME_PATH,
   safeRedirect,
 } from './navigation.ts';
 
@@ -243,7 +244,7 @@ const mfaRoute = createRoute({
         onEnabled={async () => {
           queryClient.clear();
           await router.invalidate();
-          await router.navigate({ to: '/' });
+          await router.navigate({ to: HOME_PATH });
         }}
         onSignOut={async () => {
           await logout();
@@ -268,7 +269,7 @@ const selectProjectRoute = createRoute({
       <SelectProjectPage
         onSelected={async () => {
           await queryClient.invalidateQueries();
-          await navigate({ to: '/' });
+          await navigate({ to: HOME_PATH });
         }}
       />
     );

@@ -105,9 +105,7 @@ test.describe('Secure cookie policy and exact 0|1 override (S7)', () => {
       expect(run.setCookie).toContain('HttpOnly');
       expect(run.stored).toHaveLength(1);
       expect(run.stored[0]).toMatchObject({ secure: false, httpOnly: true, sameSite: 'Strict' });
-      await expect(
-        run.page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-      ).toBeVisible();
+      await expect(run.page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
 
       // The project cookie follows the same policy (browser fetch: same origin, real cookie jar).
       const status = await run.page.evaluate(async () => {

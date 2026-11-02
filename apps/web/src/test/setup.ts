@@ -29,5 +29,7 @@ afterEach(() => {
   cleanup();
   server.resetHandlers();
   window.history.replaceState(null, '', '/');
+  // «Recientes» lives in sessionStorage; a visit in one test must not list a link in the next.
+  window.sessionStorage.clear();
 });
 afterAll(() => server.close());

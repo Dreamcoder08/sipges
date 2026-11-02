@@ -177,7 +177,7 @@ test('cross-tenant access is refused with 403 (scope) and 404 (foreign ids)', as
 
   // In the browser the restricted user only ever sees the granted project.
   await signIn(page, analyst);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
   await expect(page.getByLabel('Proyecto activo').locator('option')).toHaveText([
     'Proyecto Sechura (migración)',
   ]);
