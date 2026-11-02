@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { withTenant } from '../../src/platform/database/tenant-transaction.ts';
+import type { SqlClient } from '../../src/platform/database/sql-client.ts';
+import { enterTenant, withTenant } from '../../src/platform/database/tenant-transaction.ts';
 import { createTestApp } from '../support/test-app.ts';
 
 /**
@@ -69,6 +70,50 @@ describe('withTenant', () => {
     const t = await createTestApp();
     await expect(withTenant(t.sql, '', async () => undefined)).rejects.toThrow(
       'Tenant id is required',
+    );
+  });
+
+  it('enters a tenant with one statement sent to the database', async () => {
+    // Each statement is one round trip to a remote database; entering a tenant runs on every request.
+    const t = await createTestApp();
+    const sent: string[] = [];
+    await t.sql.transaction(async (tx) => {
+      const counting: SqlClient = {
+        query: (text, params) => {
+          sent.push(text);
+          return tx.query(text, params);
+        },
+        exec: (text) => {
+          sent.push(text);
+          return tx.exec(text);
+        },
+        transaction: tx.transaction,
+      };
+      await enterTenant(counting, 'ACME/NORTE');
+      const [row] = await tx.query<{ role: string; tenant: string; clearance: string }>(
+        "SELECT current_user AS role, current_setting('app.tenant_id') AS tenant, current_setting('app.clearance') AS clearance",
+      );
+      expect(row).toEqual({ role: 'sipges_tenant', tenant: 'ACME/NORTE', clearance: 'full' });
+    });
+    expect(sent).toHaveLength(1);
+  });
+
+  it('keeps a tenant id with quotes and backslashes as one literal value', async () => {
+    const t = await createTestApp();
+    await setupProbeTable(t);
+    const hostile = "X\\'); SET LOCAL ROLE postgres; SELECT ('";
+    const [row] = await withTenant(t.sql, hostile, (tx) =>
+      tx.query<{ role: string; tenant: string; rows: number }>(
+        "SELECT current_user AS role, current_setting('app.tenant_id') AS tenant, (SELECT count(*)::int FROM rls_probe) AS rows",
+      ),
+    );
+    expect(row).toEqual({ role: 'sipges_tenant', tenant: hostile, rows: 0 });
+  });
+
+  it('refuses a tenant id with a NUL character', async () => {
+    const t = await createTestApp();
+    await expect(withTenant(t.sql, 'ACME\0NORTE', async () => undefined)).rejects.toThrow(
+      'Tenant settings cannot contain NUL characters',
     );
   });
 });

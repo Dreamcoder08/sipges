@@ -33,10 +33,23 @@ export const withTenant = async <T>(
 export const enterTenant = async (tx: SqlClient, tenantId: string): Promise<void> => {
   if (!tenantId) throw new Error('Tenant id is required');
   const context = currentRequestContext();
-  await tx.query(
-    `SELECT set_config('app.tenant_id', $1, true), set_config('app.actor', $2, true),
-            set_config('app.clearance', $3, true)`,
-    [tenantId, context?.actor ?? '', context?.clearance ?? 'full'],
+  // One round trip: this runs on every tenant request against a remote database. A
+  // parameterized query costs two with postgres.js (parse/describe, then bind/execute), so the
+  // values are inlined as literals and run with the simple protocol. `set_config('role', …,
+  // true)` is `SET LOCAL ROLE`, so the role switch rides in the same statement.
+  await tx.exec(
+    `SELECT set_config('app.tenant_id', ${literal(tenantId)}, true),
+            set_config('app.actor', ${literal(context?.actor ?? '')}, true),
+            set_config('app.clearance', ${literal(context?.clearance ?? 'full')}, true),
+            set_config('role', 'sipges_tenant', true)`,
   );
-  await tx.exec('SET LOCAL ROLE sipges_tenant');
+};
+
+/**
+ * An escape-string literal (`E'…'`): backslashes and quotes are doubled, so the value stays one
+ * literal whatever `standard_conforming_strings` is. NUL cannot be stored in text at all.
+ */
+const literal = (value: string): string => {
+  if (value.includes('\0')) throw new Error('Tenant settings cannot contain NUL characters');
+  return `E'${value.replaceAll('\\', '\\\\').replaceAll("'", "''")}'`;
 };
