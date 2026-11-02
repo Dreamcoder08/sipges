@@ -7,6 +7,7 @@ import { ProjectSettingsProvider } from '../../shared/lib/project-settings.tsx';
 import { LevelPill } from '../../shared/ui/Badges.tsx';
 import { server } from '../../test/server.ts';
 import { SettingsPage } from './SettingsPage.tsx';
+import { type SettingsSection, settingsSearch } from './sections.ts';
 
 const meanings = {
   Verde: 'Situación estable / riesgo bajo',
@@ -67,7 +68,11 @@ const context = {
   username: 'admin',
   fullName: 'Admin Demo',
 };
-const renderPage = (role: 'admin' | 'consulta') =>
+const renderPage = (
+  role: 'admin' | 'consulta',
+  section: SettingsSection = 'proyecto',
+  extra: Partial<Parameters<typeof SettingsPage>[0]> = {},
+) =>
   render(
     <QueryClientProvider
       client={
@@ -76,7 +81,7 @@ const renderPage = (role: 'admin' | 'consulta') =>
         })
       }
     >
-      <SettingsPage {...context} role={role} />
+      <SettingsPage {...context} role={role} section={section} {...extra} />
     </QueryClientProvider>,
   );
 
@@ -102,16 +107,73 @@ it('presents the project as SIPGES with no switch to turn it on or off', async (
   expect(screen.getByText('Fuentes RSS regionales')).toBeInTheDocument();
 });
 
-it('shows Apariencia on top of the page to every role, even a read-only one', async () => {
+it('opens on Apariencia for every role, with a section nav like Claude settings', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
-  renderPage('consulta');
-  expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
-  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
-  const appearance = screen.getByRole('heading', { name: 'Apariencia' });
-  const project = screen.getByRole('heading', { name: 'SIPGES' });
+  renderPage('consulta', undefined, { section: undefined });
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
   expect(
-    appearance.compareDocumentPosition(project) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
+    within(nav)
+      .getAllByRole('link')
+      .map((link) => link.textContent),
+  ).toEqual(['Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones', 'Integraciones']);
+  expect(within(nav).getByRole('link', { name: 'Apariencia' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  expect(within(nav).getByRole('link', { name: 'Proyecto' })).toHaveAttribute(
+    'href',
+    '/version-4?seccion=proyecto',
+  );
+  expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
+    'href',
+    '/integraciones',
+  );
+  expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'SIPGES' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('checkbox', { name: 'Envío a IA externa' })).not.toBeInTheDocument();
+});
+
+it('shows one section at a time and goes to another through the URL', async () => {
+  const user = userEvent.setup();
+  const visited: string[] = [];
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('admin', 'privacidad', { onNavigate: (href) => visited.push(href) });
+  expect(await screen.findByRole('checkbox', { name: 'Envío a IA externa' })).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument();
+  expect(screen.queryByText('Significado de cada color')).not.toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(within(nav).getByRole('link', { name: 'Privacidad y datos' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  within(nav).getByRole('link', { name: 'Proyecto' }).focus();
+  await user.keyboard('{Enter}');
+  await user.click(within(nav).getByRole('link', { name: 'Integraciones' }));
+  expect(visited).toEqual(['/version-4?seccion=proyecto', '/integraciones']);
+});
+
+it('keeps the section nav working without a router', async () => {
+  const user = userEvent.setup();
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('admin', 'apariencia');
+  await user.click(screen.getByRole('link', { name: 'Proyecto' }));
+  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+});
+
+it('shows only the notification preference that exists today: this device', () => {
+  renderPage('consulta', 'notificaciones', {
+    notifications: <p>Recibir avisos en este dispositivo</p>,
+  });
+  expect(screen.getByRole('heading', { name: 'Notificaciones' })).toBeInTheDocument();
+  expect(screen.getByText('Recibir avisos en este dispositivo')).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument();
+});
+
+it('accepts only known sections in the URL', () => {
+  expect(settingsSearch.parse({ seccion: 'privacidad' })).toEqual({ seccion: 'privacidad' });
+  expect(settingsSearch.parse({ seccion: 'cuenta' })).toEqual({ seccion: undefined });
+  expect(settingsSearch.parse({ seccion: 7 })).toEqual({ seccion: undefined });
+  expect(settingsSearch.parse({})).toEqual({ seccion: undefined });
 });
 
 it('saves edited colour meanings', async () => {
@@ -281,7 +343,7 @@ const COPY =
 
 it('shows «Envío a IA externa» off by default, with the privacy copy', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
-  renderPage('admin');
+  renderPage('admin', 'privacidad');
   const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
   expect(toggle).not.toBeChecked();
   expect(screen.getByText(COPY)).toBeInTheDocument();
@@ -299,7 +361,7 @@ it('lets an administrator turn «Envío a IA externa» on and sends only that se
       return HttpResponse.json(stored);
     }),
   );
-  renderPage('admin');
+  renderPage('admin', 'privacidad');
   await user.click(await screen.findByRole('checkbox', { name: 'Envío a IA externa' }));
   expect(await screen.findByText('Envío a IA externa activado.')).toBeInTheDocument();
   expect(sent).toEqual({ external_ai: { enabled: true } });
@@ -312,7 +374,7 @@ it('shows the switch to everyone else read-only', async () => {
       HttpResponse.json({ ...settings(), external_ai: { enabled: true } }),
     ),
   );
-  renderPage('consulta');
+  renderPage('consulta', 'privacidad');
   const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
   expect(toggle).toBeChecked();
   expect(toggle).toBeDisabled();

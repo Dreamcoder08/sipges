@@ -75,6 +75,12 @@ describe('navigation', () => {
       label: 'Registros · Eventos',
     });
     expect(visitFor('/inicio', '')).toEqual({ href: '/inicio', label: 'Inicio' });
+    // Configuración is one screen in «Recientes», whichever section was open.
+    for (const search of ['', '?seccion=proyecto', '?seccion=privacidad'])
+      expect(visitFor('/version-4', search)).toEqual({
+        href: '/version-4',
+        label: 'Configuración',
+      });
     expect(visitFor('/inicio', '?vista=gerencial')).toEqual({
       href: '/inicio?vista=gerencial',
       label: 'Inicio · Centro gerencial',

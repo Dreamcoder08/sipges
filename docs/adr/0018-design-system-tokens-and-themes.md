@@ -20,7 +20,7 @@ titles, Material 3 segmented buttons and navigation bar, and the 2026 mobile tre
   tokens only. `tokens.test.ts` rejects raw colours outside `tokens.css` and cartography paint
   in `features/geography`, which is map data, not interface chrome.
 - **Light and dark themes.** The dark theme follows `prefers-color-scheme`; Configuración →
-  Apariencia (open to every role) pins Sistema, Claro or Oscuro per device (`shared/lib/theme.ts`, `localStorage`, no server
+  Apariencia (`/version-4?seccion=apariencia`, the default section, open to every role) pins Sistema, Claro or Oscuro per device (`shared/lib/theme.ts`, `localStorage`, no server
   state). It is applied in `main.tsx` before the first render because the CSP forbids inline
   scripts. Both dark blocks must stay identical, which the token test checks.
 - **Contrast is tested, not hoped for.** The token test computes WCAG ratios for every text pair

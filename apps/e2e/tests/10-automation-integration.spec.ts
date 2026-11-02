@@ -66,7 +66,7 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
         params: { name: 'get_record', arguments: { module: 'alertas', id: alertId } },
       },
     });
-  await page.goto('/version-4');
+  await page.goto('/version-4?seccion=privacidad');
   const externalAi = page.getByRole('checkbox', { name: 'Envío a IA externa' });
   // A controlled checkbox: it flips only once the server saved the setting.
   const setExternalAi = async (on: boolean) => {
