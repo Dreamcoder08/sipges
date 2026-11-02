@@ -71,6 +71,8 @@ const signInOverHttp = async (browser: Browser, instance: Instance) => {
 };
 
 test.describe('Secure cookie policy and exact 0|1 override (S7)', () => {
+  // Each case boots its own instance; startApi may wait up to 60 s, the default test budget.
+  test.describe.configure({ timeout: 120_000 });
   let browser: Browser;
   test.beforeAll(async () => {
     browser = await chromium.launch({ args: [`--host-resolver-rules=MAP ${HOST} 127.0.0.1`] });
