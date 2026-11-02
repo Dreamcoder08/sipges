@@ -49,6 +49,17 @@ Los secretos se cifran con `SIPGES_DATA_KEY` y no vuelven a mostrarse. Solo se a
 destinos `https` públicos (sin `localhost`, IP privadas ni nombres internos). De los registros
 **restringidos** solo sale el módulo y el id, nunca su contenido.
 
+### Registro de envíos
+
+Cada envío a un canal y cada aviso push deja una fila en **Auditoría** del proyecto (módulo
+«Automatizaciones»): acción `CHANNEL_SEND` con el tipo de canal, la regla, el canal, el evento
+de origen y el resultado (`Envío webhook · regla 7 · canal 3 · evento 900 · enviado` o
+`fallido`), o `PUSH_SEND` con la entrega y el resultado (`aceptado`, `expirado`, `fallido`). Las
+pruebas de canal y de push también quedan registradas. La fila nunca lleva la URL, el token, el
+chat, los correos, el endpoint, el título, el texto del mensaje ni nombres de personas (Ley
+29733): solo números internos. Si la auditoría no se puede escribir, el envío no se repite ni se
+marca como fallido; el error queda en el log del servidor. Estas filas no disparan reglas.
+
 ### Verificar un webhook
 
 Cada envío trae las cabeceras de [Standard Webhooks](https://www.standardwebhooks.com):

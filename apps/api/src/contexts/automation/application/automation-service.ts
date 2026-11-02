@@ -6,7 +6,9 @@ import {
   isPushEndpoint,
   validateChannel,
 } from '../domain/channels.ts';
+import { log } from '../../../platform/observability/logger.ts';
 import {
+  AUTOMATION_AUDIT_MODULE,
   type AuditEvent,
   type Rule,
   type RuleError,
@@ -28,6 +30,8 @@ import type {
   PushStore,
   PushSubscription,
   SecretSealer,
+  SendAudit,
+  SendAuditEntry,
 } from './ports.ts';
 
 /** Audit rows matched per tenant and tick; the cursor catches up over later ticks. */
@@ -96,8 +100,36 @@ export const createAutomationService = (deps: {
   recordModules: readonly { readonly module: string; readonly slug: string }[];
   /** Browser push; absent when no VAPID keys are configured. */
   push?: { readonly store: PushStore; readonly sender: PushSender | null };
+  /** Audit trail of outbound sends (S8); absent only in tests that do not check it. */
+  audit?: SendAudit;
 }) => {
   const { store, sender, sealer, clock } = deps;
+
+  /**
+   * Best effort by design: the send already happened (or failed) when this runs, so a failing
+   * audit write is logged and swallowed. Failing the run would retry and repeat the message.
+   */
+  const audited = async (
+    tenantId: string,
+    action: SendAuditEntry['action'],
+    detail: string,
+  ): Promise<void> => {
+    if (!deps.audit) return;
+    try {
+      await deps.audit.append(tenantId, {
+        module: AUTOMATION_AUDIT_MODULE,
+        recordId: null,
+        action,
+        detail,
+        at: clock.now(),
+      });
+    } catch (error) {
+      log('error', 'automation send audit failed', {
+        action,
+        error: error instanceof Error ? error.name : 'unknown',
+      });
+    }
+  };
   const slugs = new Map(deps.recordModules.map((m) => [m.module, m.slug]));
   const sources: EventSource[] = [
     ...deps.recordModules.map(({ module }) => ({ module, label: module.replaceAll('_', ' ') })),
@@ -130,8 +162,10 @@ export const createAutomationService = (deps: {
       );
       if (!deliveries.length) break;
       for (const d of deliveries) {
+        let outcome = 'fallido';
         try {
           const result = await push.sender.send(d.subscription, d.payload, clock.now());
+          outcome = result === 'gone' ? 'expirado' : 'aceptado';
           if (result === 'gone') await push.store.forget(d.subscription.endpoint);
           await push.store.finish(
             tenantId,
@@ -150,6 +184,7 @@ export const createAutomationService = (deps: {
             new Date(clock.now().getTime() + (delay ?? 0) * 60000),
           );
         }
+        await audited(tenantId, 'PUSH_SEND', `Envío push · entrega ${d.id} · ${outcome}`);
       }
     }
   };
@@ -195,14 +230,21 @@ export const createAutomationService = (deps: {
     }
     const config = await openChannel(tenantId, step.channelId);
     if (!config) throw new Error('El canal ya no existe');
-    await sender.send(config, {
-      id: `msg_${tenantId.replace(/[^A-Za-z0-9]/g, '_')}_${run.id}`,
-      title,
-      text,
-      tenantId,
-      at: clock.now(),
-      event: eventBody(tenantId, event),
-    });
+    const detail = `Envío ${config.kind} · regla ${run.ruleId} · canal ${step.channelId} · evento ${event.auditId}`;
+    try {
+      await sender.send(config, {
+        id: `msg_${tenantId.replace(/[^A-Za-z0-9]/g, '_')}_${run.id}`,
+        title,
+        text,
+        tenantId,
+        at: clock.now(),
+        event: eventBody(tenantId, event),
+      });
+    } catch (error) {
+      await audited(tenantId, 'CHANNEL_SEND', `${detail} · fallido`);
+      throw error;
+    }
+    await audited(tenantId, 'CHANNEL_SEND', `${detail} · enviado`);
   };
 
   const deliver = async (tenantId: string, deadline: number) => {
@@ -319,6 +361,7 @@ export const createAutomationService = (deps: {
     async testChannel(tenantId: string, id: number): Promise<Result<true, string>> {
       const config = await openChannel(tenantId, id);
       if (!config) return err('Canal no encontrado');
+      const detail = `Prueba de canal ${config.kind} · canal ${id}`;
       try {
         await sender.send(config, {
           id: `msg_test_${id}_${clock.now().getTime()}`,
@@ -328,10 +371,12 @@ export const createAutomationService = (deps: {
           at: clock.now(),
           event: { type: 'sipges.test', tenant: tenantId },
         });
-        return ok(true);
       } catch (error) {
+        await audited(tenantId, 'CHANNEL_SEND', `${detail} · fallido`);
         return err(errorText(error));
       }
+      await audited(tenantId, 'CHANNEL_SEND', `${detail} · enviado`);
+      return ok(true);
     },
 
     runs: (tenantId: string, limit: number) =>
@@ -369,7 +414,11 @@ export const createAutomationService = (deps: {
         receipt_confirmed: false as const,
       };
     },
-    async testPush(username: string): Promise<{
+    /** `tenantId` is the active project, where the test is audited (no person is named). */
+    async testPush(
+      username: string,
+      tenantId?: string,
+    ): Promise<{
       status: 'accepted' | 'no_subscription' | 'failed';
       accepted: number;
       detail: string;
@@ -405,6 +454,12 @@ export const createAutomationService = (deps: {
           failed = true;
         }
       }
+      if (tenantId)
+        await audited(
+          tenantId,
+          'PUSH_SEND',
+          `Prueba de push · ${accepted} aceptados · ${targets.length - accepted} fallidos`,
+        );
       return {
         status: failed ? 'failed' : 'accepted',
         accepted,

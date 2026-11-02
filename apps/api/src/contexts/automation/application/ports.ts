@@ -197,4 +197,18 @@ export type PushStore = {
   ): Promise<void>;
 };
 
+/** One audit row per outbound send; the detail names kinds and internal ids, never targets. */
+export type SendAuditEntry = {
+  readonly module: string;
+  readonly recordId: null;
+  readonly action: 'CHANNEL_SEND' | 'PUSH_SEND';
+  readonly detail: string;
+  readonly at: Date;
+};
+
+/** Write side of the tenant audit trail, provided by the Audit context (docs/adr/0002). */
+export type SendAudit = {
+  append(tenantId: string, entry: SendAuditEntry): Promise<void>;
+};
+
 export type Clock = { now(): Date };
