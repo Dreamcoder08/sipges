@@ -32,8 +32,6 @@ export type RiskInput = {
   readonly irsa: readonly IrsaPoint[];
   /** `YYYY-MM-DD`, the prediction day. */
   readonly today: string;
-  /** Records carrying another `Proyecto_ID` are ignored; the tenant is already the project. */
-  readonly projectId?: string;
 };
 
 export type SignalKind = 'demand' | 'commitment' | 'narrative' | 'alert' | 'escalation' | 'event';
@@ -171,12 +169,11 @@ const shortTitle = (value: string, fallback: string) => {
   return title.length > 120 ? `${title.slice(0, 117)}…` : title;
 };
 
-const recordSignals = (record: RiskRecord, names: Names, projectId?: string): Signal[] => {
+/** Every record of the tenant counts: the tenant is the project (S13), whatever `Proyecto_ID` says. */
+const recordSignals = (record: RiskRecord, names: Names): Signal[] => {
   const spec = SPECS[record.module];
   if (!spec) return [];
   const { payload } = record;
-  const project = text(payload['Proyecto_ID']);
-  if (projectId && project && project !== projectId) return [];
   if (record.module === 'Alertas' && text(payload['Origen']) === GENERATED_ORIGIN) return [];
   const dueDate = record.module === 'Compromisos' ? recordDueDate(payload) : null;
   const date = dayOf(first(payload, spec.dates)) ?? dueDate;
@@ -279,7 +276,7 @@ export type SignalIndex = {
 export const indexSignals = (input: RiskInput): SignalIndex => {
   const names = new Names();
   const signals = [
-    ...input.records.flatMap((r) => recordSignals(r, names, input.projectId)),
+    ...input.records.flatMap((r) => recordSignals(r, names)),
     ...input.alerts.flatMap((a) => alertSignals(a, names)),
   ].filter((s) => s.date <= input.today);
   const byUnit = new Map<string, Signal[]>();

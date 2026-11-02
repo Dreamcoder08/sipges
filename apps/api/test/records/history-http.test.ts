@@ -57,7 +57,11 @@ describe('GET /api/{module}/{id}/history', () => {
       },
       { field: 'Tipo', before: 'Comunal' },
     ]);
-    expect(body[2]?.changes.map((c) => c.field)).toEqual(['ID_Actor', 'Nombre_Actor/Organizacion']);
+    expect(body[2]?.changes.map((c) => c.field)).toEqual([
+      'ID_Actor',
+      'Nombre_Actor/Organizacion',
+      'Proyecto_ID',
+    ]);
   });
 
   it('skips writes that change nothing and keeps the history after deletion', async () => {

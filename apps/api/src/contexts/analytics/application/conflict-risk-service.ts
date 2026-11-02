@@ -19,7 +19,6 @@ export const createConflictRiskService = (deps: {
       alerts,
       irsa,
       today: limaToday(deps.clock.now()),
-      projectId: scope.projectId,
     });
   },
 });

@@ -6,7 +6,7 @@ const AT = '2026-10-12T12:00:00Z';
 const rec = (id: string, payload: Record<string, unknown>): StoredRecord => ({ id, payload });
 
 describe('buildSituational (app.py:627)', () => {
-  it('counts every module, excluding records of other projects, with PRJ-SECHURA fallback', () => {
+  it('counts every record the tenant holds, whatever its Proyecto_ID (S13)', () => {
     const result = buildSituational(
       {
         Eventos: [
@@ -20,7 +20,7 @@ describe('buildSituational (app.py:627)', () => {
       AT,
     );
     expect(result.counts).toEqual({
-      eventos: 2,
+      eventos: 3,
       actores: 0,
       demandas: 0,
       compromisos: 0,
