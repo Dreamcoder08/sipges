@@ -99,8 +99,10 @@ export const AppShell = ({
       inDrawer={compact}
     />
   );
+  // On wide screens the sidebar already shows the project and the active screen,
+  // so the title stays only as the focus target and outline for assistive tech.
   const h1 = (
-    <h1 ref={heading} tabIndex={-1}>
+    <h1 ref={heading} tabIndex={-1} className={compact ? undefined : 'visually-hidden'}>
       {title}
     </h1>
   );
@@ -112,32 +114,27 @@ export const AppShell = ({
       </a>
       {compact ? null : sidebar}
       <div className={styles.body}>
-        <header ref={topbar} className={styles.topbar}>
-          {compact ? (
-            <>
-              <button
-                type="button"
-                className={styles.menu}
-                aria-haspopup="dialog"
-                aria-expanded={drawer}
-                onClick={() => setDrawer(true)}
-              >
-                <Icon name="menu" />
-                {unread > 0 ? <span className={styles.unread} data-unread="" /> : null}
-                <span className="visually-hidden">
-                  Abrir menú
-                  {unread > 0 ? `, ${unread} ${unread === 1 ? 'aviso' : 'avisos'} sin leer` : ''}
-                </span>
-              </button>
-              <div className={styles.compactTitle}>{h1}</div>
-            </>
-          ) : (
-            <div className={styles.heading}>
-              <p className={styles.eyebrow}>{projectLabel}</p>
-              {h1}
-            </div>
-          )}
-        </header>
+        {compact ? (
+          <header ref={topbar} className={styles.topbar}>
+            <button
+              type="button"
+              className={styles.menu}
+              aria-haspopup="dialog"
+              aria-expanded={drawer}
+              onClick={() => setDrawer(true)}
+            >
+              <Icon name="menu" />
+              {unread > 0 ? <span className={styles.unread} data-unread="" /> : null}
+              <span className="visually-hidden">
+                Abrir menú
+                {unread > 0 ? `, ${unread} ${unread === 1 ? 'aviso' : 'avisos'} sin leer` : ''}
+              </span>
+            </button>
+            <div className={styles.compactTitle}>{h1}</div>
+          </header>
+        ) : (
+          h1
+        )}
         {live}
         <main id="contenido" className={styles.main} tabIndex={-1}>
           {children}
