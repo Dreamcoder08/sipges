@@ -214,6 +214,8 @@ export const visitFor = (path: string, search: string): { href: string; label: s
   }
   const asked = new URLSearchParams(search).get(hub.param);
   const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
+  // A hub's own page (Inicio, where sign-in lands) already has its sidebar link.
+  if (tab.label === hub.label) return null;
   return {
     href: hubHref(hub, tab.value),
     label: tab.label === hub.label ? hub.label : `${hub.label} · ${tab.label}`,
@@ -232,9 +234,9 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/inteligencia-redes': 'network',
   '/alertas': 'bell',
   '/pendientes': 'inbox',
-  '/situaciones': 'layers',
-  '/buzon': 'message',
-  '/lecciones': 'layers',
+  '/situaciones': 'link',
+  '/buzon': 'mail',
+  '/lecciones': 'lightbulb',
   '/mapa': 'map',
   '/ubicacion': 'pin',
   '/cronologia': 'clock',
@@ -242,7 +244,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/estrategia': 'target',
   '/irsa': 'chart',
   '/validacion': 'check',
-  '/calidad': 'check',
+  '/calidad': 'grid',
   '/fuentes': 'file',
   '/administracion': 'sliders',
   '/automatizaciones': 'zap',
@@ -262,6 +264,12 @@ export const titleFor = (path: string) =>
   DESTINATIONS.find((hub) => hub.path === path)?.label ??
   'SIPGES';
 
-/** Only same-app paths are accepted as a post-login destination (no open redirect). */
+/** Where a signed-in person lands by default: Inicio (functional-closure S6). */
+export const HOME_PATH = '/inicio';
+
+/**
+ * Only same-app paths are accepted as a post-login destination (no open redirect). The app root
+ * counts as no destination, so opening SIPGES and signing in lands on Inicio.
+ */
 export const safeRedirect = (value: unknown) =>
-  typeof value === 'string' && /^\/(?![/\\])/.test(value) ? value : '/';
+  typeof value === 'string' && value !== '/' && /^\/(?![/\\])/.test(value) ? value : HOME_PATH;

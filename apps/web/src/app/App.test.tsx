@@ -43,9 +43,9 @@ describe('sign-in', () => {
     await user.type(otp, '12a3456');
     expect(otp).toHaveValue('123456');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    // Opening the app root and signing in lands on Inicio (functional-closure S6).
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
+    expect(window.location.pathname).toBe('/inicio');
   });
 
   it('offers Google sign-in only when the server has it configured', async () => {
@@ -85,8 +85,8 @@ describe('sign-in', () => {
     await user.type(await screen.findByLabelText('Usuario'), 'persona');
     await user.type(screen.getByLabelText('Contraseña'), 'synthetic-pass-123');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
-    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
-    expect(window.location.pathname).toBe('/');
+    await screen.findByRole('heading', { level: 1, name: 'Inicio' });
+    expect(window.location.pathname).toBe('/inicio');
   });
 
   it('returns to the login form when the API reports an ended session', async () => {
@@ -132,9 +132,8 @@ describe('active project', () => {
     render(<App />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /Proyecto Norte/ }));
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
+    expect(window.location.pathname).toBe('/inicio');
     expect(api.scope).toBe('DEMO/PRJ-NORTE');
     expect(screen.getByLabelText('Proyecto activo')).toHaveValue('DEMO/PRJ-NORTE');
   });

@@ -38,7 +38,7 @@ test('mobile viewport: sign-in, menu drawer and every screen fit the width', asy
   await expectNoHorizontalPageScroll(page);
   const settled = watchNetwork(page);
   await signInToProject(page, admin, DEFAULT_SCOPE);
-  await expect(page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
   await expectNoHorizontalPageScroll(page);
 
   // Docs/adr/0015 addendum 2026-11-01, like ChatGPT and Claude mobile: the top bar holds only the
@@ -49,7 +49,7 @@ test('mobile viewport: sign-in, menu drawer and every screen fit the width', asy
   const menuBox = await menu.boundingBox();
   expect(menuBox?.width).toBeGreaterThanOrEqual(44);
   expect(menuBox?.height).toBeGreaterThanOrEqual(44);
-  await expect(header.getByRole('heading', { level: 1 })).toHaveText('Dashboard ejecutivo');
+  await expect(header.getByRole('heading', { level: 1 })).toHaveText('Inicio');
   await expect(page.getByRole('navigation', { name: 'Navegación principal' })).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Secciones' })).toHaveCount(0);
 
