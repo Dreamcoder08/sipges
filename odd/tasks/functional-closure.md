@@ -20,15 +20,15 @@ is private on GitHub Free, so `main` does not enforce them). Local gate: `pnpm v
 
 ## Tasks
 
-- T1 [ ] — S3, S4: Worker serves static assets without backend setup; `/health/ready` with `SELECT 1`; deploy rolls back when the smoke test fails. Risk: item 5 (delivery). Route: delegated (Herdr tab, own verifier). Commit: pending.
+- T1 [x] — S3, S4: Worker serves static assets without backend setup; `/health/ready` with `SELECT 1`; deploy rolls back when the smoke test fails. Risk: item 5 (delivery). Route: delegated (Herdr tab, own verifier). Commit: PR #150.
 - T2 [x] — S5, S11 (timeout): CI paths filter for docs-only changes, Python parity only when `reference/python/**` changes, monthly Dependabot, e2e start-up timeout. Risk: item 5. Route: inline. Commit: PR #137.
 - T3 [x] — S6: land on `/inicio`, IRSA card to `/analisis`, honest composer note, remove dead `PendingScreen`, distinct screen icons, CHANGELOG line about the bottom bar. Route: delegated (Herdr tab). Commit: PR #151.
 - T4 [x] — S7, S8 (bookkeeping): reconcile ODD documents with git, Workers-only deployment docs, README Node version, ADR 0003 global tables, handover and backup/restore guide. Route: delegated (Herdr tab). Done: `28e62b7`, PR #138 (L4).
 - T5 [ ] — S8: production check of the external-AI switch and egress refusal (needs the owner's sign-in). Route: inline with the browser. Commit: n/a.
 - T6 [ ] — S9: notifications as «Avisos» in Bandeja, bell removed. Route: wave 2. Commit: pending.
-- T7 [ ] — S9: Configuración with section navigation (no API change). Route: wave 2. Commit: pending.
+- T7 [x] — S9: Configuración with section navigation (no API change). Route: wave 2. Commit: PR #152.
 - T8 [ ] — S9: «Restablecer MFA» in Administración. Risk: item 2 (identity). Route: wave 2, own verifier. Commit: pending.
-- T9 [ ] — S9: `GET /api/registros/summary` and Registros «Todos» on it. Route: wave 2. Commit: pending.
+- T9 [x] — S9: `GET /api/registros/summary` and Registros «Todos» on it. Route: wave 2. Commit: PR #154.
 - T10 [ ] — S10: command ports for `module_records`, `automation_cursors` and `audit` writes; one records reader port. Route: wave 3. Commit: pending.
 - T11 [ ] — S10: embedder availability in config and UI. Route: wave 3. Commit: pending.
 - T12 [ ] — S8: audit row per automation channel send. Risk: item 2 (data exposure). Route: wave 3, own verifier. Commit: pending.
@@ -51,3 +51,4 @@ Outside the code (owner or external service): GEOCATMIN live check while its ser
 - L5 — T2 done inline: PR #137 merged with 8/8 checks (paths filter, Python parity only on `reference/python/**` or `ci.yml`, monthly Dependabot, 120 s budget for `02-cookie-policy`). Gentle AI review approved; follow-ups kept: shallow fetch of the base instead of `fetch-depth: 0`, one source for the duplicated ignore list. Python tests only read inside `reference/python` (`conftest.py:49`, `app.py:20`), so the filter cannot skip them silently.
 - L6 — T3 done by its tab: PR #151 merged (land on `/inicio`, IRSA card to `/analisis`, honest composer note, distinct icons, dead `PendingScreen` removed); RED 8 unit tests, GREEN web 434/434. Owner authorized agent tabs to commit and push without a prompt (`git commit`/`git push` removed from `permissions.ask`; force push, rebase and hard reset still ask).
 - L7 — Dependency queue: merged #139, #141, #142, #143 (8/8), #145 (react group, the fix from #144 working), #146; #140 closed (react-dom alone breaks React). Held: #148 `postgres` 4.0 (T15) and #147 `unpdf` 2.0 failing (T16). New tasks T17 (data key rotation) and T18 (R2 backup and restore drill) come from T4's handover findings.
+- L8 — Wave 2 merged with every check green: T1 PR #150 (static files served without the backend, `/health/ready`, deploy rollback; the SPA test now reads asset bodies that may be streams, `0fe80f8`), T7 PR #152 (Configuración by sections), T9 PR #154 (`GET /api/registros/summary` behind Registros «Todos»). Next: T6 and T8.
