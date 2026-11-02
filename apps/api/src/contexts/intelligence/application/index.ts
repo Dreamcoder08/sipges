@@ -6,6 +6,7 @@ export {
   createIntelligenceService,
   type AlertCreateError,
   type AlertDecisionError,
+  type EmbedderStatus,
   type IntelligenceService,
   type SemanticError,
 } from './intelligence-service.ts';
