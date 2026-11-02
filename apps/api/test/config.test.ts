@@ -110,6 +110,7 @@ describe('Ollama embeddings settings (RC 2.5)', () => {
     expect(loadConfig({}).ollama).toEqual({
       baseUrl: 'http://127.0.0.1:11434',
       model: 'nomic-embed-text',
+      configured: false,
     });
   });
 
@@ -119,7 +120,7 @@ describe('Ollama embeddings settings (RC 2.5)', () => {
         SIPGES_OLLAMA_URL: 'https://ollama.internal',
         SIPGES_OLLAMA_EMBED_MODEL: 'bge-m3',
       }).ollama,
-    ).toEqual({ baseUrl: 'https://ollama.internal', model: 'bge-m3' });
+    ).toEqual({ baseUrl: 'https://ollama.internal', model: 'bge-m3', configured: true });
   });
 
   it.each([
