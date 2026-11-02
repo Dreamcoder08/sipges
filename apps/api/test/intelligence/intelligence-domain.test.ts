@@ -14,6 +14,16 @@ import {
 } from '../../src/contexts/management/domain/index.ts';
 import parity from './python-parity.fixture.json' with { type: 'json' };
 
+/**
+ * app.py kept every project in one database and filtered narratives by `Proyecto_ID or
+ * project_id or "PRJ-SECHURA"`. SIPGES stores each project in its own tenant (RLS), so the
+ * parity input is the narratives the PRJ-SECHURA tenant would hold.
+ */
+const sechuraTenant = (narratives: readonly Readonly<Record<string, unknown>>[]) =>
+  narratives.filter(
+    (r) => (r['Proyecto_ID'] || r['project_id'] || 'PRJ-SECHURA') === 'PRJ-SECHURA',
+  );
+
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
 
 describe('Python parity (scripts/python-parity/operations.py)', () => {
@@ -29,7 +39,7 @@ describe('Python parity (scripts/python-parity/operations.py)', () => {
     (_, { text, expected }) => {
       const result = analyzeText(
         { text, projectId: 'PRJ-SECHURA', sourceUrl: 'https://example.org/p' },
-        parity.narratives,
+        sechuraTenant(parity.narratives),
         sha256,
       );
       expect(result).toEqual({ ok: true, value: expected });

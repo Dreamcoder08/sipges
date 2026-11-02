@@ -135,21 +135,20 @@ describe('integratedAnalysis (app.py:881)', () => {
   });
 });
 
-describe('extendedRecords project filter (app.py:709)', () => {
-  it('defaults only missing Proyecto_ID to PRJ-SECHURA and newest-first order is kept', () => {
-    const result = extendedRecords(
-      {
-        Intereses: [
-          { id: 'i1', payload: { Actor: 'A' } },
-          { id: 'i2', payload: { Proyecto_ID: 'PRJ-OTRO' } },
-          { id: 'i3', payload: { Proyecto_ID: '' } },
-          { id: 'i4', payload: { Proyecto_ID: 'PRJ-SECHURA', _id: 'spoof' } },
-        ],
-      },
-      'PRJ-SECHURA',
-    );
+describe('extendedRecords (app.py:709)', () => {
+  it('keeps every record of the tenant, whatever its Proyecto_ID, newest first (S13)', () => {
+    const result = extendedRecords({
+      Intereses: [
+        { id: 'i1', payload: { Actor: 'A' } },
+        { id: 'i2', payload: { Proyecto_ID: 'PRJ-OTRO' } },
+        { id: 'i3', payload: { Proyecto_ID: '' } },
+        { id: 'i4', payload: { Proyecto_ID: 'PRJ-SECHURA', _id: 'spoof' } },
+      ],
+    });
     expect(result.intereses).toEqual([
       { Actor: 'A', _id: 'i1' },
+      { Proyecto_ID: 'PRJ-OTRO', _id: 'i2' },
+      { Proyecto_ID: '', _id: 'i3' },
       { Proyecto_ID: 'PRJ-SECHURA', _id: 'i4' },
     ]);
     expect(result.hechos).toEqual([]);

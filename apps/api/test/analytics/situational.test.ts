@@ -6,7 +6,7 @@ const AT = '2026-10-12T12:00:00Z';
 const rec = (id: string, payload: Record<string, unknown>): StoredRecord => ({ id, payload });
 
 describe('buildSituational (app.py:627)', () => {
-  it('counts every module, excluding records of other projects, with PRJ-SECHURA fallback', () => {
+  it('counts every record the tenant holds, whatever its Proyecto_ID (S13)', () => {
     const result = buildSituational(
       {
         Eventos: [
@@ -20,7 +20,7 @@ describe('buildSituational (app.py:627)', () => {
       AT,
     );
     expect(result.counts).toEqual({
-      eventos: 2,
+      eventos: 3,
       actores: 0,
       demandas: 0,
       compromisos: 0,
@@ -124,6 +124,22 @@ describe('buildSituational (app.py:627)', () => {
       'Aplicar seguimiento periódico y documentar cambios frente al corte anterior.',
     ]);
     expect(buildSituational({}, 'PRJ-X', AT).project_name).toBe('PRJ-X');
+  });
+
+  it('names the project from the tenant label when no Proyectos record exists', () => {
+    expect(buildSituational({}, 'PRJ-NORTE', AT, 'Proyecto Norte').project_name).toBe(
+      'Proyecto Norte',
+    );
+    const named = buildSituational(
+      { Proyectos: [rec('p', { Proyecto_ID: 'PRJ-NORTE', Nombre: 'Norte' })] },
+      'PRJ-NORTE',
+      AT,
+      'Proyecto Norte',
+    );
+    expect(named.project_name).toBe('Norte');
+    expect(
+      buildSituational({}, 'PRJ-SECHURA', AT, 'Proyecto Sechura (migración)').project_name,
+    ).toBe('Proyecto Sechura');
   });
 
   it('notes narratives without treating them as evidence', () => {

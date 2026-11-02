@@ -4,11 +4,12 @@ import { useSyncExternalStore } from 'react';
  * «Recientes» of the sidebar: the last screens and hub tabs opened in this browser tab. It lives
  * in sessionStorage, so it ends with the tab and nothing persists on the device (the project
  * selection is server-owned and localStorage stays empty), and it never reaches the server; it
- * holds screen names and in-app links only, no record data.
+ * holds screen names and in-app links only, no record data. Each project (its scope) keeps its own
+ * list, so switching projects never offers the other project's screens.
  */
 export type Recent = { href: string; label: string };
 
-const KEY = 'sipges.recents';
+const keyFor = (scope: string) => `sipges.recents:${scope}`;
 const LIMIT = 4;
 const listeners = new Set<() => void>();
 
@@ -30,26 +31,31 @@ const parse = (raw: string | null): readonly Recent[] => {
   }
 };
 
-// useSyncExternalStore needs the same array until the stored text changes.
-let snapshot: { raw: string | null; list: readonly Recent[] } = { raw: null, list: [] };
+// useSyncExternalStore needs the same array until the project or the stored text changes.
+let snapshot: { key: string; raw: string | null; list: readonly Recent[] } = {
+  key: '',
+  raw: null,
+  list: [],
+};
 
-export const readRecents = (): readonly Recent[] => {
+export const readRecents = (scope: string): readonly Recent[] => {
+  const key = keyFor(scope);
   let raw: string | null = null;
   try {
-    raw = window.sessionStorage.getItem(KEY);
+    raw = window.sessionStorage.getItem(key);
   } catch {
     // Blocked storage: no recents in this tab.
   }
-  if (raw !== snapshot.raw) snapshot = { raw, list: parse(raw) };
+  if (key !== snapshot.key || raw !== snapshot.raw) snapshot = { key, raw, list: parse(raw) };
   return snapshot.list;
 };
 
-export const recordVisit = (visit: Recent) => {
-  const current = readRecents();
+export const recordVisit = (scope: string, visit: Recent) => {
+  const current = readRecents(scope);
   if (current[0]?.href === visit.href && current[0].label === visit.label) return;
   const next = [visit, ...current.filter((item) => item.href !== visit.href)].slice(0, LIMIT);
   try {
-    window.sessionStorage.setItem(KEY, JSON.stringify(next));
+    window.sessionStorage.setItem(keyFor(scope), JSON.stringify(next));
   } catch {
     return;
   }
@@ -61,4 +67,7 @@ const subscribe = (listener: () => void) => {
   return () => listeners.delete(listener);
 };
 
-export const useRecents = () => useSyncExternalStore(subscribe, readRecents, readRecents);
+export const useRecents = (scope: string) => {
+  const read = () => readRecents(scope);
+  return useSyncExternalStore(subscribe, read, read);
+};
