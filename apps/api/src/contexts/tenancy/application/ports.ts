@@ -8,6 +8,8 @@ export type TenancyStore = {
   /** Creates the tenant and its first grant atomically; false when the tenant exists. */
   createTenantWithGrant(scope: Scope, label: string, username: string, at: Date): Promise<boolean>;
   tenantExists(scope: Scope): Promise<boolean>;
+  /** The tenant's display label; null when the tenant does not exist. */
+  tenantLabel(scope: Scope): Promise<string | null>;
   /** Idempotent. */
   grant(username: string, scope: Scope, at: Date): Promise<void>;
   /** Deletes exactly one grant; false when it was already absent. */

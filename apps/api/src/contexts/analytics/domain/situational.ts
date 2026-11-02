@@ -54,6 +54,8 @@ export const buildSituational = (
   byModule: RecordsByModule,
   projectId: string,
   generatedAt: string,
+  /** The tenant's label, used when the base has no Proyectos record for the project. */
+  tenantLabel?: string | null,
 ) => {
   const groups = Object.fromEntries(
     SITUATIONAL_MODULES.map((module) => [module, (byModule[module] ?? []).map(recordWithId)]),
@@ -111,7 +113,7 @@ export const buildSituational = (
         ? project['Nombre']
         : projectId === DEFAULT_PROJECT_ID
           ? 'Proyecto Sechura'
-          : projectId,
+          : tenantLabel || projectId,
     generated_at: generatedAt,
     method: 'Síntesis descriptiva basada en registros; no predicción ni evaluación pericial.',
     counts: Object.fromEntries(

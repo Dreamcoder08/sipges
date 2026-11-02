@@ -63,8 +63,8 @@ export const AppShell = ({
 
   useEffect(() => {
     const visit = visitFor(pathname, searchStr);
-    if (visit) recordVisit(visit);
-  }, [pathname, searchStr]);
+    if (visit) recordVisit(projectKey ?? '', visit);
+  }, [pathname, searchStr, projectKey]);
 
   // Focused fields scroll clear of the sticky top bar (scroll-padding in global.css).
   useEffect(() => {
@@ -92,6 +92,7 @@ export const AppShell = ({
     <Sidebar
       pathname={pathname}
       projectLabel={projectLabel}
+      projectKey={projectKey ?? ''}
       projectSwitcher={projectSwitcher}
       search={search}
       unread={unread}
