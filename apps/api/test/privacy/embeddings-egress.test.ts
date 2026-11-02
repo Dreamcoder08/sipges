@@ -76,6 +76,28 @@ describe('embeddings to an external URL', () => {
   });
 });
 
+describe('embedder status with an external URL', () => {
+  it('is unavailable without probing while the switch is off', async () => {
+    const { embeddings, sent } = provider('external');
+    const t = await setupPrivacy({ embeddings });
+    const off = await t.call('GET', '/system/intelligence/embedder');
+    expect(off.status).toBe(200);
+    expect(off.body).toMatchObject({
+      available: false,
+      reason: 'external_ai_disabled',
+      egress: 'external',
+    });
+    expect(sent).toEqual([]);
+    await t.setSwitch(true);
+    expect((await t.call('GET', '/system/intelligence/embedder')).body).toMatchObject({
+      available: true,
+      reason: null,
+    });
+    // The probe embeds a constant written in the code: no tenant data, no access-log row.
+    expect(await t.egressRows()).toEqual([]);
+  });
+});
+
 describe('Ollama adapter', () => {
   const adapter = (baseUrl: string) => {
     const requests: string[] = [];
