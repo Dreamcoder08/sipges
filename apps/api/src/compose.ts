@@ -420,6 +420,7 @@ export const buildContainer = async (deps: {
     },
     embeddings,
     egress,
+    externalAi: { enabled: (tenantId) => situations.externalAiEnabled(tenantId) },
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,

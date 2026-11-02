@@ -112,7 +112,13 @@ export const createApp = (
   app.route('/', indicatorsRoutes({ indicators }));
   app.route('/', evidenceRoutes(evidence));
   app.route('/', documentLabRoutes(documents));
-  app.route('/', intelligenceRoutes(intelligence));
+  app.route(
+    '/',
+    intelligenceRoutes(intelligence, {
+      configured: config.ollama.configured,
+      semanticSearch: config.semanticSearch,
+    }),
+  );
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
   app.route(
