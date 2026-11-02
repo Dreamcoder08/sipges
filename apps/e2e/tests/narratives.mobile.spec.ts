@@ -6,9 +6,16 @@ test('narratives trend fits a phone at 360 px', async ({ page, admin }) => {
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await seedNonIsoNarratives(page, Date.now());
   await page.setViewportSize({ width: 360, height: 800 });
-  for (const path of ['/narrativas', '/situacion']) {
+  for (const [path, title] of [
+    ['/narrativas', 'Tendencia temporal de narrativas'],
+    ['/situacion', 'Narrativas por categoría y en el tiempo'],
+  ] as const) {
     await page.goto(path);
-    const chart = page.locator('section svg polyline').first();
+    const chart = page
+      .getByRole('heading', { name: title })
+      .locator('xpath=ancestor::section[1]')
+      .locator('svg polyline')
+      .first();
     await expect(chart).toBeVisible();
     const widths = await page.evaluate(() => ({
       scroll: document.documentElement.scrollWidth,

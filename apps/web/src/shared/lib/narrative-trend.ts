@@ -218,15 +218,17 @@ const addDays = (day: string, n: number) =>
 export type TrendWindow = 30 | 90 | 'todo';
 
 /**
- * Narratives per day and category, with zero-filled days. The window ends on the latest dated
- * narrative so a quiet week does not empty the chart; at least seven days are shown.
+ * Narratives per day and category, with zero-filled days. The window ends on the latest real
+ * narrative date so a quiet week does not empty the chart; at least seven days are shown.
  */
 export const narrativeTrend = (rows: readonly ModuleRecord[], window: TrendWindow) => {
   const categorised = rows.map((row) => ({
     date: narrativeDate(row),
     code: narrativeCategory(row),
   }));
-  const dated = categorised.flatMap(({ date, code }) => (date ? [{ day: date.day, code }] : []));
+  const dated = categorised.flatMap(({ date, code }) =>
+    date ? [{ day: date.day, code, real: date.field !== '_updated_at' }] : [],
+  );
   const undated = rows.length - dated.length;
   const fromUpdate = categorised.filter(({ date }) => date?.field === '_updated_at').length;
   const datedDays = new Set(dated.map((d) => d.day)).size;
@@ -239,10 +241,19 @@ export const narrativeTrend = (rows: readonly ModuleRecord[], window: TrendWindo
     .sort((a, b) => b.value - a.value);
   const empty = { days: [], series: [], total: 0, undated, fromUpdate, datedDays, byCategory };
   if (!dated.length) return empty;
-  const sorted = dated.map((d) => d.day).sort();
+  const span = window === 'todo' ? Infinity : window;
+  // Real dates set the window. A last-change day only extends it while the latest real date
+  // stays inside, so a recent edit cannot push older publications out of a 30- or 90-day view.
+  const realDays = dated.filter((d) => d.real).map((d) => d.day);
+  const lastReal = realDays.length ? realDays.sort()[realDays.length - 1] : undefined;
+  const reach = (day: string) =>
+    !lastReal || Date.parse(day) - Date.parse(lastReal) < span * DAY_MS;
+  const sorted = dated
+    .map((d) => d.day)
+    .filter(reach)
+    .sort();
   const last = sorted[sorted.length - 1] ?? '';
   const first = sorted[0] ?? last;
-  const span = window === 'todo' ? Infinity : window;
   let start = first;
   if (Date.parse(last) - Date.parse(first) >= span * DAY_MS) start = addDays(last, 1 - span);
   if (Date.parse(last) - Date.parse(start) < 6 * DAY_MS) start = addDays(last, -6);

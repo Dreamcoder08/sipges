@@ -47,7 +47,7 @@ export const NarrativeCharts = ({
         <>
           <h4 className={styles.subhead}>Por categoría</h4>
           {categories}
-          <h4 className={styles.subhead}>Por día</h4>
+          {hasTrend ? <h4 className={styles.subhead}>Por día</h4> : null}
         </>
       ) : null}
       {hasTrend ? (

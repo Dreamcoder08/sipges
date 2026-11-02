@@ -168,4 +168,17 @@ describe('narrativeTrend', () => {
       { code: 'N', label: 'Narrativas y señales digitales', value: 1 },
     ]);
   });
+  it('anchors the window on real dates, not on last-change days', () => {
+    const trend = narrativeTrend(
+      [
+        row('1', { Fecha_Inicio: '2026-03-01', Tema: 'agua' }),
+        row('2', { Fecha_Inicio: '2026-03-05', Tema: 'agua' }),
+        row('3', { _updated_at: '2026-11-01T10:00:00Z' }),
+      ],
+      30,
+    );
+    expect(trend.days.at(-1)).toBe('2026-03-05');
+    expect(trend.total).toBe(2);
+    expect(trend.fromUpdate).toBe(1);
+  });
 });
