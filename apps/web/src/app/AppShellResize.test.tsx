@@ -21,10 +21,17 @@ it('defers top-bar layout writes until the observer batch ends and removes them 
     disconnect() {}
   }
   vi.stubGlobal('ResizeObserver', Observer);
+  // Only the compact layout has a sticky top bar.
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query === '(max-width: 60rem)',
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
   resetApi({ me: { username: 'demo', full_name: 'Persona de prueba', role: 'admin' } });
   const { unmount } = render(<App />);
-  const heading = await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
-  const bar = heading.closest('header');
+  await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+  const bar = screen.getByRole('button', { name: /Cambiar de proyecto/ }).closest('header');
   if (!bar) throw new Error('Top bar missing');
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
     frames.set(++id, callback);

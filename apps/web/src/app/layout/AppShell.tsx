@@ -91,8 +91,10 @@ export const AppShell = ({
   }, [compact]);
 
   const close = () => setSheet(null);
+  // On wide screens the sidebar already shows the project and the active screen,
+  // so the title stays only as the focus target and outline for assistive tech.
   const h1 = (
-    <h1 ref={heading} tabIndex={-1}>
+    <h1 ref={heading} tabIndex={-1} className={compact ? undefined : 'visually-hidden'}>
       {title}
     </h1>
   );
@@ -112,37 +114,32 @@ export const AppShell = ({
         />
       )}
       <div className={styles.body}>
-        <header ref={topbar} className={styles.topbar}>
-          {compact ? (
-            <>
-              <button
-                type="button"
-                className={styles.context}
-                aria-haspopup="dialog"
-                aria-expanded={sheet === 'project'}
-                onClick={() => setSheet('project')}
-              >
-                <span className={styles.mark} aria-hidden="true">
-                  S
-                </span>
-                <span className={styles.contextText}>
-                  <b>{project.name}</b> <small>{project.detail}</small>
-                </span>
-                <span className="visually-hidden">. Cambiar de proyecto</span>
-                <Icon name="chevronDown" className={styles.chevron} />
-              </button>
-              <div className={styles.actions}>
-                {search}
-                {account}
-              </div>
-            </>
-          ) : (
-            <div className={styles.heading}>
-              <p className={styles.eyebrow}>{projectLabel}</p>
-              {h1}
+        {compact ? (
+          <header ref={topbar} className={styles.topbar}>
+            <button
+              type="button"
+              className={styles.context}
+              aria-haspopup="dialog"
+              aria-expanded={sheet === 'project'}
+              onClick={() => setSheet('project')}
+            >
+              <span className={styles.mark} aria-hidden="true">
+                S
+              </span>
+              <span className={styles.contextText}>
+                <b>{project.name}</b> <small>{project.detail}</small>
+              </span>
+              <span className="visually-hidden">. Cambiar de proyecto</span>
+              <Icon name="chevronDown" className={styles.chevron} />
+            </button>
+            <div className={styles.actions}>
+              {search}
+              {account}
             </div>
-          )}
-        </header>
+          </header>
+        ) : (
+          h1
+        )}
         {compact ? <div className={styles.titleRow}>{h1}</div> : null}
         {live}
         <main id="contenido" className={styles.main} tabIndex={-1}>

@@ -141,22 +141,12 @@ describe('desktop sidebar', () => {
 });
 
 describe('wide layout: tools live in the sidebar, not in the top bar', () => {
-  const topBar = async () => {
-    const heading = await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
-    const bar = heading.closest('header');
-    if (!bar) throw new Error('Missing top bar');
-    return bar;
-  };
-
-  it('keeps only the project eyebrow and the title in the top bar', async () => {
+  it('drops the top bar and keeps the title as a visually hidden heading', async () => {
     await renderAt('/');
-    const bar = await topBar();
-    expect(await within(bar).findByText('Proyecto Demo')).toBeVisible();
-    expect(within(bar).queryByRole('button', { name: /^Buscar/ })).toBeNull();
-    expect(within(bar).queryByRole('button', { name: /^Notificaciones/ })).toBeNull();
-    expect(within(bar).queryByLabelText('Proyecto activo')).toBeNull();
-    expect(within(bar).queryByRole('button', { name: /Cuenta/ })).toBeNull();
-    expect(within(bar).queryByRole('button')).toBeNull();
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+    expect(heading).toHaveClass('visually-hidden');
+    const main = document.getElementById('contenido');
+    expect(main?.parentElement?.querySelector(':scope > header')).toBeNull();
   });
 
   it('holds the project select, search, bell and account in the sidebar', async () => {
