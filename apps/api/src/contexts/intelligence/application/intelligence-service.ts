@@ -25,7 +25,14 @@ import {
   isAlertState,
   isPublicHttpUrl,
 } from '../domain/index.ts';
-import type { AlertStore, Clock, EmbeddingProvider, NarrativeReader, RandomHex } from './ports.ts';
+import type {
+  AlertStore,
+  Clock,
+  EmbeddingProvider,
+  ExternalAiSwitch,
+  NarrativeReader,
+  RandomHex,
+} from './ports.ts';
 
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
 
@@ -63,16 +70,66 @@ export type SemanticReport = Omit<TextReport, 'version'> & {
   source_retrieved: false;
 };
 
+/** Why semantic features are off: no reachable model, or external AI switched off. */
+export type EmbedderUnavailableReason = 'unreachable' | 'external_ai_disabled';
+
+export type EmbedderStatus = {
+  readonly available: boolean;
+  readonly reason: EmbedderUnavailableReason | null;
+  readonly model: string;
+  readonly egress: EmbeddingProvider['egress'];
+};
+
+/** How long one probe answers for every caller; short so a recovered model shows up soon. */
+const PROBE_TTL_MS = 60_000;
+const PROBE_TIMEOUT_MS = 3_000;
+/** Text written in the code: probing never sends tenant data (ADR 0030 `constant`). */
+const PROBE_TEXT = 'sipges';
+
 export const createIntelligenceService = (deps: {
   narratives: NarrativeReader;
   embeddings: EmbeddingProvider;
   /** Clears the text sent to an embeddings service that is not on this machine (ADR 0030). */
   egress: EgressGuard;
+  /**
+   * The project's external AI switch; an external embedder is not even probed while off.
+   * Absent means off: fail closed.
+   */
+  externalAi?: ExternalAiSwitch;
   alerts: AlertStore;
   clock: Clock;
   randomHex: RandomHex;
 }) => {
   const { narratives, embeddings, alerts, clock, randomHex } = deps;
+
+  let probe: { at: number; reachable: Promise<boolean> } | undefined;
+  const reachable = () => {
+    const now = clock.now().getTime();
+    if (!probe || now - probe.at >= PROBE_TTL_MS) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), PROBE_TIMEOUT_MS);
+      });
+      const attempt = embeddings.embed(exemptPayload(PROBE_TEXT, 'constant')).then(
+        () => true,
+        () => false,
+      );
+      probe = {
+        at: now,
+        reachable: Promise.race([attempt, timeout]).finally(() => clearTimeout(timer)),
+      };
+    }
+    return probe.reachable;
+  };
+
+  const embedderStatus = async (scope: Scope): Promise<EmbedderStatus> => {
+    const base = { model: embeddings.model, egress: embeddings.egress };
+    if (embeddings.egress !== 'local' && !(await deps.externalAi?.enabled(formatScope(scope))))
+      return { ...base, available: false, reason: 'external_ai_disabled' };
+    return (await reachable())
+      ? { ...base, available: true, reason: null }
+      : { ...base, available: false, reason: 'unreachable' };
+  };
   // Reference concepts never change for a model, so their vectors are computed once.
   const conceptVectors = new Map<string, Promise<number[]>>();
   const conceptVector = (description: string) => {
@@ -213,6 +270,7 @@ export const createIntelligenceService = (deps: {
     classify: classifyRecord,
     analyzeText: analyze,
     semanticAnalyze: semantic,
+    embedderStatus,
 
     createAlert,
 

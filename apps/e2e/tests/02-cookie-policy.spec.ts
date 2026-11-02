@@ -27,6 +27,8 @@ const boot = async (
   const secrets = syntheticSecrets();
   const api = await startApi({
     hostname: HOST,
+    // A fresh PGlite boot runs every migration; slow or self-hosted runners need more than the 60 s default.
+    timeoutMs: 100_000,
     env: {
       SIPGES_COOKIE_SECURE: cookieSecure,
       // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
@@ -71,7 +73,7 @@ const signInOverHttp = async (browser: Browser, instance: Instance) => {
 };
 
 test.describe('Secure cookie policy and exact 0|1 override (S7)', () => {
-  // Each case boots its own instance; startApi may wait up to 60 s, the default test budget.
+  // Each case boots its own instance; startApi may wait up to 100 s, inside this 120 s budget.
   test.describe.configure({ timeout: 120_000 });
   let browser: Browser;
   test.beforeAll(async () => {
