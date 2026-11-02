@@ -33,6 +33,25 @@ The runner is the official `ghcr.io/actions/actions-runner` image plus Node 22 (
 works). It uses the host network and the host Docker daemon, so service containers (PostgreSQL) publish their ports on
 `127.0.0.1` exactly as on GitHub-hosted runners.
 
+## Caches on the self-hosted runner
+
+Jobs on a self-hosted runner reuse work from earlier jobs instead of starting from zero. GitHub-hosted jobs are
+unchanged (the workflow checks `runner.environment`).
+
+| What | Where it lives | Effect on a warm runner |
+| --- | --- | --- |
+| pnpm store | `/home/runner/_work/_cache/pnpm-store` (`pnpm_config_store_dir`) | `pnpm install` links from the local store; `actions/setup-node` skips its GitHub cache download |
+| Playwright browsers | `/home/runner/_work/_cache/ms-playwright` (`PLAYWRIGHT_BROWSERS_PATH`) | `playwright install <browser>` finds the browser and returns at once |
+| Playwright system libraries (Chromium, WebKit) | baked into the image | the e2e job installs without `--with-deps`, so no apt work |
+
+- Each cache sits in the runner's own volume (`sipges-runner-work`, `sipges-runner-2-work`), so two runners never
+  write the same cache. The store shares the mount with the checkout, so pnpm hard-links instead of copying.
+- The script reads the `@playwright/test` version from `apps/e2e/package.json` and passes it to the image build.
+  After a Playwright upgrade, rebuild with `stop` and `start 2`: a stale image may miss a library the new browser needs.
+- Runners started before this change keep working without the caches until they are restarted the same way.
+- To clear the caches, `stop` and `docker volume rm sipges-runner-work sipges-runner-2-work`; the next `start`
+  re-registers and downloads everything once.
+
 ## Limits
 
 - Each runner runs one job at a time. Service containers publish a random host port, so several runners can share the
