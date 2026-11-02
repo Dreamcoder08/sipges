@@ -41,6 +41,7 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | [deployment/readiness.md](deployment/readiness.md)                               | ¿Qué debo comprobar antes de publicar la API con la SPA?        |
 | [deployment/cloudflare-workers.md](deployment/cloudflare-workers.md)             | ¿Cómo se publica con el adaptador de Cloudflare Workers?        |
+| [operations/handover.md](operations/handover.md) | ¿Quién tiene cada acceso, cómo se rotan los secretos y cómo se restaura? |
 | [deployment/territorial-intelligence.md](deployment/territorial-intelligence.md) | ¿Cómo se generan las señales y los avisos territoriales?        |
 | [migration/data-migration.md](migration/data-migration.md)                       | ¿Cómo muevo una instalación legada RC 3.0 a PostgreSQL?         |
 | [migration/base-maestra.md](migration/base-maestra.md)                           | ¿Cómo cargo la Base Maestra en una base vacía?                  |
