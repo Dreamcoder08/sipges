@@ -78,6 +78,12 @@ describe('navigation', () => {
     // Inicio is where sign-in lands and it already has its own link: no «Recientes» copy.
     expect(visitFor('/inicio', '')).toBeNull();
     expect(visitFor('/inicio', '?vista=inicio')).toBeNull();
+    // Configuración is one screen in «Recientes», whichever section was open.
+    for (const search of ['', '?seccion=proyecto', '?seccion=privacidad'])
+      expect(visitFor('/version-4', search)).toEqual({
+        href: '/version-4',
+        label: 'Configuración',
+      });
     expect(visitFor('/inicio', '?vista=gerencial')).toEqual({
       href: '/inicio?vista=gerencial',
       label: 'Inicio · Centro gerencial',

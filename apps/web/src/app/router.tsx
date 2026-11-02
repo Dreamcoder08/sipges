@@ -42,7 +42,12 @@ import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
-import { NotificationBell, useUnreadNotifications } from '../features/notifications/index.ts';
+import {
+  DevicePush,
+  NotificationBell,
+  useUnreadNotifications,
+} from '../features/notifications/index.ts';
+import { SETTINGS_PATH, settingsSearch } from '../features/situations/sections.ts';
 import { AppShell } from './layout/AppShell.tsx';
 import { useQualityReview } from './pending-quality.ts';
 
@@ -486,7 +491,6 @@ const featurePages = {
   '/auditoria': AuditPage,
   '/automatizaciones': AutomationPage,
   '/integraciones': IntegrationsScreen,
-  '/version-4': SettingsPage,
 } as const;
 const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePages>).map((path) =>
   createRoute({
@@ -502,6 +506,27 @@ const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePa
     },
   }),
 );
+
+/** Configuración: one screen with sections, the current one in `?seccion=` (ADR 0006). */
+const settingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: SETTINGS_PATH,
+  validateSearch: settingsSearch,
+  component: function SettingsRoute() {
+    const context = useFeatureContext();
+    const navigate = useNavigate();
+    const { seccion } = settingsRoute.useSearch();
+    return (
+      <SettingsPage
+        key={context.scope}
+        {...context}
+        section={seccion}
+        onNavigate={(href) => void navigate({ href })}
+        notifications={<DevicePush scope={context.scope} />}
+      />
+    );
+  },
+});
 
 const objectRoute = createRoute({
   getParentRoute: () => appRoute,
@@ -575,6 +600,7 @@ const routeTree = rootRoute.addChildren([
   appRoute.addChildren([
     dashboardRoute,
     objectRoute,
+    settingsRoute,
     ...hubRoutes,
     ...recordRoutes,
     ...featureRoutes,

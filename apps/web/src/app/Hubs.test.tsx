@@ -295,3 +295,31 @@ describe('Inicio hub', () => {
     expect(screen.queryByRole('region', { name: /Riesgo del territorio/ })).toBeNull();
   });
 });
+
+describe('Configuración', () => {
+  it('opens the section named in the URL and Apariencia for an unknown one', async () => {
+    const user = userEvent.setup();
+    at('/version-4?seccion=privacidad');
+    const page = render(<App />);
+    const nav = await screen.findByRole('navigation', { name: 'Secciones de Configuración' });
+    expect(within(nav).getByRole('link', { name: 'Privacidad y datos' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(await screen.findByRole('checkbox', { name: 'Envío a IA externa' })).toBeInTheDocument();
+    await user.click(within(nav).getByRole('link', { name: 'Notificaciones' }));
+    await waitFor(() => expect(window.location.search).toBe('?seccion=notificaciones'));
+    expect(await screen.findByRole('heading', { name: 'Notificaciones' })).toBeVisible();
+    page.unmount();
+
+    at('/version-4?seccion=cuenta');
+    render(<App />);
+    expect(await screen.findByRole('group', { name: 'Tema' })).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('navigation', { name: 'Secciones de Configuración' })).getByRole(
+        'link',
+        { name: 'Apariencia' },
+      ),
+    ).toHaveAttribute('aria-current', 'page');
+  });
+});

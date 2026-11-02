@@ -1,6 +1,6 @@
 import { ProjectSettings, type ProjectSettingsIn } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
@@ -16,6 +16,9 @@ import { AppearanceSection } from './AppearanceSection.tsx';
 import { ExternalAiCard } from './ExternalAiCard.tsx';
 import { MediaMonitorCard } from './MediaMonitorCard.tsx';
 import { PhaseCard } from './PhaseCard.tsx';
+import { type SettingsSection, settingsHref } from './sections.ts';
+import { SettingsNav } from './SettingsNav.tsx';
+import layout from './SettingsPage.module.css';
 import styles from './Situations.module.css';
 
 const FEATURES = [
@@ -26,37 +29,100 @@ const FEATURES = [
   'Fase del proyecto con pesos IRSA propios y monitoreo de medios regionales por RSS.',
 ];
 
-/** SIPGES configuration of the active project: colour meanings, phase, feeds (docs/adr/0020). */
-export const SettingsPage = ({ scope, role }: FeatureContext) => {
-  const settings = useQuery(projectSettingsQuery(scope));
+type SettingsPageProps = FeatureContext & {
+  /** The section in the URL (`?seccion=`); Apariencia when absent. */
+  section?: SettingsSection | undefined;
+  /** Client-side navigation; without it the page switches sections on its own. */
+  onNavigate?: ((href: string) => void) | undefined;
+  /** The device notification switch, supplied by the app (features stay isolated). */
+  notifications?: ReactNode;
+};
+
+/**
+ * Configuración as one settings screen with a section list, like Claude's settings
+ * (docs/adr/0018, docs/adr/0020): Apariencia, Proyecto, Privacidad y datos, Notificaciones and
+ * a link to Integraciones. One section shows at a time and each one has its own URL.
+ */
+export const SettingsPage = ({
+  scope,
+  role,
+  section,
+  onNavigate,
+  notifications,
+}: SettingsPageProps) => {
+  const [local, setLocal] = useState<SettingsSection>(section ?? 'apariencia');
+  const current = onNavigate ? (section ?? 'apariencia') : local;
   // Kept here: the form remounts with the saved settings, which would drop the message.
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState<{ section: SettingsSection; text: string } | null>(null);
   return (
-    <div className={styles.page}>
-      <AppearanceSection />
-      <QueryState query={settings} label="la configuración de SIPGES">
-        {(data) => (
-          <SettingsForm
-            key={data.updated_at ?? 'default'}
+    <div className={layout.layout}>
+      <SettingsNav
+        current={current}
+        onNavigate={onNavigate}
+        onSection={(next) => (onNavigate ? onNavigate(settingsHref(next)) : setLocal(next))}
+      />
+      <div className={layout.content}>
+        {current === 'apariencia' ? <AppearanceSection /> : null}
+        {current === 'proyecto' || current === 'privacidad' ? (
+          <ProjectSettingsSection
             scope={scope}
-            data={data}
+            section={current}
             admin={role === 'admin'}
-            onSaved={setNotice}
+            onSaved={(text) => setNotice(text ? { section: current, text } : null)}
           />
-        )}
-      </QueryState>
-      {notice ? <Alert tone="success">{notice}</Alert> : null}
+        ) : null}
+        {current === 'notificaciones' ? (
+          <Card eyebrow="Dispositivo" title="Notificaciones">
+            <p className={styles.muted}>
+              Los avisos pendientes se revisan en la bandeja. Aquí elige si este dispositivo también
+              los recibe.
+            </p>
+            {notifications}
+          </Card>
+        ) : null}
+        {notice?.section === current ? <Alert tone="success">{notice.text}</Alert> : null}
+      </div>
     </div>
+  );
+};
+
+const ProjectSettingsSection = ({
+  scope,
+  section,
+  admin,
+  onSaved,
+}: {
+  scope: string;
+  section: 'proyecto' | 'privacidad';
+  admin: boolean;
+  onSaved: (notice: string) => void;
+}) => {
+  const settings = useQuery(projectSettingsQuery(scope));
+  return (
+    <QueryState query={settings} label="la configuración de SIPGES">
+      {(data) => (
+        <SettingsForm
+          key={data.updated_at ?? 'default'}
+          scope={scope}
+          section={section}
+          data={data}
+          admin={admin}
+          onSaved={onSaved}
+        />
+      )}
+    </QueryState>
   );
 };
 
 const SettingsForm = ({
   scope,
+  section,
   data,
   admin,
   onSaved,
 }: {
   scope: string;
+  section: 'proyecto' | 'privacidad';
   data: ProjectSettings;
   admin: boolean;
   onSaved: (notice: string) => void;
@@ -93,6 +159,14 @@ const SettingsForm = ({
     event.preventDefault();
     save.mutate({ level_meanings: meanings });
   };
+  const error = save.isError ? <Alert tone="error">{errorDetail(save.error)}</Alert> : null;
+  if (section === 'privacidad')
+    return (
+      <>
+        <ExternalAiCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
+        {error}
+      </>
+    );
   return (
     <>
       <Card eyebrow="Proyecto" title="SIPGES">
@@ -171,8 +245,7 @@ const SettingsForm = ({
       </Card>
       <PhaseCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
       <MediaMonitorCard scope={scope} admin={admin} />
-      <ExternalAiCard data={data} admin={admin} pending={save.isPending} save={save.mutate} />
-      {save.isError ? <Alert tone="error">{errorDetail(save.error)}</Alert> : null}
+      {error}
     </>
   );
 };

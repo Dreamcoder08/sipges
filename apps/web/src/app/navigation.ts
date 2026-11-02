@@ -206,8 +206,10 @@ export const visitFor = (path: string, search: string): { href: string; label: s
   if (path === '/integraciones') return null;
   const hub = DESTINATIONS.find((item) => item.path === path);
   if (!hub) {
+    // Configuración's sections (`?seccion=`) are one screen, so they share one entry.
+    const kept = path === '/version-4' ? '' : search;
     return SCREENS.some((screen) => screen.path === path)
-      ? { href: path + search, label: labelFor(path) }
+      ? { href: path + kept, label: labelFor(path) }
       : null;
   }
   const asked = new URLSearchParams(search).get(hub.param);
