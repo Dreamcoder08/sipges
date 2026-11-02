@@ -6,9 +6,8 @@ updates:
     target-branch: main
     schedule:
       interval: monthly
+    # Dependabot uses the first group that matches, so React comes before dev-tooling.
     groups:
-      dev-tooling:
-        dependency-type: development
       # React refuses to run when react and react-dom differ by even a patch (#140).
       react:
         patterns:
@@ -16,6 +15,15 @@ updates:
           - react-dom
           - '@types/react'
           - '@types/react-dom'
+      react-security:
+        applies-to: security-updates
+        patterns:
+          - react
+          - react-dom
+          - '@types/react'
+          - '@types/react-dom'
+      dev-tooling:
+        dependency-type: development
     ignore:
       # The root keeps TypeScript 6 for typescript-eslint, which does not support TS 7 yet;
       # workspaces already use TS 7. Drop this once typescript-eslint supports it.
