@@ -73,6 +73,10 @@ export const DocumentReviewItem = z.strictObject({
   note: z.string(),
   created_at: z.string(),
   updated_at: z.string(),
+  /** Records module (URL slug and label) an approval of this item writes to. */
+  target: z.strictObject({ module: z.string(), label: z.string() }).optional(),
+  /** The record its approval created, once it exists. */
+  record: z.strictObject({ module: z.string(), id: z.string() }).nullable().optional(),
 });
 export type DocumentReviewItem = z.infer<typeof DocumentReviewItem>;
 export const DocumentReviewResponse = z.strictObject({
@@ -94,4 +98,9 @@ export const DocumentReviewDecisionResponse = z.strictObject({
   ok: z.literal(true),
   id: z.string(),
   status: DocumentReviewStatus,
+  /** Approvals create a record once (`created` false when it already existed); else null. */
+  record: z
+    .strictObject({ module: z.string(), id: z.string(), created: z.boolean() })
+    .nullable()
+    .optional(),
 });
