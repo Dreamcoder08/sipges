@@ -26,7 +26,12 @@ export type AppConfig = {
    * Embedding service for semantic text analysis (docs/migration/operations.md). A URL that is
    * not loopback is external AI: its texts leave only through the egress guard (docs/adr/0030).
    */
-  readonly ollama: { readonly baseUrl: string; readonly model: string };
+  readonly ollama: {
+    readonly baseUrl: string;
+    readonly model: string;
+    /** SIPGES_OLLAMA_URL was set; otherwise the loopback default (unreachable on Workers). */
+    readonly configured: boolean;
+  };
   /** Hybrid search with stored embeddings from the Ollama model (SIPGES_SEMANTIC_SEARCH=1). */
   readonly semanticSearch: boolean;
   /**
@@ -154,6 +159,7 @@ const parseStorage = (env: Env): StorageConfig => {
 };
 
 const parseOllama = (env: Env) => {
+  const configured = env.SIPGES_OLLAMA_URL !== undefined;
   const baseUrl = env.SIPGES_OLLAMA_URL ?? 'http://127.0.0.1:11434';
   let url: URL;
   try {
@@ -164,7 +170,7 @@ const parseOllama = (env: Env) => {
   if (url.protocol !== 'http:' && url.protocol !== 'https:')
     throw new Error('SIPGES_OLLAMA_URL must use http or https');
   const model = env.SIPGES_OLLAMA_EMBED_MODEL || 'nomic-embed-text';
-  return { baseUrl, model };
+  return { baseUrl, model, configured };
 };
 
 const MODEL_ID = /^[a-z0-9][a-z0-9.-]{1,63}$/;
