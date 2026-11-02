@@ -121,6 +121,22 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.menu {
+  position: relative;
+}
+
+/* Unread notifications wait in the drawer; the closed button shows a dot. */
+.unread {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-danger);
+  box-shadow: 0 0 0 2px var(--color-chrome);
+}
+
 .menu[aria-expanded='true'] {
   background: var(--color-fill);
 }

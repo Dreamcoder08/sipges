@@ -24,8 +24,8 @@ const inboxQuery = (scope: string) => ({
   refetchInterval: INBOX_REFRESH_MS,
 });
 
-/** Unread notifications, for a badge outside the inbox (the phone account avatar). */
-const useUnreadNotifications = (scope: string): number =>
+/** Unread notifications, for a badge outside the inbox (the phone menu button). */
+export const useUnreadNotifications = (scope: string): number =>
   useQuery(inboxQuery(scope)).data?.unread ?? 0;
 
 /** Inbox list with "mark all as read" and the device push switch (ADR 0014). */

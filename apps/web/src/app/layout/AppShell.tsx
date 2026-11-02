@@ -21,6 +21,7 @@ export const AppShell = ({
   projectSwitcher,
   search,
   notifications,
+  unread = 0,
   live,
   children,
 }: {
@@ -28,6 +29,8 @@ export const AppShell = ({
   projectSwitcher: ReactNode;
   search?: ReactNode;
   notifications?: ReactNode;
+  /** Unread notifications; on phones the closed menu button signals them. */
+  unread?: number;
   live?: ReactNode;
   children: ReactNode;
 }) => {
@@ -117,7 +120,13 @@ export const AppShell = ({
                 onClick={() => setDrawer(true)}
               >
                 <Icon name="menu" />
-                <span className="visually-hidden">Abrir menú</span>
+                {unread > 0 ? <span className={styles.unread} data-unread="" /> : null}
+                <span className="visually-hidden">
+                  Abrir menú
+                  {unread > 0
+                    ? `, ${unread} ${unread === 1 ? 'notificación' : 'notificaciones'} sin leer`
+                    : ''}
+                </span>
               </button>
               <div className={styles.compactTitle}>{h1}</div>
             </>

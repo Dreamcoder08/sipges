@@ -249,13 +249,40 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
     expect(document.querySelector('aside')).toBeNull();
   });
 
+  it('marks the menu button while notifications are unread', async () => {
+    api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
+    server.use(
+      http.get('/system/notifications', () => HttpResponse.json({ unread: 3, items: [] })),
+    );
+    at('/');
+    render(<App />);
+    const open = await screen.findByRole('button', {
+      name: 'Abrir menú, 3 notificaciones sin leer',
+    });
+    expect(open.querySelector('[data-unread]')).not.toBeNull();
+  });
+
+  it('opens search from the drawer: the drawer closes and the palette takes the keyboard', async () => {
+    api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /^Abrir menú/ }));
+    const drawer = screen.getByRole('dialog', { name: 'Menú' });
+    await user.click(within(drawer).getByRole('button', { name: /^Buscar/ }));
+    expect(screen.queryByRole('dialog', { name: 'Menú' })).toBeNull();
+    const field = await screen.findByRole('combobox');
+    expect(field).toHaveFocus();
+    expect(field.closest('[inert]')).toBeNull();
+  });
+
   it('opens the sidebar in a drawer, navigates from it and returns focus when closed', async () => {
     api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
     at('/');
     render(<App />);
     const user = userEvent.setup();
     await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
-    const open = screen.getByRole('button', { name: 'Abrir menú' });
+    const open = screen.getByRole('button', { name: /^Abrir menú/ });
     expect(open).toHaveAttribute('aria-haspopup', 'dialog');
     await user.click(open);
     const drawer = screen.getByRole('dialog', { name: 'Menú' });

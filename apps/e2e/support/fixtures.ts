@@ -65,7 +65,7 @@ export const signInToProject = async (page: Page, credentials: Credentials, scop
   const switcher = page.getByLabel('Proyecto activo');
   const chooser = page.getByRole('heading', { name: 'Seleccione un proyecto' });
   // Phones and tablets keep the selector in the menu drawer (docs/adr/0015, addendum 2026-11-01).
-  const menu = page.getByRole('button', { name: 'Abrir menú' });
+  const menu = page.getByRole('button', { name: /^Abrir menú/ });
   await expect(switcher.or(chooser).or(menu)).toBeVisible();
   if (await chooser.isVisible()) {
     await page.getByRole('button', { name: new RegExp(scope.replace('/', '\\/')) }).click();
@@ -89,7 +89,7 @@ export const signInToProject = async (page: Page, credentials: Credentials, scop
  * from the menu drawer.
  */
 export const signOut = async (page: Page) => {
-  const menu = page.getByRole('button', { name: 'Abrir menú' });
+  const menu = page.getByRole('button', { name: /^Abrir menú/ });
   if (await menu.isVisible()) await menu.click();
   await page.getByRole('button', { name: /^Cuenta de / }).click();
   await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click();

@@ -9,8 +9,8 @@ Read-only sync of the web app's design tokens and components. Every value below 
 | `apps/web/src/app/styles/tokens.css` | All tokens: `:root` (light), `@media (prefers-color-scheme: dark)` (device dark) and `:root[data-theme='dark']` (picked dark). The two dark blocks carry identical values. |
 | `apps/web/src/app/styles/global.css` | Resets, form control base, focus ring, scrollbars, reduced-motion rule |
 | `apps/web/src/app/layout/AppShell.module.css` | Current sidebar, top bar and phone menu button |
-| `apps/web/src/app/layout/AppShell.tsx` | Current sidebar structure (`aside > nav[aria-label=Secciones]` with 4 `NAV_GROUPS`) |
-| `apps/web/src/app/navigation.ts` | 26 screens, `NAV_GROUPS`, `SCREEN_ICONS`, `MOBILE_TABS`, `MORE_GROUPS` |
+| `apps/web/src/app/layout/AppShell.tsx`, `Sidebar.tsx` | Shell layout; the sidebar (`aside > nav[aria-label=Secciones]`) on wide screens and inside the phone menu drawer |
+| `apps/web/src/app/navigation.ts` | `SCREENS`, `DESTINATIONS`, `SYSTEM_PATHS`, `SCREEN_ICONS` |
 | `apps/web/src/shared/ui/` | Button, Badges, Card, ChipRow, SegmentedControl, Sheet, Icon, icons.ts, Field, Alert, EmptyState, Skeleton… |
 | `apps/web/src/features/search/SearchPalette.module.css`, `apps/web/src/features/notifications/NotificationBell.module.css`, `apps/web/src/features/auth/AccountMenu.module.css`, `apps/web/src/features/tenancy/ProjectSwitcher.module.css`, `apps/web/src/features/records/Records.module.css` | Top-bar pieces (search composer, bell, account, project picker) and the Eventos table / status pill |
 

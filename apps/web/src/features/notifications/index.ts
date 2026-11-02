@@ -1,1 +1,1 @@
-export { NotificationBell } from './NotificationBell.tsx';
+export { NotificationBell, useUnreadNotifications } from './NotificationBell.tsx';

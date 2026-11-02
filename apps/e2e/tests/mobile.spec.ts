@@ -28,7 +28,7 @@ const expectAccessible = async (page: Page, what: string) => {
   ).toEqual([]);
 };
 
-test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the width', async ({
+test('mobile viewport: sign-in, menu drawer and every screen fit the width', async ({
   page,
   admin,
 }) => {
@@ -45,7 +45,7 @@ test('mobile viewport: sign-in, bottom bar, sheets and every screen fit the widt
   // menu button and the title, and there is no bottom bar.
   const header = page.getByRole('banner');
   await expect(header.getByRole('button')).toHaveCount(1);
-  const menu = header.getByRole('button', { name: 'Abrir menú' });
+  const menu = header.getByRole('button', { name: /^Abrir menú/ });
   const menuBox = await menu.boundingBox();
   expect(menuBox?.width).toBeGreaterThanOrEqual(44);
   expect(menuBox?.height).toBeGreaterThanOrEqual(44);

@@ -42,7 +42,7 @@ import { isApiError, isMfaRequired } from '../shared/api/client.ts';
 import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
-import { NotificationBell } from '../features/notifications/index.ts';
+import { NotificationBell, useUnreadNotifications } from '../features/notifications/index.ts';
 import { AppShell } from './layout/AppShell.tsx';
 import { useQualityReview } from './pending-quality.ts';
 
@@ -299,6 +299,7 @@ const appRoute = createRoute({
     const scopes = useQuery(scopesQuery).data;
     const label = scopes?.find((s) => `${s.company_id}/${s.project_id}` === scope.scope)?.label;
     const projectLabel = label || scope.project_id;
+    const unread = useUnreadNotifications(scope.scope);
     // Colour meanings of the project; until known the labels use their plain names.
     const settings = useQuery(projectSettingsQuery(scope.scope)).data ?? null;
     usePreloadScreens();
@@ -311,6 +312,7 @@ const appRoute = createRoute({
             notifications={
               <NotificationBell key={`notifications/${locationHref}`} scope={scope.scope} />
             }
+            unread={unread}
             live={<LiveUpdates scope={scope.scope} />}
             projectSwitcher={
               <ProjectSwitcher

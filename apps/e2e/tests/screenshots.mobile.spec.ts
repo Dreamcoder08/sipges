@@ -67,7 +67,7 @@ test('capture the mobile shell', async ({ page, admin, adminApi }) => {
     await page.waitForTimeout(800);
     await shot(page, `movil-inicio${suffix}`);
     await page.screenshot({ path: `${dir}/movil-hoy-completo${suffix}.png`, fullPage: true });
-    await page.getByRole('button', { name: 'Abrir menú' }).click();
+    await page.getByRole('button', { name: /^Abrir menú/ }).click();
     await page.waitForTimeout(400);
     await shot(page, `movil-menu${suffix}`);
     await page

@@ -108,7 +108,7 @@ for (const mobile of [false, true]) {
       // Regression: navigate from an already mounted intelligence route with another selection.
       await page.goto('/inteligencia-redes?alert=DIG-MISSING-SYNTHETIC');
       // Phones reach the inbox through the menu drawer (docs/adr/0015, addendum 2026-11-01).
-      if (mobile) await page.getByRole('button', { name: 'Abrir menú' }).click();
+      if (mobile) await page.getByRole('button', { name: /^Abrir menú/ }).click();
       await page.getByRole('button', { name: /Notificaciones/ }).click();
       const inbox = page.getByRole('region', { name: 'Notificaciones', exact: true });
       await inbox.getByRole('link', { name: noticeTitle, exact: true }).click();
