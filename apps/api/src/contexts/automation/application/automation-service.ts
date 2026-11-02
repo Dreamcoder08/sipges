@@ -292,10 +292,10 @@ export const createAutomationService = (deps: {
     return { delivered, retrying, failed };
   };
 
-  const ticking = new Map<string, Promise<TickReport>>();
+  // No in-flight tick is shared: on Workers a tick started by another request may never settle
+  // for this one. Concurrent ticks of one tenant are safe: the scan locks its cursor and runs
+  // are claimed with SKIP LOCKED, so each event is queued and delivered once.
   const tickTenant = (tenantId: string): Promise<TickReport> => {
-    const existing = ticking.get(tenantId);
-    if (existing) return existing;
     const deadline = performance.now() + (deps.executionBudgetMs ?? 20000);
     const task = (async () => {
       const report = { tenants: 1, scanned: 0, queued: 0, delivered: 0, retrying: 0, failed: 0 };
@@ -311,8 +311,7 @@ export const createAutomationService = (deps: {
       }
       await deliverPush(tenantId, deadline);
       return report;
-    })().finally(() => ticking.delete(tenantId));
-    ticking.set(tenantId, task);
+    })();
     return task;
   };
 
