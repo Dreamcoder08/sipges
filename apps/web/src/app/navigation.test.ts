@@ -19,8 +19,9 @@ describe('navigation', () => {
   });
 
   it('lists every screen once with a title', () => {
-    expect(SCREENS).toHaveLength(27);
-    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(27);
+    expect(SCREENS).toHaveLength(28);
+    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(28);
+    expect(titleFor('/integraciones')).toBe('Integraciones');
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
     expect(titleFor('/nope')).toBe('SIPGES');
   });
@@ -44,6 +45,7 @@ describe('navigation', () => {
     const reachable = [
       ...DESTINATIONS.flatMap((hub) => hub.tabs.map((t) => t.screen)),
       ...SYSTEM_PATHS,
+      '/integraciones',
     ];
     // The Inicio tab shares «/» with the Dashboard tab.
     expect(new Set(reachable).size).toBe(SCREENS.length);
@@ -78,6 +80,7 @@ describe('navigation', () => {
       label: 'Inicio · Centro gerencial',
     });
     expect(visitFor('/objeto/eventos/EV-1', '')).toBeNull();
+    expect(visitFor('/integraciones', '')).toBeNull();
   });
 
   it('gives every screen an icon', () => {

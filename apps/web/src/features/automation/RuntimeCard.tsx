@@ -1,15 +1,9 @@
-import { AutomationRuntimeState } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
-import { requestJson } from '../../shared/api/client.ts';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { runtimeQuery } from './api.ts';
 export const RuntimeCard = ({ scope }: { scope: string }) => {
-  const query = useQuery({
-    queryKey: ['automation-runtime', scope],
-    queryFn: ({ signal }) =>
-      requestJson('/system/automations/runtime', AutomationRuntimeState, { scope, signal }),
-    refetchInterval: 30000,
-  });
+  const query = useQuery(runtimeQuery(scope));
   return (
     <Card title="Procesamiento y entregas">
       <QueryState query={query} label="estado del procesamiento">

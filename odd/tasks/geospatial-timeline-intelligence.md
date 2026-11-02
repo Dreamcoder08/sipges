@@ -6,7 +6,7 @@ synchronised with the map. Branch `claude/project-thread-lpyzms` from `main` 72e
 
 ## Specs
 - S1: "No la copiaría literalmente… la utilizaría como inspiración para evolucionar tu software hacia una plataforma de inteligencia geoespacial, análisis temporal y apoyo a decisiones" (owner, 2026-10-18). Keep Hono, Zod, the hexagonal architecture, shared contracts and TanStack Query; no Redux, Tailwind, shadcn or FastAPI.
-- S2: Phase 1 «Motor geoespacial»: MapLibre GL JS + deck.gl as an adapter inside MASCLI, vector layers, INGEMMET queries returning structured geometry and attributes (code, holder, status), selectable concessions with a contextual sheet.
+- S2: Phase 1 «Motor geoespacial»: MapLibre GL JS + deck.gl as an adapter inside SIPGES, vector layers, INGEMMET queries returning structured geometry and attributes (code, holder, status), selectable concessions with a contextual sheet.
 - S3: Phase 2 «Tiempo y evidencias»: timeline synchronised with the map, filters and historical traceability.
 - S4: "un conflicto social no se comporta como el fuego": no spreading stains, no prediction. Three information states, Observado / Estimado / Escenario hipotético; every record keeps source, date, location and verification grade.
 - S5: Fluid map on desktop; on phones a clean map with swipeable contextual sheets, not FireTrace's controls squeezed into 400 px.
@@ -14,7 +14,7 @@ synchronised with the map. Branch `claude/project-thread-lpyzms` from `main` 72e
 
 ## Findings
 - F1: `/mapa` drew SVG markers over raster tiles; the cadastre was only an ArcGIS `export` image, so concessions could not be selected.
-- F2: The API already proxies INGEMMET (`POST /system/geography/query`, fixed hosts, size and time limits) and relates MASCLI records by explicit WGS84 coordinates or a documented `Concesion_Codigo` + `Concesion_Fuente`; it returns Esri JSON rings.
+- F2: The API already proxies INGEMMET (`POST /system/geography/query`, fixed hosts, size and time limits) and relates SIPGES records by explicit WGS84 coordinates or a documented `Concesion_Codigo` + `Concesion_Fuente`; it returns Esri JSON rings.
 - F3: SERV_CATASTRO_MINERO layer 0 publishes CODIGOU, CONCESION, TIT_CONCES, HECTAGIS, ESTADO, D_ESTADO, LEYENDA, FEC_DENU, FECHA_ACTUALIZACION, DISTRI/PROVI/DEPA (checked 2026-10-18 on the layer's REST metadata).
 - F4: Records carry `Nivel_Verificacion` (A Confirmada … E No verificada) and `Fuente_ID`; nothing marks a scenario.
 - F5: The SPA CSP blocks `eval` and only allows images from the tile hosts; MapLibre fetches tiles and spawns workers.

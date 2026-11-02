@@ -12,7 +12,7 @@ Fecha: 2026-10-13. Rama: `feat/typescript-migration-11-complete`. Código fijado
 | Pruebas web | 98 aprobadas |
 | Pruebas kernel | 3 aprobadas |
 | Total | 484 aprobadas |
-| `corepack pnpm --filter @mascli/web build` | Pasó; bloque inicial 143.01 kB gzip y bloques independientes para las funciones nuevas |
+| `corepack pnpm --filter @sipges/web build` | Pasó; bloque inicial 143.01 kB gzip y bloques independientes para las funciones nuevas |
 | Revisión independiente | Sin hallazgos bloqueantes; 43 pruebas focalizadas aprobadas por el revisor |
 
 Las pruebas nuevas cubren contratos, permisos, escrituras y descargas con alcance fijado, conservación de borradores, bloqueo de operaciones incompatibles, fallos/reintentos, cambio de proyecto durante operaciones, descarte de clasificación obsoleta y CSV seguro. El endpoint de geometría se comprobó contra otra empresa con el mismo identificador de proyecto: devuelve `available: false` y `data: null`.

@@ -4,7 +4,7 @@
 
 La CI original de T14 (`38466902005`) aprobó TypeScript, pruebas Python de referencia y 28 pruebas Chromium sobre PostgreSQL 17. Se revisaron cookies, MFA, aislamiento, evidencias, informes, CSP y móvil.
 
-La ejecución local Chromium sobre PGlite produjo 25 aprobadas y tres fallos. Las tres pruebas de cookies sobre el hostname deliberadamente no confiable `mascli-e2e.test` fueron bloqueadas por el proxy del entorno, con `No approved upstream IPv4 address`. No se cambió la política de red ni se omitieron pruebas para afirmar una suite verde. Esta limitación local se distingue de la CI aprobada.
+La ejecución local Chromium sobre PGlite produjo 25 aprobadas y tres fallos. Las tres pruebas de cookies sobre el hostname deliberadamente no confiable `sipges-e2e.test` fueron bloqueadas por el proxy del entorno, con `No approved upstream IPv4 address`. No se cambió la política de red ni se omitieron pruebas para afirmar una suite verde. Esta limitación local se distingue de la CI aprobada.
 
 La revisión independiente encontró una fuga del harness ante fallo de arranque: no devolvía teardown y podía dejar la base temporal, conexión y directorio abiertos. Tres regresiones fallaron antes de implementar `usingCleanup`; después pasaron. Los recursos se registran al adquirirlos y se liberan en orden inverso; un fallo de limpieza no impide liberar los demás; se preservan errores originales y la limpieza drenada es idempotente. El revisor volvió a comprobar y aprobó la corrección.
 
