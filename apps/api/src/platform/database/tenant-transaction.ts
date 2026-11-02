@@ -19,13 +19,24 @@ export const withTenant = async <T>(
 ): Promise<T> => {
   if (!tenantId) throw new Error('Tenant id is required');
   return sql.transaction(async (tx) => {
-    const context = currentRequestContext();
-    await tx.query(
-      `SELECT set_config('app.tenant_id', $1, true), set_config('app.actor', $2, true),
-              set_config('app.clearance', $3, true)`,
-      [tenantId, context?.actor ?? '', context?.clearance ?? 'full'],
-    );
-    await tx.exec('SET LOCAL ROLE sipges_tenant');
+    await enterTenant(tx, tenantId);
     return fn(tx);
   });
+};
+
+/**
+ * Scopes an already open transaction to one tenant, with the same settings and role as
+ * withTenant. For owner-side work (global tables) that must commit together with a tenant
+ * write such as its audit row: run the global statements first, because the role switch
+ * makes global tables unreadable for the rest of the transaction.
+ */
+export const enterTenant = async (tx: SqlClient, tenantId: string): Promise<void> => {
+  if (!tenantId) throw new Error('Tenant id is required');
+  const context = currentRequestContext();
+  await tx.query(
+    `SELECT set_config('app.tenant_id', $1, true), set_config('app.actor', $2, true),
+            set_config('app.clearance', $3, true)`,
+    [tenantId, context?.actor ?? '', context?.clearance ?? 'full'],
+  );
+  await tx.exec('SET LOCAL ROLE sipges_tenant');
 };

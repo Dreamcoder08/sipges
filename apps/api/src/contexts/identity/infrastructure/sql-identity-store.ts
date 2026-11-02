@@ -1,4 +1,6 @@
+import { appendAudit } from '../../../platform/database/audit-trail.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
+import { enterTenant } from '../../../platform/database/tenant-transaction.ts';
 
 const USER_COLUMNS =
   'username, full_name, password_hash, role, active, totp_secret_sealed, totp_enabled, totp_last_step, google_email';
@@ -28,6 +30,18 @@ const toUser = (row: UserRow): StoredUser => ({
   totpLastStep: row.totp_last_step === null ? null : Number(row.totp_last_step),
   googleEmail: row.google_email,
 });
+
+/** Clears the second factor (enabled flag, sealed or pending secret, last step) and every session. */
+const clearTotp = async (tx: SqlClient, username: string): Promise<'reset' | 'missing'> => {
+  const rows = await tx.query(
+    `UPDATE users SET totp_enabled = false, totp_secret_sealed = NULL, totp_last_step = NULL
+      WHERE username = $1 RETURNING username`,
+    [username],
+  );
+  if (rows.length === 0) return 'missing';
+  await tx.query('DELETE FROM sessions WHERE username = $1', [username]);
+  return 'reset';
+};
 
 export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
   async hasUsers() {
@@ -141,14 +155,30 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
   },
 
   async resetTotp(username) {
+    return sql.transaction((tx) => clearTotp(tx, username));
+  },
+
+  async resetTotpInTenant(username, tenantId, audit) {
     return sql.transaction(async (tx) => {
-      const rows = await tx.query(
-        `UPDATE users SET totp_enabled = false, totp_secret_sealed = NULL, totp_last_step = NULL
-          WHERE username = $1 RETURNING username`,
-        [username],
+      const users = await tx.query('SELECT 1 FROM users WHERE username = $1 FOR UPDATE', [
+        username,
+      ]);
+      if (users.length === 0) return 'missing';
+      const granted = await tx.query(
+        'SELECT 1 FROM grants WHERE username = $1 AND tenant_id = $2',
+        [username, tenantId],
       );
-      if (rows.length === 0) return 'missing';
-      await tx.query('DELETE FROM sessions WHERE username = $1', [username]);
+      if (granted.length === 0) return 'out_of_scope';
+      await clearTotp(tx, username);
+      // Global writes first: entering the tenant drops to the role that cannot see them.
+      await enterTenant(tx, tenantId);
+      await appendAudit(tx, {
+        module: 'Cuentas',
+        recordId: username,
+        action: 'MFA_RESET',
+        detail: audit.detail,
+        at: audit.at,
+      });
       return 'reset';
     });
   },

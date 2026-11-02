@@ -4,6 +4,7 @@ import {
   createAccount,
   expect,
   signIn,
+  signInToProject,
   signOut,
   test,
 } from '../support/fixtures.ts';
@@ -147,5 +148,45 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
       form: { username: analyst.username, password: analyst.password, otp: next },
     });
     expect(replay.status()).toBe(401);
+  });
+
+  test('an administrator resets another account MFA from Administración (functional-closure T8)', async ({
+    page,
+    browser,
+    admin,
+    adminApi,
+  }) => {
+    const analyst = await createAccount(
+      adminApi,
+      { username: `e2e-reset-${Date.now()}`, role: 'analista' },
+      [DEFAULT_SCOPE],
+    );
+    const analystContext = await browser.newContext();
+    const analystPage = await analystContext.newPage();
+    await signIn(analystPage, analyst);
+    await analystPage.goto('/administracion');
+    await analystPage.getByRole('button', { name: 'Configurar mi MFA' }).click();
+    const secret = (await analystPage.locator('code').first().textContent())?.trim() ?? '';
+    await analystPage.getByLabel('Código TOTP').fill(totpCode(secret));
+    await analystPage.getByRole('button', { name: 'Activar MFA' }).click();
+    await expect(analystPage.getByText('MFA activado.')).toBeVisible();
+
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    await page.goto('/administracion');
+    await expect(
+      page.getByRole('button', { name: `Restablecer MFA de ${admin.username}` }),
+    ).toHaveCount(0);
+    await page.getByRole('button', { name: `Restablecer MFA de ${analyst.username}` }).click();
+    await page.getByRole('button', { name: 'Confirmar restablecimiento' }).click();
+    await expect(
+      page.getByText(`MFA de ${analyst.username} restablecido; sus sesiones se cerraron.`),
+    ).toBeVisible();
+
+    // The analyst's session is gone and the password alone signs in again (factor cleared).
+    expect(await (await analystPage.request.get('/system/auth/me')).json()).toBeNull();
+    await analystContext.close();
+    await signOut(page);
+    await signIn(page, analyst);
+    await expect(home(page)).toBeVisible();
   });
 });
