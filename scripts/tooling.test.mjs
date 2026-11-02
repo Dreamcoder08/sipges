@@ -292,3 +292,43 @@ test('the main-merge helper keeps main first and renumbers the branch ODD log en
       '# Changelog\n- main entry\n- branch entry\n- older\n',
     );
   }));
+test('fast verification runs static checks in parallel, tests only affected packages and propagates failures', () =>
+  fixture((dir) => {
+    const bin = path.join(dir, 'bin');
+    mkdirSync(bin);
+    const calls = path.join(dir, 'calls');
+    const run = (failing, changed) => {
+      writeFileSync(calls, '');
+      for (const [name, script] of Object.entries({
+        git: `if [ "$1" = rev-parse ]; then echo '${dir}'; elif [ "$1" = diff ]; then echo '${changed}' | grep -E '^(scripts|[.]agents|[.]claude)/'; fi`,
+        pnpm: `echo "$*" >> '${calls}'; case "$*" in ${failing}) exit 7;; esac; exit 0`,
+        pg_isready: `echo pg >> '${calls}'; exit 0`,
+      }))
+        writeFileSync(path.join(bin, name), '#!/bin/sh\n' + script + '\n', { mode: 0o755 });
+      const env = { ...process.env, PATH: bin + ':' + process.env.PATH };
+      delete env.SIPGES_TEST_DATABASE_URL;
+      delete env.SIPGES_VERIFY_BASE;
+      const result = spawnSync('bash', [path.join(root, 'scripts/verify-fast.sh')], {
+        env,
+        encoding: 'utf8',
+      });
+      return {
+        status: result.status,
+        calls: readFileSync(calls, 'utf8').trim().split('\n').sort(),
+      };
+    };
+    const affected = '--filter ...[origin/main]';
+    const green = run('never-matches', 'apps/web/src/a.ts');
+    assert.equal(green.status, 0);
+    assert.deepEqual(green.calls, [
+      `${affected} --workspace-concurrency=1 run test`,
+      `${affected} run typecheck`,
+      'boundaries',
+      'lint',
+    ]);
+    const tooling = run('never-matches', 'scripts/verify.sh');
+    assert.ok(tooling.calls.includes('test:tooling'));
+    const red = run('boundaries', 'apps/web/src/a.ts');
+    assert.equal(red.status, 1);
+    assert.ok(red.calls.includes(`${affected} --workspace-concurrency=1 run test`));
+  }));

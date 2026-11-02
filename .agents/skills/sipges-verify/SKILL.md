@@ -5,7 +5,9 @@ description: "Use when SIPGES code, scripts or configuration must be verified be
 
 # Verificar SIPGES
 
-Desde la raíz, ejecuta `corepack pnpm verify`. El script propaga el estado de `pnpm check`: lint, formato, límites de dependencias, tipos y pruebas. Una comprobación fallida impide afirmar que el cambio está verificado.
+Mientras iteras y antes de cada push, ejecuta `corepack pnpm verify:fast`: lint, límites y tipos en paralelo, y después las pruebas de los paquetes que cambiaron desde `origin/main` (base configurable con `SIPGES_VERIFY_BASE`), de a uno porque la API usa PGlite y necesita memoria. La suite completa la corre la CI en 8 jobs paralelos; sin GitHub Pro, `main` no exige esos checks, así que **no mergees sin los 8 en verde** (`sipges-ci-triage`).
+
+Usa la suite completa local, `corepack pnpm verify`, solo cuando cambies configuración compartida (raíz, `packages/*` de los que dependen todos, CI) o cuando la CI no esté disponible. Desde la raíz, `corepack pnpm verify` propaga el estado de `pnpm check`: lint, formato, límites de dependencias, tipos y pruebas. Una comprobación fallida impide afirmar que el cambio está verificado.
 
 Para PostgreSQL real, proporciona `SIPGES_TEST_DATABASE_URL` de un servidor **sintético** autorizado. El script no arranca servicios ni supone credenciales. Sin esa variable, las pruebas opcionales PostgreSQL quedan omitidas; PGlite sigue comprobándose. No imprimas la URL ni sus secretos.
 

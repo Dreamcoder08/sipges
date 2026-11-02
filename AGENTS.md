@@ -46,6 +46,7 @@ it is installed locally; the repo does not require it.
 | Command | What it does |
 | --- | --- |
 | `pnpm verify` | Lint, format, boundaries, typecheck, all tests; PostgreSQL integration only with an explicitly supplied synthetic connection. |
+| `pnpm verify:fast` | Local inner loop: lint, boundaries and typecheck in parallel, then tests of the packages changed since `origin/main` (and tooling tests when `scripts/` or skills change). CI still runs the full suite. |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
 | `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
 | `pnpm --filter @sipges/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |

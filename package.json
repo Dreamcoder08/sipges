@@ -16,6 +16,7 @@
     "check": "pnpm lint && pnpm boundaries && pnpm typecheck && pnpm test",
     "e2e": "pnpm --filter @sipges/web build && pnpm --filter @sipges/e2e run e2e",
     "verify": "bash scripts/verify.sh",
+    "verify:fast": "bash scripts/verify-fast.sh",
     "odd:close": "node scripts/odd-close-task.mjs",
     "odd:status": "node scripts/odd-status.mjs",
     "engram": "node scripts/agents/engram.mjs",

@@ -29,3 +29,19 @@ Turborepo and Biome were dropped: on this development machine Windows refuses to
 
 ## References
 pnpm workspaces, TypeScript `tsconfig` reference, typescript-eslint, dependency-cruiser.
+
+## Addendum (2026-11-01): Bun evaluated, pnpm kept
+
+The owner asked whether Bun would be better than pnpm. Decision: keep pnpm for now.
+
+- The slow part of local verification is the test suites (Vitest, PGlite) and typecheck, not package
+  installs, so a faster installer does not shorten the loop. `pnpm verify:fast` (affected packages, static
+  checks in parallel) addresses the actual cost.
+- Production runs on Cloudflare Workers (`workerd`), not on Node or Bun, so a runtime switch brings no
+  production gain; moving tests to `bun test` would mean rewriting the Vitest, MSW and Testing Library setup.
+- pnpm's strict layout and `minimumReleaseAge` already protect the supply chain. Bun 1.3 offers a release-age
+  gate and isolated installs too, so this is no longer a differentiator, but swapping the package manager and
+  lockfile of a deployed monorepo is a delivery change with its own risk.
+
+Revisit when: Workers tooling or Vitest gains first-class Bun support that removes a measured bottleneck, or a
+spike on one package shows a material gain in the verification loop.
