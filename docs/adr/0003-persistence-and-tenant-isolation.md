@@ -7,7 +7,10 @@ Python uses one SQLite file per tenant plus a global auth database, JSON setting
 - **PostgreSQL** is the single system of record. **Drizzle ORM** for typed schema and SQL-first queries; versioned migrations committed to the repo.
 - **Shared schema, `tenant_id` column on every tenant-owned table, enforced by Row-Level Security.** Each request runs in a transaction that executes `SET LOCAL app.tenant_id = $1`; RLS policies compare against `current_setting('app.tenant_id')`. The application connects with a non-owner, non-`BYPASSRLS` role. `SET LOCAL` is transaction-scoped, so it is safe with transaction-mode connection poolers.
 - Defense in depth: repositories also take a `TenantContext` argument, so isolation holds even if RLS were disabled.
-- Global tables (no RLS): `users`, `sessions`, `tenants`, `grants`.
+- Global tables (no RLS): `users`, `sessions`, `tenants`, `grants`, and three added later:
+  - `api_keys` (migration 0014): looked up by key prefix before a tenant is known, so it has no RLS; each row carries `tenant_id` and the store filters every list and revoke by it. Only the SHA-256 of the secret part is stored.
+  - `push_subscriptions` (0015): scoped to a person and device (`username`, FK to `users`, cascade delete), not to a tenant; a push reaches a subscription only through that person's `grants` for the project that raised it.
+  - `login_failures` (0001): login throttling keyed by `subject` (`user:<name>` or `ip:<address>`); no tenant data, and rows outside the throttling window are deleted.
 - Territorial records keep the generic `(tenant_id, module, record_id, payload jsonb)` model for contract parity, with **per-module Zod validation** at the boundary (correction, ADR 0008).
 - Lazy Python tables become explicit migrations (`document_reviews`, `digital_alert_reviews`, `preventive_actions`, `preventive_action_log`).
 - Per-tenant settings (IRSA config, indicator config) move to a `tenant_settings` table seeded from the JSON defaults.

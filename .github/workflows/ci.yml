@@ -1,9 +1,32 @@
 name: CI
 
+# Changes that no test reads skip CI to save Actions minutes (2,000/month on the private Free plan).
+# docs/agents and docs/escenarios stay in because tooling and scenario tests read them. If required
+# status checks come back (GitHub Pro rulesets), replace this filter with a job that reports success.
 on:
   pull_request:
+    paths-ignore:
+      - 'odd/**'
+      - '.engram/**'
+      - 'design/**'
+      - 'docs/adr/**'
+      - 'docs/deployment/**'
+      - 'docs/operations/**'
+      - 'docs/history/**'
+      - 'CHANGELOG.md'
+      - 'README.md'
   push:
     branches: [main]
+    paths-ignore:
+      - 'odd/**'
+      - '.engram/**'
+      - 'design/**'
+      - 'docs/adr/**'
+      - 'docs/deployment/**'
+      - 'docs/operations/**'
+      - 'docs/history/**'
+      - 'CHANGELOG.md'
+      - 'README.md'
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -116,10 +139,26 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+        with:
+          fetch-depth: 0
+      # The reference is frozen: run it only when it changes, but always report the check.
+      - id: changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null \
+            || git diff --name-only "$BASE" HEAD -- reference/python .github/workflows/ci.yml | grep -q .; then
+            echo "python=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "python=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.changes.outputs.python == 'true'
+        uses: actions/setup-python@v5
         with:
           python-version-file: reference/python/.python-version
           cache: pip
           cache-dependency-path: reference/python/requirements-test.txt
-      - run: pip install -r reference/python/requirements-test.txt
-      - run: PYTHONPATH=reference/python python -m pytest -q reference/python/tests
+      - if: steps.changes.outputs.python == 'true'
+        run: pip install -r reference/python/requirements-test.txt
+      - if: steps.changes.outputs.python == 'true'
+        run: PYTHONPATH=reference/python python -m pytest -q reference/python/tests
