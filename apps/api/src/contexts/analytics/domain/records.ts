@@ -1,5 +1,3 @@
-import { pyGet, pyTruthy } from './python.ts';
-
 /** A module record as persisted: its id and JSON payload. */
 export type StoredRecord = {
   readonly id: string;
@@ -12,7 +10,7 @@ export type RecordsByModule = Readonly<Record<string, readonly StoredRecord[]>>;
 /** A payload with its record id under `_id`, as app.py engines see it. */
 export type AnalysisRecord = Readonly<Record<string, unknown>> & { readonly _id: string };
 
-/** Legacy project of the Python installation: records without Proyecto_ID belong to it. */
+/** Legacy project of the Python installation, named «Proyecto Sechura» in its reports. */
 export const DEFAULT_PROJECT_ID = 'PRJ-SECHURA';
 
 export const SITUATIONAL_MODULES = [
@@ -53,17 +51,14 @@ export const recordWithId = (record: StoredRecord): AnalysisRecord => ({
   _id: record.id,
 });
 
-/** build_situational filter: `d.get("Proyecto_ID") or "PRJ-SECHURA"` (any falsy value defaults). */
-export const situationalProject = (payload: Readonly<Record<string, unknown>>) =>
-  pyTruthy(payload['Proyecto_ID']) ? payload['Proyecto_ID'] : DEFAULT_PROJECT_ID;
-
-/** extended_records (app.py:709): only a missing Proyecto_ID defaults to PRJ-SECHURA. */
-export const extendedRecords = (byModule: RecordsByModule, projectId: string): ExtendedRecords => {
+/**
+ * extended_records (app.py:709). The tenant is the project (S13): every record it holds counts,
+ * whatever its `Proyecto_ID` field says, so all screens count the same records.
+ */
+export const extendedRecords = (byModule: RecordsByModule): ExtendedRecords => {
   const result = emptyExtended() as Record<ExtendedKey, AnalysisRecord[]>;
   for (const key of EXTENDED_KEYS)
-    result[key] = (byModule[EXTENDED_MODULES[key]] ?? [])
-      .filter((r) => pyGet(r.payload, 'Proyecto_ID', DEFAULT_PROJECT_ID) === projectId)
-      .map(recordWithId);
+    result[key] = (byModule[EXTENDED_MODULES[key]] ?? []).map(recordWithId);
   return result;
 };
 

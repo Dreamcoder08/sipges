@@ -19,7 +19,7 @@ export const createManagementService = (deps: { sources: ManagementSources; cloc
       today: limaToday(now),
       alerts,
       actions,
-      commitments: commitmentsOf(records, scope.projectId),
+      commitments: commitmentsOf(records),
     });
   };
 

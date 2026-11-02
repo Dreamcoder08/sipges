@@ -19,6 +19,9 @@ Python uses one SQLite file per tenant plus a global auth database, JSON setting
 ## Amendment (T4)
 Drizzle ORM is not used. Repositories write explicit parameterized SQL through a small `SqlClient` port (`apps/api/src/platform/database/sql-client.ts`) implemented by PGlite and postgres.js, and schema changes are hand-written, versioned `.sql` migrations applied by `migrator.ts`, each in its own transaction. Reasons: RLS policies, `SET LOCAL` and grants are plain SQL anyway; one port keeps tests (PGlite) and production (postgres.js) on the same code path; no generated code to review. Drizzle can still be adopted later behind the same port if query volume justifies it.
 
+## Amendment (2026-11-02, functional-closure T22)
+The tenant is the project. A record's `Proyecto_ID` field is not a second filter: every screen and report counts all records the tenant's RLS returns, so Inicio, Panorama, the territorial map, situational, strategic, consensus and integrated analysis, management, text analysis and conflict risk count the same records. The legacy rule "an empty `Proyecto_ID` means `PRJ-SECHURA`" is gone. On write, `RecordsService.create`, `replace` and `importRows` (HTTP, MCP, ingest keys and analyst proposals) fill a missing or empty `Proyecto_ID` from the tenant. A different value is **rejected**, never overwritten: 422 on `Proyecto_ID` for a single record, and the whole import is refused with a problem on that row. Rejecting matches the tenancy middleware, which already answers 403 to a request body naming another project, and keeps a mistaken file from silently landing in the wrong project. `Proyectos` keeps `Proyecto_ID` as its own record id. Existing records are not rewritten.
+
 ## Alternatives rejected
 - Schema-per-tenant: stronger isolation, but migrations scale with tenant count and `search_path` breaks under transaction poolers.
 - Database-per-tenant: mirrors Python, impossible on free tiers.

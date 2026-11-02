@@ -43,5 +43,5 @@ it('uses valid ISO Plazo commitments and keeps free text out of due dates', () =
       payload: { Proyecto_ID: 'P-1', Fecha_Vencimiento: '2026-02-30', Plazo: '2026-10-15' },
     },
   ];
-  expect(commitmentsOf(records, 'P-1').map((row) => row.due_date)).toEqual(['2026-10-15', '', '']);
+  expect(commitmentsOf(records).map((row) => row.due_date)).toEqual(['2026-10-15', '', '']);
 });

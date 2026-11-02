@@ -36,6 +36,14 @@ export const createSqlTenancyStore = (sql: SqlClient): TenancyStore => ({
     return rows.length > 0;
   },
 
+  async tenantLabel(scope) {
+    const [row] = await sql.query<{ label: string }>(
+      'SELECT label FROM tenants WHERE company_id = $1 AND project_id = $2',
+      [scope.companyId, scope.projectId],
+    );
+    return row?.label ?? null;
+  },
+
   async grant(username, scope, at) {
     await sql.query(
       `INSERT INTO grants (username, tenant_id, created_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,

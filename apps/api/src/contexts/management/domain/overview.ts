@@ -43,8 +43,6 @@ const counter = (values: readonly string[]) => {
   return counts;
 };
 
-const LEGACY_PROJECT_ID = 'PRJ-SECHURA';
-
 const truthy = (v: unknown) =>
   v !== undefined &&
   v !== null &&
@@ -57,29 +55,22 @@ const truthy = (v: unknown) =>
 const str = (v: unknown) =>
   typeof v === 'string' ? v : typeof v === 'number' ? String(v) : JSON.stringify(v);
 
-/** `Compromisos` records of the project, as app.py read them from the generic store. */
+/** `Compromisos` records of the tenant, which is the project (S13): `Proyecto_ID` is not re-checked. */
 export const commitmentsOf = (
   records: readonly { id: string; payload: Readonly<Record<string, unknown>> }[],
-  projectId: string,
 ): Commitment[] =>
-  records
-    .filter(
-      ({ payload }) =>
-        (truthy(payload['Proyecto_ID']) ? str(payload['Proyecto_ID']) : LEGACY_PROJECT_ID) ===
-        projectId,
-    )
-    .map(({ id, payload }) => {
-      const pick = (...keys: string[]) => {
-        const key = keys.find((k) => truthy(payload[k]));
-        return key === undefined ? '' : str(payload[key]);
-      };
-      return {
-        id,
-        responsible: pick('Responsable'),
-        status: pick('Estado'),
-        due_date: recordDueDate(payload) ?? '',
-      };
-    });
+  records.map(({ id, payload }) => {
+    const pick = (...keys: string[]) => {
+      const key = keys.find((k) => truthy(payload[k]));
+      return key === undefined ? '' : str(payload[key]);
+    };
+    return {
+      id,
+      responsible: pick('Responsable'),
+      status: pick('Estado'),
+      due_date: recordDueDate(payload) ?? '',
+    };
+  });
 
 const alertJson = (a: AlertRow) => ({
   id: a.id,

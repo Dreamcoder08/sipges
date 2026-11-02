@@ -109,7 +109,9 @@ describe('desktop sidebar', () => {
       ]),
     );
     // Recents last for the tab only: nothing persists on the device (03-tenancy checks localStorage).
-    expect(JSON.parse(window.sessionStorage.getItem('sipges.recents') ?? '[]')).toHaveLength(4);
+    expect(
+      JSON.parse(window.sessionStorage.getItem('sipges.recents:DEMO/PRJ-DEMO') ?? '[]'),
+    ).toHaveLength(4);
     expect(window.localStorage.getItem('sipges.recents')).toBeNull();
     expect(recents().getByRole('link', { name: 'Registros · Demandas' })).toHaveAttribute(
       'href',
