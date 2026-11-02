@@ -249,12 +249,10 @@
   --touch-target: 2.75rem;
   --focus-ring: 3px solid var(--color-focus);
   --z-sticky: 20;
-  --z-tabbar: 25;
   --z-popover: 40;
   --z-modal: 60;
   --z-skip: 70;
 
-  --tabbar-height: 4rem;
   --sidebar-width: 15.5rem;
 }
 

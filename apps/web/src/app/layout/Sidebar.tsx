@@ -12,7 +12,8 @@ import styles from './Sidebar.module.css';
  * Sidebar of wide screens (docs/adr/0015): brand, project, search and inbox on top, then the
  * five destinations, Integraciones and the last screens opened («Recientes»), and the account
  * menu at the foot. A destination is current on its hub and on the old screens it absorbs.
- * Every other tool of the shell lives here too, so the top bar keeps the title only.
+ * Every other tool of the shell lives here too, so the top bar keeps the title only. Phones and
+ * tablets show the same sidebar inside the menu drawer (`inDrawer`), whose header names it.
  */
 export const Sidebar = ({
   pathname,
@@ -20,27 +21,31 @@ export const Sidebar = ({
   projectSwitcher,
   search,
   notifications,
+  inDrawer = false,
 }: {
   pathname: string;
   projectLabel: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
   notifications?: ReactNode;
+  inDrawer?: boolean;
 }) => {
   const ids = useId();
   const recents = useRecents();
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
-        <span className={shell.mark} aria-hidden="true">
-          S
-        </span>
-        <span>
-          <b>SIPGES</b>
-          <small>Gestión socioambiental</small>
-        </span>
-      </div>
+    <aside className={styles.sidebar} data-drawer={inDrawer}>
+      {inDrawer ? null : (
+        <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
+          <span className={shell.mark} aria-hidden="true">
+            S
+          </span>
+          <span>
+            <b>SIPGES</b>
+            <small>Gestión socioambiental</small>
+          </span>
+        </div>
+      )}
       <div className={styles.project}>{projectSwitcher}</div>
       <div className={styles.tools}>
         {search ? <div className={styles.search}>{search}</div> : null}

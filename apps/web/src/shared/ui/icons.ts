@@ -33,6 +33,7 @@ export const ICON_PATHS = {
   chevronDown: 'M6 9l6 6 6-6',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   close: 'M18 6 6 18M6 6l12 12',
+  menu: 'M4 7h16M4 12h16M4 17h10',
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
   landmark: 'M3 21h18M5 21v-9M10 21v-9M14 21v-9M19 21v-9M2 10l10-7 10 7z',

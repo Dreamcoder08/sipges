@@ -6,7 +6,7 @@ import styles from './TerritorialMap.module.css';
 export const SWIPE = 40;
 
 /**
- * Phone sheet for the territorial map (ODD geospatial-timeline S6): it sits above the tab bar
+ * Phone sheet for the territorial map (ODD geospatial-timeline S6): it sits at the bottom edge
  * without covering the map, peeks with the title and expands with a swipe up or a tap on the
  * handle; a swipe down folds it, and down again closes it. It is not modal: the map stays
  * usable behind it, and the close button returns to a clean map.

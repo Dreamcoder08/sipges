@@ -8,11 +8,11 @@ Read-only sync of the web app's design tokens and components. Every value below 
 | --- | --- |
 | `apps/web/src/app/styles/tokens.css` | All tokens: `:root` (light), `@media (prefers-color-scheme: dark)` (device dark) and `:root[data-theme='dark']` (picked dark). The two dark blocks carry identical values. |
 | `apps/web/src/app/styles/global.css` | Resets, form control base, focus ring, scrollbars, reduced-motion rule |
-| `apps/web/src/app/layout/AppShell.module.css` | Current sidebar, top bar, bottom tab bar, "Más" sheet rows |
-| `apps/web/src/app/layout/AppShell.tsx` | Current sidebar structure (`aside > nav[aria-label=Secciones]` with 4 `NAV_GROUPS`) |
-| `apps/web/src/app/navigation.ts` | 26 screens, `NAV_GROUPS`, `SCREEN_ICONS`, `MOBILE_TABS`, `MORE_GROUPS` |
+| `apps/web/src/app/layout/AppShell.module.css` | Current sidebar, top bar and phone menu button |
+| `apps/web/src/app/layout/AppShell.tsx`, `Sidebar.tsx` | Shell layout; the sidebar (`aside > nav[aria-label=Secciones]`) on wide screens and inside the phone menu drawer |
+| `apps/web/src/app/navigation.ts` | `SCREENS`, `DESTINATIONS`, `SYSTEM_PATHS`, `SCREEN_ICONS` |
 | `apps/web/src/shared/ui/` | Button, Badges, Card, ChipRow, SegmentedControl, Sheet, Icon, icons.ts, Field, Alert, EmptyState, Skeleton… |
-| `apps/web/src/features/search/SearchPalette.module.css`, `apps/web/src/features/notifications/NotificationBell.module.css`, `apps/web/src/features/auth/AccountMenu.module.css`, `apps/web/src/features/tenancy/ProjectSwitcher.module.css`, `apps/web/src/features/records/Records.module.css` | Top-bar pieces (search composer, bell, account, project picker) and the Eventos table / status pill |
+| `apps/web/src/features/search/SearchPalette.module.css`, `apps/web/src/features/notifications/NotificationBell.module.css`, `apps/web/src/features/tenancy/ProjectSwitcher.module.css`, `apps/web/src/features/records/Records.module.css` | Sidebar pieces (search composer, bell, project picker) and the Eventos table / status pill |
 
 ## Token counts (from the sync)
 
@@ -79,7 +79,7 @@ Source: `apps/web/src/app/styles/tokens.css`
 | `--color-hairline` | `#ececec` | `#1c1c1f` | Dividers and card borders |
 | `--color-hairline-strong` | `#d9d9d9` | `#323236` | Secondary button border, kbd border |
 | `--color-scrim` | `rgb(0 0 0 / 0.35)` | `rgb(0 0 0 / 0.7)` | Modal backdrop |
-| `--color-chrome` | `rgb(255 255 255 / 0.85)` | `rgb(0 0 0 / 0.78)` | Translucent top bar and tab bar |
+| `--color-chrome` | `rgb(255 255 255 / 0.85)` | `rgb(0 0 0 / 0.78)` | Translucent top bar |
 | `--color-scrollbar` | `rgb(0 0 0 / 0.18)` | `rgb(255 255 255 / 0.16)` | Scrollbar thumb |
 | `--color-scrollbar-hover` | `rgb(0 0 0 / 0.32)` | `rgb(255 255 255 / 0.3)` |  |
 
@@ -334,11 +334,9 @@ Source: `apps/web/src/app/styles/tokens.css`
 | `--touch-target` | `2.75rem` | Coarse-pointer minimum (WCAG 2.5.5) |
 | `--focus-ring` | `3px solid var(--color-focus)` | Global :focus-visible outline (offset 2px) |
 | `--z-sticky` | `20` | Stacking layer |
-| `--z-tabbar` | `25` | Stacking layer |
 | `--z-popover` | `40` | Stacking layer |
 | `--z-modal` | `60` | Stacking layer |
 | `--z-skip` | `70` | Stacking layer |
-| `--tabbar-height` | `4rem` | Phone bottom bar |
 | `--sidebar-width` | `15.5rem` | Desktop sidebar column |
 
 ## Components
@@ -360,7 +358,7 @@ Source: `apps/web/src/app/layout/AppShell.module.css`, `apps/web/src/app/layout/
 - Search composer (`apps/web/src/features/search/SearchPalette.module.css`): pill, min-width 13rem, height 2.5rem, background `--color-surface-raised`, shadow `--shadow-composer`, text `--color-muted` `--text-sm`, label "Buscar", `<kbd>Ctrl K</kbd>` (`--text-xs`, `--color-hairline-strong` border, `--radius-sm`). `aria-haspopup="dialog"`, `aria-keyshortcuts="Control+K Meta+K"`.
 - Bell (`apps/web/src/features/notifications/NotificationBell.module.css`): 2.5rem round ghost button, icon `--text-xl`, unread badge `--level-red` / `--color-on-strong`.
 - Project switcher (`apps/web/src/features/tenancy/ProjectSwitcher.module.css`): label "Proyecto activo" (`--text-xs`, 600, muted) above a native `select` (min-width 12rem, border `--color-hairline`). Label in the app: "Proyecto Sechura (Migración)".
-- Account (`apps/web/src/features/auth/AccountMenu.module.css`): pill trigger, 2.25rem round avatar (`--color-accent-tint` / `--color-accent-text`, initials, weight 700) + name (`--text-sm`) over role (`--text-xs`, muted). Opens a sheet "Cuenta" with profile, appearance (Sistema / Claro / Oscuro) and a danger "Cerrar sesión" row.
+- Account (`apps/web/src/app/layout/SidebarAccount.module.css`): row at the foot of the sidebar (also inside the phone menu drawer) with avatar, name and «Configuración y sesión»; it opens the account menu (Configuración, Administración, Auditoría, Ayuda y metodología, Cerrar sesión).
 
 ### Buttons
 Source: `apps/web/src/shared/ui/Button.module.css`
@@ -394,8 +392,7 @@ Source: `apps/web/src/app/styles/global.css`: `:focus-visible { outline: var(--f
 
 ### Mobile navigation (context for the desktop work)
 Source: `apps/web/src/app/layout/AppShell.module.css`, `apps/web/src/app/navigation.ts`
-- Bottom tab bar (`--tabbar-height`): Inicio → `/`, Monitoreo → `/eventos`, Alertas → `/alertas`, Territorio → `/mapa`, plus "Más".
-- "Más" sheet groups (`MORE_GROUPS`): **Investigar** (5), **Gestionar** (6), **Analizar** (6), **Sistema** (5). This task-oriented regrouping already exists in the product.
+- Phones and tablets (≤ 60rem): a menu button opens the same sidebar in a drawer from the left (ADR 0015, addendum 2026-11-01); there is no bottom tab bar.
 
 ## Navigation
 

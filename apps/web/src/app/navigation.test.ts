@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   DESTINATIONS,
-  MOBILE_TABS,
-  MORE_GROUPS,
   SCREEN_ICONS,
   SCREENS,
   SYSTEM_PATHS,
   destinationFor,
-  projectParts,
   safeRedirect,
   titleFor,
   visitFor,
@@ -86,37 +83,8 @@ describe('navigation', () => {
     expect(visitFor('/integraciones', '')).toBeNull();
   });
 
-  it('reaches every screen from the bottom bar, the "Más" sheet or a hub tab', () => {
-    const direct = [
-      ...MOBILE_TABS.map((tab) => tab.path),
-      ...MORE_GROUPS.flatMap((group) => group.paths),
-    ];
-    expect(new Set(direct).size).toBe(direct.length);
-    const hubs = DESTINATIONS.map((hub) => hub.path);
-    const reachable = new Set<string>(direct.filter((path) => !hubs.includes(path as never)));
-    for (const hub of DESTINATIONS) {
-      if (direct.includes(hub.path)) for (const tab of hub.tabs) reachable.add(tab.screen);
-    }
-    expect(reachable).toEqual(new Set(SCREENS.map((s) => s.path)));
-    expect(MOBILE_TABS.map((tab) => tab.label)).toEqual([
-      'Inicio',
-      'Registros',
-      'Bandeja',
-      'Territorio',
-    ]);
-  });
-
   it('gives every screen an icon', () => {
     expect(Object.keys(SCREEN_ICONS).sort()).toEqual(SCREENS.map((s) => s.path).sort());
     for (const hub of DESTINATIONS) expect(hub.icon).toBeTruthy();
-  });
-
-  it('splits project labels into a short name and a detail line', () => {
-    expect(projectParts('Proyecto Sechura (Migración)')).toEqual({
-      name: 'Sechura',
-      detail: 'Migración',
-    });
-    expect(projectParts('PRJ-SECHURA')).toEqual({ name: 'PRJ-SECHURA', detail: 'Proyecto activo' });
-    expect(projectParts('Proyecto Norte')).toEqual({ name: 'Norte', detail: 'Proyecto activo' });
   });
 });
