@@ -17,6 +17,9 @@ Causas de desborde ya vistas:
 - Texto suelto dentro de un `inline-flex` no se encoge: usa `display: block` con `text-overflow: ellipsis`.
 - Pistas de grid `auto` crecen al min-content: `grid-template-columns: minmax(0, 1fr)`.
 - Hijos flex con texto largo: `min-width: 0`.
+- Chip elegido fuera de la fila deslizable al llegar por enlace: `ChipRow` lo desplaza a la vista; con `scroll-snap-type: x proximity`, `scrollIntoView({ inline: 'nearest' })` lo dejó cortado en las pruebas, así que se alinea al inicio.
+
+Cobertura: `tests/hubs.mobile.spec.ts` recorre cada pestaña de los destinos, `/objeto` y las hojas abiertas a 360 y 412 px en claro y oscuro; amplíalo al añadir una pestaña u hoja.
 
 Cortes: teléfono `max-width: 40rem`, tableta `60rem`; usa `--tabbar-height` y `env(safe-area-inset-*)`. ADR: `docs/adr/0015-mobile-first-shell.md`.
 
