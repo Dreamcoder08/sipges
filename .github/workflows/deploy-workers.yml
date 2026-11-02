@@ -25,7 +25,8 @@ jobs:
         && github.event.workflow_run.conclusion == 'success'
         && github.event.workflow_run.event == 'push')
       || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
+    # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 20
     environment: production
     env:
@@ -51,14 +52,29 @@ jobs:
       # deploy:worker also re-asserts Hyperdrive query caching off (see the deployment guide).
       - name: Deploy the Worker
         run: pnpm --filter @sipges/hosting-cloudflare run deploy:worker
-      - name: Smoke test /health
+      # /health/ready runs SELECT 1 through Hyperdrive (5 s timeout). Like /health, it fails
+      # while the migrations check or the container build fails; unlike /health, it also
+      # fails when the backend is up but the database stops answering.
+      - name: Smoke test /health/ready
+        id: smoke
         run: |
           for attempt in 1 2 3 4 5 6; do
-            if curl -fsS --max-time 20 https://sipges.dreamcoder-dev08.workers.dev/health; then
+            if curl -fsS --max-time 20 https://sipges.dreamcoder-dev08.workers.dev/health/ready; then
               exit 0
             fi
             echo "Attempt $attempt failed; retrying in 10 s"
             sleep 10
           done
           echo "Smoke test failed" >&2
+          exit 1
+      # A failed deploy must not stay live. Rollback restores the previous Worker version only:
+      # migrations are additive and stay applied (docs/deployment/cloudflare-workers.md).
+      - name: Roll back the Worker
+        if: failure() && steps.smoke.outcome == 'failure'
+        working-directory: apps/hosting-cloudflare
+        env:
+          DEPLOYED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          pnpm exec wrangler rollback --yes --message "Smoke test failed for ${DEPLOYED_SHA::12} (run ${GITHUB_RUN_ID})"
+          echo "Rolled back to the previous version after the smoke test failed" >&2
           exit 1

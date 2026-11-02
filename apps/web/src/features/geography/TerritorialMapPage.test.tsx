@@ -3,7 +3,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, expect, it, vi } from 'vitest';
+import type { ProjectSettings } from '@sipges/contracts';
+import { ProjectSettingsProvider } from '../../shared/lib/project-settings.tsx';
 import { server } from '../../test/server.ts';
+import { UNITS_PER_DEGREE } from './BaseMap.tsx';
 import { TerritorialMapPage } from './TerritorialMapPage.tsx';
 
 // Synthetic records and a synthetic concession; no project or official data.
@@ -157,21 +160,107 @@ const serve = () =>
     }),
   );
 
-const renderPage = () =>
+const renderPage = (location: ProjectSettings['location'] = null, projectId = 'PRJ-SECHURA') =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <TerritorialMapPage
-        scope="SIPGES/PRJ-SECHURA"
-        projectId="PRJ-SECHURA"
-        projectLabel="Sechura"
-        role="consulta"
-        username="reader"
-        fullName="Reader"
-      />
+      <ProjectSettingsProvider value={location ? ({ location } as ProjectSettings) : null}>
+        <TerritorialMapPage
+          scope={`SIPGES/${projectId}`}
+          projectId={projectId}
+          projectLabel="Sechura"
+          role="consulta"
+          username="reader"
+          fullName="Reader"
+        />
+      </ProjectSettingsProvider>
     </QueryClientProvider>,
   );
+
+const TAMBOGRANDE = {
+  place: 'Tambogrande, Piura',
+  extent: [-80.548, -5.057, -80.218, -4.88] as [number, number, number, number],
+};
+
+it('frames the Sechura province when the project has no location', async () => {
+  serve();
+  server.use(http.get('/api/eventos', records([])));
+  renderPage();
+  const map = await screen.findByRole('group', {
+    name: 'Mapa territorial de la provincia de Sechura',
+  });
+  expect(within(map).getByText('Bayóvar')).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Toda la provincia' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Vice' })).toBeInTheDocument();
+});
+
+it('frames the project location and draws no Sechura base for a project elsewhere', async () => {
+  serve();
+  // A Sechura town name without coordinates is not placed at that town in another province.
+  server.use(
+    http.get('/api/eventos', records([{ _id: 'EV-7', Fecha: '2026-08-10', Territorio: 'Vice' }])),
+  );
+  renderPage(TAMBOGRANDE);
+  const map = await screen.findByRole('group', { name: 'Mapa territorial de Tambogrande, Piura' });
+  const [x = 0, y = 0, width = 0, height = 0] = (map.getAttribute('viewBox') ?? '')
+    .split(' ')
+    .map(Number);
+  expect((x + width / 2) / UNITS_PER_DEGREE).toBeCloseTo(-80.383, 3);
+  expect(-(y + height / 2) / UNITS_PER_DEGREE).toBeCloseTo(-4.9685, 3);
+  expect(width / UNITS_PER_DEGREE).toBeCloseTo(0.33 * 1.05, 3);
+  expect(within(map).queryByText(/Sechura|Bayóvar|Vice/)).toBeNull();
+  expect(screen.queryByRole('button', { name: /Vice/ })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Ver Tambogrande, Piura' })).toBeInTheDocument();
+  expect(screen.getByRole('option', { name: 'Todo Tambogrande, Piura' })).toBeInTheDocument();
+  expect(screen.queryByRole('option', { name: 'Vice' })).toBeNull();
+});
+
+it('lists the localities that records of a project elsewhere carry', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/eventos',
+      records([
+        {
+          _id: 'EV-8',
+          Fecha: '2026-08-10',
+          Territorio: 'Locuto',
+          Descripcion_Hecho: 'Reunión sintética en Locuto',
+          Latitud: -4.95,
+          Longitud: -80.4,
+        },
+      ]),
+    ),
+  );
+  renderPage(TAMBOGRANDE);
+  await screen.findByRole('group', { name: 'Mapa territorial de Tambogrande, Piura' });
+  const localities = screen.getByLabelText('Localidad');
+  expect(
+    within(localities)
+      .getAllByRole('option')
+      .map((o) => o.textContent),
+  ).toEqual(['Todo Tambogrande, Piura', 'Locuto']);
+});
+
+it('counts every record of the tenant, with or without Proyecto_ID (S13)', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/eventos',
+      records([
+        { _id: 'EV-B', Fecha: '2026-08-10', Territorio: 'Locuto', Latitud: -4.95, Longitud: -80.4 },
+      ]),
+    ),
+    http.get('/api/alertas', records([{ _id: 'AL-B', Estado: 'Abierta', Nivel: 'Rojo' }])),
+  );
+  renderPage(TAMBOGRANDE, 'PRJ-ALGARROBO');
+  await screen.findByRole('group', { name: 'Mapa territorial de Tambogrande, Piura' });
+  const kpi = (label: string) =>
+    screen.getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
+  expect(kpi('Eventos georreferenciados')).toBe('1');
+  await vi.waitFor(() => expect(kpi('Alertas abiertas')).toBe('1'));
+});
 
 afterEach(() => {
   bodies.length = 0;
@@ -338,3 +427,22 @@ it(
     expect(await screen.findByText('Concesión CONCESION SINTETICA y 3 km alrededor')).toBeVisible();
   },
 );
+
+// Regression (functional-closure S13): the map reads every page like Inicio instead of one
+// `limit=-1` request the API caps at 500 rows under the cache entry Inicio also fills.
+it('reads every page of each layer instead of one capped request', async () => {
+  serve();
+  const asked: string[] = [];
+  const page = Array.from({ length: 500 }, (_, index) => ({ _id: `EV-P${index}` }));
+  server.use(
+    http.get('/api/eventos', ({ request }) => {
+      const url = new URL(request.url);
+      asked.push(url.search);
+      return HttpResponse.json(url.searchParams.get('offset') === '0' ? page : EVENTS);
+    }),
+  );
+  renderPage();
+  const list = await screen.findByRole('list', { name: 'Registros del periodo' });
+  expect(within(list).getByText('Observado')).toBeVisible();
+  expect(asked).toEqual(['?limit=500&offset=0&q=', '?limit=500&offset=500&q=']);
+});

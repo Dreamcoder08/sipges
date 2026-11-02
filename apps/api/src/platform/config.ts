@@ -4,6 +4,8 @@ export type AppConfig = {
   readonly port: number;
   /** AES-256-GCM key for secrets at rest (TOTP), docs/adr/0004. */
   readonly dataKey: Buffer;
+  /** The key being rotated out: only opens older values (docs/operations/data-key-rotation.md). */
+  readonly dataKeyPrevious: Buffer | undefined;
   readonly admin: {
     readonly username: string;
     readonly password: string;
@@ -22,8 +24,16 @@ export type AppConfig = {
   readonly maxUploadBytes: number;
   /** Where evidence file bytes live (docs/migration/evidence.md). */
   readonly storage: StorageConfig;
-  /** Local embedding service for semantic text analysis (docs/migration/operations.md). */
-  readonly ollama: { readonly baseUrl: string; readonly model: string };
+  /**
+   * Embedding service for semantic text analysis (docs/migration/operations.md). A URL that is
+   * not loopback is external AI: its texts leave only through the egress guard (docs/adr/0030).
+   */
+  readonly ollama: {
+    readonly baseUrl: string;
+    readonly model: string;
+    /** SIPGES_OLLAMA_URL was set; otherwise the loopback default (unreachable on Workers). */
+    readonly configured: boolean;
+  };
   /** Hybrid search with stored embeddings from the Ollama model (SIPGES_SEMANTIC_SEARCH=1). */
   readonly semanticSearch: boolean;
   /**
@@ -99,12 +109,21 @@ const parsePort = (value: string | undefined): number => {
   return port;
 };
 
-const parseDataKey = (value: string | undefined): Buffer => {
-  if (value === undefined) throw new Error('SIPGES_DATA_KEY is required (base64, 32 bytes)');
+const decodeDataKey = (name: string, value: string): Buffer => {
   const key = /^[A-Za-z0-9+/]+={0,2}$/.test(value) ? Buffer.from(value, 'base64') : Buffer.alloc(0);
-  if (key.length !== 32) throw new Error('SIPGES_DATA_KEY must decode to 32 bytes');
+  if (key.length !== 32) throw new Error(`${name} must decode to 32 bytes`);
   return key;
 };
+
+const parseDataKey = (value: string | undefined): Buffer => {
+  if (value === undefined) throw new Error('SIPGES_DATA_KEY is required (base64, 32 bytes)');
+  return decodeDataKey('SIPGES_DATA_KEY', value);
+};
+
+// Optional and never compared with SIPGES_DATA_KEY: an equal value only repeats a decryption
+// attempt, while a startup error would take the Worker down mid-rotation.
+const parsePreviousDataKey = (value: string | undefined): Buffer | undefined =>
+  value === undefined ? undefined : decodeDataKey('SIPGES_DATA_KEY_PREVIOUS', value);
 
 const MAX_UPLOAD_CEILING = 100 * 1024 * 1024;
 
@@ -151,6 +170,7 @@ const parseStorage = (env: Env): StorageConfig => {
 };
 
 const parseOllama = (env: Env) => {
+  const configured = env.SIPGES_OLLAMA_URL !== undefined;
   const baseUrl = env.SIPGES_OLLAMA_URL ?? 'http://127.0.0.1:11434';
   let url: URL;
   try {
@@ -161,7 +181,7 @@ const parseOllama = (env: Env) => {
   if (url.protocol !== 'http:' && url.protocol !== 'https:')
     throw new Error('SIPGES_OLLAMA_URL must use http or https');
   const model = env.SIPGES_OLLAMA_EMBED_MODEL || 'nomic-embed-text';
-  return { baseUrl, model };
+  return { baseUrl, model, configured };
 };
 
 const MODEL_ID = /^[a-z0-9][a-z0-9.-]{1,63}$/;
@@ -255,6 +275,7 @@ export const loadConfig = (env: Env): AppConfig => ({
   host: env.SIPGES_HOST ?? '127.0.0.1',
   port: parsePort(env.SIPGES_PORT),
   dataKey: parseDataKey(env.SIPGES_DATA_KEY),
+  dataKeyPrevious: parsePreviousDataKey(env.SIPGES_DATA_KEY_PREVIOUS),
   admin: {
     username: (env.SIPGES_ADMIN_USERNAME ?? 'admin').trim().toLowerCase(),
     password: env.SIPGES_ADMIN_PASSWORD ?? '',

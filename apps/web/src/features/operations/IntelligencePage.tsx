@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   AlertCreated,
-  AlertReviewed,
   AlertState,
   AnalysisMode,
   TerritorialAlert,
-  TerritorialAlerts,
-  TerritorialSummary,
   TextAnalysisResponse,
 } from '@sipges/contracts';
 import { requestJson } from '../../shared/api/client.ts';
+import {
+  reviewTerritorialAlert,
+  territorialAlertsQuery,
+  territorialSummaryQuery,
+} from '../../shared/api/territorial-alerts.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
@@ -20,6 +22,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './Operations.module.css';
 import { AuthorizedSourcesCard } from './AuthorizedSourcesCard.tsx';
+import { embedderAvailabilityQuery, unavailableReason } from './embedder.ts';
 export const IntelligencePage = (context: FeatureContext) => {
   const { scope, projectId, role } = context;
   const writable = role !== 'consulta';
@@ -36,22 +39,10 @@ export const IntelligencePage = (context: FeatureContext) => {
   const [status, setStatus] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const alertHeading = useReveal(selected);
-  const alerts = useQuery({
-    queryKey: ['operations', scope, 'alerts'],
-    queryFn: ({ signal }) =>
-      requestJson('/system/intelligence/territorial-alerts?limit=200', TerritorialAlerts, {
-        scope,
-        signal,
-      }),
-  });
-  const summary = useQuery({
-    queryKey: ['operations', scope, 'summary'],
-    queryFn: ({ signal }) =>
-      requestJson('/system/intelligence/territorial-summary', TerritorialSummary, {
-        scope,
-        signal,
-      }),
-  });
+  const alerts = useQuery(territorialAlertsQuery(scope));
+  const summary = useQuery(territorialSummaryQuery(scope));
+  const embedder = useQuery(embedderAvailabilityQuery(scope));
+  const semanticDown = embedder.data?.available === false ? embedder.data : null;
   const body = () => ({
     text,
     source_url: sourceUrl,
@@ -81,20 +72,10 @@ export const IntelligencePage = (context: FeatureContext) => {
   });
   const review = useMutation({
     mutationFn: () =>
-      requestJson(
-        `/system/intelligence/territorial-alerts/${encodeURIComponent(selected)}`,
-        AlertReviewed,
-        {
-          scope,
-          method: 'PATCH',
-          body: {
-            json: {
-              status: status ?? selectedAlert?.status ?? 'Corroborado',
-              reviewer_note: note ?? selectedAlert?.reviewer_note ?? '',
-            },
-          },
-        },
-      ),
+      reviewTerritorialAlert(scope, selected, {
+        status: status ?? selectedAlert?.status ?? 'Corroborado',
+        reviewer_note: note ?? selectedAlert?.reviewer_note ?? '',
+      }),
     onSuccess: () => refresh(),
   });
   const busy = analysis.isPending || create.isPending || review.isPending;
@@ -166,7 +147,7 @@ export const IntelligencePage = (context: FeatureContext) => {
               disabled={busy}
             >
               {AnalysisMode.options.map((m) => (
-                <option key={m} value={m}>
+                <option key={m} value={m} disabled={m === 'semantic' && semanticDown !== null}>
                   {m === 'automatic'
                     ? 'Automático con respaldo por reglas'
                     : m === 'semantic'
@@ -176,6 +157,12 @@ export const IntelligencePage = (context: FeatureContext) => {
               ))}
             </select>
           </label>
+          {semanticDown && (
+            <Alert tone="warning">
+              Análisis semántico no disponible: {unavailableReason(semanticDown.reason)}. El modo
+              automático aplica solo reglas.
+            </Alert>
+          )}
           {writable && (
             <>
               <label>

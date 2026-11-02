@@ -18,3 +18,9 @@ export {
   type RecordVersion,
   type RecordsService,
 } from './records-service.ts';
+export type { RecordSummaryReader } from './ports.ts';
+export {
+  type RecordsSummaryPage,
+  type RecordsSummaryQuery,
+  createRecordsSummary,
+} from './records-summary.ts';

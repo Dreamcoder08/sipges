@@ -39,9 +39,7 @@ test('mandatory MFA enrolls before dashboard and requires a code on the next log
     expect(secret).toMatch(/^[A-Z2-7]+$/);
     await page.getByLabel('Código del autenticador').fill(totpCode(secret ?? ''));
     await page.getByRole('button', { name: 'Activar y continuar' }).click();
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
     // A fresh browser session cannot inherit the enrolled session's MFA proof.
     await context.clearCookies();
     await page.goto('/login');
@@ -54,9 +52,7 @@ test('mandatory MFA enrolls before dashboard and requires a code on the next log
       .getByLabel('Código de autenticación')
       .fill(totpCode(secret ?? '', Date.now() + 30_000));
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click();
-    await expect(
-      page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
   });
   await cleanup();
 });

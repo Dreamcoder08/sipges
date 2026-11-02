@@ -27,6 +27,8 @@ const boot = async (
   const secrets = syntheticSecrets();
   const api = await startApi({
     hostname: HOST,
+    // A fresh PGlite boot runs every migration; slow or self-hosted runners need more than the 60 s default.
+    timeoutMs: 100_000,
     env: {
       SIPGES_COOKIE_SECURE: cookieSecure,
       // This suite isolates parity/cookie behavior; mandatory MFA has its own browser test.
@@ -71,6 +73,8 @@ const signInOverHttp = async (browser: Browser, instance: Instance) => {
 };
 
 test.describe('Secure cookie policy and exact 0|1 override (S7)', () => {
+  // Each case boots its own instance; startApi may wait up to 100 s, inside this 120 s budget.
+  test.describe.configure({ timeout: 120_000 });
   let browser: Browser;
   test.beforeAll(async () => {
     browser = await chromium.launch({ args: [`--host-resolver-rules=MAP ${HOST} 127.0.0.1`] });
@@ -105,9 +109,7 @@ test.describe('Secure cookie policy and exact 0|1 override (S7)', () => {
       expect(run.setCookie).toContain('HttpOnly');
       expect(run.stored).toHaveLength(1);
       expect(run.stored[0]).toMatchObject({ secure: false, httpOnly: true, sameSite: 'Strict' });
-      await expect(
-        run.page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-      ).toBeVisible();
+      await expect(run.page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
 
       // The project cookie follows the same policy (browser fetch: same origin, real cookie jar).
       const status = await run.page.evaluate(async () => {

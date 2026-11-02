@@ -73,3 +73,38 @@ export const ImportReport = z.object({
   problems: z.array(z.object({ row: z.number().int(), message: z.string() })),
 });
 export type ImportReport = z.infer<typeof ImportReport>;
+
+/** The record types Registros «Todos» lists, in the order of its chips. */
+export const SUMMARY_MODULES = [
+  'eventos',
+  'actores',
+  'directorio',
+  'demandas',
+  'narrativas',
+  'fuentes',
+  'buzon',
+] as const;
+export const SummaryModule = z.enum(SUMMARY_MODULES);
+export type SummaryModule = z.infer<typeof SummaryModule>;
+
+/** One row of GET /api/registros/summary: the columns every record type shares. */
+export const RecordSummaryRow = z.object({
+  module: SummaryModule,
+  id: z.string(),
+  title: z.string(),
+  territory: z.string(),
+  /** The type's own date field (yyyy-mm-dd as stored), empty when the type or row has none. */
+  date: z.string(),
+  /** A–E grade of the verification level; null when the wording has no grade. */
+  verification: z.enum(['A', 'B', 'C', 'D', 'E']).nullable(),
+  validation: z.string(),
+  updated_at: z.string(),
+});
+export type RecordSummaryRow = z.infer<typeof RecordSummaryRow>;
+
+/** GET /api/registros/summary: one bounded page of rows and every type's matching total. */
+export const RecordsSummary = z.object({
+  counts: z.record(SummaryModule, z.number().int().nonnegative()),
+  rows: z.array(RecordSummaryRow),
+});
+export type RecordsSummary = z.infer<typeof RecordsSummary>;

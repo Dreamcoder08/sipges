@@ -96,6 +96,8 @@ const DISTRICTS = {
   })),
 };
 
+const EMPTY = { type: 'FeatureCollection' as const, features: [] };
+
 const ALPHA = { observado: 235, estimado: 120, escenario: 0 } as const;
 const RADIUS = { current: 10, normal: 7, dim: 5 } as const;
 
@@ -110,6 +112,7 @@ const GeoCanvas = ({
   basemap,
   home,
   homeLabel,
+  showDistricts = true,
   label,
   points,
   concessions,
@@ -125,6 +128,8 @@ const GeoCanvas = ({
   basemap: Basemap;
   home: Extent;
   homeLabel: string;
+  /** False outside the Sechura province: its district outlines are not drawn. */
+  showDistricts?: boolean;
   label: string;
   points: readonly CanvasPoint[];
   concessions: readonly CanvasConcession[];
@@ -231,7 +236,7 @@ const GeoCanvas = ({
       layers: [
         new GeoJsonLayer({
           id: 'distritos',
-          data: DISTRICTS,
+          data: showDistricts ? DISTRICTS : EMPTY,
           stroked: true,
           filled: false,
           getLineColor: [...paint.district],
@@ -298,7 +303,7 @@ const GeoCanvas = ({
         }),
       ],
     });
-  }, [points, concessions, selectedPoint, selectedConcession, theme]);
+  }, [points, concessions, selectedPoint, selectedConcession, theme, showDistricts]);
 
   type Action = 'in' | 'out' | 'home' | '3d';
   const act = (action: Action) => {

@@ -25,7 +25,7 @@ See [ADR 0009](0009-internet-exposure-hardening.md) for the stricter Origin rule
 
 ## Consequences
 - Users keep their passwords; hashes upgrade transparently.
-- `SIPGES_DATA_KEY` becomes a required production secret; key rotation is a documented procedure.
+- `SIPGES_DATA_KEY` becomes a required production secret; key rotation is a documented procedure: the API also opens values sealed with `SIPGES_DATA_KEY_PREVIOUS` while `pnpm --filter @sipges/api rotate:data-key` re-encrypts them ([docs/operations/data-key-rotation.md](../operations/data-key-rotation.md), 2026-11-02).
 
 ## References
 OWASP ASVS 4.0 (V2, V3), OWASP Password Storage and Session Management cheat sheets, RFC 6238, NIST SP 800-63B.

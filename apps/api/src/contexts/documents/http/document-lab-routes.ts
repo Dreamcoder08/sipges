@@ -6,14 +6,17 @@ import type { AppEnv } from '../../../platform/http/env.ts';
 import { isoSeconds } from '../../../platform/http/time.ts';
 import { parseJson } from '../../../platform/http/validation.ts';
 import { formatScope } from '../../tenancy/application/index.ts';
+import { DocumentReviewBulkRequest } from '@sipges/contracts';
 import {
+  type BulkDecisionError,
   type DocumentLabService,
   type ImportError,
   DEFAULT_REVIEW_PAGE,
   LAB_REPORT_FILENAME,
+  MAX_BULK_DECISION,
   MAX_REVIEW_PAGE,
   type ReadError,
-  type ReviewItem,
+  type ReviewListItem,
 } from '../application/index.ts';
 
 /** Multipart overhead allowed on top of the files before the body is refused unread. */
@@ -49,6 +52,11 @@ const DECISION_ERRORS = {
   missing: [404, 'Hallazgo no encontrado'],
   invalid_text: [422, 'Texto con caracteres no permitidos'],
 } as const;
+
+const BULK_ERRORS = {
+  ...DECISION_ERRORS,
+  too_many: [422, `Máximo ${MAX_BULK_DECISION} hallazgos por solicitud`],
+} as const satisfies Record<BulkDecisionError['kind'], readonly [number, string]>;
 
 const missingField = (c: Context, field: string) =>
   c.json({ detail: [{ type: 'missing', loc: ['body', field], msg: 'Field required' }] }, 422);
@@ -92,7 +100,7 @@ const readForm = async <F extends string>(
   return { ok: true, files: files as Record<F, FormFile>, projectId: scope.projectId };
 };
 
-const reviewJson = (item: ReviewItem) => ({
+const reviewJson = (item: ReviewListItem) => ({
   id: item.id,
   project_id: item.projectId,
   source_file: item.sourceFile,
@@ -106,6 +114,8 @@ const reviewJson = (item: ReviewItem) => ({
   note: item.note,
   created_at: isoSeconds(item.createdAt),
   updated_at: isoSeconds(item.updatedAt),
+  target: item.target,
+  record: item.record,
 });
 
 /** Whole-number query value inside [min, max]; undefined means "not supplied". */
@@ -228,6 +238,36 @@ export const documentLabRoutes = (lab: DocumentLabService) => {
         offset: offset ?? 0,
         themes: page.themes,
         limitations: 'Revisado no implica verdad certificada: comprobar fuente y documentación.',
+      });
+    })
+
+    .post('/system/document-lab/review/bulk', async (c) => {
+      // Same role gate as the single decision: admin and analista (identity access-policy).
+      const body = await parseJson(c, DocumentReviewBulkRequest);
+      if (!body.ok) return body.response;
+      const scope = c.get('scope');
+      const identity = c.get('identity');
+      const result = await lab.decideMany(formatScope(scope), {
+        projectId: scope.projectId,
+        ids: body.value.ids ?? null,
+        theme: body.value.theme ?? null,
+        sourceSha256: body.value.source_sha256 ?? null,
+        status: body.value.status,
+        // The acting user, as the inbox fills `reviewer` for a single decision.
+        reviewer: identity.fullName || identity.username,
+        note: body.value.note,
+        dryRun: body.value.dry_run,
+      });
+      if (!result.ok) {
+        const [status, detail] = BULK_ERRORS[result.error.kind];
+        return c.json({ detail }, status);
+      }
+      const { recordsCreated, ...counts } = result.value;
+      return c.json({
+        ok: true,
+        dry_run: body.value.dry_run,
+        ...counts,
+        records_created: recordsCreated,
       });
     })
 

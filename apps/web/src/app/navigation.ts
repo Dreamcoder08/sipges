@@ -34,6 +34,8 @@ export const SCREENS = [
     ready: true,
   },
   { path: '/alertas', label: 'Alertas', title: 'Centro de alertas', ready: true },
+  { path: '/pendientes', label: 'Pendientes', title: 'Pendientes de decisión', ready: true },
+  { path: '/avisos', label: 'Avisos', title: 'Avisos', ready: true },
   { path: '/situaciones', label: 'Situaciones', title: 'Situaciones relacionadas', ready: true },
   { path: '/buzon', label: 'Buzón', title: 'Buzón de quejas y sugerencias', ready: true },
   { path: '/lecciones', label: 'Lecciones', title: 'Lecciones territoriales', ready: true },
@@ -58,6 +60,7 @@ export const SCREENS = [
     ready: true,
   },
   { path: '/irsa', label: 'IRSA-SIPGES', title: 'IRSA-SIPGES', ready: true },
+  { path: '/riesgo', label: 'Riesgo de conflicto', title: 'Riesgo de conflicto', ready: true },
   { path: '/validacion', label: 'Validación', title: 'Validación', ready: true },
   {
     path: '/calidad',
@@ -78,6 +81,7 @@ export const SCREENS = [
     title: 'Automatizaciones e integraciones',
     ready: true,
   },
+  { path: '/integraciones', label: 'Integraciones', title: 'Integraciones', ready: true },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología SIPGES', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
   { path: '/version-4', label: 'Configuración', title: 'Configuración del proyecto', ready: true },
@@ -90,77 +94,138 @@ export const SCREENS = [
 
 export type ScreenPath = (typeof SCREENS)[number]['path'];
 
-/**
- * Sidebar sections: contiguous runs of SCREENS, so the legacy menu order is unchanged and the
- * long list is easier to scan (above all in the mobile drawer).
- */
-export const NAV_GROUPS = [
-  {
-    label: 'Monitoreo',
-    paths: ['/', '/eventos', '/actores', '/directorio', '/demandas', '/narrativas'],
-  },
-  {
-    label: 'Gestión y alertas',
-    paths: [
-      '/gerencia',
-      '/inteligencia-redes',
-      '/alertas',
-      '/situaciones',
-      '/buzon',
-      '/lecciones',
-      '/mapa',
-      '/ubicacion',
-    ],
-  },
-  {
-    label: 'Análisis',
-    paths: [
-      '/cronologia',
-      '/situacion',
-      '/estrategia',
-      '/irsa',
-      '/validacion',
-      '/calidad',
-      '/fuentes',
-    ],
-  },
-  {
-    label: 'Sistema',
-    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria', '/version-4'],
-  },
-] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
-
-/**
- * Desktop sidebar (docs/adr/0015): the screens people open most sit under «Fijados» and are not
- * repeated in their group.
- */
-export const PINNED_PATHS = [
-  '/',
-  '/eventos',
-  '/alertas',
-  '/mapa',
-  '/validacion',
+/** Sistema screens, reached from the account menu; Integraciones has its own sidebar link. */
+export const SYSTEM_PATHS = [
+  '/administracion',
+  '/automatizaciones',
+  '/metodologia',
+  '/auditoria',
+  '/version-4',
 ] as const satisfies readonly ScreenPath[];
 
-const PINNED: ReadonlySet<string> = new Set(PINNED_PATHS);
+export const labelFor = (path: string): string =>
+  SCREENS.find((screen) => screen.path === path)?.label ??
+  DESTINATIONS.find((hub) => hub.path === path)?.label ??
+  path;
 
-/** Name of the group whose screens live in the account menu instead of the sidebar list. */
-const SYSTEM_GROUP = 'Sistema';
+/** A tab of a destination hub: one of today's screens, chosen by `value` in the URL search. */
+type HubTab = { value: string; screen: ScreenPath; label: string };
+type Tabs = readonly [HubTab, ...HubTab[]];
+type TabEntry = readonly [value: string, screen: ScreenPath, label?: string];
+const tabs = (...entries: readonly [TabEntry, ...TabEntry[]]) =>
+  entries.map(([value, screen, label]) => ({
+    value,
+    screen,
+    label: label ?? labelFor(screen),
+  })) as unknown as Tabs;
 
-/** Collapsible sidebar sections: NAV_GROUPS without the pinned screens and without Sistema. */
-export const SIDEBAR_SECTIONS: readonly { label: string; paths: readonly ScreenPath[] }[] =
-  NAV_GROUPS.filter((group) => group.label !== SYSTEM_GROUP).map((group) => ({
-    label: group.label,
-    paths: group.paths.filter((path) => !PINNED.has(path)),
-  }));
+/**
+ * The five destinations (odd/tasks/workspace-architecture.md S3). Each hub renders the screens
+ * it absorbs as tabs; the active tab is `?<param>=<value>` and the first tab is the default.
+ * The old routes keep working as deep links.
+ */
+export const DESTINATIONS = [
+  {
+    path: '/inicio',
+    label: 'Inicio',
+    icon: 'home',
+    param: 'vista',
+    // The first tab is the briefing page (features/dashboard/inicio); it has no screen of its own
+    // and shares «/» with the Dashboard tab, which keeps the old route's content.
+    tabs: tabs(['inicio', '/', 'Inicio'], ['dashboard', '/'], ['gerencial', '/gerencia']),
+  },
+  {
+    path: '/registros',
+    label: 'Registros',
+    icon: 'layers',
+    param: 'tipo',
+    tabs: tabs(
+      ['eventos', '/eventos'],
+      ['actores', '/actores'],
+      ['directorio', '/directorio'],
+      ['demandas', '/demandas'],
+      ['narrativas', '/narrativas'],
+      ['fuentes', '/fuentes'],
+      ['buzon', '/buzon'],
+    ),
+  },
+  {
+    path: '/territorio',
+    label: 'Territorio',
+    icon: 'map',
+    param: 'vista',
+    tabs: tabs(['mapa', '/mapa'], ['ubicacion', '/ubicacion'], ['cronologia', '/cronologia']),
+  },
+  {
+    path: '/bandeja',
+    label: 'Bandeja',
+    icon: 'inbox',
+    param: 'vista',
+    tabs: tabs(
+      ['pendientes', '/pendientes'],
+      // Automation notifications (ADR 0014); the shell's bell opens this tab (functional-closure S9).
+      ['avisos', '/avisos'],
+      ['alertas', '/alertas'],
+      ['validacion', '/validacion'],
+      ['calidad', '/calidad'],
+      ['situaciones', '/situaciones'],
+    ),
+  },
+  {
+    path: '/analisis',
+    label: 'Análisis',
+    icon: 'chart',
+    param: 'vista',
+    // Inteligencia de redes is not named in S3; it joins here so it stays reachable.
+    tabs: tabs(
+      ['irsa', '/irsa'],
+      ['riesgo', '/riesgo'],
+      ['situacional', '/situacion'],
+      ['estrategica', '/estrategia'],
+      ['lecciones', '/lecciones'],
+      ['redes', '/inteligencia-redes'],
+    ),
+  },
+] as const satisfies readonly {
+  path: string;
+  label: string;
+  icon: IconName;
+  param: string;
+  tabs: Tabs;
+}[];
 
-/** Sistema screens, reached from the account menu. */
-export const SYSTEM_PATHS: readonly ScreenPath[] =
-  NAV_GROUPS.find((group) => group.label === SYSTEM_GROUP)?.paths ?? [];
+export type DestinationPath = (typeof DESTINATIONS)[number]['path'];
+export type NavPath = ScreenPath | DestinationPath;
+export type Destination = (typeof DESTINATIONS)[number];
 
-/** Label of the NAV_GROUPS group that owns a path, or null for routes outside the menu. */
-export const groupLabelFor = (path: string): string | null =>
-  NAV_GROUPS.find((group) => (group.paths as readonly string[]).includes(path))?.label ?? null;
+/** The destination that owns a path: its hub or one of the old screens it absorbs. */
+export const destinationFor = (path: string): Destination | undefined =>
+  DESTINATIONS.find((hub) => hub.path === path || hub.tabs.some((tab) => tab.screen === path));
+
+export const hubHref = (hub: Destination, value: string) =>
+  value === hub.tabs[0].value ? hub.path : `${hub.path}?${hub.param}=${value}`;
+
+/** What the «Recientes» list stores for a screen or hub tab; null for routes outside the menu. */
+export const visitFor = (path: string, search: string): { href: string; label: string } | null => {
+  // Integraciones has its own sidebar link, so listing it under «Recientes» would repeat it.
+  if (path === '/integraciones') return null;
+  const hub = DESTINATIONS.find((item) => item.path === path);
+  if (!hub) {
+    // Configuración's sections (`?seccion=`) are one screen, so they share one entry.
+    const kept = path === '/version-4' ? '' : search;
+    return SCREENS.some((screen) => screen.path === path)
+      ? { href: path + kept, label: labelFor(path) }
+      : null;
+  }
+  const asked = new URLSearchParams(search).get(hub.param);
+  const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
+  // A hub's own page (Inicio, where sign-in lands) already has its sidebar link.
+  if (tab.label === hub.label) return null;
+  return {
+    href: hubHref(hub, tab.value),
+    label: tab.label === hub.label ? hub.label : `${hub.label} · ${tab.label}`,
+  };
+};
 
 /** Icon shown next to each screen in the sidebar, the bottom bar and the "Más" sheet. */
 export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
@@ -173,72 +238,48 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/gerencia': 'gauge',
   '/inteligencia-redes': 'network',
   '/alertas': 'bell',
-  '/situaciones': 'layers',
-  '/buzon': 'message',
-  '/lecciones': 'layers',
+  '/pendientes': 'inbox',
+  '/avisos': 'alert',
+  '/situaciones': 'link',
+  '/buzon': 'mail',
+  '/lecciones': 'lightbulb',
   '/mapa': 'map',
   '/ubicacion': 'pin',
   '/cronologia': 'clock',
   '/situacion': 'compass',
   '/estrategia': 'target',
   '/irsa': 'chart',
+  '/riesgo': 'trend',
   '/validacion': 'check',
-  '/calidad': 'check',
+  '/calidad': 'grid',
   '/fuentes': 'file',
   '/administracion': 'sliders',
   '/automatizaciones': 'zap',
+  '/integraciones': 'plug',
   '/metodologia': 'bookOpen',
   '/auditoria': 'shield',
   '/version-4': 'layers',
 };
 
-/**
- * Phone and tablet bottom bar (docs/adr/0015): the four most frequent tasks; every other
- * screen lives in the "Más" sheet.
- */
-export const MOBILE_TABS = [
-  { path: '/', label: 'Inicio' },
-  { path: '/eventos', label: 'Monitoreo' },
-  { path: '/alertas', label: 'Alertas' },
-  { path: '/mapa', label: 'Territorio' },
-] as const satisfies readonly { path: ScreenPath; label: string }[];
-
-/** "Más" sheet, grouped by what the person wants to do rather than by system module. */
-export const MORE_GROUPS = [
-  {
-    label: 'Investigar',
-    paths: ['/actores', '/directorio', '/demandas', '/narrativas', '/inteligencia-redes'],
-  },
-  {
-    label: 'Gestionar',
-    paths: ['/gerencia', '/situaciones', '/buzon', '/lecciones', '/cronologia', '/ubicacion'],
-  },
-  {
-    label: 'Analizar',
-    paths: ['/situacion', '/estrategia', '/irsa', '/validacion', '/calidad', '/fuentes'],
-  },
-  {
-    label: 'Sistema',
-    paths: ['/administracion', '/automatizaciones', '/metodologia', '/auditoria', '/version-4'],
-  },
-] as const satisfies readonly { label: string; paths: readonly ScreenPath[] }[];
-
-export const labelFor = (path: string) =>
-  SCREENS.find((screen) => screen.path === path)?.label ?? path;
-
-/**
- * Splits a project label such as "Proyecto Sechura (Migración)" into a short name and a detail
- * line for the phone header; labels without parentheses keep a generic detail.
- */
-export const projectParts = (label: string): { name: string; detail: string } => {
-  const match = /^(?:Proyecto\s+)?(.+?)\s*\(([^)]+)\)\s*$/i.exec(label.trim());
-  if (match?.[1] && match[2]) return { name: match[1], detail: match[2] };
-  return { name: label.trim().replace(/^Proyecto\s+/i, '') || label, detail: 'Proyecto activo' };
-};
+export const iconFor = (path: NavPath): IconName =>
+  path in SCREEN_ICONS
+    ? SCREEN_ICONS[path as ScreenPath]
+    : (DESTINATIONS.find((hub) => hub.path === path)?.icon ?? 'layers');
 
 export const titleFor = (path: string) =>
-  SCREENS.find((screen) => screen.path === path)?.title ?? 'SIPGES';
+  SCREENS.find((screen) => screen.path === path)?.title ??
+  DESTINATIONS.find((hub) => hub.path === path)?.label ??
+  'SIPGES';
 
-/** Only same-app paths are accepted as a post-login destination (no open redirect). */
+/** Bandeja › «Avisos», the notification inbox the shell's bell opens (functional-closure S9). */
+export const AVISOS_HREF = '/bandeja?vista=avisos';
+
+/** Where a signed-in person lands by default: Inicio (functional-closure S6). */
+export const HOME_PATH = '/inicio';
+
+/**
+ * Only same-app paths are accepted as a post-login destination (no open redirect). The app root
+ * counts as no destination, so opening SIPGES and signing in lands on Inicio.
+ */
 export const safeRedirect = (value: unknown) =>
-  typeof value === 'string' && /^\/(?![/\\])/.test(value) ? value : '/';
+  typeof value === 'string' && value !== '/' && /^\/(?![/\\])/.test(value) ? value : HOME_PATH;

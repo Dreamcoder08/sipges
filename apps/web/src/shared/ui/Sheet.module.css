@@ -124,6 +124,50 @@
   }
 }
 
+/* Navigation drawer: full height from the left edge on every width; no grabber. */
+.layer[data-side='start'] {
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.layer[data-side='start'] .backdrop {
+  background: var(--color-scrim);
+}
+
+.layer[data-side='start'] .panel {
+  width: min(20rem, 86vw);
+  max-width: none;
+  max-height: none;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0 var(--radius-xl) var(--radius-xl) 0;
+  padding-top: env(safe-area-inset-top);
+  animation-name: slide;
+}
+
+.layer[data-side='start'] .handle {
+  display: none;
+}
+
+.layer[data-side='start'] .grip {
+  touch-action: auto;
+  cursor: auto;
+}
+
+.layer[data-side='start'] .body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-2) var(--space-3);
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
 @keyframes rise {
   from {
     transform: translateY(100%);

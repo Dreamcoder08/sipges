@@ -90,6 +90,17 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
     expect(await tick.json()).toMatchObject({ tenants: 1, queued: 2, delivered: 2 });
     expect(outbox.sent.map((s) => s.message.title)).toEqual(['Alerta AL-PG']);
     expect((await call('GET', '/system/notifications')).body).toMatchObject({ unread: 1 });
+    // One audit row per channel send (S8), in the sending tenant, naming no target.
+    const sends = await withTenant(pool.client, 'SIPGES/PRJ-SECHURA', (tx) =>
+      tx.query<{ tenant_id: string; action: string; detail: string }>(
+        "SELECT tenant_id, action, detail FROM audit WHERE action = 'CHANNEL_SEND'",
+      ),
+    );
+    expect(sends).toHaveLength(1);
+    expect(sends[0]).toMatchObject({ tenant_id: 'SIPGES/PRJ-SECHURA' });
+    expect(sends[0]?.detail).toMatch(
+      /^Envío webhook · regla \d+ · canal \d+ · evento \d+ · enviado$/,
+    );
 
     // Another tenant sees none of these rows, and the tenant role cannot read API keys.
     await pool.client.exec(
@@ -104,6 +115,9 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
         'automation_cursors',
       ])
         expect(await tx.query(`SELECT * FROM ${table}`), table).toEqual([]);
+      expect(
+        await tx.query("SELECT * FROM audit WHERE action IN ('CHANNEL_SEND','PUSH_SEND')"),
+      ).toEqual([]);
     });
     await expect(
       withTenant(pool.client, 'ACME/NORTE', (tx) => tx.query('SELECT * FROM api_keys')),
@@ -175,6 +189,7 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
       clientIp: () => '203.0.113.75',
       embeddings: {
         model: 'toy-pg',
+        egress: 'local',
         embed: async (text) => [/agua|hídric/i.test(text) ? 1 : 0, 0.01, 0, 0, 0, 0, 0, 0],
       },
     });

@@ -47,13 +47,17 @@ const number = (value: unknown) => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-/** Explicit coordinates win; otherwise the locality named in `Territorio`. */
+/**
+ * Explicit coordinates win; otherwise the Sechura locality named in `Territorio`, only for
+ * projects in that province (`sechura`). Elsewhere the locality is what the record carries.
+ */
 const placeOf = (
   record: TerritorialRecord,
+  sechura: boolean,
 ): { at: LonLat; locality: string; exact: boolean } | null => {
   const lon = number(record['Longitud']);
   const lat = number(record['Latitud']);
-  const locality = localityOf(record['Territorio']);
+  const locality = sechura ? localityOf(record['Territorio']) : null;
   if (lon !== null && lat !== null && Math.abs(lon) <= 180 && Math.abs(lat) <= 90)
     return { at: [lon, lat], locality: locality?.name ?? text(record['Territorio']), exact: true };
   return locality ? { at: locality.at, locality: locality.name, exact: false } : null;
@@ -85,12 +89,14 @@ const first = (record: TerritorialRecord, keys: readonly string[]) =>
   keys.map((key) => text(record[key])).find(Boolean) ?? '';
 
 /**
- * Located records of the active project as map points. Records at the same place are spread
- * on a small spiral (golden angle) so each one stays visible and clickable.
+ * Located records of the active project as map points. Every record the API returns counts:
+ * the tenant is the project (S13), so `Proyecto_ID` is not re-checked. Records at the same
+ * place are spread on a small spiral (golden angle) so each one stays visible and clickable.
  */
 export const mapPoints = (
   layers: Readonly<Record<Layer, readonly TerritorialRecord[]>>,
-  projectId: string,
+  /** Whether the project lies in the Sechura province, whose localities place records. */
+  sechura = true,
 ) => {
   const points: MapPoint[] = [];
   let unlocated = 0;
@@ -98,9 +104,7 @@ export const mapPoints = (
   for (const layer of LAYERS) {
     const describe = DESCRIPTORS[layer];
     for (const record of layers[layer]) {
-      const owner = text(record['Proyecto_ID']) || 'PRJ-SECHURA';
-      if (owner !== projectId) continue;
-      const place = placeOf(record);
+      const place = placeOf(record, sechura);
       if (!place) {
         unlocated += 1;
         continue;

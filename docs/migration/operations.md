@@ -54,6 +54,14 @@ Only the configured URL is contacted (12 s timeout, no redirects, 1.5 MB respons
 request's `source_url` is never fetched. Without a reachable model, `automatic` mode falls back
 to the rules analysis and says so in `semantic.note`.
 
+`GET /system/intelligence/embedder` (every role, active project) answers `configured` (whether
+`SIPGES_OLLAMA_URL` was set; the loopback default is unreachable on Cloudflare Workers),
+`available`, `reason` (`unreachable`, `external_ai_disabled` or `null`), `model`, `egress` and
+`semantic_search`. The probe embeds one constant word, shares its answer for 60 s and gives up
+after 3 s; an external embedder is not probed while the project's «Envío a IA externa» switch is
+off (ADR 0030). Inteligencia then says the semantic layer is unavailable and disables the
+semantic mode, and the global search says it is matching keywords only.
+
 ## Parity
 
 `test/intelligence/python-parity.fixture.json` is generated from `app.py` with synthetic data by

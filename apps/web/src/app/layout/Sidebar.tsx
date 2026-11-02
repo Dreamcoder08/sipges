@@ -1,108 +1,114 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
+import { InternalLink } from '../../shared/lib/navigation.tsx';
+import { useRecents } from '../../shared/lib/recents.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
-import { PINNED_PATHS, SIDEBAR_SECTIONS, groupLabelFor } from '../navigation.ts';
+import { AVISOS_HREF, DESTINATIONS, destinationFor } from '../navigation.ts';
 import shell from './AppShell.module.css';
 import { NavLink } from './NavLink.tsx';
 import { SidebarAccount } from './SidebarAccount.tsx';
 import styles from './Sidebar.module.css';
 
 /**
- * Sidebar of wide screens (docs/adr/0015): brand, project, search and inbox on top, then the
- * pinned screens and three collapsible sections, and the account menu at the foot. Only the
- * section that owns the current screen starts open, and a pinned screen is not listed again in
- * its section. Every other tool of the shell lives here too, so the top bar keeps the title only.
+ * Sidebar of wide screens (docs/adr/0015): brand, project, search and the bell on top (it opens Bandeja › Avisos and counts the
+ * unread ones, functional-closure S9), then the
+ * five destinations, Integraciones and the last screens opened («Recientes»), and the account
+ * menu at the foot. A destination is current on its hub and on the old screens it absorbs.
+ * Every other tool of the shell lives here too, so the top bar keeps the title only. Phones and
+ * tablets show the same sidebar inside the menu drawer (`inDrawer`), whose header names it.
  */
 export const Sidebar = ({
   pathname,
   projectLabel,
+  projectKey,
   projectSwitcher,
   search,
-  notifications,
+  unread = 0,
+  inDrawer = false,
 }: {
   pathname: string;
   projectLabel: string;
+  /** Scope of the active project: «Recientes» are kept per project. */
+  projectKey: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
-  notifications?: ReactNode;
+  /** Unread avisos, counted on the bell that opens Bandeja › Avisos. */
+  unread?: number;
+  inDrawer?: boolean;
 }) => {
   const ids = useId();
-  const current = groupLabelFor(pathname);
-  // Manual opens and closes last until the person moves to another section.
-  const [manual, setManual] = useState<Readonly<Record<string, boolean>>>({});
-  const [seen, setSeen] = useState(current);
-  if (seen !== current) {
-    setSeen(current);
-    setManual({});
-  }
-  const isOpen = (label: string) => manual[label] ?? label === current;
+  const recents = useRecents(projectKey);
 
   return (
-    <aside className={styles.sidebar}>
-      <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
-        <span className={shell.mark} aria-hidden="true">
-          S
-        </span>
-        <span>
-          <b>SIPGES</b>
-          <small>Gestión socioambiental</small>
-        </span>
-      </div>
+    <aside className={styles.sidebar} data-drawer={inDrawer}>
+      {inDrawer ? null : (
+        <div className={styles.brand} title="Sistema Inteligente de Predicción y GEStión Social">
+          <span className={shell.mark} aria-hidden="true">
+            S
+          </span>
+          <span>
+            <b>SIPGES</b>
+            <small>Gestión socioambiental</small>
+          </span>
+        </div>
+      )}
       <div className={styles.project}>{projectSwitcher}</div>
       <div className={styles.tools}>
         {search ? <div className={styles.search}>{search}</div> : null}
-        {notifications ? <div className={styles.bell}>{notifications}</div> : null}
+        <InternalLink
+          href={AVISOS_HREF}
+          className={styles.bell}
+          aria-label={
+            unread > 0
+              ? `Notificaciones, ${unread} ${unread === 1 ? 'aviso' : 'avisos'} sin leer`
+              : 'Notificaciones'
+          }
+        >
+          <Icon name="bell" />
+          {unread > 0 ? (
+            <span className={styles.count} data-unread="" aria-hidden="true">
+              {unread > 99 ? '99+' : unread}
+            </span>
+          ) : null}
+        </InternalLink>
       </div>
       <nav aria-label="Secciones" className={styles.nav}>
-        <section aria-labelledby={`${ids}-pinned`}>
-          <p id={`${ids}-pinned`} className={styles.groupLabel}>
-            Fijados
-          </p>
-          <ul>
-            {PINNED_PATHS.map((path) => (
-              <li key={path}>
-                <NavLink path={path} className={styles.link} />
-              </li>
-            ))}
-          </ul>
-        </section>
-        <section aria-labelledby={`${ids}-sections`}>
-          <p id={`${ids}-sections`} className={styles.groupLabel}>
-            Secciones
-          </p>
-          <div className={styles.sections}>
-            {SIDEBAR_SECTIONS.map((group, index) => {
-              const open = isOpen(group.label);
-              const panel = `${ids}-panel-${index}`;
-              return (
-                <div key={group.label}>
-                  <button
-                    type="button"
-                    className={styles.toggle}
-                    aria-expanded={open}
-                    aria-controls={panel}
-                    onClick={() => setManual({ ...manual, [group.label]: !open })}
-                  >
-                    <span className={styles.name}>{group.label}</span>{' '}
-                    <span className={styles.count}>
-                      {group.paths.length}
-                      <span className="visually-hidden"> pantallas</span>
-                    </span>
-                    <Icon name="chevronRight" className={styles.chevron} />
-                  </button>
-                  <div id={panel} className={styles.panel} hidden={!open}>
-                    <ul>
-                      {group.paths.map((path) => (
-                        <li key={path}>
-                          <NavLink path={path} className={styles.link} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+        <ul>
+          {DESTINATIONS.map((hub) => (
+            <li key={hub.path}>
+              <NavLink
+                path={hub.path}
+                className={styles.link}
+                current={destinationFor(pathname)?.path === hub.path}
+              />
+            </li>
+          ))}
+        </ul>
+        <ul className={styles.apart}>
+          <li>
+            <NavLink
+              path="/integraciones"
+              className={styles.link}
+              current={pathname === '/integraciones' || pathname === '/automatizaciones'}
+            />
+          </li>
+        </ul>
+        {recents.length > 0 ? (
+          <section aria-labelledby={`${ids}-recents`}>
+            <p id={`${ids}-recents`} className={styles.groupLabel}>
+              Recientes
+            </p>
+            <ul>
+              {recents.map((recent) => (
+                <li key={recent.href}>
+                  <InternalLink href={recent.href} className={`${styles.link} ${styles.small}`}>
+                    <Icon name="clock" className={shell.icon} />
+                    <span className={shell.text}>{recent.label}</span>
+                  </InternalLink>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </nav>
       <SidebarAccount pathname={pathname} projectLabel={projectLabel} />
     </aside>

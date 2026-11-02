@@ -35,7 +35,7 @@ Verificación local del 15 de octubre de 2026:
 | Web tras corregir la aserción antigua de compromisos | 211 pruebas / 50 archivos aprobados |
 | Kernel / hosting / soporte E2E / herramientas | 8 / 6 / 9 / 4 aprobadas |
 | Lint, formato, límites y tipos de todos los paquetes | Aprobados; 604 módulos, 1725 dependencias |
-| `pnpm --filter @mascli/hosting build` | Aprobado; incluye el build web |
+| `pnpm --filter @sipges/hosting build` | Aprobado; incluye el build web |
 | Suite completa Chromium, Playwright 1.56.1 | 87 aprobadas; 1 captura opcional preexistente omitida |
 | Nuevos recorridos Chromium, Playwright 1.63.0 | 2/2 aprobados contra API y persistencia reales de prueba |
 | WebKit, Playwright 1.63.0 / imagen Noble correspondiente | 7/7 aprobadas; incluye escritorio y móvil, recarga y lectura de bytes |

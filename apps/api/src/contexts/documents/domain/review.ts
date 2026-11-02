@@ -15,6 +15,9 @@ export const isReviewStatus = (value: string): value is ReviewStatus =>
 export const MAX_REVIEW_IMPORT = 75;
 export const DEFAULT_REVIEW_PAGE = 50;
 export const MAX_REVIEW_PAGE = 200;
+/** One bulk request decides at most this many items, in transactions of `BULK_BATCH` (T26). */
+export const MAX_BULK_DECISION = 1000;
+export const BULK_BATCH = 200;
 
 export const REVIEW_LIMITS = {
   projectId: 120,

@@ -1,62 +1,55 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { useRouterState } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { Sheet } from '../../shared/ui/Sheet.tsx';
-import {
-  MOBILE_TABS,
-  MORE_GROUPS,
-  SCREEN_ICONS,
-  labelFor,
-  projectParts,
-  titleFor,
-} from '../navigation.ts';
+import { recordVisit } from '../../shared/lib/recents.ts';
+import { titleFor, visitFor } from '../navigation.ts';
 import styles from './AppShell.module.css';
-import { NavLink } from './NavLink.tsx';
 import { Sidebar } from './Sidebar.tsx';
-
-const MORE_PATHS: ReadonlySet<string> = new Set(MORE_GROUPS.flatMap((group) => group.paths));
 
 /**
  * Layout of every signed-in screen (docs/adr/0015): skip link, navigation, page heading and
  * main region. Focus moves to the heading after each navigation so screen readers announce it.
- * Wide screens keep a persistent sidebar, which holds the project, search, inbox and account,
- * and a top bar with the title only. Phones and tablets get a context bar
- * (project, search, account), the title under it, a five-item bottom bar and sheets for the
- * project selector and the remaining sections.
+ * Wide screens keep a persistent sidebar, which holds the project, search, bell and account,
+ * and a top bar with the title only. Phones and tablets show the same sidebar in a drawer that a
+ * menu button opens, as ChatGPT and Claude mobile do: the top bar holds the button and the title
+ * and there is no bottom bar (addendum 2026-11-01).
  */
 export const AppShell = ({
   projectLabel,
+  projectKey = projectLabel,
   projectSwitcher,
-  account,
   search,
-  notifications,
+  unread = 0,
   live,
   children,
 }: {
   projectLabel: string;
+  /** Stable id of the active project (its scope); the label changes once the project list loads. */
+  projectKey?: string;
   projectSwitcher: ReactNode;
-  account: ReactNode;
   search?: ReactNode;
-  /** Desktop bell; on phones the inbox lives in the account sheet. */
-  notifications?: ReactNode;
+  /** Unread avisos: the sidebar bell counts them and, on phones, the closed menu button signals them. */
+  unread?: number;
   live?: ReactNode;
   children: ReactNode;
 }) => {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const searchStr = useRouterState({ select: (state) => state.location.searchStr });
   const compact = useMediaQuery(COMPACT_QUERY);
-  const [sheet, setSheet] = useState<'project' | 'more' | null>(null);
+  const [drawer, setDrawer] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const topbar = useRef<HTMLElement>(null);
   const title = titleFor(pathname);
   const first = useRef(true);
-  const project = projectParts(projectLabel);
-  const inMore = MORE_PATHS.has(pathname);
-  // A completed project switch closes the project sheet.
-  const [shownLabel, setShownLabel] = useState(projectLabel);
-  if (shownLabel !== projectLabel) {
-    setShownLabel(projectLabel);
-    if (sheet === 'project') setSheet(null);
+  // Any navigation (a new search string included) or a completed project switch closes the drawer,
+  // and so does leaving the compact layout, so it never reappears open when the window narrows.
+  const place = `${pathname}?${searchStr}|${projectKey}|${compact}`;
+  const [shown, setShown] = useState(place);
+  if (shown !== place) {
+    setShown(place);
+    if (drawer) setDrawer(false);
   }
 
   useEffect(() => {
@@ -67,6 +60,11 @@ export const AppShell = ({
     }
     heading.current?.focus();
   }, [pathname, title]);
+
+  useEffect(() => {
+    const visit = visitFor(pathname, searchStr);
+    if (visit) recordVisit(projectKey ?? '', visit);
+  }, [pathname, searchStr, projectKey]);
 
   // Focused fields scroll clear of the sticky top bar (scroll-padding in global.css).
   useEffect(() => {
@@ -90,7 +88,17 @@ export const AppShell = ({
     };
   }, [compact]);
 
-  const close = () => setSheet(null);
+  const sidebar = (
+    <Sidebar
+      pathname={pathname}
+      projectLabel={projectLabel}
+      projectKey={projectKey ?? ''}
+      projectSwitcher={projectSwitcher}
+      search={search}
+      unread={unread}
+      inDrawer={compact}
+    />
+  );
   // On wide screens the sidebar already shows the project and the active screen,
   // so the title stays only as the focus target and outline for assistive tech.
   const h1 = (
@@ -104,109 +112,38 @@ export const AppShell = ({
       <a className={styles.skip} href="#contenido">
         Saltar al contenido principal
       </a>
-      {compact ? null : (
-        <Sidebar
-          pathname={pathname}
-          projectLabel={projectLabel}
-          projectSwitcher={projectSwitcher}
-          search={search}
-          notifications={notifications}
-        />
-      )}
+      {compact ? null : sidebar}
       <div className={styles.body}>
         {compact ? (
           <header ref={topbar} className={styles.topbar}>
             <button
               type="button"
-              className={styles.context}
+              className={styles.menu}
               aria-haspopup="dialog"
-              aria-expanded={sheet === 'project'}
-              onClick={() => setSheet('project')}
+              aria-expanded={drawer}
+              onClick={() => setDrawer(true)}
             >
-              <span className={styles.mark} aria-hidden="true">
-                S
+              <Icon name="menu" />
+              {unread > 0 ? <span className={styles.unread} data-unread="" /> : null}
+              <span className="visually-hidden">
+                Abrir menú
+                {unread > 0 ? `, ${unread} ${unread === 1 ? 'aviso' : 'avisos'} sin leer` : ''}
               </span>
-              <span className={styles.contextText}>
-                <b>{project.name}</b> <small>{project.detail}</small>
-              </span>
-              <span className="visually-hidden">. Cambiar de proyecto</span>
-              <Icon name="chevronDown" className={styles.chevron} />
             </button>
-            <div className={styles.actions}>
-              {search}
-              {account}
-            </div>
+            <div className={styles.compactTitle}>{h1}</div>
           </header>
         ) : (
           h1
         )}
-        {compact ? <div className={styles.titleRow}>{h1}</div> : null}
         {live}
         <main id="contenido" className={styles.main} tabIndex={-1}>
           {children}
         </main>
       </div>
       {compact ? (
-        <>
-          <nav aria-label="Navegación principal" className={styles.tabbar}>
-            <ul>
-              {MOBILE_TABS.map((tab) => (
-                <li key={tab.path}>
-                  <Link
-                    to={tab.path}
-                    className={styles.tab}
-                    activeOptions={{ exact: true }}
-                    activeProps={{ 'aria-current': 'page' }}
-                  >
-                    <span className={styles.pill}>
-                      <Icon name={SCREEN_ICONS[tab.path]} />
-                    </span>
-                    {tab.label}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <button
-                  type="button"
-                  className={styles.tab}
-                  data-active={inMore}
-                  aria-haspopup="dialog"
-                  aria-expanded={sheet === 'more'}
-                  onClick={() => setSheet('more')}
-                >
-                  <span className={styles.pill}>
-                    <Icon name="grid" />
-                  </span>
-                  Más
-                  {inMore ? (
-                    <span className="visually-hidden">, sección actual: {labelFor(pathname)}</span>
-                  ) : null}
-                </button>
-              </li>
-            </ul>
-          </nav>
-          <Sheet open={sheet === 'project'} onClose={close} title="Cambiar de proyecto">
-            {projectSwitcher}
-          </Sheet>
-          <Sheet open={sheet === 'more'} onClose={close} title="Más secciones">
-            <nav aria-label="Secciones" className={styles.more}>
-              {MORE_GROUPS.map((group) => (
-                <section key={group.label} className={styles.moreGroup}>
-                  <h3>{group.label}</h3>
-                  <ul>
-                    {group.paths.map((path) => (
-                      <li key={path}>
-                        <NavLink path={path} className={styles.row} onNavigate={close}>
-                          <Icon name="chevronRight" className={styles.rowChevron} />
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              ))}
-            </nav>
-          </Sheet>
-        </>
+        <Sheet open={drawer} onClose={() => setDrawer(false)} title="Menú" side="start">
+          {sidebar}
+        </Sheet>
       ) : null}
     </div>
   );

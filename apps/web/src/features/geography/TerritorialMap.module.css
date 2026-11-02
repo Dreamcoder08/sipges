@@ -483,12 +483,12 @@
   font-weight: 700;
 }
 
-/* Phone sheet: above the tab bar, never covering the whole map. */
+/* Phone sheet: at the bottom edge, never covering the whole map. */
 .mapSheet {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  bottom: env(safe-area-inset-bottom);
   z-index: 30;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);

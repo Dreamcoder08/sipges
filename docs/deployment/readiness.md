@@ -100,7 +100,17 @@ able to create databases. A database named `sipges_e2e_<random>` is created and 
 
 ## Pre-deployment checklist
 
-### 1. Runtime
+> **Historical sections.** Production runs only on Cloudflare Workers (ADR 0028,
+> [ADR 0029](../adr/0029-retire-vercel-host.md)); Node runs SIPGES only for development and tests.
+> The parts below that assume a self-hosted Node process (§1 Runtime, §7 Cloudflare Tunnel and
+> Access, process supervision in §9, journald in §10 and the application rollback in §11) are kept
+> as a record and apply only if a future institutional host is chosen. For the Worker, follow the
+> [Workers deployment guide](cloudflare-workers.md); secrets, incidents and backups are in the
+> [handover guide](../operations/handover.md).
+
+### 1. Runtime (historical: self-hosted Node)
+
+For the Worker, see the [Workers deployment guide](cloudflare-workers.md) instead.
 
 - [ ] Node.js 22 or later on the host. Node 24 is recommended. The API runs `.ts` files directly
       with type stripping, so it has no build step: `node apps/api/src/main.ts`.
@@ -192,7 +202,7 @@ No aplica a la demo académica: usa únicamente datos sintéticos. Para una futu
 - [ ] Known follow-up (L53): objects left behind after a record is deleted are not swept yet.
       Plan a periodic reconciliation.
 
-### 7. Network exposure: Cloudflare Tunnel and Access
+### 7. Network exposure: Cloudflare Tunnel and Access (historical: self-hosted Node)
 
 Esta alternativa queda para un futuro alojamiento institucional. La demo actual usa Cloudflare Workers
 y su URL `workers.dev`; no requiere dominio ni túnel Cloudflare. Los pasos siguientes
@@ -230,7 +240,8 @@ solo aplican si se elige posteriormente esa alternativa.
   database check (for example `pg_isready`, or a monitored authenticated request).
 - [ ] An external uptime monitor through the tunnel (Access service token) and process
       supervision (systemd `Restart=on-failure` or equivalent) with `SIGTERM` graceful shutdown.
-      The API closes the server and then the pool.
+      The API closes the server and then the pool. *Historical (self-hosted Node): on Workers,
+      the deploy workflow smoke-tests `/health` and Cloudflare runs the process.*
 
 ### 10. Logging
 
@@ -241,13 +252,15 @@ solo aplican si se elige posteriormente esa alternativa.
   status and duration, without query strings, request bodies or cookies. A path can contain
   record identifiers: restrict log access and retention. Edge-provider logs are separate and
   do not replace application logs.
-- [ ] Capture stdout/stderr with journald or the platform's log collector, rotate them and
+- [ ] *Self-hosted Node only (historical):* capture stdout/stderr with journald or the platform's log collector, rotate them and
       restrict access. Logs must never contain passwords, TOTP secrets, session tokens or record
       payloads. The migration tool's redaction is test-asserted; the API's request logging is
       minimal by design.
 - The tenant audit trail (`GET /system/audit`) is the business-level record of who changed what.
 
-### 11. Rollback
+### 11. Rollback (historical: self-hosted Node)
+
+On Workers, roll back as described in the [Workers guide](cloudflare-workers.md#rolling-back).
 
 - **Application:** keep the previous git revision and `apps/web/dist`. Stop the service, check
   out the previous revision, rebuild the web app and start again. Migrations are forward-only, so

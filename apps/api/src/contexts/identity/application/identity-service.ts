@@ -264,17 +264,23 @@ export const createIdentityService = ({
      * Lets an administrator clear another account's second factor (lost authenticator). The
      * user's sessions end and the next login enrolls again. An administrator cannot reset
      * their own MFA: a stolen admin session must not be able to remove the factor (ADR 0009).
+     * Only users granted the administrator's active project (`tenantId`) can be reset, and the
+     * reset is recorded in that project's audit trail.
      */
     async resetMfa(
       actor: Identity,
       rawUsername: string,
-    ): Promise<Result<true, 'forbidden' | 'self' | 'invalid' | 'missing'>> {
+      tenantId: string,
+    ): Promise<Result<true, 'forbidden' | 'self' | 'invalid' | 'missing' | 'out_of_scope'>> {
       if (actor.role !== 'admin') return err('forbidden');
       const username = normalizeUsername(rawUsername);
       if (!username || username.includes('\u0000') || username.length > MAX_STORED_USERNAME)
         return err('invalid');
       if (username === actor.username) return err('self');
-      const result = await store.resetTotp(username);
+      const result = await store.resetTotpInTenant(username, tenantId, {
+        detail: `MFA restablecido por ${actor.username}; sesiones revocadas`,
+        at: clock.now(),
+      });
       return result === 'reset' ? ok(true) : err(result);
     },
 

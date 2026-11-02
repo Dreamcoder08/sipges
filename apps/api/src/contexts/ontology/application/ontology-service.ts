@@ -1,6 +1,12 @@
 import { type Result, err, ok } from '@sipges/kernel';
 import { log } from '../../../platform/observability/logger.ts';
 import {
+  type EgressGuard,
+  type EgressSession,
+  EXTERNAL_AI_DISABLED,
+  exemptPayload,
+} from '../../privacy/application/index.ts';
+import {
   INFERENCE_RULES,
   LINK_TYPES,
   isMarking,
@@ -14,7 +20,7 @@ import {
   titleOf,
 } from '../domain/catalog.ts';
 import { findMention, suggestedLink } from '../domain/mentions.ts';
-import { matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
+import { foldText, matchExcerpt, searchTerms, toPrefixQuery } from '../domain/search.ts';
 import { MIN_SIMILARITY, cosine, embeddingText, fuseRankings } from '../domain/semantic.ts';
 import type {
   Clock,
@@ -154,28 +160,70 @@ const isUsableId = (id: string) => id.length > 0 && id.length <= MAX_ID && !id.i
 export const createOntologyService = (deps: {
   store: OntologyStore;
   clock: Clock;
-  semantic?: { index: EmbeddingIndex; embedder: Embedder };
+  /** `egress` clears every text bound for an embedder that is not on this machine (ADR 0030). */
+  semantic?: { index: EmbeddingIndex; embedder: Embedder; egress: EgressGuard };
 }) => {
   const { store, clock } = deps;
+
+  /** The egress session for one embeddings call; null for a local model, which is not egress. */
+  const egressFor = async (
+    semantic: { embedder: Embedder; egress: EgressGuard },
+    tenantId: string,
+    purpose: string,
+  ): Promise<EgressSession | null> => {
+    if (semantic.embedder.egress === 'local') return null;
+    const opened = await semantic.egress.open({ tenantId, channel: 'embeddings', purpose });
+    if (!opened.ok) throw new Error(EXTERNAL_AI_DISABLED);
+    return opened.session;
+  };
 
   const refreshEmbeddings = async (tenantId: string, limit: number) => {
     const semantic = deps.semantic;
     if (!semantic) return 0;
-    const stale = await semantic.index.stale(tenantId, semantic.embedder.model, limit);
+    const stale = (await semantic.index.stale(tenantId, semantic.embedder.model, limit)).flatMap(
+      (record) => {
+        const objectType = objectTypeForModule(record.module);
+        return objectType ? [{ record, objectType }] : [];
+      },
+    );
+    if (!stale.length) return 0;
+    const session = await egressFor(semantic, tenantId, 'index');
+    const sanitised = session?.records(
+      stale.map(({ record, objectType }) => ({
+        module: objectType.slug,
+        id: record.id,
+        title: titleOf(objectType, record.id, record.payload),
+        marking: record.marking,
+        fields: record.payload,
+      })),
+    );
+    // A record the guard withholds is not embedded; it stays stale until it may be.
+    const ready = stale.flatMap((item, i) => {
+      const clean = sanitised?.[i];
+      if (clean?.withheld) return [];
+      const { record, objectType } = item;
+      return [
+        {
+          record,
+          text: embeddingText(
+            objectType.label,
+            clean ? (clean.title ?? clean.id) : titleOf(objectType, record.id, record.payload),
+            clean ? clean.fields : record.payload,
+          ),
+        },
+      ];
+    });
+    const texts = ready.map((item) => item.text);
+    const cleared = session
+      ? await session.releaseMany(texts)
+      : texts.map((text) => exemptPayload(text, 'loopback'));
     const rows = [];
-    for (const record of stale) {
-      const objectType = objectTypeForModule(record.module);
-      if (!objectType) continue;
-      const text = embeddingText(
-        objectType.label,
-        titleOf(objectType, record.id, record.payload),
-        record.payload,
-      );
+    for (const [i, { record }] of ready.entries()) {
       rows.push({
         module: record.module,
         id: record.id,
         hash: record.hash,
-        vector: await semantic.embedder.embed(text),
+        vector: await semantic.embedder.embed(cleared[i] as (typeof cleared)[number]),
       });
     }
     if (rows.length)
@@ -194,7 +242,12 @@ export const createOntologyService = (deps: {
     if (!semantic) return [];
     try {
       await refreshEmbeddings(tenantId, EMBED_BATCH);
-      const query = await semantic.embedder.embed(raw.trim());
+      const session = await egressFor(semantic, tenantId, 'search');
+      const query = await semantic.embedder.embed(
+        session
+          ? await session.release(session.text(raw.trim()))
+          : exemptPayload(raw.trim(), 'loopback'),
+      );
       const vectors = await semantic.index.vectors(
         tenantId,
         modules,
@@ -515,6 +568,12 @@ export const createOntologyService = (deps: {
       raw: string,
       slugs: readonly string[] | null,
       limit: number,
+      /**
+       * Only these fields may explain a hit: the excerpt comes from them, and a record found
+       * only through other fields (or only by meaning) is left out, so a hit never reveals
+       * what a field the caller may not see holds.
+       */
+      visibleField?: (slug: string, field: string) => boolean,
     ): Promise<SearchHit[]> {
       const terms = searchTerms(raw);
       const query = toPrefixQuery(terms);
@@ -554,16 +613,26 @@ export const createOntologyService = (deps: {
         const row = rows.get(k);
         const objectType = row && objectTypeForModule(row.module);
         if (!row || !objectType) return [];
-        return [
-          {
-            ...summarize(objectType, row),
-            match: matchExcerpt(row.payload, terms, [
-              objectType.titleField,
-              ...objectType.summaryFields,
-            ]),
-            semantic: semanticKeys.has(k),
-          },
-        ];
+        const payload = visibleField
+          ? Object.fromEntries(
+              Object.entries(row.payload).filter(([field]) => visibleField(objectType.slug, field)),
+            )
+          : row.payload;
+        const match = matchExcerpt(payload, terms, [
+          objectType.titleField,
+          ...objectType.summaryFields,
+        ]);
+        // The store requires every term somewhere in the record; with hidden fields every term
+        // must be in a visible one, or pairing a visible word with a probe reveals hidden text.
+        if (visibleField) {
+          const visible = foldText(
+            Object.values(payload)
+              .filter((v) => typeof v === 'string' || typeof v === 'number')
+              .join(' '),
+          );
+          if (!match || !terms.every((term) => visible.includes(term))) return [];
+        }
+        return [{ ...summarize(objectType, row), match, semantic: semanticKeys.has(k) }];
       });
     },
 

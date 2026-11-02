@@ -25,6 +25,8 @@ export const situationsRoutes = (situations: SituationsService) => {
       weights: s.phaseWeights[id] ?? null,
       suggestion: PHASE_WEIGHT_SUGGESTIONS[id],
     })),
+    external_ai: s.externalAi,
+    location: s.location,
     updated_by: s.updatedBy,
     updated_at: s.updatedAt?.toISOString() ?? null,
   });
@@ -43,6 +45,8 @@ export const situationsRoutes = (situations: SituationsService) => {
         recommendations,
         phase,
         phase_weights,
+        external_ai,
+        location,
       } = body.value;
       const saved = await situations.updateSettings(
         c.get('scope'),
@@ -54,6 +58,8 @@ export const situationsRoutes = (situations: SituationsService) => {
           recommendations,
           phase,
           phaseWeights: phase_weights,
+          externalAi: external_ai,
+          location,
         },
         c.get('identity').username,
       );

@@ -26,14 +26,14 @@ Se conservan dos diferencias de paridad menores: clasificación explícita de di
 
 `corepack pnpm check` pasó: lint, límites de arquitectura (258 módulos / 628 dependencias), tipos y pruebas. API: 382 pasaron / 6 omitidas; web: 46 pasaron; kernel: 3 pasaron. Total: 431 pruebas aprobadas. Las seis omitidas son la integración opcional con PostgreSQL real.
 
-`corepack pnpm --filter @mascli/web build` pasó; bundle de aproximadamente 145 kB gzip. No se incorporaron nuevas dependencias.
+`corepack pnpm --filter @sipges/web build` pasó; bundle de aproximadamente 145 kB gzip. No se incorporaron nuevas dependencias.
 
 ## Reproducir las comprobaciones del workspace
 
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm check
-corepack pnpm --filter @mascli/web build
+corepack pnpm --filter @sipges/web build
 ```
 
-Las pruebas HTTP de interfaz usan MSW y contratos reales; las pruebas de API usan PGlite. Los flujos de navegador adicionales se ejercitaron contra el build de la SPA servido por Hono, con un directorio temporal nuevo para PGlite y evidencias. Las seis pruebas opcionales con PostgreSQL real se omiten cuando no se configura `MASCLI_TEST_DATABASE_URL`; la comprobación con PGlite no sustituye esa integración.
+Las pruebas HTTP de interfaz usan MSW y contratos reales; las pruebas de API usan PGlite. Los flujos de navegador adicionales se ejercitaron contra el build de la SPA servido por Hono, con un directorio temporal nuevo para PGlite y evidencias. Las seis pruebas opcionales con PostgreSQL real se omiten cuando no se configura `SIPGES_TEST_DATABASE_URL`; la comprobación con PGlite no sustituye esa integración.

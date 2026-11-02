@@ -19,7 +19,8 @@ const isBottomSheet = () =>
 
 /**
  * Modal sheet (docs/adr/0015): rises from the bottom on phones and opens as a panel at the top
- * right on wide screens. While open, focus moves inside (the current link if there is one),
+ * right on wide screens. With `side="start"` it is a drawer that slides in from the left edge
+ * at full height on every width (the phone navigation drawer). While open, focus moves inside (the current link if there is one),
  * the rest of the page is inert and does not scroll; Escape, the backdrop, the close button and
  * (on phones) dragging the grabber down close it, and focus returns to whatever opened it.
  */
@@ -27,11 +28,13 @@ export const Sheet = ({
   open,
   onClose,
   title,
+  side = 'bottom',
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  side?: 'bottom' | 'start';
   children: ReactNode;
 }) => {
   const titleId = useId();
@@ -76,7 +79,7 @@ export const Sheet = ({
 
   const drag = useRef<{ y: number; t: number; dy: number } | null>(null);
   const onGrab = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isBottomSheet() || event.button !== 0) return;
+    if (side !== 'bottom' || !isBottomSheet() || event.button !== 0) return;
     if (event.target instanceof Element && event.target.closest('button')) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = { y: event.clientY, t: event.timeStamp, dy: 0 };
@@ -99,7 +102,7 @@ export const Sheet = ({
 
   if (!open) return null;
   return createPortal(
-    <div ref={container} className={styles.layer}>
+    <div ref={container} className={styles.layer} data-side={side}>
       <div className={styles.backdrop} aria-hidden="true" onClick={() => closeRef.current()} />
       <div
         ref={panel}

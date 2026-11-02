@@ -24,7 +24,7 @@ relate signals, alerts, commitments and territorial actions on the map. Branch
 - T4 [x] S5 — API, unit, interface and Chromium E2E coverage; `pnpm verify`; draft PR; route: verify; commit: see L5
 
 ## Log
-- L1 (plan, 2026-10-19): Read ODD geospatial-timeline, ADR 0011/0017, the ontology service and the map; findings F1-F3 above. PR #63 (MASCLI 4.0) holds ADR 0020 and touches records/modules.ts in another module.
+- L1 (plan, 2026-10-19): Read ODD geospatial-timeline, ADR 0011/0017, the ontology service and the map; findings F1-F3 above. PR #63 (SIPGES) holds ADR 0020 and touches records/modules.ts in another module.
 - L2 (T1): POST /system/graph/neighbourhood con semillas múltiples, tipos de vínculo por salto y campos extra; en READ_ONLY_POSTS; consulta no ve restringidos. ADR 0022. Pruebas HTTP de recorrido tipado, 422 por tipo inválido o tres saltos, y rol consulta (b6cf521, PR #66).
 - L3 (T2): operations.ts: alertas con señales de origen y estado de información, acciones con resultado, compromisos con avance y demandas, actores por tipo y pendientes deterministas; 6 pruebas unitarias (cdaf809, PR #66).
 - L4 (T3): Tarjeta Inteligencia operacional en /mapa que sigue concesión, registro o los 100 visibles más recientes; campo Resultado en Acciones; prueba de interfaz y capturas de escritorio y 390 px con datos sintéticos (cdaf809, PR #66).

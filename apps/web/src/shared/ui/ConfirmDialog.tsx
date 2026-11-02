@@ -18,6 +18,7 @@ export const ConfirmDialog = ({
   confirmLabel,
   pendingLabel,
   pending,
+  confirmDisabled = false,
   error,
   onConfirm,
   onCancel,
@@ -27,6 +28,8 @@ export const ConfirmDialog = ({
   confirmLabel: string;
   pendingLabel: string;
   pending: boolean;
+  /** Keeps «Cancelar» usable while the action cannot run yet (for example, a preview loads). */
+  confirmDisabled?: boolean;
   error: string | null;
   onConfirm: () => void;
   onCancel: () => void;
@@ -64,7 +67,7 @@ export const ConfirmDialog = ({
           <Button ref={cancel} variant="secondary" disabled={pending} onClick={onCancel}>
             Cancelar
           </Button>
-          <Button disabled={pending} onClick={onConfirm}>
+          <Button disabled={pending || confirmDisabled} onClick={onConfirm}>
             {pending ? pendingLabel : confirmLabel}
           </Button>
         </div>

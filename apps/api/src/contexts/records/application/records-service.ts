@@ -1,4 +1,5 @@
 import { type Result, err, ok } from '@sipges/kernel';
+import { parseScope } from '../../tenancy/application/index.ts';
 import { type FieldChange, type VersionOperation, diffPayloads } from '../domain/history.ts';
 import { type ImportProblem, MAX_IMPORT_ROWS, planImport } from '../domain/import.ts';
 import {
@@ -9,6 +10,7 @@ import {
   recordIdFor,
   validatePayload,
   withAssignedId,
+  withTenantProject,
 } from '../domain/modules.ts';
 import type { Clock, RandomHex, RecordStore, StoredRecord } from './ports.ts';
 
@@ -38,6 +40,25 @@ export type InvalidPayload = {
 const checkPayload = (module: ModuleName, payload: Payload): InvalidPayload | null => {
   const problem = validatePayload(module, payload);
   return problem ? { kind: 'invalid', ...problem } : null;
+};
+
+/** Project of a `company/project` tenant id; undefined for ids without one. */
+const tenantProject = (tenantId: string) => parseScope(tenantId)?.projectId || undefined;
+
+/** The id rule, then the tenant's project on the payload (S13). */
+const ownedPayload = (
+  tenantId: string,
+  module: ModuleName,
+  payload: Payload,
+): Result<Payload, InvalidPayload> => {
+  const invalid = checkPayload(module, payload);
+  if (invalid) return err(invalid);
+  const project = tenantProject(tenantId);
+  if (!project) return ok(payload);
+  const owned = withTenantProject(module, payload, project);
+  return owned.ok
+    ? ok(owned.payload)
+    : err({ kind: 'invalid', field: owned.field, message: owned.message });
 };
 
 /** Absolute ceiling for list sizes (docs/adr/0008 #10). */
@@ -95,10 +116,11 @@ export const createRecordsService = (deps: {
     async create(
       tenantId: string,
       module: ModuleName,
-      payload: Payload,
+      given: Payload,
     ): Promise<Result<string, InvalidPayload | { readonly kind: 'exhausted' }>> {
-      const invalid = checkPayload(module, payload);
-      if (invalid) return err(invalid);
+      const checked = ownedPayload(tenantId, module, given);
+      if (!checked.ok) return checked;
+      const payload = checked.value;
       const preferred = recordIdFor(module, payload, randomHex);
       function* candidates() {
         yield preferred;
@@ -119,13 +141,13 @@ export const createRecordsService = (deps: {
       tenantId: string,
       module: ModuleName,
       id: string,
-      payload: Payload,
+      given: Payload,
     ): Promise<Result<true, InvalidPayload | { readonly kind: 'missing' }>> {
-      const invalid = checkPayload(module, payload);
-      if (invalid) return err(invalid);
+      const checked = ownedPayload(tenantId, module, given);
+      if (!checked.ok) return checked;
       const replaced =
         isLookupableId(id) &&
-        (await store.replace(tenantId, module, id, payload, NOTES.update, clock.now()));
+        (await store.replace(tenantId, module, id, checked.value, NOTES.update, clock.now()));
       return replaced ? ok(true) : err({ kind: 'missing' });
     },
 
@@ -148,7 +170,7 @@ export const createRecordsService = (deps: {
           problems: [{ row: 0, message: `Máximo ${MAX_IMPORT_ROWS} filas por importación` }],
         };
       }
-      const plan = planImport(module, rows, randomHex);
+      const plan = planImport(module, rows, randomHex, tenantProject(tenantId));
       if (options.dryRun || plan.problems.length > 0 || plan.items.length === 0) {
         const existing = plan.items.length
           ? await store.existing(
@@ -177,6 +199,93 @@ export const createRecordsService = (deps: {
         clock.now(),
       );
       return { applied: true, ...result, problems: [] };
+    },
+
+    /** Ids among `ids` already stored in `module` (unusable ids are never found). */
+    existing: (tenantId: string, module: ModuleName, ids: readonly string[]) =>
+      store.existing(tenantId, module, ids.filter(isLookupableId)),
+
+    /**
+     * Insert-only creation under caller-chosen, deterministic ids (document review approvals,
+     * docs/operations/review-materialize.md). Values are normalized and validated exactly as a
+     * spreadsheet import; any problem refuses the whole batch. Ids already stored are left
+     * untouched, so re-running never duplicates nor overwrites an edited record. A dry run
+     * writes nothing. One item is audited as CREATE under its id; a batch as one IMPORT entry.
+     */
+    async createMissing(
+      tenantId: string,
+      module: ModuleName,
+      items: readonly { id: string; fields: Readonly<Record<string, string>> }[],
+      options: { dryRun: boolean; source: string },
+    ): Promise<{ created: number; existing: number; problems: readonly ImportProblem[] }> {
+      if (items.length > MAX_IMPORT_ROWS)
+        return {
+          created: 0,
+          existing: 0,
+          problems: [{ row: 0, message: `Máximo ${MAX_IMPORT_ROWS} filas por importación` }],
+        };
+      // The caller's ids replace planImport's; a per-row counter keeps its throwaway ids for
+      // modules without an id field distinct, so they can never refuse the batch as repeated.
+      let row = 0;
+      const plan = planImport(
+        module,
+        items.map((item) => item.fields),
+        (length) => (row++).toString(16).padStart(length, '0'),
+      );
+      const problems = [...plan.problems];
+      const seen = new Set<string>();
+      items.forEach((item, index) => {
+        if (!isLookupableId(item.id) || !item.id)
+          problems.push({ row: index + 1, message: 'Código de registro inválido' });
+        else if (seen.has(item.id))
+          problems.push({ row: index + 1, message: `El código ${item.id} está repetido` });
+        seen.add(item.id);
+      });
+      if (problems.length > 0) {
+        problems.sort((a, b) => a.row - b.row);
+        return { created: 0, existing: 0, problems };
+      }
+      // planImport numbers rows from 1 and keeps their order; the caller's id replaces its id.
+      const planned = plan.items.map((entry) => ({
+        id: items[entry.row - 1]?.id ?? entry.id,
+        payload: entry.payload,
+      }));
+      const present = planned.length
+        ? await store.existing(
+            tenantId,
+            module,
+            planned.map((entry) => entry.id),
+          )
+        : new Set<string>();
+      const fresh = planned.filter((entry) => !present.has(entry.id));
+      if (options.dryRun || fresh.length === 0)
+        return { created: fresh.length, existing: planned.length - fresh.length, problems: [] };
+      const source = options.source.trim().slice(0, 120) || 'origen sin nombre';
+      let created: number;
+      const [single] = fresh;
+      if (fresh.length === 1 && single) {
+        const id = await store.create(
+          tenantId,
+          module,
+          [single.id],
+          () => single.payload,
+          { action: 'CREATE', detail: `Registro creado desde ${source}` },
+          clock.now(),
+        );
+        created = id ? 1 : 0;
+      } else {
+        created = (
+          await store.importBatch(
+            tenantId,
+            module,
+            fresh,
+            { action: 'IMPORT', detail: `${fresh.length} registros creados desde ${source}` },
+            clock.now(),
+            { insertOnly: true },
+          )
+        ).created;
+      }
+      return { created, existing: planned.length - created, problems: [] };
     },
 
     async remove(tenantId: string, module: ModuleName, id: string): Promise<boolean> {

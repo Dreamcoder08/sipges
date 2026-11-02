@@ -8,6 +8,10 @@ import { loadConfig, parseAllowedHosts } from '../../api/src/platform/config.ts'
 import { pendingMigrations } from '../../api/src/platform/database/migrator.ts';
 import { postgresClient } from '../../api/src/platform/database/postgres.ts';
 import { requestScopedSqlClient } from '../../api/src/platform/database/request-scoped-client.ts';
+import { isSpaRequest } from '../../api/src/platform/http/spa.ts';
+import { createWebApp } from '../../api/src/platform/http/web-app.ts';
+// The path exactly as Hono's router and the SPA middleware see it (percent-decoded).
+import { getPath } from 'hono/utils/url';
 import { workerWebAssets } from './assets.ts';
 import type { Env, ExecutionContext } from './bindings.ts';
 import { MIGRATIONS } from './migrations.ts';
@@ -43,12 +47,13 @@ const stringsOf = (env: Env) =>
     Object.entries(env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   );
 
-const initialize = async (env: Env): Promise<Backend> => {
+/** Configuration from bindings and variables only: it never opens a connection. */
+const configFor = (env: Env) => {
   const vars = stringsOf(env);
   // Never derived from the request: its Host header is client-controlled.
   const allowedHosts = parseAllowedHosts(vars.SIPGES_ALLOWED_HOSTS ?? '');
   if (allowedHosts.length === 0) throw new Error('SIPGES_ALLOWED_HOSTS is required');
-  const config = loadConfig({
+  return loadConfig({
     ...vars,
     NODE_ENV: 'production',
     SIPGES_DATABASE_URL: env.HYPERDRIVE.connectionString,
@@ -58,6 +63,11 @@ const initialize = async (env: Env): Promise<Backend> => {
     // Cron Triggers run scheduled automation; an isolate has no long-lived timer.
     SIPGES_AUTOMATION_INTERVAL: '0',
   });
+};
+
+const initialize = async (env: Env): Promise<Backend> => {
+  const vars = stringsOf(env);
+  const config = configFor(env);
   // Migrations run at deploy time (migrate.mjs); a request never takes the lock or runs DDL.
   const pending = await pendingMigrations(sql.client, MIGRATIONS);
   if (pending.length > 0) {
@@ -84,6 +94,25 @@ const initialize = async (env: Env): Promise<Backend> => {
     cronSchedule: vars.SIPGES_CRON_SCHEDULE ?? '*/15 * * * *',
   });
   return { container, app };
+};
+
+let webApp: ReturnType<typeof createWebApp> | undefined;
+
+/**
+ * Built files and the HTML shell, with the same headers and host allowlist as the API but
+ * without migrations check, container or Hyperdrive connection: the first load never waits
+ * on the database. A configuration error is not cached, like a failed backend.
+ */
+const webAppFor = (env: Env) => {
+  if (!webApp) {
+    const config = configFor(env);
+    webApp = createWebApp({
+      allowedHosts: config.allowedHosts,
+      hsts: config.cookieSecure,
+      web: workerWebAssets(env.ASSETS),
+    });
+  }
+  return webApp;
 };
 
 const backendFor = (env: Env) => {
@@ -150,8 +179,17 @@ const unavailable = (error: unknown) => {
 };
 
 export default {
-  fetch: (request: Request, env: Env, ctx: ExecutionContext): Promise<Response> =>
-    withConnection(env, ctx, async () => {
+  fetch: async (request: Request, env: Env, ctx: ExecutionContext): Promise<Response> => {
+    if (isSpaRequest(request.method, getPath(request), request.headers.get('accept'))) {
+      let web: ReturnType<typeof webAppFor>;
+      try {
+        web = webAppFor(env);
+      } catch (error) {
+        return unavailable(error);
+      }
+      return web.fetch(request);
+    }
+    return withConnection(env, ctx, async () => {
       let app: Backend['app'];
       try {
         ({ app } = await backendFor(env));
@@ -159,7 +197,8 @@ export default {
         return { value: unavailable(error), ended: Promise.resolve() };
       }
       return observeEnd(await app.fetch(request));
-    }),
+    });
+  },
 
   scheduled: (_event: unknown, env: Env, ctx: ExecutionContext): Promise<void> =>
     withConnection(env, ctx, async () => {

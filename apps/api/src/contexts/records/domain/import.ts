@@ -1,4 +1,10 @@
-import { type ModuleName, type Payload, recordIdFor, validatePayload } from './modules.ts';
+import {
+  type ModuleName,
+  type Payload,
+  recordIdFor,
+  validatePayload,
+  withTenantProject,
+} from './modules.ts';
 
 export const MAX_IMPORT_ROWS = 2000;
 
@@ -13,12 +19,14 @@ export type ImportItem = { readonly row: number; readonly id: string; readonly p
 /**
  * Turns spreadsheet rows (already mapped to field names) into records to merge: values are
  * trimmed, blank cells are skipped (they never erase stored data), and each row gets the
- * module's id rule. Rows are numbered from 1 as in the source file, header excluded.
+ * module's id rule. Rows are numbered from 1 as in the source file, header excluded. With a
+ * `projectId`, rows take the tenant's project and a row naming another one is a problem.
  */
 export const planImport = (
   module: ModuleName,
   rows: readonly Readonly<Record<string, string>>[],
   randomHex: (length: number) => string,
+  projectId?: string,
 ): { items: ImportItem[]; problems: ImportProblem[] } => {
   const items: ImportItem[] = [];
   const problems: ImportProblem[] = [];
@@ -49,6 +57,11 @@ export const planImport = (
       problems.push({ row, message: `${invalid.field}: ${invalid.message}` });
       return;
     }
+    const owned = projectId ? withTenantProject(module, payload, projectId) : null;
+    if (owned && !owned.ok) {
+      problems.push({ row, message: `${owned.field}: ${owned.message}` });
+      return;
+    }
     const id = recordIdFor(module, payload, randomHex);
     const previous = seen.get(id);
     if (previous !== undefined) {
@@ -56,7 +69,7 @@ export const planImport = (
       return;
     }
     seen.set(id, row);
-    items.push({ row, id, payload });
+    items.push({ row, id, payload: owned ? owned.payload : payload });
   });
   return { items, problems };
 };

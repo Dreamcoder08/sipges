@@ -109,3 +109,25 @@ export const collisionId = (id: string, randomHex: (n: number) => string) =>
 /** Projects carry their own id inside the payload (app.py create_record). */
 export const withAssignedId = (module: ModuleName, payload: Payload, id: string): Payload =>
   module === 'Proyectos' ? { ...payload, Proyecto_ID: id } : payload;
+
+/**
+ * Every record belongs to its tenant's project (S13): screens count the tenant's records and
+ * never re-filter by this field, so a missing or empty `Proyecto_ID` is filled from the tenant
+ * and another project's id is refused rather than overwritten, as the tenancy middleware
+ * refuses it in request bodies. `Proyectos` keeps `Proyecto_ID` as its own record id.
+ */
+export const withTenantProject = (
+  module: ModuleName,
+  payload: Payload,
+  projectId: string,
+): { ok: true; payload: Payload } | { ok: false; field: string; message: string } => {
+  if (module === 'Proyectos') return { ok: true, payload };
+  const value = payload['Proyecto_ID'];
+  if (value === undefined || value === null || value === '' || value === projectId)
+    return { ok: true, payload: { ...payload, Proyecto_ID: projectId } };
+  return {
+    ok: false,
+    field: 'Proyecto_ID',
+    message: 'Proyecto_ID no corresponde al proyecto activo',
+  };
+};

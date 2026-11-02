@@ -160,6 +160,7 @@ const CesiumCanvas = ({
   basemap,
   home,
   homeLabel,
+  showDistricts = true,
   label,
   points,
   concessions,
@@ -175,6 +176,8 @@ const CesiumCanvas = ({
   basemap: Basemap;
   home: Extent;
   homeLabel: string;
+  /** False outside the Sechura province: its district outlines are not drawn. */
+  showDistricts?: boolean;
   label: string;
   points: readonly CanvasPoint[];
   concessions: readonly CanvasConcession[];
@@ -288,7 +291,7 @@ const CesiumCanvas = ({
     entities.suspendEvents();
     entities.removeAll();
     const selected = cssColour('--map-outline-selected', theme);
-    for (const d of SECHURA_DISTRICTS)
+    for (const d of showDistricts ? SECHURA_DISTRICTS : [])
       entities.add({
         polyline: {
           positions: ringPositions(d.ring),
@@ -355,7 +358,7 @@ const CesiumCanvas = ({
     }
     entities.resumeEvents();
     instance.scene.requestRender();
-  }, [points, columns, concessions, selectedPoint, selectedConcession, theme]);
+  }, [points, columns, concessions, selectedPoint, selectedConcession, theme, showDistricts]);
 
   const homeKey = home.join(',');
   useEffect(() => {

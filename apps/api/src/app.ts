@@ -10,6 +10,7 @@ import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
+import { conflictRiskRoutes } from './contexts/analytics/http/conflict-risk-routes.ts';
 import { situationsRoutes } from './contexts/situations/http/situations-routes.ts';
 import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
 import { apiKeyRoutes } from './contexts/integration/http/api-key-routes.ts';
@@ -83,7 +84,7 @@ export const createApp = (
   app.use('*', roleGate(identity));
   if (options.eventAutomation) app.use('*', automationWakeup(container.runtime, options.defer));
 
-  app.route('/', healthRoutes());
+  app.route('/', healthRoutes({ ready: container.ready }));
   app.route(
     '/',
     runtimeRoutes(container.runtime, {
@@ -100,9 +101,10 @@ export const createApp = (
   app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
   app.route('/', analyticsRoutes({ analytics }));
+  app.route('/', conflictRiskRoutes({ conflictRisk: container.conflictRisk }));
   app.route('/', situationsRoutes(container.situations));
   app.route('/', mediaRoutes({ media: container.media }));
-  app.route('/', recordsRoutes(records));
+  app.route('/', recordsRoutes(records, container.recordsSummary));
   app.route('/', ontologyRoutes(container.ontology));
   app.route('/', analystRoutes(container.analyst));
   app.route('/', auditRoutes(audit));
@@ -110,7 +112,13 @@ export const createApp = (
   app.route('/', indicatorsRoutes({ indicators }));
   app.route('/', evidenceRoutes(evidence));
   app.route('/', documentLabRoutes(documents));
-  app.route('/', intelligenceRoutes(intelligence));
+  app.route(
+    '/',
+    intelligenceRoutes(intelligence, {
+      configured: config.ollama.configured,
+      semanticSearch: config.semanticSearch,
+    }),
+  );
   app.route('/', preventionRoutes(prevention));
   app.route('/', managementRoutes(management));
   app.route(
@@ -128,6 +136,7 @@ export const createApp = (
         ontology: container.ontology,
         records: container.records,
         analyst: container.analyst,
+        guard: container.egress,
       },
     }),
   );

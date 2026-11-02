@@ -9,7 +9,8 @@
   "alias": { "@node-rs/argon2": "./src/native-argon2-unavailable.ts" },
   "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": false }],
   // Every request reaches the Worker first, so SIPGES applies its own CSP, security headers
-  // and host allowlist to the SPA too; the binding only reads the built files.
+  // and host allowlist to the SPA too; the binding only reads the built files. Built files and
+  // the HTML shell skip the backend (no database), see src/index.ts and the deployment guide.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",

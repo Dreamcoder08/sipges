@@ -78,7 +78,10 @@ describe('territorial records', () => {
     await user.clear(screen.getByLabelText('Nombre del actor u organización'));
     await user.type(screen.getByLabelText('Nombre del actor u organización'), 'Actor actualizado');
     await user.click(screen.getByRole('button', { name: 'Guardar registro' }));
-    expect(within(await screen.findByRole('table')).getByText('Actor actualizado')).toBeVisible();
+    // The list refetches after the save; wait for the new row instead of the first table found.
+    await waitFor(() =>
+      expect(within(screen.getByRole('table')).getByText('Actor actualizado')).toBeVisible(),
+    );
     expect(state.payloads[0]).toMatchObject({
       ID_Actor: 'A-1',
       Extra: { tags: [1, 2] },

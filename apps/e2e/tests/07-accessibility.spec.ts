@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { SCREENS } from '../../web/src/app/navigation.ts';
+import { DESTINATIONS, SCREENS } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
 
@@ -33,6 +33,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
       await settled();
       await expectNoViolations(page, `${screen.path} (${colorScheme})`);
+    }
+    for (const hub of DESTINATIONS) {
+      await page.goto(hub.path);
+      await expect(page.getByRole('heading', { level: 1, name: hub.label })).toBeVisible();
+      await settled();
+      await expectNoViolations(page, `${hub.path} (${colorScheme})`);
     }
   });
 }

@@ -43,9 +43,9 @@ describe('sign-in', () => {
     await user.type(otp, '12a3456');
     expect(otp).toHaveValue('123456');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    // Opening the app root and signing in lands on Inicio (functional-closure S6).
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
+    expect(window.location.pathname).toBe('/inicio');
   });
 
   it('offers Google sign-in only when the server has it configured', async () => {
@@ -85,8 +85,8 @@ describe('sign-in', () => {
     await user.type(await screen.findByLabelText('Usuario'), 'persona');
     await user.type(screen.getByLabelText('Contraseña'), 'synthetic-pass-123');
     await user.click(screen.getByRole('button', { name: 'Ingresar' }));
-    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
-    expect(window.location.pathname).toBe('/');
+    await screen.findByRole('heading', { level: 1, name: 'Inicio' });
+    expect(window.location.pathname).toBe('/inicio');
   });
 
   it('returns to the login form when the API reports an ended session', async () => {
@@ -132,9 +132,8 @@ describe('active project', () => {
     render(<App />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: /Proyecto Norte/ }));
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
+    expect(window.location.pathname).toBe('/inicio');
     expect(api.scope).toBe('DEMO/PRJ-NORTE');
     expect(screen.getByLabelText('Proyecto activo')).toHaveValue('DEMO/PRJ-NORTE');
   });
@@ -197,7 +196,7 @@ describe('dashboard and navigation', () => {
     render(<App />);
     const user = userEvent.setup();
     const nav = await screen.findByRole('navigation', { name: 'Secciones' });
-    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -216,17 +215,24 @@ describe('dashboard and navigation', () => {
     expect(document.title).toBe('Auditoría | SIPGES');
   });
 
-  it('shows the SIPGES screens in the menu of every project, with no switch', async () => {
+  it('reaches the SIPGES screens from the hub tabs of every project, with no switch', async () => {
     signIn();
-    at('/');
+    at('/bandeja');
     render(<App />);
-    const nav = await screen.findByRole('navigation', { name: 'Secciones' });
-    // Only the current section starts open: «Gestión y alertas» holds these three.
-    await userEvent.click(within(nav).getByRole('button', { name: /^Gestión y alertas/ }));
-    expect(await within(nav).findByRole('link', { name: 'Situaciones' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Buzón' })).toBeInTheDocument();
-    expect(within(nav).getByRole('link', { name: 'Lecciones' })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    const user = userEvent.setup();
+    const tabs = await screen.findByRole('group', { name: 'Bandeja' });
+    expect(within(tabs).getByRole('button', { name: 'Situaciones' })).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole('navigation', { name: 'Secciones' })).getByRole('link', {
+        name: 'Análisis',
+      }),
+    );
+    expect(
+      within(await screen.findByRole('group', { name: 'Análisis' })).getByRole('button', {
+        name: 'Lecciones',
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
     expect(screen.getByRole('menuitem', { name: 'Configuración' })).toBeInTheDocument();
   });
 
@@ -254,55 +260,44 @@ describe('phone shell', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('shows the project as context and five destinations in a bottom bar', async () => {
+  it('shows only the menu button and the title; navigation and tools wait in the menu', async () => {
     signIn();
     at('/');
     render(<App />);
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
     ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeVisible();
     expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Navegación principal' })).toBeNull();
     expect(screen.queryByLabelText('Proyecto activo')).toBeNull();
     expect(screen.queryByRole('button', { name: /^Notificaciones/ })).toBeNull();
-    const bar = screen.getByRole('navigation', { name: 'Navegación principal' });
-    expect(
-      within(bar)
-        .getAllByRole('listitem')
-        .map((item) => item.textContent),
-    ).toEqual(['Inicio', 'Monitoreo', 'Alertas', 'Territorio', 'Más']);
-    expect(within(bar).getByRole('link', { name: 'Inicio' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
   });
 
-  it('opens the remaining sections in a sheet and returns focus when it closes', async () => {
+  it('opens the menu as a modal drawer, returns focus and reaches Sistema screens', async () => {
     signIn();
     at('/');
     render(<App />);
     const user = userEvent.setup();
-    const more = await screen.findByRole('button', { name: 'Más' });
-    await user.click(more);
-    const sheet = screen.getByRole('dialog', { name: 'Más secciones' });
-    const nav = within(sheet).getByRole('navigation', { name: 'Secciones' });
-    expect(within(nav).getByRole('link', { name: 'Actores' })).toHaveFocus();
+    const menu = await screen.findByRole('button', { name: 'Abrir menú' });
+    await user.click(menu);
+    const drawer = screen.getByRole('dialog', { name: 'Menú' });
+    const nav = within(drawer).getByRole('navigation', { name: 'Secciones' });
+    expect(within(nav).getByRole('link', { name: 'Inicio' })).toHaveFocus();
     expect(screen.getByRole('main', { hidden: true }).closest('[inert]')).not.toBeNull();
     expect(document.body.style.overflow).toBe('hidden');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(more).toHaveFocus();
+    expect(menu).toHaveFocus();
     expect(document.querySelector('[inert]')).toBeNull();
     expect(document.body.style.overflow).toBe('');
 
     server.use(http.get('/system/audit', () => HttpResponse.json([])));
-    await user.click(more);
-    await user.click(screen.getByRole('link', { name: 'Auditoría' }));
+    await user.click(menu);
+    await user.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    await user.click(screen.getByRole('menuitem', { name: 'Auditoría' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Auditoría' })).toBeVisible();
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('button', { name: /^Más.*sección actual: Auditoría/ })).toHaveAttribute(
-      'data-active',
-      'true',
-    );
   });
 
   it('opens on the "Hoy" summary with counters, alerts that need action and shortcuts', async () => {
@@ -328,19 +323,21 @@ describe('phone shell', () => {
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
   });
 
-  it('keeps the project selector, inbox and sign-out one tap away', async () => {
+  it('keeps the project selector, inbox and sign-out inside the menu', async () => {
     signIn();
     at('/');
     render(<App />);
     const user = userEvent.setup();
-    await user.click(await screen.findByRole('button', { name: /Cambiar de proyecto/ }));
-    const project = screen.getByRole('dialog', { name: 'Cambiar de proyecto' });
-    expect(within(project).getByLabelText('Proyecto activo')).toBeVisible();
-    await user.keyboard('{Escape}');
-
-    await user.click(screen.getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
-    const account = screen.getByRole('dialog', { name: 'Cuenta' });
-    expect(within(account).getByText('Notificaciones')).toBeVisible();
-    expect(within(account).getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+    await user.click(await screen.findByRole('button', { name: 'Abrir menú' }));
+    const drawer = screen.getByRole('dialog', { name: 'Menú' });
+    expect(within(drawer).getByLabelText('Proyecto activo')).toBeVisible();
+    expect(within(drawer).getByRole('link', { name: /^Notificaciones/ })).toHaveAttribute(
+      'href',
+      '/bandeja?vista=avisos',
+    );
+    await user.click(within(drawer).getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
+    const account = screen.getByRole('menu', { name: 'Cuenta' });
+    expect(within(account).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeVisible();
+    expect(within(account).queryByRole('menuitemradio')).toBeNull();
   });
 });

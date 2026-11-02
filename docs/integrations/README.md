@@ -18,7 +18,7 @@ Una regla tiene:
   `contiene`, `mayor o igual`, `menor o igual`, `tiene valor`, `está vacío`. Los números se
   comparan como números y las fechas ISO como texto. `$marking`, `$detail` y `$action` se
   refieren a la clasificación, el detalle y la acción del evento.
-- **Acciones**: un aviso en la bandeja (campana) de todos los miembros del proyecto, o un
+- **Acciones**: un aviso en Bandeja › «Avisos» de todos los miembros del proyecto, o un
   mensaje a un canal. El título admite `{id}`, `{modulo}`, `{accion}` y `{Campo}`.
 
 Las reglas nuevas solo reaccionan a eventos posteriores a su creación. Cada entrega se
@@ -49,6 +49,18 @@ Los secretos se cifran con `SIPGES_DATA_KEY` y no vuelven a mostrarse. Solo se a
 destinos `https` públicos (sin `localhost`, IP privadas ni nombres internos). De los registros
 **restringidos** solo sale el módulo y el id, nunca su contenido.
 
+### Registro de envíos
+
+Cada envío a un canal y cada aviso push deja una fila en **Auditoría** del proyecto (módulo
+«Automatizaciones»): acción `CHANNEL_SEND` con el tipo de canal, la regla, el canal, el evento
+de origen y el resultado (`Envío webhook · regla 7 · canal 3 · evento 900 · enviado` o
+`fallido`), o `PUSH_SEND` con la entrega y el resultado (`aceptado`, `expirado`, `fallido`). Las
+pruebas de canal y de push también quedan registradas (una prueba de push es una fila, con cuántos
+dispositivos la aceptaron). La fila nunca lleva la URL, el token, el
+chat, los correos, el endpoint, el título, el texto del mensaje ni nombres de personas (Ley
+29733): solo números internos. Si la auditoría no se puede escribir, el envío no se repite ni se
+marca como fallido; el error queda en el log del servidor. Estas filas no disparan reglas.
+
 ### Verificar un webhook
 
 Cada envío trae las cabeceras de [Standard Webhooks](https://www.standardwebhooks.com):
@@ -75,8 +87,11 @@ duplicados: un reintento repite el mismo id. El cuerpo JSON trae `type`
 
 ## Avisos en el dispositivo
 
-La campana muestra los avisos de la bandeja. Además, cada persona puede marcar **Recibir avisos
-en este dispositivo** para que lleguen como notificación del sistema (Chrome, Edge, Firefox y
+La pestaña «Avisos» de Bandeja (`/bandeja?vista=avisos`) los lista; la campana de la barra lateral
+cuenta los que no se han leído y abre esa pestaña, y en el teléfono el botón de menú lo señala con
+un punto.
+Además, cada persona puede marcar **Recibir avisos en este dispositivo** (Configuración ›
+Notificaciones) para que lleguen como notificación del sistema (Chrome, Edge, Firefox y
 Safari, también en el móvil con la app instalada desde el navegador). Al tocar el aviso se abre
 el registro. Si el aviso viene de un registro **restringido**, no llega a los dispositivos del
 rol consulta.
@@ -163,6 +178,9 @@ compartan palabras. Usa el modelo de embeddings de Ollama ya configurado
 - Los registros **restringidos** nunca se envían al modelo; siguen apareciendo en la búsqueda
   de texto para quien puede verlos.
 - Si el modelo no responde, la búsqueda sigue funcionando solo por texto.
+- Si `SIPGES_OLLAMA_URL` no es de esta máquina, los textos salen seudonimizados y solo con el
+  interruptor «Envío a IA externa» encendido; con un Ollama local nada cambia (ver
+  [Privacidad](#privacidad-qué-sale-hacia-una-ia-externa)).
 
 ## Tiempo real y trazas
 
@@ -217,6 +235,38 @@ claude mcp add --transport http sipges https://<tu-dominio>/mcp \
 
 Otros clientes (Claude Desktop, VS Code, Cursor) aceptan la misma URL y la cabecera
 `Authorization` en su configuración de servidores MCP remotos.
+
+### Privacidad: qué sale hacia una IA externa
+
+Un agente MCP, el resumen asistido (`SIPGES_ANALYST_PROVIDER=anthropic`) y unos embeddings en
+una URL que no sea de esta máquina son **IA externa**. Pasan por una sola guarda
+([ADR 0030](../adr/0030-external-ai-egress-guard.md)); es apoyo técnico para cumplir la
+Ley 29733, no una decisión legal.
+
+- **Interruptor por proyecto.** *Configuración → IA externa → Envío a IA externa*, solo
+  administradores y **apagado por defecto**. Apagado, las herramientas de lectura de MCP
+  responden «El envío a IA externa está desactivado para este proyecto», el resumen asistido no
+  se genera (queda el informe extractivo) y los embeddings a una URL no local se rechazan. Siguen
+  funcionando `list_object_types`, `create_record`, `link_records` y los embeddings de un Ollama
+  en `localhost`/`127.0.0.1`/`[::1]`.
+- **Seudónimos.** Encendido, los nombres de actores, personas y organizaciones salen como
+  `Actor-7F3A1C`, `Persona-…` u `Org-…`: el mismo nombre da el mismo seudónimo dentro del proyecto
+  y otro distinto en otro proyecto. Los nombres conocidos también se reemplazan dentro de textos
+  libres (sin importar mayúsculas ni tildes), y correos, teléfonos y DNI quedan como `[correo]`,
+  `[teléfono]` y `[DNI]`. La equivalencia no se guarda ni se devuelve.
+- **Registros restringidos.** Un registro marcado `restringido` nunca sale hacia una IA externa, sea cual sea la autorización de la clave o del usuario: se omite de las listas y en Auditoría aparece su id como «retenidos», sin contenido.
+- **Solo campos permitidos.** Cada módulo declara qué campos pueden salir
+  (`apps/api/src/contexts/privacy/domain/allowlist.ts`, con el motivo de cada uno); lo demás se
+  descarta. Nunca salen la posición frente al proyecto, el origen étnico, la salud, la religión,
+  la afiliación sindical, los ingresos, datos biométricos ni datos de contacto (teléfono, correo,
+  remitente del buzón).
+- **Registro de accesos.** Cada envío deja una fila en **Auditoría** (módulo «IA externa», acción
+  `EGRESS`): canal (`mcp`, `analyst` o `embeddings`), herramienta o propósito, quién (usuario, o
+  nombre e id de la clave de API), ids de los registros y cuántos campos se enviaron y
+  descartaron. Nunca los valores.
+- **Límites.** Un texto libre se limpia de nombres conocidos y de patrones de contacto, no se
+  interpreta: un nombre que nadie registró puede pasar. Los datos seudonimizados siguen siendo datos
+  personales: el interruptor no reemplaza el consentimiento ni la revisión legal.
 
 ## Variables de entorno
 

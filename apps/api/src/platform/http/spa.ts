@@ -2,15 +2,21 @@ import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import type { MiddlewareHandler } from 'hono';
 
+/** File contents: whole bytes, or a stream a host passes through without buffering. */
+export type AssetBody = Uint8Array | ReadableStream<Uint8Array>;
+
 /** Built single-page app (apps/web/dist): its HTML shell and its hashed assets. */
 export type WebAssets = {
   index(): Promise<string | null>;
-  asset(name: string): Promise<Uint8Array | null>;
+  asset(name: string): Promise<AssetBody | null>;
   /** One of ROOT_FILES from the build root (Vite's `public/` directory). */
-  rootFile?(name: string): Promise<Uint8Array | null>;
+  rootFile?(name: string): Promise<AssetBody | null>;
   /** A CesiumJS worker or asset under `cesium/` (ADR 0026); `path` is already validated. */
-  cesium?(path: string): Promise<Uint8Array | null>;
+  cesium?(path: string): Promise<AssetBody | null>;
 };
+
+const responseBody = (body: AssetBody) =>
+  body instanceof Uint8Array ? new Uint8Array(body) : body;
 
 /** Installable-app files that must live at the site root (docs/adr/0014). */
 const ROOT_FILES: Readonly<Record<string, string>> = {
@@ -68,26 +74,38 @@ const CESIUM_TYPES: Readonly<Record<string, string>> = {
 export const CESIUM_CACHE = 'public, max-age=86400';
 /** Paths the API owns; everything else a browser navigates to is a client route. */
 const API_PREFIXES = ['/api/', '/system/', '/auth/'];
-const API_PATHS = new Set(['/health', '/select-project', '/logout']);
+const API_PATHS = new Set(['/health', '/health/ready', '/select-project', '/logout']);
 
 const isClientRoute = (path: string) =>
   !API_PATHS.has(path) && !API_PREFIXES.some((prefix) => path.startsWith(prefix));
 
 /**
+ * Whether spaMiddleware answers this request itself: built files, and the shell for a browser
+ * navigation to a client route. None of them needs a session or the database, so a host may
+ * serve them before building the API (the Cloudflare Worker does).
+ */
+export const isSpaRequest = (method: string, path: string, accept: string | undefined | null) =>
+  (method === 'GET' || method === 'HEAD') &&
+  (Object.hasOwn(ROOT_FILES, path) ||
+    path.startsWith('/assets/') ||
+    path.startsWith('/cesium/') ||
+    (isClientRoute(path) && (accept ?? '').includes('text/html')));
+
+/**
  * Serves the SPA before authentication: the shell and bundle hold no tenant data, and the app
- * itself asks the API who is signed in. Only GET/HEAD navigations and `/assets/*` are handled.
+ * itself asks the API who is signed in. Only isSpaRequest() requests are handled.
  */
 export const spaMiddleware =
   (web: WebAssets): MiddlewareHandler =>
   async (c, next) => {
-    if (c.req.method !== 'GET' && c.req.method !== 'HEAD') return next();
     const path = c.req.path;
+    if (!isSpaRequest(c.req.method, path, c.req.header('accept'))) return next();
     const rootType = Object.hasOwn(ROOT_FILES, path) ? ROOT_FILES[path] : undefined;
     if (rootType) {
       const bytes = web.rootFile ? await web.rootFile(path.slice(1)) : null;
       if (!bytes) return c.json({ detail: 'Not Found' }, 404);
       // The worker runs under its own CSP: the SPA policy lets it show the app icon.
-      return c.body(new Uint8Array(bytes), 200, {
+      return c.body(responseBody(bytes), 200, {
         'Content-Type': rootType,
         'Content-Security-Policy': SPA_CSP,
       });
@@ -97,7 +115,7 @@ export const spaMiddleware =
       const type = ASSET_TYPES[extname(name)];
       const bytes = type && ASSET_NAME.test(name) ? await web.asset(name) : null;
       if (!type || !bytes) return c.json({ detail: 'Not Found' }, 404);
-      return c.body(new Uint8Array(bytes), 200, {
+      return c.body(responseBody(bytes), 200, {
         'Content-Type': type,
         'Cache-Control': ASSET_CACHE,
       });
@@ -107,15 +125,12 @@ export const spaMiddleware =
       const type = CESIUM_TYPES[extname(file)];
       const bytes = type && CESIUM_PATH.test(file) && web.cesium ? await web.cesium(file) : null;
       if (!type || !bytes) return c.json({ detail: 'Not Found' }, 404);
-      return c.body(new Uint8Array(bytes), 200, {
+      return c.body(responseBody(bytes), 200, {
         'Content-Type': type,
         'Cache-Control': CESIUM_CACHE,
         // Workers run under their own response's policy: the SPA one, not the API's.
         'Content-Security-Policy': SPA_CSP,
       });
-    }
-    if (!isClientRoute(path) || !(c.req.header('accept') ?? '').includes('text/html')) {
-      return next();
     }
     const html = await web.index();
     if (html === null) return next();
@@ -124,16 +139,19 @@ export const spaMiddleware =
     return c.html(html);
   };
 
-/** Reads a Vite build directory; asset names are validated before they reach the path. */
 /**
  * WebAssets over any file source. Every name is validated here, before `read` sees it, so no
  * host adapter can serve a path outside the built app.
  */
 export const webAssetsFrom = (
-  read: (relativePath: string) => Promise<Uint8Array | null>,
+  read: (relativePath: string) => Promise<AssetBody | null>,
 ): WebAssets => ({
   async index() {
-    const bytes = await read('index.html');
+    const body = await read('index.html');
+    const bytes =
+      body instanceof ReadableStream
+        ? new Uint8Array(await new Response(body).arrayBuffer())
+        : body;
     // ignoreBOM keeps a leading BOM, exactly as readFile(..., 'utf8') did.
     return bytes ? new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes) : null;
   },
@@ -142,6 +160,7 @@ export const webAssetsFrom = (
   asset: async (name) => (ASSET_NAME.test(name) ? read(`assets/${name}`) : null),
 });
 
+/** Reads a Vite build directory; asset names are validated before they reach the path. */
 export const fileWebAssets = (dir: string): WebAssets =>
   webAssetsFrom(async (relativePath) => {
     try {

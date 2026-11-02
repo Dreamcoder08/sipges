@@ -65,6 +65,8 @@ describe('SIPGES project settings', () => {
         },
       ]),
       phase: null,
+      external_ai: { enabled: false },
+      location: null,
       phases: expect.arrayContaining([
         {
           id: 'operacion',
@@ -171,6 +173,38 @@ describe('SIPGES project settings', () => {
       await (await request('/system/v4/situations', NORTE)).json(),
     );
     expect(norte.situations.flatMap((s) => s.records.map((r) => r.id))).toEqual(['D-9', 'D-8']);
+  });
+
+  it('stores the project location for that project only, audits it and clears it', async () => {
+    const { t, request, put } = await setup();
+    const locationOf = async (res: Response | Promise<Response>) =>
+      ProjectSettings.parse(await (await res).json()).location;
+    const tambogrande = { place: 'Tambogrande, Piura', extent: [-80.548, -5.057, -80.218, -4.88] };
+    const res = await put({ location: { ...tambogrande, place: '  Tambogrande, Piura ' } });
+    expect(res.status).toBe(200);
+    expect(ProjectSettings.parse(await res.json()).location).toEqual(tambogrande);
+    expect(await locationOf(request('/system/v4/settings'))).toEqual(tambogrande);
+    // Another tenant never reads it.
+    expect(await locationOf(request('/system/v4/settings', NORTE))).toBeNull();
+    expect(
+      await t.sql.query("SELECT tenant_id, detail FROM audit WHERE module = 'SIPGES'"),
+    ).toEqual([{ tenant_id: SECHURA, detail: 'Campos: location' }]);
+    // Other changes keep it; null clears it.
+    await put({ window_days: 60 });
+    expect(await locationOf(request('/system/v4/settings'))).toEqual(tambogrande);
+    expect(await locationOf(put({ location: null }))).toBeNull();
+  });
+
+  it.each([
+    ['an empty place', { place: ' ', extent: [-80.5, -5.1, -80.2, -4.9] }],
+    ['west east of east', { place: 'Zona', extent: [-80.2, -5.1, -80.5, -4.9] }],
+    ['south north of north', { place: 'Zona', extent: [-80.5, -4.9, -80.2, -5.1] }],
+    ['a latitude out of range', { place: 'Zona', extent: [-80.5, -95, -80.2, -4.9] }],
+    ['three numbers', { place: 'Zona', extent: [-80.5, -5.1, -80.2] }],
+  ])('rejects a location with %s', async (_case, location) => {
+    const { t, put } = await setup();
+    expect((await put({ location })).status).toBe(422);
+    expect(await t.sql.query('SELECT tenant_id FROM project_settings')).toEqual([]);
   });
 
   it('writes nothing when nothing changes', async () => {

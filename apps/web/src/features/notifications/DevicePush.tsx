@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
-import styles from './NotificationBell.module.css';
+import styles from './Avisos.module.css';
 
 const Ok = z.object({ ok: z.literal(true) });
 

@@ -6,20 +6,55 @@ import {
   RecordCreated,
   RecordIn,
   RecordVersion,
+  RecordsSummary,
 } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { isApiError, requestJson } from '../../shared/api/client.ts';
-import { fetchModuleRecords } from '../../shared/api/module-records.ts';
+import { moduleRecordsQuery } from '../../shared/api/module-records.ts';
 import { recordPayload } from './model.ts';
 import type { RecordModule } from './modules.ts';
 
 const recordPath = (module: RecordModule, id?: string) =>
   `/api/${module}${id === undefined ? '' : `/${encodeURIComponent(id)}`}`;
 export const recordsQuery = (module: RecordModule, scope: string, search: string) =>
+  moduleRecordsQuery(module, scope, search);
+const SUMMARY_PAGE = 500;
+
+/**
+ * Registros «Todos» and the per-type counts in one request per bounded page (the same 500-row
+ * pages fetchModuleRecords follows), instead of one list per record type.
+ */
+export const fetchRecordsSummary = async (
+  scope: string,
+  signal?: AbortSignal,
+): Promise<RecordsSummary> => {
+  const rows: RecordsSummary['rows'] = [];
+  const seen = new Set<string>();
+  let counts: RecordsSummary['counts'] | undefined;
+  for (let offset = 0; ; offset += SUMMARY_PAGE) {
+    const page = await requestJson(
+      `/api/registros/summary?${new URLSearchParams({ limit: String(SUMMARY_PAGE), offset: String(offset) })}`,
+      RecordsSummary,
+      { scope, ...(signal ? { signal } : {}) },
+    );
+    counts ??= page.counts;
+    for (const row of page.rows) {
+      const key = `${row.module}/${row.id}`;
+      if (seen.has(key))
+        throw new Error(
+          'Los registros cambiaron durante la consulta. Reintente para actualizar la lista.',
+        );
+      seen.add(key);
+      rows.push(row);
+    }
+    if (page.rows.length < SUMMARY_PAGE) return { counts, rows };
+  }
+};
+export const recordsSummaryQuery = (scope: string) =>
   queryOptions({
-    queryKey: ['records', scope, module, 'list', search],
-    queryFn: ({ signal }) => fetchModuleRecords(module, scope, search, signal),
+    queryKey: ['records', scope, 'summary'],
+    queryFn: ({ signal }) => fetchRecordsSummary(scope, signal),
   });
 export const recordQuery = (module: RecordModule, scope: string, id: string) =>
   queryOptions({

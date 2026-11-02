@@ -32,15 +32,21 @@ export const createAnalyticsService = (deps: {
   dashboardReader?: AnalyticsRecordReader;
   clock: Clock;
   renderer: ReportRenderer;
+  /** The tenant's display label (Tenancy's public API), naming projects without a Proyectos record. */
+  projectLabel?: (scope: Scope) => Promise<string | null>;
 }) => {
   const { reader, clock, renderer } = deps;
   // app.py now() has second precision; UTC is made explicit as in the tenancy export.
   const generatedAt = () => `${clock.now().toISOString().slice(0, 19)}Z`;
-  const extended = async (scope: Scope) =>
-    extendedRecords(await reader.read(scope, EXTENDED), scope.projectId);
+  const extended = async (scope: Scope) => extendedRecords(await reader.read(scope, EXTENDED));
 
   const situational = async (scope: Scope) =>
-    buildSituational(await reader.read(scope, SITUATIONAL), scope.projectId, generatedAt());
+    buildSituational(
+      await reader.read(scope, SITUATIONAL),
+      scope.projectId,
+      generatedAt(),
+      await deps.projectLabel?.(scope),
+    );
 
   const outline = async (kind: AnalyticsReport, scope: Scope) => {
     switch (kind) {

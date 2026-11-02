@@ -33,10 +33,21 @@ export const ICON_PATHS = {
   chevronDown: 'M6 9l6 6 6-6',
   logout: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
   close: 'M18 6 6 18M6 6l12 12',
+  menu: 'M4 7h16M4 12h16M4 17h10',
   plus: 'M12 5v14M5 12h14',
   minus: 'M5 12h14',
   landmark: 'M3 21h18M5 21v-9M10 21v-9M14 21v-9M19 21v-9M2 10l10-7 10 7z',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z',
+  alert: 'M12 3 2 20h20zM12 10v4M12 17.5h.01',
+  /** Rising trend: conflict-risk prediction (ADR 0031). */
+  trend: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+  chevronLeft: 'M15 18l-6-6 6-6',
+  plug: 'M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5',
   briefcase: 'M3 7h18v13H3zM9 7V4h6v3M3 13h18',
+  arrowUp: 'M12 19V5M5 12l7-7 7 7',
+  link: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
+  mail: 'M3 5h18v14H3zM3 6l9 7 9-7',
+  lightbulb: 'M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.74V16h8v-1.26A7 7 0 0 0 12 2',
 } as const;
 
 export type IconName = keyof typeof ICON_PATHS;

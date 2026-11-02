@@ -1,6 +1,6 @@
 import { DashboardResponse, IrsaSummary, ModelStatus } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
-import { fetchModuleRecords } from '../../shared/api/module-records.ts';
+import { moduleRecordsQuery as recordsQuery } from '../../shared/api/module-records.ts';
 import { requestJson } from '../../shared/api/client.ts';
 
 /** A module record as `/api/{module}` lists it: free-form payload plus `_id`. */
@@ -25,9 +25,6 @@ export const modelStatusQuery = (scope: string) =>
     staleTime: Infinity,
   });
 
-/** Every scoped record, retrieved through bounded API pages. */
+/** Every scoped record, retrieved through bounded API pages, in the cache entry the map shares. */
 export const moduleRecordsQuery = (slug: 'alertas' | 'eventos', scope: string) =>
-  queryOptions({
-    queryKey: ['records', scope, slug, 'all'],
-    queryFn: ({ signal }) => fetchModuleRecords(slug, scope, '', signal),
-  });
+  recordsQuery(slug, scope);

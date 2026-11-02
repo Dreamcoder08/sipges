@@ -7,6 +7,7 @@ import { ProjectSettingsProvider } from '../../shared/lib/project-settings.tsx';
 import { LevelPill } from '../../shared/ui/Badges.tsx';
 import { server } from '../../test/server.ts';
 import { SettingsPage } from './SettingsPage.tsx';
+import { type SettingsSection, settingsSearch } from './sections.ts';
 
 const meanings = {
   Verde: 'Situación estable / riesgo bajo',
@@ -67,7 +68,11 @@ const context = {
   username: 'admin',
   fullName: 'Admin Demo',
 };
-const renderPage = (role: 'admin' | 'consulta') =>
+const renderPage = (
+  role: 'admin' | 'consulta',
+  section: SettingsSection = 'proyecto',
+  extra: Partial<Parameters<typeof SettingsPage>[0]> = {},
+) =>
   render(
     <QueryClientProvider
       client={
@@ -76,7 +81,7 @@ const renderPage = (role: 'admin' | 'consulta') =>
         })
       }
     >
-      <SettingsPage {...context} role={role} />
+      <SettingsPage {...context} role={role} section={section} {...extra} />
     </QueryClientProvider>,
   );
 
@@ -100,6 +105,75 @@ it('presents the project as SIPGES with no switch to turn it on or off', async (
   expect(screen.getByText('Significado de cada color')).toBeInTheDocument();
   expect(screen.getByText('Fase del proyecto')).toBeInTheDocument();
   expect(screen.getByText('Fuentes RSS regionales')).toBeInTheDocument();
+});
+
+it('opens on Apariencia for every role, with a section nav like Claude settings', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('consulta', undefined, { section: undefined });
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(
+    within(nav)
+      .getAllByRole('link')
+      .map((link) => link.textContent),
+  ).toEqual(['Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones', 'Integraciones']);
+  expect(within(nav).getByRole('link', { name: 'Apariencia' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  expect(within(nav).getByRole('link', { name: 'Proyecto' })).toHaveAttribute(
+    'href',
+    '/version-4?seccion=proyecto',
+  );
+  expect(within(nav).getByRole('link', { name: 'Integraciones' })).toHaveAttribute(
+    'href',
+    '/integraciones',
+  );
+  expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'SIPGES' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('checkbox', { name: 'Envío a IA externa' })).not.toBeInTheDocument();
+});
+
+it('shows one section at a time and goes to another through the URL', async () => {
+  const user = userEvent.setup();
+  const visited: string[] = [];
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('admin', 'privacidad', { onNavigate: (href) => visited.push(href) });
+  expect(await screen.findByRole('checkbox', { name: 'Envío a IA externa' })).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument();
+  expect(screen.queryByText('Significado de cada color')).not.toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(within(nav).getByRole('link', { name: 'Privacidad y datos' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  within(nav).getByRole('link', { name: 'Proyecto' }).focus();
+  await user.keyboard('{Enter}');
+  await user.click(within(nav).getByRole('link', { name: 'Integraciones' }));
+  expect(visited).toEqual(['/version-4?seccion=proyecto', '/integraciones']);
+});
+
+it('keeps the section nav working without a router', async () => {
+  const user = userEvent.setup();
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('admin', 'apariencia');
+  await user.click(screen.getByRole('link', { name: 'Proyecto' }));
+  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+});
+
+it('shows only the notification preference that exists today: this device', () => {
+  renderPage('consulta', 'notificaciones', {
+    notifications: <p>Recibir avisos en este dispositivo</p>,
+  });
+  expect(screen.getByRole('heading', { name: 'Notificaciones' })).toBeInTheDocument();
+  expect(screen.getByText('Recibir avisos en este dispositivo')).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument();
+});
+
+it('accepts only known sections in the URL', () => {
+  expect(settingsSearch.parse({ seccion: 'privacidad' })).toEqual({ seccion: 'privacidad' });
+  expect(settingsSearch.parse({ seccion: 'cuenta' })).toEqual({ seccion: undefined });
+  expect(settingsSearch.parse({ seccion: 7 })).toEqual({ seccion: undefined });
+  expect(settingsSearch.parse({})).toEqual({ seccion: undefined });
 });
 
 it('saves edited colour meanings', async () => {
@@ -262,4 +336,103 @@ it('shows media sources read-only to other roles', async () => {
   expect(screen.queryByRole('button', { name: 'Consultar ahora' })).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Agregar fuente')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Operación' })).not.toBeInTheDocument();
+});
+
+const COPY =
+  'Envío a IA externa — los datos salen siempre seudonimizados; nunca se envían nombres reales ni datos sensibles. Requiere revisión legal (Ley 29733).';
+
+it('shows «Envío a IA externa» off by default, with the privacy copy', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('admin', 'privacidad');
+  const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
+  expect(toggle).not.toBeChecked();
+  expect(screen.getByText(COPY)).toBeInTheDocument();
+});
+
+it('lets an administrator turn «Envío a IA externa» on and sends only that setting', async () => {
+  const user = userEvent.setup();
+  let sent: unknown;
+  let stored: ReturnType<typeof settings> & { external_ai?: { enabled: boolean } } = settings();
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(stored)),
+    http.put('*/system/v4/settings', async ({ request }) => {
+      sent = await request.json();
+      stored = { ...settings(), external_ai: { enabled: true } };
+      return HttpResponse.json(stored);
+    }),
+  );
+  renderPage('admin', 'privacidad');
+  await user.click(await screen.findByRole('checkbox', { name: 'Envío a IA externa' }));
+  expect(await screen.findByText('Envío a IA externa activado.')).toBeInTheDocument();
+  expect(sent).toEqual({ external_ai: { enabled: true } });
+  expect(await screen.findByRole('checkbox', { name: 'Envío a IA externa' })).toBeChecked();
+});
+
+it('shows the switch to everyone else read-only', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({ ...settings(), external_ai: { enabled: true } }),
+    ),
+  );
+  renderPage('consulta', 'privacidad');
+  const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
+  expect(toggle).toBeChecked();
+  expect(toggle).toBeDisabled();
+});
+
+it('lets an administrator save and clear the project location the maps open on', async () => {
+  const user = userEvent.setup();
+  const sent: unknown[] = [];
+  let current: Record<string, unknown> = settings();
+  server.use(
+    http.get('*/system/v4/settings', () => HttpResponse.json(current)),
+    http.put('*/system/v4/settings', async ({ request }) => {
+      const body = (await request.json()) as { location?: unknown };
+      sent.push(body);
+      current = {
+        ...current,
+        location: body.location,
+        updated_at: `2026-10-19T12:0${sent.length}:00Z`,
+      };
+      return HttpResponse.json(current);
+    }),
+  );
+  renderPage('admin');
+  const locationCard = async () =>
+    (await screen.findByRole('heading', { name: 'Ubicación del proyecto' })).closest(
+      'section',
+    ) as HTMLElement;
+  const card = await locationCard();
+  expect(within(card).getByText(/Sin ubicación guardada/)).toBeInTheDocument();
+  await user.type(within(card).getByLabelText('Lugar'), 'Tambogrande, Piura');
+  await user.type(within(card).getByLabelText('Oeste (longitud)'), '-80.548');
+  await user.type(within(card).getByLabelText('Sur (latitud)'), '-5.057');
+  await user.type(within(card).getByLabelText('Este (longitud)'), '-80.218');
+  await user.type(within(card).getByLabelText('Norte (latitud)'), '-4.880');
+  await user.click(within(card).getByRole('button', { name: 'Guardar ubicación' }));
+  expect(await screen.findByText('Ubicación del proyecto guardada.')).toBeInTheDocument();
+  expect(sent[0]).toEqual({
+    location: { place: 'Tambogrande, Piura', extent: [-80.548, -5.057, -80.218, -4.88] },
+  });
+  // The form remounts with the saved settings.
+  const saved = await locationCard();
+  expect(within(saved).getByText(/Guardada: Tambogrande, Piura/)).toBeInTheDocument();
+  await user.click(within(saved).getByRole('button', { name: 'Quitar ubicación' }));
+  expect(await screen.findByText('Ubicación del proyecto quitada.')).toBeInTheDocument();
+  expect(sent[1]).toEqual({ location: null });
+});
+
+it('shows the project location read-only to other roles', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({
+        ...settings(),
+        location: { place: 'Tambogrande, Piura', extent: [-80.548, -5.057, -80.218, -4.88] },
+      }),
+    ),
+  );
+  renderPage('consulta');
+  expect(await screen.findByLabelText('Lugar')).toHaveValue('Tambogrande, Piura');
+  expect(screen.getByLabelText('Lugar')).toHaveAttribute('readonly');
+  expect(screen.queryByRole('button', { name: 'Guardar ubicación' })).toBeNull();
 });

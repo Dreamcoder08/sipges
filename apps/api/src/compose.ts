@@ -48,9 +48,14 @@ import {
 } from './contexts/analyst/infrastructure/index.ts';
 import {
   type AnalyticsService,
+  type ConflictRiskService,
   createAnalyticsService,
+  createConflictRiskService,
 } from './contexts/analytics/application/index.ts';
-import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import {
+  createSqlAnalyticsRecordReader,
+  createSqlDatedRecordReader,
+} from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
 import { createSqlDashboardRecordReader } from './contexts/analytics/infrastructure/sql-dashboard-record-reader.ts';
 import {
   type SituationsService,
@@ -82,10 +87,13 @@ import {
   keyCrypto,
 } from './contexts/integration/infrastructure/index.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
+import { readinessProbe } from './platform/database/readiness.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
+import { createSqlAuditWriter } from './contexts/audit/infrastructure/sql-audit-writer.ts';
 import {
   type DocumentLabService,
   type DocumentReader,
+  type ReviewRecordWriter,
   createDocumentLabService,
 } from './contexts/documents/application/index.ts';
 import {
@@ -104,6 +112,12 @@ import {
   createOllamaEmbeddings,
   createSqlAlertStore,
 } from './contexts/intelligence/infrastructure/index.ts';
+import { type EgressGuard, createEgressGuard } from './contexts/privacy/application/index.ts';
+import {
+  createPseudonymKeys,
+  createSqlEgressLog,
+  createSqlNameDirectory,
+} from './contexts/privacy/infrastructure/index.ts';
 import {
   createManagementService,
   type ManagementService,
@@ -153,10 +167,13 @@ import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-o
 import {
   RECORD_MODULES,
   createRecordsService,
+  createRecordsSummary,
   moduleForSlug,
   type RecordsService,
+  type RecordsSummaryQuery,
 } from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
+import { createSqlRecordSummaryReader } from './contexts/records/infrastructure/sql-record-summary-reader.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
 import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
 import { createSqlTenancyStore } from './contexts/tenancy/infrastructure/sql-tenancy-store.ts';
@@ -169,6 +186,8 @@ export type Container = {
   readonly authorizedSources: AuthorizedSourcesService;
   readonly media: MediaMonitorService;
   readonly runtime: AutomationRuntime;
+  /** Readiness probe for /health/ready: resolves once the database answers SELECT 1. */
+  readonly ready: () => Promise<void>;
   readonly reference: ReferenceService;
   readonly config: AppConfig;
   readonly identity: IdentityService;
@@ -176,11 +195,16 @@ export type Container = {
   readonly googleSignIn: GoogleSignIn | undefined;
   readonly tenancy: TenancyService;
   readonly records: RecordsService;
+  readonly recordsSummary: RecordsSummaryQuery;
   readonly ontology: OntologyService;
   readonly analyst: AnalystService;
+  /** Gate for every path that sends tenant data to an external model or client (ADR 0030). */
+  readonly egress: EgressGuard;
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
+  /** Conflict-risk prediction (docs/adr/0031), inside the Worker, no external model. */
+  readonly conflictRisk: ConflictRiskService;
   readonly situations: SituationsService;
   readonly evidence: EvidenceService;
   readonly documents: DocumentLabService;
@@ -199,6 +223,27 @@ const randomHex = (length: number) =>
     .slice(0, length);
 
 /** Wires adapters into use cases (manual constructor injection, docs/adr/0002). */
+/**
+ * The records port of the document lab (docs/adr/0002): approvals create records through the
+ * records use cases, so validation, normalization and audit match every other record write.
+ */
+export const reviewRecordsPort = (records: RecordsService): ReviewRecordWriter => ({
+  async createMissing(tenantId, slug, items, options) {
+    const module = moduleForSlug(slug);
+    if (!module) return { created: 0, existing: 0, problems: [`Módulo desconocido: ${slug}`] };
+    const result = await records.createMissing(tenantId, module, items, options);
+    return {
+      created: result.created,
+      existing: result.existing,
+      problems: result.problems.map((problem) => `fila ${problem.row}: ${problem.message}`),
+    };
+  },
+  async existing(tenantId, slug, ids) {
+    const module = moduleForSlug(slug);
+    return module ? records.existing(tenantId, module, ids) : new Set<string>();
+  },
+});
+
 export const buildContainer = async (deps: {
   geographyGateway?: GeographyGateway;
   sourceGateway?: OfficialSourceGateway;
@@ -226,7 +271,11 @@ export const buildContainer = async (deps: {
   /** Overrides browser push delivery (tests record pushes instead). */
   pushSender?: PushSender | null;
 }): Promise<Container> => {
-  const cipher = createSecretCipher(deps.config.dataKey);
+  // Reads values sealed with the key being rotated out; seals with the current one only.
+  const cipher = createSecretCipher(
+    deps.config.dataKey,
+    deps.config.dataKeyPrevious ? [deps.config.dataKeyPrevious] : [],
+  );
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
     hasher: deps.passwordHasher ?? passwordHasher,
@@ -258,12 +307,31 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
   });
+  const recordsSummary = createRecordsSummary({ reader: createSqlRecordSummaryReader(deps.sql) });
+  const situations = createSituationsService({
+    settings: createSqlProjectSettingsStore(deps.sql),
+    records: createSqlSituationRecordReader(deps.sql),
+    clock: deps.clock,
+  });
+  const egress = createEgressGuard({
+    switch: { enabled: (tenantId) => situations.externalAiEnabled(tenantId) },
+    names: createSqlNameDirectory(deps.sql),
+    keys: createPseudonymKeys(deps.config.dataKey),
+    log: createSqlEgressLog(deps.sql),
+    clock: deps.clock,
+  });
   const embeddings = deps.embeddings ?? createOllamaEmbeddings(deps.config.ollama);
   const ontology = createOntologyService({
     store: createSqlOntologyStore(deps.sql),
     clock: deps.clock,
     ...(deps.config.semanticSearch
-      ? { semantic: { index: createSqlEmbeddingIndex(deps.sql), embedder: embeddings } }
+      ? {
+          semantic: {
+            index: createSqlEmbeddingIndex(deps.sql),
+            embedder: embeddings,
+            egress,
+          },
+        }
       : {}),
   });
   const analyst = createAnalystService({
@@ -319,6 +387,7 @@ export const buildContainer = async (deps: {
         : deps.config.analyst
           ? createClaudeNarrator({ model: deps.config.analyst.model })
           : null,
+    egress,
     clock: deps.clock,
   });
   const audit = createAuditService(createSqlAuditReader(deps.sql));
@@ -329,11 +398,7 @@ export const buildContainer = async (deps: {
     dashboardReader: createSqlDashboardRecordReader(deps.sql),
     clock: deps.clock,
     renderer: docxRenderer,
-  });
-  const situations = createSituationsService({
-    settings: createSqlProjectSettingsStore(deps.sql),
-    records: createSqlSituationRecordReader(deps.sql),
-    clock: deps.clock,
+    projectLabel: tenancy.label,
   });
   const indicators = createIndicatorsService({
     records: createSqlModuleRecordReader(deps.sql),
@@ -370,6 +435,7 @@ export const buildContainer = async (deps: {
     reader,
     renderer: docxRenderer,
     reviews: createSqlReviewStore(deps.sql),
+    records: reviewRecordsPort(records),
     clock: deps.clock,
     randomHex,
     maxUploadBytes: deps.config.maxUploadBytes,
@@ -382,6 +448,8 @@ export const buildContainer = async (deps: {
         ),
     },
     embeddings,
+    egress,
+    externalAi: { enabled: (tenantId) => situations.externalAiEnabled(tenantId) },
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
@@ -401,6 +469,28 @@ export const buildContainer = async (deps: {
     randomHex,
   });
   const iso = (date: Date) => `${date.toISOString().slice(0, 19)}Z`;
+  // Other contexts are read through their public services, for the scope's tenant only (ADR 0002).
+  const datedRecords = createSqlDatedRecordReader(deps.sql);
+  const conflictRisk = createConflictRiskService({
+    sources: {
+      records: (scope, modules) => datedRecords.read(scope, modules),
+      alerts: async (scope) =>
+        (await intelligence.allAlerts(scope)).map((a) => ({
+          id: a.id,
+          createdAt: a.createdAt.toISOString(),
+          territory: a.territory ?? null,
+          level: a.level,
+          status: a.status,
+          reviewedAt: a.reviewedAt ? a.reviewedAt.toISOString() : null,
+        })),
+      irsa: async (scope) =>
+        (await indicators.history(formatScope(scope), null)).map((p) => ({
+          ts: p.ts,
+          irsa: p.irsa,
+        })),
+    },
+    clock: deps.clock,
+  });
   const management = createManagementService({
     sources: {
       alerts: async (scope) =>
@@ -485,6 +575,7 @@ export const buildContainer = async (deps: {
     sealer: cipher,
     clock: deps.clock,
     recordModules: RECORD_MODULES,
+    audit: createSqlAuditWriter(deps.sql),
     push: {
       store: createSqlPushStore(deps.sql),
       sender:
@@ -518,6 +609,7 @@ export const buildContainer = async (deps: {
     authorizedSources,
     media,
     runtime,
+    ready: readinessProbe(deps.sql),
     reference: createReferenceService(deps.referenceReader ?? fileReferenceReader),
     config: deps.config,
     identity,
@@ -526,11 +618,14 @@ export const buildContainer = async (deps: {
       (deps.config.google ? createGoogleSignIn(deps.config.google) : undefined),
     tenancy,
     records,
+    recordsSummary,
     ontology,
     analyst,
+    egress,
     audit,
     indicators,
     analytics,
+    conflictRisk,
     situations,
     evidence,
     documents,

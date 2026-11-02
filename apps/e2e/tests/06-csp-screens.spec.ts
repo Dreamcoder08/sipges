@@ -1,6 +1,14 @@
-import { SCREENS, SYSTEM_PATHS } from '../../web/src/app/navigation.ts';
+import { DESTINATIONS, SCREENS, destinationFor } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
+
+/** Screens in the sidebar's account menu, with the name the menu gives them. */
+const ACCOUNT_MENU_LABELS: Readonly<Record<string, string>> = {
+  '/version-4': 'Configuración',
+  '/administracion': 'Administración',
+  '/auditoria': 'Auditoría',
+  '/metodologia': 'Ayuda y metodología',
+};
 
 /** Directives that would weaken the SPA policy (docs/migration/web.md, ADR 0006). */
 const UNSAFE = /'unsafe-(inline|eval|hashes)'|'wasm-unsafe-eval'|\*|data:\s*;?\s*script/;
@@ -68,22 +76,36 @@ test('every screen renders without CSP violations or script errors', async ({ pa
     await page.goto(screen.path);
     await expect(page.getByRole('heading', { level: 1, name: screen.title })).toBeVisible();
     await expect(page).toHaveTitle(new RegExp(screen.title));
-    // The sidebar lists the screen (pinned, or in its open group); Sistema screens sit in the
+    // The sidebar marks the destination that owns the screen; Sistema screens sit in the
     // account menu instead.
-    if ((SYSTEM_PATHS as readonly string[]).includes(screen.path)) {
+    const inMenu = ACCOUNT_MENU_LABELS[screen.path];
+    if (inMenu) {
       await page.getByRole('button', { name: /^Cuenta de / }).click();
-      await expect(page.getByRole('menuitem', { name: screen.label, exact: true })).toHaveAttribute(
+      await expect(page.getByRole('menuitem', { name: inMenu, exact: true })).toHaveAttribute(
         'aria-current',
         'page',
       );
       await page.keyboard.press('Escape');
+    } else if (screen.path === '/automatizaciones') {
+      // Reached from the sidebar's «Integraciones» link, not from the account menu.
+      await expect(
+        page
+          .getByRole('navigation', { name: 'Secciones' })
+          .getByRole('link', { name: 'Integraciones', exact: true }),
+      ).toHaveAttribute('aria-current', 'page');
     } else {
-      const link = page
-        .getByRole('navigation', { name: 'Secciones' })
-        .getByRole('link', { name: screen.label, exact: true });
+      const link = page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', {
+        name: destinationFor(screen.path)?.label ?? screen.label,
+        exact: true,
+      });
       await expect(link).toHaveAttribute('aria-current', 'page');
     }
     // Let lazy chunks and their queries settle before moving on.
+    await settled();
+  }
+  for (const hub of DESTINATIONS) {
+    await page.goto(hub.path);
+    await expect(page.getByRole('heading', { level: 1, name: hub.label })).toBeVisible();
     await settled();
   }
 });

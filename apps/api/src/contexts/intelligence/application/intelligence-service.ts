@@ -1,5 +1,10 @@
 import { createHash } from 'node:crypto';
 import { type Result, err, ok } from '@sipges/kernel';
+import {
+  type EgressGuard,
+  EXTERNAL_AI_DISABLED,
+  exemptPayload,
+} from '../../privacy/application/index.ts';
 import { type Scope, formatScope } from '../../tenancy/application/index.ts';
 import {
   ANALYSIS_MODES,
@@ -20,7 +25,14 @@ import {
   isAlertState,
   isPublicHttpUrl,
 } from '../domain/index.ts';
-import type { AlertStore, Clock, EmbeddingProvider, NarrativeReader, RandomHex } from './ports.ts';
+import type {
+  AlertStore,
+  Clock,
+  EmbeddingProvider,
+  ExternalAiSwitch,
+  NarrativeReader,
+  RandomHex,
+} from './ports.ts';
 
 const sha256 = (text: string) => createHash('sha256').update(text, 'utf8').digest('hex');
 
@@ -58,20 +70,73 @@ export type SemanticReport = Omit<TextReport, 'version'> & {
   source_retrieved: false;
 };
 
+/** Why semantic features are off: no reachable model, or external AI switched off. */
+export type EmbedderUnavailableReason = 'unreachable' | 'external_ai_disabled';
+
+export type EmbedderStatus = {
+  readonly available: boolean;
+  readonly reason: EmbedderUnavailableReason | null;
+  readonly model: string;
+  readonly egress: EmbeddingProvider['egress'];
+};
+
+/** How long one probe answers for every caller; short so a recovered model shows up soon. */
+const PROBE_TTL_MS = 60_000;
+const PROBE_TIMEOUT_MS = 3_000;
+/** Text written in the code: probing never sends tenant data (ADR 0030 `constant`). */
+const PROBE_TEXT = 'sipges';
+
 export const createIntelligenceService = (deps: {
   narratives: NarrativeReader;
   embeddings: EmbeddingProvider;
+  /** Clears the text sent to an embeddings service that is not on this machine (ADR 0030). */
+  egress: EgressGuard;
+  /**
+   * The project's external AI switch; an external embedder is not even probed while off.
+   * Absent means off: fail closed.
+   */
+  externalAi?: ExternalAiSwitch;
   alerts: AlertStore;
   clock: Clock;
   randomHex: RandomHex;
 }) => {
   const { narratives, embeddings, alerts, clock, randomHex } = deps;
+
+  let probe: { at: number; reachable: Promise<boolean> } | undefined;
+  const reachable = () => {
+    const now = clock.now().getTime();
+    if (!probe || now - probe.at >= PROBE_TTL_MS) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), PROBE_TIMEOUT_MS);
+      });
+      const attempt = embeddings.embed(exemptPayload(PROBE_TEXT, 'constant')).then(
+        () => true,
+        () => false,
+      );
+      probe = {
+        at: now,
+        reachable: Promise.race([attempt, timeout]).finally(() => clearTimeout(timer)),
+      };
+    }
+    return probe.reachable;
+  };
+
+  const embedderStatus = async (scope: Scope): Promise<EmbedderStatus> => {
+    const base = { model: embeddings.model, egress: embeddings.egress };
+    if (embeddings.egress !== 'local' && !(await deps.externalAi?.enabled(formatScope(scope))))
+      return { ...base, available: false, reason: 'external_ai_disabled' };
+    return (await reachable())
+      ? { ...base, available: true, reason: null }
+      : { ...base, available: false, reason: 'unreachable' };
+  };
   // Reference concepts never change for a model, so their vectors are computed once.
   const conceptVectors = new Map<string, Promise<number[]>>();
   const conceptVector = (description: string) => {
     let vector = conceptVectors.get(description);
     if (!vector) {
-      vector = embeddings.embed(description);
+      // A reference description is written in the code: no tenant data is in it.
+      vector = embeddings.embed(exemptPayload(description, 'constant'));
       vector.catch(() => conceptVectors.delete(description));
       conceptVectors.set(description, vector);
     }
@@ -113,9 +178,21 @@ export const createIntelligenceService = (deps: {
     if (input.mode === 'rules') return ok(report);
     try {
       const entries = Object.entries(SEMANTIC_CONCEPTS);
+      const trimmed = input.text.trim();
+      let cleared;
+      if (embeddings.egress === 'local') cleared = exemptPayload(trimmed, 'loopback');
+      else {
+        const opened = await deps.egress.open({
+          tenantId: formatScope(scope),
+          channel: 'embeddings',
+          purpose: 'semantic-analyze',
+        });
+        if (!opened.ok) throw new Error(EXTERNAL_AI_DISABLED);
+        cleared = await opened.session.release(opened.session.text(trimmed));
+      }
       // The text and any uncached concept are embedded concurrently: one model round trip.
       const [content, vectors] = await Promise.all([
-        embeddings.embed(input.text.trim()),
+        embeddings.embed(cleared),
         Promise.all(entries.map(([, description]) => conceptVector(description))),
       ]);
       const scored = entries
@@ -193,6 +270,7 @@ export const createIntelligenceService = (deps: {
     classify: classifyRecord,
     analyzeText: analyze,
     semanticAnalyze: semantic,
+    embedderStatus,
 
     createAlert,
 

@@ -1,4 +1,4 @@
-import { ApiKeyCreated, ApiKeyOut, type ApiKeyIn } from '@sipges/contracts';
+import { ApiKeyCreated, type ApiKeyIn } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -9,6 +9,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { apiKeysQuery } from './api.ts';
 import styles from './AutomationPage.module.css';
 
 const Ok = z.object({ ok: z.literal(true) });
@@ -19,11 +20,7 @@ const date = (iso: string | null) =>
 /** Machine access for AI agents (MCP) and inbound integrations (ADR 0014 §6-7). */
 export const ApiKeysCard = ({ scope }: { scope: string }) => {
   const client = useQueryClient();
-  const keys = useQuery({
-    queryKey: ['automation', scope, 'api-keys'],
-    queryFn: ({ signal }) =>
-      requestJson('/system/integrations/api-keys', ApiKeyOut.array(), { scope, signal }),
-  });
+  const keys = useQuery(apiKeysQuery(scope));
   const [form, setForm] = useState<ApiKeyIn>({ name: '', access: 'read', clearance: 'limited' });
   const [token, setToken] = useState('');
   const mutation = useMutation({

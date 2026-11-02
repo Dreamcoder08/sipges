@@ -32,9 +32,11 @@ export const GeographyPage = ({ scope }: FeatureContext) => {
         data ? (
           <MapReference data={data} notice={notice} scope={scope} />
         ) : (
-          <Card title="Referencia territorial">
-            <p>{notice}</p>
-          </Card>
+          // Without a registered reference there is nothing to show: a note, never an empty card.
+          <Alert tone="info">
+            {notice} El Mapa territorial ubica el proyecto con la ubicación guardada en
+            Configuración › Proyecto.
+          </Alert>
         )
       }
     </QueryState>
