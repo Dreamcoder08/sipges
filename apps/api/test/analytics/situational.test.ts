@@ -126,6 +126,22 @@ describe('buildSituational (app.py:627)', () => {
     expect(buildSituational({}, 'PRJ-X', AT).project_name).toBe('PRJ-X');
   });
 
+  it('names the project from the tenant label when no Proyectos record exists', () => {
+    expect(buildSituational({}, 'PRJ-NORTE', AT, 'Proyecto Norte').project_name).toBe(
+      'Proyecto Norte',
+    );
+    const named = buildSituational(
+      { Proyectos: [rec('p', { Proyecto_ID: 'PRJ-NORTE', Nombre: 'Norte' })] },
+      'PRJ-NORTE',
+      AT,
+      'Proyecto Norte',
+    );
+    expect(named.project_name).toBe('Norte');
+    expect(
+      buildSituational({}, 'PRJ-SECHURA', AT, 'Proyecto Sechura (migración)').project_name,
+    ).toBe('Proyecto Sechura');
+  });
+
   it('notes narratives without treating them as evidence', () => {
     const result = buildSituational({ Narrativas: [rec('n1', {})] }, 'PRJ-SECHURA', AT);
     expect(result.observaciones).toEqual([

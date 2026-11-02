@@ -103,6 +103,19 @@ describe('POST /system/auth/scopes', () => {
   });
 });
 
+describe('tenant label', () => {
+  it('names the situational analysis of a project without a Proyectos record', async () => {
+    const { t, admin } = await setup();
+    await t.createScope(admin.cookie, NORTE);
+    const ana = await t.login(ANA.username, ANA.password);
+    const res = await t.request('/system/situational-analysis', {
+      headers: { cookie: ana.cookie },
+    });
+    expect(res.status).toBe(200);
+    expect(await json(res)).toMatchObject({ project_id: 'NORTE', project_name: 'Proyecto Norte' });
+  });
+});
+
 describe('POST /system/auth/grants', () => {
   it('grants an existing project idempotently', async () => {
     const { t, admin } = await setup();

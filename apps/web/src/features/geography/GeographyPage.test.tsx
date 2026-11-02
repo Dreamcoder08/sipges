@@ -62,8 +62,14 @@ it('does not draw Sechura geometry when the scope has no registered reference', 
     ),
   );
   renderPage();
-  expect(await screen.findByText('No hay geometría registrada.')).toBeVisible();
+  const note = await screen.findByText(/^No hay geometría registrada\./);
+  expect(note).toHaveAttribute('role', 'status');
+  expect(note).toHaveTextContent(
+    'No hay geometría registrada. El Mapa territorial ubica el proyecto con la ubicación guardada en Configuración › Proyecto.',
+  );
   expect(screen.queryByLabelText('Geometría de referencia')).toBeNull();
+  // No empty «Referencia territorial» card for a project without a registered reference.
+  expect(screen.queryByRole('heading', { name: 'Referencia territorial' })).toBeNull();
 });
 // Regression (functional audit, error 06): a selected concession is framed with its real
 // geometry, shapes never fall back to the default black fill, and bad geometry is reported.
