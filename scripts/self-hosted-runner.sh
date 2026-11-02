@@ -27,7 +27,8 @@ start() {
     -v "$VOLUME":/home/runner/_work \
     -e RUNNER_TOKEN="$token" \
     --entrypoint bash "$IMAGE" -c "
-      ./config.sh --unattended --replace --url https://github.com/$REPO --token \"\$RUNNER_TOKEN\" \
+      # Register only on first start: the token expires after an hour, and a restart keeps the registration.
+      [ -f .runner ] || ./config.sh --unattended --replace --url https://github.com/$REPO --token \"\$RUNNER_TOKEN\" \
         --name $NAME --labels $LABELS --work /home/runner/_work &&
       exec ./run.sh" >/dev/null
   echo "$NAME started; set the repository variable SIPGES_RUNS_ON to [\"self-hosted\",\"$LABELS\"] to use it"
