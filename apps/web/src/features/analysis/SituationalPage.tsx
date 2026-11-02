@@ -14,6 +14,7 @@ import {
   TextList,
 } from './ReportParts.tsx';
 import { DocumentLab } from './DocumentLab.tsx';
+import { NarrativeOverview } from './NarrativeOverview.tsx';
 import styles from './Analysis.module.css';
 
 export const SituationalPage = (context: FeatureContext) => {
@@ -66,6 +67,7 @@ export const SituationalPage = (context: FeatureContext) => {
               <Tallies title="Temas de demanda" rows={data.temas_demanda} />
               <Tallies title="Niveles de alerta" rows={data.niveles_alerta} />
             </div>
+            <NarrativeOverview scope={context.scope} />
             <Card title="Observaciones">
               <TextList items={data.observaciones} />
             </Card>

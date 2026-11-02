@@ -24,7 +24,7 @@ Versión publicada: **v1.0.0** (ver [CHANGELOG](../CHANGELOG.md) y las releases 
 
 - 14 módulos de registros (eventos, actores, directorio, demandas y compromisos, narrativas, fuentes, alertas y acciones, intereses, diálogos, oportunidades, hechos y AARC) con alta, búsqueda, ficha, edición, eliminación, importación CSV, evidencias, vínculos e historial.
 - Dashboard y vista «Hoy», centro gerencial, inteligencia de redes, mapa territorial y ubicación geoespacial con mapa satelital, cronología, análisis situacional, inteligencia estratégica, IRSA, validación, automatizaciones e integración.
-- Tendencia temporal de narrativas por día y categoría.
+- Tendencia temporal de narrativas por día y categoría (Registros › Narrativas) y un gráfico compacto por categoría y en el tiempo en Análisis situacional. Lee la fecha de publicación, observación, «Fecha» o «Fecha_Registro» en ISO, D/M/AAAA, D-M-AAAA, D.M.AAAA, AAAA/MM/DD, con mes en español («15 oct 2026», «15 de octubre de 2026») o como número de serie de Excel; sin ninguna, usa la fecha del último cambio y lo indica. Con menos de dos días con fecha muestra el total por categoría.
 - Seguridad: MFA, entrada con Google para cuentas invitadas, comprobación de origen, aislamiento por proyecto con RLS y marcas de clasificación.
 - Solo datos reales del proyecto: el caso académico sintético se retiró de la base y del código (migración 0019).
 
