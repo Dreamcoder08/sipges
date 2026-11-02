@@ -23,6 +23,9 @@ export type EmbeddingProvider = {
   embed(text: SanitisedPayload<string>): Promise<number[]>;
 };
 
+/** Whether the project switched external AI on (privacy context, docs/adr/0030). */
+export type ExternalAiSwitch = { enabled(tenantId: string): Promise<boolean> };
+
 export type NewAlert = Omit<TerritorialAlert, 'reviewerNote' | 'reviewedAt' | 'status'>;
 
 export type AlertStore = {

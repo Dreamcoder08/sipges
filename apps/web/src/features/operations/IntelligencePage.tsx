@@ -22,6 +22,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './Operations.module.css';
 import { AuthorizedSourcesCard } from './AuthorizedSourcesCard.tsx';
+import { embedderAvailabilityQuery, unavailableReason } from './embedder.ts';
 export const IntelligencePage = (context: FeatureContext) => {
   const { scope, projectId, role } = context;
   const writable = role !== 'consulta';
@@ -40,6 +41,8 @@ export const IntelligencePage = (context: FeatureContext) => {
   const alertHeading = useReveal(selected);
   const alerts = useQuery(territorialAlertsQuery(scope));
   const summary = useQuery(territorialSummaryQuery(scope));
+  const embedder = useQuery(embedderAvailabilityQuery(scope));
+  const semanticDown = embedder.data?.available === false ? embedder.data : null;
   const body = () => ({
     text,
     source_url: sourceUrl,
@@ -144,7 +147,7 @@ export const IntelligencePage = (context: FeatureContext) => {
               disabled={busy}
             >
               {AnalysisMode.options.map((m) => (
-                <option key={m} value={m}>
+                <option key={m} value={m} disabled={m === 'semantic' && semanticDown !== null}>
                   {m === 'automatic'
                     ? 'Automático con respaldo por reglas'
                     : m === 'semantic'
@@ -154,6 +157,12 @@ export const IntelligencePage = (context: FeatureContext) => {
               ))}
             </select>
           </label>
+          {semanticDown && (
+            <Alert tone="warning">
+              Análisis semántico no disponible: {unavailableReason(semanticDown.reason)}. El modo
+              automático aplica solo reglas.
+            </Alert>
+          )}
           {writable && (
             <>
               <label>
