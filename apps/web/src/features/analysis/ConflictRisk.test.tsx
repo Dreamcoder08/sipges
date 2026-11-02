@@ -136,6 +136,34 @@ describe('ConflictRiskPage', () => {
     expect(screen.getByRole('button', { name: '30 días' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('shows the band, percentage and back-test of the chosen horizon', async () => {
+    const top = unit('Pampa Alta', 'locality', 3.1, 'alta');
+    respond({
+      ...thinReport,
+      backtest: { '30': thin(30), '90': { ...thin(90), reason: 'Razón propia de 90 días.' } },
+      localities: [
+        {
+          ...top,
+          horizons: {
+            '30': { probability: 0.1, band: 'baja' },
+            '90': { probability: 0.45, band: 'alta' },
+          },
+        },
+      ],
+    });
+    mount();
+    const card = await screen.findByRole('article');
+    expect(within(card).getByText('Riesgo alto')).toBeInTheDocument();
+    expect(within(card).getByText('45 %')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Último back-test a 90 días' })).toBeInTheDocument();
+    expect(screen.getByText('Razón propia de 90 días.')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: '30 días' }));
+    expect(within(card).getByText('Riesgo bajo')).toBeInTheDocument();
+    expect(within(card).getByText('10 %')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Último back-test a 30 días' })).toBeInTheDocument();
+    expect(screen.queryByText('Razón propia de 90 días.')).toBeNull();
+  });
+
   it('shows the probability and the calibration when the history supports it', async () => {
     const calibrated = {
       ...thin(90),

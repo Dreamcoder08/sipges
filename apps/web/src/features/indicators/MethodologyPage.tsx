@@ -39,8 +39,8 @@ export const MethodologyPage = ({ scope, projectLabel }: FeatureContext) => {
           en 30 y 90 días. Escalar es registrar una alerta roja o naranja, una alerta territorial
           alta o un evento grave que no se descartó. Cada unidad suma nueve factores con pesos
           fijos: demandas abiertas, compromisos vencidos, narrativas críticas y su aumento, alertas,
-          escalamientos recientes, IRSA del proyecto y su subida, y actividad reciente. Cada factor
-          enlaza a los registros que lo sustentan.
+          escalamientos recientes, IRSA del proyecto y su subida, y días desde la última señal. Cada
+          factor enlaza a los registros que lo sustentan.
         </p>
         <p>
           El puntaje se convierte en probabilidad con el historial del propio proyecto: se mide qué
