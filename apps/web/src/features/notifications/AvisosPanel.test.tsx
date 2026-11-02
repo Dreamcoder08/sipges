@@ -4,14 +4,14 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
 import { server } from '../../test/server.ts';
-import { NotificationBell } from './NotificationBell.tsx';
+import { AvisosPanel } from './AvisosPanel.tsx';
 
-const renderBell = () =>
+const renderAvisos = () =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <NotificationBell scope="ACME/P1" />
+      <AvisosPanel scope="ACME/P1" />
     </QueryClientProvider>,
   );
 
@@ -54,22 +54,33 @@ it('shows the unread count, links to the record and marks everything read', asyn
       return HttpResponse.json({ ok: true });
     }),
   );
-  renderBell();
-  expect(await screen.findByRole('button', { name: 'Notificaciones 2 sin leer' })).toBeVisible();
-  await user.click(screen.getByRole('button', { name: /Notificaciones/ }));
-  const panel = screen.getByRole('region', { name: 'Notificaciones' });
+  renderAvisos();
+  const panel = screen.getByRole('region', { name: 'Avisos' });
+  expect(await within(panel).findByText('2 sin leer')).toBeVisible();
   expect(
     within(panel).getByRole('link', { name: 'Alerta AL-1: bloqueo sintético' }),
   ).toHaveAttribute('href', '/objeto/alertas/AL-1');
+  expect(within(panel).getByText('Corte IRSA')).toBeVisible();
   await user.click(within(panel).getByRole('button', { name: 'Marcar todo como leído' }));
   expect(marked).toEqual({ all: true });
-  expect(await screen.findByRole('button', { name: 'Notificaciones' })).toBeVisible();
+  expect(await within(panel).findByText('Todo leído')).toBeVisible();
+  expect(within(panel).getByRole('button', { name: 'Marcar todo como leído' })).toBeDisabled();
 });
 
-it('explains an empty inbox', async () => {
-  const user = userEvent.setup();
+it('explains an empty inbox and where device notifications are switched on', async () => {
   server.use(http.get('*/system/notifications', () => HttpResponse.json({ unread: 0, items: [] })));
-  renderBell();
-  await user.click(screen.getByRole('button', { name: /Notificaciones/ }));
-  expect(await screen.findByText(/Sin notificaciones/)).toBeInTheDocument();
+  renderAvisos();
+  expect(await screen.findByText(/Sin avisos/)).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Configuración › Notificaciones' })).toHaveAttribute(
+    'href',
+    '/version-4?seccion=notificaciones',
+  );
+  // The device push switch lives in Configuración only, not twice.
+  expect(screen.queryByText(/notificaciones push/)).toBeNull();
+});
+
+it('says when the inbox cannot be loaded', async () => {
+  server.use(http.get('*/system/notifications', () => new HttpResponse(null, { status: 500 })));
+  renderAvisos();
+  expect(await screen.findByRole('alert')).toHaveTextContent('No se pudieron cargar los avisos.');
 });

@@ -188,13 +188,13 @@ describe('wide layout: tools live in the sidebar, not in the top bar', () => {
     expect(within(bar).queryByRole('button')).toBeNull();
   });
 
-  it('holds the project select, search, bell and account in the sidebar', async () => {
+  it('holds the project select, search and account in the sidebar, with no bell', async () => {
     const { nav } = await renderAt('/');
     const sidebar = nav.closest('aside');
     if (!sidebar) throw new Error('Missing sidebar');
     expect(within(sidebar).getByLabelText('Proyecto activo')).toHaveValue('DEMO/PRJ-DEMO');
     expect(within(sidebar).getByRole('button', { name: /^Buscar/ })).toBeVisible();
-    expect(within(sidebar).getByRole('button', { name: /^Notificaciones/ })).toBeVisible();
+    expect(within(sidebar).queryByRole('button', { name: /^Notificaciones/ })).toBeNull();
     expect(within(sidebar).getByRole('button', { name: /^Cuenta de / })).toBeVisible();
   });
 
@@ -209,15 +209,45 @@ describe('wide layout: tools live in the sidebar, not in the top bar', () => {
     await waitFor(() => expect(select).toHaveValue('DEMO/PRJ-NORTE'));
   });
 
-  it('opens the notification inbox from the sidebar bell', async () => {
+  it('counts unread avisos on the Bandeja link and lists them in its Avisos tab', async () => {
+    server.use(
+      http.get('/system/notifications', () =>
+        HttpResponse.json({
+          unread: 3,
+          items: [
+            {
+              id: 1,
+              title: 'Aviso sintético',
+              body: '',
+              module: 'Alertas',
+              record_id: null,
+              link: null,
+              created_at: '2026-10-14T09:00:00Z',
+              read: false,
+            },
+          ],
+        }),
+      ),
+    );
     const { nav, user } = await renderAt('/');
-    const sidebar = nav.closest('aside') as HTMLElement;
-    const bell = within(sidebar).getByRole('button', { name: /^Notificaciones/ });
-    await user.click(bell);
-    expect(bell).toHaveAttribute('aria-expanded', 'true');
-    expect(within(sidebar).getByRole('region', { name: 'Notificaciones' })).toBeVisible();
-    await user.keyboard('{Escape}');
-    expect(bell).toHaveAttribute('aria-expanded', 'false');
+    const bandeja = within(nav).getByRole('link', { name: 'Bandeja' });
+    await waitFor(() => expect(bandeja).toHaveAccessibleDescription('3 avisos sin leer'));
+    expect(within(bandeja).getByText('3')).toBeVisible();
+    await user.click(bandeja);
+    await user.click(await screen.findByRole('button', { name: 'Avisos' }));
+    await waitFor(() => expect(window.location.search).toBe('?vista=avisos'));
+    const avisos = await screen.findByRole('region', { name: 'Avisos' });
+    expect(await within(avisos).findByText('Aviso sintético')).toBeVisible();
+  });
+
+  it('shows no count on the Bandeja link once every aviso is read', async () => {
+    server.use(
+      http.get('/system/notifications', () => HttpResponse.json({ unread: 0, items: [] })),
+    );
+    const { nav } = await renderAt('/');
+    const bandeja = within(nav).getByRole('link', { name: 'Bandeja' });
+    expect(bandeja).not.toHaveAccessibleDescription();
+    expect(bandeja.querySelector('[data-unread]')).toBeNull();
   });
 });
 
@@ -257,7 +287,7 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
     at('/');
     render(<App />);
     const open = await screen.findByRole('button', {
-      name: 'Abrir menú, 3 notificaciones sin leer',
+      name: 'Abrir menú, 3 avisos sin leer',
     });
     expect(open.querySelector('[data-unread]')).not.toBeNull();
   });

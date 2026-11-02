@@ -11,7 +11,7 @@ import { Sidebar } from './Sidebar.tsx';
 /**
  * Layout of every signed-in screen (docs/adr/0015): skip link, navigation, page heading and
  * main region. Focus moves to the heading after each navigation so screen readers announce it.
- * Wide screens keep a persistent sidebar, which holds the project, search, inbox and account,
+ * Wide screens keep a persistent sidebar, which holds the project, search and account,
  * and a top bar with the title only. Phones and tablets show the same sidebar in a drawer that a
  * menu button opens, as ChatGPT and Claude mobile do: the top bar holds the button and the title
  * and there is no bottom bar (addendum 2026-11-01).
@@ -21,7 +21,6 @@ export const AppShell = ({
   projectKey = projectLabel,
   projectSwitcher,
   search,
-  notifications,
   unread = 0,
   live,
   children,
@@ -31,8 +30,7 @@ export const AppShell = ({
   projectKey?: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
-  notifications?: ReactNode;
-  /** Unread notifications; on phones the closed menu button signals them. */
+  /** Unread avisos: the Bandeja link counts them and, on phones, the closed menu button signals them. */
   unread?: number;
   live?: ReactNode;
   children: ReactNode;
@@ -96,7 +94,7 @@ export const AppShell = ({
       projectLabel={projectLabel}
       projectSwitcher={projectSwitcher}
       search={search}
-      notifications={notifications}
+      unread={unread}
       inDrawer={compact}
     />
   );
@@ -127,9 +125,7 @@ export const AppShell = ({
                 {unread > 0 ? <span className={styles.unread} data-unread="" /> : null}
                 <span className="visually-hidden">
                   Abrir menú
-                  {unread > 0
-                    ? `, ${unread} ${unread === 1 ? 'notificación' : 'notificaciones'} sin leer`
-                    : ''}
+                  {unread > 0 ? `, ${unread} ${unread === 1 ? 'aviso' : 'avisos'} sin leer` : ''}
                 </span>
               </button>
               <div className={styles.compactTitle}>{h1}</div>

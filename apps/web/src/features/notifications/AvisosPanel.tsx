@@ -1,15 +1,16 @@
 import { NotificationInbox } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId } from 'react';
+import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
-import { z } from 'zod';
-import { Icon } from '../../shared/ui/Icon.tsx';
-import { DevicePush } from './DevicePush.tsx';
-import styles from './NotificationBell.module.css';
+import styles from './Avisos.module.css';
 
 /** How often the inbox is refreshed while the app is open. */
 export const INBOX_REFRESH_MS = 60_000;
+
+/** Where the device push switch lives (Configuración, section Notificaciones). */
+export const DEVICE_PUSH_HREF = '/version-4?seccion=notificaciones';
 
 const Ok = z.object({ ok: z.literal(true) });
 
@@ -24,13 +25,18 @@ const inboxQuery = (scope: string) => ({
   refetchInterval: INBOX_REFRESH_MS,
 });
 
-/** Unread notifications, for a badge outside the inbox (the phone menu button). */
+/** Unread avisos, for the counts the shell shows (Bandeja link, phone menu button). */
 export const useUnreadNotifications = (scope: string): number =>
   useQuery(inboxQuery(scope)).data?.unread ?? 0;
 
-/** Inbox list with "mark all as read" and the device push switch (ADR 0014). */
-const NotificationList = ({ scope }: { scope: string }) => {
+/**
+ * «Avisos», the Bandeja tab with the automation notifications (ADR 0014, functional-closure
+ * S9): the list, its read state per person and "mark all as read". Receiving them on this
+ * device is switched on in Configuración, so the switch is not repeated here.
+ */
+export const AvisosPanel = ({ scope }: { scope: string }) => {
   const client = useQueryClient();
+  const heading = useId();
   const inbox = useQuery(inboxQuery(scope));
   const markAll = useMutation({
     mutationFn: () =>
@@ -43,9 +49,12 @@ const NotificationList = ({ scope }: { scope: string }) => {
   });
   const unread = inbox.data?.unread ?? 0;
   return (
-    <>
+    <section className={styles.panel} aria-labelledby={heading}>
       <div className={styles.header}>
-        <strong>Notificaciones</strong>
+        <h2 id={heading}>Avisos</h2>
+        {inbox.data ? (
+          <span className={styles.count}>{unread > 0 ? `${unread} sin leer` : 'Todo leído'}</span>
+        ) : null}
         <button
           type="button"
           className={styles.link}
@@ -56,13 +65,11 @@ const NotificationList = ({ scope }: { scope: string }) => {
         </button>
       </div>
       {inbox.error ? (
-        <p role="alert">No se pudieron cargar las notificaciones.</p>
+        <p role="alert">No se pudieron cargar los avisos.</p>
       ) : !inbox.data ? (
         <p role="status">Cargando…</p>
       ) : inbox.data.items.length === 0 ? (
-        <p className={styles.empty}>
-          Sin notificaciones. Las automatizaciones publican aquí sus avisos.
-        </p>
+        <p className={styles.empty}>Sin avisos. Las automatizaciones publican aquí sus avisos.</p>
       ) : (
         <ul className={styles.list}>
           {inbox.data.items.map((item) => (
@@ -79,65 +86,16 @@ const NotificationList = ({ scope }: { scope: string }) => {
               {item.body && <p>{item.body}</p>}
               <small>
                 {when(item.created_at)}
-                {item.read ? '' : ' · nueva'}
+                {item.read ? '' : ' · nuevo'}
               </small>
             </li>
           ))}
         </ul>
       )}
-      <DevicePush scope={scope} />
-    </>
-  );
-};
-
-/** Top-bar inbox of automation notifications (ADR 0014); read state is per person. */
-export const NotificationBell = ({ scope }: { scope: string }) => {
-  const [open, setOpen] = useState(false);
-  const panelId = useId();
-  const root = useRef<HTMLDivElement>(null);
-  const unread = useUnreadNotifications(scope);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (event: KeyboardEvent | MouseEvent) => {
-      if (
-        event instanceof KeyboardEvent
-          ? event.key === 'Escape'
-          : !root.current?.contains(event.target as Node)
-      )
-        setOpen(false);
-    };
-    document.addEventListener('keydown', close);
-    document.addEventListener('mousedown', close);
-    return () => {
-      document.removeEventListener('keydown', close);
-      document.removeEventListener('mousedown', close);
-    };
-  }, [open]);
-
-  return (
-    <div ref={root} className={styles.root}>
-      <button
-        type="button"
-        className={styles.trigger}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Icon name="bell" />
-        <span className="visually-hidden">Notificaciones</span>
-        {unread > 0 && (
-          <span className={styles.badge}>
-            {unread > 99 ? '99+' : unread}
-            <span className="visually-hidden"> sin leer</span>
-          </span>
-        )}
-      </button>
-      {open && (
-        <div id={panelId} className={styles.panel} role="region" aria-label="Notificaciones">
-          <NotificationList scope={scope} />
-        </div>
-      )}
-    </div>
+      <p className={styles.empty}>
+        Para recibirlos también en este dispositivo, actívalos en{' '}
+        <InternalLink href={DEVICE_PUSH_HREF}>Configuración › Notificaciones</InternalLink>.
+      </p>
+    </section>
   );
 };

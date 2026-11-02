@@ -63,7 +63,8 @@ test('mobile viewport: sign-in, menu drawer and every screen fit the width', asy
   await expectAccessible(page, 'the menu drawer');
   await expect(drawer.getByLabel('Proyecto activo')).toHaveValue(DEFAULT_SCOPE);
   await expect(drawer.getByRole('button', { name: /^Buscar/ })).toBeVisible();
-  await expect(drawer.getByRole('button', { name: /^Notificaciones/ })).toBeVisible();
+  // Notifications are Bandeja › «Avisos» now; there is no bell (functional-closure S9).
+  await expect(drawer.getByRole('button', { name: /^Notificaciones/ })).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(drawer).toBeHidden();
   await expect(menu).toBeFocused();

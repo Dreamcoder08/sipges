@@ -18,6 +18,7 @@ export const NavLink = ({
   onNavigate,
   role,
   tabIndex,
+  describedBy,
   children,
 }: {
   path: NavPath;
@@ -30,6 +31,8 @@ export const NavLink = ({
   /** «menuitem» when the link sits in a menu that moves focus with the arrow keys. */
   role?: 'menuitem';
   tabIndex?: number;
+  /** Id of the element that describes the link, e.g. the unread count of Bandeja. */
+  describedBy?: string;
   children?: ReactNode;
 }) => (
   <Link
@@ -41,6 +44,7 @@ export const NavLink = ({
     {...(current ? { 'aria-current': 'page' as const } : {})}
     {...(role ? { role } : {})}
     {...(tabIndex === undefined ? {} : { tabIndex })}
+    {...(describedBy ? { 'aria-describedby': describedBy } : {})}
   >
     <Icon name={icon ?? iconFor(path)} className={styles.icon} />
     <span className={styles.text}>{label ?? labelFor(path)}</span>

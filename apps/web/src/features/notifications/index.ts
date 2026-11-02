@@ -1,2 +1,2 @@
 export { DevicePush } from './DevicePush.tsx';
-export { NotificationBell, useUnreadNotifications } from './NotificationBell.tsx';
+export { AvisosPanel, useUnreadNotifications } from './AvisosPanel.tsx';

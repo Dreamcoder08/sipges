@@ -323,7 +323,7 @@ describe('phone shell', () => {
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
   });
 
-  it('keeps the project selector, inbox and sign-out inside the menu', async () => {
+  it('keeps the project selector, Bandeja and sign-out inside the menu', async () => {
     signIn();
     at('/');
     render(<App />);
@@ -331,7 +331,8 @@ describe('phone shell', () => {
     await user.click(await screen.findByRole('button', { name: 'Abrir menú' }));
     const drawer = screen.getByRole('dialog', { name: 'Menú' });
     expect(within(drawer).getByLabelText('Proyecto activo')).toBeVisible();
-    expect(within(drawer).getByRole('button', { name: /^Notificaciones/ })).toBeVisible();
+    expect(within(drawer).queryByRole('button', { name: /^Notificaciones/ })).toBeNull();
+    expect(within(drawer).getByRole('link', { name: 'Bandeja' })).toBeVisible();
     await user.click(within(drawer).getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
     const account = screen.getByRole('menu', { name: 'Cuenta' });
     expect(within(account).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeVisible();
