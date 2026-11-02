@@ -470,7 +470,7 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                   {confirmation.kind === 'deactivate'
                     ? `Desactivar ${confirmation.username} revoca todas sus sesiones. El servidor protege al último administrador.`
                     : confirmation.kind === 'reset-mfa'
-                      ? `Restablecer el MFA de ${confirmation.username} borra su autenticador y cierra todas sus sesiones; registrará uno nuevo al volver a ingresar. Queda en la auditoría del proyecto activo.`
+                      ? `Restablecer el MFA de ${confirmation.username} borra su autenticador y cierra todas sus sesiones; registrará uno nuevo al volver a ingresar. Solo se permite si la cuenta tiene acceso al proyecto activo, y queda en su auditoría.`
                       : `Revocar el acceso de ${confirmation.access.username} a ${confirmation.access.company_id}/${confirmation.access.project_id}.`}
                 </p>
                 <div className={styles.actions}>

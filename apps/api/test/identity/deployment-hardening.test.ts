@@ -296,10 +296,14 @@ describe('POST /system/auth/accounts/:username/reset-mfa', () => {
       headers: { cookie: adminCookie, 'x-sipges-scope': 'SIPGES/PRJ-AJENO' },
     });
     expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({
+      detail: 'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project',
+    });
     const [row] = await t.sql.query<{ totp_enabled: boolean }>(
       "SELECT totp_enabled FROM users WHERE username = 'ana.perez'",
     );
     expect(row?.totp_enabled).toBe(true);
+    expect(await auditOf(t, adminCookie)).toEqual([]);
   });
 
   it('answers 404 for unknown users and requires a same-origin request', async () => {
