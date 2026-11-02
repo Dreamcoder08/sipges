@@ -228,11 +228,78 @@ describe('POST /system/auth/accounts/:username/reset-mfa', () => {
       "SELECT totp_enabled FROM users WHERE username = 'admin'",
     );
     expect(row?.totp_enabled).toBe(true);
+    expect(await auditOf(t, adminCookie)).toEqual([]);
   });
 
   it('is restricted to administrators', async () => {
-    const { t, analystCookie } = await setupWithEnrolledAnalyst();
-    expect((await reset(t, analystCookie, 'admin')).status).toBe(403);
+    const { t, adminCookie, analystCookie } = await setupWithEnrolledAnalyst();
+    const res = await reset(t, analystCookie, 'admin');
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ detail: 'Administración de cuentas restringida' });
+    expect(await auditOf(t, adminCookie)).toEqual([]);
+  });
+
+  const auditOf = async (t: TestApp, cookie: string) =>
+    (
+      (await (await t.request('/system/audit', { headers: { cookie } })).json()) as {
+        module: string;
+        record_id: string | null;
+        action: string;
+        detail: string | null;
+      }[]
+    ).filter((entry) => entry.action === 'MFA_RESET');
+
+  it('writes an audit row in the active project naming the administrator', async () => {
+    const { t, adminCookie } = await setupWithEnrolledAnalyst();
+    expect((await reset(t, adminCookie, 'ana.perez')).status).toBe(200);
+    expect(await auditOf(t, adminCookie)).toEqual([
+      {
+        id: expect.any(Number),
+        ts: expect.any(String),
+        module: 'Cuentas',
+        record_id: 'ana.perez',
+        action: 'MFA_RESET',
+        detail: 'MFA restablecido por admin; sesiones revocadas',
+      },
+    ]);
+  });
+
+  it('refuses a user outside the active project and leaves the factor, sessions and audit untouched', async () => {
+    const { t, adminCookie } = await setupWithEnrolledAnalyst();
+    const other = { ...ANALYST, username: 'bea.rios', full_name: 'Bea Ríos' };
+    expect((await t.createAccount(adminCookie, other)).status).toBe(200);
+    const created = await t.createScope(adminCookie, {
+      company_id: 'SIPGES',
+      project_id: 'PRJ-NORTE',
+      label: 'Proyecto Norte',
+      username: other.username,
+    });
+    expect(created.status).toBe(200);
+    const bea = await t.login(other.username, other.password);
+    await enroll(t, bea.cookie);
+
+    const res = await reset(t, adminCookie, 'bea.rios');
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ detail: 'Usuario fuera del proyecto activo' });
+    expect((await t.request('/api/eventos', { headers: { cookie: bea.cookie } })).status).toBe(200);
+    const [row] = await t.sql.query<{ totp_enabled: boolean }>(
+      "SELECT totp_enabled FROM users WHERE username = 'bea.rios'",
+    );
+    expect(row?.totp_enabled).toBe(true);
+    expect(await auditOf(t, adminCookie)).toEqual([]);
+  });
+
+  it('refuses a project the administrator is not granted', async () => {
+    const { t, adminCookie } = await setupWithEnrolledAnalyst();
+    const res = await t.request('/system/auth/accounts/ana.perez/reset-mfa', {
+      method: 'POST',
+      headers: { cookie: adminCookie, 'x-sipges-scope': 'SIPGES/PRJ-AJENO' },
+    });
+    expect(res.status).toBe(403);
+    const [row] = await t.sql.query<{ totp_enabled: boolean }>(
+      "SELECT totp_enabled FROM users WHERE username = 'ana.perez'",
+    );
+    expect(row?.totp_enabled).toBe(true);
   });
 
   it('answers 404 for unknown users and requires a same-origin request', async () => {
