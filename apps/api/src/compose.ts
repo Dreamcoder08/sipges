@@ -89,6 +89,7 @@ import {
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { readinessProbe } from './platform/database/readiness.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
+import { createSqlAuditWriter } from './contexts/audit/infrastructure/sql-audit-writer.ts';
 import {
   type DocumentLabService,
   type DocumentReader,
@@ -443,6 +444,7 @@ export const buildContainer = async (deps: {
     },
     embeddings,
     egress,
+    externalAi: { enabled: (tenantId) => situations.externalAiEnabled(tenantId) },
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
@@ -568,6 +570,7 @@ export const buildContainer = async (deps: {
     sealer: cipher,
     clock: deps.clock,
     recordModules: RECORD_MODULES,
+    audit: createSqlAuditWriter(deps.sql),
     push: {
       store: createSqlPushStore(deps.sql),
       sender:

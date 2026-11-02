@@ -295,7 +295,7 @@ export const automationRoutes = (
       c.json(await automation.pushState(c.get('identity').username)),
     )
     .post('/system/notifications/push/test', async (c) => {
-      const result = await automation.testPush(c.get('identity').username);
+      const result = await automation.testPush(c.get('identity').username, tenantOf(c));
       return c.json(result, result.status === 'failed' ? 502 : 200);
     })
     .post('/system/notifications/push', async (c) => {

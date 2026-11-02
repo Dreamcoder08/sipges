@@ -553,3 +553,37 @@ it('SIPGES situation room shows who each plan waits on and records a blocker', a
   await screen.findByText('Avance registrado; no modifica el IRSA.');
   expect(updated).toMatchObject({ blocked_by: 'Comunidad', blocked_reason: 'Asamblea pendiente' });
 });
+it('says when the semantic model is unavailable and offers rules only', async () => {
+  server.use(
+    http.get('*/system/intelligence/territorial-alerts', () => HttpResponse.json([])),
+    http.get('*/system/intelligence/territorial-summary', () =>
+      HttpResponse.json({
+        version: '2.6',
+        project_id: 'PRJ-DEMO',
+        total: 0,
+        by_status: {},
+        by_priority: {},
+        themes: [],
+        irsa_integration: 'Independiente',
+        caution: 'Revisión',
+      }),
+    ),
+    http.get('*/system/intelligence/embedder', () =>
+      HttpResponse.json({
+        configured: false,
+        available: false,
+        reason: 'unreachable',
+        model: 'nomic-embed-text',
+        egress: 'local',
+        semantic_search: false,
+      }),
+    ),
+  );
+  mount(<IntelligencePage {...context} />);
+  expect(
+    await screen.findByText(
+      'Análisis semántico no disponible: no se pudo contactar el modelo de embeddings. El modo automático aplica solo reglas.',
+    ),
+  ).toBeVisible();
+  expect(screen.getByRole('option', { name: /Semántico/ })).toBeDisabled();
+});
