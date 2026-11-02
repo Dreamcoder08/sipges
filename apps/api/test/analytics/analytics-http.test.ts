@@ -36,6 +36,12 @@ const DATA: Record<string, Record<string, StoredRecord[]>> = {
   'ACME/NORTE': {
     Hechos_Compartidos: [{ id: 'n1', payload: { Proyecto_ID: 'NORTE' } }],
   },
+  // Project B: records saved before the server stamped Proyecto_ID (S13).
+  'SIPGES/PRJ-ALGARROBO': {
+    Eventos: [{ id: 'b-e1', payload: { Territorio: 'Tambogrande' } }],
+    Alertas: [{ id: 'b-a1', payload: { Estado: 'Abierta', Nivel: 'Rojo' } }],
+    Hechos_Compartidos: [{ id: 'b-h1', payload: { Asunto: 'riego', Proyecto_ID: '' } }],
+  },
 };
 
 const setup = (scope: Scope) => {
@@ -118,13 +124,37 @@ describe('analytics HTTP routes', () => {
     expect(body.summary.registros_estrategicos).toBe(2);
   });
 
-  it('a non-default tenant drops records whose Proyecto_ID falls back to PRJ-SECHURA', async () => {
+  it('a non-default tenant counts its records that carry its Proyecto_ID', async () => {
     const { app } = setup({ companyId: 'ACME', projectId: 'NORTE' });
     const body = StrategicAssessmentResponse.parse(
       await (await app.request('/system/strategic-assessment')).json(),
     );
     expect(body.project_id).toBe('NORTE');
     expect(body.counts.hechos).toBe(1);
+  });
+
+  it('counts records without Proyecto_ID for their tenant only, the same on every report', async () => {
+    const counts = async (scope: Scope) => {
+      const { app } = setup(scope);
+      const json = async (path: string) => (await app.request(path)).json();
+      const dashboard = DashboardResponse.parse(await json('/api/dashboard'));
+      const situational = SituationalAnalysisResponse.parse(
+        await json('/system/situational-analysis'),
+      );
+      const strategic = StrategicAssessmentResponse.parse(
+        await json('/system/strategic-assessment'),
+      );
+      return {
+        dashboard: [dashboard.eventos, dashboard.alertas_activas],
+        situational: [situational.counts.eventos, situational.alertas_activas],
+        hechos: strategic.counts.hechos,
+      };
+    };
+    const projectB = await counts({ companyId: 'SIPGES', projectId: 'PRJ-ALGARROBO' });
+    expect(projectB).toEqual({ dashboard: [1, 1], situational: [1, 1], hechos: 1 });
+    // Project A (the legacy default) never sees B's records, filled or not.
+    const projectA = await counts(SECHURA);
+    expect(projectA).toEqual({ dashboard: [1, 1], situational: [1, 1], hechos: 1 });
   });
 });
 

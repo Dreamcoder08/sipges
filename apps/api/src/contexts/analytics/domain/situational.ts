@@ -5,7 +5,6 @@ import {
   type RecordsByModule,
   SITUATIONAL_MODULES,
   recordWithId,
-  situationalProject,
 } from './records.ts';
 
 const CLOSED = new Set(['cerrada', 'cerrado', 'descartado', 'descartada', 'resuelta', 'resuelto']);
@@ -48,7 +47,8 @@ const LIMITATIONS = [
 
 /**
  * Situational analysis (app.py:627 build_situational): deterministic synthesis of the master
- * base, not a validated judgment.
+ * base, not a validated judgment. Every record of the tenant counts: the tenant is the project
+ * (S13), so its `Proyecto_ID` field is not re-checked.
  */
 export const buildSituational = (
   byModule: RecordsByModule,
@@ -56,12 +56,7 @@ export const buildSituational = (
   generatedAt: string,
 ) => {
   const groups = Object.fromEntries(
-    SITUATIONAL_MODULES.map((module) => [
-      module,
-      (byModule[module] ?? [])
-        .filter((r) => situationalProject(r.payload) === projectId)
-        .map(recordWithId),
-    ]),
+    SITUATIONAL_MODULES.map((module) => [module, (byModule[module] ?? []).map(recordWithId)]),
   ) as Record<(typeof SITUATIONAL_MODULES)[number], AnalysisRecord[]>;
   const project = (byModule['Proyectos'] ?? []).find(
     (r) => r.payload['Proyecto_ID'] === projectId,

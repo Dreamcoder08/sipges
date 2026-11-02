@@ -82,7 +82,7 @@ for (const scale of SCALES) {
   const indicatorInput = Object.fromEntries(
     INDICATOR_MODULES.map((m) => [m, (stored[m] ?? []).map((r) => ({ ...r.payload, _id: r.id }))]),
   ) as unknown as ModuleRecords;
-  const extended = extendedRecords(stored, PROJECT);
+  const extended = extendedRecords(stored);
 
   await record(
     'Indicators + IRSA',

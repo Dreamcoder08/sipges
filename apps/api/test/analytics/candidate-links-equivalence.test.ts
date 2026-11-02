@@ -56,7 +56,7 @@ const extended = (scale: number, seed: number) => {
       rows.map((payload, i) => ({ id: `${m}-${i}`, payload })),
     ]),
   );
-  return extendedRecords(stored, 'PRJ-SECHURA');
+  return extendedRecords(stored);
 };
 
 describe('candidatePairs optimisation (T12)', () => {

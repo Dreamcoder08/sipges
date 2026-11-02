@@ -107,15 +107,6 @@ export const SEMANTIC_THRESHOLD = 0.38;
 export type Topic = { tema: string; terminos_detectados: string[]; cantidad: number };
 export type TextSignal = { senal: string; terminos_detectados: string[] };
 
-const LEGACY_PROJECT_ID = 'PRJ-SECHURA';
-
-/** Project of a narrative record, as app.py filtered `records_of('Narrativas')`. */
-const recordProject = (payload: Readonly<Record<string, unknown>>) => {
-  if (pyTruthy(payload['Proyecto_ID'])) return pyStr(payload['Proyecto_ID']);
-  if (pyTruthy(payload['project_id'])) return pyStr(payload['project_id']);
-  return LEGACY_PROJECT_ID;
-};
-
 export type TextAnalysisError = { readonly kind: 'empty' } | { readonly kind: 'too_long' };
 
 export const analyzeText = (
@@ -155,7 +146,8 @@ const textReport = (
   const level = score >= 65 ? 'Alta' : score >= 35 ? 'Media' : 'Baja';
 
   const counts = new Map<string, number>();
-  for (const record of narratives.filter((r) => recordProject(r) === input.projectId)) {
+  // Every narrative of the tenant counts: the tenant is the project (S13).
+  for (const record of narratives) {
     const rt = foldMarks(
       ['Tema', 'Descripcion'].map((k) => (pyTruthy(record[k]) ? pyStr(record[k]) : '')).join(' '),
     );

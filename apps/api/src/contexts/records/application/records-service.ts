@@ -1,4 +1,5 @@
 import { type Result, err, ok } from '@sipges/kernel';
+import { parseScope } from '../../tenancy/application/index.ts';
 import { type FieldChange, type VersionOperation, diffPayloads } from '../domain/history.ts';
 import { type ImportProblem, MAX_IMPORT_ROWS, planImport } from '../domain/import.ts';
 import {
@@ -9,6 +10,7 @@ import {
   recordIdFor,
   validatePayload,
   withAssignedId,
+  withTenantProject,
 } from '../domain/modules.ts';
 import type { Clock, RandomHex, RecordStore, StoredRecord } from './ports.ts';
 
@@ -38,6 +40,25 @@ export type InvalidPayload = {
 const checkPayload = (module: ModuleName, payload: Payload): InvalidPayload | null => {
   const problem = validatePayload(module, payload);
   return problem ? { kind: 'invalid', ...problem } : null;
+};
+
+/** Project of a `company/project` tenant id; undefined for ids without one. */
+const tenantProject = (tenantId: string) => parseScope(tenantId)?.projectId || undefined;
+
+/** The id rule, then the tenant's project on the payload (S13). */
+const ownedPayload = (
+  tenantId: string,
+  module: ModuleName,
+  payload: Payload,
+): Result<Payload, InvalidPayload> => {
+  const invalid = checkPayload(module, payload);
+  if (invalid) return err(invalid);
+  const project = tenantProject(tenantId);
+  if (!project) return ok(payload);
+  const owned = withTenantProject(module, payload, project);
+  return owned.ok
+    ? ok(owned.payload)
+    : err({ kind: 'invalid', field: owned.field, message: owned.message });
 };
 
 /** Absolute ceiling for list sizes (docs/adr/0008 #10). */
@@ -95,10 +116,11 @@ export const createRecordsService = (deps: {
     async create(
       tenantId: string,
       module: ModuleName,
-      payload: Payload,
+      given: Payload,
     ): Promise<Result<string, InvalidPayload | { readonly kind: 'exhausted' }>> {
-      const invalid = checkPayload(module, payload);
-      if (invalid) return err(invalid);
+      const checked = ownedPayload(tenantId, module, given);
+      if (!checked.ok) return checked;
+      const payload = checked.value;
       const preferred = recordIdFor(module, payload, randomHex);
       function* candidates() {
         yield preferred;
@@ -119,13 +141,13 @@ export const createRecordsService = (deps: {
       tenantId: string,
       module: ModuleName,
       id: string,
-      payload: Payload,
+      given: Payload,
     ): Promise<Result<true, InvalidPayload | { readonly kind: 'missing' }>> {
-      const invalid = checkPayload(module, payload);
-      if (invalid) return err(invalid);
+      const checked = ownedPayload(tenantId, module, given);
+      if (!checked.ok) return checked;
       const replaced =
         isLookupableId(id) &&
-        (await store.replace(tenantId, module, id, payload, NOTES.update, clock.now()));
+        (await store.replace(tenantId, module, id, checked.value, NOTES.update, clock.now()));
       return replaced ? ok(true) : err({ kind: 'missing' });
     },
 
@@ -148,7 +170,7 @@ export const createRecordsService = (deps: {
           problems: [{ row: 0, message: `Máximo ${MAX_IMPORT_ROWS} filas por importación` }],
         };
       }
-      const plan = planImport(module, rows, randomHex);
+      const plan = planImport(module, rows, randomHex, tenantProject(tenantId));
       if (options.dryRun || plan.problems.length > 0 || plan.items.length === 0) {
         const existing = plan.items.length
           ? await store.existing(
