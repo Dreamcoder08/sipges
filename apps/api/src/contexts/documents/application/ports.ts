@@ -46,7 +46,7 @@ export type ReviewStore = {
   /** Inserts items, skipping exact duplicates; returns how many rows were new. */
   importItems(tenantId: string, items: readonly NewReviewItem[]): Promise<number>;
   list(tenantId: string, query: ReviewQuery): Promise<ReviewPage>;
-  /** Updates one item and writes its audit row in the same transaction; false when missing. */
+  /** Updates one item and writes its audit row in the same transaction; null when missing. */
   decide(
     tenantId: string,
     decision: {
@@ -56,7 +56,27 @@ export type ReviewStore = {
       note: string;
       at: Date;
     },
-  ): Promise<boolean>;
+  ): Promise<ReviewItem | null>;
+  /** Approved items (any project of the tenant) with an id after `afterId`, in id order. */
+  approved(tenantId: string, page: { afterId: string; limit: number }): Promise<ReviewItem[]>;
+};
+
+/**
+ * The records context, seen from the document lab (docs/adr/0002: documents never write
+ * `module_records`). `module` is a records URL slug such as `actores`.
+ */
+export type ReviewRecordWriter = {
+  /**
+   * Insert-only under the given ids, validated and normalized like a records import; ids already
+   * stored are counted as `existing` and left untouched. A dry run writes nothing.
+   */
+  createMissing(
+    tenantId: string,
+    module: string,
+    items: readonly { id: string; fields: Readonly<Record<string, string>> }[],
+    options: { dryRun: boolean; source: string },
+  ): Promise<{ created: number; existing: number; problems: readonly string[] }>;
+  existing(tenantId: string, module: string, ids: readonly string[]): Promise<Set<string>>;
 };
 
 /** Optional OCR for scanned PDFs: one text per page, in page order. */

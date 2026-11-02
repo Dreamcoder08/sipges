@@ -93,6 +93,7 @@ import { createSqlAuditWriter } from './contexts/audit/infrastructure/sql-audit-
 import {
   type DocumentLabService,
   type DocumentReader,
+  type ReviewRecordWriter,
   createDocumentLabService,
 } from './contexts/documents/application/index.ts';
 import {
@@ -222,6 +223,27 @@ const randomHex = (length: number) =>
     .slice(0, length);
 
 /** Wires adapters into use cases (manual constructor injection, docs/adr/0002). */
+/**
+ * The records port of the document lab (docs/adr/0002): approvals create records through the
+ * records use cases, so validation, normalization and audit match every other record write.
+ */
+export const reviewRecordsPort = (records: RecordsService): ReviewRecordWriter => ({
+  async createMissing(tenantId, slug, items, options) {
+    const module = moduleForSlug(slug);
+    if (!module) return { created: 0, existing: 0, problems: [`Módulo desconocido: ${slug}`] };
+    const result = await records.createMissing(tenantId, module, items, options);
+    return {
+      created: result.created,
+      existing: result.existing,
+      problems: result.problems.map((problem) => `fila ${problem.row}: ${problem.message}`),
+    };
+  },
+  async existing(tenantId, slug, ids) {
+    const module = moduleForSlug(slug);
+    return module ? records.existing(tenantId, module, ids) : new Set<string>();
+  },
+});
+
 export const buildContainer = async (deps: {
   geographyGateway?: GeographyGateway;
   sourceGateway?: OfficialSourceGateway;
@@ -412,6 +434,7 @@ export const buildContainer = async (deps: {
     reader,
     renderer: docxRenderer,
     reviews: createSqlReviewStore(deps.sql),
+    records: reviewRecordsPort(records),
     clock: deps.clock,
     randomHex,
     maxUploadBytes: deps.config.maxUploadBytes,

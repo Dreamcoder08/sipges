@@ -2,6 +2,7 @@ import { appendAudit } from '../../../platform/database/audit-trail.ts';
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import { withTenant } from '../../../platform/database/tenant-transaction.ts';
 import type { ReviewItem, ReviewStore } from '../application/index.ts';
+import { APPROVAL_STATUSES } from '../domain/index.ts';
 
 type Row = {
   id: string;
@@ -34,6 +35,9 @@ const toItem = (row: Row): ReviewItem => ({
   createdAt: new Date(row.created_at),
   updatedAt: new Date(row.updated_at),
 });
+
+const COLUMNS = `id, project_id, source_file, source_sha256, location, theme, excerpt, action,
+  status, reviewer, note, created_at, updated_at`;
 
 /** Audit module name used by app.py for review decisions. */
 const AUDIT_MODULE = 'Laboratorio_Documental';
@@ -96,12 +100,12 @@ export const createSqlReviewStore = (sql: SqlClient): ReviewStore => ({
 
   decide: (tenantId, decision) =>
     withTenant(sql, tenantId, async (tx) => {
-      const updated = await tx.query<{ id: string }>(
+      const [updated] = await tx.query<Row>(
         `UPDATE document_review SET status = $2, reviewer = $3, note = $4, updated_at = $5
-          WHERE id = $1 RETURNING id`,
+          WHERE id = $1 RETURNING ${COLUMNS}`,
         [decision.id, decision.status, decision.reviewer, decision.note, decision.at],
       );
-      if (updated.length === 0) return false;
+      if (!updated) return null;
       await appendAudit(tx, {
         module: AUDIT_MODULE,
         recordId: decision.id,
@@ -109,6 +113,18 @@ export const createSqlReviewStore = (sql: SqlClient): ReviewStore => ({
         detail: `${decision.status} | ${decision.reviewer}`,
         at: decision.at,
       });
-      return true;
+      return toItem(updated);
     }),
+
+  approved: (tenantId, { afterId, limit }) =>
+    withTenant(sql, tenantId, async (tx) =>
+      (
+        await tx.query<Row>(
+          `SELECT ${COLUMNS} FROM document_review
+            WHERE status = ANY($3::text[]) AND id > $1
+            ORDER BY id LIMIT $2`,
+          [afterId, limit, APPROVAL_STATUSES],
+        )
+      ).map(toItem),
+    ),
 });
