@@ -9,6 +9,11 @@ PREFIX="sipges-runner"
 IMAGE="sipges-runner:local"
 DOCKERFILE="$(dirname "$0")/self-hosted-runner.Dockerfile"
 LABELS="sipges-local"
+# Caches live inside each runner's own work volume: no two runners write the same cache, and pnpm can hard-link
+# from its store into node_modules because both sit on the same mount.
+CACHE_DIR="/home/runner/_work/_cache"
+# The image bakes Playwright's system libraries for the version apps/e2e pins (lockfile).
+PLAYWRIGHT_VERSION="$(sed -n 's/.*"@playwright\/test": "\([0-9.]*\)".*/\1/p' "$(dirname "$0")/../apps/e2e/package.json")"
 
 start() {
   local count="${1:-1}" built=""
@@ -21,7 +26,8 @@ start() {
     fi
     docker rm -f "$name" >/dev/null 2>&1 || true
     if [ -z "$built" ]; then
-      docker build -q -t "$IMAGE" -f "$DOCKERFILE" "$(dirname "$DOCKERFILE")" >/dev/null
+      docker build -q -t "$IMAGE" --build-arg PLAYWRIGHT_VERSION="$PLAYWRIGHT_VERSION" \
+        -f "$DOCKERFILE" "$(dirname "$DOCKERFILE")" >/dev/null
       built=1
     fi
     local token docker_gid
@@ -35,6 +41,8 @@ start() {
       -v /var/run/docker.sock:/var/run/docker.sock \
       -v "$name-work":/home/runner/_work \
       -e RUNNER_TOKEN="$token" \
+      -e PLAYWRIGHT_BROWSERS_PATH="$CACHE_DIR/ms-playwright" \
+      -e pnpm_config_store_dir="$CACHE_DIR/pnpm-store" \
       --entrypoint bash "$IMAGE" -c "
         # A new named volume is owned by root; the runner user must own its work directory.
         sudo chown runner:runner /home/runner/_work &&
