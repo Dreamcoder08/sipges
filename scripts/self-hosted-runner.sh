@@ -27,6 +27,8 @@ start() {
     -v "$VOLUME":/home/runner/_work \
     -e RUNNER_TOKEN="$token" \
     --entrypoint bash "$IMAGE" -c "
+      # A new named volume is owned by root; the runner user must own its work directory.
+      sudo chown runner:runner /home/runner/_work &&
       # Register only on first start: the token expires after an hour, and a restart keeps the registration.
       [ -f .runner ] || ./config.sh --unattended --replace --url https://github.com/$REPO --token \"\$RUNNER_TOKEN\" \
         --name $NAME --labels $LABELS --work /home/runner/_work &&
