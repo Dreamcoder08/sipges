@@ -31,6 +31,17 @@ describe('secret cipher (AES-256-GCM)', () => {
     expect(() => createSecretCipher(randomBytes(32)).open(sealed)).toThrow();
   });
 
+  it('opens values sealed with a previous key and seals only with the current one', () => {
+    const previous = randomBytes(32);
+    const old = createSecretCipher(previous).seal('rotating');
+    const staged = createSecretCipher(key, [previous]);
+    expect(staged.open(old)).toBe('rotating');
+    const fresh = staged.seal('rotating');
+    expect(createSecretCipher(key).open(fresh)).toBe('rotating');
+    expect(() => createSecretCipher(previous).open(fresh)).toThrow();
+    expect(() => staged.open(createSecretCipher(randomBytes(32)).seal('other'))).toThrow();
+  });
+
   it('requires a 32-byte key', () => {
     expect(() => createSecretCipher(randomBytes(16))).toThrow(
       'SIPGES_DATA_KEY must decode to 32 bytes',
