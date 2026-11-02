@@ -2,7 +2,7 @@ import styles from './Hub.module.css';
 import type { VerificationLetter } from './summary.ts';
 
 /** A = most confident, E = least; the letter always carries the meaning, colour only helps. */
-export const VerificationChip = ({ letter }: { letter: VerificationLetter | undefined }) =>
+export const VerificationChip = ({ letter }: { letter: VerificationLetter | null }) =>
   letter ? (
     <span
       className={styles.ver}

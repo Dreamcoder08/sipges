@@ -102,7 +102,7 @@ export const createApp = (
   app.route('/', analyticsRoutes({ analytics }));
   app.route('/', situationsRoutes(container.situations));
   app.route('/', mediaRoutes({ media: container.media }));
-  app.route('/', recordsRoutes(records));
+  app.route('/', recordsRoutes(records, container.recordsSummary));
   app.route('/', ontologyRoutes(container.ontology));
   app.route('/', analystRoutes(container.analyst));
   app.route('/', auditRoutes(audit));

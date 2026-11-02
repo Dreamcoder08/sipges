@@ -159,10 +159,13 @@ import { createSqlOntologyStore } from './contexts/ontology/infrastructure/sql-o
 import {
   RECORD_MODULES,
   createRecordsService,
+  createRecordsSummary,
   moduleForSlug,
   type RecordsService,
+  type RecordsSummaryQuery,
 } from './contexts/records/application/index.ts';
 import { createSqlRecordStore } from './contexts/records/infrastructure/sql-record-store.ts';
+import { createSqlRecordSummaryReader } from './contexts/records/infrastructure/sql-record-summary-reader.ts';
 import { createTenancyService, type TenancyService } from './contexts/tenancy/application/index.ts';
 import { createSqlTenantDataReader } from './contexts/tenancy/infrastructure/sql-tenant-data-reader.ts';
 import { createSqlTenancyStore } from './contexts/tenancy/infrastructure/sql-tenancy-store.ts';
@@ -182,6 +185,7 @@ export type Container = {
   readonly googleSignIn: GoogleSignIn | undefined;
   readonly tenancy: TenancyService;
   readonly records: RecordsService;
+  readonly recordsSummary: RecordsSummaryQuery;
   readonly ontology: OntologyService;
   readonly analyst: AnalystService;
   /** Gate for every path that sends tenant data to an external model or client (ADR 0030). */
@@ -266,6 +270,7 @@ export const buildContainer = async (deps: {
     clock: deps.clock,
     randomHex: (length) => randomHex(length).toUpperCase(),
   });
+  const recordsSummary = createRecordsSummary({ reader: createSqlRecordSummaryReader(deps.sql) });
   const situations = createSituationsService({
     settings: createSqlProjectSettingsStore(deps.sql),
     records: createSqlSituationRecordReader(deps.sql),
@@ -549,6 +554,7 @@ export const buildContainer = async (deps: {
       (deps.config.google ? createGoogleSignIn(deps.config.google) : undefined),
     tenancy,
     records,
+    recordsSummary,
     ontology,
     analyst,
     egress,

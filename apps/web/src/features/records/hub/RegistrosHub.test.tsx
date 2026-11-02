@@ -4,7 +4,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../../../test/records-api.ts';
-import { resetApi } from '../../../test/server.ts';
+import { api, resetApi } from '../../../test/server.ts';
 import { RegistrosHub } from './RegistrosHub.tsx';
 
 const SCOPE = 'ACME/P1';
@@ -71,6 +71,15 @@ it('shows a chip per record type with its count, and Todos as the sum', async ()
     'Buzón 0',
   ])
     expect(await within(types).findByRole('button', { name })).toBeInTheDocument();
+});
+
+it('reads Todos and every count from one summary request, not one list per type', async () => {
+  renderHub('todos');
+  await screen.findByText('Bloqueo del muelle');
+  expect(await screen.findByRole('button', { name: 'Eventos 2' })).toBeInTheDocument();
+  expect(api.requests.filter((request) => request.startsWith('GET /api/'))).toEqual([
+    'GET /api/registros/summary',
+  ]);
 });
 
 it('lists every type together under Todos, with verification and validation as chips', async () => {
