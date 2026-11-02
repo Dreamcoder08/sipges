@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -40,6 +40,68 @@ describe('destination hubs', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Eventos' })).toBeVisible();
     await waitFor(() => expect(screen.getByText('Hecho sintético')).toBeVisible());
   });
+});
+
+describe('Riesgo de conflicto', () => {
+  // Synthetic localities only.
+  const backtest = (horizon: 30 | 90) => ({
+    horizon,
+    calibrated: false,
+    reason: 'Historial insuficiente para calibrar.',
+    cutoffs: 0,
+    from: null,
+    to: null,
+    train: { samples: 0, events: 0 },
+    test: { samples: 0, events: 0 },
+    brier: null,
+    brierReference: null,
+    skill: null,
+    bins: [],
+  });
+  const unit = (name: string) => ({
+    key: `L:${name.toLowerCase()}`,
+    kind: 'locality',
+    name,
+    score: 1,
+    signals: 1,
+    horizons: {
+      '30': { probability: null, band: 'media' },
+      '90': { probability: null, band: 'media' },
+    },
+    confidence: 'baja',
+    confidenceReason: 'Historial insuficiente para calibrar.',
+    factors: [],
+  });
+
+  it(
+    'follows a new ?localidad= from the map while the tab stays open',
+    { timeout: 20_000 },
+    async () => {
+      server.use(
+        http.get('*/system/conflict-risk', () =>
+          HttpResponse.json({
+            generatedOn: '2026-11-02',
+            status: 'ok',
+            method: 'Puntaje transparente.',
+            backtest: { '30': backtest(30), '90': backtest(90) },
+            localities: [unit('Pampa Alta'), unit('Loma Verde')],
+            actors: [],
+            limitations: [],
+          }),
+        ),
+      );
+      at('/analisis?vista=riesgo&localidad=Loma%20Verde');
+      render(<App />);
+      expect(await screen.findByRole('heading', { level: 4, name: 'Loma Verde' })).toBeVisible();
+      expect(screen.queryByRole('heading', { level: 4, name: 'Pampa Alta' })).toBeNull();
+      act(() => {
+        window.history.pushState(null, '', '/analisis?vista=riesgo&localidad=Pampa%20Alta');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      });
+      expect(await screen.findByRole('heading', { level: 4, name: 'Pampa Alta' })).toBeVisible();
+      expect(screen.queryByRole('heading', { level: 4, name: 'Loma Verde' })).toBeNull();
+    },
+  );
 });
 
 describe('Integraciones', () => {

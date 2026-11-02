@@ -57,9 +57,13 @@ export const PointCard = ({ point, onClose }: { point: MapPoint; onClose: () => 
       <InternalLink href={objectHref(LAYER_SLUGS[point.layer], point.id)}>
         Abrir registro (vista 360°)
       </InternalLink>
-      <InternalLink href={`/analisis?vista=riesgo&localidad=${encodeURIComponent(point.locality)}`}>
-        Riesgo de conflicto de {point.locality}
-      </InternalLink>
+      {point.locality ? (
+        <InternalLink
+          href={`/analisis?vista=riesgo&localidad=${encodeURIComponent(point.locality)}`}
+        >
+          Riesgo de conflicto de {point.locality}
+        </InternalLink>
+      ) : null}
       <Button variant="ghost" onClick={onClose}>
         Cerrar ficha
       </Button>

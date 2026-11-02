@@ -30,3 +30,8 @@ it("links the record's locality to its conflict-risk prediction", () => {
     '/analisis?vista=riesgo&localidad=Pampa%20Alta',
   );
 });
+
+it('offers no conflict-risk link when the record has no locality', () => {
+  render(<PointCard point={{ ...point, locality: '' }} onClose={() => undefined} />);
+  expect(screen.queryByRole('link', { name: /Riesgo de conflicto/ })).toBeNull();
+});
