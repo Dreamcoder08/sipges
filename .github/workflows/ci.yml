@@ -30,7 +30,8 @@ permissions:
 jobs:
   static:
     name: Static checks and non-API tests (lint, boundaries, typecheck, web, tooling)
-    runs-on: ubuntu-latest
+    # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -47,7 +48,8 @@ jobs:
 
   api:
     name: API tests (shard ${{ matrix.shard }}/3)
-    runs-on: ubuntu-latest
+    # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -78,7 +80,8 @@ jobs:
 
   e2e:
     name: End-to-end parity (Playwright, ${{ matrix.browser }} ${{ matrix.shard }})
-    runs-on: ubuntu-latest
+    # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -127,7 +130,7 @@ jobs:
   python-legacy:
     name: Frozen Python parity reference (pytest)
     # The frozen reference pins Python 3.12.8, which setup-python only publishes up to Ubuntu 24.04.
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

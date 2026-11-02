@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Integración continua
+
+- La CI y los despliegues pueden correr en un runner propio cuando se agotan los minutos de GitHub Actions del repositorio privado: variable `SIPGES_RUNS_ON` y `scripts/self-hosted-runner.sh` ([guía](docs/operations/ci-runner.md)). Sin la variable, todo sigue en los runners de GitHub.
+
 ### Privacidad
 
 - Envíos de las automatizaciones en Auditoría: cada mensaje a un canal (webhook, Slack, Teams, Discord, Google Chat, Telegram, correo), cada aviso push y cada prueba de canal o de push dejan una fila en la Auditoría del proyecto (módulo «Automatizaciones», acciones `CHANNEL_SEND` y `PUSH_SEND`) con tipo de canal, regla, canal, evento de origen o entrega y resultado. Sin URL, tokens, destinatarios, endpoints, textos del mensaje ni nombres de personas (Ley 29733). Si la fila no se puede escribir, el envío sigue igual (no se repite ni falla) y el error va al log. El contexto de Auditoría expone el puerto de escritura `AuditWriter` ([ADR 0002](docs/adr/0002-hexagonal-architecture-and-bounded-contexts.md)). Sin migración ni cambios de permisos. Guía en [docs/integrations/README.md](docs/integrations/README.md#registro-de-envíos).
