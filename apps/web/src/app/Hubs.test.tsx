@@ -247,7 +247,8 @@ describe('Inicio hub', () => {
             Proyecto_ID: 'PRJ-DEMO',
           },
           { _id: 'E-3', Descripcion_Hecho: 'Hecho viejo', Fecha: day(40), Proyecto_ID: 'PRJ-DEMO' },
-          { _id: 'E-4', Descripcion_Hecho: 'Otro proyecto', Fecha: day(0), Proyecto_ID: 'OTRO' },
+          // Saved before the server stamped Proyecto_ID: still this project's (S13).
+          { _id: 'E-4', Descripcion_Hecho: 'Sin proyecto', Fecha: day(0) },
         ]),
       ),
       http.get('/system/search', ({ request }) => {
@@ -328,10 +329,10 @@ describe('Inicio hub', () => {
       '/bandeja',
     );
     const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
-    await waitFor(() => expect(within(fresh).getByText('2')).toBeVisible());
+    await waitFor(() => expect(within(fresh).getByText('3')).toBeVisible());
     expect(within(fresh).getByText('Hecho de hoy')).toBeVisible();
+    expect(within(fresh).getByText('Sin proyecto')).toBeVisible();
     expect(within(fresh).queryByText('Hecho viejo')).toBeNull();
-    expect(within(fresh).queryByText('Otro proyecto')).toBeNull();
     expect(within(fresh).getByRole('link', { name: /Ver en Registros/ })).toHaveAttribute(
       'href',
       '/registros',

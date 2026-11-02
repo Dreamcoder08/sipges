@@ -104,7 +104,7 @@ const round = ([a, b, c, d]: Extent): Extent => {
  * actors with INGEMMET's mining concessions as selectable polygons, a contextual sheet and an
  * evolution timeline synchronised with the map.
  */
-export const TerritorialMapPage = ({ scope, projectId }: FeatureContext) => {
+export const TerritorialMapPage = ({ scope }: FeatureContext) => {
   const events = useLayer('eventos', scope);
   const demands = useLayer('demandas', scope);
   const actors = useLayer('actores', scope);
@@ -117,22 +117,11 @@ export const TerritorialMapPage = ({ scope, projectId }: FeatureContext) => {
         ? { Eventos: events.data, Demandas: demands.data, Actores: actors.data }
         : undefined,
   };
-  const openAlerts =
-    alerts.data?.filter(
-      (a) =>
-        (String(a['Proyecto_ID'] ?? '') || 'PRJ-SECHURA') === projectId &&
-        !CLOSED.has(foldText(a['Estado'])),
-    ).length ?? 0;
+  // Every alert of the tenant counts: the tenant is the project (S13).
+  const openAlerts = alerts.data?.filter((a) => !CLOSED.has(foldText(a['Estado']))).length ?? 0;
   return (
     <QueryState query={all} label="el mapa territorial">
-      {(layers) => (
-        <TerritorialWorkspace
-          layers={layers}
-          projectId={projectId}
-          openAlerts={openAlerts}
-          scope={scope}
-        />
-      )}
+      {(layers) => <TerritorialWorkspace layers={layers} openAlerts={openAlerts} scope={scope} />}
     </QueryState>
   );
 };
@@ -166,12 +155,10 @@ type Selection = { kind: 'point'; id: string } | { kind: 'concession'; concessio
 
 const TerritorialWorkspace = ({
   layers,
-  projectId,
   openAlerts,
   scope,
 }: {
   layers: Record<Layer, readonly TerritorialRecord[]>;
-  projectId: string;
   openAlerts: number;
   scope: string;
 }) => {
@@ -208,8 +195,8 @@ const TerritorialWorkspace = ({
   const mapSection = useRef<HTMLElement>(null);
 
   const { points, unlocated } = useMemo(
-    () => mapPoints(layers, projectId, area.sechura),
-    [layers, projectId, area.sechura],
+    () => mapPoints(layers, area.sechura),
+    [layers, area.sechura],
   );
   const selectedConcession = selection?.kind === 'concession' ? selection.concession : null;
 

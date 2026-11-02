@@ -160,15 +160,15 @@ const serve = () =>
     }),
   );
 
-const renderPage = (location: ProjectSettings['location'] = null) =>
+const renderPage = (location: ProjectSettings['location'] = null, projectId = 'PRJ-SECHURA') =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <ProjectSettingsProvider value={location ? ({ location } as ProjectSettings) : null}>
         <TerritorialMapPage
-          scope="SIPGES/PRJ-SECHURA"
-          projectId="PRJ-SECHURA"
+          scope={`SIPGES/${projectId}`}
+          projectId={projectId}
           projectLabel="Sechura"
           role="consulta"
           username="reader"
@@ -241,6 +241,25 @@ it('lists the localities that records of a project elsewhere carry', async () =>
       .getAllByRole('option')
       .map((o) => o.textContent),
   ).toEqual(['Todo Tambogrande, Piura', 'Locuto']);
+});
+
+it('counts every record of the tenant, with or without Proyecto_ID (S13)', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/eventos',
+      records([
+        { _id: 'EV-B', Fecha: '2026-08-10', Territorio: 'Locuto', Latitud: -4.95, Longitud: -80.4 },
+      ]),
+    ),
+    http.get('/api/alertas', records([{ _id: 'AL-B', Estado: 'Abierta', Nivel: 'Rojo' }])),
+  );
+  renderPage(TAMBOGRANDE, 'PRJ-ALGARROBO');
+  await screen.findByRole('group', { name: 'Mapa territorial de Tambogrande, Piura' });
+  const kpi = (label: string) =>
+    screen.getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
+  expect(kpi('Eventos georreferenciados')).toBe('1');
+  await vi.waitFor(() => expect(kpi('Alertas abiertas')).toBe('1'));
 });
 
 afterEach(() => {

@@ -39,11 +39,9 @@ const KPIS = [
  * analysis cards below it (docs/adr/0015).
  */
 export const DashboardPage = ({
-  projectId,
   scope,
   renderLink,
 }: {
-  projectId: string;
   scope: string;
   renderLink: (to: string, children: ReactNode) => ReactNode;
 }) => {
@@ -57,7 +55,7 @@ export const DashboardPage = ({
   return (
     <div className={styles.page}>
       {compact ? (
-        <TodayView projectId={projectId} scope={scope} renderLink={renderLink} />
+        <TodayView scope={scope} renderLink={renderLink} />
       ) : (
         <>
           <section className={styles.hero} aria-labelledby="hero-title">
@@ -101,7 +99,7 @@ export const DashboardPage = ({
         <Card eyebrow="Alertas por nivel" title="Alertas abiertas del proyecto">
           <QueryState query={alerts} label="las alertas">
             {(rows) => {
-              const counts = alertsByLevel(rows, projectId);
+              const counts = alertsByLevel(rows);
               return (
                 <DonutChart
                   caption="Alertas abiertas por nivel"
@@ -121,7 +119,7 @@ export const DashboardPage = ({
         <Card eyebrow="Eventos por dimensión" title="G · A · D · N · E · I">
           <QueryState query={events} label="los eventos">
             {(rows) => {
-              const counts = eventsByDimension(rows, projectId);
+              const counts = eventsByDimension(rows);
               return (
                 <BarList
                   empty="Sin eventos."
@@ -148,7 +146,7 @@ export const DashboardPage = ({
             <ColumnChart
               caption="Eventos registrados por mes"
               empty="Aún no hay eventos con fecha para mostrar una tendencia."
-              data={eventsByMonth(rows, projectId)}
+              data={eventsByMonth(rows)}
             />
           )}
         </QueryState>
