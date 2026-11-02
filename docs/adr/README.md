@@ -34,6 +34,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0028](0028-cloudflare-workers-hosting.md) | Cloudflare Workers as the host, through Hyperdrive to PostgreSQL | Accepted |
 | [0029](0029-retire-vercel-host.md) | Retire the Vercel host: Workers is the only host | Accepted |
 | [0030](0030-external-ai-egress-guard.md) | External AI egress guard: switch, allowlists, pseudonyms and access log | Accepted |
+| [0031](0031-conflict-risk-prediction.md) | Conflict-risk prediction: transparent score calibrated on the project's history | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 
