@@ -18,7 +18,7 @@ export const FACTORS = {
   escalations: { weight: 0.7, label: 'Escalamientos recientes (últimos 90 días)' },
   irsa: { weight: 0.8, label: 'IRSA del proyecto' },
   irsa_rise: { weight: 0.4, label: 'Subida del IRSA (últimos 90 días)' },
-  recency: { weight: 0.5, label: 'Actividad reciente' },
+  recency: { weight: 0.5, label: 'Días desde la última señal' },
 } as const;
 
 export type FactorId = keyof typeof FACTORS;

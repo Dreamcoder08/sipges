@@ -88,6 +88,9 @@ const MethodologyPage = lazy(() =>
 const SituationalPage = lazy(() =>
   import('../features/analysis/index.ts').then((module) => ({ default: module.SituationalPage })),
 );
+const ConflictRiskPage = lazy(() =>
+  import('../features/analysis/index.ts').then((module) => ({ default: module.ConflictRiskPage })),
+);
 const StrategyPage = lazy(() =>
   import('../features/analysis/index.ts').then((module) => ({ default: module.StrategyPage })),
 );
@@ -485,6 +488,7 @@ const featurePages = {
   '/situacion': SituationalPage,
   '/estrategia': StrategicPage,
   '/irsa': IrsaPage,
+  '/riesgo': ConflictRiskPage,
   '/validacion': ValidationPage,
   '/administracion': AdministrationPage,
   '/metodologia': MethodologyPage,

@@ -166,7 +166,8 @@ const calibrate = (
 
 const confidenceOf = (calibration: Calibration, signals: number): [Confidence, string] => {
   const { backtest } = calibration;
-  if (!calibration.platt) return ['baja', backtest.reason ?? 'Sin calibración.'];
+  if (!calibration.platt)
+    return ['baja', 'Historial insuficiente para calibrar; el detalle está en el back-test.'];
   if (signals < 2) return ['baja', 'Una sola señal registrada en los últimos 180 días.'];
   const skill = backtest.skill ?? 0;
   if (skill <= 0) return ['baja', 'En el back-test el modelo no supera la tasa base del proyecto.'];

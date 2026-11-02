@@ -280,6 +280,9 @@ describe('Inicio hub', () => {
       'href',
       '/analisis',
     );
+    expect(
+      within(territory).getByRole('link', { name: /Riesgo de conflicto por localidad/ }),
+    ).toHaveAttribute('href', '/analisis?vista=riesgo');
   });
 
   it('hides the card whose source fails instead of inventing numbers', async () => {

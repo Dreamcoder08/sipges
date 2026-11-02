@@ -223,6 +223,9 @@ export const InicioPage = ({
                   ))}
                 </ul>
               ) : null}
+              <InternalLink href="/analisis?vista=riesgo" className={styles.more}>
+                Riesgo de conflicto por localidad y actor (30 y 90 días)
+              </InternalLink>
             </Card>
           ) : null}
         </div>

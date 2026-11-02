@@ -33,6 +33,23 @@ export const MethodologyPage = ({ scope, projectLabel }: FeatureContext) => {
           )}
         </QueryState>
       </Card>
+      <Card title="Cómo se calcula el riesgo de conflicto">
+        <p>
+          Análisis › Riesgo de conflicto ordena localidades y actores por su probabilidad de escalar
+          en 30 y 90 días. Escalar es registrar una alerta roja o naranja, una alerta territorial
+          alta o un evento grave que no se descartó. Cada unidad suma nueve factores con pesos
+          fijos: demandas abiertas, compromisos vencidos, narrativas críticas y su aumento, alertas,
+          escalamientos recientes, IRSA del proyecto y su subida, y actividad reciente. Cada factor
+          enlaza a los registros que lo sustentan.
+        </p>
+        <p>
+          El puntaje se convierte en probabilidad con el historial del propio proyecto: se mide qué
+          pasó después de cortes pasados usando solo lo registrado hasta cada corte, se entrena con
+          los cortes antiguos y se evalúa con los recientes (puntaje de Brier frente a la tasa
+          base). Si el historial no alcanza, no se muestra porcentaje y la confianza es baja. Se
+          calcula dentro de SIPGES, sin IA externa.
+        </p>
+      </Card>
       <Card title="Definiciones, métodos y evidencias">
         <QueryState query={report} label="indicadores">
           {(data) => (
