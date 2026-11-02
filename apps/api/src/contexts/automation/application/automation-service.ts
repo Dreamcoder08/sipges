@@ -490,9 +490,8 @@ export const createAutomationService = (deps: {
       await deps.push?.store.remove(username, endpoint);
     },
 
-    notifications: (tenantId: string, username: string, limit: number) =>
-      store.notifications(tenantId, username, Math.min(Math.max(limit, 1), 100)),
-    unread: (tenantId: string, username: string) => store.unread(tenantId, username),
+    inbox: (tenantId: string, username: string, limit: number) =>
+      store.inbox(tenantId, username, Math.min(Math.max(limit, 1), 100)),
     markRead: (tenantId: string, username: string, ids: readonly number[] | 'all') =>
       store.markRead(tenantId, username, ids, clock.now()),
   };
