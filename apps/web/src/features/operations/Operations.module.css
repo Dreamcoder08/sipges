@@ -1,7 +1,14 @@
 .stack {
   display: grid;
+  /* An `auto` track grows to its widest child (a table, a long id) and widens the page on phones. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.2rem;
   min-width: 0;
+}
+/* Ids such as REV-<review item id> have no break point; let them wrap instead of overflowing. */
+.stack li,
+.stack p {
+  overflow-wrap: anywhere;
 }
 .form {
   display: grid;
