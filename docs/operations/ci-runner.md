@@ -24,9 +24,9 @@ Needs Docker running (`sudo systemctl enable --now docker`) and the user in the 
 with admin rights on the repository.
 
 ```sh
-scripts/self-hosted-runner.sh start    # registers and starts the container
+scripts/self-hosted-runner.sh start 2  # registers and starts two runners (default 1)
 scripts/self-hosted-runner.sh status
-scripts/self-hosted-runner.sh stop     # removes the container and unregisters the runner
+scripts/self-hosted-runner.sh stop     # removes every runner container and unregisters them
 ```
 
 The runner is the official `ghcr.io/actions/actions-runner` image plus Node 22 (`scripts/self-hosted-runner.Dockerfile`; Ubuntu, so `playwright install --with-deps`
@@ -35,7 +35,8 @@ works). It uses the host network and the host Docker daemon, so service containe
 
 ## Limits
 
-- One runner runs one job at a time: the 8 CI jobs run one after another (slower than GitHub's parallel jobs).
+- Each runner runs one job at a time. Service containers publish a random host port, so several runners can share the
+  machine; two is the sensible maximum with 7 GB of RAM.
 - The machine has 7 GB of RAM: avoid running full suites locally while CI runs.
 - The deploy job also runs here, so the Cloudflare deploy secrets reach this machine during a deploy. Only use a
   self-hosted runner on a private repository; never on a public one, where a fork's pull request could run code here.

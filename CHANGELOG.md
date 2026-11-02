@@ -6,7 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Integración continua
 
-- La CI y los despliegues pueden correr en un runner propio cuando se agotan los minutos de GitHub Actions del repositorio privado: variable `SIPGES_RUNS_ON` y `scripts/self-hosted-runner.sh` ([guía](docs/operations/ci-runner.md)). Sin la variable, todo sigue en los runners de GitHub.
+- La CI y los despliegues pueden correr en un runner propio cuando se agotan los minutos de GitHub Actions del repositorio privado: variable `SIPGES_RUNS_ON` y `scripts/self-hosted-runner.sh` ([guía](docs/operations/ci-runner.md)). Sin la variable, todo sigue en los runners de GitHub. El script levanta varios runners (`start 2`): PostgreSQL de cada job publica un puerto libre, así que dos jobs no chocan.
 
 ### Privacidad
 
