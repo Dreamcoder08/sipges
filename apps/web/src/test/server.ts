@@ -41,7 +41,6 @@ const signedIn = <T>(respond: () => T) => (api.me ? respond() : unauthorized());
 const SYNTHETIC_ALERTS = [
   { _id: 'AL-1', Estado: 'Abierta', Nivel_Preliminar: 'Alta', Proyecto_ID: 'PRJ-DEMO' },
   { _id: 'AL-2', Estado: 'Cerrada', Nivel: 'Rojo', Proyecto_ID: 'PRJ-DEMO' },
-  { _id: 'AL-3', Estado: 'Abierta', Nivel: 'Rojo', Proyecto_ID: 'OTRO' },
 ];
 const SYNTHETIC_EVENTS = [
   { _id: 'EV-1', Dimension_Principal: 'E - Ambiental', Proyecto_ID: 'PRJ-DEMO' },

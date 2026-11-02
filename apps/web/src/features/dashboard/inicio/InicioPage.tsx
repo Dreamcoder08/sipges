@@ -93,8 +93,8 @@ export const InicioPage = ({
     ask();
   };
 
-  const urgent = alerts.data ? criticalAlerts(alerts.data, projectId) : [];
-  const week = events.data ? eventsThisWeek(events.data, projectId, new Date()) : null;
+  const urgent = alerts.data ? criticalAlerts(alerts.data) : [];
+  const week = events.data ? eventsThisWeek(events.data, new Date()) : null;
   const drivers = irsa.data?.drivers.slice(0, 3) ?? [];
 
   return (
