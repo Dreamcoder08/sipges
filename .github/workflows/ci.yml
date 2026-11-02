@@ -1,12 +1,14 @@
 name: CI
 
-# Changes that no test reads skip CI to save Actions minutes (2,000/month on the private Free plan).
-# docs/agents and docs/escenarios stay in because tooling and scenario tests read them. If required
-# status checks come back (GitHub Pro rulesets), replace this filter with a job that reports success.
+# Every pull request reports the 8 required checks (the main ruleset requires them now that the repository is
+# public). When a change only touches files no test reads, the `changes` job says so and each job skips its
+# steps, so the checks finish green in seconds. docs/agents and docs/escenarios stay in because tooling and
+# scenario tests read them. Pushes to main still skip CI entirely for those files.
 on:
   pull_request:
-    # Docs-only changes skip CI; the push trigger reuses this list through the YAML anchor.
-    paths-ignore: &docs-only
+  push:
+    branches: [main]
+    paths-ignore:
       - 'odd/**'
       - '.engram/**'
       - 'design/**'
@@ -16,9 +18,6 @@ on:
       - 'docs/history/**'
       - 'CHANGELOG.md'
       - 'README.md'
-  push:
-    branches: [main]
-    paths-ignore: *docs-only
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -28,25 +27,55 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Pushes to main are already filtered by paths-ignore; on pull requests compare with the base commit.
+          if [ -z "$BASE" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          # Same list as paths-ignore above; anything else counts as code.
+          code=$(git diff --name-only "$BASE" HEAD | grep -vE '^(odd/|\.engram/|design/|docs/(adr|deployment|operations|history)/|CHANGELOG\.md$|README\.md$)' | head -1)
+          if [ -n "$code" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+
   static:
+    needs: changes
     name: Static checks and non-API tests (lint, boundaries, typecheck, web, tooling)
     # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: pnpm/action-setup@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm lint && pnpm boundaries && pnpm typecheck
+          # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
+          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm lint && pnpm boundaries && pnpm typecheck
       # `pnpm check` minus @sipges/api, which runs sharded in the api job below.
-      - run: pnpm -r --workspace-concurrency=1 --filter '!@sipges/api' run test && pnpm test:tooling
-      - run: pnpm --filter @sipges/web build
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm -r --workspace-concurrency=1 --filter '!@sipges/api' run test && pnpm test:tooling
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm --filter @sipges/web build
 
   api:
+    needs: changes
     name: API tests (shard ${{ matrix.shard }}/3)
     # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
@@ -67,19 +96,27 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
-      - name: Point the tests at the PostgreSQL service
+      - if: needs.changes.outputs.code == 'true'
+        name: Point the tests at the PostgreSQL service
         run: echo "SIPGES_TEST_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: pnpm/action-setup@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
+          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm install --frozen-lockfile
       # Each shard has its own PostgreSQL service, so shards share no database state.
-      - run: pnpm --filter @sipges/api exec vitest run --shard=${{ matrix.shard }}/3
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm --filter @sipges/api exec vitest run --shard=${{ matrix.shard }}/3
 
   e2e:
+    needs: changes
     name: End-to-end parity (Playwright, ${{ matrix.browser }} ${{ matrix.shard }})
     # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
@@ -104,21 +141,30 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       # The suite creates and drops its own throwaway database on this server.
-      - name: Point the tests at the PostgreSQL service
+      - if: needs.changes.outputs.code == 'true'
+        name: Point the tests at the PostgreSQL service
         run: echo "SIPGES_E2E_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: pnpm/action-setup@v4
+      - if: needs.changes.outputs.code == 'true'
+        uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+          # Self-hosted runners keep a persistent pnpm store in their volume (docs/operations/ci-runner.md).
+          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm install --frozen-lockfile
       # Browser revision follows the @playwright/test version pinned in apps/e2e (lockfile).
-      - run: pnpm --filter @sipges/e2e exec playwright install --with-deps ${{ matrix.browser }}
-      - run: pnpm --filter @sipges/web build
-      - if: matrix.browser == 'chromium'
+      # The self-hosted image bakes the system dependencies and keeps the browsers in its volume, so it skips apt.
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm --filter @sipges/e2e exec playwright install ${{ runner.environment == 'github-hosted' && '--with-deps' || '' }} ${{ matrix.browser }}
+      - if: needs.changes.outputs.code == 'true'
+        run: pnpm --filter @sipges/web build
+      - if: needs.changes.outputs.code == 'true' && matrix.browser == 'chromium'
         run: pnpm --filter @sipges/e2e exec playwright test --shard=${{ matrix.shard }}
-      - if: matrix.browser == 'webkit'
+      - if: needs.changes.outputs.code == 'true' && matrix.browser == 'webkit'
         run: pnpm --filter @sipges/e2e exec playwright test --config playwright.webkit.config.ts
       - if: failure()
         uses: actions/upload-artifact@v4
