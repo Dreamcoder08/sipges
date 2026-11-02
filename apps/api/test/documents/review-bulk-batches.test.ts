@@ -24,8 +24,11 @@ const item = (n: number): ReviewItem => ({
   updatedAt: new Date(0),
 });
 
-const setup = (pending: number) => {
-  let queue = Array.from({ length: pending }, (_, n) => item(n));
+const setup = (pending: number, failing: string | null = null) => {
+  // Odd items go to Narrativas so a batch spans two modules.
+  let queue = Array.from({ length: pending }, (_, n) =>
+    n % 2 ? { ...item(n), theme: 'Territorio y ambiente' } : item(n),
+  );
   const limits: number[] = [];
   const recordCalls: number[] = [];
   const reviews = {
@@ -40,7 +43,8 @@ const setup = (pending: number) => {
     },
   } as Pick<ReviewStore, 'pending' | 'countPending' | 'decidePending'> as ReviewStore;
   const records: ReviewRecordWriter = {
-    createMissing: async (_t, _m, rows) => {
+    createMissing: async (_t, module, rows) => {
+      if (module === failing) throw new Error('synthetic records failure');
       recordCalls.push(rows.length);
       return { created: rows.length, existing: 0, problems: [] };
     },
@@ -75,7 +79,8 @@ describe('bulk decision batches (T26)', () => {
     const result = await decide(null);
     expect(result.ok && result.value).toMatchObject({ decided: 1000, remaining: 250 });
     expect(limits).toEqual([200, 200, 200, 200, 200]);
-    expect(recordCalls).toEqual([200, 200, 200, 200, 200]);
+    // Each batch of 200 writes two modules of 100.
+    expect(recordCalls).toEqual(Array.from({ length: 10 }, () => 100));
   });
 
   it('stops early when a batch comes back short', async () => {
@@ -91,5 +96,15 @@ describe('bulk decision batches (T26)', () => {
     const result = await decide([...ids, ids[0] ?? '']);
     expect(result.ok && result.value).toMatchObject({ decided: 450, skipped: 0 });
     expect(limits).toEqual([200, 200, 200]);
+  });
+
+  it('keeps the counts of the modules that were written when another one fails', async () => {
+    const { decide } = setup(4, 'narrativas');
+    const result = await decide(null);
+    expect(result.ok && result.value).toMatchObject({
+      decided: 4,
+      recordsCreated: 2,
+      problems: ['narrativas: 2 hallazgos decididos sin registro: use review:materialize'],
+    });
   });
 });
