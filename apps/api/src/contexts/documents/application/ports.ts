@@ -42,6 +42,14 @@ export type ReviewPage = {
   themes: Record<string, number>;
 };
 
+/** Pending items of one project: explicit ids, or a theme and/or source document (null = any). */
+export type PendingSelector = {
+  projectId: string;
+  ids: readonly string[] | null;
+  theme: string | null;
+  sourceSha256: string | null;
+};
+
 export type ReviewStore = {
   /** Inserts items, skipping exact duplicates; returns how many rows were new. */
   importItems(tenantId: string, items: readonly NewReviewItem[]): Promise<number>;
@@ -57,6 +65,19 @@ export type ReviewStore = {
       at: Date;
     },
   ): Promise<ReviewItem | null>;
+  /** Pending items matching the selector, in id order, at most `limit`. */
+  pending(tenantId: string, selector: PendingSelector, limit: number): Promise<ReviewItem[]>;
+  countPending(tenantId: string, selector: PendingSelector): Promise<number>;
+  /**
+   * Decides up to `limit` items that are still pending in one transaction, each with the same
+   * audit row as `decide`; items decided meanwhile are left alone. Returns the decided items.
+   */
+  decidePending(
+    tenantId: string,
+    selector: PendingSelector,
+    decision: { status: ReviewStatus; reviewer: string; note: string; at: Date },
+    limit: number,
+  ): Promise<ReviewItem[]>;
   /** Approved items (any project of the tenant) with an id after `afterId`, in id order. */
   approved(tenantId: string, page: { afterId: string; limit: number }): Promise<ReviewItem[]>;
 };

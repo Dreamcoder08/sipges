@@ -37,6 +37,46 @@ edits made in Registros survive.
 
 The inbox says «Al aprobar, se crea el registro en <Módulo>» and links the record once it exists.
 
+## Bulk approval
+
+`POST /system/document-lab/review/bulk` decides many pending items of the active project at
+once (functional-closure T26). It takes the single decision's path for each item: the same
+audit row (`REVIEW`, «<decision> | <acting user>») and the same `REV-<id>` record.
+
+| Field | Meaning |
+| --- | --- |
+| `ids` | Explicit items, up to 1,000. |
+| `theme`, `source_sha256` | Or a filter: pending items of a theme and/or a source document. |
+| `status` | `aceptado_para_revision`, `corroborado_documentalmente` (needs `note`) or `descartado`. |
+| `note` | Optional review note, required to corroborate. |
+| `dry_run` | `true` counts what would happen per module and writes nothing. |
+
+- The reviewer is the signed-in user, never a body field. Admin and analista only, like the
+  single decision; consulta and coordinador get 403.
+- Only «Pendiente» items are touched. Ids already decided, missing or from another project
+  count as `skipped`; running the request again decides and creates nothing new.
+- Transactions of 200 items, at most 1,000 per request. A filter with more pending items
+  reports the rest in `remaining`: send the same request again.
+- Decisions commit before their records. If a records batch fails, `problems` says so and
+  `review:materialize --apply` creates the missing records later under the same ids.
+
+The response carries counts only:
+
+```json
+{
+  "ok": true,
+  "dry_run": false,
+  "decided": 200,
+  "records_created": 200,
+  "skipped": 0,
+  "remaining": 2415,
+  "modules": [{ "module": "demandas", "label": "Demandas", "nuevos": 200, "ya_existentes": 0 }],
+  "problems": []
+}
+```
+
+Discarding later is the single decision («Descartado»): the record stays, as with any approval.
+
 ## Run the backfill
 
 The CLI targets the database of the API configuration: `SIPGES_DATABASE_URL`, or
