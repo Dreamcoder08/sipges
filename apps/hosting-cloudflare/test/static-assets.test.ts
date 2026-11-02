@@ -135,10 +135,45 @@ describe('Worker static assets without the backend', () => {
     expectNoBackend();
   });
 
+  it('serves an empty build file as an empty 200, not a 404', async () => {
+    const worker = await freshWorker();
+    const empty = { fetch: vi.fn(async () => new Response(null, { status: 200 })) };
+    const res = await worker.fetch(
+      get('/assets/empty-abc.css'),
+      envWith(empty, { SIPGES_ALLOWED_HOSTS: HOST }),
+      ctx,
+    );
+    expect(res.status).toBe(200);
+    expect(await res.text()).toBe('');
+    expectNoBackend();
+  });
+
+  it('answers a failing asset binding with a JSON 500 that keeps the security headers', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const worker = await freshWorker();
+    const broken = {
+      fetch: vi.fn(async () => {
+        throw new Error('synthetic binding failure');
+      }),
+    };
+    const res = await worker.fetch(
+      get('/assets/index-abc.js'),
+      envWith(broken, { SIPGES_ALLOWED_HOSTS: HOST }),
+      ctx,
+    );
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ detail: 'Internal Server Error' });
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expectNoBackend();
+  });
+
   it('still refuses a foreign Host for static files', async () => {
     const worker = await freshWorker();
     const res = await worker.fetch(
-      new Request('https://evil.invalid/assets/index-abc.js', { headers: { host: 'evil.invalid' } }),
+      new Request('https://evil.invalid/assets/index-abc.js', {
+        headers: { host: 'evil.invalid' },
+      }),
       env,
       ctx,
     );
@@ -163,7 +198,10 @@ describe('Worker static assets without the backend', () => {
       expect(await res.text(), path).toBe('backend');
     }
     const post = await worker.fetch(
-      new Request(`https://${HOST}/assets/index-abc.js`, { method: 'POST', headers: { host: HOST } }),
+      new Request(`https://${HOST}/assets/index-abc.js`, {
+        method: 'POST',
+        headers: { host: HOST },
+      }),
       env,
       ctx,
     );

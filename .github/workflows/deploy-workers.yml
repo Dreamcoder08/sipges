@@ -51,8 +51,9 @@ jobs:
       # deploy:worker also re-asserts Hyperdrive query caching off (see the deployment guide).
       - name: Deploy the Worker
         run: pnpm --filter @sipges/hosting-cloudflare run deploy:worker
-      # /health/ready runs SELECT 1 through Hyperdrive: it fails while the database, the
-      # migrations check or the container build fails, unlike the static /health.
+      # /health/ready runs SELECT 1 through Hyperdrive (5 s timeout). Like /health, it fails
+      # while the migrations check or the container build fails; unlike /health, it also
+      # fails when the backend is up but the database stops answering.
       - name: Smoke test /health/ready
         id: smoke
         run: |

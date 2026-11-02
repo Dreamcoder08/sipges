@@ -8,7 +8,8 @@ import type { AssetFetcher } from './bindings.ts';
 export const workerWebAssets = (assets: AssetFetcher): WebAssets =>
   webAssetsFrom(async (relativePath) => {
     const response = await assets.fetch(new Request(`https://assets.invalid/${relativePath}`));
-    if (response.ok && response.body) return response.body;
+    // An empty build file has no body; it is still a file, served as zero bytes.
+    if (response.ok) return response.body ?? new Uint8Array();
     await response.body?.cancel();
     return null;
   });

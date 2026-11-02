@@ -1,4 +1,6 @@
+import type { ErrorResponse } from '@sipges/contracts';
 import { Hono } from 'hono';
+import { log } from '../observability/logger.ts';
 import type { AppEnv } from './env.ts';
 import { hostAllowlist } from './host.ts';
 import { requestContext } from './request-context.ts';
@@ -20,6 +22,11 @@ export const createWebApp = (options: {
   app.use('*', securityHeaders({ hsts: options.hsts }));
   app.use('*', hostAllowlist(options.allowedHosts));
   app.use('*', spaMiddleware(options.web));
-  app.notFound((c) => c.json({ detail: 'Not Found' }, 404));
+  app.notFound((c) => c.json({ detail: 'Not Found' } satisfies ErrorResponse, 404));
+  // Same answer as createApp: a failing asset binding never leaks its error to the client.
+  app.onError((error, c) => {
+    log('error', 'unhandled_error', { method: c.req.method, path: c.req.path, error });
+    return c.json({ detail: 'Internal Server Error' } satisfies ErrorResponse, 500);
+  });
   return app;
 };

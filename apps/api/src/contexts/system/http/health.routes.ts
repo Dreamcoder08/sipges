@@ -18,10 +18,7 @@ const withTimeout = (work: Promise<void>, ms: number) => {
  * `/health` is liveness and stays static. `/health/ready` proves the database answers; the
  * deploy workflow smoke-tests it and rolls back on failure (docs/deployment/cloudflare-workers.md).
  */
-export const healthRoutes = (options?: {
-  ready?: () => Promise<void>;
-  timeoutMs?: number;
-}) => {
+export const healthRoutes = (options?: { ready?: () => Promise<void>; timeoutMs?: number }) => {
   const app = new Hono().get('/health', (c) => c.json(HEALTH));
   const ready = options?.ready;
   if (!ready) return app;

@@ -93,7 +93,7 @@ export const isSpaRequest = (method: string, path: string, accept: string | unde
 
 /**
  * Serves the SPA before authentication: the shell and bundle hold no tenant data, and the app
- * itself asks the API who is signed in. Only GET/HEAD navigations and `/assets/*` are handled.
+ * itself asks the API who is signed in. Only isSpaRequest() requests are handled.
  */
 export const spaMiddleware =
   (web: WebAssets): MiddlewareHandler =>
@@ -149,7 +149,9 @@ export const webAssetsFrom = (
   async index() {
     const body = await read('index.html');
     const bytes =
-      body instanceof ReadableStream ? new Uint8Array(await new Response(body).arrayBuffer()) : body;
+      body instanceof ReadableStream
+        ? new Uint8Array(await new Response(body).arrayBuffer())
+        : body;
     // ignoreBOM keeps a leading BOM, exactly as readFile(..., 'utf8') did.
     return bytes ? new TextDecoder('utf-8', { ignoreBOM: true }).decode(bytes) : null;
   },
