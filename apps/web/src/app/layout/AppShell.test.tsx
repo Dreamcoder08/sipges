@@ -262,6 +262,28 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
     expect(open.querySelector('[data-unread]')).not.toBeNull();
   });
 
+  it('stays open when the project name arrives after the drawer was opened', async () => {
+    api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
+    let release: () => void = () => undefined;
+    const slow = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.use(
+      http.get('/system/auth/scopes', async () => {
+        await slow;
+        return HttpResponse.json(api.scopes);
+      }),
+    );
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /^Abrir menú/ }));
+    expect(screen.getByRole('dialog', { name: 'Menú' })).toBeVisible();
+    release();
+    expect(await screen.findByRole('option', { name: 'Proyecto Demo' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Menú' })).toBeVisible();
+  });
+
   it('opens search from the drawer: the drawer closes and the palette takes the keyboard', async () => {
     api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
     at('/');

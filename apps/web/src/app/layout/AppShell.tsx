@@ -18,6 +18,7 @@ import { Sidebar } from './Sidebar.tsx';
  */
 export const AppShell = ({
   projectLabel,
+  projectKey = projectLabel,
   projectSwitcher,
   search,
   notifications,
@@ -26,6 +27,8 @@ export const AppShell = ({
   children,
 }: {
   projectLabel: string;
+  /** Stable id of the active project (its scope); the label changes once the project list loads. */
+  projectKey?: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
   notifications?: ReactNode;
@@ -42,8 +45,9 @@ export const AppShell = ({
   const topbar = useRef<HTMLElement>(null);
   const title = titleFor(pathname);
   const first = useRef(true);
-  // Any navigation (a new search string included) or a completed project switch closes the drawer.
-  const place = `${pathname}?${searchStr}|${projectLabel}`;
+  // Any navigation (a new search string included) or a completed project switch closes the drawer,
+  // and so does leaving the compact layout, so it never reappears open when the window narrows.
+  const place = `${pathname}?${searchStr}|${projectKey}|${compact}`;
   const [shown, setShown] = useState(place);
   if (shown !== place) {
     setShown(place);

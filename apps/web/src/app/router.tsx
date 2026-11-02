@@ -308,6 +308,7 @@ const appRoute = createRoute({
         <NavigateProvider value={(href) => void router.navigate({ href })}>
           <AppShell
             projectLabel={projectLabel}
+            projectKey={scope.scope}
             search={<SearchPalette scope={scope.scope} />}
             notifications={
               <NotificationBell key={`notifications/${locationHref}`} scope={scope.scope} />

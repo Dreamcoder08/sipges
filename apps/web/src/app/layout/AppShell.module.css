@@ -107,6 +107,7 @@
 /* ---------- Phones and tablets: menu button, title, drawer (addendum 2026-11-01) ---------- */
 
 .menu {
+  position: relative;
   flex: none;
   display: grid;
   place-items: center;
@@ -119,10 +120,6 @@
   font-size: var(--text-xl);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-}
-
-.menu {
-  position: relative;
 }
 
 /* Unread notifications wait in the drawer; the closed button shows a dot. */
