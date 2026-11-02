@@ -141,3 +141,65 @@ export const DashboardResponse = z.strictObject({
   niveles: z.record(z.string(), z.number().int()),
 });
 export type DashboardResponse = z.infer<typeof DashboardResponse>;
+
+const RiskBand = z.enum(['alta', 'media', 'baja']);
+const RiskSource = z.strictObject({
+  module: z.string(),
+  id: z.string(),
+  title: z.string(),
+  date: z.string(),
+});
+const RiskFactor = z.strictObject({
+  id: z.string(),
+  label: z.string(),
+  count: z.number(),
+  value: z.number(),
+  contribution: z.number(),
+  records: z.array(RiskSource),
+});
+const RiskHorizon = z.strictObject({ probability: z.number().nullable(), band: RiskBand });
+const RiskPrediction = z.strictObject({
+  key: z.string(),
+  kind: z.enum(['locality', 'actor']),
+  name: z.string(),
+  score: z.number(),
+  signals: z.number().int(),
+  horizons: z.strictObject({ '30': RiskHorizon, '90': RiskHorizon }),
+  confidence: RiskBand,
+  confidenceReason: z.string(),
+  factors: z.array(RiskFactor),
+});
+const RiskBacktest = z.strictObject({
+  horizon: z.union([z.literal(30), z.literal(90)]),
+  calibrated: z.boolean(),
+  reason: z.string().nullable(),
+  cutoffs: z.number().int(),
+  from: z.string().nullable(),
+  to: z.string().nullable(),
+  train: z.strictObject({ samples: z.number().int(), events: z.number().int() }),
+  test: z.strictObject({ samples: z.number().int(), events: z.number().int() }),
+  brier: z.number().nullable(),
+  brierReference: z.number().nullable(),
+  skill: z.number().nullable(),
+  bins: z.array(
+    z.strictObject({
+      range: z.string(),
+      n: z.number().int(),
+      predicted: z.number().nullable(),
+      observed: z.number().nullable(),
+    }),
+  ),
+});
+
+/** GET /system/conflict-risk (docs/adr/0031). */
+export const ConflictRiskResponse = z.strictObject({
+  generatedOn: z.string(),
+  status: z.enum(['ok', 'sin datos suficientes']),
+  method: z.string(),
+  backtest: z.strictObject({ '30': RiskBacktest, '90': RiskBacktest }),
+  localities: z.array(RiskPrediction),
+  actors: z.array(RiskPrediction),
+  limitations: z.array(z.string()),
+});
+export type ConflictRiskResponse = z.infer<typeof ConflictRiskResponse>;
+export type ConflictRiskPrediction = z.infer<typeof RiskPrediction>;

@@ -2,14 +2,15 @@ import { useId, type ReactNode } from 'react';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { useRecents } from '../../shared/lib/recents.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
-import { DESTINATIONS, destinationFor } from '../navigation.ts';
+import { AVISOS_HREF, DESTINATIONS, destinationFor } from '../navigation.ts';
 import shell from './AppShell.module.css';
 import { NavLink } from './NavLink.tsx';
 import { SidebarAccount } from './SidebarAccount.tsx';
 import styles from './Sidebar.module.css';
 
 /**
- * Sidebar of wide screens (docs/adr/0015): brand, project, search and inbox on top, then the
+ * Sidebar of wide screens (docs/adr/0015): brand, project, search and the bell on top (it opens Bandeja › Avisos and counts the
+ * unread ones, functional-closure S9), then the
  * five destinations, Integraciones and the last screens opened («Recientes»), and the account
  * menu at the foot. A destination is current on its hub and on the old screens it absorbs.
  * Every other tool of the shell lives here too, so the top bar keeps the title only. Phones and
@@ -20,14 +21,15 @@ export const Sidebar = ({
   projectLabel,
   projectSwitcher,
   search,
-  notifications,
+  unread = 0,
   inDrawer = false,
 }: {
   pathname: string;
   projectLabel: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
-  notifications?: ReactNode;
+  /** Unread avisos, counted on the bell that opens Bandeja › Avisos. */
+  unread?: number;
   inDrawer?: boolean;
 }) => {
   const ids = useId();
@@ -49,7 +51,22 @@ export const Sidebar = ({
       <div className={styles.project}>{projectSwitcher}</div>
       <div className={styles.tools}>
         {search ? <div className={styles.search}>{search}</div> : null}
-        {notifications ? <div className={styles.bell}>{notifications}</div> : null}
+        <InternalLink
+          href={AVISOS_HREF}
+          className={styles.bell}
+          aria-label={
+            unread > 0
+              ? `Notificaciones, ${unread} ${unread === 1 ? 'aviso' : 'avisos'} sin leer`
+              : 'Notificaciones'
+          }
+        >
+          <Icon name="bell" />
+          {unread > 0 ? (
+            <span className={styles.count} data-unread="" aria-hidden="true">
+              {unread > 99 ? '99+' : unread}
+            </span>
+          ) : null}
+        </InternalLink>
       </div>
       <nav aria-label="Secciones" className={styles.nav}>
         <ul>

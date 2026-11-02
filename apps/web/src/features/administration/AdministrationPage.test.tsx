@@ -103,6 +103,43 @@ it('requires confirmation before deactivation and surfaces last administrator de
   );
   expect(calls).toBe(1);
 });
+it('resets another account MFA only after confirmation and in the active project', async () => {
+  const user = userEvent.setup();
+  const calls: (string | null)[] = [];
+  server.use(
+    http.get('*/system/auth/accounts', () =>
+      HttpResponse.json([account, { ...account, username: 'admin', role: 'admin' }]),
+    ),
+    http.post('*/system/auth/accounts/analyst/reset-mfa', ({ request }) => {
+      calls.push(request.headers.get('x-sipges-scope'));
+      return HttpResponse.json({ ok: true, username: 'analyst' });
+    }),
+  );
+  renderPage();
+  await user.click(await screen.findByRole('button', { name: 'Restablecer MFA de analyst' }));
+  expect(
+    screen.queryByRole('button', { name: 'Restablecer MFA de admin' }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByText(/cierra todas sus sesiones/)).toBeInTheDocument();
+  expect(calls).toEqual([]);
+  await user.click(screen.getByRole('button', { name: 'Confirmar restablecimiento' }));
+  expect(
+    await screen.findByText('MFA de analyst restablecido; sus sesiones se cerraron.'),
+  ).toBeInTheDocument();
+  expect(calls).toEqual(['ACME/P1']);
+});
+it('surfaces a refused MFA reset for a user outside the project', async () => {
+  const user = userEvent.setup();
+  server.use(
+    http.post('*/system/auth/accounts/analyst/reset-mfa', () =>
+      HttpResponse.json({ detail: 'Usuario fuera del proyecto activo' }, { status: 403 }),
+    ),
+  );
+  renderPage();
+  await user.click(await screen.findByRole('button', { name: 'Restablecer MFA de analyst' }));
+  await user.click(screen.getByRole('button', { name: 'Confirmar restablecimiento' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent('Usuario fuera del proyecto activo');
+});
 it('uses DELETE for confirmed scoped access revocation', async () => {
   const user = userEvent.setup();
   let sent: unknown;

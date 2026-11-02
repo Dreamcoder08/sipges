@@ -62,7 +62,11 @@ test('search, inbox, project and account are in the sidebar, not in the top bar'
   await expect(bar.getByLabel('Proyecto activo')).toHaveCount(0);
 
   await expect(sidebar.getByLabel('Proyecto activo')).toHaveValue(DEFAULT_SCOPE);
-  await expect(sidebar.getByRole('button', { name: /^Notificaciones/ })).toBeVisible();
+  // The bell opens Bandeja › «Avisos» (functional-closure S9).
+  await expect(sidebar.getByRole('link', { name: /^Notificaciones/ })).toHaveAttribute(
+    'href',
+    '/bandeja?vista=avisos',
+  );
   const search = sidebar.getByRole('button', { name: /^Buscar/ });
   await search.click();
   await expect(page.getByRole('combobox', { name: 'Buscar en todo el proyecto' })).toBeFocused();

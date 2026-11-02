@@ -257,7 +257,7 @@ const connectors = ({ media, defensoria, geography, keys, push, overview }: Sour
       direction: 'Saliente',
       name: 'Notificaciones push',
       description: push.enabled
-        ? 'Avisos al dispositivo de quien los activó desde la campana de notificaciones.'
+        ? 'Avisos al dispositivo de quien los activó en Configuración › Notificaciones.'
         : 'Avisos al dispositivo; no están configurados en este servidor.',
       trust: 'integrated',
       status: push.enabled ? 'ok' : 'pause',

@@ -40,6 +40,15 @@ export type IdentityStore = {
   startTotpEnrollment(username: string, sealedSecret: string): Promise<boolean>;
   /** Clears the second factor and deletes every session of the user, atomically (ADR 0009). */
   resetTotp(username: string): Promise<'reset' | 'missing'>;
+  /**
+   * Administrator path of resetTotp: refuses a user without a grant to `tenantId`, and in the
+   * same transaction appends the audit row to that tenant's trail.
+   */
+  resetTotpInTenant(
+    username: string,
+    tenantId: string,
+    audit: { readonly detail: string; readonly at: Date },
+  ): Promise<'reset' | 'missing' | 'out_of_scope'>;
   /** Enables MFA, records the used step and revokes every other session of the user, atomically. */
   enableTotp(username: string, step: number, keepTokenHash: string): Promise<void>;
   /** Records a consumed step only if it is newer than the stored one; false means replay. */

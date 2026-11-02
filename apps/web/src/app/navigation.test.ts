@@ -20,14 +20,14 @@ describe('navigation', () => {
   });
 
   it('lists every screen once with a title', () => {
-    expect(SCREENS).toHaveLength(28);
-    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(28);
+    expect(SCREENS).toHaveLength(29);
+    expect(new Set(SCREENS.map((s) => s.path)).size).toBe(29);
     expect(titleFor('/integraciones')).toBe('Integraciones');
     expect(titleFor('/gerencia')).toBe('Centro de control gerencial');
     expect(titleFor('/nope')).toBe('SIPGES');
   });
 
-  it('offers five destinations whose tabs absorb 22 screens, the rest being Sistema', () => {
+  it('offers five destinations whose tabs absorb 23 screens, the rest being Sistema', () => {
     expect(DESTINATIONS.map((hub) => hub.path)).toEqual([
       '/inicio',
       '/registros',
@@ -35,7 +35,7 @@ describe('navigation', () => {
       '/bandeja',
       '/analisis',
     ]);
-    expect(DESTINATIONS.map((hub) => hub.tabs.length)).toEqual([3, 7, 3, 5, 5]);
+    expect(DESTINATIONS.map((hub) => hub.tabs.length)).toEqual([3, 7, 3, 6, 5]);
     expect(SYSTEM_PATHS).toEqual([
       '/administracion',
       '/automatizaciones',
@@ -60,6 +60,9 @@ describe('navigation', () => {
     expect(destinationFor('/alertas')?.label).toBe('Bandeja');
     expect(destinationFor('/pendientes')?.label).toBe('Bandeja');
     expect(DESTINATIONS[3]?.tabs[0]).toMatchObject({ value: 'pendientes', label: 'Pendientes' });
+    // Notifications are «Avisos», a tab of Bandeja (functional-closure S9).
+    expect(destinationFor('/avisos')?.label).toBe('Bandeja');
+    expect(DESTINATIONS[3]?.tabs[1]).toMatchObject({ value: 'avisos', label: 'Avisos' });
     expect(destinationFor('/lecciones')?.label).toBe('Análisis');
     expect(destinationFor('/auditoria')).toBeUndefined();
     expect(destinationFor('/objeto/eventos/EV-1')).toBeUndefined();

@@ -10,6 +10,7 @@ import { referenceRoutes } from './contexts/reference/http/reference-routes.ts';
 import type { Container } from './compose.ts';
 import { roleGate, sessionMiddleware } from './contexts/identity/http/auth-middleware.ts';
 import { analyticsRoutes } from './contexts/analytics/http/analytics-routes.ts';
+import { conflictRiskRoutes } from './contexts/analytics/http/conflict-risk-routes.ts';
 import { situationsRoutes } from './contexts/situations/http/situations-routes.ts';
 import { automationRoutes } from './contexts/automation/http/automation-routes.ts';
 import { apiKeyRoutes } from './contexts/integration/http/api-key-routes.ts';
@@ -100,6 +101,7 @@ export const createApp = (
   app.route('/', referenceRoutes(container.reference));
   app.route('/', tenancyRoutes({ tenancy, identity, cookieSecure: config.cookieSecure }));
   app.route('/', analyticsRoutes({ analytics }));
+  app.route('/', conflictRiskRoutes({ conflictRisk: container.conflictRisk }));
   app.route('/', situationsRoutes(container.situations));
   app.route('/', mediaRoutes({ media: container.media }));
   app.route('/', recordsRoutes(records, container.recordsSummary));

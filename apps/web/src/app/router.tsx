@@ -44,7 +44,7 @@ import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
 import {
   DevicePush,
-  NotificationBell,
+  AvisosPanel,
   useUnreadNotifications,
 } from '../features/notifications/index.ts';
 import { SETTINGS_PATH, settingsSearch } from '../features/situations/sections.ts';
@@ -298,7 +298,6 @@ const appRoute = createRoute({
     }
   },
   component: function AppLayout() {
-    const locationHref = useLocation({ select: (location) => location.href });
     const { scope, queryClient } = appRoute.useRouteContext();
     const router = useRouter();
     // Subscribed, so the header shows the project's name once the list arrives.
@@ -316,9 +315,6 @@ const appRoute = createRoute({
             projectLabel={projectLabel}
             projectKey={scope.scope}
             search={<SearchPalette scope={scope.scope} />}
-            notifications={
-              <NotificationBell key={`notifications/${locationHref}`} scope={scope.scope} />
-            }
             unread={unread}
             live={<LiveUpdates scope={scope.scope} />}
             projectSwitcher={
@@ -470,8 +466,10 @@ const IntegrationsScreen = (context: FeatureContext) => (
 const PendingScreen = (context: FeatureContext) => (
   <DecisionInbox {...context} useQuality={useQualityReview} />
 );
+const AvisosScreen = (context: FeatureContext) => <AvisosPanel scope={context.scope} />;
 const featurePages = {
   '/pendientes': PendingScreen,
+  '/avisos': AvisosScreen,
   '/situaciones': SituationsScreen,
   '/buzon': MailboxScreen,
   '/lecciones': LessonsScreen,

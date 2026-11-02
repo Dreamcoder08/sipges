@@ -88,8 +88,9 @@ Keep a copy of `SIPGES_DATA_KEY` in a password manager, separate from any databa
 1. Rotate it with the table above, starting with whatever grants the widest access (Cloudflare
    token, database URL).
 2. A leaked SIPGES session or password: deactivate the account (this deletes all its sessions),
-   reset the password, reactivate. An administrator can also reset its MFA
-   (`POST /system/auth/accounts/:username/reset-mfa`).
+   reset the password, reactivate. An administrator of a project the user is granted can also
+   reset its MFA (Administración › «Restablecer MFA», `POST /system/auth/accounts/:username/reset-mfa`);
+   it ends the user's sessions and leaves a `MFA_RESET` row in that project's Auditoría.
 3. Read Auditoría for the period of exposure; egress to external AI is logged under module
    «IA externa», action `EGRESS`.
 4. If the secret was ever committed, rotating it is mandatory; removing it from git history does

@@ -25,7 +25,10 @@ import { useReveal } from '../../shared/lib/reveal.ts';
 import styles from './AdministrationPage.module.css';
 
 type Access = { username: string; company_id: string; project_id: string };
-type Confirmation = { kind: 'deactivate'; username: string } | { kind: 'revoke'; access: Access };
+type Confirmation =
+  | { kind: 'deactivate'; username: string }
+  | { kind: 'reset-mfa'; username: string }
+  | { kind: 'revoke'; access: Access };
 type Operation =
   | {
       kind: 'account';
@@ -118,6 +121,13 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
             options,
           );
           return 'Cuenta desactivada y sesiones revocadas.';
+        case 'reset-mfa':
+          await requestJson(
+            `/system/auth/accounts/${encodeURIComponent(operation.username)}/reset-mfa`,
+            OkResponse,
+            options,
+          );
+          return `MFA de ${operation.username} restablecido; sus sesiones se cerraron.`;
         case 'revoke':
           await requestJson('/system/auth/grants', OkResponse, {
             scope,
@@ -184,8 +194,8 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
   );
   const confirmationPanel = useReveal<HTMLDivElement>(
     confirmation
-      ? confirmation.kind === 'deactivate'
-        ? `deactivate:${confirmation.username}`
+      ? confirmation.kind !== 'revoke'
+        ? `${confirmation.kind}:${confirmation.username}`
         : `revoke:${confirmation.access.username}:${confirmation.access.company_id}/${confirmation.access.project_id}`
       : '',
   );
@@ -234,16 +244,37 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                             <td data-label="Estado">{row.active ? 'Activa' : 'Inactiva'}</td>
                             <td data-label="Acción">
                               {row.active === 1 && (
-                                <Button
-                                  variant="secondary"
-                                  disabled={busy || !!confirmation}
-                                  onClick={() =>
-                                    setConfirmation({ kind: 'deactivate', username: row.username })
-                                  }
-                                  aria-label={`Desactivar ${row.username}`}
-                                >
-                                  Desactivar
-                                </Button>
+                                <div className={styles.actions}>
+                                  <Button
+                                    variant="secondary"
+                                    disabled={busy || !!confirmation}
+                                    onClick={() =>
+                                      setConfirmation({
+                                        kind: 'deactivate',
+                                        username: row.username,
+                                      })
+                                    }
+                                    aria-label={`Desactivar ${row.username}`}
+                                  >
+                                    Desactivar
+                                  </Button>
+                                  {/* The server refuses resetting one's own MFA (ADR 0009). */}
+                                  {row.username !== username && (
+                                    <Button
+                                      variant="secondary"
+                                      disabled={busy || !!confirmation}
+                                      onClick={() =>
+                                        setConfirmation({
+                                          kind: 'reset-mfa',
+                                          username: row.username,
+                                        })
+                                      }
+                                      aria-label={`Restablecer MFA de ${row.username}`}
+                                    >
+                                      Restablecer MFA
+                                    </Button>
+                                  )}
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -438,13 +469,17 @@ export const AdministrationPage = ({ scope, projectLabel, role, username }: Feat
                 <p>
                   {confirmation.kind === 'deactivate'
                     ? `Desactivar ${confirmation.username} revoca todas sus sesiones. El servidor protege al último administrador.`
-                    : `Revocar el acceso de ${confirmation.access.username} a ${confirmation.access.company_id}/${confirmation.access.project_id}.`}
+                    : confirmation.kind === 'reset-mfa'
+                      ? `Restablecer el MFA de ${confirmation.username} borra su autenticador y cierra todas sus sesiones; registrará uno nuevo al volver a ingresar. Solo se permite si la cuenta tiene acceso al proyecto activo, y queda en su auditoría.`
+                      : `Revocar el acceso de ${confirmation.access.username} a ${confirmation.access.company_id}/${confirmation.access.project_id}.`}
                 </p>
                 <div className={styles.actions}>
                   <Button disabled={busy} onClick={() => run(confirmation)}>
                     {confirmation.kind === 'deactivate'
                       ? 'Confirmar desactivación'
-                      : 'Confirmar revocación'}
+                      : confirmation.kind === 'reset-mfa'
+                        ? 'Confirmar restablecimiento'
+                        : 'Confirmar revocación'}
                   </Button>
                   <Button disabled={busy} variant="secondary" onClick={() => setConfirmation(null)}>
                     Cancelar

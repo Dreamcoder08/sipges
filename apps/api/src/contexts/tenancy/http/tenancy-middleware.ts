@@ -37,8 +37,9 @@ export const tenancyMiddleware =
   (tenancy: TenancyService): MiddlewareHandler<AppEnv> =>
   async (c, next) => {
     const identity = c.get('identity');
-    const accountDeactivation =
-      /^\/system\/auth\/accounts\/[^/]+\/(deactivate|reset-mfa|google)$/.test(c.req.path);
+    const accountDeactivation = /^\/system\/auth\/accounts\/[^/]+\/(deactivate|google)$/.test(
+      c.req.path,
+    );
     if (!identity || SCOPE_FREE_PATHS.has(c.req.path) || accountDeactivation) return next();
 
     const resolution = await tenancy.resolve({

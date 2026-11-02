@@ -105,19 +105,20 @@ for (const mobile of [false, true]) {
         });
       expect(await signals()).toHaveLength(1);
       expect(await notices()).toHaveLength(1);
-      // Regression: navigate from an already mounted intelligence route with another selection.
+      // Start on the intelligence route with another selection; the notice must open its own.
       await page.goto('/inteligencia-redes?alert=DIG-MISSING-SYNTHETIC');
-      // Phones reach the inbox through the menu drawer (docs/adr/0015, addendum 2026-11-01).
+      // The bell opens Bandeja › «Avisos» (functional-closure S9); phones reach it through the
+      // menu drawer (docs/adr/0015, addenda 2026-11-01 and 2026-11-02).
       if (mobile) await page.getByRole('button', { name: /^Abrir menú/ }).click();
-      await page.getByRole('button', { name: /Notificaciones/ }).click();
-      const inbox = page.getByRole('region', { name: 'Notificaciones', exact: true });
+      await page.getByRole('link', { name: /^Notificaciones/ }).click();
+      if (mobile) await expect(page.getByRole('dialog', { name: 'Menú' })).toBeHidden();
+      const inbox = page.getByRole('region', { name: 'Avisos', exact: true });
       await inbox.getByRole('link', { name: noticeTitle, exact: true }).click();
       await expect(page).toHaveURL(
         (url) =>
           url.pathname === '/inteligencia-redes' && url.searchParams.get('alert') === signal.id,
       );
       await expect(inbox).toBeHidden();
-      if (mobile) await expect(page.getByRole('dialog', { name: 'Menú' })).toBeHidden();
       await expect(
         page.getByRole('heading', { name: `Alerta ${signal.id}`, exact: true }),
       ).toBeVisible();

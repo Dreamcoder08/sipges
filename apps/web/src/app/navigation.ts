@@ -35,6 +35,7 @@ export const SCREENS = [
   },
   { path: '/alertas', label: 'Alertas', title: 'Centro de alertas', ready: true },
   { path: '/pendientes', label: 'Pendientes', title: 'Pendientes de decisión', ready: true },
+  { path: '/avisos', label: 'Avisos', title: 'Avisos', ready: true },
   { path: '/situaciones', label: 'Situaciones', title: 'Situaciones relacionadas', ready: true },
   { path: '/buzon', label: 'Buzón', title: 'Buzón de quejas y sugerencias', ready: true },
   { path: '/lecciones', label: 'Lecciones', title: 'Lecciones territoriales', ready: true },
@@ -161,6 +162,8 @@ export const DESTINATIONS = [
     param: 'vista',
     tabs: tabs(
       ['pendientes', '/pendientes'],
+      // Automation notifications (ADR 0014); the shell's bell opens this tab (functional-closure S9).
+      ['avisos', '/avisos'],
       ['alertas', '/alertas'],
       ['validacion', '/validacion'],
       ['calidad', '/calidad'],
@@ -234,6 +237,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/inteligencia-redes': 'network',
   '/alertas': 'bell',
   '/pendientes': 'inbox',
+  '/avisos': 'alert',
   '/situaciones': 'link',
   '/buzon': 'mail',
   '/lecciones': 'lightbulb',
@@ -263,6 +267,9 @@ export const titleFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.title ??
   DESTINATIONS.find((hub) => hub.path === path)?.label ??
   'SIPGES';
+
+/** Bandeja › «Avisos», the notification inbox the shell's bell opens (functional-closure S9). */
+export const AVISOS_HREF = '/bandeja?vista=avisos';
 
 /** Where a signed-in person lands by default: Inicio (functional-closure S6). */
 export const HOME_PATH = '/inicio';

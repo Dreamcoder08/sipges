@@ -7,6 +7,7 @@ import {
   TotpEnableRequest,
 } from '@sipges/contracts';
 import { Hono } from 'hono';
+import { formatScope } from '../../tenancy/application/index.ts';
 import { getCookie } from 'hono/cookie';
 import {
   SCOPE_COOKIE,
@@ -119,11 +120,16 @@ export const authRoutes = (deps: {
     })
 
     .post('/system/auth/accounts/:username/reset-mfa', async (c) => {
-      const result = await identity.resetMfa(c.get('identity'), c.req.param('username'));
+      const result = await identity.resetMfa(
+        c.get('identity'),
+        c.req.param('username'),
+        formatScope(c.get('scope')),
+      );
       if (!result.ok) {
         const errors = {
           forbidden: [403, 'Administración de cuentas restringida'],
           self: [403, 'No puede restablecer su propio MFA; pida a otro administrador'],
+          out_of_scope: [403, 'Usuario fuera del proyecto activo'],
           invalid: [422, 'Usuario inválido'],
           missing: [404, 'Usuario inexistente'],
         } as const;
