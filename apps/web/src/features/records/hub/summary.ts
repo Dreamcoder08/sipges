@@ -7,16 +7,21 @@ export type VerificationLetter = (typeof VERIFICATION_LETTERS)[number];
 export const VALIDATION_STATES = ['Preliminar', 'En revisión', 'Validado'] as const;
 
 /** «B - Corroborada» → B. Other wordings («Por verificar») have no A–E grade. */
-export const verificationLetter = (label: string): VerificationLetter | undefined =>
-  VERIFICATION_LETTERS.find((letter) => label.startsWith(`${letter} -`));
+export const verificationLetter = (label: string): VerificationLetter | null =>
+  VERIFICATION_LETTERS.find((letter) => label.startsWith(`${letter} -`)) ?? null;
 
+/**
+ * The columns every record type shares. Registros «Todos» receives them from
+ * GET /api/registros/summary (the server mirrors these field reads in
+ * apps/api/src/contexts/records/domain/summary.ts); the record sheet derives them here.
+ */
 export type RecordSummary = {
   module: RecordModule;
   id: string;
   title: string;
   territory: string;
   date: string;
-  verification: VerificationLetter | undefined;
+  verification: VerificationLetter | null;
   validation: string;
 };
 

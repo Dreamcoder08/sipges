@@ -1,10 +1,10 @@
 import type { Role } from '@sipges/contracts';
-import { useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { ChipRow } from '../../../shared/ui/ChipRow.tsx';
 import { QueryState } from '../../../shared/ui/QueryState.tsx';
-import { recordsQuery } from '../api.ts';
+import { recordsSummaryQuery } from '../api.ts';
 import { canWriteRecords } from '../model.ts';
 import type { RecordModule } from '../modules.ts';
 import { RecordsPage } from '../RecordsPage.tsx';
@@ -13,7 +13,7 @@ import { useDocked } from './dock.ts';
 import styles from './Hub.module.css';
 import { HUB_TYPES } from './types.ts';
 import { type OpenRecord, RecordSheet } from './RecordSheet.tsx';
-import { type RecordSummary, summarize } from './summary.ts';
+import type { RecordSummary } from './summary.ts';
 import { TodosList } from './TodosList.tsx';
 import { TypePicker } from './TypePicker.tsx';
 
@@ -38,30 +38,20 @@ const DENSITIES: readonly (readonly [Density, string])[] = [
 /**
  * Registros as one destination (odd/tasks/workspace-architecture.md S3): chips by record type
  * with counts, one cross-type list, and the type screens unchanged underneath. Counts and the
- * cross-type list are read from each type's own list endpoint, so no API changed.
+ * cross-type list come from one request, GET /api/registros/summary.
  */
 export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
   const selected: 'todos' | RecordModule = isType(tipo) ? tipo : 'todos';
-  const lists = useQueries({
-    queries: HUB_TYPES.map(([module]) => recordsQuery(module, context.scope, '')),
-  });
-  const count = (query: (typeof lists)[number] | undefined) =>
-    query?.data ? String(query.data.length) : query?.isError ? '—' : '…';
-  const total = lists.every((query) => query.data)
-    ? String(lists.reduce((sum, query) => sum + (query.data?.length ?? 0), 0))
-    : lists.some((query) => query.isError)
-      ? '—'
-      : '…';
+  const summary = useQuery(recordsSummaryQuery(context.scope));
+  const pending = summary.isError ? '—' : '…';
+  const counts = summary.data?.counts;
+  const total = counts ? String(Object.values(counts).reduce((sum, n) => sum + n, 0)) : pending;
   const everything = {
-    isPending: lists.some((query) => query.isPending),
-    error: lists.find((query) => query.error)?.error ?? null,
-    isFetching: lists.some((query) => query.isFetching),
-    refetch: () => lists.forEach((query) => query.error && void query.refetch()),
-    data: lists.every((query) => query.data)
-      ? lists.flatMap((query, index) =>
-          (query.data ?? []).map((row) => summarize(HUB_TYPES[index]?.[0] ?? 'eventos', row)),
-        )
-      : undefined,
+    isPending: summary.isPending,
+    error: summary.error,
+    isFetching: summary.isFetching,
+    refetch: () => void summary.refetch(),
+    data: summary.data?.rows,
   };
   const [open, setOpen] = useState<OpenRecord | null>(null);
   const [intent, setIntent] = useState<{ module: RecordModule; kind: 'create' | 'import' } | null>(
@@ -88,7 +78,7 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
           >
             Todos <span className={styles.count}>{total}</span>
           </Button>
-          {HUB_TYPES.map(([module, label], index) => (
+          {HUB_TYPES.map(([module, label]) => (
             <Button
               key={module}
               size="sm"
@@ -96,7 +86,8 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
               aria-pressed={selected === module}
               onClick={() => choose(module)}
             >
-              {label} <span className={styles.count}>{count(lists[index])}</span>
+              {label}{' '}
+              <span className={styles.count}>{counts ? String(counts[module]) : pending}</span>
             </Button>
           ))}
         </ChipRow>
@@ -155,7 +146,7 @@ const Workspace = ({
   ...context
 }: Omit<Props, 'tipo' | 'onTipo'> & {
   selected: 'todos' | RecordModule;
-  everything: Parameters<typeof QueryState<RecordSummary[]>>[0]['query'];
+  everything: Parameters<typeof QueryState<readonly RecordSummary[]>>[0]['query'];
   onOpen: (record: OpenRecord) => void;
   docked: boolean;
   start: 'create' | 'import' | undefined;

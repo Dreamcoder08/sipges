@@ -78,3 +78,19 @@ export type RecordStore = {
 
 export type Clock = { now(): Date };
 export type RandomHex = (length: number) => string;
+
+/** A stored record with the type it belongs to (cross-type reads). */
+export type TypedRecord = StoredRecord & { readonly module: ModuleName };
+
+/**
+ * Cross-type read for Registros «Todos», inside one tenant transaction (forced RLS also hides
+ * restricted rows from limited clearance). Rows come in `modules` order, newest first within
+ * each type; `counts` holds every listed type's total matching `q`, also when it is zero.
+ */
+export type RecordSummaryReader = {
+  summary(
+    tenantId: string,
+    modules: readonly ModuleName[],
+    query: { limit: number; offset: number; q: string | null },
+  ): Promise<{ rows: TypedRecord[]; counts: ReadonlyMap<ModuleName, number> }>;
+};

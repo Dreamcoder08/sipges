@@ -1,4 +1,6 @@
+import { SUMMARY_MODULES } from '@sipges/contracts';
 import { HttpResponse, http } from 'msw';
+import { summarize } from '../features/records/hub/summary.ts';
 import { api, server } from './server.ts';
 
 type Row = Record<string, unknown> & { _id: string };
@@ -8,6 +10,24 @@ export const installRecordsApi = (initial: Record<string, Row[]> = {}) => {
   const key = (request: Request, module: string) =>
     `${request.headers.get('X-SIPGES-Scope') ?? api.scope}/${module}`;
   server.use(
+    // Registros «Todos»: every hub type of the request's scope, in chip order, paged.
+    http.get('/api/registros/summary', ({ request }) => {
+      const url = new URL(request.url);
+      const limit = Number(url.searchParams.get('limit') ?? 200);
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const all = SUMMARY_MODULES.flatMap((module) =>
+        (rows[key(request, module)] ?? []).map((row) => ({
+          ...summarize(module, row),
+          updated_at: '2026-10-01T00:00:00Z',
+        })),
+      );
+      return HttpResponse.json({
+        counts: Object.fromEntries(
+          SUMMARY_MODULES.map((module) => [module, (rows[key(request, module)] ?? []).length]),
+        ),
+        rows: all.slice(offset, offset + limit),
+      });
+    }),
     http.get('/api/:module', ({ request, params }) => {
       const q = new URL(request.url).searchParams.get('q')?.toLowerCase() ?? '';
       return HttpResponse.json(

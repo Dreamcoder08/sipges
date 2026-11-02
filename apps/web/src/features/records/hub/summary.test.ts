@@ -4,8 +4,8 @@ import { summarize, verificationLetter } from './summary.ts';
 it('reads the A–E letter from a verification label, and nothing from other wording', () => {
   expect(verificationLetter('B - Corroborada')).toBe('B');
   expect(verificationLetter('E - No verificada')).toBe('E');
-  expect(verificationLetter('Por verificar')).toBeUndefined();
-  expect(verificationLetter('')).toBeUndefined();
+  expect(verificationLetter('Por verificar')).toBeNull();
+  expect(verificationLetter('')).toBeNull();
 });
 
 it('summarises a record of any type for the shared list', () => {
@@ -30,7 +30,7 @@ it('summarises a record of any type for the shared list', () => {
   expect(summarize('actores', { _id: 'A-1' })).toMatchObject({
     title: 'A-1',
     territory: '',
-    verification: undefined,
+    verification: null,
     validation: '',
   });
 });
