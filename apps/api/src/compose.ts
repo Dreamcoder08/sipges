@@ -89,9 +89,11 @@ import {
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
 import { readinessProbe } from './platform/database/readiness.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
+import { createSqlAuditWriter } from './contexts/audit/infrastructure/sql-audit-writer.ts';
 import {
   type DocumentLabService,
   type DocumentReader,
+  type ReviewRecordWriter,
   createDocumentLabService,
 } from './contexts/documents/application/index.ts';
 import {
@@ -221,6 +223,27 @@ const randomHex = (length: number) =>
     .slice(0, length);
 
 /** Wires adapters into use cases (manual constructor injection, docs/adr/0002). */
+/**
+ * The records port of the document lab (docs/adr/0002): approvals create records through the
+ * records use cases, so validation, normalization and audit match every other record write.
+ */
+export const reviewRecordsPort = (records: RecordsService): ReviewRecordWriter => ({
+  async createMissing(tenantId, slug, items, options) {
+    const module = moduleForSlug(slug);
+    if (!module) return { created: 0, existing: 0, problems: [`Módulo desconocido: ${slug}`] };
+    const result = await records.createMissing(tenantId, module, items, options);
+    return {
+      created: result.created,
+      existing: result.existing,
+      problems: result.problems.map((problem) => `fila ${problem.row}: ${problem.message}`),
+    };
+  },
+  async existing(tenantId, slug, ids) {
+    const module = moduleForSlug(slug);
+    return module ? records.existing(tenantId, module, ids) : new Set<string>();
+  },
+});
+
 export const buildContainer = async (deps: {
   geographyGateway?: GeographyGateway;
   sourceGateway?: OfficialSourceGateway;
@@ -248,7 +271,11 @@ export const buildContainer = async (deps: {
   /** Overrides browser push delivery (tests record pushes instead). */
   pushSender?: PushSender | null;
 }): Promise<Container> => {
-  const cipher = createSecretCipher(deps.config.dataKey);
+  // Reads values sealed with the key being rotated out; seals with the current one only.
+  const cipher = createSecretCipher(
+    deps.config.dataKey,
+    deps.config.dataKeyPrevious ? [deps.config.dataKeyPrevious] : [],
+  );
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
     hasher: deps.passwordHasher ?? passwordHasher,
@@ -407,6 +434,7 @@ export const buildContainer = async (deps: {
     reader,
     renderer: docxRenderer,
     reviews: createSqlReviewStore(deps.sql),
+    records: reviewRecordsPort(records),
     clock: deps.clock,
     randomHex,
     maxUploadBytes: deps.config.maxUploadBytes,
@@ -420,6 +448,7 @@ export const buildContainer = async (deps: {
     },
     embeddings,
     egress,
+    externalAi: { enabled: (tenantId) => situations.externalAiEnabled(tenantId) },
     alerts: createSqlAlertStore(deps.sql),
     clock: deps.clock,
     randomHex,
@@ -545,6 +574,7 @@ export const buildContainer = async (deps: {
     sealer: cipher,
     clock: deps.clock,
     recordModules: RECORD_MODULES,
+    audit: createSqlAuditWriter(deps.sql),
     push: {
       store: createSqlPushStore(deps.sql),
       sender:

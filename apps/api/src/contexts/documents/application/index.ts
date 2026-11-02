@@ -7,6 +7,7 @@ export type {
   ReportRenderer,
   ReviewPage,
   ReviewQuery,
+  ReviewRecordWriter,
   ReviewStore,
   TextRecognizer,
 } from './ports.ts';
@@ -15,4 +16,7 @@ export {
   type DocumentLabService,
   type ImportError,
   type ReadError,
+  type ReviewDecision,
+  type ReviewListItem,
 } from './document-lab-service.ts';
+export { type MaterializeReport, materializeApprovedReviews } from './review-materialize.ts';

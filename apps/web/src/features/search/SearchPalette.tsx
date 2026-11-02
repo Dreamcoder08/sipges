@@ -5,6 +5,7 @@ import { objectHref, useInternalNavigate } from '../../shared/lib/navigation.tsx
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '../../shared/ui/dialog.tsx';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { searchQuery } from './api.ts';
+import { embedderStatusQuery, embedderUnavailableReason, semanticSearchDown } from './embedder.ts';
 import styles from './SearchPalette.module.css';
 
 const useDebounced = (value: string, ms: number) => {
@@ -37,6 +38,7 @@ const Results = ({
   const [active, setActive] = useState(0);
   const q = useDebounced(text.trim(), 200);
   const results = useQuery({ ...searchQuery(scope, q), placeholderData: keepPreviousData });
+  const embedder = useQuery(embedderStatusQuery(scope));
   const hits = q ? (results.data?.hits ?? []) : [];
   const current = Math.min(active, Math.max(0, hits.length - 1));
   const open = (index: number) => {
@@ -88,6 +90,12 @@ const Results = ({
               ? 'Buscando…'
               : `${hits.length} resultado${hits.length === 1 ? '' : 's'}`}
       </p>
+      {embedder.data && semanticSearchDown(embedder.data) && (
+        <p className={styles.status}>
+          Búsqueda por palabras clave: la búsqueda por significado no está disponible (
+          {embedderUnavailableReason(embedder.data)}).
+        </p>
+      )}
       <ul id={listId} role="listbox" aria-label="Resultados" className={styles.list}>
         {hits.map((hit, index) => (
           <li

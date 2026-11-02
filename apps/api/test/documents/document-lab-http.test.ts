@@ -280,7 +280,12 @@ describe('document review inbox', () => {
       note: 'Contrastado con acta firmada',
     });
     expect(ok.status).toBe(200);
-    expect(await ok.json()).toEqual({ ok: true, id, status: 'corroborado_documentalmente' });
+    expect(await ok.json()).toEqual({
+      ok: true,
+      id,
+      status: 'corroborado_documentalmente',
+      record: { module: 'compromisos', id: `REV-${id}`, created: true },
+    });
 
     const done = (await (
       await json('GET', '/system/document-lab/review?status=corroborado_documentalmente')
@@ -290,7 +295,9 @@ describe('document review inbox', () => {
     ]);
 
     const audit = (await (await json('GET', '/system/audit')).json()) as Record<string, unknown>[];
-    expect(audit[0]).toMatchObject({
+    // The decision is audited, then the record its approval created (T23).
+    expect(audit[0]).toMatchObject({ module: 'Compromisos', record_id: `REV-${id}` });
+    expect(audit[1]).toMatchObject({
       module: 'Laboratorio_Documental',
       record_id: id,
       action: 'REVIEW',

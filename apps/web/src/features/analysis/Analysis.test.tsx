@@ -300,6 +300,52 @@ describe('document lab', () => {
       note: 'Acta original contrastada con fecha y firma.',
     });
   });
+  it('says which module an approval writes to and links the record it created', async () => {
+    server.use(
+      http.get('*/system/document-lab/review', () =>
+        HttpResponse.json({
+          items: [
+            { ...review, target: { module: 'demandas', label: 'Demandas' }, record: null },
+            {
+              ...review,
+              id: 'review2',
+              status: 'corroborado_documentalmente',
+              target: { module: 'demandas', label: 'Demandas' },
+              record: { module: 'demandas', id: 'REV-review2' },
+            },
+          ],
+          total: 2,
+          limit: 50,
+          offset: 0,
+          themes: { [review.theme]: 2 },
+          limitations: 'Revisión no certifica verdad.',
+        }),
+      ),
+      http.patch('*/system/document-lab/review/review1', () =>
+        HttpResponse.json({
+          ok: true,
+          id: 'review1',
+          status: 'aceptado_para_revision',
+          record: { module: 'demandas', id: 'REV-review1', created: true },
+        }),
+      ),
+    );
+    mount(<DocumentLab {...context} />);
+    const row = await screen.findByRole('group', { name: 'Revisar hallazgo review1' });
+    expect(within(row).getByText('Al aprobar, se crea el registro en Demandas.')).toBeVisible();
+    const existing = screen.getByRole('link', { name: 'Ver el registro en Demandas' });
+    expect(existing).toHaveAttribute('href', '/objeto/demandas/REV-review2');
+    await userEvent.selectOptions(within(row).getByLabelText('Decisión'), 'aceptado_para_revision');
+    await userEvent.click(within(row).getByRole('button', { name: 'Guardar decisión' }));
+    expect(
+      await within(row).findByText('Decisión registrada. Registro creado en Demandas.'),
+    ).toBeVisible();
+    expect(within(row).getByRole('link', { name: 'Ver el registro en Demandas' })).toHaveAttribute(
+      'href',
+      '/objeto/demandas/REV-review1',
+    );
+  });
+
   it('pages the review queue and shows the total, page and item count', async () => {
     const requests: URL[] = [];
     pagedInbox(requests);

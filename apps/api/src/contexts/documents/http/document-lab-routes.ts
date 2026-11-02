@@ -13,7 +13,7 @@ import {
   LAB_REPORT_FILENAME,
   MAX_REVIEW_PAGE,
   type ReadError,
-  type ReviewItem,
+  type ReviewListItem,
 } from '../application/index.ts';
 
 /** Multipart overhead allowed on top of the files before the body is refused unread. */
@@ -92,7 +92,7 @@ const readForm = async <F extends string>(
   return { ok: true, files: files as Record<F, FormFile>, projectId: scope.projectId };
 };
 
-const reviewJson = (item: ReviewItem) => ({
+const reviewJson = (item: ReviewListItem) => ({
   id: item.id,
   project_id: item.projectId,
   source_file: item.sourceFile,
@@ -106,6 +106,8 @@ const reviewJson = (item: ReviewItem) => ({
   note: item.note,
   created_at: isoSeconds(item.createdAt),
   updated_at: isoSeconds(item.updatedAt),
+  target: item.target,
+  record: item.record,
 });
 
 /** Whole-number query value inside [min, max]; undefined means "not supplied". */
