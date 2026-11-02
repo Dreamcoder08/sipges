@@ -37,11 +37,9 @@ const when = (date: string) =>
  * frequent tasks. The full analysis follows below it on the same page.
  */
 export const TodayView = ({
-  projectId,
   scope,
   renderLink,
 }: {
-  projectId: string;
   scope: string;
   renderLink: (to: string, children: ReactNode) => ReactNode;
 }) => {
@@ -49,8 +47,8 @@ export const TodayView = ({
   const irsa = useQuery(irsaQuery(scope));
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
-  const urgent = alerts.data ? criticalAlerts(alerts.data, projectId) : null;
-  const latest = events.data ? recentEvents(events.data, projectId) : null;
+  const urgent = alerts.data ? criticalAlerts(alerts.data) : null;
+  const latest = events.data ? recentEvents(events.data) : null;
 
   return (
     <div className={styles.today}>

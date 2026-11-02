@@ -14,24 +14,20 @@ describe('territorial map model', () => {
   });
 
   it('places located records of the project and spreads those sharing a place', () => {
-    const { points, unlocated } = mapPoints(
-      {
-        Eventos: [
-          {
-            _id: 'E-1',
-            Territorio: 'Vice',
-            Dimension_Principal: 'N - Narrativas',
-            Fecha: '2026-10-02',
-          },
-          { _id: 'E-2', Territorio: 'Vice', Dimension_Principal: 'G', Fecha: '2026-09-20' },
-          { _id: 'E-3', Territorio: 'Sin dato', Proyecto_ID: 'PRJ-SECHURA' },
-          { _id: 'E-4', Territorio: 'Vice', Proyecto_ID: 'OTRO' },
-        ],
-        Demandas: [{ _id: 'D-1', Territorio: 'x', Latitud: '-5.6', Longitud: '-80.9' }],
-        Actores: [],
-      },
-      'PRJ-SECHURA',
-    );
+    const { points, unlocated } = mapPoints({
+      Eventos: [
+        {
+          _id: 'E-1',
+          Territorio: 'Vice',
+          Dimension_Principal: 'N - Narrativas',
+          Fecha: '2026-10-02',
+        },
+        { _id: 'E-2', Territorio: 'Vice', Dimension_Principal: 'G', Fecha: '2026-09-20' },
+        { _id: 'E-3', Territorio: 'Sin dato', Proyecto_ID: 'PRJ-SECHURA' },
+      ],
+      Demandas: [{ _id: 'D-1', Territorio: 'x', Latitud: '-5.6', Longitud: '-80.9' }],
+      Actores: [],
+    });
     expect(unlocated).toBe(1);
     expect(points.map((p) => [p.id, p.dimension, p.locality])).toEqual([
       ['E-1', 'N', 'Vice'],
@@ -53,6 +49,18 @@ describe('territorial map model', () => {
       { month: '2026-09', count: 1 },
       { month: '2026-10', count: 1 },
     ]);
+  });
+
+  it('places every record of the tenant, with or without Proyecto_ID (S13)', () => {
+    const { points } = mapPoints({
+      Eventos: [
+        { _id: 'E-1', Latitud: '-4.95', Longitud: '-80.4' },
+        { _id: 'E-2', Latitud: '-4.95', Longitud: '-80.4', Proyecto_ID: 'PRJ-ALGARROBO' },
+      ],
+      Demandas: [],
+      Actores: [],
+    });
+    expect(points.map((p) => p.id)).toEqual(['E-1', 'E-2']);
   });
 
   it('counts points per month over a continuous span', () => {
@@ -77,19 +85,16 @@ describe('territorial map model', () => {
 
 describe('timeline playback', () => {
   it('shows what was documented up to the month, highlighting that month', () => {
-    const { points } = mapPoints(
-      {
-        Eventos: [
-          { _id: 'E-1', Territorio: 'Vice', Fecha: '2026-08-02' },
-          { _id: 'E-2', Territorio: 'Vice', Fecha: '2026-09-20' },
-          { _id: 'E-3', Territorio: 'Vice', Fecha: '2026-10-01' },
-          { _id: 'E-4', Territorio: 'Vice' },
-        ],
-        Demandas: [],
-        Actores: [],
-      },
-      'PRJ-SECHURA',
-    );
+    const { points } = mapPoints({
+      Eventos: [
+        { _id: 'E-1', Territorio: 'Vice', Fecha: '2026-08-02' },
+        { _id: 'E-2', Territorio: 'Vice', Fecha: '2026-09-20' },
+        { _id: 'E-3', Territorio: 'Vice', Fecha: '2026-10-01' },
+        { _id: 'E-4', Territorio: 'Vice' },
+      ],
+      Demandas: [],
+      Actores: [],
+    });
     expect(atCursor(points, '').map((d) => d.emphasis)).toEqual([
       'normal',
       'normal',
@@ -103,17 +108,14 @@ describe('timeline playback', () => {
   });
 
   it('keeps exact coordinates in place and filters by information state', () => {
-    const { points } = mapPoints(
-      {
-        Eventos: [
-          { _id: 'E-1', Latitud: -5.5, Longitud: -80.8, Nivel_Verificacion: 'A', Fuente_ID: 'F' },
-          { _id: 'E-2', Latitud: -5.5, Longitud: -80.8 },
-        ],
-        Demandas: [],
-        Actores: [],
-      },
-      'PRJ-SECHURA',
-    );
+    const { points } = mapPoints({
+      Eventos: [
+        { _id: 'E-1', Latitud: -5.5, Longitud: -80.8, Nivel_Verificacion: 'A', Fuente_ID: 'F' },
+        { _id: 'E-2', Latitud: -5.5, Longitud: -80.8 },
+      ],
+      Demandas: [],
+      Actores: [],
+    });
     expect(points.map((p) => [p.id, p.at, p.precision, p.evidence])).toEqual([
       ['E-1', [-80.8, -5.5], 'exacta', 'observado'],
       ['E-2', [-80.8, -5.5], 'exacta', 'estimado'],

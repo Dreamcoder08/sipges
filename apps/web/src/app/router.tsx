@@ -346,7 +346,6 @@ const DashboardScreen = (context: FeatureContext) => (
   <DashboardPage
     key={context.scope}
     scope={context.scope}
-    projectId={context.projectId}
     renderLink={(to, children) => <Link to={isScreen(to) ? to : '/'}>{children}</Link>}
   />
 );
