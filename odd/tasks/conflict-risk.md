@@ -17,7 +17,7 @@ slices. Delivery: `auto-chain`, stacked to main (domain → API → screen). Tes
 ## Tasks
 
 - T1 [x] — S1–S3, S7: ADR 0031 and the pure domain engine (signals, features, score, back-test, calibration, predictions) with unit tests. Route: inline. Commit: PR slice 1 (`feat/fc-conflict-risk`).
-- T2 [ ] — S4, S5 (API), S7: record reader with `updated_at`, ports wired in `compose.ts`, `GET /system/conflict-risk`, contract, HTTP and cross-tenant tests. Route: inline. Commit: pending.
+- T2 [x] — S4, S5 (API), S7: record reader with `updated_at`, ports wired in `compose.ts`, `GET /system/conflict-risk`, contract, HTTP and cross-tenant tests. Route: inline. Commit: PR slice 2 (`feat/fc-conflict-risk-api`).
 - T3 [ ] — S5, S6, S7: «Riesgo de conflicto» tab in Análisis, links from Inicio and the map's locality card, phone check, CHANGELOG and help text. Route: inline. Commit: pending.
 
 ## Log
@@ -25,3 +25,4 @@ slices. Delivery: `auto-chain`, stacked to main (domain → API → screen). Tes
 - L1 — 2026-11-02, request (verbatim owner words in S1, scope from functional-closure L10). Delegated to this tab; the parent ticks functional-closure.
 - L2 — Map: analytics already reads `module_records` through `AnalyticsRecordReader`; management shows the port pattern for other contexts (`intelligence.allAlerts`, `prevention.list` in `compose.ts`). IRSA is per project (snapshots 0–100), territorial alerts carry `territory`, `level` (Alta/Media/Baja), `status` and `reviewedAt`. Status-as-of-cut-off uses `updated_at`/`reviewedAt` to avoid leakage.
 - L3 — T1 done: RED (module missing) then 9/9 domain tests green; analytics folder 59/59 with one worker. Probe on 2,800 synthetic records, 75 units: 0.16 s, 90-day back-test skill 0.70. `pnpm verify:fast`: lint, Prettier, boundaries, typecheck OK; its full API test run was cut off by memory pressure (1.8 GB free), so focused tests stand in locally and CI runs the full suite.
+- L4 — T2 done: one RLS-checked query behind both record readers (`createSqlDatedRecordReader` adds `updated_at`), sources wired in `compose.ts` through `intelligence.allAlerts` and `indicators.history`, `GET /system/conflict-risk` and `ConflictRiskResponse`. RED: the HTTP suite fails to load without the route. GREEN: `test/analytics` 64/64 (one worker), including a cross-tenant test with fake per-scope sources, a PGlite RLS test of the dated reader and a full-app test (migrations, session, tenancy middleware; `?project_id=NORTE` refused). Typecheck api/web/contracts, ESLint and boundaries OK.

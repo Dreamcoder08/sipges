@@ -48,9 +48,14 @@ import {
 } from './contexts/analyst/infrastructure/index.ts';
 import {
   type AnalyticsService,
+  type ConflictRiskService,
   createAnalyticsService,
+  createConflictRiskService,
 } from './contexts/analytics/application/index.ts';
-import { createSqlAnalyticsRecordReader } from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import {
+  createSqlAnalyticsRecordReader,
+  createSqlDatedRecordReader,
+} from './contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
 import { createSqlDashboardRecordReader } from './contexts/analytics/infrastructure/sql-dashboard-record-reader.ts';
 import {
   type SituationsService,
@@ -196,6 +201,8 @@ export type Container = {
   readonly audit: AuditService;
   readonly indicators: IndicatorsService;
   readonly analytics: AnalyticsService;
+  /** Conflict-risk prediction (docs/adr/0031), inside the Worker, no external model. */
+  readonly conflictRisk: ConflictRiskService;
   readonly situations: SituationsService;
   readonly evidence: EvidenceService;
   readonly documents: DocumentLabService;
@@ -432,6 +439,28 @@ export const buildContainer = async (deps: {
     randomHex,
   });
   const iso = (date: Date) => `${date.toISOString().slice(0, 19)}Z`;
+  // Other contexts are read through their public services, for the scope's tenant only (ADR 0002).
+  const datedRecords = createSqlDatedRecordReader(deps.sql);
+  const conflictRisk = createConflictRiskService({
+    sources: {
+      records: (scope, modules) => datedRecords.read(scope, modules),
+      alerts: async (scope) =>
+        (await intelligence.allAlerts(scope)).map((a) => ({
+          id: a.id,
+          createdAt: a.createdAt.toISOString(),
+          territory: a.territory ?? null,
+          level: a.level,
+          status: a.status,
+          reviewedAt: a.reviewedAt ? a.reviewedAt.toISOString() : null,
+        })),
+      irsa: async (scope) =>
+        (await indicators.history(formatScope(scope), null)).map((p) => ({
+          ts: p.ts,
+          irsa: p.irsa,
+        })),
+    },
+    clock: deps.clock,
+  });
   const management = createManagementService({
     sources: {
       alerts: async (scope) =>
@@ -565,6 +594,7 @@ export const buildContainer = async (deps: {
     audit,
     indicators,
     analytics,
+    conflictRisk,
     situations,
     evidence,
     documents,

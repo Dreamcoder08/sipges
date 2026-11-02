@@ -1,6 +1,9 @@
 import { PGlite } from '@electric-sql/pglite';
 import { describe, expect, it } from 'vitest';
-import { createSqlAnalyticsRecordReader } from '../../src/contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
+import {
+  createSqlAnalyticsRecordReader,
+  createSqlDatedRecordReader,
+} from '../../src/contexts/analytics/infrastructure/sql-analytics-record-reader.ts';
 import { pgliteClient } from '../../src/platform/database/pglite.ts';
 import { trackTestDatabase } from '../support/test-database.ts';
 
@@ -28,7 +31,9 @@ const setup = async (withTable: boolean, forced = true) => {
         ('SIPGES/PRJ-SECHURA','Actores','a1','{}','2026-01-01'),
         ('ACME/NORTE','Eventos','n1','{"Tema":"north"}','2026-03-01');
     `);
-  return createSqlAnalyticsRecordReader(sql);
+  return Object.assign(createSqlAnalyticsRecordReader(sql), {
+    dated: createSqlDatedRecordReader(sql),
+  });
 };
 
 describe('SQL analytics record reader', () => {
@@ -59,5 +64,28 @@ describe('SQL analytics record reader', () => {
     await expect(reader.read(SECHURA, ['Eventos'])).rejects.toThrow(
       'Analytics requires forced tenant row-level security',
     );
+  });
+
+  it('reads records with their last update for conflict risk, never across tenants', async () => {
+    const reader = await setup(true);
+    expect(await reader.dated.read(SECHURA, ['Eventos'])).toEqual([
+      {
+        module: 'Eventos',
+        id: 'e-new',
+        payload: { Tema: 'new' },
+        updatedAt: '2026-02-01T00:00:00.000Z',
+      },
+      {
+        module: 'Eventos',
+        id: 'e-old',
+        payload: { Tema: 'old' },
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]);
+    const north = await reader.dated.read({ companyId: 'ACME', projectId: 'NORTE' }, ['Eventos']);
+    expect(north.map((r) => r.id)).toEqual(['n1']);
+    await expect(
+      reader.dated.read({ companyId: 'X', projectId: 'Y' }, ['Eventos']),
+    ).resolves.toEqual([]);
   });
 });
