@@ -5,7 +5,8 @@ name: CI
 # status checks come back (GitHub Pro rulesets), replace this filter with a job that reports success.
 on:
   pull_request:
-    paths-ignore:
+    # Docs-only changes skip CI; the push trigger reuses this list through the YAML anchor.
+    paths-ignore: &docs-only
       - 'odd/**'
       - '.engram/**'
       - 'design/**'
@@ -17,16 +18,7 @@ on:
       - 'README.md'
   push:
     branches: [main]
-    paths-ignore:
-      - 'odd/**'
-      - '.engram/**'
-      - 'design/**'
-      - 'docs/adr/**'
-      - 'docs/deployment/**'
-      - 'docs/operations/**'
-      - 'docs/history/**'
-      - 'CHANGELOG.md'
-      - 'README.md'
+    paths-ignore: *docs-only
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -139,13 +131,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       # The reference is frozen: run it only when it changes, but always report the check.
+      # Only the base commit is fetched (depth 1): comparing two trees needs no history.
       - id: changes
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
+          [ -n "$BASE" ] && git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
           if [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null \
             || git diff --name-only "$BASE" HEAD -- reference/python .github/workflows/ci.yml | grep -q .; then
             echo "python=true" >> "$GITHUB_OUTPUT"
