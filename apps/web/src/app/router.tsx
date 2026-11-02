@@ -88,6 +88,9 @@ const MethodologyPage = lazy(() =>
 const SituationalPage = lazy(() =>
   import('../features/analysis/index.ts').then((module) => ({ default: module.SituationalPage })),
 );
+const ConflictRiskPage = lazy(() =>
+  import('../features/analysis/index.ts').then((module) => ({ default: module.ConflictRiskPage })),
+);
 const StrategyPage = lazy(() =>
   import('../features/analysis/index.ts').then((module) => ({ default: module.StrategyPage })),
 );
@@ -483,6 +486,7 @@ const featurePages = {
   '/situacion': SituationalPage,
   '/estrategia': StrategicPage,
   '/irsa': IrsaPage,
+  '/riesgo': ConflictRiskPage,
   '/validacion': ValidationPage,
   '/administracion': AdministrationPage,
   '/metodologia': MethodologyPage,
@@ -497,7 +501,8 @@ const featureRoutes = (Object.keys(featurePages) as Array<keyof typeof featurePa
     component: function FeatureRoute() {
       const context = useFeatureContext();
       const search = useLocation({
-        select: (location) => (path === '/inteligencia-redes' ? location.searchStr : ''),
+        select: (location) =>
+          path === '/inteligencia-redes' || path === '/riesgo' ? location.searchStr : '',
       });
       const Page = featurePages[path];
       return <Page key={`${context.scope}/${path}/${search}`} {...context} />;
@@ -557,6 +562,8 @@ const hubRoute = (hub: Destination) => {
       const context = useFeatureContext();
       const navigate = useNavigate();
       const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      // Riesgo de conflicto reads `?localidad=` on mount; a new one remounts it (ADR 0031).
+      const searchStr = useLocation({ select: (location) => location.searchStr });
       if (hub.path === '/registros')
         return (
           <RegistrosHub
@@ -582,7 +589,10 @@ const hubRoute = (hub: Destination) => {
               </Button>
             ))}
           </ChipRow>
-          <Screen key={`${context.scope}/${tab.value}`} {...context} />
+          <Screen
+            key={`${context.scope}/${tab.value}${tab.value === 'riesgo' ? searchStr : ''}`}
+            {...context}
+          />
         </>
       );
     },

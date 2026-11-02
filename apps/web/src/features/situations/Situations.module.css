@@ -97,3 +97,9 @@
 .error {
   color: var(--color-danger, inherit);
 }
+
+.coordinates {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+}

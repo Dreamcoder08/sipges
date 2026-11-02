@@ -6,6 +6,7 @@ import { requestJson } from '../../shared/api/client.ts';
 import { saveBlob } from '../../shared/api/download.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
+import { useProjectSettings } from '../../shared/lib/project-settings.tsx';
 import {
   DIMENSIONS,
   DIMENSION_NAMES,
@@ -40,7 +41,7 @@ import { MapSheet } from './MapSheet.tsx';
 import { SIGNAL_MODULES } from './operations.ts';
 import { OperationsPanel } from './OperationsPanel.tsx';
 import { PointCard } from './PointCard.tsx';
-import { SECHURA_EXTENT } from './sechura-base.ts';
+import { projectArea } from './project-area.ts';
 import {
   atCursor,
   filterPlace,
@@ -175,6 +176,7 @@ const TerritorialWorkspace = ({
   scope: string;
 }) => {
   const id = useId();
+  const area = projectArea(useProjectSettings()?.location);
   const [filters, setFilters] = useState({
     layer: '',
     dimension: '',
@@ -205,7 +207,10 @@ const TerritorialWorkspace = ({
   const compact = useMediaQuery(COMPACT_QUERY);
   const mapSection = useRef<HTMLElement>(null);
 
-  const { points, unlocated } = useMemo(() => mapPoints(layers, projectId), [layers, projectId]);
+  const { points, unlocated } = useMemo(
+    () => mapPoints(layers, projectId, area.sechura),
+    [layers, projectId, area.sechura],
+  );
   const selectedConcession = selection?.kind === 'concession' ? selection.concession : null;
 
   const polygon = selectedConcession ? relationPolygon(selectedConcession) : null;
@@ -243,10 +248,16 @@ const TerritorialWorkspace = ({
   const selectedPoint =
     selection?.kind === 'point' ? (points.find((p) => p.id === selection.id) ?? null) : null;
   const localities = new Set(visible.map((p) => p.locality));
+  // Sechura's towns for projects there; elsewhere the localities the records carry.
+  const localityOptions = area.sechura
+    ? LOCALITIES.map((l) => l.name)
+    : [...new Set(points.map((p) => p.locality).filter(Boolean))].sort((a, b) =>
+        a.localeCompare(b, 'es'),
+      );
   const activeFilters =
     Object.values(filters).filter(Boolean).length + (evidence.length < EVIDENCE.length ? 1 : 0);
 
-  // Home view frames the visible points (or the whole province when there are none).
+  // Home view frames the visible points (or the project's area when there are none).
   const [minLon, minLat, maxLon, maxLat] = visible.length
     ? [
         Math.min(...visible.map((p) => p.at[0])),
@@ -254,7 +265,7 @@ const TerritorialWorkspace = ({
         Math.max(...visible.map((p) => p.at[0])),
         Math.max(...visible.map((p) => p.at[1])),
       ]
-    : SECHURA_EXTENT;
+    : area.extent;
   const home: readonly [number, number] = [(minLon + maxLon) / 2, (minLat + maxLat) / 2];
   const homeSpan = visible.length
     ? Math.max(maxLon - minLon, maxLat - minLat, 0.2) * 1.4
@@ -322,9 +333,11 @@ const TerritorialWorkspace = ({
     setCursor('');
     setPlaying(false);
     if (key === 'locality') {
-      const place = LOCALITIES.find((l) => l.name === value);
-      map.focus(place ? place.at : null, 1);
-      setFocus(place ? { at: place.at, zoom: 12 } : { extent: SECHURA_EXTENT });
+      const place = area.sechura
+        ? LOCALITIES.find((l) => l.name === value)?.at
+        : points.find((p) => p.locality === value)?.at;
+      map.focus(place ?? null, 1);
+      setFocus(place ? { at: place, zoom: 12 } : { extent: area.extent });
     }
   };
   const focusPoint = (point: MapPoint) => {
@@ -415,15 +428,16 @@ const TerritorialWorkspace = ({
     evidence: point.evidence,
     emphasis,
   }));
-  const mapLabel = 'Mapa territorial de la provincia de Sechura';
+  const mapLabel = `Mapa territorial de ${area.place}`;
 
   const svgMap = (
-    <MapFrame map={map} homeLabel="Ver toda la provincia">
+    <MapFrame map={map} homeLabel={area.home}>
       {(hint) => (
         <BaseMap
           view={map.view}
           label={mapLabel}
-          title="Registros georreferenciados y concesiones en la provincia de Sechura"
+          title={`Registros georreferenciados y concesiones en ${area.place}`}
+          showBase={area.sechura}
           background={
             basemap === 'ninguno' ? undefined : <TileLayer view={map.view} basemap={basemap} />
           }
@@ -579,8 +593,8 @@ const TerritorialWorkspace = ({
         <div className={styles.toolbar}>
           {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}
           {select('locality', 'Localidad', [
-            ['', 'Toda la provincia'],
-            ...LOCALITIES.map((l): [string, string] => [l.name, l.name]),
+            ['', area.all],
+            ...localityOptions.map((name): [string, string] => [name, name]),
           ])}
           {select('dimension', 'Dimensión', [
             ['', 'Todas'],
@@ -634,7 +648,8 @@ const TerritorialWorkspace = ({
                 <CesiumCanvas
                   basemap={basemap}
                   home={homeExtent}
-                  homeLabel="Ver toda la provincia"
+                  homeLabel={area.home}
+                  showDistricts={area.sechura}
                   label={`${mapLabel} En 3D, con relieve.`}
                   points={canvasPoints}
                   concessions={shownConcessions}
@@ -659,7 +674,8 @@ const TerritorialWorkspace = ({
                 <GeoCanvas
                   basemap={basemap}
                   home={homeExtent}
-                  homeLabel="Ver toda la provincia"
+                  homeLabel={area.home}
+                  showDistricts={area.sechura}
                   label={mapLabel}
                   points={canvasPoints}
                   concessions={shownConcessions}

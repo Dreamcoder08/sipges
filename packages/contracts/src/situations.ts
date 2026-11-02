@@ -65,6 +65,27 @@ export type PhaseWeights = z.infer<typeof PhaseWeights>;
 export const ExternalAiSetting = z.object({ enabled: z.boolean() });
 export type ExternalAiSetting = z.infer<typeof ExternalAiSetting>;
 
+const longitude = z.number().min(-180).max(180);
+const latitude = z.number().min(-90).max(90);
+/**
+ * Where the project is (T19): a place name for labels and the area the maps open on, as
+ * WGS 84 [west, south, east, north] in decimal degrees.
+ */
+export const ProjectLocation = z.object({
+  place: z
+    .string()
+    .trim()
+    .min(2)
+    .max(80)
+    .refine((value) => !value.includes('\0')),
+  extent: z
+    .tuple([longitude, latitude, longitude, latitude])
+    .refine(([west, south, east, north]) => west < east && south < north, {
+      message: 'El área debe ir de oeste a este y de sur a norte',
+    }),
+});
+export type ProjectLocation = z.infer<typeof ProjectLocation>;
+
 export const ProjectSettingsIn = z.object({
   level_meanings: LevelMeanings.optional(),
   window_days: z.number().int().min(7).max(365).optional(),
@@ -76,6 +97,8 @@ export const ProjectSettingsIn = z.object({
   /** Per phase: weights to save, or null to go back to the general IRSA weights. */
   phase_weights: z.partialRecord(ProjectPhase, PhaseWeights.nullable()).optional(),
   external_ai: ExternalAiSetting.optional(),
+  /** null clears the location: the maps go back to the Sechura province. */
+  location: ProjectLocation.nullable().optional(),
 });
 export type ProjectSettingsIn = z.infer<typeof ProjectSettingsIn>;
 
@@ -105,6 +128,8 @@ export const ProjectSettings = z.object({
   ),
   /** Absent from servers that predate the switch; read as off. */
   external_ai: ExternalAiSetting.optional(),
+  /** Null until an admin sets it; absent from servers that predate it. */
+  location: ProjectLocation.nullable().optional(),
   updated_by: z.string(),
   updated_at: z.string().nullable(),
 });

@@ -135,3 +135,23 @@ lists a Neon restore drill as outside the code).
    migrations run (`migrate` before `deploy:worker`).
 6. Record the drill (date, target time, duration, what failed) in an ODD log and change the
    status above.
+
+## Project location
+
+Each project stores where it is in Configuración › Proyecto › «Ubicación del proyecto» (administrators only;
+kept in `project_settings`, per tenant). The territorial map opens on that area when no record has coordinates
+and only draws the Sechura districts, towns and localities when the area overlaps that province. A project
+without a location keeps the Sechura province.
+
+Values to enter for Proyecto El Algarrobo (Tambogrande), from the GEOCATMIN view the owner shared (EPSG:3857
+extent `-8966404.4383, -562927.7506, -8929714.6648, -543206.9973`). The exact conversion to WGS 84 is
+about `[-80.547, -5.050, -80.217, -4.874]`; the agreed values below are slightly wider (under 1 km) and frame
+the same area:
+
+| Field | Value |
+| --- | --- |
+| Lugar | `Tambogrande, Piura` |
+| Oeste (longitud) | `-80.548` |
+| Sur (latitud) | `-5.057` |
+| Este (longitud) | `-80.218` |
+| Norte (latitud) | `-4.880` |
