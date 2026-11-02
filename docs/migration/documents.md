@@ -52,3 +52,14 @@ their order, and DOCX paragraph/table extraction of a python-docx file.
 Documents are never stored. Bodies above the upload limit plus 64 KiB of multipart overhead are
 refused unread. PDFs over 100 pages are refused before any page is read. DOCX bodies are capped
 at 32 MiB uncompressed.
+
+## PDF library version
+
+`unpdf` 2.1 (from 1.8). The adapter uses only `getDocumentProxy` and `getTextContent`, which
+the 2.0 breaking changes (ESM only, `definePDFJSModule`, `extractLinks`, `extractImages`,
+`renderPageAsImage`, `getMeta`) leave untouched. Use 2.1 or later, not 2.0.x: 2.0.x bundles the
+CCITT, JBIG2 and JPEG 2000 image decoders into every build, which grew the Worker upload from
+1,226 KiB to 1,622 KiB gzipped; 2.1 keeps them out of text-only bundles (1,237 KiB). On
+`wrangler dev` (workerd, `nodejs_compat`) the inline reader extracts the synthetic PDF's pages
+and refuses a PDF over the page limit as before. unpdf 2 declares Node.js 24 or later; CI and
+the deploy job still run Node.js 22, where the document tests pass.
