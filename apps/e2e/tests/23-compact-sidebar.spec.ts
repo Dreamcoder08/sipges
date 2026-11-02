@@ -49,17 +49,18 @@ test('the sidebar lists five destinations and Integraciones and fits without scr
   await expect(sidebar.getByRole('button', { name: /^Cuenta de / })).toBeInViewport();
 });
 
-test('search, inbox, project and account are in the sidebar, not in the top bar', async ({
+test('search, inbox, project and account are in the sidebar, with no top bar', async ({
   page,
   admin,
 }) => {
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await page.goto('/eventos');
   const sidebar = page.locator('aside').first();
-  const bar = page.locator('header').first();
-  await expect(bar.getByRole('heading', { level: 1, name: 'Eventos' })).toBeVisible();
-  await expect(bar.getByRole('button')).toHaveCount(0);
-  await expect(bar.getByLabel('Proyecto activo')).toHaveCount(0);
+  // The sidebar already names the project and the screen, so the title is only for assistive tech.
+  await expect(page.getByRole('heading', { level: 1, name: 'Eventos' })).toHaveClass(
+    /visually-hidden/,
+  );
+  await expect(page.locator('header:has(h1)')).toHaveCount(0);
 
   await expect(sidebar.getByLabel('Proyecto activo')).toHaveValue(DEFAULT_SCOPE);
   // The bell opens Bandeja › «Avisos» (functional-closure S9).
