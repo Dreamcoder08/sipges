@@ -48,14 +48,17 @@ start() {
 }
 
 stop() {
-  local names
-  names="$(docker ps -a --format '{{.Names}}' | grep -E "^$PREFIX(-[0-9]+)?$" || true)"
-  for name in $names; do
+  local name id
+  # Containers on this machine and registrations on GitHub: a registration whose container is gone is removed too.
+  for name in $(docker ps -a --format '{{.Names}}' | grep -E "^$PREFIX(-[0-9]+)?$" || true); do
     docker rm -f "$name" >/dev/null 2>&1 || true
-    id="$(gh api "repos/$REPO/actions/runners" --jq ".runners[] | select(.name == \"$name\") | .id")"
-    if [ -n "$id" ]; then gh api -X DELETE "repos/$REPO/actions/runners/$id"; fi
-    echo "$name stopped and unregistered"
+    echo "$name container removed"
   done
+  gh api "repos/$REPO/actions/runners" --jq ".runners[] | select(.name | test(\"^$PREFIX(-[0-9]+)?$\")) | \"\(.id) \(.name)\"" |
+    while read -r id name; do
+      gh api -X DELETE "repos/$REPO/actions/runners/$id"
+      echo "$name unregistered"
+    done
 }
 
 status() {
