@@ -13,7 +13,8 @@
     "bench:compare": "node bench/compare.ts",
     "vapid:keys": "node src/tools/vapid-keys.ts",
     "import:base-maestra": "node src/tools/base-maestra/cli.ts",
-    "review:materialize": "node src/tools/review-materialize/cli.ts"
+    "review:materialize": "node src/tools/review-materialize/cli.ts",
+    "rotate:data-key": "node src/tools/rotate-data-key/cli.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.3.0",

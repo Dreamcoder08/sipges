@@ -271,7 +271,11 @@ export const buildContainer = async (deps: {
   /** Overrides browser push delivery (tests record pushes instead). */
   pushSender?: PushSender | null;
 }): Promise<Container> => {
-  const cipher = createSecretCipher(deps.config.dataKey);
+  // Reads values sealed with the key being rotated out; seals with the current one only.
+  const cipher = createSecretCipher(
+    deps.config.dataKey,
+    deps.config.dataKeyPrevious ? [deps.config.dataKeyPrevious] : [],
+  );
   const identity = createIdentityService({
     store: createSqlIdentityStore(deps.sql),
     hasher: deps.passwordHasher ?? passwordHasher,
