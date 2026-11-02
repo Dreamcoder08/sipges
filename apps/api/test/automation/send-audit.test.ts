@@ -175,6 +175,13 @@ describe('audit of automation channel sends (S8)', () => {
     expectNoPersonalData([...accepted.entries, ...rejected.entries]);
   });
 
+  it('audits a push already sent even when recording its outcome fails', async () => {
+    const { service, pushStore, entries } = setup();
+    pushStore.finish.mockRejectedValue(new Error('database unavailable'));
+    await service.tick('SIPGES/PRJ-A').catch(() => {});
+    expect(entries.map((e) => e.entry.detail)).toEqual(['Envío push · entrega 5 · aceptado']);
+  });
+
   it('audits a push test in the active tenant without naming the person', async () => {
     const { service, entries } = setup();
     const result = await service.testPush('persona.sintetica', 'SIPGES/PRJ-A');

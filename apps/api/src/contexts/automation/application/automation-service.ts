@@ -162,10 +162,14 @@ export const createAutomationService = (deps: {
       );
       if (!deliveries.length) break;
       for (const d of deliveries) {
-        let outcome = 'fallido';
+        const audit = (outcome: string) =>
+          audited(tenantId, 'PUSH_SEND', `Envío push · entrega ${d.id} · ${outcome}`);
+        let sent = false;
         try {
           const result = await push.sender.send(d.subscription, d.payload, clock.now());
-          outcome = result === 'gone' ? 'expirado' : 'aceptado';
+          sent = true;
+          // Audited before any bookkeeping, so a send that happened always leaves its row.
+          await audit(result === 'gone' ? 'expirado' : 'aceptado');
           if (result === 'gone') await push.store.forget(d.subscription.endpoint);
           await push.store.finish(
             tenantId,
@@ -175,6 +179,7 @@ export const createAutomationService = (deps: {
             clock.now(),
           );
         } catch (error) {
+          if (!sent) await audit('fallido');
           const delay = retryDelayMinutes(d.attempts);
           await push.store.finish(
             tenantId,
@@ -184,7 +189,6 @@ export const createAutomationService = (deps: {
             new Date(clock.now().getTime() + (delay ?? 0) * 60000),
           );
         }
-        await audited(tenantId, 'PUSH_SEND', `Envío push · entrega ${d.id} · ${outcome}`);
       }
     }
   };
@@ -417,7 +421,7 @@ export const createAutomationService = (deps: {
     /** `tenantId` is the active project, where the test is audited (no person is named). */
     async testPush(
       username: string,
-      tenantId?: string,
+      tenantId: string,
     ): Promise<{
       status: 'accepted' | 'no_subscription' | 'failed';
       accepted: number;
@@ -454,12 +458,11 @@ export const createAutomationService = (deps: {
           failed = true;
         }
       }
-      if (tenantId)
-        await audited(
-          tenantId,
-          'PUSH_SEND',
-          `Prueba de push · ${accepted} aceptados · ${targets.length - accepted} fallidos`,
-        );
+      await audited(
+        tenantId,
+        'PUSH_SEND',
+        `Prueba de push · ${accepted} aceptados · ${targets.length - accepted} fallidos`,
+      );
       return {
         status: failed ? 'failed' : 'accepted',
         accepted,
