@@ -48,6 +48,7 @@ export const enterTenant = async (tx: SqlClient, tenantId: string): Promise<void
 /**
  * An escape-string literal (`E'…'`): backslashes and quotes are doubled, so the value stays one
  * literal whatever `standard_conforming_strings` is. NUL cannot be stored in text at all.
+ * Safe only with an ASCII-safe client encoding; both drivers here always use UTF8.
  */
 const literal = (value: string): string => {
   if (value.includes('\0')) throw new Error('Tenant settings cannot contain NUL characters');
