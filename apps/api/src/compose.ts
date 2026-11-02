@@ -371,6 +371,7 @@ export const buildContainer = async (deps: {
     dashboardReader: createSqlDashboardRecordReader(deps.sql),
     clock: deps.clock,
     renderer: docxRenderer,
+    projectLabel: tenancy.label,
   });
   const indicators = createIndicatorsService({
     records: createSqlModuleRecordReader(deps.sql),

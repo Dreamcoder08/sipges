@@ -38,7 +38,7 @@ const DATA: Record<string, Record<string, StoredRecord[]>> = {
   },
 };
 
-const setup = (scope: Scope) => {
+const setup = (scope: Scope, projectLabel?: (scope: Scope) => Promise<string | null>) => {
   const requested: string[][] = [];
   const reader: AnalyticsRecordReader = {
     async read(s, modules) {
@@ -51,6 +51,7 @@ const setup = (scope: Scope) => {
     reader,
     clock: { now: () => new Date('2026-10-12T12:00:00.123Z') },
     renderer: docxRenderer,
+    ...(projectLabel ? { projectLabel } : {}),
   });
   const app = new Hono<AppEnv>()
     .use(async (c, next) => {
@@ -88,6 +89,19 @@ describe('analytics HTTP routes', () => {
     expect(body.counts.eventos).toBe(1);
     expect(body.alertas_activas).toBe(1);
     expect(body.territorios).toEqual([['Sechura', 1]]);
+  });
+
+  it('names the situational project from the tenant label without a Proyectos record', async () => {
+    const asked: string[] = [];
+    const { app } = setup({ companyId: 'ACME', projectId: 'NORTE' }, async (s) => {
+      asked.push(`${s.companyId}/${s.projectId}`);
+      return 'Proyecto Norte';
+    });
+    const body = SituationalAnalysisResponse.parse(
+      await (await app.request('/system/situational-analysis')).json(),
+    );
+    expect(body.project_name).toBe('Proyecto Norte');
+    expect(asked).toEqual(['ACME/NORTE']);
   });
 
   it('GET /system/strategic-assessment', async () => {
