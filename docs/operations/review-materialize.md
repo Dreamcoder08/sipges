@@ -75,6 +75,16 @@ The response carries counts only:
 }
 ```
 
+In the inbox (Situación › Bandeja de revisión documental), admin and analista see:
+
+- a checkbox on each pending item and «Seleccionar todos los visibles» (the current page);
+- «Aprobar seleccionados (N)» and «Descartar seleccionados»;
+- on each pending item, «Aprobar todos los pendientes de este tema» and «… de este documento».
+
+Every action opens a confirmation that first runs the dry run and shows how many items it
+decides and how many records it creates per module. A bulk approval is «Aceptado para
+revisión»; corroborating still goes item by item, with its evidence note.
+
 Discarding later is the single decision («Descartado»): the record stays, as with any approval.
 
 ## Run the backfill
