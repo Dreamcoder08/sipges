@@ -104,3 +104,54 @@ export const DocumentReviewDecisionResponse = z.strictObject({
     .nullable()
     .optional(),
 });
+/** Decisions a bulk request may take: approving or discarding, never back to «pendiente». */
+export const DocumentReviewBulkStatus = z.enum([
+  'aceptado_para_revision',
+  'corroborado_documentalmente',
+  'descartado',
+]);
+/**
+ * Decides many pending items at once (functional-closure T26): explicit `ids`, or the pending
+ * items of a `theme` and/or `source_sha256`, never both. At most 1,000 per request.
+ */
+export const DocumentReviewBulkRequest = z
+  .strictObject({
+    // Over 1,000 is refused by the API with its own message; this only bounds the body.
+    ids: z.array(z.string().max(64)).min(1).max(5000).optional(),
+    theme: z.string().max(140).optional(),
+    source_sha256: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/)
+      .optional(),
+    status: DocumentReviewBulkStatus,
+    note: z.string().max(1500).default(''),
+    /** Counts what would be decided and created, writing nothing. */
+    dry_run: z.boolean().default(false),
+  })
+  .refine(
+    (body) =>
+      (body.ids === undefined) !== (body.theme === undefined && body.source_sha256 === undefined),
+    { message: 'Indique ids o un filtro por tema o documento, no ambos' },
+  );
+export type DocumentReviewBulkRequest = z.input<typeof DocumentReviewBulkRequest>;
+export const DocumentReviewBulkResponse = z.strictObject({
+  ok: z.literal(true),
+  dry_run: z.boolean(),
+  /** Items decided (or, in a dry run, that would be). */
+  decided: z.number().int(),
+  records_created: z.number().int(),
+  /** Requested ids not pending in this project (already decided or not found). */
+  skipped: z.number().int(),
+  /** Pending items of the filter left for another request after the cap. */
+  remaining: z.number().int(),
+  modules: z.array(
+    z.strictObject({
+      module: z.string(),
+      label: z.string(),
+      nuevos: z.number().int(),
+      ya_existentes: z.number().int(),
+    }),
+  ),
+  problems: z.array(z.string()),
+});
+export type DocumentReviewBulkResponse = z.infer<typeof DocumentReviewBulkResponse>;

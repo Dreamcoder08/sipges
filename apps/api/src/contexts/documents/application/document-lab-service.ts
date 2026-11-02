@@ -9,6 +9,8 @@ import {
   COMPARE_METHOD,
   type DocumentAnalysis,
   type DocumentKind,
+  BULK_BATCH,
+  MAX_BULK_DECISION,
   MAX_PDF_PAGES,
   MAX_REVIEW_IMPORT,
   REVIEW_LIMITS,
@@ -97,6 +99,31 @@ export type ReviewDecision = {
   } | null;
 };
 
+/** Records a bulk decision created (or would create) in one module. */
+type BulkModule = {
+  readonly module: string;
+  readonly label: string;
+  readonly created: number;
+  readonly existing: number;
+  readonly problems: readonly string[];
+};
+
+export type BulkDecision = {
+  readonly decided: number;
+  readonly recordsCreated: number;
+  readonly skipped: number;
+  readonly remaining: number;
+  readonly modules: readonly {
+    readonly module: string;
+    readonly label: string;
+    readonly nuevos: number;
+    readonly ya_existentes: number;
+  }[];
+  readonly problems: readonly string[];
+};
+
+export type BulkDecisionError = ReviewDecisionError | { readonly kind: 'too_many' };
+
 export const createDocumentLabService = (deps: {
   reader: DocumentReader;
   renderer: ReportRenderer;
@@ -108,18 +135,75 @@ export const createDocumentLabService = (deps: {
 }) => {
   const { reader, renderer, reviews, records, clock, randomHex, maxUploadBytes } = deps;
 
+  /**
+   * Creates the approved items' records unless they exist (deterministic ids, insert-only), one
+   * records call per module; a dry run only counts. Returns the counts per module, by slug.
+   */
+  const writeRecords = async (
+    tenantId: string,
+    items: readonly ReviewItem[],
+    dryRun: boolean,
+    tolerant = false,
+  ): Promise<BulkModule[]> => {
+    const byModule = new Map<string, ReviewItem[]>();
+    for (const item of items) {
+      if (!isApproval(item.status)) continue;
+      const { module } = reviewTarget(item.theme);
+      byModule.set(module, [...(byModule.get(module) ?? []), item]);
+    }
+    const counts: BulkModule[] = [];
+    for (const [module, group] of [...byModule].sort(([a], [b]) => a.localeCompare(b))) {
+      const target = reviewTarget(group[0]?.theme ?? '');
+      const write = records.createMissing(
+        tenantId,
+        module,
+        group.map((item) => ({
+          id: reviewRecordId(item.id),
+          fields: reviewRecordFields(item, projectOf(tenantId)),
+        })),
+        { dryRun, source: REVIEW_SOURCE },
+      );
+      // In bulk, one module's failure is reported and the other modules keep their counts.
+      const result = tolerant
+        ? await write.catch(() => ({
+            created: 0,
+            existing: 0,
+            problems: [`${group.length} hallazgos decididos sin registro: use review:materialize`],
+          }))
+        : await write;
+      counts.push({
+        ...target,
+        created: result.created,
+        existing: result.existing,
+        problems: result.problems,
+      });
+    }
+    return counts;
+  };
+
   /** Creates the approved item's record unless it exists (deterministic id, insert-only). */
   const materialize = async (tenantId: string, item: ReviewItem) => {
-    const target = reviewTarget(item.theme);
-    const id = reviewRecordId(item.id);
-    const result = await records.createMissing(
-      tenantId,
-      target.module,
-      [{ id, fields: reviewRecordFields(item, projectOf(tenantId)) }],
-      { dryRun: false, source: REVIEW_SOURCE },
-    );
-    if (result.problems.length > 0) throw new Error('review record refused by records');
-    return { module: target.module, id, created: result.created === 1 };
+    const [result] = await writeRecords(tenantId, [item], false);
+    if (!result || result.problems.length > 0) throw new Error('review record refused by records');
+    return { module: result.module, id: reviewRecordId(item.id), created: result.created === 1 };
+  };
+
+  /** Adds one batch's module counts to the running totals of a bulk decision. */
+  const addCounts = (totals: Map<string, BulkModule>, batch: readonly BulkModule[]) => {
+    for (const counts of batch) {
+      const seen = totals.get(counts.module);
+      totals.set(
+        counts.module,
+        seen
+          ? {
+              ...seen,
+              created: seen.created + counts.created,
+              existing: seen.existing + counts.existing,
+              problems: [...seen.problems, ...counts.problems],
+            }
+          : counts,
+      );
+    }
   };
 
   const chunksOf = async (
@@ -303,6 +387,93 @@ export const createDocumentLabService = (deps: {
       // backfill creates it under the same id (never a duplicate).
       const record = isApproval(decided.status) ? await materialize(tenantId, decided) : null;
       return ok({ id: input.id, status: checked.status, record });
+    },
+
+    /**
+     * Decides many pending items (T26) with the single decision's audit row and record: in
+     * transactions of BULK_BATCH, at most MAX_BULK_DECISION per request. Items no longer pending
+     * are skipped, so a re-run never duplicates. A dry run counts and writes nothing.
+     */
+    async decideMany(
+      tenantId: string,
+      input: {
+        projectId: string;
+        ids: readonly string[] | null;
+        theme: string | null;
+        sourceSha256: string | null;
+        status: string;
+        reviewer: string;
+        note: string;
+        dryRun: boolean;
+      },
+    ): Promise<Result<BulkDecision, BulkDecisionError>> {
+      const checked = checkDecision(input.status, input.note);
+      if (!checked.ok) return err(checked.error);
+      if (checked.status === 'pendiente') return err({ kind: 'status' });
+      const ids = input.ids ? [...new Set(input.ids)] : null;
+      if (ids && ids.length > MAX_BULK_DECISION) return err({ kind: 'too_many' });
+      const reviewer = takeCodePoints(input.reviewer, REVIEW_LIMITS.reviewer);
+      const note = takeCodePoints(input.note, REVIEW_LIMITS.note);
+      const texts = [reviewer, note, input.projectId, input.theme ?? '', ...(ids ?? [])];
+      if (texts.some(hasNul)) return err({ kind: 'invalid_text' });
+      const selector = {
+        projectId: input.projectId,
+        ids,
+        theme: input.theme,
+        sourceSha256: input.sourceSha256,
+      };
+      const decision = { status: checked.status, reviewer, note, at: clock.now() };
+      const totals = new Map<string, BulkModule>();
+      let decided = 0;
+      if (input.dryRun) {
+        const items = await reviews.pending(tenantId, selector, MAX_BULK_DECISION);
+        const asDecided = items.map((item) => ({ ...item, ...decision, updatedAt: decision.at }));
+        for (let start = 0; start < asDecided.length; start += BULK_BATCH)
+          addCounts(
+            totals,
+            await writeRecords(tenantId, asDecided.slice(start, start + BULK_BATCH), true),
+          );
+        decided = items.length;
+      } else {
+        // Explicit ids go in chunks; a filter takes the next pending batch until the cap.
+        const chunks = ids
+          ? Array.from({ length: Math.ceil(ids.length / BULK_BATCH) }, (_, n) =>
+              ids.slice(n * BULK_BATCH, (n + 1) * BULK_BATCH),
+            )
+          : null;
+        for (let n = 0; chunks ? n < chunks.length : decided < MAX_BULK_DECISION; n++) {
+          const limit = chunks ? BULK_BATCH : Math.min(BULK_BATCH, MAX_BULK_DECISION - decided);
+          const batch = await reviews.decidePending(
+            tenantId,
+            chunks ? { ...selector, ids: chunks[n] ?? [] } : selector,
+            decision,
+            limit,
+          );
+          decided += batch.length;
+          // Decisions commit first; a failed module write is reported per module, and the
+          // review:materialize backfill creates the missing records under the same ids.
+          addCounts(totals, await writeRecords(tenantId, batch, false, true));
+          if (!chunks && batch.length < limit) break;
+        }
+      }
+      const modules = [...totals.values()];
+      const problems = [
+        ...modules.flatMap((m) => m.problems.map((problem) => `${m.module}: ${problem}`)),
+      ];
+      const pendingLeft = ids ? 0 : await reviews.countPending(tenantId, selector);
+      return ok({
+        decided,
+        recordsCreated: modules.reduce((sum, m) => sum + m.created, 0),
+        skipped: ids ? ids.length - decided : 0,
+        remaining: input.dryRun ? Math.max(0, pendingLeft - decided) : pendingLeft,
+        modules: modules.map(({ module, label, created, existing }) => ({
+          module,
+          label,
+          nuevos: created,
+          ya_existentes: existing,
+        })),
+        problems,
+      });
     },
   };
 };
