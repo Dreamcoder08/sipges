@@ -331,7 +331,10 @@ describe('phone shell', () => {
     await user.click(await screen.findByRole('button', { name: 'Abrir menú' }));
     const drawer = screen.getByRole('dialog', { name: 'Menú' });
     expect(within(drawer).getByLabelText('Proyecto activo')).toBeVisible();
-    expect(within(drawer).getByRole('button', { name: /^Notificaciones/ })).toBeVisible();
+    expect(within(drawer).getByRole('link', { name: /^Notificaciones/ })).toHaveAttribute(
+      'href',
+      '/bandeja?vista=avisos',
+    );
     await user.click(within(drawer).getByRole('button', { name: /^Cuenta de Persona Sintética/ }));
     const account = screen.getByRole('menu', { name: 'Cuenta' });
     expect(within(account).getByRole('menuitem', { name: 'Cerrar sesión' })).toBeVisible();

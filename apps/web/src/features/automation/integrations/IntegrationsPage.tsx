@@ -164,7 +164,7 @@ const Detail = ({
     media: renderSource?.('media') ?? null,
     info: (
       <p className={styles.muted}>
-        Cada persona activa los avisos de su dispositivo desde la campana de notificaciones.
+        Cada persona activa los avisos de su dispositivo en Configuración › Notificaciones.
       </p>
     ),
   };

@@ -18,7 +18,7 @@ Una regla tiene:
   `contiene`, `mayor o igual`, `menor o igual`, `tiene valor`, `está vacío`. Los números se
   comparan como números y las fechas ISO como texto. `$marking`, `$detail` y `$action` se
   refieren a la clasificación, el detalle y la acción del evento.
-- **Acciones**: un aviso en la bandeja (campana) de todos los miembros del proyecto, o un
+- **Acciones**: un aviso en Bandeja › «Avisos» de todos los miembros del proyecto, o un
   mensaje a un canal. El título admite `{id}`, `{modulo}`, `{accion}` y `{Campo}`.
 
 Las reglas nuevas solo reaccionan a eventos posteriores a su creación. Cada entrega se
@@ -75,8 +75,11 @@ duplicados: un reintento repite el mismo id. El cuerpo JSON trae `type`
 
 ## Avisos en el dispositivo
 
-La campana muestra los avisos de la bandeja. Además, cada persona puede marcar **Recibir avisos
-en este dispositivo** para que lleguen como notificación del sistema (Chrome, Edge, Firefox y
+La pestaña «Avisos» de Bandeja (`/bandeja?vista=avisos`) los lista; la campana de la barra lateral
+cuenta los que no se han leído y abre esa pestaña, y en el teléfono el botón de menú lo señala con
+un punto.
+Además, cada persona puede marcar **Recibir avisos en este dispositivo** (Configuración ›
+Notificaciones) para que lleguen como notificación del sistema (Chrome, Edge, Firefox y
 Safari, también en el móvil con la app instalada desde el navegador). Al tocar el aviso se abre
 el registro. Si el aviso viene de un registro **restringido**, no llega a los dispositivos del
 rol consulta.

@@ -82,10 +82,39 @@
   min-width: 0;
 }
 
-/* The inbox panel is wider than the sidebar: it opens towards the content. */
-.bell [role='region'] {
-  left: 0;
-  right: auto;
+/* The bell opens Bandeja › Avisos; its badge counts the unread ones. */
+.bell {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-muted);
+  font-size: var(--text-xl);
+  transition: background var(--motion-fast) ease;
+}
+
+.bell:hover {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.count {
+  position: absolute;
+  top: -0.1rem;
+  right: -0.15rem;
+  min-width: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-danger);
+  color: var(--color-on-strong);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.25rem;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--color-surface);
 }
 
 /* Only the navigation scrolls, so the tools above and the account below stay put. */
