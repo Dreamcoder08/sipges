@@ -19,3 +19,4 @@ export {
   type ReviewDecision,
   type ReviewListItem,
 } from './document-lab-service.ts';
+export { type MaterializeReport, materializeApprovedReviews } from './review-materialize.ts';

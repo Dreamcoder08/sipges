@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { runReviewMaterialize } from '../../src/tools/review-materialize/run.ts';
 import { createTestApp } from '../support/test-app.ts';
 
 // T23 (odd/tasks/functional-closure.md S13): approving a review item creates its record in the
-// tenant's module. Synthetic data.
+// tenant's module; a dry-run-by-default backfill covers items approved before. Synthetic data.
 
 const SHA = 'c'.repeat(64);
 const finding = (tema: string, n: number) => ({
@@ -182,5 +183,96 @@ describe('approving a document review item (T23)', () => {
       [`REV-${item?.id}`],
     );
     expect(stored).toEqual({ tenant_id: 'SIPGES/PRJ-SECHURA', project: 'PRJ-SECHURA' });
+  });
+});
+
+describe('review:materialize backfill (T23)', () => {
+  const approveLegacy = async (sql: Awaited<ReturnType<typeof setup>>['t']['sql']) =>
+    sql.query(
+      `UPDATE document_review SET status = 'corroborado_documentalmente', reviewer = 'Revisora'
+        WHERE theme <> 'Demandas e intereses'`,
+    );
+
+  it('dry run reports counts per tenant and module and writes nothing', async () => {
+    const { t, importItems, rowHash } = await setup();
+    await importItems([
+      finding('Compromisos y trazabilidad', 1),
+      finding('Compromisos y trazabilidad', 2),
+      finding('Territorio y ambiente', 3),
+      finding('Demandas e intereses', 4),
+    ]);
+    await approveLegacy(t.sql);
+    const before = await rowHash();
+    const report = await runReviewMaterialize(t.sql, { apply: false, now: t.clock.now });
+    expect(report.applied).toBe(false);
+    expect(report.tenants).toEqual([
+      {
+        tenant: 'SIPGES/PRJ-SECHURA',
+        approved: 3,
+        modules: [
+          { module: 'compromisos', nuevos: 2, ya_existentes: 0 },
+          { module: 'narrativas', nuevos: 1, ya_existentes: 0 },
+        ],
+        problems: [],
+      },
+    ]);
+    expect(await rowHash()).toBe(before);
+  });
+
+  it('apply creates the missing records once and is idempotent with approvals', async () => {
+    const { t, importItems, list, approve, rowHash } = await setup();
+    await importItems([
+      finding('Compromisos y trazabilidad', 1),
+      finding('Territorio y ambiente', 2),
+    ]);
+    const [first] = await list();
+    // One item approved through the inbox (record exists), the other approved before T23.
+    expect((await approve(first?.id ?? '')).status).toBe(200);
+    await approveLegacy(t.sql);
+
+    const applied = await runReviewMaterialize(t.sql, { apply: true, now: t.clock.now });
+    expect(applied.applied).toBe(true);
+    expect(applied.tenants[0]?.modules.reduce((sum, m) => sum + m.nuevos, 0)).toBe(1);
+    expect(applied.tenants[0]?.modules.reduce((sum, m) => sum + m.ya_existentes, 0)).toBe(1);
+
+    const settled = await rowHash();
+    const rerun = await runReviewMaterialize(t.sql, { apply: true, now: t.clock.now });
+    expect(rerun.tenants[0]?.modules.every((m) => m.nuevos === 0)).toBe(true);
+    expect(await rowHash()).toBe(settled);
+    // Approving again after the backfill still creates nothing.
+    for (const item of await list()) await approve(item.id);
+    const [{ n } = { n: 0 }] = await t.sql.query<{ n: number | string }>(
+      `SELECT count(*) AS n FROM module_records WHERE id LIKE 'REV-%'`,
+    );
+    expect(Number(n)).toBe(2);
+  });
+
+  it('limits the run to one tenant with scope', async () => {
+    const { t, admin, importItems } = await setup();
+    expect(
+      (
+        await t.createScope(admin.cookie, {
+          company_id: 'ACME',
+          project_id: 'NORTE',
+          label: 'Norte',
+          username: 'admin',
+        })
+      ).status,
+    ).toBe(200);
+    await importItems([finding('Territorio y ambiente', 1)], { 'x-sipges-scope': 'ACME/NORTE' });
+    await importItems([finding('Territorio y ambiente', 2)], {
+      'x-sipges-scope': 'SIPGES/PRJ-SECHURA',
+    });
+    await approveLegacy(t.sql);
+    const report = await runReviewMaterialize(t.sql, {
+      apply: true,
+      scope: 'ACME/NORTE',
+      now: t.clock.now,
+    });
+    expect(report.tenants.map((r) => r.tenant)).toEqual(['ACME/NORTE']);
+    const rows = await t.sql.query<{ tenant_id: string }>(
+      `SELECT tenant_id FROM module_records WHERE id LIKE 'REV-%'`,
+    );
+    expect(rows).toEqual([{ tenant_id: 'ACME/NORTE' }]);
   });
 });
