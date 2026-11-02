@@ -93,6 +93,9 @@ describe('GET /system/conflict-risk', () => {
       id: 'd1',
     });
     expect(body.localities[0]?.confidence).toBe('baja');
+    expect(body.localities[0]?.confidenceReason).toBe(
+      'Historial insuficiente para calibrar; el detalle está en el back-test.',
+    );
     expect(body.backtest['30'].calibrated).toBe(false);
     expect(asked).toEqual([
       'records:SIPGES/PRJ-SECHURA:Alertas,Compromisos,Demandas,Eventos,Narrativas',
@@ -149,6 +152,7 @@ describe('GET /system/conflict-risk', () => {
     const foreign = await t.request('/system/conflict-risk?project_id=NORTE', {
       headers: { cookie },
     });
-    expect(foreign.status).not.toBe(200);
+    expect(foreign.status).toBe(403);
+    expect(await foreign.json()).toEqual({ detail: 'Proyecto fuera de alcance' });
   });
 });

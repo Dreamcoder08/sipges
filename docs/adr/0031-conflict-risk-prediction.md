@@ -55,7 +55,7 @@ Constraints:
 | Escalations in the last 90 days (history repeats) | `ln(1 + n)` | 0.7 |
 | Project IRSA at `t` (latest snapshot on or before `t`) | `IRSA / 100` | 0.8 |
 | IRSA rise over the 90 days before `t` | `clamp(Δ / 25, 0, 1)` | 0.4 |
-| Recency of the last signal | `exp(−days / 30)` | 0.5 |
+| Days since the last signal (shown as «Días desde la última señal») | `exp(−days / 30)` | 0.5 |
 
 The score is the weighted sum. Each factor's contribution (`weight × value`) is shown with the
 records behind it, so the ranking can be read and disputed. The weights are fixed here, not

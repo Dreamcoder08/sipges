@@ -60,6 +60,7 @@ export const SCREENS = [
     ready: true,
   },
   { path: '/irsa', label: 'IRSA-SIPGES', title: 'IRSA-SIPGES', ready: true },
+  { path: '/riesgo', label: 'Riesgo de conflicto', title: 'Riesgo de conflicto', ready: true },
   { path: '/validacion', label: 'Validación', title: 'Validación', ready: true },
   {
     path: '/calidad',
@@ -178,6 +179,7 @@ export const DESTINATIONS = [
     // Inteligencia de redes is not named in S3; it joins here so it stays reachable.
     tabs: tabs(
       ['irsa', '/irsa'],
+      ['riesgo', '/riesgo'],
       ['situacional', '/situacion'],
       ['estrategica', '/estrategia'],
       ['lecciones', '/lecciones'],
@@ -247,6 +249,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/situacion': 'compass',
   '/estrategia': 'target',
   '/irsa': 'chart',
+  '/riesgo': 'trend',
   '/validacion': 'check',
   '/calidad': 'grid',
   '/fuentes': 'file',
