@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Seguridad
+
+- Rotación de `SIPGES_DATA_KEY` ([guía](docs/operations/data-key-rotation.md), [ADR 0004](docs/adr/0004-identity-and-session-security.md)): la API también abre los valores sellados con `SIPGES_DATA_KEY_PREVIOUS` (opcional) y sigue sellando solo con la clave actual. Nuevo `pnpm --filter @sipges/api rotate:data-key`: por defecto solo cuenta (por tabla, columna y proyecto) los secretos TOTP y las configuraciones de canales que abre cada clave; con `--apply` los vuelve a cifrar con la clave nueva, una transacción por tabla o proyecto, comprobando cada valor antes de confirmar. Si un valor no abre con ninguna clave no escribe nada; volver a ejecutarlo no cambia nada. Nunca muestra valores ni claves. Sin migración.
+
 ### Integración continua
 
 - Con el repositorio público, `main` vuelve a exigir los 8 checks: un PR que solo toca documentación ya no se queda sin CI, sino que un job `changes` detecta que no hay código y cada job salta sus pasos y termina en verde en segundos.
