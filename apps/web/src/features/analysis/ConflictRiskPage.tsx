@@ -34,6 +34,9 @@ const sourceHref = (source: Source) => {
 const number = (value: number, digits = 2) =>
   String(Math.round(value * 10 ** digits) / 10 ** digits);
 const percent = (value: number) => `${Math.round(value * 100)} %`;
+/** A skill at or below zero is not an improvement; say so instead of «mejora −15 %». */
+const skillText = (skill: number | null) =>
+  skill !== null && skill > 0 ? `mejora ${percent(skill)}` : 'no supera la tasa base';
 
 /** The locality the territorial map asked for (`?localidad=`), folded for matching. */
 const fold = (value: string) =>
@@ -130,10 +133,10 @@ const BacktestCard = ({ backtest }: { backtest: Backtest }) => {
         <>
           <p>
             Brier {number(backtest.brier, 3)} frente a {number(backtest.brierReference ?? 0, 3)} de
-            la tasa base (mejora {percent(backtest.skill ?? 0)}). {samples} muestras y {events}{' '}
-            escalamientos en {backtest.cutoffs} cortes, del {backtest.from} al {backtest.to}; se
-            entrenó con los cortes más antiguos ({backtest.train.samples} muestras) y se evaluó con
-            los más recientes ({backtest.test.samples}).
+            la tasa base ({skillText(backtest.skill)}). {samples} muestras y {events} escalamientos
+            en {backtest.cutoffs} cortes, del {backtest.from} al {backtest.to}; se entrenó con los
+            cortes más antiguos ({backtest.train.samples} muestras) y se evaluó con los más
+            recientes ({backtest.test.samples}).
           </p>
           <div className={styles.tableWrap}>
             <table className={styles.bins}>

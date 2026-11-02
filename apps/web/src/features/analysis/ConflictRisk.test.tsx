@@ -220,4 +220,26 @@ describe('ConflictRiskPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Ver todas' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
   });
+
+  it('says the model does not beat the base rate instead of a negative improvement', async () => {
+    respond({
+      ...thinReport,
+      backtest: {
+        '30': thin(30),
+        '90': {
+          ...thin(90),
+          calibrated: true,
+          reason: null,
+          train: { samples: 60, events: 8 },
+          test: { samples: 20, events: 3 },
+          brier: 0.2,
+          brierReference: 0.17,
+          skill: -0.176,
+        },
+      },
+    });
+    mount();
+    expect(await screen.findByText(/no supera la tasa base/)).toBeInTheDocument();
+    expect(screen.queryByText(/mejora/)).toBeNull();
+  });
 });
