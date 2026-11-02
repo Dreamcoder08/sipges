@@ -6,6 +6,7 @@ import {
   ASSET_CACHE,
   CESIUM_CACHE,
   SPA_CSP,
+  type AssetBody,
   type WebAssets,
   fileWebAssets,
   webAssetsFrom,
@@ -20,6 +21,10 @@ const memoryWeb: WebAssets = {
 };
 
 const html = { accept: 'text/html,application/xhtml+xml' };
+
+/** A file body as text, whether a host returned whole bytes or a stream. */
+const textOf = async (body: AssetBody | null | undefined) =>
+  body ? new Response(body).text() : null;
 
 describe('single-page app delivery', () => {
   it('serves the shell for client routes without a session, with a strict CSP', async () => {
@@ -134,20 +139,14 @@ describe('single-page app delivery', () => {
     await writeFile(join(dir, 'assets', 'app-1.css'), 'body{}');
     const web = fileWebAssets(dir);
     expect(await web.index()).toBe(SHELL);
-    expect(new TextDecoder().decode((await web.asset('app-1.css')) ?? new Uint8Array())).toBe(
-      'body{}',
-    );
+    expect(await textOf(await web.asset('app-1.css'))).toBe('body{}');
     expect(await web.asset('../index.html')).toBeNull();
     await writeFile(join(dir, 'sw.js'), 'self.x=1');
-    expect(new TextDecoder().decode((await web.rootFile?.('sw.js')) ?? new Uint8Array())).toBe(
-      'self.x=1',
-    );
+    expect(await textOf(await web.rootFile?.('sw.js'))).toBe('self.x=1');
     expect(await web.rootFile?.('index.html')).toBeNull();
     await mkdir(join(dir, 'cesium', 'Assets'), { recursive: true });
     await writeFile(join(dir, 'cesium', 'Assets', 'heights.json'), '{}');
-    expect(
-      new TextDecoder().decode((await web.cesium?.('Assets/heights.json')) ?? new Uint8Array()),
-    ).toBe('{}');
+    expect(await textOf(await web.cesium?.('Assets/heights.json'))).toBe('{}');
     expect(await web.cesium?.('../index.html')).toBeNull();
     expect(await fileWebAssets(join(dir, 'missing')).index()).toBeNull();
   });
