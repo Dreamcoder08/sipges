@@ -17,6 +17,7 @@ is private on GitHub Free, so `main` does not enforce them). Local gate: `pnpm v
 - S9 — Product flows still open: notifications inside Bandeja, Configuración by sections, Administración can reset a user's MFA, cited answers in Inicio (T7b), Registros «Todos» in one request.
 - S10 — Architecture: contexts stop writing other contexts' tables (ADR 0002) and the duplicated `module_records` readers become one port; semantic intelligence reports when no embedder is reachable.
 - S11 — Tests: mobile coverage of hub tabs, record pages and open sheets at 360 and 412 px; the e2e start-up timeout no longer equals the test timeout.
+- S12 — «cambiale , debes ponerle sistema inteligente de prediccion y gestion social , implementa , https://geocatmin.ingemmet.gob.pe/geocatmin_v3/?extent=-8966404.4383%2C-562927.7506%2C-8929714.6648%2C-543206.9973%2C102100 esa es la ubicacion del proyecto el alagrrobo , esta en tambogrande , por ejemplo ella ingreso al proyecto algarrobo , en el mapa territorial sale  sechura. pero este proyecto esta en tambogrande -locuto , ademas el buzon dejalo  como icono mas , aun aun no sale los graficos de la narrativas» (screenshot: Territorio › Mapa territorial for «Proyecto El Algarrobo» framed on Sechura, 0 records on the map). The GEOCATMIN extent (EPSG:3857) is lon −80.548…−80.218, lat −5.057…−4.880 (Tambogrande, Piura).
 
 ## Tasks
 
@@ -39,6 +40,9 @@ is private on GitHub Free, so `main` does not enforce them). Local gate: `pnpm v
 - T16 [ ] — S10: `unpdf` 2.0 (Dependabot #147) fails CI; adapt the document extraction or pin 1.x with a reason. Route: wave 3. Commit: pending.
 - T17 [ ] — S7: `SIPGES_DATA_KEY` rotation tool and procedure (ADR 0004 says one exists; none does). Risk: item 1 (rewrites encrypted data). Route: own verifier. Commit: pending.
 - T18 [ ] — S7: R2 evidence backup (no backup configured) and a drilled Neon + R2 restore. Risk: item 5. Route: needs the owner's Cloudflare access. Commit: pending.
+- T19 [ ] — S12: each project stores its own location (name, extent); the territorial and concession maps frame it, Sechura base layers, towns and labels appear only for projects in Sechura; El Algarrobo gets the Tambogrande extent. Route: Herdr tab. Commit: pending.
+- T20 [ ] — S12: Registros › Narrativas trend shows charts with the dates real narratives carry (more date formats, count of undated ones). Route: Herdr tab. Commit: pending.
+- T21 [ ] — S12: «sistema inteligente de prediccion y gestion social» — scope to agree with the owner (today the code states it makes no predictions). Route: pending decision. Commit: pending.
 
 Outside the code (owner or external service): GEOCATMIN live check while its services time out (territorial-intelligence-alerts T1/T2), push on a real phone and credentialed channels (T8 there), data-quality T6 with original sources, a Neon restore drill, and where an embedder runs in production.
 
@@ -52,3 +56,4 @@ Outside the code (owner or external service): GEOCATMIN live check while its ser
 - L6 — T3 done by its tab: PR #151 merged (land on `/inicio`, IRSA card to `/analisis`, honest composer note, distinct icons, dead `PendingScreen` removed); RED 8 unit tests, GREEN web 434/434. Owner authorized agent tabs to commit and push without a prompt (`git commit`/`git push` removed from `permissions.ask`; force push, rebase and hard reset still ask).
 - L7 — Dependency queue: merged #139, #141, #142, #143 (8/8), #145 (react group, the fix from #144 working), #146; #140 closed (react-dom alone breaks React). Held: #148 `postgres` 4.0 (T15) and #147 `unpdf` 2.0 failing (T16). New tasks T17 (data key rotation) and T18 (R2 backup and restore drill) come from T4's handover findings.
 - L8 — Wave 2 merged with every check green: T1 PR #150 (static files served without the backend, `/health/ready`, deploy rollback; the SPA test now reads asset bodies that may be streams, `0fe80f8`), T7 PR #152 (Configuración by sections), T9 PR #154 (`GET /api/registros/summary` behind Registros «Todos»). Next: T6 and T8.
+- L9 — 2026-11-02, S12 verbatim. Map cause (explorer): no project location exists; `TerritorialMapPage.tsx` falls back to the hard-coded `SECHURA_EXTENT` when no record has coordinates, and base layers, towns and labels are Sechura constants. Narratives chart lives only in Registros › Narrativas (`NarrativeTrend`) and is empty when no narrative date parses (`narrative-trend.ts:116-126`). «el buzon dejalo como icono mas» sent to T6 (PR #157): keep the bell as an extra icon.
