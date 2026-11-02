@@ -102,24 +102,24 @@ export const createIntelligenceService = (deps: {
 }) => {
   const { narratives, embeddings, alerts, clock, randomHex } = deps;
 
-  let probe: { at: number; reachable: Promise<boolean> } | undefined;
-  const reachable = () => {
+  // Only settled answers are shared between requests. On Workers a probe or embedding still in
+  // flight belongs to the request that started it; if that request is cancelled it never settles
+  // and every caller awaiting it would hang. Concurrent callers repeat the work instead.
+  let probe: { at: number; reachable: boolean } | undefined;
+  const reachable = async () => {
     const now = clock.now().getTime();
-    if (!probe || now - probe.at >= PROBE_TTL_MS) {
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const timeout = new Promise<boolean>((resolve) => {
-        timer = setTimeout(() => resolve(false), PROBE_TIMEOUT_MS);
-      });
-      const attempt = embeddings.embed(exemptPayload(PROBE_TEXT, 'constant')).then(
-        () => true,
-        () => false,
-      );
-      probe = {
-        at: now,
-        reachable: Promise.race([attempt, timeout]).finally(() => clearTimeout(timer)),
-      };
-    }
-    return probe.reachable;
+    if (probe && now - probe.at < PROBE_TTL_MS) return probe.reachable;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<boolean>((resolve) => {
+      timer = setTimeout(() => resolve(false), PROBE_TIMEOUT_MS);
+    });
+    const attempt = embeddings.embed(exemptPayload(PROBE_TEXT, 'constant')).then(
+      () => true,
+      () => false,
+    );
+    const answer = await Promise.race([attempt, timeout]).finally(() => clearTimeout(timer));
+    probe = { at: now, reachable: answer };
+    return answer;
   };
 
   const embedderStatus = async (scope: Scope): Promise<EmbedderStatus> => {
@@ -130,16 +130,14 @@ export const createIntelligenceService = (deps: {
       ? { ...base, available: true, reason: null }
       : { ...base, available: false, reason: 'unreachable' };
   };
-  // Reference concepts never change for a model, so their vectors are computed once.
-  const conceptVectors = new Map<string, Promise<number[]>>();
-  const conceptVector = (description: string) => {
-    let vector = conceptVectors.get(description);
-    if (!vector) {
-      // A reference description is written in the code: no tenant data is in it.
-      vector = embeddings.embed(exemptPayload(description, 'constant'));
-      vector.catch(() => conceptVectors.delete(description));
-      conceptVectors.set(description, vector);
-    }
+  // Reference concepts never change for a model, so a computed vector is kept for good.
+  const conceptVectors = new Map<string, number[]>();
+  const conceptVector = async (description: string) => {
+    const known = conceptVectors.get(description);
+    if (known) return known;
+    // A reference description is written in the code: no tenant data is in it.
+    const vector = await embeddings.embed(exemptPayload(description, 'constant'));
+    conceptVectors.set(description, vector);
     return vector;
   };
 

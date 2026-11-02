@@ -230,3 +230,25 @@ it('rejects exterior holes and touching self intersections', () => {
     }).success,
   ).toBe(false);
 });
+it('does not make a later caller wait on an earlier caller that never finishes', async () => {
+  // On Workers, I/O started by one request cannot complete for another: a cancelled first
+  // request leaves its fetch pending forever. A later caller must do its own lookup.
+  let calls = 0;
+  const gateway = createIngemmetGateway({
+    fetch: async () => {
+      calls += 1;
+      if (calls === 1) return new Promise<Response>(() => {});
+      return Response.json({
+        layers: [{ id: 7, name: 'Sintética', type: 'Feature Layer' }],
+        capabilities: 'Map',
+      });
+    },
+  });
+  void gateway.catalogue();
+  const later = await Promise.race([
+    gateway.catalogue(),
+    new Promise<'hung'>((resolve) => setTimeout(() => resolve('hung'), 500)),
+  ]);
+  expect(later).not.toBe('hung');
+  expect(later).toMatchObject({ status: 'verified' });
+});
