@@ -82,6 +82,7 @@ import {
   keyCrypto,
 } from './contexts/integration/infrastructure/index.ts';
 import { type AuditService, createAuditService } from './contexts/audit/application/index.ts';
+import { readinessProbe } from './platform/database/readiness.ts';
 import { createSqlAuditReader } from './contexts/audit/infrastructure/sql-audit-reader.ts';
 import {
   type DocumentLabService,
@@ -175,6 +176,8 @@ export type Container = {
   readonly authorizedSources: AuthorizedSourcesService;
   readonly media: MediaMonitorService;
   readonly runtime: AutomationRuntime;
+  /** Readiness probe for /health/ready: resolves once the database answers SELECT 1. */
+  readonly ready: () => Promise<void>;
   readonly reference: ReferenceService;
   readonly config: AppConfig;
   readonly identity: IdentityService;
@@ -541,6 +544,7 @@ export const buildContainer = async (deps: {
     authorizedSources,
     media,
     runtime,
+    ready: readinessProbe(deps.sql),
     reference: createReferenceService(deps.referenceReader ?? fileReferenceReader),
     config: deps.config,
     identity,

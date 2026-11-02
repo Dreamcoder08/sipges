@@ -54,7 +54,9 @@ The Worker sets `NODE_ENV=production`, the database URL (from Hyperdrive), the u
 
 Deploys are automatic: when the `CI` workflow succeeds on a push to `main`, the
 `Deploy Workers` workflow (`.github/workflows/deploy-workers.yml`) checks out that exact
-commit, builds, applies the migrations, runs `deploy:worker` and smoke-tests `/health`. It can
+commit, builds, applies the migrations, runs `deploy:worker` and smoke-tests `/health/ready`
+(six attempts, ten seconds apart). If the smoke test fails, the job runs `wrangler rollback`
+to the previous Worker version and then fails, so a broken deploy does not stay live. It can
 also be started by hand (`workflow_dispatch`, `main` only) and runs one at a time. Define these
 secrets on the GitHub `production` environment:
 
@@ -84,9 +86,35 @@ transaction each) before the new code goes live. A request that finds migrations
 503 and logs the pending versions, so always run `migrate` before `deploy:worker`. Migrations
 must stay compatible with the version still serving while the deploy finishes.
 
+## How requests reach the backend
+
+`run_worker_first` stays `true`, so every request goes through the Worker and gets SIPGES's own
+CSP, security headers and host allowlist. The Worker then splits them (`src/index.ts`):
+
+| Request | Served by | Database |
+| --- | --- | --- |
+| `GET`/`HEAD` of `/assets/*`, `/cesium/*`, `/manifest.webmanifest`, `/sw.js`, `/icon.svg` | Static branch (`createWebApp`), body streamed from the `ASSETS` binding | Never |
+| `GET`/`HEAD` browser navigation (`Accept: text/html`) to a client route | Static branch: the HTML shell under the SPA CSP | Never |
+| Everything else, including `/health` and `/health/ready` | API backend (migrations check, container, Hyperdrive connection per request) | Yes |
+
+`isSpaRequest` in `apps/api/src/platform/http/spa.ts` decides the split and is the same check
+the API's SPA middleware uses, so both answer these paths identically. The static branch skips
+the access log and request metrics; it still needs `SIPGES_ALLOWED_HOSTS` and answers 503
+without it. The shell and bundle hold no tenant data, so serving them before the backend exists
+exposes nothing new.
+
+## Health checks
+
+| Path | Meaning | Answer |
+| --- | --- | --- |
+| `/health` | Liveness: the Worker and backend started. Static payload. | 200, or 503 while the backend cannot start |
+| `/health/ready` | Readiness: runs `SELECT 1` through the database client (Hyperdrive), with a 5 s timeout | 200 `{"status":"ready"}` or 503 `{"status":"unavailable"}` |
+
+Both are public and never cached. `/health/ready` does not echo or log the database error.
+
 ## 4. Check the deployment
 
-1. `GET /health` returns 200 on the public host. On `workers.dev`, Cloudflare's edge already
+1. `GET /health/ready` returns 200 on the public host (the deploy workflow checks it too). On `workers.dev`, Cloudflare's edge already
    answers 403 for a foreign host; a foreign host that reaches the Worker (custom domain or
    route) gets 400 (`Host no permitido`).
 2. The SPA loads with SIPGES's CSP header (no inline scripts).
@@ -95,8 +123,12 @@ must stay compatible with the version still serving while the deploy finishes.
 
 ## Rolling back
 
-Vercel was retired (ADR 0029), so there is no second host to point the domain back to. Roll back by
-redeploying the previous Worker version (`wrangler rollback`) or by running the Node build
+Vercel was retired (ADR 0029), so there is no second host to point the domain back to. The deploy
+workflow rolls back by itself when `/health/ready` fails after a deploy. It restores only the
+Worker code: migrations stay applied, which is why they must be additive, and the rollback
+fails (and so does the job) when there is no previous version or the previous one used a
+binding or secret that no longer exists. By hand, roll back with
+`pnpm --filter @sipges/hosting-cloudflare exec wrangler rollback` or by running the Node build
 (`pnpm --filter @sipges/api start`) against the same database; migrations must stay compatible
 with the version being restored. Evidence uploaded to R2 must be copied to the Node storage
 before serving from Node.

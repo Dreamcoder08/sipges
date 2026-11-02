@@ -20,3 +20,32 @@ describe('Workers deploy script', () => {
     );
   });
 });
+
+/** A failed deploy must not stay live: the smoke test proves the database answers. */
+describe('Deploy Workers workflow', () => {
+  const workflow = () => read('../../../.github/workflows/deploy-workers.yml');
+  /** The text of one step, from its `- name:` line to the next step. */
+  const step = (text: string, name: string) => {
+    const start = text.indexOf(`- name: ${name}`);
+    expect(start, name).toBeGreaterThanOrEqual(0);
+    const next = text.indexOf('\n      - ', start + 1);
+    return text.slice(start, next === -1 ? undefined : next);
+  };
+
+  it('smoke-tests /health/ready, which runs SELECT 1, after deploying', async () => {
+    const smoke = step(await workflow(), 'Smoke test /health/ready');
+    expect(smoke).toContain('id: smoke');
+    expect(smoke).toMatch(/curl -fsS[^\n]*\/health\/ready/);
+  });
+
+  it('rolls back to the previous version when the smoke test fails, then fails the job', async () => {
+    const text = await workflow();
+    const rollback = step(text, 'Roll back the Worker');
+    expect(rollback).toContain("if: failure() && steps.smoke.outcome == 'failure'");
+    expect(rollback).toMatch(/wrangler rollback --yes --message /);
+    expect(rollback).toMatch(/exit 1\s*$/);
+    expect(text.indexOf('Roll back the Worker')).toBeGreaterThan(
+      text.indexOf('Smoke test /health/ready'),
+    );
+  });
+});
