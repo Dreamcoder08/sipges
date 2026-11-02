@@ -1,4 +1,5 @@
 import { ModuleRecord } from '@sipges/contracts';
+import { queryOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 import { requestJson } from './client.ts';
 
@@ -29,3 +30,10 @@ export const fetchModuleRecords = async (
     if (page.length < limit) return records;
   }
 };
+
+/** One record list per project, module and search: features that read it share one cache entry. */
+export const moduleRecordsQuery = (module: string, scope: string, search = '') =>
+  queryOptions({
+    queryKey: ['records', scope, module, 'list', search],
+    queryFn: ({ signal }) => fetchModuleRecords(module, scope, search, signal),
+  });
