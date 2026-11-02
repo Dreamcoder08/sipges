@@ -251,12 +251,13 @@ describe('Inicio hub', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('says that cited answers are not available yet', async () => {
+  it('says that sending opens the search with the question', async () => {
     await open();
-    expect(await screen.findByText('Las respuestas con citas llegan pronto')).toBeVisible();
+    expect(await screen.findByText('Enviar abre la búsqueda con tu pregunta')).toBeVisible();
+    expect(screen.queryByText(/citas llegan pronto/)).toBeNull();
   });
 
-  it('briefs from existing data and links to Bandeja, Registros and Territorio', async () => {
+  it('briefs from existing data and links to Bandeja, Registros and the IRSA tab of Análisis', async () => {
     await open();
     const decision = await screen.findByRole('region', { name: /Alertas activas/ });
     expect(within(decision).getByText('4')).toBeVisible();
@@ -275,9 +276,9 @@ describe('Inicio hub', () => {
     );
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
     expect(within(territory).getByText(/^Amarillo/)).toBeVisible();
-    expect(within(territory).getByRole('link', { name: /Abrir Territorio/ })).toHaveAttribute(
+    expect(within(territory).getByRole('link', { name: /Abrir IRSA/ })).toHaveAttribute(
       'href',
-      '/territorio',
+      '/analisis',
     );
   });
 

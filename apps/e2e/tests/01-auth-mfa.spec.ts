@@ -9,8 +9,8 @@ import {
 } from '../support/fixtures.ts';
 import { totpCode } from '../support/totp.ts';
 
-const dashboard = (page: Page) =>
-  page.getByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+// Signing in lands on Inicio (odd/tasks/functional-closure.md S6).
+const home = (page: Page) => page.getByRole('heading', { level: 1, name: 'Inicio' });
 
 test.describe('sign-in (S7, ADR 0004)', () => {
   test('rejects a wrong password and signs in with the right one', async ({ page, admin }) => {
@@ -20,7 +20,7 @@ test.describe('sign-in (S7, ADR 0004)', () => {
 
     await page.getByLabel('Contraseña').fill(admin.password);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(dashboard(page)).toBeVisible();
+    await expect(home(page)).toBeVisible();
     await expect(page.getByText('Administración E2E')).toBeVisible();
   });
 
@@ -40,7 +40,7 @@ test.describe('sign-in (S7, ADR 0004)', () => {
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('Secure');
     expect(setCookie).toContain('SameSite=Strict');
-    await expect(dashboard(page)).toBeVisible();
+    await expect(home(page)).toBeVisible();
 
     const session = (await context.cookies()).find((c) => c.name === 'sipges_session');
     expect(session).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Strict' });
@@ -69,13 +69,13 @@ test.describe('sign-in (S7, ADR 0004)', () => {
     await page.context().clearCookies();
     await page.goto('/login?redirect=//attacker.example/steal');
     await submit();
-    await expect(dashboard(page)).toBeVisible();
+    await expect(home(page)).toBeVisible();
     expect(new URL(page.url()).origin).toBe(new URL(baseURL ?? '').origin);
   });
 
   test('signs out and revokes the session server-side', async ({ page, admin }) => {
     await signIn(page, admin);
-    await expect(dashboard(page)).toBeVisible();
+    await expect(home(page)).toBeVisible();
     const token = (await page.context().cookies()).find((c) => c.name === 'sipges_session');
     await signOut(page);
     await expect(page.getByRole('heading', { name: 'Ingresar a SIPGES' })).toBeVisible();
@@ -99,7 +99,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
       [DEFAULT_SCOPE],
     );
     await signIn(page, analyst);
-    await expect(dashboard(page)).toBeVisible();
+    await expect(home(page)).toBeVisible();
 
     await page.goto('/administracion');
     await page.getByRole('button', { name: 'Configurar mi MFA' }).click();
@@ -139,7 +139,7 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     const next = totpCode(secret, enabledAt + 30_000);
     await page.getByLabel('Código de autenticación').fill(next);
     await page.getByRole('button', { name: 'Ingresar' }).click();
-    await expect(dashboard(page)).toBeVisible();
+    await expect(home(page)).toBeVisible();
 
     // The same code cannot be replayed for a second sign-in.
     const replay = await page.request.post('/login', {

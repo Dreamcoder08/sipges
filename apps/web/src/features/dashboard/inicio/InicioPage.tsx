@@ -125,7 +125,7 @@ export const InicioPage = ({
               Registros de {project || 'este proyecto'}
             </span>
             <span className={styles.hint}>
-              <span>Las respuestas con citas llegan pronto</span>
+              <span>Enviar abre la búsqueda con tu pregunta</span>
             </span>
             <button type="submit" className={styles.send} aria-label="Enviar pregunta">
               <Icon name="arrowUp" />
@@ -206,7 +206,7 @@ export const InicioPage = ({
             </Card>
           ) : null}
           {irsa.data ? (
-            <Card title="Riesgo del territorio" to="/territorio" action="Abrir Territorio">
+            <Card title="Riesgo del territorio" to="/analisis" action="Abrir IRSA">
               <p className={styles.risk}>
                 IRSA <strong>{irsa.data.irsa.toFixed(1)}</strong>{' '}
                 <LevelPill level={irsa.data.level} />
