@@ -41,16 +41,11 @@ test('automation rule, API key, inbound webhook, notification and MCP', async ({
   expect(ingested.status(), await ingested.text()).toBe(201);
   expect(await ingested.json()).toMatchObject({ ids: [alertId] });
 
-  // Running the rules now turns it into a notice in Bandeja › «Avisos», counted on the Bandeja link.
+  // Running the rules now turns it into a notice in Bandeja › «Avisos», counted on the bell.
   await page.getByRole('button', { name: 'Ejecutar ahora' }).click();
   await expect(page.getByText(/Revisión completada/)).toBeVisible();
   await page.reload();
-  const bandeja = page
-    .getByRole('navigation', { name: 'Secciones' })
-    .getByRole('link', { name: 'Bandeja', exact: true });
-  await expect(bandeja).toHaveAccessibleDescription(/^\d+ avisos? sin leer$/);
-  await bandeja.click();
-  await page.getByRole('button', { name: 'Avisos', exact: true }).click();
+  await page.getByRole('link', { name: /^Notificaciones, \d+ avisos? sin leer$/ }).click();
   await expect(page).toHaveURL(/\/bandeja\?vista=avisos$/);
   const inbox = page.getByRole('region', { name: 'Avisos' });
   await expect(inbox.getByRole('link', { name: new RegExp(alertId) })).toBeVisible();

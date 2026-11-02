@@ -188,13 +188,17 @@ describe('wide layout: tools live in the sidebar, not in the top bar', () => {
     expect(within(bar).queryByRole('button')).toBeNull();
   });
 
-  it('holds the project select, search and account in the sidebar, with no bell', async () => {
+  it('holds the project select, search, bell and account in the sidebar', async () => {
     const { nav } = await renderAt('/');
     const sidebar = nav.closest('aside');
     if (!sidebar) throw new Error('Missing sidebar');
     expect(within(sidebar).getByLabelText('Proyecto activo')).toHaveValue('DEMO/PRJ-DEMO');
     expect(within(sidebar).getByRole('button', { name: /^Buscar/ })).toBeVisible();
-    expect(within(sidebar).queryByRole('button', { name: /^Notificaciones/ })).toBeNull();
+    // The bell is a link to Bandeja › Avisos (functional-closure S9, owner correction).
+    expect(within(sidebar).getByRole('link', { name: 'Notificaciones' })).toHaveAttribute(
+      'href',
+      '/bandeja?vista=avisos',
+    );
     expect(within(sidebar).getByRole('button', { name: /^Cuenta de / })).toBeVisible();
   });
 
@@ -209,7 +213,7 @@ describe('wide layout: tools live in the sidebar, not in the top bar', () => {
     await waitFor(() => expect(select).toHaveValue('DEMO/PRJ-NORTE'));
   });
 
-  it('counts unread avisos on the Bandeja link and lists them in its Avisos tab', async () => {
+  it('counts unread avisos on the bell, which opens the Avisos tab of Bandeja', async () => {
     server.use(
       http.get('/system/notifications', () =>
         HttpResponse.json({
@@ -230,24 +234,29 @@ describe('wide layout: tools live in the sidebar, not in the top bar', () => {
       ),
     );
     const { nav, user } = await renderAt('/');
-    const bandeja = within(nav).getByRole('link', { name: 'Bandeja' });
-    await waitFor(() => expect(bandeja).toHaveAccessibleDescription('3 avisos sin leer'));
-    expect(within(bandeja).getByText('3')).toBeVisible();
-    await user.click(bandeja);
-    await user.click(await screen.findByRole('button', { name: 'Avisos' }));
-    await waitFor(() => expect(window.location.search).toBe('?vista=avisos'));
+    const sidebar = nav.closest('aside') as HTMLElement;
+    const bell = await within(sidebar).findByRole('link', {
+      name: 'Notificaciones, 3 avisos sin leer',
+    });
+    expect(within(bell).getByText('3')).toBeVisible();
+    expect(within(nav).getByRole('link', { name: 'Bandeja' })).not.toHaveAccessibleDescription();
+    await user.click(bell);
+    await waitFor(() => expect(window.location.pathname).toBe('/bandeja'));
+    expect(window.location.search).toBe('?vista=avisos');
+    expect(screen.getByRole('button', { name: 'Avisos' })).toHaveAttribute('aria-pressed', 'true');
     const avisos = await screen.findByRole('region', { name: 'Avisos' });
     expect(await within(avisos).findByText('Aviso sintético')).toBeVisible();
   });
 
-  it('shows no count on the Bandeja link once every aviso is read', async () => {
+  it('shows no count on the bell once every aviso is read', async () => {
     server.use(
       http.get('/system/notifications', () => HttpResponse.json({ unread: 0, items: [] })),
     );
     const { nav } = await renderAt('/');
-    const bandeja = within(nav).getByRole('link', { name: 'Bandeja' });
-    expect(bandeja).not.toHaveAccessibleDescription();
-    expect(bandeja.querySelector('[data-unread]')).toBeNull();
+    const bell = within(nav.closest('aside') as HTMLElement).getByRole('link', {
+      name: 'Notificaciones',
+    });
+    expect(bell.querySelector('[data-unread]')).toBeNull();
   });
 });
 

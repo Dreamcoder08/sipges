@@ -75,8 +75,9 @@ duplicados: un reintento repite el mismo id. El cuerpo JSON trae `type`
 
 ## Avisos en el dispositivo
 
-La pestaña «Avisos» de Bandeja (`/bandeja?vista=avisos`) los lista; el enlace Bandeja de la barra
-lateral cuenta los que no se han leído y, en el teléfono, el botón de menú lo señala con un punto.
+La pestaña «Avisos» de Bandeja (`/bandeja?vista=avisos`) los lista; la campana de la barra lateral
+cuenta los que no se han leído y abre esa pestaña, y en el teléfono el botón de menú lo señala con
+un punto.
 Además, cada persona puede marcar **Recibir avisos en este dispositivo** (Configuración ›
 Notificaciones) para que lleguen como notificación del sistema (Chrome, Edge, Firefox y
 Safari, también en el móvil con la app instalada desde el navegador). Al tocar el aviso se abre

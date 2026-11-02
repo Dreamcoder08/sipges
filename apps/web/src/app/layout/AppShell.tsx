@@ -11,7 +11,7 @@ import { Sidebar } from './Sidebar.tsx';
 /**
  * Layout of every signed-in screen (docs/adr/0015): skip link, navigation, page heading and
  * main region. Focus moves to the heading after each navigation so screen readers announce it.
- * Wide screens keep a persistent sidebar, which holds the project, search and account,
+ * Wide screens keep a persistent sidebar, which holds the project, search, bell and account,
  * and a top bar with the title only. Phones and tablets show the same sidebar in a drawer that a
  * menu button opens, as ChatGPT and Claude mobile do: the top bar holds the button and the title
  * and there is no bottom bar (addendum 2026-11-01).
@@ -30,7 +30,7 @@ export const AppShell = ({
   projectKey?: string;
   projectSwitcher: ReactNode;
   search?: ReactNode;
-  /** Unread avisos: the Bandeja link counts them and, on phones, the closed menu button signals them. */
+  /** Unread avisos: the sidebar bell counts them and, on phones, the closed menu button signals them. */
   unread?: number;
   live?: ReactNode;
   children: ReactNode;

@@ -162,7 +162,7 @@ export const DESTINATIONS = [
     param: 'vista',
     tabs: tabs(
       ['pendientes', '/pendientes'],
-      // Automation notifications (ADR 0014); the bell is gone (functional-closure S9).
+      // Automation notifications (ADR 0014); the shell's bell opens this tab (functional-closure S9).
       ['avisos', '/avisos'],
       ['alertas', '/alertas'],
       ['validacion', '/validacion'],
@@ -267,6 +267,9 @@ export const titleFor = (path: string) =>
   SCREENS.find((screen) => screen.path === path)?.title ??
   DESTINATIONS.find((hub) => hub.path === path)?.label ??
   'SIPGES';
+
+/** Bandeja › «Avisos», the notification inbox the shell's bell opens (functional-closure S9). */
+export const AVISOS_HREF = '/bandeja?vista=avisos';
 
 /** Where a signed-in person lands by default: Inicio (functional-closure S6). */
 export const HOME_PATH = '/inicio';

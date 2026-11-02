@@ -22,8 +22,8 @@ visible choices, no frequency-based priority and a heavy navy panel.
   permission or API change.
 - **Compact sidebar above 60rem** (`odd/tasks/compact-sidebar.md`, S1–S5). It holds every tool of
   the shell, so the top bar keeps the project eyebrow and the title only: brand, the project
-  selector, the search composer («Ctrl K»), the five destinations (the notification bell was replaced by
-  Bandeja › «Avisos», see the addendum of 2026-11-02),
+  selector, the search composer («Ctrl K») with the notification bell (it opens Bandeja › «Avisos», see the
+  addendum of 2026-11-02), the five destinations,
   «Integraciones» (Automatizaciones for now), «Recientes» (the last four screens or hub tabs
   opened, kept in sessionStorage for the browser tab only, never sent to the server) and, at the foot, an
   account row. There are no collapsible groups. The account menu is short, like Claude's or
@@ -69,7 +69,7 @@ tablets (≤ 60rem):
 
 - The top bar holds only a menu button («Abrir menú», 44 px) and the page title (`h1`).
 - The button opens the wide-screen `Sidebar` in a modal drawer from the left edge (`Sheet side="start"`): project
-  selector, search, the five destinations, Integraciones, Recientes and the account menu. One
+  selector, search, notifications, the five destinations, Integraciones, Recientes and the account menu. One
   navigation component serves every width.
 - Focus moves to the current destination; Escape and the backdrop close the drawer and return focus to the button;
   navigating or switching project closes it.
@@ -79,10 +79,10 @@ tablets (≤ 60rem):
 ## Addendum (2026-11-02): notifications as «Avisos» in Bandeja
 
 `odd/tasks/functional-closure.md` S9 moves the automation notifications (ADR 0014) out of the sidebar bell into a
-Bandeja tab, «Avisos» (`/bandeja?vista=avisos`, old-style deep link `/avisos`). The bell and its pop-over panel are
+Bandeja tab, «Avisos» (`/bandeja?vista=avisos`, old-style deep link `/avisos`). The bell's pop-over panel is
 removed; the inbox reuses `GET /system/notifications` and `POST /system/notifications/read` unchanged.
 
-- The unread count stays in the shell: the Bandeja link of the sidebar shows it as a badge, described to assistive
-  tech as «N avisos sin leer», and on phones the closed menu button keeps its dot and says «Abrir menú, N avisos sin
-  leer».
+- The owner kept the bell as a shell icon («el buzon dejalo como icono mas»): next to search in the sidebar (and so
+  in the phone drawer), a link named «Notificaciones, N avisos sin leer» with the unread badge, that opens the Avisos
+  tab. On phones the closed menu button keeps its dot and says «Abrir menú, N avisos sin leer».
 - The device push switch lives only in Configuración › Notificaciones; the Avisos tab links to it.

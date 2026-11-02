@@ -49,7 +49,7 @@ test('the sidebar lists five destinations and Integraciones and fits without scr
   await expect(sidebar.getByRole('button', { name: /^Cuenta de / })).toBeInViewport();
 });
 
-test('search, project and account are in the sidebar, not in the top bar', async ({
+test('search, inbox, project and account are in the sidebar, not in the top bar', async ({
   page,
   admin,
 }) => {
@@ -62,8 +62,11 @@ test('search, project and account are in the sidebar, not in the top bar', async
   await expect(bar.getByLabel('Proyecto activo')).toHaveCount(0);
 
   await expect(sidebar.getByLabel('Proyecto activo')).toHaveValue(DEFAULT_SCOPE);
-  // Notifications are Bandeja › «Avisos» now; there is no bell (functional-closure S9).
-  await expect(sidebar.getByRole('button', { name: /^Notificaciones/ })).toHaveCount(0);
+  // The bell opens Bandeja › «Avisos» (functional-closure S9).
+  await expect(sidebar.getByRole('link', { name: /^Notificaciones/ })).toHaveAttribute(
+    'href',
+    '/bandeja?vista=avisos',
+  );
   const search = sidebar.getByRole('button', { name: /^Buscar/ });
   await search.click();
   await expect(page.getByRole('combobox', { name: 'Buscar en todo el proyecto' })).toBeFocused();

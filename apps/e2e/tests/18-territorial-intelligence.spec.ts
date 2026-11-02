@@ -107,15 +107,11 @@ for (const mobile of [false, true]) {
       expect(await notices()).toHaveLength(1);
       // Start on the intelligence route with another selection; the notice must open its own.
       await page.goto('/inteligencia-redes?alert=DIG-MISSING-SYNTHETIC');
-      // The inbox is Bandeja › «Avisos» (functional-closure S9); phones reach Bandeja through the
+      // The bell opens Bandeja › «Avisos» (functional-closure S9); phones reach it through the
       // menu drawer (docs/adr/0015, addenda 2026-11-01 and 2026-11-02).
       if (mobile) await page.getByRole('button', { name: /^Abrir menú/ }).click();
-      await page
-        .getByRole('navigation', { name: 'Secciones' })
-        .getByRole('link', { name: 'Bandeja', exact: true })
-        .click();
+      await page.getByRole('link', { name: /^Notificaciones/ }).click();
       if (mobile) await expect(page.getByRole('dialog', { name: 'Menú' })).toBeHidden();
-      await page.getByRole('button', { name: 'Avisos', exact: true }).click();
       const inbox = page.getByRole('region', { name: 'Avisos', exact: true });
       await inbox.getByRole('link', { name: noticeTitle, exact: true }).click();
       await expect(page).toHaveURL(
