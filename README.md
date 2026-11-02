@@ -6,13 +6,13 @@ SIPGES es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobr
 
 ## Inicio rápido
 
-Requiere Node.js 24 y Corepack.
+Requiere Node.js 22 o posterior (la CI usa 22) y pnpm, en la versión fijada en `packageManager` de `package.json`.
 
 ```bash
-corepack pnpm install --frozen-lockfile
-corepack pnpm check                          # lint, límites de capas, tipos y pruebas
-corepack pnpm --filter @sipges/api dev       # API en http://127.0.0.1:8000
-corepack pnpm --filter @sipges/web dev       # SPA en http://127.0.0.1:5173
+pnpm install --frozen-lockfile
+pnpm check                          # lint, límites de capas, tipos y pruebas
+pnpm --filter @sipges/api dev       # API en http://127.0.0.1:8000
+pnpm --filter @sipges/web dev       # SPA en http://127.0.0.1:5173
 ```
 
 Antes de arrancar la API configura `SIPGES_DATA_KEY` y `SIPGES_ADMIN_PASSWORD`; para HTTP local, `SIPGES_COOKIE_SECURE=0`.

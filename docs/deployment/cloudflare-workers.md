@@ -31,8 +31,10 @@ parameters, which in SIPGES are the global tables (accounts, sessions, grants, A
 read can keep a revoked session or key alive and shows writes up to a minute late. Tenant reads
 run inside `withTenant` transactions, which Hyperdrive never caches.
 
-Put the Hyperdrive id printed by the first command in `wrangler.jsonc`
-(`REPLACE_WITH_HYPERDRIVE_CONFIG_ID`). Never commit the connection string.
+The production Hyperdrive id is already committed in `wrangler.jsonc` (`hyperdrive[0].id`). Only
+when you create a new configuration, replace that id with the one the first command prints, and
+in the `deploy:worker` script of `apps/hosting-cloudflare/package.json` in the same change; a test
+pins the two together (§3). Never commit the connection string.
 
 ## 2. Set variables and secrets
 
