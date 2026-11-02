@@ -70,8 +70,24 @@ const alertJson = (a: TerritorialAlert) => ({
 });
 
 /** Classifier, text analysis and the territorial alert inbox (app.py:1251, 1939-2125). */
-export const intelligenceRoutes = (intelligence: IntelligenceService) =>
+export const intelligenceRoutes = (
+  intelligence: IntelligenceService,
+  embedder: { configured: boolean; semanticSearch: boolean },
+) =>
   new Hono<AppEnv>()
+    // Whether semantic features can run; the web falls back to keyword search when not.
+    .get('/system/intelligence/embedder', async (c) => {
+      const status = await intelligence.embedderStatus(c.get('scope'));
+      return c.json({
+        configured: embedder.configured,
+        available: status.available,
+        reason: status.reason,
+        model: status.model,
+        egress: status.egress,
+        semantic_search: embedder.semanticSearch,
+      });
+    })
+
     .post('/system/analyze', async (c) => {
       const body = await parseJson(c, RecordBody);
       if (!body.ok) return body.response;

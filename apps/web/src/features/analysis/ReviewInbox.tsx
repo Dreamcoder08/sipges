@@ -10,6 +10,7 @@ import { useRef, useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
+import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
@@ -23,6 +24,10 @@ const labels: Record<DocumentReviewStatus, string> = {
   corroborado_documentalmente: 'Corroborado documentalmente',
 };
 const PAGE_SIZE = 50;
+/** Link to the record an approval created (T23), named by its module's label. */
+const RecordLink = ({ module, id, label }: { module: string; id: string; label: string }) => (
+  <InternalLink href={objectHref(module, id)}>Ver el registro en {label}</InternalLink>
+);
 const ReviewDecision = ({
   item,
   context,
@@ -34,6 +39,7 @@ const ReviewDecision = ({
   const [note, setNote] = useState(item.note);
   const lock = useRef(false);
   const client = useQueryClient();
+  const label = item.target?.label ?? 'su módulo';
   const mutation = useMutation({
     mutationFn: (input: { status: DocumentReviewStatus; note: string }) =>
       requestJson(
@@ -96,6 +102,10 @@ const ReviewDecision = ({
         Para corroborar, indique la fuente y documentación contrastada. Una decisión no certifica la
         verdad.
       </p>
+      {item.target && !item.record ? (
+        // «Aceptado para revisión» and «Corroborado documentalmente» both approve.
+        <p>Al aprobar, se crea el registro en {label}.</p>
+      ) : null}
       <Button
         disabled={mutation.isPending || (status === 'corroborado_documentalmente' && !note.trim())}
         onClick={() => void save()}
@@ -103,7 +113,20 @@ const ReviewDecision = ({
         {mutation.isPending ? 'Guardando…' : 'Guardar decisión'}
       </Button>
       {mutation.error ? <Alert tone="error">{errorDetail(mutation.error)}</Alert> : null}
-      {mutation.isSuccess ? <Alert tone="success">Decisión registrada.</Alert> : null}
+      {mutation.isSuccess ? (
+        <Alert tone="success">
+          {mutation.data.record
+            ? `Decisión registrada. ${
+                mutation.data.record.created ? 'Registro creado' : 'El registro ya existía'
+              } en ${label}.`
+            : 'Decisión registrada.'}
+        </Alert>
+      ) : null}
+      {mutation.data?.record ? (
+        <p>
+          <RecordLink {...mutation.data.record} label={label} />
+        </p>
+      ) : null}
     </fieldset>
   );
 };
@@ -217,6 +240,11 @@ export const ReviewInbox = (context: FeatureContext) => {
                     {accountDisplayName(item.reviewer) || 'Sin asignar'}.
                   </p>
                   {item.note ? <p>Nota registrada: {item.note}</p> : null}
+                  {item.record ? (
+                    <p>
+                      <RecordLink {...item.record} label={item.target?.label ?? 'su módulo'} />
+                    </p>
+                  ) : null}
                   {writable ? (
                     <ReviewDecision
                       key={`${item.id}/${item.updated_at}/${item.status}`}

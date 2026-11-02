@@ -18,6 +18,7 @@ here** means it depends on an external console that the repository does not reco
 | A new operator takes over | [Access matrix](#access-matrix), then [Secrets](#secrets-and-rotation) |
 | The last deploy broke production | [Bad deploy](#bad-deploy) |
 | A secret or key leaked | [Leaked key](#leaked-key-or-secret) |
+| `SIPGES_DATA_KEY` must change | [Data key rotation](data-key-rotation.md) |
 | `SIPGES_DATA_KEY` is lost | [Lost data key](#lost-sipges_data_key) |
 | Data must be recovered | [Backup and restore](#backup-and-restore) |
 
@@ -41,7 +42,8 @@ sessions, verified in `sql-identity-store.ts`).
 
 | Name | Store | Used for |
 | --- | --- | --- |
-| `SIPGES_DATA_KEY` | Worker secret | Encrypts TOTP secrets (AES-256-GCM, ADR 0004); derives the per-project pseudonym keys (ADR 0030) |
+| `SIPGES_DATA_KEY` | Worker secret | Encrypts TOTP secrets and automation channel settings (AES-256-GCM, ADR 0004); derives the per-project pseudonym keys (ADR 0030) |
+| `SIPGES_DATA_KEY_PREVIOUS` | Worker secret, **only during a rotation** | The old key, read-only while the tool re-encrypts ([data-key-rotation.md](data-key-rotation.md)) |
 | `SIPGES_ADMIN_USERNAME`, `SIPGES_ADMIN_PASSWORD`, `SIPGES_ADMIN_FULL_NAME` | Worker secret | First administrator, only on an empty database |
 | `SIPGES_GOOGLE_CLIENT_ID`, `SIPGES_GOOGLE_CLIENT_SECRET`, `SIPGES_GOOGLE_ADMIN_EMAIL` | Worker secret | Google sign-in |
 | `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Worker secret, only if push is used | Browser push (ADR 0014) |
@@ -65,9 +67,10 @@ Which Worker secrets are currently set cannot be checked from the repository; li
 | `SIPGES_ADMIN_PASSWORD` | Change the password inside SIPGES; delete the secret with `wrangler secret delete SIPGES_ADMIN_PASSWORD` (only read on an empty database) | None |
 | VAPID keys | `pnpm --filter @sipges/api vapid:keys`, then `wrangler secret put` each key | Every device subscription stops working and must subscribe again |
 | API key (MCP, webhook) | Revoke it in Integraciones and create a new one | Clients using the old key get 401 |
-| `SIPGES_DATA_KEY` | **No rotation tool exists.** The cipher format is versioned (`v1.`) to allow it later, but nothing re-encrypts stored secrets today, although ADR 0004 says rotation is a documented procedure | Changing it breaks every enrolled MFA factor and every pseudonym (ADR 0030). Do not change it |
+| `SIPGES_DATA_KEY` | Staged: the Worker reads the old and new keys, `pnpm --filter @sipges/api rotate:data-key` re-encrypts, then the old key is removed. Full procedure and rollback: [data-key-rotation.md](data-key-rotation.md) | Every pseudonym changes (ADR 0030). Never just overwrite the secret: that breaks every enrolled MFA factor and every channel |
 
-Keep a copy of `SIPGES_DATA_KEY` in a password manager, separate from any database backup.
+Keep a copy of `SIPGES_DATA_KEY` in a password manager, separate from any database backup. After
+a rotation, keep the old key there too while any backup from before it exists.
 
 ## Incident checklist
 
