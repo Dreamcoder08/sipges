@@ -1,13 +1,5 @@
 {
-  "slugs": [
-    "eventos",
-    "actores",
-    "directorio",
-    "demandas",
-    "narrativas",
-    "fuentes",
-    "buzon"
-  ],
+  "slugs": ["eventos", "actores", "directorio", "demandas", "narrativas", "fuentes", "buzon"],
   "cases": [
     {
       "payload": "{}",
@@ -287,11 +279,7 @@
       "after": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
       "changes": "[{\"field\":\"Descripcion_Hecho\",\"after\":\"\"},{\"field\":\"Fecha\",\"after\":20260102},{\"field\":\"Nivel_Verificacion\",\"after\":\"Por verificar\"},{\"field\":\"Territorio\",\"after\":null}]"
     },
-    {
-      "before": null,
-      "after": null,
-      "changes": "[]"
-    },
+    { "before": null, "after": null, "changes": "[]" },
     {
       "before": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
       "after": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",

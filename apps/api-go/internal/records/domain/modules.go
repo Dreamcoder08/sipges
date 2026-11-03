@@ -1,3 +1,4 @@
+//nolint:misspell // Spanish module slugs and record fields, verbatim from the TypeScript API.
 package domain
 
 import "strings"

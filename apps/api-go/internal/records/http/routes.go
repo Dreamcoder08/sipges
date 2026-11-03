@@ -50,7 +50,9 @@ type handlers struct {
 func writeJSON(w http.ResponseWriter, status int, body []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_, _ = w.Write(body) // the status is already sent; a failed write has no recovery
+	// JSON.stringify output sent as application/json, never HTML; the status is already sent,
+	// so a failed write has no recovery.
+	_, _ = w.Write(body) //nolint:gosec // see above
 }
 
 // fail answers the TypeScript API's onError 500; only the event is logged, since driver

@@ -7,8 +7,12 @@
 // Every payload is synthetic: no real record is read.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { format, resolveConfig } from 'prettier';
 import { diffPayloads } from '../../../../api/src/contexts/records/domain/history.ts';
-import { SUMMARY_TYPES, summarizeRecord } from '../../../../api/src/contexts/records/domain/summary.ts';
+import {
+  SUMMARY_TYPES,
+  summarizeRecord,
+} from '../../../../api/src/contexts/records/domain/summary.ts';
 
 const OUT = fileURLToPath(new URL('./fixtures.json', import.meta.url));
 
@@ -42,7 +46,9 @@ const cases = PAYLOADS.map((text) => ({
   payload: text,
   list: JSON.stringify({ ...parse(text), _id: 'REC-1', _updated_at: '2026-01-02T03:04:05Z' }),
   get: JSON.stringify({ ...parse(text), _id: 'REC-1' }),
-  summaries: SUMMARY_TYPES.map((type) => JSON.stringify(summarizeRecord(type, 'REC-1', parse(text)))),
+  summaries: SUMMARY_TYPES.map((type) =>
+    JSON.stringify(summarizeRecord(type, 'REC-1', parse(text))),
+  ),
 }));
 
 const diffs = [];
@@ -59,10 +65,22 @@ for (let i = 0; i < PAYLOADS.length; i++) {
     });
   }
 }
-diffs.push({ before: null, after: PAYLOADS[13], changes: JSON.stringify(diffPayloads(null, parse(PAYLOADS[13]))) });
-diffs.push({ before: PAYLOADS[13], after: PAYLOADS[13], changes: JSON.stringify(diffPayloads(parse(PAYLOADS[13]), parse(PAYLOADS[13]))) });
+diffs.push({
+  before: null,
+  after: PAYLOADS[13],
+  changes: JSON.stringify(diffPayloads(null, parse(PAYLOADS[13]))),
+});
+diffs.push({
+  before: PAYLOADS[13],
+  after: PAYLOADS[13],
+  changes: JSON.stringify(diffPayloads(parse(PAYLOADS[13]), parse(PAYLOADS[13]))),
+});
 
-const text = `${JSON.stringify({ slugs: SUMMARY_TYPES.map((t) => t.slug), cases, diffs }, null, 2)}\n`;
+// Formatted as `pnpm lint` (prettier --check) expects.
+const text = await format(
+  JSON.stringify({ slugs: SUMMARY_TYPES.map((t) => t.slug), cases, diffs }),
+  { ...(await resolveConfig(OUT)), filepath: OUT },
+);
 if (process.argv.includes('--check')) {
   if (readFileSync(OUT, 'utf8') !== text) {
     console.error('fixtures.json drifted: rerun without --check');
