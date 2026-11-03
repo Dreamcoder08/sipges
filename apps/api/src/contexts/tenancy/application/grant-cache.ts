@@ -18,16 +18,19 @@ export const createGrantCache = (
   load: (username: string) => Promise<TenantSummary[]>,
   clock: Clock,
 ) => {
-  const entries = new Map<string, { at: number; grants: TenantSummary[] }>();
+  const entries = new Map<string, { at: number; grants: readonly TenantSummary[] }>();
   let generation = 0;
 
   return {
-    async get(username: string): Promise<TenantSummary[]> {
+    async get(username: string): Promise<readonly TenantSummary[]> {
       const now = clock.now().getTime();
       const cached = entries.get(username);
       if (cached && now - cached.at < GRANT_CACHE_TTL_MS) return cached.grants;
       const started = generation;
-      const grants = await load(username);
+      // Frozen: every request in the isolate shares this copy, so no caller may change it.
+      const grants = Object.freeze(
+        (await load(username)).map((grant) => Object.freeze({ ...grant })),
+      );
       if (generation === started) {
         if (entries.size >= MAX_USERS && !entries.has(username)) {
           const oldest = entries.keys().next().value;

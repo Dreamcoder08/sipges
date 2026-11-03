@@ -165,4 +165,14 @@ describe('grant cache bounds', () => {
     await cache.get('u0');
     expect(lookups).toBe(1002);
   });
+
+  it('shares a frozen copy so no caller can change the cached grants', async () => {
+    const cache = createGrantCache(async () => [{ ...NORTE, label: 'Norte' }], {
+      now: () => new Date('2026-11-02T12:00:00Z'),
+    });
+    const first = await cache.get('analista');
+    expect(Object.isFrozen(first)).toBe(true);
+    expect(Object.isFrozen(first[0])).toBe(true);
+    expect(await cache.get('analista')).toEqual([{ ...NORTE, label: 'Norte' }]);
+  });
 });
