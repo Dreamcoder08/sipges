@@ -12,6 +12,7 @@ import (
 	audithttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/audit/http"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
+	indicatorshttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/indicators/http"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
@@ -65,6 +66,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
 			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)
 			audithttp.Register(mux, audithttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
+			indicatorshttp.Register(mux, indicatorshttp.Deps{Pool: pool, Engine: opts.Engines.Indicators, Logger: opts.Logger})
 			preventionhttp.Routes(mux, prevention.Service{Store: preventionsql.Actions{DB: pool}, Now: opts.Now}, opts.Logger)
 			if opts.Routes != nil {
 				opts.Routes(mux)
