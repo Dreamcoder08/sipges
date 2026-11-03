@@ -55,7 +55,14 @@ export default {
 
     const started = Date.now();
     const stub = env.SPIKE.get(env.SPIKE.idFromName(INSTANCE_NAME), { locationHint: LOCATION_HINT });
-    const upstream = await stub.fetch(request);
+    let upstream: Response;
+    try {
+      upstream = await stub.fetch(request);
+    } catch (error) {
+      // A container that fails to start or to open its port surfaces here.
+      console.error("container fetch failed", { colo, error: String(error) });
+      return json(503, { error: { code: "container_unavailable" } }, { "x-worker-colo": colo });
+    }
     const containerMs = Date.now() - started; // includes the container start on a cold request
     const response = new Response(upstream.body, upstream);
     response.headers.set("x-worker-colo", colo);

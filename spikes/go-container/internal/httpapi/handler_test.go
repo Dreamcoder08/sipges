@@ -152,3 +152,33 @@ func TestEgressUpstreamFailure(t *testing.T) {
 		t.Fatalf("status = %d, want 502", rec.Code)
 	}
 }
+
+type blockingConnector struct{}
+
+func (blockingConnector) Connect(ctx context.Context) (dbping.Session, dbping.ConnectTimings, error) {
+	<-ctx.Done() // a blackholed host: only the deadline ends the dial
+	return nil, dbping.ConnectTimings{}, ctx.Err()
+}
+
+func TestDBPingHasItsOwnDeadline(t *testing.T) {
+	h := httpapi.New(httpapi.Deps{
+		Targets:      map[string]dbping.Connector{"direct": blockingConnector{}},
+		Now:          time.Now,
+		StartedAt:    time.Now(),
+		PingDeadline: 50 * time.Millisecond,
+	})
+	done := make(chan *httptest.ResponseRecorder, 1)
+	go func() {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/db-ping", nil))
+		done <- rec
+	}()
+	select {
+	case rec := <-done:
+		if rec.Code != http.StatusGatewayTimeout {
+			t.Fatalf("status = %d, want 504 (body %s)", rec.Code, rec.Body.String())
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("/db-ping did not honour its deadline")
+	}
+}

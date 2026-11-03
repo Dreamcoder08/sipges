@@ -33,7 +33,7 @@ and is not part of the pnpm workspace.
 ```sh
 go test -race ./...                                   # unit tests
 SPIKE_TEST_DATABASE_URL='postgres://sipges_test@127.0.0.1:55439/sipges_test?sslmode=disable' go test ./internal/postgres/
-cd worker && pnpm install --ignore-workspace && npx tsc --noEmit -p . && node --test src/auth.test.ts
+cd worker && pnpm install --ignore-workspace && pnpm typecheck && pnpm test   # typecheck generates the Worker types first
 
 ./deploy.sh                                            # needs a logged-in wrangler and docker
 printf %s "$URL" | (cd worker && npx wrangler secret put DATABASE_URL -c .wrangler.generated.json)

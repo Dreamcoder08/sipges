@@ -3,6 +3,7 @@ package httpapi
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,15 +36,22 @@ type Deps struct {
 	// where the container's outbound traffic leaves Cloudflare.
 	TraceURL   string
 	HTTPClient *http.Client
+	// PingDeadline bounds one /db-ping run (connect plus queries) so an
+	// unreachable host answers 504 before the server's write timeout.
+	PingDeadline time.Duration
 }
 
 const (
-	defaultTarget  = "direct"
-	defaultQueries = 50
+	defaultTarget       = "direct"
+	defaultQueries      = 50
+	defaultPingDeadline = 30 * time.Second
 )
 
 // New returns the HTTP handler.
 func New(deps Deps) http.Handler {
+	if deps.PingDeadline <= 0 {
+		deps.PingDeadline = defaultPingDeadline
+	}
 	if deps.Logger == nil {
 		deps.Logger = slog.New(slog.DiscardHandler)
 	}
@@ -103,10 +111,15 @@ func (h handler) dbPing(w http.ResponseWriter, r *http.Request) {
 		n = parsed
 	}
 
-	result, err := dbping.Run(r.Context(), connector, n, time.Now)
+	ctx, cancel := context.WithTimeout(r.Context(), h.deps.PingDeadline)
+	defer cancel()
+	result, err := dbping.Run(ctx, connector, n, time.Now)
 	switch {
 	case errors.Is(err, dbping.ErrInvalidCount):
 		writeError(w, http.StatusBadRequest, "invalid_count", err.Error())
+	case errors.Is(err, context.DeadlineExceeded):
+		h.deps.Logger.ErrorContext(r.Context(), "db ping timed out", "target", target, "error", err)
+		writeError(w, http.StatusGatewayTimeout, "database_timeout", err.Error())
 	case err != nil:
 		h.deps.Logger.ErrorContext(r.Context(), "db ping failed", "target", target, "error", err)
 		writeError(w, http.StatusBadGateway, "database_unreachable", err.Error())
