@@ -15,17 +15,21 @@ import (
 // sipges-analytics-wasm` (override with SIPGES_ANALYTICS_WASM).
 const defaultAnalyticsWasm = "../../target/wasm32-wasip1/release/sipges_analytics_wasm.wasm"
 
-// Each analytics fixture file and the op that selects its engine.
+// Each analytics fixture file and the op that selects its engine; an empty op means each case
+// names its own (text-analysis.json covers several operations).
 var analyticsFixtures = []struct{ file, op string }{
 	{"situational.json", "situational"},
 	{"strategic.json", "strategic"},
 	{"consensus.json", "consensus"},
 	{"candidate-links.json", "candidate_links"},
 	{"integrated.json", "integrated"},
+	{"conflict-risk.json", "conflict_risk"},
+	{"text-analysis.json", ""},
 }
 
 type analyticsCase struct {
 	Name    string `json:"name"`
+	Op      string `json:"op"`
 	Request string `json:"request"`
 	Value   string `json:"value"`
 }
@@ -60,7 +64,7 @@ func TestAnalyticsFixturesMatchTheTypeScriptEnginesThroughWasm(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = engine.Close(ctx) })
 	for _, fixture := range analyticsFixtures {
-		t.Run(fixture.op, func(t *testing.T) {
+		t.Run(strings.TrimSuffix(fixture.file, ".json"), func(t *testing.T) {
 			raw, err := os.ReadFile(filepath.Join("../../fixtures", fixture.file))
 			if err != nil {
 				t.Fatalf("read fixtures: %v", err)
@@ -75,7 +79,11 @@ func TestAnalyticsFixturesMatchTheTypeScriptEnginesThroughWasm(t *testing.T) {
 				t.Fatalf("expected the full fixture set, got %d cases", len(file.Cases))
 			}
 			for _, tc := range file.Cases {
-				got, err := engine.Invoke(ctx, withOp(t, fixture.op, tc.Request))
+				op := fixture.op
+				if op == "" {
+					op = tc.Op
+				}
+				got, err := engine.Invoke(ctx, withOp(t, op, tc.Request))
 				if err != nil {
 					t.Fatalf("%s: %v", tc.Name, err)
 				}

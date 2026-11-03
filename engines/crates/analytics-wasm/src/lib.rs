@@ -1,6 +1,7 @@
 //! WebAssembly ABI of the SIPGES analytics engines (engines/README.md): `alloc`, `compute`,
 //! `dealloc`, JSON in and JSON out. `op` selects the engine: `situational`, `strategic`,
-//! `consensus`, `candidate_links` or `integrated`.
+//! `consensus`, `candidate_links`, `integrated`, `conflict_risk`, or the text-analysis operations
+//! `text_analysis`, `classify_record`, `text_cosine` and `public_http_url`.
 
 use std::alloc::{Layout, alloc as raw_alloc, dealloc as raw_dealloc};
 use std::ptr::NonNull;
@@ -9,12 +10,17 @@ use serde_json::{Map, Value};
 use sipges_analytics_common::{EngineError, js};
 
 /// Operations accepted in the request's `op` field.
-pub const OPERATIONS: [&str; 5] = [
+pub const OPERATIONS: [&str; 10] = [
     "situational",
     "strategic",
     "consensus",
     "candidate_links",
     "integrated",
+    "conflict_risk",
+    "text_analysis",
+    "classify_record",
+    "text_cosine",
+    "public_http_url",
 ];
 
 fn dispatch(input: &[u8]) -> Result<Value, EngineError> {
@@ -34,6 +40,11 @@ fn dispatch(input: &[u8]) -> Result<Value, EngineError> {
         "consensus" => sipges_consensus::run(&request),
         "candidate_links" => sipges_candidate_links::run(&request),
         "integrated" => sipges_integrated::run(&request),
+        "conflict_risk" => sipges_conflict_risk::run(&request),
+        "text_analysis" => sipges_text_analysis::text_analysis(&request),
+        "classify_record" => sipges_text_analysis::classify_record(&request),
+        "text_cosine" => sipges_text_analysis::text_cosine(&request),
+        "public_http_url" => sipges_text_analysis::public_http_url(&request),
         other => Err(EngineError::InvalidRequest(format!(
             "unknown op {other:?}; expected one of {}",
             OPERATIONS.join(", ")
