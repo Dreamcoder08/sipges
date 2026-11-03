@@ -1,0 +1,15 @@
+[package]
+name = "sipges-situational"
+version = "0.1.0"
+description = "Situational analysis engine of SIPGES (port of apps/api/src/contexts/analytics/domain/situational.ts)."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+sipges-analytics-common = { path = "../analytics-common" }
+
+[lints]
+workspace = true
