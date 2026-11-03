@@ -47,10 +47,11 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 	defer pool.Close()
 
 	handler := app.NewHandler(pool, app.Options{
-		Logger:       log,
-		AllowedHosts: cfg.AllowedHosts,
-		AccessLog:    cfg.AccessLog,
-		RequireMFA:   cfg.RequireMFA,
+		Logger:        log,
+		AllowedHosts:  cfg.AllowedHosts,
+		AccessLog:     cfg.AccessLog,
+		RequireMFA:    cfg.RequireMFA,
+		GoogleEnabled: cfg.GoogleEnabled,
 	})
 	ln, err := listen("tcp", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)))
 	if err != nil {

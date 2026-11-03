@@ -12,13 +12,21 @@ export type ParityCase = {
   readonly method: Method;
   /** Path and query, starting with `/`. */
   readonly path: string;
+  /** Extra headers; the value `{origin}` becomes the base URL of the API being called. */
   readonly headers?: Readonly<Record<string, string>>;
-  readonly body?: { readonly json: unknown } | { readonly form: Readonly<Record<string, string>> };
+  readonly body?:
+    | { readonly json: unknown }
+    | { readonly form: Readonly<Record<string, string>> }
+    /** Sent byte for byte (application/json unless headers say otherwise). */
+    | { readonly raw: string };
+  /** Send `path` exactly as written (dot segments, backslashes), through node:http. */
+  readonly rawTarget?: boolean;
   /**
-   * `admin` sends the session of the synthetic administrator the runner seeds and signs in
-   * through the TypeScript API; both APIs read sessions from the same database.
+   * Sends the session of a synthetic user the runner seeds through the TypeScript API (seed.ts):
+   * `admin` holds the default project; `consulta` (read-only role) holds it too; `multi`
+   * (analista) holds two projects and must choose one. Both APIs read the same sessions.
    */
-  readonly auth?: 'admin';
+  readonly auth?: 'admin' | 'consulta' | 'multi';
   /** Sends `Origin` set to each API's own base URL, as a same-origin browser write would. */
   readonly sameOrigin?: true;
   /**
@@ -27,6 +35,10 @@ export type ParityCase = {
    */
   readonly normalize?: readonly string[];
 };
+
+const UNKNOWN_TOKEN = 'sipges_session=' + 'f'.repeat(64);
+const WITH_ORIGIN = { origin: '{origin}' };
+const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };
 
 export const CASES: readonly ParityCase[] = [
   { name: 'liveness', method: 'GET', path: '/health' },
@@ -78,6 +90,197 @@ export const CASES: readonly ParityCase[] = [
     auth: 'admin',
     sameOrigin: true,
     body: { json: { project_id: 'NORTE', payload: {} } },
+  },
+
+  // GET /system/auth/me and /system/auth/providers: public, served by Go (T15).
+  { name: 'me without a session is null', method: 'GET', path: '/system/auth/me' },
+  {
+    name: 'me with an unknown session is null',
+    method: 'GET',
+    path: '/system/auth/me',
+    headers: { cookie: UNKNOWN_TOKEN },
+  },
+  { name: 'me with a session', method: 'GET', path: '/system/auth/me', auth: 'consulta' },
+  { name: 'sign-in providers', method: 'GET', path: '/system/auth/providers' },
+  {
+    name: 'public write without Origin',
+    method: 'POST',
+    path: '/system/auth/me',
+    auth: 'consulta',
+  },
+
+  // Project choice, role gate and request reading, with the seeded consulta and multi users.
+  {
+    name: 'one project is chosen automatically',
+    method: 'GET',
+    path: '/no-such-route',
+    auth: 'consulta',
+  },
+  { name: 'two projects need a choice', method: 'GET', path: '/no-such-route', auth: 'multi' },
+  {
+    name: 'X-SIPGES-Scope chooses',
+    method: 'GET',
+    path: '/no-such-route',
+    auth: 'multi',
+    headers: SECOND,
+  },
+  {
+    name: 'the scope cookie chooses',
+    method: 'GET',
+    path: '/no-such-route',
+    auth: 'multi',
+    headers: { cookie: 'sipges_scope=PARITY%2FPRJ-B' },
+  },
+  {
+    name: 'an ungranted scope is refused',
+    method: 'GET',
+    path: '/no-such-route',
+    auth: 'consulta',
+    headers: SECOND,
+  },
+  {
+    name: 'undecodable project_id',
+    method: 'GET',
+    path: '/system/no-such-route?project_id=%ZZ',
+    auth: 'consulta',
+  },
+  {
+    name: 'encoded project_id key',
+    method: 'GET',
+    path: '/system/no-such-route?project%5Fid=PRJ-B',
+    auth: 'consulta',
+  },
+  {
+    name: 'a write without a session checks the session first',
+    method: 'POST',
+    path: '/system/no-such-route',
+    headers: WITH_ORIGIN,
+  },
+  {
+    name: 'read-only role cannot write',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'consulta',
+    headers: WITH_ORIGIN,
+  },
+  { name: 'admin-only area', method: 'GET', path: '/system/audit/no-such-route', auth: 'consulta' },
+  {
+    name: 'payload naming the chosen project',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'multi',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { json: { payload: { Proyecto_ID: 'PRJ-B' } } },
+  },
+  {
+    name: 'payload naming another project',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'multi',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { json: { payload: { project_id: 'PRJ-SECHURA' } } },
+  },
+  {
+    name: 'reset-mfa needs a project',
+    method: 'POST',
+    path: '/system/auth/accounts/parity-consulta/reset-mfa',
+    auth: 'multi',
+    headers: WITH_ORIGIN,
+  },
+  {
+    name: 'body with an out-of-range number',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'multi',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { raw: '{"payload":{"Proyecto_ID":"PRJ-SECHURA"},"x":1e400}' },
+  },
+  {
+    name: 'body with a UTF-8 BOM',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'multi',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { raw: '﻿{"project_id":"PRJ-SECHURA"}' },
+  },
+  {
+    name: 'body nested deeper than encoding/json reads',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'multi',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { raw: '{"project_id":"PRJ-SECHURA","x":' + '['.repeat(10001) + ']'.repeat(10001) + '}' },
+  },
+  {
+    name: 'two Origin headers',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'multi',
+    headers: { ...SECOND, origin: '{origin}, http://evil.example' },
+  },
+
+  // Paths read as Hono reads them.
+  { name: 'encoded slash is not a public path', method: 'GET', path: '/system%2Fauth%2Fme' },
+  { name: 'encoded slash is not a machine path', method: 'GET', path: '/hooks%2Fx' },
+  {
+    name: 'encoded slash with a session',
+    method: 'GET',
+    path: '/system%2Fauth%2Fme',
+    auth: 'consulta',
+  },
+  {
+    name: 'dot segments leave the machine path',
+    method: 'GET',
+    path: '/hooks/../system/x',
+    rawTarget: true,
+  },
+  {
+    name: 'backslash dot segments leave the machine path',
+    method: 'GET',
+    path: '/hooks\\..\\system\\x',
+    rawTarget: true,
+  },
+  {
+    name: 'dot segments reach the public route',
+    method: 'GET',
+    path: '/system/../system/auth/me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'encoded dot segments',
+    method: 'GET',
+    path: '/system/%2e%2E/system/auth/me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'backslashes are slashes',
+    method: 'GET',
+    path: '/system\\auth\\me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'trailing dot',
+    method: 'GET',
+    path: '/system/auth/me/.',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  // Hono routes //x as is (no route): JSON 404, not Go's ServeMux redirect.
+  {
+    name: 'empty segment',
+    method: 'GET',
+    path: '//system/auth/me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'empty segment without a session',
+    method: 'GET',
+    path: '//no-such-route',
+    rawTarget: true,
   },
 ];
 
