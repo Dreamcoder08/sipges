@@ -7,7 +7,7 @@ import { CONTEXT_NAMES } from './contexts/index.ts';
 import { loadContexts } from './discover.ts';
 
 test('every context file in src/contexts is discovered without editing index.ts', () => {
-  for (const name of ['audit', 'prevention', 'reference', 'situations']) {
+  for (const name of ['audit', 'management', 'prevention', 'reference', 'situations']) {
     assert.ok(CONTEXT_NAMES.includes(name), `${name} missing from ${CONTEXT_NAMES.join(', ')}`);
   }
   assert.deepEqual([...CONTEXT_NAMES], [...CONTEXT_NAMES].sort());
