@@ -3,3 +3,9 @@
 *.cmd text eol=crlf
 pnpm-lock.yaml linguist-generated=true -diff
 *.wasm binary
+
+# Append-only logs: a local `git merge` keeps both sides instead of conflicting. GitHub ignores
+# merge drivers on pull requests, so agents merge origin/main locally (no rebase) before pushing;
+# `pnpm odd:check` catches an id the union duplicated.
+odd/tasks/*.md merge=union
+CHANGELOG.md merge=union

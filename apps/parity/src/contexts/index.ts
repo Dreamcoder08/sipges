@@ -1,16 +1,13 @@
 /**
- * Per-context parity cases and fixtures. A context ported to Go adds one module here with its
- * `cases` and the synthetic `seed` SQL they read; cases.ts and fixtures.ts pick them up.
+ * Per-context parity cases and fixtures. A context ported to Go adds one file next to this one
+ * exporting its `cases` and the synthetic `seed` SQL they read; it is discovered by file name, so
+ * this file never changes when a context is added. cases.ts and fixtures.ts pick them up.
  */
+import { loadContexts } from '../discover.ts';
 import type { ParityCase } from '../types.ts';
-import * as audit from './audit.ts';
-import * as indicators from './indicators.ts';
-import * as management from './management.ts';
-import * as prevention from './prevention.ts';
-import * as reference from './reference.ts';
-import * as situations from './situations.ts';
 
-const CONTEXTS = [audit, management, prevention, situations, reference, indicators];
+const CONTEXTS = await loadContexts(import.meta.dirname);
 
+export const CONTEXT_NAMES: readonly string[] = CONTEXTS.map((c) => c.name);
 export const CONTEXT_CASES: readonly ParityCase[] = CONTEXTS.flatMap((c) => c.cases);
 export const SEEDS: readonly string[] = CONTEXTS.map((c) => c.seed).filter(Boolean);

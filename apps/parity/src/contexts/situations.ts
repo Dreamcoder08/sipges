@@ -217,7 +217,9 @@ ${settings(
   'parity-admin',
   '2026-01-02 03:04:05.678912+00',
 )},
-${settings(OTHER, { windowDays: 30, phase: 'cierre', levelMeanings: { Rojo: 'AJENA' } }, 'ajena', '2026-01-01T00:00:00Z')};
+${settings(OTHER, { windowDays: 30, phase: 'cierre', levelMeanings: { Rojo: 'AJENA' } }, 'ajena', '2026-01-01T00:00:00Z')}
+  -- Another context's seed (indicators) may insert these rows first: merge into them.
+  ON CONFLICT (tenant_id) DO UPDATE SET settings = project_settings.settings || EXCLUDED.settings;
 `;
 
 const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };

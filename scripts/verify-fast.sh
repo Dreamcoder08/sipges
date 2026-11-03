@@ -11,7 +11,7 @@ status=0
 # Lint, layer boundaries and typecheck are light: run them at the same time.
 pnpm lint &
 lint=$!
-pnpm boundaries &
+{ pnpm boundaries && pnpm odd:check; } &
 boundaries=$!
 pnpm --filter "$affected" run typecheck &
 typecheck=$!
