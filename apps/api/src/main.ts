@@ -8,6 +8,7 @@ import { openDatabase } from './platform/database/open.ts';
 import { resolveClientIp } from './platform/http/client-ip.ts';
 import { fileWebAssets } from './platform/http/spa.ts';
 import { log } from './platform/observability/logger.ts';
+import { skipWhileRunning } from './platform/skip-while-running.ts';
 
 // Composition root: validate configuration first, then open adapters and build the app.
 const config = loadConfig(process.env);
@@ -39,14 +40,20 @@ const server = serve(
   (info) => console.info(`SIPGES API listening on http://${info.address}:${info.port}`),
 );
 
-// Automations tick in-process on a long-running server (ADR 0014 §4).
+// Automations tick in-process on a long-running server (ADR 0014 §4). A tick slower than the
+// interval makes the next one skip instead of overlapping and holding more pool connections.
+const automationTick = skipWhileRunning(() => container.runtime.scheduled(), {
+  onError: (error) => log('error', 'automation_tick_failed', { error }),
+  onSkip: (runningForMs) =>
+    log('warn', 'automation_tick_skipped', {
+      reason: 'previous tick still running',
+      running_for_ms: runningForMs,
+      interval_seconds: config.automation.intervalSeconds,
+    }),
+});
 const automationTimer =
   config.automation.intervalSeconds > 0
-    ? setInterval(() => {
-        container.runtime.scheduled().catch((error: unknown) => {
-          log('error', 'automation_tick_failed', { error });
-        });
-      }, config.automation.intervalSeconds * 1000)
+    ? setInterval(automationTick, config.automation.intervalSeconds * 1000)
     : undefined;
 automationTimer?.unref();
 

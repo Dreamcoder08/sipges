@@ -48,5 +48,8 @@ go test -run '^$' -bench WithTenant ./internal/platform/database/   # with SIPGE
 golangci-lint run ./...                                  # v2.15.0
 ```
 
+Parity with the TypeScript API (every route the Go API serves): `pnpm parity` from the repository root,
+see [apps/parity](../parity/README.md).
+
 Without `SIPGES_TEST_DATABASE_URL` the integration tests skip. With it, each run creates
 `sipges_go_test_<random>`, applies every migration and drops the database at the end.
