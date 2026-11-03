@@ -162,3 +162,61 @@ pass alone as proof of compatibility with the app-local runner.
 Run the full harness before and after any change to a hotspot, and save the JSON next to these
 results. A new native adapter needs a run that trips the gate at 10× after algorithmic and
 worker-thread fixes have been tried.
+
+## Producción (Worker + Hyperdrive + Neon)
+
+The local benchmarks above cannot show the production cost: every database message pays the
+Lima ↔ us-east-1 round trip through the Worker and Hyperdrive. `bench/prod-screens-stress.ts`
+measures it from the outside, as a signed-in user sees it.
+
+### Method
+
+- A synthetic load account with the `consulta` role (read-only; the tool refuses any other role)
+  signs in with password and TOTP, selects one project and opens screens like the browser does:
+  every GET a screen fires, in parallel, then the next screen. Each virtual screen loops over
+  Inicio (7 requests), Registros (2) and IRSA (2) — see `SCREENS` in `bench/prod-screens.ts`.
+- Steps of 1, 4 and 8 concurrent screens, 20 s each. Whole-screen latency runs from the first
+  request to the last answer and counts only screens whose requests all answered 200.
+- The run stops as soon as more than 20 % of requests fail (after 20 requests), and skips the
+  remaining steps. It logs out at the end. Bodies are drained and discarded; output holds
+  statuses and latencies only.
+
+```bash
+cd apps/api
+SIPGES_LOAD_BASE_URL=https://<deployment> SIPGES_LOAD_SCOPE=<tenant/project> \
+  pnpm run bench:prod-screens -- --env-file ~/.config/sipges-carga.env --label <name> --out <file>.json
+```
+
+The env file (or the environment) supplies `SIPGES_LOAD_USER`, `SIPGES_LOAD_PASSWORD` and
+`SIPGES_LOAD_TOTP` (base32). Keep it outside the repository with mode 600; values are read
+verbatim after the first `=`. Run it only against a deployment whose owner authorized the load.
+
+### History (8 concurrent screens, 20 s, 0 errors in every step)
+
+| Run (2026-11-03 UTC) | Requests in 20 s | Inicio p50 / p95 (ms) | Registros p50 / p95 (ms) |
+| --- | ---: | ---: | ---: |
+| v1.1.0 baseline | 286 | 2415 / 3133 | 2264 / 2961 |
+| After #197 (fewer round trips per request) | 383 | 1764 / 2100 | 1415 / 1835 |
+| After #199 (typed parameters, no type catalogue) | 504 | 1371 / 1830 | 932 / 1295 |
+| #199 again (run labelled "after #200"; #200 was not deployed) | 497 | 1410 / 1991 | 927 / 1485 |
+| #199 again, this tool | 488 | 1396 / 1629 | 963 / 1634 |
+
+From v1.1.0 to #199 the same load serves about 1.7× the requests, and Inicio p50 drops by ~1 s.
+CI failed on `main` after #200 and #201, so Deploy Workers skipped them: production stayed at
+`cd001ea` (#199) and the last three rows measure the same code. Their spread (488–504 requests,
+Inicio p95 1629–1991 ms) is the run-to-run noise. #200 and #201 have no production measurement yet.
+The first four rows came from the ad-hoc script this tool replaces; it used the same screens,
+steps and account, with a `floor(p·n)` percentile index instead of nearest rank (a difference of
+at most one sample).
+
+### Limits
+
+- One synthetic account and one project: per-user caches (the #200 grant cache, sessions) are
+  always warm or always shared, and real users spread over more tenants.
+- 20 s steps give a few dozen screens per step: p95 moves by hundreds of ms between runs.
+  Compare p50 and request counts first; treat p95 differences under ~300 ms as noise.
+- The 1-screen step includes the cold start of the first isolate after a deploy (Inicio p95
+  ~3 s in several runs); it is not a steady-state number.
+- A run measures whatever is deployed, not what is merged: check the last Deploy Workers run
+  (`gh run list --workflow "Deploy Workers" --branch main`) before labelling it.
+- The client runs from one machine and network; its own latency to Cloudflare is included.

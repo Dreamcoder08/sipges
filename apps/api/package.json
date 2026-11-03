@@ -11,6 +11,7 @@
     "bench": "node bench/run.ts",
     "migrate:legacy": "node src/tools/migrate-legacy/cli.ts",
     "bench:compare": "node bench/compare.ts",
+    "bench:prod-screens": "node bench/prod-screens-stress.ts",
     "vapid:keys": "node src/tools/vapid-keys.ts",
     "import:base-maestra": "node src/tools/base-maestra/cli.ts",
     "review:materialize": "node src/tools/review-materialize/cli.ts",
