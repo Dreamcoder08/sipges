@@ -37,7 +37,7 @@ Phase 0 — foundations (no production traffic):
 - T15 [x] — S2, S6 (L14): what T14 (#216) lacked from the duplicate branch `feat/go-request-pipeline`: `GET /system/auth/me` and `/system/auth/providers` in Go (`SIPGES_GOOGLE_*` read like `config.ts`), the JSON 404 for paths with an empty segment instead of ServeMux's 307, and the parity seed (`consulta`, `multi` with two projects) with 34 more cases. Route: inline.
 - T16 [x] — S2, S6, S7 (L15, L16): audit read routes (`GET /system/audit`, `GET /system/events` SSE) → `internal/audit`, parity cases and tenant isolation tests. Route: delegated (parallel unit, disjoint directory). Branch `feat/go-audit-geo-mgmt`; commit 2670222.
 - T17 [ ] — S2, S6, S7 (L15, L16): geography routes (`GET /system/geography/catalogue`, read-only `POST /system/geography/query`) → `internal/geography`, INGEMMET gateway with a fixed origin, parity cases and isolation tests. Route: delegated (parallel unit). Commit f6c4b4d.
-- T18 [ ] — S2, S6, S7 (L15, L16): management routes (`GET /system/management/overview`, `GET /system/management/report.csv`) → `internal/management`, parity cases and isolation tests. Route: delegated (parallel unit). Commit 5febffb.
+- T18 [x] — S2, S6, S7 (L15, L16): management routes (`GET /system/management/overview`, `GET /system/management/report.csv`) → `internal/management`, parity cases and isolation tests. Route: delegated (parallel unit). Commit 5febffb.
 
 Phase 1 — read-only, low-risk contexts (switch per route after parity): reference, system/health, audit (read), management, geography, indicators (Rust engine), analytics (Rust engines), situations, prevention.
 
