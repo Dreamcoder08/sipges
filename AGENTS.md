@@ -21,6 +21,9 @@ move to `odd/archive/`); decisions live in `docs/adr/`.
 | `sipges-go-port` | Port one TypeScript context's read routes to `apps/api-go` with parity cases. |
 | `sipges-rust-engine` | Port a pure TypeScript engine to Rust → WebAssembly → Go, byte-identical. |
 | `sipges-parallel-agents` | Run units as parallel Herdr tabs; watch, relay prompts, land and close them. |
+| `sipges-deps-bump` | Triage, verify, land or hold Dependabot and manual dependency upgrades. |
+| `sipges-adr` | Write, number, index and supersede Architecture Decision Records. |
+| `sipges-e2e-stabilize` | Write or fix Playwright e2e tests that wait for state, not time. |
 
 Skills require at least three independent uses evidenced in [docs/agents/skills.md](docs/agents/skills.md). Benchmarking has only two archived runs and remains a documented procedure. Load only the matching SKILL.md; repository skills do not grant permissions.
 

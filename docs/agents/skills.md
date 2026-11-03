@@ -20,12 +20,15 @@ El usuario solicitó explícitamente instalar `neon` y `neon-postgres` con `npx 
 | `sipges-go-port` | Puertos a Go de contextos de lectura con casos de paridad: reference (#217), audit (#219), management (#220), geography (#221), prevention (#222), situations (#223) e indicators (#225) |
 | `sipges-rust-engine` | Motores TypeScript portados a Rust/WebAssembly/Go: indicators e IRSA (#206), los cinco de analytics (#214) y conflict-risk/text-analysis (rama `feat/rust-risk-text-engines`, con tablas generadas en commits propios) |
 | `sipges-parallel-agents` | Pestañas paralelas de Herdr de la sesión del 2026-11-03 (una por unidad, worktree propio) que entregaron #203 a #225; el vigilante `scripts/agents/watch-tabs.sh` automatiza el seguimiento manual de `hc ls`/`hc read` |
+| `sipges-deps-bump` | PR de Dependabot revisados y aterrizados: #75, #76, #77, #78, #94, #102–#106, #139–#149; retenciones `cebd8fd` (tipos de Node 24) y `fb325da` (Playwright 1.63) |
+| `sipges-adr` | ADR 0028 (#84), 0029 (#115), 0030 (#130), 0031 (#161) y 0032 (#202) |
+| `sipges-e2e-stabilize` | Carreras e2e corregidas esperando estado en lugar de leer una vez: #62, #84, #89, #124, #130, #171 y #204 |
 
 El usuario pidió también adoptar Gentle AI (2026-10-19). Las skills `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript` y `zod-4` son instrucciones de proveedor de [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) v4.2.0 y [Gentleman-Skills](https://github.com/Gentleman-Programming/Gentleman-Skills), sin modificar; `computedHash` es el sha256 de su `SKILL.md`. Ver [gentle-ai.md](gentle-ai.md).
 
 Benchmarks conserva su [procedimiento](../benchmarks/README.md) y comparador existentes. Solo se archivan dos ejecuciones independientes (baseline/after); no se crea una skill de benchmark hasta demostrar una tercera necesidad independiente. Tampoco se crean skills específicas de migración o despliegue por una sola fase T13/T14.
 
-Invocación explícita en Codex: `$sipges-verify`, `$sipges-odd-task`, `$sipges-task-pr`, `$sipges-archify`, `$sipges-sync-main`, `$sipges-ci-triage`, `$sipges-phone-check`, `$sipges-code-quality`, `$sipges-go-port`, `$sipges-rust-engine` o `$sipges-parallel-agents`.
+Invocación explícita en Codex: `$sipges-verify`, `$sipges-odd-task`, `$sipges-task-pr`, `$sipges-archify`, `$sipges-sync-main`, `$sipges-ci-triage`, `$sipges-phone-check`, `$sipges-code-quality`, `$sipges-go-port`, `$sipges-rust-engine`, `$sipges-parallel-agents`, `$sipges-deps-bump`, `$sipges-adr` o `$sipges-e2e-stabilize`.
 
 Claude Code no lee `.agents/skills/`: descubre las skills de proyecto en `.claude/skills/` ([documentación oficial](https://code.claude.com/docs/en/skills), consultada el 2026-11-01). Cada skill SIPGES y Neon tiene allí un enlace simbólico a su carpeta en `.agents/skills/`, de modo que ambas herramientas leen la misma fuente; en Claude Code se invocan con `/sipges-verify`, etc. Las skills de Gentle AI no se enlazan porque Claude Code ya las recibe del instalador global de Gentle AI. La descripción determina cuándo aplica cada skill; `AGENTS.md` resume convenciones del repositorio sin cargar todas las instrucciones en cada tarea.
 
