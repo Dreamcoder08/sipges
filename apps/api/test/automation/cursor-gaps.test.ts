@@ -43,15 +43,20 @@ it('still notifies an audit event that commits after a higher id was already sca
   await commitAudit(base + 50, 'EV-SLOW');
   await call('POST', '/system/automations/tick', {});
   expect(await titles()).toEqual(['Evento EV-FAST', 'Evento EV-SLOW']);
+  const cursorAt = async () =>
+    (
+      await t.sql.query<{ last_audit_id: number }>(
+        'SELECT last_audit_id FROM automation_cursors WHERE tenant_id = $1',
+        [TENANT],
+      )
+    )[0]?.last_audit_id;
+  // While the events are inside the settle window the cursor holds back.
+  expect(await cursorAt()).toBeLessThan(base + 50);
 
   // Once both settle the cursor moves past them, and nothing is notified twice.
   t.clock.advance(120);
   await call('POST', '/system/automations/tick', {});
   await call('POST', '/system/automations/tick', {});
   expect(await titles()).toEqual(['Evento EV-FAST', 'Evento EV-SLOW']);
-  const [cursor] = await t.sql.query<{ last_audit_id: number }>(
-    'SELECT last_audit_id FROM automation_cursors WHERE tenant_id = $1',
-    [TENANT],
-  );
-  expect(cursor?.last_audit_id).toBe(base + 100);
+  expect(await cursorAt()).toBe(base + 100);
 });
