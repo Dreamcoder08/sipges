@@ -229,11 +229,20 @@ func bigRequest(t *testing.T, n int) []byte {
 }
 
 func TestInterruptibleCallStopsMidFlightAndTheEngineRecovers(t *testing.T) {
-	engine := newEngine(t, wasmengine.Options{MaxInstances: 1, Interruptible: true})
+	// Retain up to the memory limit: the 5 MiB request grows the instance past the 16 MiB default,
+	// which would discard the warmed instance and make the timed call instantiate a fresh one.
+	engine := newEngine(t, wasmengine.Options{
+		MaxInstances:      1,
+		Interruptible:     true,
+		RetainMemoryPages: wasmengine.DefaultMemoryLimitPages,
+	})
 	request := bigRequest(t, 16) // about 5 MiB: tens of milliseconds of work
 	// Warm the instance first so the timed call measures only the computation.
 	if _, err := engine.Invoke(context.Background(), request); err != nil {
 		t.Fatalf("warm-up call failed: %v", err)
+	}
+	if got := engine.Stats(); got != (wasmengine.Stats{Live: 1, Idle: 1}) {
+		t.Fatalf("after the warm-up Stats = %+v, want the warmed instance pooled", got)
 	}
 	start := time.Now()
 	if _, err := engine.Invoke(context.Background(), request); err != nil {
@@ -253,6 +262,50 @@ func TestInterruptibleCallStopsMidFlightAndTheEngineRecovers(t *testing.T) {
 	}
 	if _, err := engine.Call(context.Background(), []byte(`{"op":"defaults"}`)); err != nil {
 		t.Fatalf("engine unusable after an interrupted call: %v", err)
+	}
+}
+
+// endsAfterFirstCheck is a context that is still live when Invoke first checks it and ends right
+// after, the window in which a waiting caller can be handed an instance after its context ended.
+type endsAfterFirstCheck struct {
+	context.Context
+	checks int
+}
+
+func (c *endsAfterFirstCheck) Err() error {
+	c.checks++
+	if c.checks == 1 {
+		return nil
+	}
+	return context.Canceled
+}
+
+func TestContextThatEndsAfterAcquireDoesNotStartTheCall(t *testing.T) {
+	for _, pooled := range []bool{true, false} {
+		t.Run(fmt.Sprintf("pooled=%v", pooled), func(t *testing.T) {
+			engine := newEngine(t, wasmengine.Options{MaxInstances: 1})
+			request := []byte(`{"op":"defaults"}`)
+			if pooled {
+				if _, err := engine.Call(context.Background(), request); err != nil {
+					t.Fatalf("warm-up call: %v", err)
+				}
+			}
+			ctx := &endsAfterFirstCheck{Context: context.Background()}
+			response, err := engine.Invoke(ctx, request)
+			if !errors.Is(err, context.Canceled) || response != nil {
+				t.Fatalf("Invoke = (%d response bytes, %v), want (none, context.Canceled)", len(response), err)
+			}
+			if ctx.checks < 2 {
+				t.Fatalf("context checked %d times, want a check after the instance was acquired", ctx.checks)
+			}
+			// The unused instance is healthy, so it goes back to the pool instead of being lost.
+			if got := engine.Stats(); got != (wasmengine.Stats{Live: 1, Idle: 1}) {
+				t.Fatalf("after the canceled call Stats = %+v, want the instance pooled", got)
+			}
+			if _, err := engine.Call(context.Background(), request); err != nil {
+				t.Fatalf("engine unusable after the canceled call: %v", err)
+			}
+		})
 	}
 }
 
