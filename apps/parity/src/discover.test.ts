@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -7,17 +7,12 @@ import { CONTEXT_NAMES } from './contexts/index.ts';
 import { loadContexts } from './discover.ts';
 
 test('every context file in src/contexts is discovered without editing index.ts', () => {
-  for (const name of [
-    'audit',
-    'geography',
-    'indicators',
-    'management',
-    'prevention',
-    'reference',
-    'situations',
-  ]) {
-    assert.ok(CONTEXT_NAMES.includes(name), `${name} missing from ${CONTEXT_NAMES.join(', ')}`);
-  }
+  const dir = join(import.meta.dirname, 'contexts');
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith('.ts') && f !== 'index.ts' && !f.endsWith('.test.ts'))
+    .map((f) => f.replace(/\.ts$/, ''));
+  assert.ok(files.length > 0);
+  assert.deepEqual([...CONTEXT_NAMES], files.sort());
   assert.deepEqual([...CONTEXT_NAMES], [...CONTEXT_NAMES].sort());
 });
 

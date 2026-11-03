@@ -22,3 +22,6 @@ apps/hosting-cloudflare/public/
 
 # Byte-identical copies of data/*.json embedded in the Go binary (a Go test compares them).
 apps/api-go/internal/reference/infrastructure/data/
+
+# Expected answers of the Go analytics routes, byte for byte as the engine writes them (compact JSON).
+apps/api-go/internal/analytics/http/testdata/

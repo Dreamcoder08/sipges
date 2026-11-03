@@ -1,0 +1,1429 @@
+{
+  "catalog": "{\"object_types\":[{\"module\":\"actores\",\"label\":\"Actor\",\"title_field\":\"Nombre_Actor/Organizacion\",\"summary_fields\":[\"Tipo_Actor\",\"Posicion_Proyecto\",\"Influencia\",\"Territorio\"],\"date_field\":null},{\"module\":\"eventos\",\"label\":\"Evento\",\"title_field\":\"Descripcion_Hecho\",\"summary_fields\":[\"Tipo_Evento\",\"Territorio\",\"Relevancia_Preliminar\",\"Estado_Validacion\"],\"date_field\":\"Fecha\"},{\"module\":\"demandas\",\"label\":\"Demanda\",\"title_field\":\"Descripcion\",\"summary_fields\":[\"Actor/Grupo\",\"Tema\",\"Prioridad\",\"Estado\"],\"date_field\":\"Fecha_Registro\"},{\"module\":\"compromisos\",\"label\":\"Compromiso\",\"title_field\":\"Descripcion\",\"summary_fields\":[\"Actor/Entidad\",\"Responsable\",\"Plazo\",\"Avance_%\",\"Estado\"],\"date_field\":\"Fecha\"},{\"module\":\"narrativas\",\"label\":\"Narrativa\",\"title_field\":\"Descripcion\",\"summary_fields\":[\"Plataforma/Fuente\",\"Tema\",\"Tono\",\"Estado\"],\"date_field\":\"Fecha_Observacion\"},{\"module\":\"fuentes\",\"label\":\"Fuente\",\"title_field\":\"Archivo_Fuente\",\"summary_fields\":[\"Tipo_Fuente\",\"Institucion/Autor\",\"Nivel_Base_Verificacion\"],\"date_field\":\"Fecha_Documento\"},{\"module\":\"alertas\",\"label\":\"Alerta\",\"title_field\":\"Causa\",\"summary_fields\":[\"Dimension\",\"Nivel_Preliminar\",\"Estado\"],\"date_field\":\"Fecha\"},{\"module\":\"acciones\",\"label\":\"Acción\",\"title_field\":\"Accion\",\"summary_fields\":[\"Responsable\",\"Plazo\",\"Estado\"],\"date_field\":null},{\"module\":\"directorio\",\"label\":\"Contacto\",\"title_field\":\"Nombre\",\"summary_fields\":[\"Cargo\",\"Institucion\",\"Prioridad\"],\"date_field\":null},{\"module\":\"intereses\",\"label\":\"Interés\",\"title_field\":\"Actor\",\"summary_fields\":[\"Posicion\",\"Interes\",\"Estado\"],\"date_field\":null},{\"module\":\"dialogos\",\"label\":\"Diálogo\",\"title_field\":\"Proceso\",\"summary_fields\":[\"Tema\",\"Acuerdo\",\"Proximo_Paso\",\"Estado\"],\"date_field\":null},{\"module\":\"oportunidades\",\"label\":\"Oportunidad\",\"title_field\":\"Oportunidad\",\"summary_fields\":[\"Tipo\",\"Beneficiarios\",\"Viabilidad\",\"Estado\"],\"date_field\":null},{\"module\":\"hechos\",\"label\":\"Hecho compartido\",\"title_field\":\"Asunto\",\"summary_fields\":[\"Metodo\",\"Accion_Verificacion\",\"Estado\"],\"date_field\":null},{\"module\":\"aarc\",\"label\":\"Evaluación AARC\",\"title_field\":\"Actor_Proceso\",\"summary_fields\":[\"Accion_Mejora\",\"Estado\"],\"date_field\":\"Fecha\"},{\"module\":\"buzon\",\"label\":\"Caso del buzón\",\"title_field\":\"Asunto\",\"summary_fields\":[\"Tipo\",\"Territorio\",\"Estado\"],\"date_field\":\"Fecha\"},{\"module\":\"lecciones\",\"label\":\"Lección territorial\",\"title_field\":\"Aprendido\",\"summary_fields\":[\"Territorio\",\"Tema\",\"Actor\"],\"date_field\":\"Fecha\"}],\"link_types\":[{\"id\":\"participa_en\",\"label\":\"participa en\",\"inverse_label\":\"tiene como participante a\",\"sources\":[\"actores\"],\"targets\":[\"eventos\",\"dialogos\"],\"symmetric\":false},{\"id\":\"plantea\",\"label\":\"plantea\",\"inverse_label\":\"es planteada por\",\"sources\":[\"actores\"],\"targets\":[\"demandas\"],\"symmetric\":false},{\"id\":\"asume\",\"label\":\"asume\",\"inverse_label\":\"es asumido por\",\"sources\":[\"actores\"],\"targets\":[\"compromisos\"],\"symmetric\":false},{\"id\":\"responde_a\",\"label\":\"responde a\",\"inverse_label\":\"es atendida por\",\"sources\":[\"compromisos\",\"acciones\",\"oportunidades\"],\"targets\":[\"demandas\"],\"symmetric\":false},{\"id\":\"difunde\",\"label\":\"difunde\",\"inverse_label\":\"es difundida por\",\"sources\":[\"actores\"],\"targets\":[\"narrativas\"],\"symmetric\":false},{\"id\":\"sustenta\",\"label\":\"sustenta\",\"inverse_label\":\"se sustenta en\",\"sources\":[\"fuentes\"],\"targets\":null,\"symmetric\":false},{\"id\":\"origina\",\"label\":\"origina\",\"inverse_label\":\"se origina en\",\"sources\":[\"eventos\",\"narrativas\",\"demandas\"],\"targets\":[\"alertas\"],\"symmetric\":false},{\"id\":\"atiende\",\"label\":\"atiende\",\"inverse_label\":\"es atendida por\",\"sources\":[\"acciones\"],\"targets\":[\"alertas\"],\"symmetric\":false},{\"id\":\"representa_a\",\"label\":\"representa a\",\"inverse_label\":\"es representado por\",\"sources\":[\"directorio\"],\"targets\":[\"actores\"],\"symmetric\":false},{\"id\":\"aliado_de\",\"label\":\"es aliado de\",\"inverse_label\":\"es aliado de\",\"sources\":[\"actores\"],\"targets\":[\"actores\"],\"symmetric\":true},{\"id\":\"en_conflicto_con\",\"label\":\"está en conflicto con\",\"inverse_label\":\"está en conflicto con\",\"sources\":[\"actores\"],\"targets\":[\"actores\"],\"symmetric\":true},{\"id\":\"relacionado_con\",\"label\":\"está relacionado con\",\"inverse_label\":\"está relacionado con\",\"sources\":null,\"targets\":null,\"symmetric\":true}]}",
+  "rules": "[{\"linkType\":\"sustenta\",\"holder\":\"eventos\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"actores\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"directorio\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"demandas\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"compromisos\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"narrativas\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"alertas\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"acciones\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"intereses\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"dialogos\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"oportunidades\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"sustenta\",\"holder\":\"hechos\",\"field\":\"Fuente_ID\",\"target\":\"fuentes\",\"match\":\"id\",\"holderIsSource\":false},{\"linkType\":\"atiende\",\"holder\":\"acciones\",\"field\":\"Alerta_Asociada\",\"target\":\"alertas\",\"match\":\"id\",\"holderIsSource\":true},{\"linkType\":\"responde_a\",\"holder\":\"compromisos\",\"field\":\"Demanda_Asociada\",\"target\":\"demandas\",\"match\":\"id\",\"holderIsSource\":true},{\"linkType\":\"participa_en\",\"holder\":\"eventos\",\"field\":\"Actor_Principal\",\"target\":\"actores\",\"match\":\"title\",\"holderIsSource\":false},{\"linkType\":\"plantea\",\"holder\":\"demandas\",\"field\":\"Actor/Grupo\",\"target\":\"actores\",\"match\":\"title\",\"holderIsSource\":false},{\"linkType\":\"asume\",\"holder\":\"compromisos\",\"field\":\"Actor/Entidad\",\"target\":\"actores\",\"match\":\"title\",\"holderIsSource\":false},{\"linkType\":\"difunde\",\"holder\":\"narrativas\",\"field\":\"Actor_Relacionado\",\"target\":\"actores\",\"match\":\"title\",\"holderIsSource\":false},{\"linkType\":\"relacionado_con\",\"holder\":\"intereses\",\"field\":\"Actor\",\"target\":\"actores\",\"match\":\"title\",\"holderIsSource\":true}]",
+  "fold": [
+    { "text": "", "out": "" },
+    { "text": "Agua", "out": "agua" },
+    { "text": "ÁGUA potable", "out": "agua potable" },
+    { "text": "Comunidad San Pedro", "out": "comunidad san pedro" },
+    { "text": "año de la niñez", "out": "ano de la ninez" },
+    { "text": "AÑO", "out": "ano" },
+    { "text": "İzmir", "out": "izmir" },
+    { "text": "ßeta Straße", "out": "ßeta straße" },
+    { "text": "ΟΔΟΣ ΣΟΦΙΑΣ", "out": "οδος σοφιας" },
+    { "text": "ǅungla ǆ", "out": "ǆungla ǆ" },
+    { "text": "ﬁn ﬂor", "out": "ﬁn ﬂor" },
+    { "text": "é compuesto", "out": "e compuesto" },
+    { "text": "😀 emoji y agua", "out": "😀 emoji y agua" },
+    { "text": "한국어 텍스트", "out": "한국어 텍스트" },
+    { "text": "Ⅻ capítulo", "out": "ⅻ capitulo" },
+    { "text": "  espacios y\ttabs　 ", "out": "  espacios y\ttabs　 " },
+    { "text": "﻿bom inicial", "out": "﻿bom inicial" },
+    {
+      "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxaguayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy",
+      "out": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxaguayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+    },
+    { "text": "Ñandú en Ñuñoa", "out": "nandu en nunoa" },
+    { "text": "contaminación del río", "out": "contaminacion del rio" }
+  ],
+  "terms": [
+    { "raw": "", "terms": [], "query": null },
+    { "raw": "   ", "terms": [], "query": null },
+    { "raw": "agua", "terms": ["agua"], "query": "agua:*" },
+    { "raw": "Agua potable agua", "terms": ["agua", "potable"], "query": "agua:* & potable:*" },
+    { "raw": "a b c 1 2 xy", "terms": ["1", "2", "xy"], "query": "1:* & 2:* & xy:*" },
+    { "raw": "ÑANDÚ", "terms": ["nandu"], "query": "nandu:*" },
+    {
+      "raw": "año-2024 / PRJ_01",
+      "terms": ["ano", "2024", "prj", "01"],
+      "query": "ano:* & 2024:* & prj:* & 01:*"
+    },
+    {
+      "raw": "uno dos tres cuatro cinco seis siete ocho nueve diez",
+      "terms": ["uno", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho"],
+      "query": "uno:* & dos:* & tres:* & cuatro:* & cinco:* & seis:* & siete:* & ocho:*"
+    },
+    { "raw": "😀 emoji", "terms": ["emoji"], "query": "emoji:*" },
+    { "raw": "İstanbul", "terms": ["istanbul"], "query": "istanbul:*" },
+    { "raw": "ﬁn", "terms": [], "query": null },
+    { "raw": "%20 + &", "terms": ["20"], "query": "20:*" },
+    { "raw": "1", "terms": ["1"], "query": "1:*" },
+    { "raw": "ab", "terms": ["ab"], "query": "ab:*" }
+  ],
+  "excerpts": [
+    {
+      "payload": "{}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"Corte de agua en el caserío\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"12.5\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Otro\",\"excerpt\":\"agua del río\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"…xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"…xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"10\",\"excerpt\":\"agua diez\"}"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Ñ campo\",\"excerpt\":\"año agua\"}"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"a\",\"excerpt\":\"nada\"}"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"…😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀…\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"…zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"…zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"ééééééééééééééééééééééééééééééagua\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["agua"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "{\"field\":\"Descripcion_Hecho\",\"excerpt\":\"agua\"}"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["ano"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["xx"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["resto"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["nada", "zzz"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["12"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["true"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["izmir"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": ["iii"],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    },
+    {
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "terms": [],
+      "preferred": ["Descripcion_Hecho", "Tipo_Evento", "Territorio"],
+      "out": "null"
+    }
+  ],
+  "summaries": [
+    {
+      "slug": "eventos",
+      "payload": "{}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "title": "\"Corte de agua en el caserío\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"Corte de agua en el caserío\",\"date\":\"2026-01-02\",\"marking\":\"interno\",\"fields\":{\"Tipo_Evento\":\"Conflicto\"}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "title": "\"12.5\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"12.5\",\"date\":null,\"marking\":\"interno\",\"fields\":{\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":\"3\",\"Estado_Validacion\":\"true\"}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "title": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\ud83d…\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\ud83d…\",\"date\":null,\"marking\":\"interno\",\"fields\":{\"Tipo_Evento\":\"Tipo\"}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "title": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "title": "\"1e+21\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"1e+21\",\"date\":\"20260102\",\"marking\":\"interno\",\"fields\":{\"Tipo_Evento\":\"0.1\",\"Territorio\":\"0\"}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "title": "\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "title": "\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\\ud83d…\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\\ud83d…\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "title": "\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz…\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz…\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "title": "\"ééééééééééééééééééééééééééééééagua\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"ééééééééééééééééééééééééééééééagua\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "eventos",
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "title": "\"agua\"",
+      "out": "{\"module\":\"eventos\",\"id\":\"ID-1\",\"type_label\":\"Evento\",\"title\":\"agua\",\"date\":null,\"marking\":\"interno\",\"fields\":{\"Territorio\":\"agua\"}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{\"Territorio\":\"Sechura\"}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{\"Territorio\":\"0\"}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "actores",
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"actores\",\"id\":\"ID-1\",\"type_label\":\"Actor\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{\"Territorio\":\"agua\"}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "acciones",
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"acciones\",\"id\":\"ID-1\",\"type_label\":\"Acción\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"Corte de agua en el caserío\",\"Tipo_Evento\":\"Conflicto\",\"Fecha\":\"2026-01-02\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":12.5,\"Territorio\":\"Sechura\",\"Relevancia_Preliminar\":3,\"Estado_Validacion\":true}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"  \",\"Territorio\":\"\",\"Otro\":\"agua del río\",\"Zeta\":\"agua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\",\"Tipo_Evento\":\"  Tipo  \"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx😀 resto\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":null,\"Fecha\":null,\"Tipo_Evento\":[\"lista\"],\"Territorio\":{\"a\":1}}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":1e+21,\"Fecha\":20260102,\"Tipo_Evento\":0.1,\"Territorio\":0}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"2\":\"agua dos\",\"10\":\"agua diez\",\"Ñ campo\":\"año agua\",\"b\":\"ÁGUA\",\"a\":\"nada\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"İİİİİİİİİİİİİİİİİİİİİİİİİİİİİİ agua al final del texto largo que sigue y sigue\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀agua😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어한국어 agua zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"ééééééééééééééééééééééééééééééagua\"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    },
+    {
+      "slug": "fuentes",
+      "payload": "{\"Descripcion_Hecho\":\"   agua   \",\"Territorio\":\"﻿ agua  \"}",
+      "title": "\"ID-1\"",
+      "out": "{\"module\":\"fuentes\",\"id\":\"ID-1\",\"type_label\":\"Fuente\",\"title\":\"ID-1\",\"date\":null,\"marking\":\"interno\",\"fields\":{}}"
+    }
+  ],
+  "days": [
+    { "value": "", "end": false, "out": "0000-01-01" },
+    { "value": "", "end": true, "out": "9999-12-31" },
+    { "value": "  ", "end": false, "out": "0000-01-01" },
+    { "value": "  ", "end": true, "out": "9999-12-31" },
+    { "value": "2024", "end": false, "out": "2024-01-01" },
+    { "value": "2024", "end": true, "out": "2024-12-31" },
+    { "value": "2024-02", "end": false, "out": "2024-02-01" },
+    { "value": "2024-02", "end": true, "out": "2024-02-31" },
+    { "value": "2024-13", "end": false, "out": null },
+    { "value": "2024-13", "end": true, "out": null },
+    { "value": "2024-00", "end": false, "out": null },
+    { "value": "2024-00", "end": true, "out": null },
+    { "value": "2024-02-30", "end": false, "out": "2024-02-30" },
+    { "value": "2024-02-30", "end": true, "out": "2024-02-30" },
+    { "value": " 2024-01-01 ", "end": false, "out": "2024-01-01" },
+    { "value": " 2024-01-01 ", "end": true, "out": "2024-01-01" },
+    { "value": "2024-1-1", "end": false, "out": null },
+    { "value": "2024-1-1", "end": true, "out": null },
+    { "value": "20241", "end": false, "out": null },
+    { "value": "20241", "end": true, "out": null },
+    { "value": "२०२४", "end": false, "out": null },
+    { "value": "२०२४", "end": true, "out": null },
+    { "value": "2024-01-01x", "end": false, "out": null },
+    { "value": "2024-01-01x", "end": true, "out": null },
+    { "value": " 2024　", "end": false, "out": "2024-01-01" },
+    { "value": " 2024　", "end": true, "out": "2024-12-31" }
+  ]
+}
