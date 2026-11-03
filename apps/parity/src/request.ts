@@ -11,8 +11,14 @@ export const send = async (
   cookie: string | undefined,
   timeoutMs: number,
 ): Promise<Observed> => {
-  const headers = new Headers(c.headers);
-  if (c.auth && cookie) headers.set('cookie', cookie);
+  // `{origin}` stands for the base URL of the API being called (each listens on its own port).
+  const headers = new Headers(
+    Object.entries(c.headers ?? {}).map(([k, v]) => [k, v === '{origin}' ? baseUrl : v]),
+  );
+  if (c.auth && cookie) {
+    const own = headers.get('cookie');
+    headers.set('cookie', own ? `${own}; ${cookie}` : cookie);
+  }
   let body: string | null = null;
   if (c.body && 'json' in c.body) {
     headers.set('content-type', 'application/json');

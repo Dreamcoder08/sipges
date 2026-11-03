@@ -31,9 +31,9 @@ Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a rout
 | `name`      | Unique name in the report.                                                |
 | `method`    | HTTP method.                                                              |
 | `path`      | Path and query, starting with `/`.                                        |
-| `headers`   | Extra request headers.                                                    |
+| `headers`   | Extra request headers; `{origin}` becomes each API's own base URL.        |
 | `body`      | `{ json: … }` or `{ form: { … } }`.                                       |
-| `auth`      | `'admin'` sends the synthetic administrator's session to both APIs.       |
+| `auth`      | `'admin'` or `'consulta'`: that seeded user's session, sent to both APIs. |
 | `normalize` | JSON paths that differ per run (`id`, `items.*.created_at`); fields only. |
 
 JSON compares as values: object key order does not count, `null` and a missing key differ. A normalized
@@ -41,12 +41,17 @@ path present on only one side is still a difference, and a path that names no fi
 
 ## Covered routes
 
-| Route                    | Cases                                          |
-| ------------------------ | ---------------------------------------------- |
-| `GET /health`            | plain, with a query string                     |
-| `GET /health/ready`      | database up                                    |
-| unknown paths (JSON 404) | `/no-such-route` and `/health/` with a session |
+| Route or rule                      | Cases                                                                                                                                                                                                                                           |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /health`, `GET /health/ready` | plain, with a query string; database up                                                                                                                                                                                                         |
+| `GET /system/auth/me`              | no session, unknown session, a session                                                                                                                                                                                                          |
+| `GET /system/auth/providers`       | Google not configured                                                                                                                                                                                                                           |
+| Session (every non-public path)    | none or unknown → 401; a write without a session is 401 before the Origin check                                                                                                                                                                 |
+| Origin                             | authenticated write without it → 403; public write without it → 403                                                                                                                                                                             |
+| Project                            | one grant chosen automatically; two need a choice (403 with the list); `X-SIPGES-Scope`; the encoded scope cookie; an ungranted scope; `project_id` of another project, also undecodable; a JSON body naming another project, or the chosen one |
+| Role gate                          | `consulta` writing; `consulta` in an admin-only area                                                                                                                                                                                            |
 
-Known difference, not covered: without a session, unknown paths answer 401 in TypeScript and 404 in Go
-until identity moves to Go (phase 4); such paths stay on TypeScript. `/health/ready` with the database
-down (503) is covered by each API's own tests.
+The pipeline cases use paths neither API serves, so only the pipeline answers. The runner seeds two
+synthetic users through the TypeScript API ([`src/seed.ts`](src/seed.ts)): `admin` with two projects and
+`consulta` with one. Both APIs run with `SIPGES_REQUIRE_MFA=0`; the MFA gate and `/health/ready` with the
+database down (503) are covered by each API's own tests.

@@ -26,8 +26,9 @@ unsetting `SIPGES_GO_ROUTING` for all of them.
 3. Measure it through the `sipges-go` Worker (target from the container to Neon: warm p50 ≤ 35 ms,
    p95 ≤ 45 ms) and show the owner before any production change (S7).
 
-Until identity moves to Go (phase 4), a Go route does not check sessions: unauthenticated requests to it would
-not get TypeScript's 401. Only routes whose parity cases include the unauthenticated request may move.
+The Go API runs the same request pipeline as TypeScript before any route (session, Origin, MFA, project and
+role gate; see `apps/api-go/README.md`), so a route's parity cases should include the request without a
+session and, for project data, one naming another project.
 
 ## Choices
 
