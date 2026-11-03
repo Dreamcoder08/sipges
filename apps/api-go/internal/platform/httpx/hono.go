@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -20,12 +21,19 @@ var (
 	dotSegment      = regexp.MustCompile(`/\.\.?(?:[/?#]|$)`)
 )
 
+var upperToken = regexp.MustCompile(`^[A-Z]+$`)
+
 // CanonicalPath replaces r.URL.Path with the path Hono's c.req.path would give, before any
 // other middleware runs, so the gates and the router read one and the same string: a gate can
 // never see one path while the router dispatches another.
 func CanonicalPath() Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if !upperToken.MatchString(r.Method) {
+				// Node's parser refuses such methods before Hono sees them.
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+				return
+			}
 			path := HonoPath(r)
 			if path != r.URL.Path || r.URL.RawPath != "" {
 				u := *r.URL
@@ -42,7 +50,7 @@ func CanonicalPath() Middleware {
 // HonoPath is c.req.path for this request: the raw target, normalized like `new URL` when
 // @hono/node-server would build one, then decoded like Hono's getPath (decodeURI, %25 kept).
 func HonoPath(r *http.Request) string {
-	target := r.RequestURI
+	target, _, _ := strings.Cut(r.RequestURI, "#") // Hono's getPath stops at '#'
 	if !strings.HasPrefix(target, "/") {
 		target = r.URL.EscapedPath()
 		if r.URL.RawQuery != "" {
@@ -229,8 +237,8 @@ func Cookie(r *http.Request, name string) (string, bool) {
 			continue
 		}
 		value = strings.Trim(value, " \t")
-		if len(value) >= 2 && strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) {
-			value = value[1 : len(value)-1]
+		if strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) {
+			value = value[1:max(1, len(value)-1)] // a lone '"' unquotes to "", as in Hono
 		}
 		if cookieValue.MatchString(value) {
 			return tryDecodeComponent(value), true
@@ -244,7 +252,8 @@ func Cookie(r *http.Request, name string) (string, bool) {
 func QueryParam(r *http.Request, key string) (string, bool) {
 	query := r.URL.RawQuery
 	if strings.HasPrefix(r.RequestURI, "/") {
-		_, query, _ = strings.Cut(r.RequestURI, "?")
+		target, _, _ := strings.Cut(r.RequestURI, "#") // Hono drops the fragment first
+		_, query, _ = strings.Cut(target, "?")
 	}
 	if query == "" && !strings.Contains(r.RequestURI, "?") {
 		return "", false
@@ -288,8 +297,17 @@ func originHost(value string) (string, bool) {
 	if !conservativeHost.MatchString(host) {
 		return "", false
 	}
-	if port, ok := defaultPorts[strings.ToLower(u.Scheme)]; ok {
-		host = strings.TrimSuffix(host, ":"+port)
+	// new URL reads the port as a number (leading zeros dropped, above 65535 an error) and
+	// drops the scheme's default port.
+	if p := u.Port(); p != "" {
+		n, err := strconv.Atoi(p)
+		if err != nil || n > 65535 {
+			return "", false
+		}
+		host = strings.TrimSuffix(host, ":"+p)
+		if strconv.Itoa(n) != defaultPorts[strings.ToLower(u.Scheme)] {
+			host += ":" + strconv.Itoa(n)
+		}
 	}
 	return host, true
 }

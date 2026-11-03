@@ -130,7 +130,11 @@ func Middleware(grants GrantSource, log *slog.Logger) httpx.Middleware {
 // body.payload.Proyecto_ID and body.payload.project_id, with JavaScript truthiness. found is
 // false when none is truthy or the body is not a JSON object.
 func projectFromBody(body []byte) (any, bool) {
-	record, ok := parseJSON(body).(map[string]any)
+	parsed := parseJSON(body)
+	if _, deep := parsed.(tooDeep); deep {
+		return parsed, true // never equal to a project id: refused
+	}
+	record, ok := parsed.(map[string]any)
 	if !ok {
 		return nil, false
 	}
@@ -143,6 +147,9 @@ func projectFromBody(body []byte) (any, bool) {
 	return nil, false
 }
 
+// tooDeep marks a body nested beyond encoding/json's limit.
+type tooDeep struct{}
+
 // parseJSON is Hono's c.req.json() as the middleware uses it: Response.text() (which drops a
 // UTF-8 byte order mark), then JSON.parse of the whole text; anything unparseable is {}.
 func parseJSON(body []byte) any {
@@ -151,6 +158,11 @@ func parseJSON(body []byte) any {
 	dec.UseNumber() // JSON.parse reads 1e400 as Infinity, where float64 decoding fails
 	var v any
 	if err := dec.Decode(&v); err != nil {
+		if strings.Contains(err.Error(), "exceeded max depth") {
+			// JSON.parse reads far deeper bodies than encoding/json; refuse rather than read
+			// such a body as {} and skip the check.
+			return tooDeep{}
+		}
 		return map[string]any{}
 	}
 	if _, err := dec.Token(); !errors.Is(err, io.EOF) {

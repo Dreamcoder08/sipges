@@ -145,3 +145,65 @@ func TestIsWriteMethod(t *testing.T) {
 		}
 	}
 }
+
+// Verifier findings on T8 (fail-open spellings): each must read as TypeScript reads it or fail
+// closed.
+func TestVerifierFindingsFailClosed(t *testing.T) {
+	addr := echoServer(t)
+	read := func(target string, headers ...string) echo {
+		t.Helper()
+		status, body := rawGet(t, addr, target, headers)
+		if status != http.StatusOK {
+			t.Fatalf("%s: status %d", target, status)
+		}
+		var e echo
+		if err := json.Unmarshal(body, &e); err != nil {
+			t.Fatal(err)
+		}
+		return e
+	}
+	// Hono unquotes a lone '"' to "" and stops at that first match.
+	if e := read("/s", `Cookie: sipges_session="; sipges_session=abc`); e.Session == nil || *e.Session != "" {
+		t.Errorf("lone quote: session %v, want \"\"", e.Session)
+	}
+	// Hono's getPath and getQueryParam stop at '#'.
+	if e := read("/system/auth/current-scope#/../../../health"); e.Path != "/system/auth/current-scope" {
+		t.Errorf("fragment path: %q", e.Path)
+	}
+	if e := read("/s?project_id=X#"); e.ProjectID == nil || *e.ProjectID != "X" {
+		t.Errorf("fragment query: %v", e.ProjectID)
+	}
+	if e := read("/s?a#&project_id=X"); e.ProjectID != nil {
+		t.Errorf("query after fragment: %v", *e.ProjectID)
+	}
+}
+
+func TestOriginNormalizesPortsLikeNewURL(t *testing.T) {
+	for _, c := range []struct {
+		origin, host string
+		ok           bool
+	}{
+		{"http://h.example:0080", "h.example:0080", false}, // new URL drops the default port
+		{"http://h.example:0080", "h.example", true},
+		{"https://h.example:08443", "h.example:8443", true},
+		{"https://h.example:99999", "h.example:99999", false}, // new URL throws
+	} {
+		r := httptest.NewRequest(http.MethodPost, "http://"+c.host+"/x", nil)
+		r.Header.Set("Origin", c.origin)
+		if got := httpx.OriginAllowed(r); got != c.ok {
+			t.Errorf("Origin %s, Host %s: %v, want %v", c.origin, c.host, got, c.ok)
+		}
+	}
+}
+
+// Node refuses methods that are not upper-case tokens before any handler runs.
+func TestRefusesLowerCaseMethods(t *testing.T) {
+	h := httpx.Chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Fatal("handler ran")
+	}), httpx.CanonicalPath())
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, httptest.NewRequest(strings.ToLower(http.MethodPost), "/api/eventos", nil))
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status %d", w.Code)
+	}
+}

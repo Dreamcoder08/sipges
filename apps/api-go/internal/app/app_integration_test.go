@@ -395,6 +395,10 @@ func TestRefusesJSONBodiesThatNameAnotherProject(t *testing.T) {
 	} {
 		t.Run("passes "+body, func(t *testing.T) { expect(t, post(body, "application/json"), http.StatusNotFound, notFound) })
 	}
+	t.Run("a body nested beyond Go's decoder is refused, not read as {}", func(t *testing.T) {
+		deep := `{"project_id":"NORTE","x":` + strings.Repeat("[", 10001) + strings.Repeat("]", 10001) + `}`
+		expect(t, post(deep, "application/json"), http.StatusForbidden, otherProject)
+	})
 	t.Run("other content types are not inspected", func(t *testing.T) {
 		expect(t, post(`{"project_id":"NORTE"}`, "text/plain"), http.StatusNotFound, notFound)
 		expect(t, post(`{"project_id":"NORTE"}`, "Application/JSON"), http.StatusNotFound, notFound)
