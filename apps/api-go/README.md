@@ -25,7 +25,9 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                 |
 | `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).            |
 
-Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used.
+Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used. A ported
+context mounts its routes from its own file, `internal/app/context_<name>.go`, which calls `registerContext` from
+`init`; `app.go` is not edited, so parallel ports do not conflict ([parallel delivery](../../docs/agents/parallel-delivery.md)).
 
 ## Warm pool
 
