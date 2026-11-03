@@ -14,29 +14,37 @@ const MATCHES = `module = ANY($1::text[])
 export const createSqlRecordSummaryReader = (sql: SqlClient): RecordSummaryReader => ({
   summary: (tenantId, modules, { limit, offset, q }) =>
     withTenant(sql, tenantId, async (tx) => {
-      const rows = await tx.query<{
-        module: ModuleName;
-        id: string;
-        payload: Payload;
-        updated_at: Date | string;
+      // One statement for the page and the totals: each query is a round trip to the database.
+      const [result] = await tx.query<{
+        rows: { module: ModuleName; id: string; payload: Payload; updated_at: string }[];
+        totals: Record<string, number | string>;
       }>(
-        `SELECT module, id, payload, updated_at FROM module_records WHERE ${MATCHES}
-         ORDER BY array_position($1::text[], module), updated_at DESC, id DESC
-         LIMIT $3 OFFSET $4`,
+        `SELECT
+           (SELECT coalesce(json_agg(page ORDER BY page.position, page.updated_at DESC, page.id DESC),
+                            '[]'::json)
+            FROM (SELECT module, id, payload, updated_at,
+                         array_position($1::text[], module) AS position
+                  FROM module_records WHERE ${MATCHES}
+                  ORDER BY position, updated_at DESC, id DESC
+                  LIMIT $3 OFFSET $4) page) AS rows,
+           (SELECT coalesce(json_object_agg(module, total), '{}'::json)
+            FROM (SELECT module, count(*) AS total FROM module_records WHERE ${MATCHES}
+                  GROUP BY module) totals) AS totals`,
         [modules, q, limit, offset],
       );
-      const totals = await tx.query<{ module: ModuleName; total: number | string }>(
-        `SELECT module, count(*) AS total FROM module_records WHERE ${MATCHES} GROUP BY module`,
-        [modules, q],
-      );
       return {
-        rows: rows.map((row) => ({
+        rows: (result?.rows ?? []).map((row) => ({
           module: row.module,
           id: row.id,
           payload: row.payload,
           updatedAt: new Date(row.updated_at),
         })),
-        counts: new Map(totals.map((row) => [row.module, Number(row.total)])),
+        counts: new Map(
+          Object.entries(result?.totals ?? {}).map(([module, total]) => [
+            module as ModuleName,
+            Number(total),
+          ]),
+        ),
       };
     }),
 });

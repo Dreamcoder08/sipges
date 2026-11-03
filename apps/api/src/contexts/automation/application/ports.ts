@@ -61,6 +61,11 @@ export type NotificationView = {
   readonly read: boolean;
 };
 
+export type NotificationInbox = {
+  readonly unread: number;
+  readonly items: NotificationView[];
+};
+
 export type NewNotification = {
   readonly runId?: number;
   readonly title: string;
@@ -121,8 +126,8 @@ export type AutomationStore = {
   runs(tenantId: string, limit: number): Promise<RunView[]>;
 
   notify(tenantId: string, notification: NewNotification, at: Date): Promise<number>;
-  notifications(tenantId: string, username: string, limit: number): Promise<NotificationView[]>;
-  unread(tenantId: string, username: string): Promise<number>;
+  /** The user's unread count and latest notifications, read together in one transaction. */
+  inbox(tenantId: string, username: string, limit: number): Promise<NotificationInbox>;
   markRead(
     tenantId: string,
     username: string,

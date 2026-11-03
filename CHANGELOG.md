@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Rendimiento
+
+- Menos viajes a la base de datos por pedido (cada viaje Lima ↔ us-east-1 cuesta ~130 ms): entrar al proyecto (tenant) en una transacción pasa de 3 viajes a 1 (mismos ajustes y rol `sipges_tenant`, valores escapados como literales); las notificaciones leen el contador y la lista en una sola transacción y sentencia; el resumen de Registros trae la página y los totales en una sola consulta; el canal de actividad (`/system/events`) consulta cada 10 s en lugar de cada 3 s.
+- Ningún pedido espera trabajo empezado por otro: el catálogo de GEOCATMIN, la comprobación del modelo de embeddings y los vectores de conceptos solo comparten entre pedidos resultados ya terminados (en Workers, un pedido cancelado dejaba colgados a los que esperaban su consulta), y un resultado más viejo ya no reemplaza a uno más nuevo.
+- Worker: el arranque en frío ya no se comparte como una promesa en curso atada al primer pedido. Si ese pedido se cancelaba, todos los que llegaban después quedaban colgados (pantallas en blanco o «Cargando…» durante más de 35 s). Ahora solo se guarda una inicialización terminada; cada pedido que no la encuentra inicializa con su propia conexión, y la primera que termina bien queda en caché.
+- La web pide la sesión y el proyecto activo a la vez al cargar, en lugar de uno después del otro.
+- Las importaciones de registros (también `import:base-maestra`) escriben 500 filas por sentencia en lugar de una por fila; los ids repetidos dentro de un lote dan el mismo resultado y los mismos conteos que antes.
+- Automatizaciones: ningún pedido espera el procesamiento que empezó otro pedido (en Workers podía quedar colgado); dos procesamientos del mismo proyecto son seguros porque la base serializa el escaneo y reclama cada ejecución una sola vez. Las escrituras que llegan mientras uno corre piden un escaneo más al terminar, en lugar de encadenarse.
+- Nueva prueba de estrés `node bench/latency-stress.ts` (en `apps/api`): PostgreSQL sintético detrás de un proxy con latencia configurable (`--rtt`) y pool configurable (`--pool`), a varios niveles de concurrencia. Con 130 ms de ida y vuelta y pool de 20, frente a `main`: de 10,3 a 15,7 pedidos/s con 8 pantallas a la vez y p95 de `/system/v4/settings` de 4,5 s a 2,8 s.
+
 ## [1.1.0] - 2026-11-02
 
 Versión de entrega de la tesis.

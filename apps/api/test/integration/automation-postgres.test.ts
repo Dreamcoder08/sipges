@@ -202,4 +202,69 @@ describe.skipIf(!adminUrl)('automation on real PostgreSQL', () => {
     expect(hits.map((h) => [h.id, h.semantic])).toContainEqual(['EV-PG-1', true]);
     expect(await container.ontology.refreshEmbeddings('SIPGES/PRJ-SECHURA')).toBe(0);
   });
+
+  it('queues and notifies each event once when ticks of one tenant run at once', async () => {
+    // Ticks no longer share an in-flight promise (Workers cannot await another request's
+    // work): the cursor lock and SKIP LOCKED claims must keep concurrent ticks exact.
+    const container = await buildContainer({
+      config: loadConfig({ ...TEST_ENV, SIPGES_CRON_SECRET: CRON_SECRET }),
+      sql: pool.client,
+      clock: new TestClock(),
+      clientIp: () => '203.0.113.73',
+    });
+    const app = createApp(container);
+    const headers = { host: 'localhost', origin: 'http://localhost' };
+    const login = await app.request('/login', {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams({ username: 'admin', password: 'admin-password-123' }),
+    });
+    const cookie = login.headers.get('set-cookie')?.split(';')[0] ?? '';
+    const post = (path: string, body: unknown) =>
+      app.request(path, {
+        method: 'POST',
+        headers: { ...headers, cookie, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    expect(
+      (
+        await post('/system/automations/rules', {
+          name: 'Eventos concurrentes',
+          module: 'Eventos',
+          actions: ['CREATE'],
+          steps: [{ kind: 'notify', title: 'Evento {id}' }],
+        })
+      ).status,
+    ).toBe(200);
+    for (let i = 0; i < 10; i++)
+      expect((await post('/api/eventos', { payload: { ID_Evento: `EV-TICK-${i}` } })).status).toBe(
+        200,
+      );
+    const tick = () =>
+      app.request('/system/automations/cron', {
+        method: 'POST',
+        headers: { host: 'localhost', authorization: `Bearer ${CRON_SECRET}` },
+      });
+    const statuses = (await Promise.all(Array.from({ length: 6 }, tick))).map((r) => r.status);
+    expect(statuses).toEqual([200, 200, 200, 200, 200, 200]);
+    const { created, notified } = await withTenant(
+      pool.client,
+      'SIPGES/PRJ-SECHURA',
+      async (tx) => ({
+        // Record ids get a suffix on collision, so compare with the ids actually stored.
+        created: (
+          await tx.query<{ id: string }>(
+            "SELECT id FROM module_records WHERE module = 'Eventos' AND payload->>'ID_Evento' LIKE 'EV-TICK-%'",
+          )
+        ).map((row) => `Evento ${row.id}`),
+        notified: await tx.query<{ title: string; copies: number }>(
+          `SELECT title, count(*)::int AS copies FROM notifications
+         WHERE title LIKE 'Evento EV-TICK-%' GROUP BY title`,
+        ),
+      }),
+    );
+    expect(created).toHaveLength(10);
+    expect(notified.map((n) => n.title).sort()).toEqual([...created].sort());
+    expect(notified.every((n) => n.copies === 1)).toBe(true);
+  });
 });

@@ -22,26 +22,122 @@ const setup = () => {
   return { store, calls, clock: { now: () => new Date('2026-10-17T12:00:00Z') } };
 };
 describe('automation runtime', () => {
-  it('coalesces a project without suppressing another project', async () => {
+  it('runs its own tick for a project already ticking and never waits on the other', async () => {
+    // On Workers a tick started by a cancelled request never settles for another request;
+    // the database serializes concurrent scans of one project.
     const f = setup();
-    const releases: (() => void)[] = [];
+    let calls = 0;
     const runtime = createAutomationRuntime({
       ...f,
       tick: async () => {
-        await new Promise<void>((r) => releases.push(r));
+        calls += 1;
+        if (calls === 1) await new Promise<void>(() => {});
         return report;
       },
     });
-    const a = runtime.run('A/project', 'event'),
-      again = runtime.run('A/project', 'event'),
-      b = runtime.run('B/project', 'event');
+    void runtime.run('A/project', 'event');
+    const again = await Promise.race([
+      runtime.run('A/project', 'cron'),
+      new Promise<'hung'>((resolve) => setTimeout(() => resolve('hung'), 500)),
+    ]);
+    expect(again).toEqual(report);
+    expect(await runtime.run('B/project', 'event')).toEqual(report);
+    expect(f.calls.filter((x) => x.startsWith('start'))).toEqual([
+      'start:A/project:event',
+      'start:A/project:cron',
+      'start:B/project:event',
+    ]);
+  });
+  it('turns writes during a running tick into one more scan instead of waiting', async () => {
+    const f = setup();
+    let release: (() => void) | undefined;
+    let ticks = 0;
+    const runtime = createAutomationRuntime({
+      ...f,
+      tick: async () => {
+        ticks += 1;
+        if (ticks === 1) await new Promise<void>((r) => (release = r));
+        return report;
+      },
+    });
+    const pending: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => pending.push(task));
     await new Promise((r) => setImmediate(r));
-    expect(releases).toHaveLength(2);
-    releases.forEach((r) => r());
-    expect(await a).toEqual(report);
-    expect(await again).toEqual(report);
-    expect(await b).toEqual(report);
-    expect(f.calls.filter((x) => x.startsWith('start'))).toHaveLength(2);
+    // Two writes while the first tick runs: neither waits on it, and they share one rescan.
+    const deferredByLaterWrites: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => deferredByLaterWrites.push(task));
+    await runtime.dispatch('A/project', (task) => deferredByLaterWrites.push(task));
+    await Promise.all(deferredByLaterWrites);
+    release?.();
+    await Promise.all(pending);
+    expect(ticks).toBe(2);
+  });
+  it('still rescans for a write that arrived while the running tick failed', async () => {
+    const f = setup();
+    let fail: ((error: Error) => void) | undefined;
+    let ticks = 0;
+    const runtime = createAutomationRuntime({
+      ...f,
+      tick: async () => {
+        ticks += 1;
+        if (ticks === 1) await new Promise<void>((_, reject) => (fail = reject));
+        return report;
+      },
+      onError: () => undefined,
+    });
+    const pending: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => pending.push(task));
+    await new Promise((r) => setImmediate(r));
+    await runtime.dispatch('A/project', () => undefined);
+    fail?.(new Error('provider unavailable'));
+    await Promise.all(pending);
+    expect(ticks).toBe(2);
+    expect(f.calls).toEqual([
+      'start:A/project:event',
+      'finish:A/project:failed',
+      'start:A/project:event',
+      'finish:A/project:completed',
+    ]);
+  });
+  it('starts a fresh tick when the running one outlived its budget', async () => {
+    // On Workers a tick whose request was cancelled never ends; later writes must not wait for it.
+    const f = setup();
+    let elapsed = 0;
+    let ticks = 0;
+    const runtime = createAutomationRuntime({
+      ...f,
+      budgetMs: 20000,
+      monotonicNow: () => elapsed,
+      tick: async () => {
+        ticks += 1;
+        if (ticks === 1) await new Promise<void>(() => {});
+        return report;
+      },
+    });
+    await runtime.dispatch('A/project', () => undefined);
+    await new Promise((r) => setImmediate(r));
+    elapsed = 20001;
+    const pending: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => pending.push(task));
+    await Promise.all(pending);
+    expect(ticks).toBe(2);
+  });
+  it('bounds the rescans one tick owes to writes that keep arriving', async () => {
+    const f = setup();
+    let ticks = 0;
+    const runtime = createAutomationRuntime({
+      ...f,
+      tick: async () => {
+        ticks += 1;
+        // Every scan sees one more write arrive meanwhile.
+        await runtime.dispatch('A/project', () => undefined);
+        return report;
+      },
+    });
+    const pending: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => pending.push(task));
+    await Promise.all(pending);
+    expect(ticks).toBe(3);
   });
   it('registers deferred work and records failures without rejecting committed writes', async () => {
     const f = setup(),

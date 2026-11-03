@@ -40,7 +40,12 @@ class PendingMigrationsError extends Error {
 }
 
 type Backend = { readonly container: Container; readonly app: ReturnType<typeof createApp> };
-let backend: Promise<Backend> | undefined;
+/**
+ * Only a finished, successful initialization is cached. A promise still in flight is bound to
+ * the I/O of the request that started it: if that request is cancelled or ends first, it never
+ * settles, and every request that awaited it would hang. Workers do not fail in that case.
+ */
+let backend: Backend | undefined;
 
 const stringsOf = (env: Env) =>
   Object.fromEntries(
@@ -115,12 +120,13 @@ const webAppFor = (env: Env) => {
   return webApp;
 };
 
-const backendFor = (env: Env) => {
-  // One initialization per isolate; a failed attempt is retried by the next request.
-  backend ??= initialize(env).catch((error: unknown) => {
-    backend = undefined;
-    throw error;
-  });
+const backendFor = async (env: Env): Promise<Backend> => {
+  if (backend) return backend;
+  // Each request that finds no backend initializes on its own connection; concurrent cold
+  // starts repeat the idempotent work, which is cheaper than waiting on another request's I/O.
+  // A failure is not cached: the next request retries. The first success wins the cache.
+  const built = await initialize(env);
+  backend ??= built;
   return backend;
 };
 

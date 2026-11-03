@@ -16,6 +16,9 @@ const toRecord = (row: Row): StoredRecord => ({
  * Records live in module_records under forced RLS. Each change and its audit entry share one
  * withTenant transaction, so an audit row exists exactly when the change committed.
  */
+/** Records per insert statement: bounds one message while keeping imports to a few trips. */
+const IMPORT_CHUNK = 500;
+
 export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
   list: (tenantId, module, { limit, q, offset = 0 }) =>
     withTenant(sql, tenantId, async (tx) =>
@@ -99,23 +102,40 @@ export const createSqlRecordStore = (sql: SqlClient): RecordStore => ({
 
   importBatch: (tenantId, module, items, note, at, options) =>
     withTenant(sql, tenantId, async (tx) => {
-      let created = 0;
-      let updated = 0;
+      // A statement can write a row only once, so repeated ids are folded in order first: in
+      // merge mode later fields win, like successive updates; insert-only keeps the first.
+      // Every repeat after the first would have been one more update (merge mode) or a no-op.
+      const folded = new Map<string, Payload>();
+      let repeats = 0;
       for (const item of items) {
-        const [row] = await tx.query<{ inserted: boolean }>(
+        const known = folded.get(item.id);
+        if (known === undefined) folded.set(item.id, item.payload);
+        else {
+          repeats++;
+          if (!options?.insertOnly) folded.set(item.id, { ...known, ...item.payload });
+        }
+      }
+      let created = 0;
+      let updated = options?.insertOnly ? 0 : repeats;
+      const rows = [...folded].map(([id, payload]) => ({ id, payload }));
+      // One statement per chunk instead of one per record: each is a round trip.
+      for (let i = 0; i < rows.length; i += IMPORT_CHUNK) {
+        const written = await tx.query<{ inserted: boolean }>(
           `INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at)
-           VALUES (current_setting('app.tenant_id', true), $1, $2, $3::jsonb, $4, $4)
+           SELECT current_setting('app.tenant_id', true), $1, x.id, x.payload, $3, $3
+           FROM jsonb_to_recordset($2::jsonb) AS x(id text, payload jsonb)
            ON CONFLICT (tenant_id, module, id) ${
              options?.insertOnly
                ? 'DO NOTHING'
                : 'DO UPDATE SET payload = module_records.payload || EXCLUDED.payload, updated_at = EXCLUDED.updated_at'
            }
            RETURNING (xmax = 0) AS inserted`,
-          [module, item.id, JSON.stringify(item.payload), at],
+          [module, JSON.stringify(rows.slice(i, i + IMPORT_CHUNK)), at],
         );
-        if (!row) continue;
-        if (row.inserted) created++;
-        else updated++;
+        for (const row of written) {
+          if (row.inserted) created++;
+          else updated++;
+        }
       }
       if (created + updated)
         await appendAudit(tx, {

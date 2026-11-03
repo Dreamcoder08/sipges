@@ -376,45 +376,45 @@ export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
       return Number(row?.id);
     }),
 
-  notifications: (tenantId, username, limit) =>
-    withTenant(sql, tenantId, async (tx) =>
-      (
-        await tx.query<{
+  inbox: (tenantId, username, limit) =>
+    withTenant(sql, tenantId, async (tx) => {
+      // One statement: the count and the page share a round trip and a pooled connection.
+      const [row] = await tx.query<{
+        unread: number | string;
+        items: {
           id: number;
           title: string;
           body: string;
           module: string | null;
           record_id: string | null;
-          created_at: Date | string;
+          created_at: string;
           read: boolean;
-        }>(
-          `SELECT n.id, n.title, n.body, n.module, n.record_id, n.created_at,
-                  (r.username IS NOT NULL) AS read
-           FROM notifications n
-           LEFT JOIN notification_reads r ON r.notification_id = n.id AND r.username = $1
-           ORDER BY n.id DESC LIMIT $2`,
-          [username, limit],
-        )
-      ).map((row) => ({
-        id: Number(row.id),
-        title: row.title,
-        body: row.body,
-        module: row.module,
-        recordId: row.record_id,
-        createdAt: new Date(row.created_at),
-        read: row.read,
-      })),
-    ),
-
-  unread: (tenantId, username) =>
-    withTenant(sql, tenantId, async (tx) => {
-      const [row] = await tx.query<{ count: number | string }>(
-        `SELECT count(*) AS count FROM notifications n
-         WHERE NOT EXISTS (SELECT 1 FROM notification_reads r
-                           WHERE r.notification_id = n.id AND r.username = $1)`,
-        [username],
+        }[];
+      }>(
+        `SELECT
+           (SELECT count(*) FROM notifications n
+            WHERE NOT EXISTS (SELECT 1 FROM notification_reads r
+                              WHERE r.notification_id = n.id AND r.username = $1)) AS unread,
+           coalesce((SELECT json_agg(page ORDER BY page.id DESC) FROM (
+             SELECT n.id, n.title, n.body, n.module, n.record_id, n.created_at,
+                    (r.username IS NOT NULL) AS read
+             FROM notifications n
+             LEFT JOIN notification_reads r ON r.notification_id = n.id AND r.username = $1
+             ORDER BY n.id DESC LIMIT $2) page), '[]'::json) AS items`,
+        [username, limit],
       );
-      return Number(row?.count ?? 0);
+      return {
+        unread: Number(row?.unread ?? 0),
+        items: (row?.items ?? []).map((item) => ({
+          id: Number(item.id),
+          title: item.title,
+          body: item.body,
+          module: item.module,
+          recordId: item.record_id,
+          createdAt: new Date(item.created_at),
+          read: item.read,
+        })),
+      };
     }),
 
   markRead: (tenantId, username, ids, at) =>

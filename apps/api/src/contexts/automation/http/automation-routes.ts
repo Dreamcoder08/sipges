@@ -251,10 +251,7 @@ export const automationRoutes = (
       if (!limit.ok) return limit.response;
       const tenant = tenantOf(c);
       const username = c.get('identity').username;
-      const [unread, items] = await Promise.all([
-        automation.unread(tenant, username),
-        automation.notifications(tenant, username, limit.value),
-      ]);
+      const { unread, items } = await automation.inbox(tenant, username, limit.value);
       return c.json({
         unread,
         items: items.map((n) => ({

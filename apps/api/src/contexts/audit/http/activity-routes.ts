@@ -15,7 +15,12 @@ export type ActivityOptions = {
   readonly heartbeatMs: number;
 };
 
-const DEFAULTS: ActivityOptions = { pollMs: 3_000, maxMs: 240_000, heartbeatMs: 25_000 };
+/**
+ * Every poll is a tenant transaction held by each open tab; at 3 s a few tabs kept database
+ * connections busy enough to delay the requests that draw a screen. 10 s still refreshes
+ * "every few seconds" (ADR 0014) at a third of the load.
+ */
+const DEFAULTS: ActivityOptions = { pollMs: 10_000, maxMs: 240_000, heartbeatMs: 25_000 };
 const BATCH = 100;
 
 /**

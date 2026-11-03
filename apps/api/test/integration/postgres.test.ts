@@ -5,7 +5,9 @@ import { createApp } from '../../src/app.ts';
 import { buildContainer } from '../../src/compose.ts';
 import { loadConfig } from '../../src/platform/config.ts';
 import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
+import { createSqlRecordStore } from '../../src/contexts/records/infrastructure/sql-record-store.ts';
 import { postgresClient } from '../../src/platform/database/postgres.ts';
+import { withTenant } from '../../src/platform/database/tenant-transaction.ts';
 import { TEST_ENV, TestClock } from '../support/test-app.ts';
 
 /**
@@ -78,5 +80,43 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
       body: new URLSearchParams({ username: 'admin', password: 'admin-password-123' }),
     });
     expect(ok.status).toBe(429);
+  });
+
+  it('imports a batch across several insert statements under the tenant role', async () => {
+    // The batched insert relies on postgres.js serializing one JSON parameter; PGlite does not
+    // exercise that driver or the non-superuser role that enforces row-level security.
+    const sql = open();
+    await buildContainer({
+      config: loadConfig(TEST_ENV),
+      sql,
+      clock: new TestClock(),
+      clientIp: () => '203.0.113.10',
+    });
+    const tenant = 'SIPGES/PRJ-SECHURA';
+    const store = createSqlRecordStore(sql);
+    const at = new Date('2026-11-02T12:00:00Z');
+    const note = { action: 'IMPORT', detail: 'Importación sintética' } as const;
+    await store.importBatch(tenant, 'Eventos', [{ id: 'EV-0', payload: { a: 'x' } }], note, at);
+    const items = Array.from({ length: 1200 }, (_, i) => ({
+      id: `EV-${i}`,
+      payload: { n: i, texto: `«${i}» "\\" ñ` },
+    }));
+    expect(await store.importBatch(tenant, 'Eventos', items, note, at)).toEqual({
+      created: 1199,
+      updated: 1,
+    });
+    const [summary] = await withTenant(sql, tenant, (tx) =>
+      tx.query<{ total: number; first: Record<string, unknown>; last: Record<string, unknown> }>(
+        `SELECT count(*)::int AS total,
+                (SELECT payload FROM module_records WHERE module = 'Eventos' AND id = 'EV-0') AS first,
+                (SELECT payload FROM module_records WHERE module = 'Eventos' AND id = 'EV-1199') AS last
+         FROM module_records WHERE module = 'Eventos'`,
+      ),
+    );
+    expect(summary).toEqual({
+      total: 1200,
+      first: { a: 'x', n: 0, texto: '«0» "\\" ñ' },
+      last: { n: 1199, texto: '«1199» "\\" ñ' },
+    });
   });
 });

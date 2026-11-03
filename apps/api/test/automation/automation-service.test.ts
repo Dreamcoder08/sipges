@@ -39,14 +39,19 @@ const run = (marking = 'interno'): ClaimedRun => ({
   },
 });
 describe('bounded tenant execution', () => {
-  it('coalesces the same tenant without suppressing another', async () => {
+  it('does not make a tick wait on a tick of the same tenant that never finishes', async () => {
+    // On Workers a tick started by a cancelled request never settles for another request;
+    // concurrent ticks are safe because the scan locks the tenant's cursor in the database.
     const { service, store } = setup();
-    const a = service.tick('A');
-    expect(service.tick('A')).toBe(a);
-    const b = service.tick('B');
-    expect(b).not.toBe(a);
-    await Promise.all([a, b]);
-    expect(store.scan.mock.calls.map((c) => c[0])).toEqual(['A', 'B']);
+    store.scan.mockImplementationOnce(() => new Promise(() => {}));
+    void service.tick('A');
+    const again = await Promise.race([
+      service.tick('A'),
+      new Promise<'hung'>((resolve) => setTimeout(() => resolve('hung'), 500)),
+    ]);
+    expect(again).not.toBe('hung');
+    await service.tick('B');
+    expect(store.scan.mock.calls.map((c) => c[0])).toEqual(['A', 'A', 'B']);
   });
   it('evaluates and scans a follow-up round', async () => {
     const { service, store, evaluate } = setup();

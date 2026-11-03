@@ -289,10 +289,14 @@ const appRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: 'app',
   beforeLoad: async ({ context, location }) => {
+    // Session and project are asked together: each is a round trip to a distant server.
+    // Refetched only once invalidated, e.g. after a project switch.
+    const pendingScope = cachedOrFetch(context.queryClient, currentScopeQuery);
+    // Without a session the project request fails too; the sign-in redirect below wins.
+    pendingScope.catch(() => undefined);
     const me = await requireSession(context.queryClient, location.href);
     try {
-      // Refetched only once invalidated, e.g. after a project switch.
-      const scope = await cachedOrFetch(context.queryClient, currentScopeQuery);
+      const scope = await pendingScope;
       return { me, scope };
     } catch (error) {
       if (isMfaRequired(error)) throw redirect({ to: '/mfa' });

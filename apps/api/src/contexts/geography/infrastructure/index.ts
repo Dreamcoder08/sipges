@@ -51,77 +51,75 @@ export const createIngemmetGateway = (
       clearTimeout(timer);
     }
   };
-  let cached: { expires: number; data: GeographyCatalogue } | undefined,
-    pending: Promise<GeographyCatalogue> | undefined;
+  // Only a settled catalogue is shared. On Workers a lookup still in flight belongs to the request
+  // that started it: if that request is cancelled it never settles, and a caller awaiting it would
+  // hang. Concurrent cold callers repeat the lookup, which is cheaper than that wait.
+  let cached: { lookup: number; expires: number; data: GeographyCatalogue } | undefined,
+    lookups = 0;
   const catalogue = async (): Promise<GeographyCatalogue> => {
     if (cached && cached.expires > Date.now()) return cached.data;
-    if (pending) return pending;
-    pending = (async () => {
-      const layers: GeographyCatalogue['layers'] = [],
-        services: GeographyCatalogue['services'] = [],
-        checkedAt = new Date().toISOString();
-      const ids = [...GeographyServiceId.options];
-      for (let i = 0; i < ids.length; i += 2)
-        await Promise.all(
-          ids.slice(i, i + 2).map(async (id) => {
-            try {
-              const base = officialServiceUrl(id),
-                data = await json(`${base}/layers?f=json`),
-                root = await json(`${base}?f=json`);
-              if (!Array.isArray(data['layers'])) throw new Error('Catálogo oficial inválido');
-              for (const raw of data['layers']) {
-                if (!raw || typeof raw !== 'object') continue;
-                const l = raw as Record<string, unknown>;
-                if (
-                  l['type'] !== 'Feature Layer' ||
-                  !Number.isInteger(l['id']) ||
-                  typeof l['name'] !== 'string'
-                )
-                  continue;
-                layers.push({
-                  serviceId: id,
-                  id: l['id'] as number,
-                  name: l['name'],
-                  minScale: typeof l['minScale'] === 'number' ? l['minScale'] : null,
-                  maxScale: typeof l['maxScale'] === 'number' ? l['maxScale'] : null,
-                  capabilities:
-                    typeof l['capabilities'] === 'string'
-                      ? l['capabilities']
-                      : String(root['capabilities'] ?? ''),
-                  attribution: String(l['copyrightText'] || root['copyrightText'] || 'INGEMMET'),
-                  exportUrl: `${base}/export`,
-                  metadataUrl: `${base}/${l['id']}`,
-                });
-              }
-              services.push({ id, status: 'verified', checkedAt });
-            } catch {
-              services.push({
-                id,
-                status: 'unavailable',
-                checkedAt,
-                error:
-                  'No se pudo verificar el servicio oficial. Revise INGEMMET; no se inventan capas ni escalas.',
+    const lookup = ++lookups;
+    const layers: GeographyCatalogue['layers'] = [],
+      services: GeographyCatalogue['services'] = [],
+      checkedAt = new Date().toISOString();
+    const ids = [...GeographyServiceId.options];
+    for (let i = 0; i < ids.length; i += 2)
+      await Promise.all(
+        ids.slice(i, i + 2).map(async (id) => {
+          try {
+            const base = officialServiceUrl(id),
+              data = await json(`${base}/layers?f=json`),
+              root = await json(`${base}?f=json`);
+            if (!Array.isArray(data['layers'])) throw new Error('Catálogo oficial inválido');
+            for (const raw of data['layers']) {
+              if (!raw || typeof raw !== 'object') continue;
+              const l = raw as Record<string, unknown>;
+              if (
+                l['type'] !== 'Feature Layer' ||
+                !Number.isInteger(l['id']) ||
+                typeof l['name'] !== 'string'
+              )
+                continue;
+              layers.push({
+                serviceId: id,
+                id: l['id'] as number,
+                name: l['name'],
+                minScale: typeof l['minScale'] === 'number' ? l['minScale'] : null,
+                maxScale: typeof l['maxScale'] === 'number' ? l['maxScale'] : null,
+                capabilities:
+                  typeof l['capabilities'] === 'string'
+                    ? l['capabilities']
+                    : String(root['capabilities'] ?? ''),
+                attribution: String(l['copyrightText'] || root['copyrightText'] || 'INGEMMET'),
+                exportUrl: `${base}/export`,
+                metadataUrl: `${base}/${l['id']}`,
               });
             }
-          }),
-        );
-      const data: GeographyCatalogue = {
-        status: services.some((s) => s.status === 'verified') ? 'verified' : 'unavailable',
-        checkedAt,
-        serviceUrl: ORIGIN,
-        attribution: 'INGEMMET – GEOCATMIN',
-        services,
-        layers,
-        ...(layers.length ? {} : { error: 'No fue posible verificar el catálogo oficial.' }),
-      };
-      cached = { expires: Date.now() + (layers.length ? 300_000 : 30_000), data };
-      return data;
-    })();
-    try {
-      return await pending;
-    } finally {
-      pending = undefined;
-    }
+            services.push({ id, status: 'verified', checkedAt });
+          } catch {
+            services.push({
+              id,
+              status: 'unavailable',
+              checkedAt,
+              error:
+                'No se pudo verificar el servicio oficial. Revise INGEMMET; no se inventan capas ni escalas.',
+            });
+          }
+        }),
+      );
+    const data: GeographyCatalogue = {
+      status: services.some((s) => s.status === 'verified') ? 'verified' : 'unavailable',
+      checkedAt,
+      serviceUrl: ORIGIN,
+      attribution: 'INGEMMET – GEOCATMIN',
+      services,
+      layers,
+      ...(layers.length ? {} : { error: 'No fue posible verificar el catálogo oficial.' }),
+    };
+    // A slower lookup that started earlier must not replace a newer answer.
+    if (!cached || cached.lookup < lookup)
+      cached = { lookup, expires: Date.now() + (layers.length ? 300_000 : 30_000), data };
+    return data;
   };
   return {
     catalogue,
