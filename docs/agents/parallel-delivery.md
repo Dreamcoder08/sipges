@@ -14,10 +14,12 @@ A pull request adds files; it does not edit a list that another pull request als
 
 ## One writer for shared documents
 
-The feature document (`odd/tasks/<feature>.md`), READMEs and ADRs have one writer: the orchestrator.
+The feature document (`odd/tasks/<feature>.md`), `CHANGELOG.md`, READMEs and ADRs have one writer: the orchestrator.
+Tests that check every context is wired derive the expected names from the `context_*` files, so a new context
+edits no test list either.
 
 - The orchestrator assigns task ids (`T<n>`) before launching a worker and writes the task line.
-- A worker writes its log entry in the pull request description, under `## Log entry`.
+- A worker writes its log entry (and any changelog line) in the pull request description, under `## Log entry`.
 - After the merge, the orchestrator appends that entry to the feature document with `pnpm odd:close`.
 
 ## Merging main

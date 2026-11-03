@@ -1,0 +1,18 @@
+[package]
+name = "sipges-conflict-risk"
+version = "0.1.0"
+description = "SIPGES conflict-risk prediction engine (port of apps/api/src/contexts/analytics/domain/conflict-risk)."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+sipges-analytics-common = { path = "../analytics-common" }
+# String.prototype.normalize('NFD') and canonical combining classes; 0.1.25 was published on
+# 2025-10-30 and is already pinned by sipges-candidate-links.
+unicode-normalization = { version = "=0.1.25", default-features = false }
+
+[lints]
+workspace = true

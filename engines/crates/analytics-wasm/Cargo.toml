@@ -1,7 +1,7 @@
 [package]
 name = "sipges-analytics-wasm"
 version = "0.1.0"
-description = "WebAssembly ABI (JSON in, JSON out) for the SIPGES analytics engines (situational, strategic, consensus, candidate links, integrated)."
+description = "WebAssembly ABI (JSON in, JSON out) for the SIPGES analytics engines (situational, strategic, consensus, candidate links, integrated, conflict risk, text analysis)."
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -14,10 +14,12 @@ crate-type = ["cdylib", "rlib"]
 serde_json.workspace = true
 sipges-analytics-common = { path = "../analytics-common" }
 sipges-candidate-links = { path = "../candidate-links" }
+sipges-conflict-risk = { path = "../conflict-risk" }
 sipges-consensus = { path = "../consensus" }
 sipges-integrated = { path = "../integrated" }
 sipges-situational = { path = "../situational" }
 sipges-strategic = { path = "../strategic" }
+sipges-text-analysis = { path = "../text-analysis" }
 
 [lints.rust]
 # The ABI shim is the only place that touches raw linear-memory pointers.
