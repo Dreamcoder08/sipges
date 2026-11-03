@@ -3,28 +3,16 @@
 package app
 
 import (
-	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	audithttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/audit/http"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
-	prevention "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/application"
-	preventionhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/http"
-	preventionsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/infrastructure"
-	referenceapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/application"
-	referencedomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/domain"
-	referencehttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/http"
-	reference "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/infrastructure"
-	situationshttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/http"
-	situationssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
@@ -48,11 +36,10 @@ type Options struct {
 // NewHandler builds the API on pool. It fails only when the embedded reference files do not
 // match their contract.
 func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
-	references, err := reference.NewEmbeddedReader()
+	routes, err := contextRoutes(Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
 	if err != nil {
-		return nil, fmt.Errorf("reference: %w", err)
+		return nil, err
 	}
-	referenceService := referenceapp.NewService(references)
 	grants := application.NewGrantCache(tenancy.Grants{DB: pool}.List, opts.Now)
 	sessions := identity.Sessions{DB: pool, Now: opts.Now}
 	return httpx.NewHandler(httpx.Options{
@@ -72,19 +59,12 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		Routes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
 			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)
-			audithttp.Register(mux, audithttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
-			preventionhttp.Routes(mux, prevention.Service{Store: preventionsql.Actions{DB: pool}, Now: opts.Now}, opts.Logger)
-			situationshttp.Routes(mux, situationshttp.Options{DB: pool, Store: situationssql.Store{}, Now: opts.Now, Logger: opts.Logger})
-			referencehttp.Register(mux, referenceService, referenceScope, opts.Logger)
+			for _, register := range routes {
+				register(mux)
+			}
 			if opts.Routes != nil {
 				opts.Routes(mux)
 			}
 		},
 	}), nil
-}
-
-// referenceScope hands the tenancy middleware's project to the reference context.
-func referenceScope(ctx context.Context) (referencedomain.Scope, bool) {
-	s, ok := tenancyhttp.ScopeFrom(ctx)
-	return referencedomain.Scope{CompanyID: s.CompanyID, ProjectID: s.ProjectID}, ok
 }
