@@ -1,0 +1,81 @@
+name: Rust engines
+
+# engines/ (ADR 0032): Rust engines compiled to WebAssembly and run from Go with wazero. Runs when the
+# engines, this workflow or the TypeScript engine they port (and its fixture inputs) change.
+on:
+  pull_request:
+    paths:
+      - 'engines/**'
+      - '.github/workflows/rust.yml'
+      - 'apps/api/src/contexts/indicators/domain/**'
+      - 'apps/api/bench/synthetic.ts'
+      - 'apps/api/test/indicators/python-parity.fixture.json'
+      - 'packages/kernel/src/**'
+  push:
+    branches: [main]
+    paths:
+      - 'engines/**'
+      - '.github/workflows/rust.yml'
+      - 'apps/api/src/contexts/indicators/domain/**'
+      - 'apps/api/bench/synthetic.ts'
+      - 'apps/api/test/indicators/python-parity.fixture.json'
+      - 'packages/kernel/src/**'
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  engines:
+    name: Rust engines (fmt, clippy, tests, wasm, Go host)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: engines
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the toolchain pinned in engines/rust-toolchain.toml (channel, rustfmt, clippy, wasm32-wasip1).
+      - run: rustup toolchain install && rustc --version && cargo --version
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            engines/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('engines/rust-toolchain.toml', 'engines/Cargo.lock') }}
+          restore-keys: cargo-${{ runner.os }}-
+      - run: cargo fmt --all --check
+      - run: cargo clippy --locked --all-targets -- -D warnings
+      - run: cargo test --locked
+      - run: cargo build --locked --release --target wasm32-wasip1 -p sipges-indicators-wasm
+      - run: ls -l target/wasm32-wasip1/release/sipges_indicators_wasm.wasm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: engines/go/go.mod
+          cache-dependency-path: engines/go/go.sum
+      - name: Go host (vet, race tests through the .wasm)
+        working-directory: engines/go
+        run: |
+          test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+          go vet ./...
+          go test -race -count=1 ./...
+
+  fixtures:
+    name: Rust engine fixtures match the TypeScript engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Regenerates the fixtures from apps/api/src/contexts/indicators/domain and fails on any drift.
+      - run: node engines/fixtures/generate.ts --check
