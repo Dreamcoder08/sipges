@@ -68,16 +68,16 @@ describe('loadConfig', () => {
   });
 
   it('names the missing variables without echoing any value', () => {
-    const { SIPGES_LOAD_PASSWORD: _, SIPGES_LOAD_TOTP: __, ...partial } = env;
+    const partial = { ...env, SIPGES_LOAD_PASSWORD: undefined, SIPGES_LOAD_TOTP: '  ' };
     expect(() => loadConfig(partial)).toThrow(
       'Missing settings: SIPGES_LOAD_PASSWORD, SIPGES_LOAD_TOTP',
     );
   });
 
   it('refuses plain HTTP except for the local machine', () => {
-    expect(() => loadConfig({ ...env, SIPGES_LOAD_BASE_URL: 'http://sipges.example.test' })).toThrow(
-      /https/,
-    );
+    expect(() =>
+      loadConfig({ ...env, SIPGES_LOAD_BASE_URL: 'http://sipges.example.test' }),
+    ).toThrow(/https/);
     expect(loadConfig({ ...env, SIPGES_LOAD_BASE_URL: 'http://127.0.0.1:8000' }).baseUrl).toBe(
       'http://127.0.0.1:8000',
     );
@@ -173,7 +173,10 @@ const fakeAuth = (role: string) => {
     if (pathname === '/login')
       return new Response('{}', { headers: { 'set-cookie': 'sipges_session=s1; Path=/' } });
     if (pathname === '/select-project')
-      return new Response(null, { status: 303, headers: { 'set-cookie': 'sipges_scope=p1; Path=/' } });
+      return new Response(null, {
+        status: 303,
+        headers: { 'set-cookie': 'sipges_scope=p1; Path=/' },
+      });
     if (pathname === '/system/auth/me') return Response.json({ role });
     return new Response('{}');
   };

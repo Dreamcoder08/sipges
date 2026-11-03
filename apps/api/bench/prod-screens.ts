@@ -83,7 +83,8 @@ const base32Decode = (secret: string) => {
     bits += value.toString(2).padStart(5, '0');
   }
   const bytes: number[] = [];
-  for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(Number.parseInt(bits.slice(i, i + 8), 2));
+  for (let i = 0; i + 8 <= bits.length; i += 8)
+    bytes.push(Number.parseInt(bits.slice(i, i + 8), 2));
   return Buffer.from(bytes);
 };
 
