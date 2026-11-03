@@ -177,7 +177,11 @@ func composed(t *testing.T, gateway application.Gateway) *httptest.Server {
 // production is app.NewHandler itself, for every answer given before the gateway is reached.
 func production(t *testing.T) *httptest.Server {
 	t.Helper()
-	srv := httptest.NewServer(app.NewHandler(pool(t), app.Options{Logger: slog.New(slog.DiscardHandler), Now: now}))
+	handler, err := app.NewHandler(pool(t), app.Options{Logger: slog.New(slog.DiscardHandler), Now: now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
 	return srv
 }

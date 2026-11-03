@@ -151,15 +151,14 @@ func NewScratch(ctx context.Context, adminURL string) (*Scratch, error) {
 	if len(migrations) == 0 {
 		return nil, errors.Join(errors.New("no migrations found in "+MigrationsDir()), scratch.Drop(ctx))
 	}
-	// The migrations create, grant and rename cluster-wide roles, so scratch databases of
-	// packages tested in parallel must migrate one at a time. Advisory locks belong to one
-	// database, so the lock is held on the admin database every package shares.
+	// Migrations create and rename roles, which are cluster-wide: test packages running in
+	// parallel (go test ./...) migrate one at a time, under a lock on the shared admin database.
 	lock, err := pgx.Connect(ctx, adminURL)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("connect admin database: %w", err), scratch.Drop(ctx))
 	}
-	defer func() { _ = lock.Close(ctx) }()
-	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", migrationLockKey); err != nil {
+	defer func() { _ = lock.Close(context.WithoutCancel(ctx)) }() // closing releases the lock
+	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", scratchLockKey); err != nil {
 		return nil, errors.Join(fmt.Errorf("lock migrations: %w", err), scratch.Drop(ctx))
 	}
 	conn, err := pgx.Connect(ctx, scratch.URL)
@@ -172,6 +171,10 @@ func NewScratch(ctx context.Context, adminURL string) (*Scratch, error) {
 	}
 	return scratch, nil
 }
+
+// scratchLockKey serializes scratch migrations across databases of one server. migrationLockKey
+// cannot: an advisory lock is per database, and each scratch migration runs in its own.
+const scratchLockKey int64 = 0x5349504745530001
 
 // URLAs returns the scratch database URL for another login.
 func (s *Scratch) URLAs(user, password string) string {
