@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/indicators", "crates/indicators-wasm"]
+members = ["crates/*"]
 
 [workspace.package]
 edition = "2024"

@@ -1,0 +1,17 @@
+[package]
+name = "sipges-integrated"
+version = "0.1.0"
+description = "SIPGES integrated analysis engine (port of apps/api/src/contexts/analytics/domain/integrated.ts)."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+sipges-analytics-common = { path = "../analytics-common" }
+sipges-candidate-links = { path = "../candidate-links" }
+sipges-consensus = { path = "../consensus" }
+
+[lints]
+workspace = true
