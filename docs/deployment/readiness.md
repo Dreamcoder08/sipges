@@ -120,7 +120,7 @@ For the Worker, see the [Workers deployment guide](cloudflare-workers.md) instea
       embedded PGlite can never be used by mistake.
 - [x] Los archivos de arranque Python históricos se han trasladado a `reference/python`; no se usan para desplegar el runtime TypeScript.
 
-La primera URL es una demo académica/personal con datos sintéticos: el subdominio gratuito `workers.dev` de Cloudflare sustituye la necesidad inicial de un dominio propio o un túnel Cloudflare. No se migran datos reales. Los créditos de DOCX conservan la identificación neutral SIPGES; no se atribuyen autores sin indicación del usuario.
+La primera URL fue una demo académica/personal con datos sintéticos: el subdominio gratuito `workers.dev` de Cloudflare sustituye la necesidad inicial de un dominio propio o un túnel Cloudflare. **Histórico (hasta la 1.0.0):** desde el PR #49 (migración 0019) se retiró el caso sintético y la base guarda la información real del proyecto ([CHANGELOG](../../CHANGELOG.md)); las pruebas siguen usando solo datos sintéticos. Los créditos de DOCX conservan la identificación neutral SIPGES; no se atribuyen autores sin indicación del usuario.
 
 ### 2. Environment variables and secrets
 
@@ -177,7 +177,7 @@ schema, the bootstrap admin and the default tenant `SIPGES/PRJ-SECHURA`.
 
 ### 5. Legacy data migration (future institutional deployment)
 
-No aplica a la demo académica: usa únicamente datos sintéticos. Para una futura migración institucional autorizada, follow [data-migration.md](../migration/data-migration.md) end to end:
+No aplicaba a la demo académica de octubre, que usaba datos sintéticos (hoy la base guarda la información real del proyecto, véase arriba). Para una futura migración institucional autorizada, follow [data-migration.md](../migration/data-migration.md) end to end:
 
 1. Back up the legacy SQLite files, `data/` configs and uploads, and back up the target database
    even when it is empty.

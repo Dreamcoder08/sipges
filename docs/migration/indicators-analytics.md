@@ -8,6 +8,7 @@ Two bounded contexts port the Python engines as pure domain functions behind ten
 - The 32 indicators match `app.py` `compute_indicators` exactly on a golden synthetic fixture (`test/indicators/python-parity.fixture.json`); rounding reproduces Python `round()` ties-to-even.
 - Config is stored per tenant in `irsa_configs` (defaults from `data/irsa_config.json`); snapshots in `irsa_snapshots`. Both live in migration `0005_irsa.sql` with forced RLS; `sipges_tenant` has no DELETE. Values are stored as `json`, not `jsonb`, so band order (first match wins) is preserved.
 - Config updates and snapshots append audit rows in the same tenant transaction.
+- `computeIrsa` (V0.4) uses only the 32 indicators: IRSA = Σ weight × dimension score, where a dimension score is the mean of its calculable indicators. The `contributions` block (active alert 18, open demand 7, …) is kept from the prototype for comparison and is **not** part of the calculation; the IRSA screen says so. The default config `version` is `0.4-indicators`, the engine's `CONFIG_VERSION`.
 - Deliberate differences from Python: malformed weights, contributions or bands return 422 instead of 500; timestamps are UTC ISO seconds with `Z`.
 
 ## Strategic analytics (`contexts/analytics`)
