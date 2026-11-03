@@ -1,7 +1,7 @@
 # Display Sechura's existing extracted data
 
 Restore the path from existing documentary findings to their corresponding TypeScript modules; never invent production records.
-Branch: `fix/sechura-record-visibility`; baseline `2ca004d`; delivery: `ask-on-risk`, forecast <200 authored lines for the first correction; no publishing or deployment assumed. Runners: API Vitest/PGlite, `pnpm verify`.
+Branch: `fix/sechura-record-visibility`; baseline `2ca004d`; delivery: `ask-on-risk`, forecast <200 authored lines for the first correction; owner authorized publishing, integration after green CI, and deployment through GitHub Actions; production review decisions remain separate. Runners: API Vitest/PGlite, `pnpm verify`.
 
 ## Specs
 
@@ -27,3 +27,6 @@ Branch: `fix/sechura-record-visibility`; baseline `2ca004d`; delivery: `ask-on-r
 - L5 — T2 verified and committed as `0927716` (3 files, 50 authored additions). `pnpm verify` exit 0: API 1,031 passed / 27 skipped, web 500, kernel 8, hosting 46, node 10, parity 22, tooling 15; lint/format/boundaries/typecheck passed. Optional real PostgreSQL omitted, synthetic PGlite exercised. Independent verifier: no change-caused blockers; scratch baseline with candidate tests 7 pass / 1 expected failure, candidate 8 pass. Limits: no separate automatic-actor bulk/backfill probe or byte-for-byte HTTP differential; existing shared-path tests pass. Parent removed verifier scratch and full-gate log. Risk item 3: shared theme mapping contract; native assess high, review due (initial untracked selection negotiation required excluding task/memory files). Native consent, publication, deployment, dry run and owner production decision still pending. No production data writes.
 
 - L6 — Owner selected «1. Revisar este cambio». Native review `review-5191a35b0a304c77` inspected immutable commit `0927716` with risk/readability/reliability lenses; all returned zero findings. Exact acknowledgement confirmed `acknowledged`, authority `burned`, target `sha256:0ac1632a87bd316cc4604db53cd826a47b3711698bc8743a12f30937bf0bc5e4`. No source changes after review. Next decision: authorize publication/integration/deployment via the existing GitHub workflow; no remote mutation performed. Only after deployment obtain the scoped dry-run and owner decision; never reinterpret that as documentary corroboration.
+- L7 — Recovery notes and Engram export committed as `efc10d4`; native assessment of that notes-only slice against `0927716`: medium, `review_due=false`, `under_budget`. No new review started and the acknowledged source candidate was not reopened. Credential-pattern scan of exported chunks found no matches; prompts excluded. Awaiting explicit publication/deployment authorization before T3.
+
+- L8 — Owner publication/deployment authorization, verbatim: «yes te autorizo todo de forma autonoma avanza» (answer to publishing the branch, opening PR, integrating after CI, and deploying through Deploy Workers, explicitly without approving pending data yet). Authorized destination is this GitHub repository and existing workflow using the configured GitHub session. No direct Cloudflare/Neon credential use authorized or needed.
