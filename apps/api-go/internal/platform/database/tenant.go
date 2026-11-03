@@ -53,6 +53,15 @@ func WithTenant[T any](ctx context.Context, db Beginner, tenantID string, fn fun
 		return zero, fmt.Errorf("begin tenant transaction: %w", err)
 	}
 	q := &tenantQuerier{tx: tx, statement: statement}
+	// A panic in the work must not leak the connection: an HTTP recovery middleware would
+	// swallow it and the pool would lose one connection, still in the tenant role, per panic.
+	defer func() {
+		if p := recover(); p != nil {
+			_ = q.finishPipeline()
+			_ = tx.Rollback(context.WithoutCancel(ctx))
+			panic(p)
+		}
+	}()
 	result, workErr := fn(ctx, q)
 	// Rows of the first query the work left open still hold the pipeline.
 	if err := q.finishPipeline(); err != nil && workErr == nil {
@@ -110,6 +119,10 @@ func tenantStatement(ctx context.Context, tenantID string) (string, error) {
 	actor, ok := ActorFrom(ctx)
 	if !ok {
 		actor = Actor{Clearance: ClearanceFull}
+	}
+	if actor.Clearance == "" {
+		// TypeScript never sends an empty clearance; an actor must say which one it has.
+		return "", fmt.Errorf("%w: the actor has no clearance", ErrInvalidSetting)
 	}
 	tenant, err := literal(tenantID)
 	if err != nil {

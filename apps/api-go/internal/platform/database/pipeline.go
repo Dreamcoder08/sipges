@@ -37,16 +37,16 @@ func (q *tenantQuerier) Exec(ctx context.Context, sql string, args ...any) (pgco
 	if q.sent {
 		return q.tx.Exec(ctx, sql, args...)
 	}
-	if len(args) == 0 {
-		// pgx runs an Exec without arguments with the simple protocol, which allows several
-		// statements; the extended protocol does not. Enter first to keep that behaviour.
-		q.sent = true
-		if q.enterErr = enter(ctx, q.tx, q.statement); q.enterErr != nil {
-			return pgconn.CommandTag{}, q.enterErr
+	// pgx runs an Exec without arguments with the simple protocol, which allows several
+	// statements; the extended protocol does not. Enter first to keep that behaviour.
+	eqb, ok := q.encodable(args)
+	if len(args) == 0 || !ok {
+		if err := q.enterAlone(ctx); err != nil {
+			return pgconn.CommandTag{}, err
 		}
-		return q.tx.Exec(ctx, sql)
+		return q.tx.Exec(ctx, sql, args...)
 	}
-	reader, err := q.send(ctx, sql, args)
+	reader, err := q.send(ctx, sql, eqb)
 	if err != nil {
 		return pgconn.CommandTag{}, err
 	}
@@ -58,7 +58,14 @@ func (q *tenantQuerier) Query(ctx context.Context, sql string, args ...any) (pgx
 	if q.sent {
 		return q.tx.Query(ctx, sql, args...)
 	}
-	reader, err := q.send(ctx, sql, args)
+	eqb, ok := q.encodable(args)
+	if !ok {
+		if err := q.enterAlone(ctx); err != nil {
+			return nil, err
+		}
+		return q.tx.Query(ctx, sql, args...)
+	}
+	reader, err := q.send(ctx, sql, eqb)
 	if err != nil {
 		return nil, err
 	}
@@ -74,14 +81,37 @@ func (q *tenantQuerier) QueryRow(ctx context.Context, sql string, args ...any) p
 	return &row{rows: rows, err: err}
 }
 
+// encodable encodes args the way pgx's QueryExecModeExec does, which needs no statement
+// description and so no extra round trip. It reports false for anything pgx handles before
+// encoding (NamedArgs and other rewriters, exec-mode and result-format options) and for values
+// that need the statement's parameter types (a map for jsonb, for example): those queries take
+// the ordinary pgx path after entering alone, one round trip more but the same behaviour as a
+// pgx.Tx.
+func (q *tenantQuerier) encodable(args []any) (*pgx.ExtendedQueryBuilder, bool) {
+	for _, arg := range args {
+		switch arg.(type) {
+		case pgx.QueryRewriter, pgx.QueryExecMode, pgx.QueryResultFormats, pgx.QueryResultFormatsByOID:
+			return nil, false
+		}
+	}
+	eqb := &pgx.ExtendedQueryBuilder{}
+	if err := eqb.Build(q.tx.Conn().TypeMap(), nil, args); err != nil {
+		return nil, false
+	}
+	return eqb, true
+}
+
+// enterAlone sends the tenant statement by itself.
+func (q *tenantQuerier) enterAlone(ctx context.Context) error {
+	q.sent = true
+	q.enterErr = enter(ctx, q.tx, q.statement)
+	return q.enterErr
+}
+
 // send pipelines the tenant statement with the first query and returns the first query's
 // reader. When entering fails it records the failure and returns the first query's own error
 // (25P02), so nothing from the work's query is ever returned.
-func (q *tenantQuerier) send(ctx context.Context, sql string, args []any) (*pgconn.ResultReader, error) {
-	var eqb pgx.ExtendedQueryBuilder
-	if err := eqb.Build(q.tx.Conn().TypeMap(), nil, args); err != nil {
-		return nil, err // nothing sent: entering happens later, as for work without queries
-	}
+func (q *tenantQuerier) send(ctx context.Context, sql string, eqb *pgx.ExtendedQueryBuilder) (*pgconn.ResultReader, error) {
 	q.sent = true
 	p := q.tx.Conn().PgConn().StartPipeline(ctx)
 	q.pipeline = p
@@ -129,10 +159,12 @@ func (q *tenantQuerier) finishPipeline() error {
 	for {
 		results, err := p.GetResults()
 		if err != nil {
-			errs = append(errs, err)
 			if !isPgError(err) {
-				break
+				// The connection is gone; Close would only repeat it.
+				_ = p.Close()
+				return errors.Join(append(errs, err)...)
 			}
+			errs = append(errs, err)
 			continue
 		}
 		if results == nil {

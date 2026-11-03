@@ -23,8 +23,21 @@ and pipelines it with the work's first query: `tenant statement, Sync, first que
 write. The Sync in between keeps the TypeScript semantics: if entering fails, the first query gets
 25P02 and returns nothing, and the failure to enter is the error reported. `pgx.Batch` cannot do
 this (in every exec mode the second statement is skipped with the first one's error), so the
-pipeline uses `pgconn` directly. A first `Exec` without arguments enters separately, because it
-may hold several statements, which only the simple protocol allows.
+pipeline uses `pgconn` directly.
+
+The first query is encoded as pgx's `QueryExecModeExec` does (no statement description, so no
+extra round trip). Whatever that cannot express takes the ordinary pgx path after entering alone,
+one round trip more but the same behaviour as a `pgx.Tx`:
+
+- a first `Exec` without arguments (it may hold several statements, which only the simple
+  protocol allows);
+- `pgx.NamedArgs` and other query rewriters, exec-mode and result-format options;
+- values that need the parameter types, such as a `map[string]any` for a `jsonb` column.
+
+A panic in the work rolls the transaction back and releases the connection before it propagates.
+
+Known limits: pgx's `QueryTracer` does not see the pipelined first query, and a test run killed
+by `-timeout` skips the drop of its scratch database (`sipges_go_test_*`).
 
 ## Run
 

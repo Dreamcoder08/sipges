@@ -90,14 +90,14 @@ func requireDB(t *testing.T) {
 	}
 }
 
-func newPool(t testing.TB, maxConns int32) *pgxpool.Pool {
+func newPool(ctx context.Context, t testing.TB, maxConns int32) *pgxpool.Pool {
 	t.Helper()
 	cfg, err := pgxpool.ParseConfig(scratch.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 	cfg.MaxConns = maxConns
-	pool, err := pgxpool.NewWithConfig(context.Background(), cfg)
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -123,7 +123,7 @@ func pgCode(err error) string {
 
 func TestWithTenantShowsEachTenantOnlyItsRows(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 2)
+	pool := newPool(t.Context(), t, 2)
 	ctx := context.Background()
 	for tenant, want := range map[string][]string{
 		"ACME/NORTE":         {"north"},
@@ -144,7 +144,7 @@ func TestWithTenantShowsEachTenantOnlyItsRows(t *testing.T) {
 
 func TestWithTenantIsolatesSimultaneousTransactionsAcrossTwoPools(t *testing.T) {
 	requireDB(t)
-	pools := []*pgxpool.Pool{newPool(t, 4), newPool(t, 4)}
+	pools := []*pgxpool.Pool{newPool(t.Context(), t, 4), newPool(t.Context(), t, 4)}
 	ctx := context.Background()
 	var wg sync.WaitGroup
 	errs := make(chan error, 24)
@@ -182,7 +182,7 @@ func TestWithTenantIsolatesSimultaneousTransactionsAcrossTwoPools(t *testing.T) 
 
 func TestWithTenantRejectsCrossTenantWritesAndLeavesDataUnchanged(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 2)
+	pool := newPool(t.Context(), t, 2)
 	ctx := context.Background()
 	_, err := database.WithTenant(ctx, pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) (pgconn.CommandTag, error) {
 		return q.Exec(ctx, "INSERT INTO rls_probe VALUES ($1, $2)", "SIPGES/PRJ-SECHURA", "intruder")
@@ -220,7 +220,7 @@ func TestWithTenantRejectsCrossTenantWritesAndLeavesDataUnchanged(t *testing.T) 
 
 func TestWithTenantCannotReadIdentityTables(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	for _, sql := range []string{"SELECT password_hash FROM users", "SELECT token_hash FROM sessions"} {
 		_, err := database.WithTenant(context.Background(), pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) ([]string, error) {
 			return values(ctx, q, sql)
@@ -234,7 +234,7 @@ func TestWithTenantCannotReadIdentityTables(t *testing.T) {
 func TestWithTenantResetsPooledSettingsAfterCommitAndRollback(t *testing.T) {
 	requireDB(t)
 	// One connection: the next query certainly reuses the connection the tenant used.
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	ctx := database.WithActor(context.Background(), database.Actor{Name: "ana.perez", Clearance: database.ClearanceLimited})
 	check := func(when string) {
 		t.Helper()
@@ -276,7 +276,7 @@ func TestWithTenantResetsPooledSettingsAfterCommitAndRollback(t *testing.T) {
 
 func TestWithTenantRollsBackTheWorkOnError(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	workErr := errors.New("synthetic work failure")
 	_, err := database.WithTenant(context.Background(), pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) (struct{}, error) {
 		if _, err := q.Exec(ctx, "INSERT INTO rls_probe VALUES ($1, $2)", "ACME/NORTE", "rolled-back"); err != nil {
@@ -298,7 +298,7 @@ func TestWithTenantRollsBackTheWorkOnError(t *testing.T) {
 
 func TestWithTenantSetsSettingsAndRoleForThePipelinedFirstQuery(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 2)
+	pool := newPool(t.Context(), t, 2)
 	ctx := database.WithActor(context.Background(), database.Actor{Name: "ana.perez", Clearance: database.ClearanceLimited})
 	for i := range 5 {
 		got, err := database.WithTenant(ctx, pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) ([]string, error) {
@@ -319,7 +319,7 @@ func TestWithTenantSetsSettingsAndRoleForThePipelinedFirstQuery(t *testing.T) {
 
 func TestWithTenantFirstExecWithoutArgumentsMayHoldSeveralStatements(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	got, err := database.WithTenant(context.Background(), pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) ([]string, error) {
 		if _, err := q.Exec(ctx, "SET LOCAL statement_timeout = '5s'; SET LOCAL lock_timeout = '1s'"); err != nil {
 			return nil, err
@@ -336,7 +336,7 @@ func TestWithTenantFirstExecWithoutArgumentsMayHoldSeveralStatements(t *testing.
 
 func TestWithTenantKeepsHostileTenantIDAsOneLiteral(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	hostile := `X\'); SET LOCAL ROLE postgres; SELECT ('`
 	got, err := database.WithTenant(context.Background(), pool, hostile, func(ctx context.Context, q database.Querier) ([]string, error) {
 		var role, tenant string
@@ -354,7 +354,7 @@ func TestWithTenantKeepsHostileTenantIDAsOneLiteral(t *testing.T) {
 
 func TestWithTenantRefusesInvalidTenantIDs(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	for tenant, want := range map[string]error{"": database.ErrTenantRequired, "ACME\x00NORTE": database.ErrInvalidSetting} {
 		_, err := database.WithTenant(context.Background(), pool, tenant, func(context.Context, database.Querier) (struct{}, error) {
 			t.Fatal("work must not run")
@@ -562,7 +562,7 @@ func TestWithTenantReportsAFailureToEnterAndReturnsNothingFromThePipelinedQuery(
 
 func TestWithTenantClosesRowsTheWorkLeftOpen(t *testing.T) {
 	requireDB(t)
-	pool := newPool(t, 1)
+	pool := newPool(t.Context(), t, 1)
 	_, err := database.WithTenant(context.Background(), pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) (struct{}, error) {
 		_, err := q.Query(ctx, "SELECT value FROM rls_probe") //nolint:sqlclosecheck // deliberately left open: WithTenant must close it
 		return struct{}{}, err
@@ -572,5 +572,84 @@ func TestWithTenantClosesRowsTheWorkLeftOpen(t *testing.T) {
 	}
 	if _, err := values(context.Background(), pool, "SELECT value FROM rls_probe"); err != nil {
 		t.Fatalf("pool unusable afterwards: %v", err)
+	}
+}
+
+func TestWithTenantRollsBackAndReleasesTheConnectionWhenTheWorkPanics(t *testing.T) {
+	requireDB(t)
+	pool := newPool(t.Context(), t, 1)
+	for _, first := range []string{"no query", "open rows", "after a query"} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Fatalf("%s: the panic was swallowed", first)
+				}
+			}()
+			_, _ = database.WithTenant(context.Background(), pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) (struct{}, error) {
+				switch first {
+				case "open rows":
+					_, _ = q.Query(ctx, "SELECT value FROM rls_probe WHERE value = $1", "north") //nolint:sqlclosecheck // left open on purpose
+				case "after a query":
+					_, _ = q.Exec(ctx, "INSERT INTO rls_probe VALUES ($1, $2)", "ACME/NORTE", "panicked")
+				}
+				panic("synthetic panic")
+			})
+		}()
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		var role string
+		var n int
+		err := pool.QueryRow(ctx, "SELECT current_user, (SELECT count(*)::int FROM rls_probe WHERE value = 'panicked')").Scan(&role, &n)
+		cancel()
+		if err != nil {
+			t.Fatalf("%s: connection not released: %v", first, err)
+		}
+		if role == "sipges_tenant" || n != 0 {
+			t.Fatalf("%s: role=%q panicked rows=%d, want owner and a rollback", first, role, n)
+		}
+	}
+}
+
+func TestWithTenantFirstQueryAcceptsWhatAPgxTransactionAccepts(t *testing.T) {
+	requireDB(t)
+	pool := newPool(t.Context(), t, 2)
+	type probe struct {
+		name string
+		sql  string
+		args []any
+		want string
+	}
+	probes := []probe{
+		{"named args", "SELECT @v::text", []any{pgx.NamedArgs{"v": "x"}}, "x"},
+		{"exec mode option", "SELECT $1::text", []any{pgx.QueryExecModeSimpleProtocol, "x"}, "x"},
+		{"jsonb from a map", "SELECT $1::jsonb ->> 'a'", []any{map[string]any{"a": "b"}}, "b"},
+		{"plain text", "SELECT $1::text", []any{"x"}, "x"},
+	}
+	for _, p := range probes {
+		got, err := database.WithTenant(context.Background(), pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) ([]string, error) {
+			var role, v string
+			if err := q.QueryRow(ctx, "SELECT current_user, ("+p.sql+")", p.args...).Scan(&role, &v); err != nil {
+				return nil, err
+			}
+			return []string{role, v}, nil
+		})
+		if err != nil {
+			t.Fatalf("%s: %v", p.name, err)
+		}
+		if want := []string{"sipges_tenant", p.want}; !slices.Equal(got, want) {
+			t.Fatalf("%s: got %v, want %v", p.name, got, want)
+		}
+	}
+}
+
+func TestWithTenantRefusesAnActorWithoutClearance(t *testing.T) {
+	requireDB(t)
+	pool := newPool(t.Context(), t, 1)
+	ctx := database.WithActor(context.Background(), database.Actor{Name: "ana.perez"})
+	_, err := database.WithTenant(ctx, pool, "ACME/NORTE", func(context.Context, database.Querier) (struct{}, error) {
+		t.Fatal("work must not run")
+		return struct{}{}, nil
+	})
+	if !errors.Is(err, database.ErrInvalidSetting) {
+		t.Fatalf("err = %v, want ErrInvalidSetting", err)
 	}
 }

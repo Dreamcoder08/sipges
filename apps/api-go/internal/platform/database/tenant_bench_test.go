@@ -19,7 +19,7 @@ func BenchmarkWithTenant(b *testing.B) {
 	}
 	ctx := context.Background()
 	b.Run("pipelined", func(b *testing.B) {
-		pool := newPool(b, 16)
+		pool := newPool(ctx, b, 16)
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				if _, err := database.WithTenant(ctx, pool, "ACME/NORTE", func(ctx context.Context, q database.Querier) ([]string, error) {
@@ -32,7 +32,7 @@ func BenchmarkWithTenant(b *testing.B) {
 		})
 	})
 	b.Run("enter-then-query", func(b *testing.B) {
-		pool := newPool(b, 16)
+		pool := newPool(ctx, b, 16)
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				if err := pgx.BeginFunc(ctx, pool, func(tx pgx.Tx) error {
