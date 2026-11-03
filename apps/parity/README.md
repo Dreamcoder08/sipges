@@ -62,9 +62,11 @@ path present on only one side is still a difference, and a path that names no fi
 | paths as Hono reads them            | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                             |
 | `GET /system/audit`                 | trail, limits and 422s, 401, 403 read-only role and ungranted project                                                                                                            |
 | `GET /system/management/*`          | overview (admin, consulta), 401 and 403 for overview and CSV                                                                                                                     |
+| `/system/geography/*`               | 401, 403, 413, the 422s and Origin; not answers that need INGEMMET                                                                                                               |
 
 The runner seeds `consulta` (read-only, one project) and `multi` (analista, two projects) through the
 TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
 covered by each API's own tests (`apps/api-go/internal/app`). So are the bodies parity cannot compare: the
-management CSV (it holds the wall-clock second), and the `/system/events` stream. Rows of `PARITY/OTRO` are labelled, so a leak shows as a
+management CSV (it holds the wall-clock second), the `/system/events` stream and geography answers that call
+INGEMMET (tested in Go against a fake gateway). Rows of `PARITY/OTRO` are labelled, so a leak shows as a
 difference.

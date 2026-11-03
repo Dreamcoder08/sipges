@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	audithttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/audit/http"
+	geographyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/geography/http"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	managementhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/management/http"
@@ -49,6 +50,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 				RequireMFA: opts.RequireMFA,
 				Logger:     opts.Logger,
 			}),
+			geographyhttp.RequestLimit(),
 			tenancyhttp.Middleware(grants, opts.Logger),
 			identityhttp.RoleGate(),
 		},
@@ -56,6 +58,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
 			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)
 			audithttp.Register(mux, audithttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
+			geographyhttp.Register(mux, geographyhttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
 			managementhttp.Register(mux, managementhttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
 			if opts.Routes != nil {
 				opts.Routes(mux)
