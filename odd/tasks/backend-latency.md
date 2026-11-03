@@ -27,7 +27,10 @@ cross-request hangs. Branch `perf/backend-hotspots`; delivery `ask-on-risk`; run
 - T9 [x] — S3, S9: Worker caches only a settled initialization (ported from the abandoned `delivery-readiness` worktree). Risk: items 4, 5. Route: inline + independent verifier (PASS). Commit: 1e8faf3.
 - T10 [x] — S9: record import with one insert per 500 rows, repeated ids folded in order. Risk: real-data import tool. Route: inline + independent verifier. Commit: c21752c.
 - T11 [x] — S3: automation ticks never await another request's tick; writes during a tick ask for one rescan (verifier advisory on T9). Risk: item 4. Route: inline + independent verifier. Commit: 7f17f72.
-- T12 [x] — S8: `bench/latency-stress.ts`, base vs branch at 130 ms RTT. Route: inline. Commit: pending (docs commit).
+- T12 [x] — S8: `bench/latency-stress.ts`, base vs branch at 130 ms RTT. Route: inline. Commit: ad1beb7.
+- T13 [x] — S3: tick rescans capped at 2 and a tick older than its budget replaced (verifier and native-review advisories). Route: inline. Commit: 5776266.
+- T14 [x] — Review advisories: summary order/totals pinned (same result on main), batched import and concurrent ticks covered on real PostgreSQL. Commits: fe7f9bb, 3c40972.
+- T15 [ ] — Pre-existing, high severity, found by the T11 verifier: the automation cursor advances to the highest audit id seen, so an audit row that commits after a higher id is never scanned (reproduced 1 in 12 runs on main and on the branch with 20 concurrent writes). Needs its own task (scan up to the oldest in-flight id or re-check a recent window).
 - T7 [ ] — Pending, with tradeoffs: typed query parameters (removes the describe trip; needs a per-query review), session + grants cache (identity, revocation delay — owner decision), web bootstrap endpoint and Bandeja server summaries, Inicio/Bandeja whole-module loads, GIN search (changes substring to word matching — owner decision).
 
 ## Log
@@ -38,3 +41,4 @@ cross-request hangs. Branch `perf/backend-hotspots`; delivery `ask-on-risk`; run
 - L4 — Mid-turn (2026-11-02): «despues haces pruebas de estres , y mas se obsesivocritico»; then «okey te autorizo y continua con todo».
 - L5 — Stress evidence (local, synthetic, PostgreSQL 18 behind a 130 ms RTT proxy, `node bench/latency-stress.ts`, base 74a2046 vs branch, 0 errors both). Shared pool 5: throughput 2.4→3.1 req/s (1 screen), 3.0→4.3 (8), 3.1→4.4 (32); `/system/v4/settings` p95 1428→1166 ms (1 screen). Pool 20 (Hyperdrive origin limit): 10.3→15.7 req/s (8 screens), 12.1→17.5 (32); settings p95 4504→2753 ms (8). Limit: one process shares one pool; the Worker opens a client per request, so absolute queueing differs; relative gains hold.
 - L6 — Verifier advisories kept as follow-ups: pending migrations are checked only until a backend is cached per isolate (pre-existing); `bootstrapGoogleAdmin` read-then-write race at cold start (pre-existing, tiny window).
+- L7 — Native review of the whole branch (reliability lens): approved, receipt burned; advisories closed by T13/T14. Verifiers: T10 PASS (17 differential scenarios identical to main), T11 PASS (no duplicate queue/delivery under concurrent ticks on real PostgreSQL).
