@@ -332,3 +332,55 @@ test('fast verification runs static checks in parallel, tests only affected pack
     assert.equal(red.status, 1);
     assert.ok(red.calls.includes(`${affected} --workspace-concurrency=1 run test`));
   }));
+test('odd:check fails on a repeated task or log id and passes on unique ids', () =>
+  fixture((dir) => {
+    const run = () =>
+      spawnSync(process.execPath, [path.join(root, 'scripts/odd-check-ids.mjs'), dir], {
+        encoding: 'utf8',
+      });
+    writeFileSync(
+      path.join(dir, 'f.md'),
+      '# F\n## Tasks\n- T1 [x] a\n- T2 [ ] b\n## Log\n- L1 — a\n- L2 — b\n',
+    );
+    assert.equal(run().status, 0);
+    writeFileSync(
+      path.join(dir, 'f.md'),
+      '# F\n## Tasks\n- T1 [x] a\n## Log\n- L1 — a\n- L2 — b\n- L2 — c\n',
+    );
+    const failed = run();
+    assert.equal(failed.status, 1);
+    assert.match(failed.stderr, /f\.md: L2 appears more than once under "## Log"/);
+  }));
+test('two branches appending to a feature log merge locally without a conflict', () =>
+  fixture((dir) => {
+    const git = (...args) => {
+      const r = spawnSync(
+        'git',
+        ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', ...args],
+        { cwd: dir, encoding: 'utf8' },
+      );
+      assert.equal(r.status, 0, r.stderr);
+      return r.stdout;
+    };
+    git('init', '-q', '-b', 'main');
+    mkdirSync(path.join(dir, 'odd/tasks'), { recursive: true });
+    writeFileSync(
+      path.join(dir, '.gitattributes'),
+      readFileSync(path.join(root, '.gitattributes')),
+    );
+    const log = path.join(dir, 'odd/tasks/f.md');
+    writeFileSync(log, '# F\n## Log\n- L1 — start\n');
+    git('add', '.');
+    git('commit', '-qm', 'base');
+    git('checkout', '-qb', 'a');
+    writeFileSync(log, '# F\n## Log\n- L1 — start\n- L2 — from a\n');
+    git('commit', '-qam', 'a');
+    git('checkout', '-q', 'main');
+    writeFileSync(log, '# F\n## Log\n- L1 — start\n- L3 — from main\n');
+    git('commit', '-qam', 'main');
+    git('merge', '-q', '--no-edit', 'a');
+    const merged = readFileSync(log, 'utf8');
+    assert.match(merged, /L2 — from a/);
+    assert.match(merged, /L3 — from main/);
+    assert.doesNotMatch(merged, /<<<<<<<|>>>>>>>/);
+  }));
