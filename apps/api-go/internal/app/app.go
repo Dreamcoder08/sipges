@@ -13,6 +13,8 @@ import (
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	situationshttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/http"
+	situationssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
@@ -26,7 +28,8 @@ type Options struct {
 	RequireMFA   bool
 	// GoogleEnabled is what GET /system/auth/providers reports.
 	GoogleEnabled bool
-	// Now is the clock for session expiry and the grant cache; nil means time.Now.
+	// Now is the clock for session expiry, the grant cache and the situations' "today"; nil
+	// means time.Now.
 	Now func() time.Time
 	// Routes adds routes beyond the ones registered here (tests).
 	Routes func(mux *http.ServeMux)
@@ -53,6 +56,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 		Routes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
 			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)
+			situationshttp.Routes(mux, situationshttp.Options{DB: pool, Store: situationssql.Store{}, Now: opts.Now, Logger: opts.Logger})
 			if opts.Routes != nil {
 				opts.Routes(mux)
 			}
