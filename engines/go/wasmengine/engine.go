@@ -68,8 +68,11 @@ type Engine struct {
 	compiled wazero.CompiledModule
 	idle     chan *instance
 	slots    chan struct{} // one token per live instance
-	mu       sync.RWMutex  // guards closed
+	mu       sync.RWMutex  // guards closed and orders calls.Add before Close's calls.Wait
 	closed   bool
+	calls    sync.WaitGroup     // calls between begin and their end, waited for by Close
+	stop     context.Context    // done once Close starts
+	halt     context.CancelFunc // ends stop
 }
 
 type instance struct {
@@ -107,7 +110,10 @@ func New(ctx context.Context, wasm []byte, opts Options) (*Engine, error) {
 			return nil, errors.Join(fmt.Errorf("wasmengine: module does not export %q", name), runtime.Close(ctx))
 		}
 	}
+	stop, halt := context.WithCancel(context.WithoutCancel(ctx))
 	return &Engine{
+		stop:     stop,
+		halt:     halt,
 		retain:   uint64(opts.RetainMemoryPages) * pageSize,
 		runtime:  runtime,
 		compiled: compiled,
@@ -123,18 +129,35 @@ func (e *Engine) Invoke(ctx context.Context, request []byte) ([]byte, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, fmt.Errorf("wasmengine: %w", err)
 	}
+	// Close closes the runtime only after every call that began has ended: closing it while
+	// guest code runs races with the WASI host functions that call is using.
+	if !e.begin() {
+		return nil, ErrClosed
+	}
+	defer e.calls.Done()
 	in, err := e.acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// select picks randomly among ready cases, so a caller whose context ended while it waited
-	// may still have been handed an instance: do not start the call then.
+	// select picks randomly among ready cases, so a caller whose context ended (or whose engine
+	// started closing) while it waited may still have been handed an instance: do not start then.
+	if e.stop.Err() != nil {
+		e.release(ctx, in, false)
+		return nil, ErrClosed
+	}
 	if err := ctx.Err(); err != nil {
 		e.release(ctx, in, true)
 		return nil, fmt.Errorf("wasmengine: %w", err)
 	}
-	response, err := in.invoke(ctx, request)
+	// An interruptible call also stops when Close starts; an uninterruptible one runs to the end.
+	callCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	defer context.AfterFunc(e.stop, cancel)()
+	response, err := in.invoke(callCtx, request)
 	e.release(ctx, in, err == nil)
+	if err != nil && e.stop.Err() != nil && ctx.Err() == nil {
+		return nil, errors.Join(ErrClosed, err)
+	}
 	return response, err
 }
 
@@ -167,19 +190,34 @@ func (e *Engine) Stats() Stats {
 	return Stats{Live: len(e.slots), Idle: len(e.idle)}
 }
 
-// Close releases the runtime and every instance; later calls get ErrClosed. A call in flight
-// either completes or fails (an interruptible one is stopped); none is left waiting.
+// Close releases the runtime and every instance; later calls get ErrClosed. It returns once the
+// calls in flight have ended: an uninterruptible one runs to completion, an interruptible one is
+// stopped and gets ErrClosed, and callers waiting for an instance get ErrClosed.
 func (e *Engine) Close(ctx context.Context) error {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 	if e.closed {
+		e.mu.Unlock()
 		return nil
 	}
 	e.closed = true
+	e.mu.Unlock()
+	e.halt()
+	e.calls.Wait()
 	if err := e.runtime.Close(ctx); err != nil {
 		return fmt.Errorf("wasmengine: close runtime: %w", err)
 	}
 	return nil
+}
+
+// begin registers a call unless Close has started.
+func (e *Engine) begin() bool {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	if e.closed {
+		return false
+	}
+	e.calls.Add(1)
+	return true
 }
 
 func (e *Engine) isClosed() bool {
@@ -189,9 +227,6 @@ func (e *Engine) isClosed() bool {
 }
 
 func (e *Engine) acquire(ctx context.Context) (*instance, error) {
-	if e.isClosed() {
-		return nil, ErrClosed
-	}
 	select {
 	case in := <-e.idle:
 		return in, nil
@@ -209,6 +244,8 @@ func (e *Engine) acquire(ctx context.Context) (*instance, error) {
 		return in, nil
 	case <-ctx.Done():
 		return nil, fmt.Errorf("wasmengine: wait for an instance: %w", ctx.Err())
+	case <-e.stop.Done():
+		return nil, ErrClosed
 	}
 }
 

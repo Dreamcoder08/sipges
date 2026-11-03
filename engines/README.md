@@ -74,6 +74,9 @@ instead of pooled, because linear memory never shrinks) and `Interruptible`. `St
 live and idle instances. Interruption is off by default because wazero's `WithCloseOnContextDone` made the
 engine 5.3x slower (2.28 → 12.09 ms per 1x request); without it the context is checked before
 each call and a call runs to completion. A trapped or interrupted instance is discarded.
+`Close` returns only after the calls in flight have ended (closing the runtime under running guest
+code raced with the WASI host functions): an uninterruptible call runs to completion, an
+interruptible one is stopped, and both it and callers still waiting for an instance get `ErrClosed`.
 
 ## Performance
 
