@@ -6,6 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Pruebas e2e: la revisión de accesibilidad (axe) espera a que terminen las animaciones antes de medir. CI en `main` falló dos veces porque axe midió el menú Cuenta del cajón móvil a mitad de su aparición (opacidad ~0,83): leyó el texto atenuado como #787878 (4,41:1) y «Cerrar sesión» como #cf5353 (4,18:1), cuando en reposo son #5d5d5d y #c53030 y cumplen AA. La prueba del cajón reproduce el caso al reproducir las animaciones diez veces más lentas.
 - Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
 
 ### Rendimiento
