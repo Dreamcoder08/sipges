@@ -382,7 +382,8 @@ const numberInputs = [
 ];
 for (let i = 0; i < 2000; i++) {
   const mag = Math.floor(random() * 60) - 30;
-  numberInputs.push((random() - 0.5) * 10 ** mag);
+  // Number("1e…") is correctly rounded on every Node version; V8's `**` is not (it changed between 22 and 26).
+  numberInputs.push((random() - 0.5) * Number(`1e${mag}`));
 }
 const numberCases = numberInputs.map((x) => [x, String(x), pyFloat(x)]);
 

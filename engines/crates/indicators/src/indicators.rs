@@ -86,7 +86,7 @@ impl<'a> Modules<'a> {
 }
 
 /// `txt(...)`: the fields' text joined by spaces, lowercased. Lowercasing each part equals
-/// lowercasing the join: a space isolates the parts (records::tests pins it over Unicode).
+/// lowercasing the join: a space isolates the parts (`records::tests` pins it over Unicode).
 fn txt(row: &Row, keys: &[F]) -> String {
     keys.iter()
         .map(|k| row.lower(*k))
@@ -95,7 +95,7 @@ fn txt(row: &Row, keys: &[F]) -> String {
 }
 
 /// `contains(value, words)` on lowercase text: TypeScript lowercases it once more, a no-op
-/// because lowercasing is idempotent (pinned in records::tests).
+/// because lowercasing is idempotent (pinned in `records::tests`).
 fn contains(lower: &str, words: &[&str]) -> bool {
     words.iter().any(|w| lower.contains(w))
 }
@@ -599,7 +599,7 @@ fn narratives(r: &Modules) -> Result<Vec<Raw>> {
     let themes: BTreeSet<String> = r
         .narrativas
         .iter()
-        .map(|x| js::trim(&x.text(F::Tema)).to_lowercase())
+        .map(|x| js::trim(x.text(F::Tema)).to_lowercase())
         .filter(|t| !t.is_empty())
         .collect();
     let themes = themes.len();
@@ -864,7 +864,7 @@ fn institutional(r: &Modules) -> Result<Vec<Raw>> {
         .filter(|a| is_open_state(a.get(F::Estado)))
         .collect();
     let noresp = count(active.iter().copied(), |a| {
-        js::trim(&a.text(F::Responsable)).is_empty() || has(a, F::Responsable, &["por asignar"])
+        js::trim(a.text(F::Responsable)).is_empty() || has(a, F::Responsable, &["por asignar"])
     });
     let key_records: Vec<&&Row> = r
         .eventos
@@ -880,7 +880,7 @@ fn institutional(r: &Modules) -> Result<Vec<Raw>> {
             x.get(F::EvidenciaResultado),
             x.get(F::EvidenciaCierre),
         ]);
-        !js::trim(&x.text(F::FuenteId)).is_empty() || !js::trim(&text(evidence)).is_empty()
+        !js::trim(x.text(F::FuenteId)).is_empty() || !js::trim(&text(evidence)).is_empty()
     });
     let n_key = key_records.len();
     let completeness = pct(with_source, n_key.max(1))?;

@@ -317,21 +317,21 @@ mod tests {
         let records = Records::from_json(
             br#"{"Eventos":[{"Tema":"a","x":{"deep":[1]},"Tema":"B"}],"Otro":[1]}"#,
         );
-        let Ok(Records {
-            modules: Some(modules),
-        }) = records
-        else {
-            panic!("expected records");
+        let row = match records {
+            Ok(Records {
+                modules: Some(modules),
+            }) => match modules.into_iter().next() {
+                Some(Some(Module::Rows(mut rows))) if rows.len() == 1 => rows.pop(),
+                _ => None,
+            },
+            _ => None,
         };
-        let Some(Some(Module::Rows(rows))) = modules.first() else {
-            panic!("expected Eventos rows");
-        };
-        let Some(Slot::Row(row)) = rows.first() else {
-            panic!("expected one row");
-        };
-        assert_eq!(row.text(F::Tema), "B");
-        assert_eq!(row.lower(F::Tema), "b");
-        assert_eq!(row.fields.len(), 1);
+        assert!(
+            matches!(&row, Some(Slot::Row(row)) if row.text(F::Tema) == "B"
+                && row.lower(F::Tema) == "b"
+                && row.fields.len() == 1),
+            "expected one Eventos row with only Tema = B"
+        );
     }
 
     /// The rules lowercase `txt(...)` (already lowercase) and joins of lowercased parts. That
