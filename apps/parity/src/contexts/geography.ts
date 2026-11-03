@@ -1,4 +1,4 @@
-import type { ParityCase } from '../cases.ts';
+import type { ParityCase } from '../types.ts';
 
 /**
  * Synthetic rows of the geography context in DEFAULT_TENANT and OTHER_TENANT (see ../fixtures.ts).
