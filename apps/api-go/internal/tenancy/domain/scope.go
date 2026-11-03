@@ -3,7 +3,9 @@
 package domain
 
 import (
+	"bytes"
 	"encoding/json"
+	"strconv"
 )
 
 // Scope is the company and project a request works in.
@@ -43,8 +45,10 @@ func truthy(v any) bool {
 		return false
 	case bool:
 		return x
-	case float64:
-		return x != 0
+	case json.Number:
+		// JavaScript numbers: 1e400 is Infinity (truthy), 1e-400 and -0 are 0 (falsy).
+		f, _ := strconv.ParseFloat(x.String(), 64)
+		return f != 0
 	case string:
 		return x != ""
 	default:
@@ -54,10 +58,14 @@ func truthy(v any) bool {
 
 // BodyNamesOtherProject is the JSON-body check of tenancy-middleware.ts: the first truthy of
 // body.project_id, body.payload.Proyecto_ID, body.payload.project_id, compared with !== against
-// projectID (so only the identical string matches). A body that is not a JSON object names none.
+// projectID (so only the identical string matches). It reads the body as Hono's c.req.json()
+// does (a leading UTF-8 BOM dropped, any number accepted); a body JSON.parse would refuse, or
+// that is not an object, names none, as TypeScript reads it as {}.
 func BodyNamesOtherProject(body []byte, projectID string) bool {
+	decoder := json.NewDecoder(bytes.NewReader(bytes.TrimPrefix(body, []byte("\xef\xbb\xbf"))))
+	decoder.UseNumber()
 	var record map[string]any
-	if json.Unmarshal(body, &record) != nil || record == nil {
+	if decoder.Decode(&record) != nil || record == nil {
 		return false
 	}
 	payload, _ := record["payload"].(map[string]any)

@@ -14,7 +14,13 @@ export type ParityCase = {
   readonly path: string;
   /** Extra headers; the value `{origin}` becomes the base URL of the API being called. */
   readonly headers?: Readonly<Record<string, string>>;
-  readonly body?: { readonly json: unknown } | { readonly form: Readonly<Record<string, string>> };
+  readonly body?:
+    | { readonly json: unknown }
+    | { readonly form: Readonly<Record<string, string>> }
+    /** Sent byte for byte (application/json unless headers say otherwise). */
+    | { readonly raw: string };
+  /** Send `path` exactly as written (dot segments, backslashes), through node:http. */
+  readonly rawTarget?: boolean;
   /**
    * Sends the session of a synthetic user the runner seeds through the TypeScript API (seed.ts):
    * `admin` holds two projects and must choose one; `consulta` holds one, chosen automatically.
@@ -134,6 +140,86 @@ export const CASES: readonly ParityCase[] = [
     method: 'POST',
     path: '/system/auth/me',
     auth: 'consulta',
+  },
+
+  // Regression cases from the independent verification of T14 (odd/tasks/go-rust-stack.md L13).
+  {
+    name: 'encoded project_id key',
+    method: 'GET',
+    path: '/system/no-such-route?project%5Fid=PRJ-B',
+    auth: 'consulta',
+  },
+  {
+    name: 'reset-mfa needs a project',
+    method: 'POST',
+    path: '/system/auth/accounts/parity-consulta/reset-mfa',
+    auth: 'admin',
+    headers: WITH_ORIGIN,
+  },
+  {
+    name: 'body with an out-of-range number',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'admin',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { raw: '{"payload":{"Proyecto_ID":"PRJ-SECHURA"},"x":1e400}' },
+  },
+  {
+    name: 'body with a UTF-8 BOM',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'admin',
+    headers: { ...WITH_ORIGIN, ...SECOND },
+    body: { raw: '\uFEFF{"project_id":"PRJ-SECHURA"}' },
+  },
+  { name: 'encoded slash is not a public path', method: 'GET', path: '/system%2Fauth%2Fme' },
+  { name: 'encoded slash is not a machine path', method: 'GET', path: '/hooks%2Fx' },
+  {
+    name: 'encoded slash with a session',
+    method: 'GET',
+    path: '/system%2Fauth%2Fme',
+    auth: 'consulta',
+  },
+  {
+    name: 'dot segments leave the machine path',
+    method: 'GET',
+    path: '/hooks/../system/x',
+    rawTarget: true,
+  },
+  {
+    name: 'dot segments reach the public route',
+    method: 'GET',
+    path: '/system/../system/auth/me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'encoded dot segments',
+    method: 'GET',
+    path: '/system/%2e%2E/system/auth/me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'backslashes are slashes',
+    method: 'GET',
+    path: '/system\\auth\\me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'empty segment',
+    method: 'GET',
+    path: '//system/auth/me',
+    auth: 'consulta',
+    rawTarget: true,
+  },
+  {
+    name: 'two Origin headers',
+    method: 'POST',
+    path: '/system/no-such-route',
+    auth: 'admin',
+    headers: { ...SECOND, origin: '{origin}, http://evil.example' },
   },
 ];
 

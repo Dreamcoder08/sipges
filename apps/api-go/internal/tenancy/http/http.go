@@ -31,7 +31,8 @@ var scopeFreePaths = []string{
 	"/system/auth/scopes", "/system/auth/grants", "/system/auth/totp/setup", "/system/auth/totp/enable",
 }
 
-var accountAction = regexp.MustCompile(`^/system/auth/accounts/[^/]+/(deactivate|reset-mfa|google)$`)
+// accountAction is the scope-free account route of tenancy-middleware.ts (reset-mfa is not one).
+var accountAction = regexp.MustCompile(`^/system/auth/accounts/[^/]+/(deactivate|google)$`)
 
 type scopeKey struct{}
 
@@ -54,7 +55,7 @@ func Tenancy(svc *application.Service, username Username, log *slog.Logger) http
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			user, ok := username(r)
-			path := r.URL.Path
+			path := httpx.RequestPath(r)
 			if !ok || slices.Contains(scopeFreePaths, path) || accountAction.MatchString(path) {
 				next.ServeHTTP(w, r)
 				return
@@ -105,5 +106,5 @@ func checksBody(r *http.Request) bool {
 		return false
 	}
 	return strings.HasPrefix(httpx.HeaderValue(r, "Content-Type"), "application/json") &&
-		(strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/system/"))
+		(strings.HasPrefix(httpx.RequestPath(r), "/api/") || strings.HasPrefix(httpx.RequestPath(r), "/system/"))
 }

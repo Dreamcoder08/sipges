@@ -67,14 +67,22 @@ func NewHandler(opts Options) http.Handler {
 		opts.Routes(mux)
 	}
 	// Unknown paths and methods answer the JSON 404 of the other APIs, not ServeMux's text 405.
-	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		WriteError(w, http.StatusNotFound, "Not Found")
+	notFound := func(w http.ResponseWriter, _ *http.Request) { WriteError(w, http.StatusNotFound, "Not Found") }
+	mux.HandleFunc("/", notFound)
+	// Hono routes //x as is (no route matches); ServeMux would redirect it to /x instead.
+	var routes http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if HasEmptySegment(r) {
+			notFound(w, r)
+			return
+		}
+		mux.ServeHTTP(w, r)
 	})
-	middleware := []Middleware{RequestID()}
+	// CanonicalPath first: every later decision, and the router, sees Hono's path.
+	middleware := []Middleware{CanonicalPath(), RequestID()}
 	if opts.AccessLog {
 		middleware = append(middleware, AccessLog(opts.Logger))
 	}
 	middleware = append(middleware, Recover(opts.Logger), HostAllowlist(opts.AllowedHosts))
 	middleware = append(middleware, opts.Pipeline...)
-	return Chain(mux, middleware...)
+	return Chain(routes, middleware...)
 }

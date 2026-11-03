@@ -59,6 +59,8 @@ func TestTenancyMiddleware(t *testing.T) {
 	}{
 		{name: "no principal passes", method: "GET", target: "/system/x", status: 200, want: map[string]any{"reached": true, "body": ""}},
 		{name: "scope-free path", method: "GET", target: "/system/auth/scopes", user: "two", status: 200, want: map[string]any{"reached": true, "body": ""}},
+		{name: "reset-mfa needs a project, as in tenancy-middleware.ts", method: "POST", target: "/system/auth/accounts/ana/reset-mfa", user: "two", status: 403, want: choose},
+		{name: "encoded project_id key", method: "GET", target: "/system/x?project%5Fid=PRJ-B", user: "one", status: 403, want: map[string]any{"detail": "Proyecto fuera de alcance"}},
 		{name: "account deactivation is scope-free", method: "POST", target: "/system/auth/accounts/ana/deactivate", user: "two", status: 200, want: map[string]any{"reached": true, "body": ""}},
 		{name: "single grant is selected", method: "GET", target: "/system/x", user: "one", status: 200, want: map[string]any{"reached": true, "body": "", "scope": "SIPGES/PRJ-A"}},
 		{name: "two grants need a choice", method: "GET", target: "/system/x", user: "two", status: 403, want: choose},

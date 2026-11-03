@@ -62,6 +62,12 @@ func TestBodyNamesOtherProject(t *testing.T) {
 		{`"P2"`, false},
 		{`{}`, false},
 		{`not json`, false},
+		// JSON.parse accepts what encoding/json alone refuses: a UTF-8 BOM, numbers out of range.
+		{"\ufeff{\"project_id\":\"P2\"}", true},
+		{`{"payload":{"Proyecto_ID":"P2"},"x":1e400}`, true},
+		{`{"project_id":1e400}`, true},
+		{`{"project_id":1e-400,"payload":{"project_id":"P2"}}`, true},
+		{`{"project_id":-0,"payload":{"project_id":"P1"}}`, false},
 		{``, false},
 	}
 	for _, c := range cases {

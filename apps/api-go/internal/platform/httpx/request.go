@@ -34,13 +34,15 @@ func Cookie(r *http.Request, name string) (string, bool) {
 	return "", false
 }
 
-// QueryParam is Hono's c.req.query(key): the first `key=value` (or bare `key`) of the raw query,
-// with '+' as a space and tolerant percent-decoding; "" when absent.
+// QueryParam is Hono's c.req.query(key): the value of the first pair whose name, decoded with
+// '+' as a space and tolerant percent-decoding (so project%5Fid counts), equals key; a bare
+// `key` gives ""; "" when absent.
 func QueryParam(r *http.Request, key string) string {
+	decode := func(s string) string { return tryDecodeURIComponent(strings.ReplaceAll(s, "+", " ")) }
 	for pair := range strings.SplitSeq(r.URL.RawQuery, "&") {
 		name, value, _ := strings.Cut(pair, "=")
-		if name == key {
-			return tryDecodeURIComponent(strings.ReplaceAll(value, "+", " "))
+		if name = decode(name); name != "" && name == key {
+			return decode(value)
 		}
 	}
 	return ""
@@ -106,7 +108,7 @@ func hostOf(value string) (string, bool) {
 		return "", false
 	}
 	u, err := url.Parse(value)
-	if err != nil || u.Scheme == "" {
+	if err != nil || u.Scheme == "" || strings.ContainsAny(u.Host, ", ") {
 		return "", false
 	}
 	host := strings.ToLower(u.Host)
@@ -122,9 +124,10 @@ func OriginAllowed(r *http.Request) bool {
 	if r.Host == "" {
 		return false
 	}
-	source, ok := hostOf(r.Header.Get("Origin"))
+	// Repeated headers are joined as Fetch's Headers.get does; the joined value never parses.
+	source, ok := hostOf(HeaderValue(r, "Origin"))
 	if !ok {
-		source, ok = hostOf(r.Header.Get("Referer"))
+		source, ok = hostOf(HeaderValue(r, "Referer"))
 	}
 	return ok && source == strings.ToLower(r.Host)
 }

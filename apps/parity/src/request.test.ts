@@ -87,3 +87,43 @@ test('{origin} becomes each API base URL and a case cookie joins the session coo
     server.close();
   }
 });
+
+test('a raw body is sent byte for byte and a raw target reaches the server unnormalized', async () => {
+  const seen: { url: string | undefined; type: string | undefined; body: string }[] = [];
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk: Buffer) => (body += chunk.toString('utf8')));
+    req.on('end', () => {
+      seen.push({ url: req.url, type: req.headers['content-type'], body });
+      res.writeHead(200, { 'content-type': 'application/json' }).end('{"ok":1}');
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  try {
+    const url = `http://127.0.0.1:${port}`;
+    await send(
+      url,
+      { name: 'r', method: 'POST', path: '/x', body: { raw: '﻿{"a":1e400}' } },
+      undefined,
+      1_000,
+    );
+    const raw = await send(
+      url,
+      { name: 't', method: 'GET', path: '/hooks/../system/x?q=1', rawTarget: true },
+      undefined,
+      1_000,
+    );
+    assert.deepEqual(seen, [
+      { url: '/x', type: 'application/json', body: '﻿{"a":1e400}' },
+      { url: '/hooks/../system/x?q=1', type: undefined, body: '' },
+    ]);
+    assert.deepEqual(raw, {
+      status: 200,
+      contentType: 'application/json',
+      body: { kind: 'json', value: { ok: 1 } },
+    });
+  } finally {
+    server.close();
+  }
+});

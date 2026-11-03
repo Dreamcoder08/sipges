@@ -79,6 +79,14 @@ func TestOriginAllowed(t *testing.T) {
 		{"app.example", "", "", false},
 		{"app.example", "https://app.example:443", "", true},
 	}
+	// Two Origin headers read as one joined value, which no URL parser accepts, as in Fetch.
+	two := httptest.NewRequest(http.MethodPost, "/", nil)
+	two.Host = "app.example"
+	two.Header.Add("Origin", "https://app.example")
+	two.Header.Add("Origin", "https://evil.example")
+	if httpx.OriginAllowed(two) {
+		t.Error("two Origin headers must not pass")
+	}
 	for _, c := range cases {
 		r := httptest.NewRequest(http.MethodPost, "/", nil)
 		r.Host = c.host

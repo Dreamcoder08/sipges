@@ -33,7 +33,7 @@ func PrincipalFrom(ctx context.Context) *domain.Principal {
 // messages may carry connection details.
 func internalError(w http.ResponseWriter, r *http.Request, log *slog.Logger) {
 	log.Error("unhandled_error", slog.String("request_id", httpx.RequestIDFrom(r.Context())),
-		slog.String("method", r.Method), slog.String("path", r.URL.Path), slog.String("error", "store_error"))
+		slog.String("method", r.Method), slog.String("path", httpx.RequestPath(r)), slog.String("error", "store_error"))
 	httpx.WriteError(w, http.StatusInternalServerError, "Internal Server Error")
 }
 
@@ -43,7 +43,7 @@ func internalError(w http.ResponseWriter, r *http.Request, log *slog.Logger) {
 func Session(auth Authenticator, requireMFA bool, log *slog.Logger) httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			path := r.URL.Path
+			path := httpx.RequestPath(r)
 			write := httpx.IsWriteMethod(r.Method)
 			if domain.IsMachinePath(path) {
 				next.ServeHTTP(w, r)
@@ -93,7 +93,7 @@ func RoleGate() httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if p := PrincipalFrom(r.Context()); p != nil {
-				if d := domain.CheckRoleAccess(p.Role, r.Method, r.URL.Path); !d.Allowed {
+				if d := domain.CheckRoleAccess(p.Role, r.Method, httpx.RequestPath(r)); !d.Allowed {
 					httpx.WriteError(w, http.StatusForbidden, d.Detail)
 					return
 				}
