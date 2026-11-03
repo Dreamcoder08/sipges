@@ -13,6 +13,7 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/tenancy`                  | Grant cache, project scope, `GET /system/auth/current-scope`.            |
 | `internal/identity/http/routes.go`  | `GET /system/auth/me` and `GET /system/auth/providers`.                  |
 | `internal/audit`                    | `GET /system/audit`, the `GET /system/events` activity stream (SSE).     |
+| `internal/analytics`                | Dashboard and analysis read routes, computed by the Rust engine.         |
 | `internal/management`               | Management overview and CSV report of the active project.                |
 | `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
 | `internal/situations`               | `GET /system/v4/settings` and `GET /system/v4/situations` (read-only).   |
