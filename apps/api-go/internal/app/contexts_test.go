@@ -3,13 +3,30 @@ package app
 import (
 	"errors"
 	"net/http"
+	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 )
 
+// The expected contexts are the context_<name>.go files themselves, so a new context adds a
+// file and never edits a list here.
 func TestEveryPortedContextRegistersFromItsOwnFile(t *testing.T) {
-	want := []string{"audit", "management", "ontology", "prevention", "reference", "situations"}
+	files, err := filepath.Glob("context_*.go")
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no context files found: %v", err)
+	}
+	var want []string
+	for _, f := range files {
+		if strings.HasSuffix(f, "_test.go") {
+			continue
+		}
+		want = append(want, strings.TrimSuffix(strings.TrimPrefix(f, "context_"), ".go"))
+	}
 	got := contextNames()
+	if len(got) != len(want) {
+		t.Fatalf("registered %v, files %v: every context_<name>.go must call registerContext(\"<name>\", ...)", got, want)
+	}
 	for _, name := range want {
 		if !slices.Contains(got, name) {
 			t.Fatalf("context %q is not registered; registered: %v", name, got)

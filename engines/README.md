@@ -3,8 +3,9 @@
 Pure computation engines in Rust, compiled to WebAssembly (`wasm32-wasip1`) and run inside the
 Go backend with [wazero](https://github.com/tetratelabs/wazero) (pure Go, no cgo). Engines, each a byte-for-byte port of its TypeScript source:
 indicators v0.4 + IRSA (`apps/api/src/contexts/indicators/domain`) and the analytics engines
-situational, strategic, consensus, candidate links and integrated
-(`apps/api/src/contexts/analytics/domain`).
+situational, strategic, consensus, candidate links, integrated and conflict risk
+(`apps/api/src/contexts/analytics/domain`), and text analysis with the record classifier
+(`apps/api/src/contexts/intelligence/domain`).
 
 | Path | What it is |
 | --- | --- |
@@ -12,7 +13,9 @@ situational, strategic, consensus, candidate links and integrated
 | `crates/indicators-wasm` | `sipges-indicators-wasm`: the WebAssembly ABI shim of the indicators engine (with `analytics-wasm`, the only `unsafe`). |
 | `crates/analytics-common` | Python value semantics, record shapes and constants shared by the analytics engines. |
 | `crates/{situational,strategic,consensus,candidate-links,integrated}` | One analytics engine each; `integrated` calls `consensus` and `candidate-links`. |
-| `crates/analytics-wasm` | `sipges-analytics-wasm`: one WebAssembly module for the five analytics engines, selected by `op`. |
+| `crates/conflict-risk` | Conflict-risk prediction (`conflictRisk`): V8's fdlibm `exp`/`log`/`log1p`, `Date.parse` day rollover and ICU Spanish collation for tied scores. |
+| `crates/text-analysis` | `analyzeText`, `classifyRecord`, `cosine`, `isPublicHttpUrl`; in-crate SHA-256; `unicode-tables.ts` writes `src/unicode_tables.rs` (`\p{Mn}`, `\p{L}`, `\p{N}` from Node; `--check` fails when stale). |
+| `crates/analytics-wasm` | `sipges-analytics-wasm`: one WebAssembly module for the analytics and text engines, selected by `op`. |
 | `fixtures/generate.ts` | Runs the TypeScript engine on synthetic inputs and writes `fixtures/indicators.json` and `crates/indicators/src/defaults.json`. |
 | `fixtures/<engine>.ts` | Same for each analytics engine: writes `fixtures/<engine>.json` (`--check` fails when stale). |
 | `go/wasmengine` | Go host: loads the `.wasm`, pools instances, calls the ABI. |
@@ -70,6 +73,11 @@ The analytics module takes `records` as stored, `{module: [{id, payload}]}` (abs
 | `consensus` | `records`, `project_id`, `generated_at` | `automatedConsensus(extendedRecords(records), …)` |
 | `candidate_links` | `records` | `candidatePairs(extendedRecords(records))` |
 | `integrated` | `records`, `project_id`, `generated_at` | `integratedAnalysis(extendedRecords(records), …)` |
+| `conflict_risk` | `records` (`[{module, id, payload, updatedAt}]`), `alerts`, `irsa`, `today` (`YYYY-MM-DD`) | `conflictRisk` |
+| `text_analysis` | `text`, `project_id`, `source_url`, `narratives`? | `analyzeText` (the `{ok,value}` or `{ok:false,error:{kind}}` result is the `value`) |
+| `classify_record` | `payload` (any JSON) | `classifyRecord` |
+| `text_cosine` | `a`, `b` (number arrays) | `cosine` (`null` when not finite) |
+| `public_http_url` | `url` | `isPublicHttpUrl` |
 
 A malformed `records` (not an object; a module the engine reads that is neither an array nor
 `null`; an item there without a string `id` and an object `payload`) or a non-string
@@ -77,6 +85,14 @@ A malformed `records` (not an object; a module the engine reads that is neither 
 as in TypeScript. `candidate_links` applies `normalize('NFKD')` with `unicode-normalization`
 0.1.25 (Unicode 17.0); a character whose decomposition changed between Unicode versions could
 differ from an older Node ICU, and no fixture uses one.
+
+Known differences from TypeScript, each answered with an error instead of a different result:
+a JSON request with an unpaired UTF-16 surrogate escape is rejected (`serde_json` cannot hold
+it); `conflict_risk` answers `unsupported_value` when a cut title would end in a lone surrogate
+inside the report and when a record's `module` is an `Object.prototype` name (`constructor`,
+`__proto__`, …), where TypeScript throws. Tied scores are ordered by ICU's Spanish collation,
+exact for ASCII, `ñ`, combining accents and `ø đ ħ æ œ ß`; other scripts, emoji and fullwidth
+forms are approximated.
 
 ### Responses
 
