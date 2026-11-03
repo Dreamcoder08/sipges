@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Agregado
+
+- Esqueleto del backend en Go (`apps/api-go`, ADR 0032), todavía sin rutas de producción ni despliegue: configuración validada al arrancar con los mismos nombres de variables que la API TypeScript (`SIPGES_DATABASE_URL`, `SIPGES_HOST`, `SIPGES_PORT`, `SIPGES_ALLOWED_HOSTS`, `SIPGES_ACCESS_LOG`), `/health` y `/health/ready` (la base responde en menos de 5 s), errores `{"detail": …}`, `X-Request-Id`, registros JSON sin secretos y apagado ordenado. La transacción de proyecto es la misma sentencia que la de TypeScript y viaja con la primera consulta en un solo viaje (medido: 3 viajes por transacción en lugar de 4); si entrar al proyecto falla, esa consulta recibe 25P02 y no devuelve nada. Las pruebas de aislamiento entre proyectos están portadas y corren contra PostgreSQL con todas las migraciones, en un flujo de CI propio (`go vet`, `go test -race`, `golangci-lint` v2.15.0).
+
 ### Corregido
 
 - Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
