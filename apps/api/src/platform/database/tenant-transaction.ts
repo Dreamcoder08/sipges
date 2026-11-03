@@ -17,10 +17,21 @@ export const withTenant = async <T>(
   tenantId: string,
   fn: (tx: SqlClient) => Promise<T>,
 ): Promise<T> => {
-  if (!tenantId) throw new Error('Tenant id is required');
+  // Built before the transaction: an invalid tenant id fails here and no work runs at all.
+  const statement = tenantStatement(tenantId);
   return sql.transaction(async (tx) => {
-    await enterTenant(tx, tenantId);
-    return fn(tx);
+    // Not awaited before the work starts: statements on one connection run in order, so the
+    // work's first query is sent right behind the tenant settings and runs under them, saving
+    // a round trip on every tenant request. If entering fails, PostgreSQL rejects every later
+    // statement of the transaction (25P02). Both are awaited to the end, so the transaction
+    // never settles while the work still runs, and a failure to enter is the error reported.
+    const entered = tx.exec(statement);
+    // An async wrapper turns a synchronous throw from fn into a rejection, so both are awaited.
+    const work = (async () => fn(tx))();
+    const [enteredResult, workResult] = await Promise.allSettled([entered, work]);
+    if (enteredResult.status === 'rejected') throw enteredResult.reason;
+    if (workResult.status === 'rejected') throw workResult.reason;
+    return workResult.value;
   });
 };
 
@@ -31,18 +42,23 @@ export const withTenant = async <T>(
  * makes global tables unreadable for the rest of the transaction.
  */
 export const enterTenant = async (tx: SqlClient, tenantId: string): Promise<void> => {
+  await tx.exec(tenantStatement(tenantId));
+};
+
+/**
+ * One statement for the tenant settings and role: this runs on every tenant request against a
+ * remote database. A parameterized query costs two round trips with postgres.js
+ * (parse/describe, then bind/execute), so the values are inlined as literals and run with the
+ * simple protocol. `set_config('role', …, true)` is `SET LOCAL ROLE`, so the role switch rides
+ * in the same statement.
+ */
+const tenantStatement = (tenantId: string): string => {
   if (!tenantId) throw new Error('Tenant id is required');
   const context = currentRequestContext();
-  // One round trip: this runs on every tenant request against a remote database. A
-  // parameterized query costs two with postgres.js (parse/describe, then bind/execute), so the
-  // values are inlined as literals and run with the simple protocol. `set_config('role', …,
-  // true)` is `SET LOCAL ROLE`, so the role switch rides in the same statement.
-  await tx.exec(
-    `SELECT set_config('app.tenant_id', ${literal(tenantId)}, true),
+  return `SELECT set_config('app.tenant_id', ${literal(tenantId)}, true),
             set_config('app.actor', ${literal(context?.actor ?? '')}, true),
             set_config('app.clearance', ${literal(context?.clearance ?? 'full')}, true),
-            set_config('role', 'sipges_tenant', true)`,
-  );
+            set_config('role', 'sipges_tenant', true)`;
 };
 
 /**
