@@ -28,8 +28,11 @@ Run: `pnpm e2e` (builds the web app first), or
 
 ```sh
 pnpm --filter @sipges/e2e exec playwright test tests/<file> --repeat-each 20 --workers 2
-pnpm --filter @sipges/e2e exec playwright test --shuffle   # Playwright 1.64+: exposes order dependence
 ```
+
+Order dependence: `playwright test --shuffle` exists only from Playwright 1.64. While
+`apps/e2e/package.json` pins an older version, run the suspect file alone and then with its neighbours
+(`playwright test tests/<a> tests/<b> --workers 1`) instead.
 
 Playwright 1.62–1.64 added `locator.waitForFunction()`, `locator.visible()`, test `lock` (tests that
 share a resource never run together) and `retryStrategy: 'isolated'` (release notes, read 2026-11-03);
