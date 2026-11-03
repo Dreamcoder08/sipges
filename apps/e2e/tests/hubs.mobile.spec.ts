@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator, Page } from '@playwright/test';
 import { DESTINATIONS, hubHref } from '../../web/src/app/navigation.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
@@ -39,9 +39,7 @@ const expectWithin = async (control: Locator, width: number, what: string) => {
 };
 
 const expectAccessible = async (page: Page, what: string) => {
-  const result = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
+  const result = await analyzeAccessibility(page);
   expect(
     result.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`),
     `accessibility of ${what}`,
