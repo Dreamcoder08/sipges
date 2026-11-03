@@ -179,8 +179,10 @@ pub fn module_records(by_module: &Value, module: &str) -> Result<Vec<Record>, En
             "records must be an object of module arrays",
         ));
     };
-    let Some(rows) = map.get(module) else {
-        return Ok(Vec::new());
+    // `byModule[module] ?? []`: an absent or `null` module has no records.
+    let rows = match map.get(module) {
+        None | Some(Value::Null) => return Ok(Vec::new()),
+        Some(rows) => rows,
     };
     let Value::Array(rows) = rows else {
         return Err(EngineError::input(format!(
@@ -283,6 +285,8 @@ mod tests {
             js::stringify(&ext.counts()),
             r#"{"intereses":1,"dialogos":0,"oportunidades":0,"hechos":0,"aarc":0}"#
         );
+        assert_eq!(module_records(&json!({"Intereses": null}), "Intereses"), Ok(Vec::new()));
+        assert!(module_records(&json!({"Intereses": "x"}), "Intereses").is_err());
         assert!(module_records(&json!([]), "Intereses").is_err());
         assert!(
             module_records(
