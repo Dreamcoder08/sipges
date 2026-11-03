@@ -1,0 +1,9 @@
+{
+  "CCSMS": {
+    "canonical_name": "Comunidad Campesina San Martín de Sechura (CCSMS)",
+    "short_name": "CCSMS",
+    "entity_type": "Comunal",
+    "territory": "Sechura",
+    "note": "Usar esta denominación como nombre canónico en fichas analíticas y salidas del sistema. Los textos de fuentes originales se conservan sin reescritura."
+  }
+}
