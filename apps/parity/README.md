@@ -25,8 +25,9 @@ CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 ## Adding a route
 
 Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go, or, for a
-bounded context, a module in [`src/contexts/`](src/contexts/index.ts) exporting its `cases` (names prefixed
-with the context) and the synthetic `seed` SQL they read. [`src/fixtures.ts`](src/fixtures.ts) loads those
+bounded context, a new file `src/contexts/<context>.ts` exporting its `cases` (names prefixed with the context)
+and the synthetic `seed` SQL they read. Files are discovered by name ([`src/discover.ts`](src/discover.ts)), so
+[`src/contexts/index.ts`](src/contexts/index.ts) is not edited. [`src/fixtures.ts`](src/fixtures.ts) loads those
 rows straight into the database after the migrations, together with a project nobody in the run is granted
 (`PARITY/OTRO`), so a case can prove another project's rows stay invisible. Against two running APIs the
 rows load only with `SIPGES_PARITY_SEED_DATABASE_URL`.

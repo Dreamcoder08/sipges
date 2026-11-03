@@ -1,7 +1,7 @@
 # Gentle AI y Engram en SIPGES
 
 Fuente: [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) v4.2.0 y
-[Engram](https://github.com/Gentleman-Programming/engram) v3.4.0, revisados el 2026-10-19. Adoptado a petición
+[Engram](https://github.com/Gentleman-Programming/engram) v3.6.1 (actualizado el 2026-11-03 a pedido del dueño; v4.2.0 de Gentle AI revisado el 2026-10-19). Adoptado a petición
 explícita del dueño del repositorio.
 
 ## Qué queda activo en el repositorio
@@ -66,7 +66,7 @@ Windows (PowerShell, requiere Go 1.25.10+):
 
 ```powershell
 go install github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@v4.2.0
-go install github.com/Gentleman-Programming/engram/v3/cmd/engram@v3.4.0
+go install github.com/Gentleman-Programming/engram/v3/cmd/engram@v3.6.1
 gentle-ai install --agent claude-code,codex --preset ecosystem-only --persona neutral
 ```
 

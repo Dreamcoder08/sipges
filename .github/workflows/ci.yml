@@ -67,7 +67,7 @@ jobs:
       - if: needs.changes.outputs.code == 'true'
         run: pnpm install --frozen-lockfile
       - if: needs.changes.outputs.code == 'true'
-        run: pnpm lint && pnpm boundaries && pnpm typecheck
+        run: pnpm lint && pnpm boundaries && pnpm odd:check && pnpm typecheck
       # `pnpm check` minus @sipges/api, which runs sharded in the api job below.
       - if: needs.changes.outputs.code == 'true'
         run: pnpm -r --workspace-concurrency=1 --filter '!@sipges/api' run test && pnpm test:tooling
