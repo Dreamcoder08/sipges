@@ -63,7 +63,7 @@ export const createSqlTenancyStore = (sql: SqlClient): TenancyStore => ({
     const rows = await sql.query<{ company_id: string; project_id: string; label: string }>(
       `SELECT t.company_id, t.project_id, t.label
          FROM grants g JOIN tenants t ON t.tenant_id = g.tenant_id
-        WHERE g.username = $1
+        WHERE g.username = $1::text
         ORDER BY t.company_id, t.project_id`,
       [username],
     );

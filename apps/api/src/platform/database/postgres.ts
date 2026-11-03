@@ -1,11 +1,22 @@
 import postgres from 'postgres';
+import { declaredParameterTypes } from './declared-types.ts';
 import type { SqlClient } from './sql-client.ts';
 
 type Sql = postgres.Sql | postgres.TransactionSql;
+type Typed = postgres.Sql['typed'];
 
-const wrap = (sql: Sql, transaction: SqlClient['transaction']): SqlClient => ({
+/** Declares the types the SQL already casts to, so the query goes out in one round trip. */
+const withDeclaredTypes = (typed: Typed, text: string, params: readonly unknown[]) => {
+  const oids = declaredParameterTypes(text, params);
+  return params.map((value, index) => {
+    const oid = oids[index];
+    return oid ? typed(value as never, oid) : value;
+  }) as postgres.ParameterOrJSON<never>[];
+};
+
+const wrap = (sql: Sql, typed: Typed, transaction: SqlClient['transaction']): SqlClient => ({
   query: async <Row>(text: string, params: readonly unknown[] = []) =>
-    (await sql.unsafe(text, params as postgres.ParameterOrJSON<never>[])) as unknown as Row[],
+    (await sql.unsafe(text, withDeclaredTypes(typed, text, params))) as unknown as Row[],
   exec: async (text) => {
     // No parameters: postgres.js uses the simple protocol, which accepts several statements.
     await sql.unsafe(text);
@@ -35,6 +46,10 @@ export const postgresClient = (
     max: options.max ?? 10,
     ssl: options.ssl ?? (local ? false : 'require'),
     prepare: options.prepare ?? false,
+    // On connect postgres.js would query pg_type for custom array types: one more round trip on
+    // every new connection, and the Worker opens one per request. SIPGES uses built-in types
+    // only (no CREATE TYPE or extension types), which postgres.js already knows.
+    fetch_types: false,
     types: {
       /**
        * Repositories pass JSON *text* for `json`/`jsonb` parameters (`$n::jsonb`). postgres.js
@@ -52,10 +67,11 @@ export const postgresClient = (
   });
   const client = wrap(
     sql,
+    sql.typed,
     (fn) =>
       sql.begin((tx) =>
         fn(
-          wrap(tx, () => {
+          wrap(tx, sql.typed, () => {
             throw new Error('Nested transactions are not supported');
           }),
         ),

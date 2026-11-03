@@ -231,7 +231,7 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     }>(
       `SELECT u.username, u.full_name, u.role, u.totp_enabled, s.via_google
          FROM sessions s JOIN users u ON u.username = s.username
-        WHERE s.token_hash = $1 AND s.expires_at > $2 AND u.active`,
+        WHERE s.token_hash = $1::text AND s.expires_at > $2::timestamptz AND u.active`,
       [tokenHash, at],
     );
     return row
