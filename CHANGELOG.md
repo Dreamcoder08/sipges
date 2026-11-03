@@ -4,6 +4,16 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+## [1.1.0] - 2026-11-02
+
+Versión de entrega de la tesis.
+
+### Metodología
+
+- La configuración IRSA por defecto declara la versión del motor (`0.4-indicators`) en lugar de `0.3-provisional`. Los proyectos que ya guardaron su configuración conservan la suya; el resultado del IRSA siempre informó la versión del motor.
+- La pantalla IRSA rotula «Contribuciones del prototipo» y aclara que no intervienen en el cálculo del IRSA V0.4, que usa solo los 32 indicadores; la configuración por defecto suma esa nota. Sin cambios de API, datos ni permisos.
+- `docs/deployment/readiness.md` marca como histórica la nota de «solo datos sintéticos» de la demo de octubre.
+
 ### Seguridad
 
 - Rotación de `SIPGES_DATA_KEY` ([guía](docs/operations/data-key-rotation.md), [ADR 0004](docs/adr/0004-identity-and-session-security.md)): la API también abre los valores sellados con `SIPGES_DATA_KEY_PREVIOUS` (opcional) y sigue sellando solo con la clave actual. Nuevo `pnpm --filter @sipges/api rotate:data-key`: por defecto solo cuenta (por tabla, columna y proyecto) los secretos TOTP y las configuraciones de canales que abre cada clave; con `--apply` los vuelve a cifrar con la clave nueva, una transacción por tabla o proyecto, comprobando cada valor antes de confirmar. Si un valor no abre con ninguna clave no escribe nada; volver a ejecutarlo no cambia nada. Nunca muestra valores ni claves. Sin migración.
