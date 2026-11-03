@@ -12,6 +12,11 @@ A pull request adds files; it does not edit a list that another pull request als
 | A Go context's routes | `apps/api-go/internal/app/context_<name>.go`, calling `registerContext` from `init` | `internal/app/app.go` |
 | A context's parity cases | `apps/parity/src/contexts/<name>.ts`, exporting `cases` and `seed` | `apps/parity/src/contexts/index.ts` |
 
+## Shared platform helpers
+
+Before adding a helper to a shared package (for example `apps/api-go/internal/platform/httpx`), search `main` for it.
+If it is missing, add it in a file of its own named after the helper; never add a second definition elsewhere.
+
 ## One writer for shared documents
 
 The feature document (`odd/tasks/<feature>.md`), `CHANGELOG.md`, READMEs and ADRs have one writer: the orchestrator.
