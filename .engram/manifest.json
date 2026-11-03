@@ -242,6 +242,14 @@
       "prompts": 0
     },
     {
+      "id": "7b024fca",
+      "created_by": "vm",
+      "created_at": "2026-11-03T19:07:16.637127208Z",
+      "sessions": 1,
+      "memories": 1,
+      "prompts": 0
+    },
+    {
       "id": "b1706b47",
       "created_by": "vm",
       "created_at": "2026-11-03T19:26:15.806499861Z",
