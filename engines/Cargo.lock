@@ -105,6 +105,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "sipges-analytics-common"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-indicators",
+]
+
+[[package]]
 name = "sipges-indicators"
 version = "0.1.0"
 dependencies = [

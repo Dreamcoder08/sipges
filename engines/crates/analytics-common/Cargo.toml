@@ -1,0 +1,15 @@
+[package]
+name = "sipges-analytics-common"
+version = "0.1.0"
+description = "Shared helpers of the SIPGES analytics engines (port of apps/api/src/contexts/analytics/domain/{python,records}.ts)."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+sipges-indicators = { path = "../indicators" }
+
+[lints]
+workspace = true
