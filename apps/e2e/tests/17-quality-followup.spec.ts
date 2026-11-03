@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 for (const mobile of [false, true]) {
@@ -135,13 +135,7 @@ for (const mobile of [false, true]) {
     await expect(
       page.getByText(/No hay observaciones que coincidan|No se detectaron los campos pendientes/),
     ).toBeVisible();
-    expect(
-      (
-        await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-          .analyze()
-      ).violations,
-    ).toEqual([]);
+    expect((await analyzeAccessibility(page)).violations).toEqual([]);
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
     ).toBe(true);

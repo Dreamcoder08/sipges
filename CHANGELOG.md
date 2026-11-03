@@ -4,8 +4,14 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Agregado
+
+- Esqueleto del backend en Go (`apps/api-go`, ADR 0032), todavía sin rutas de producción ni despliegue: configuración validada al arrancar con los mismos nombres de variables que la API TypeScript (`SIPGES_DATABASE_URL`, `SIPGES_HOST`, `SIPGES_PORT`, `SIPGES_ALLOWED_HOSTS`, `SIPGES_ACCESS_LOG`), `/health` y `/health/ready` (la base responde en menos de 5 s), errores `{"detail": …}`, `X-Request-Id`, registros JSON sin secretos y apagado ordenado. La transacción de proyecto es la misma sentencia que la de TypeScript y viaja con la primera consulta en un solo viaje (medido: 3 viajes por transacción en lugar de 4); si entrar al proyecto falla, esa consulta recibe 25P02 y no devuelve nada. Las pruebas de aislamiento entre proyectos están portadas y corren contra PostgreSQL con todas las migraciones, en un flujo de CI propio (`go vet`, `go test -race`, `golangci-lint` v2.15.0).
+- Motores en Rust (ADR 0032): `engines/` con el primer motor, indicadores v0.4 + IRSA, portado del motor TypeScript con resultados idénticos byte a byte (mismo redondeo estilo Python, mismo texto de números y mismo orden de claves que `JSON.stringify`), compilado a WebAssembly (`wasm32-wasip1`) y ejecutado desde Go con wazero (`engines/go/wasmengine`). Las 41 pruebas de paridad se generan desde el motor TypeScript con datos sintéticos y CI (`Rust engines`) falla si dejan de coincidir. Aún no atiende tráfico: ninguna ruta lo usa todavía.
+
 ### Corregido
 
+- Pruebas e2e: la revisión de accesibilidad (axe) espera a que terminen las animaciones antes de medir. CI en `main` falló dos veces porque axe midió el menú Cuenta del cajón móvil a mitad de su aparición (opacidad ~0,83): leyó el texto atenuado como #787878 (4,41:1) y «Cerrar sesión» como #cf5353 (4,18:1), cuando en reposo son #5d5d5d y #c53030 y cumplen AA. La prueba del cajón reproduce el caso al reproducir las animaciones diez veces más lentas.
 - Servidor Node: si una ronda de automatizaciones tarda más que `SIPGES_AUTOMATION_INTERVAL`, la siguiente se omite (con un aviso `automation_tick_skipped` en el registro que indica cuánto lleva la ronda anterior, para detectar una ronda colgada) en lugar de superponerse y ocupar más conexiones de la base mientras espera.
 - Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
 
@@ -22,6 +28,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 - Las importaciones de registros (también `import:base-maestra`) escriben 500 filas por sentencia en lugar de una por fila; los ids repetidos dentro de un lote dan el mismo resultado y los mismos conteos que antes.
 - Automatizaciones: ningún pedido espera el procesamiento que empezó otro pedido (en Workers podía quedar colgado); dos procesamientos del mismo proyecto son seguros porque la base serializa el escaneo y reclama cada ejecución una sola vez. Las escrituras que llegan mientras uno corre piden un escaneo más al terminar, en lugar de encadenarse.
 - Nueva prueba de estrés `node bench/latency-stress.ts` (en `apps/api`): PostgreSQL sintético detrás de un proxy con latencia configurable (`--rtt`) y pool configurable (`--pool`), a varios niveles de concurrencia. Con 130 ms de ida y vuelta y pool de 20, frente a `main`: de 10,3 a 15,7 pedidos/s con 8 pantallas a la vez y p95 de `/system/v4/settings` de 4,5 s a 2,8 s.
+- Nueva prueba de estrés autenticada contra producción `pnpm run bench:prod-screens` (en `apps/api`): entra con una cuenta sintética de solo lectura (`consulta`) con contraseña y TOTP, elige un proyecto y abre las pantallas Inicio, Registros e IRSA con sus pedidos GET en paralelo, con 1, 4 y 8 pantallas a la vez; se detiene si fallan más del 20 % de los pedidos. Las credenciales y la URL se leen de variables de entorno o de un archivo fuera del repositorio; no guarda nada de las respuestas. El historial medido (v1.1.0 → #197 → #199: de 286 a ~500 pedidos en 20 s con 8 pantallas, Inicio p50 de 2,4 s a 1,4 s; #200 y #201 aún no tienen medición en producción) está en `docs/benchmarks/README.md`.
 
 ## [1.1.0] - 2026-11-02
 
