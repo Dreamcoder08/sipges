@@ -9,7 +9,8 @@ const MAX_USERS = 1_000;
  * from the user's grants; a 30 s copy saves that query on repeated requests.
  *
  * Within this isolate a grant change is visible at once: `forget` drops the copy, and a lookup
- * that started before it never stores what it read (generation check). Other isolates keep
+ * that started before any `forget` never stores what it read (one generation counter for all
+ * users keeps the bookkeeping bounded; it only costs an extra miss after unrelated changes). Other isolates keep
  * their copy for at most the TTL, so a revoked project can still resolve there for up to 30 s.
  * Only settled values are kept, never a lookup in flight (no request waits on another's I/O).
  */
@@ -18,17 +19,16 @@ export const createGrantCache = (
   clock: Clock,
 ) => {
   const entries = new Map<string, { at: number; grants: TenantSummary[] }>();
-  const generations = new Map<string, number>();
-  const generation = (username: string) => generations.get(username) ?? 0;
+  let generation = 0;
 
   return {
     async get(username: string): Promise<TenantSummary[]> {
       const now = clock.now().getTime();
       const cached = entries.get(username);
       if (cached && now - cached.at < GRANT_CACHE_TTL_MS) return cached.grants;
-      const started = generation(username);
+      const started = generation;
       const grants = await load(username);
-      if (generation(username) === started) {
+      if (generation === started) {
         if (entries.size >= MAX_USERS && !entries.has(username)) {
           const oldest = entries.keys().next().value;
           if (oldest !== undefined) entries.delete(oldest);
@@ -39,7 +39,7 @@ export const createGrantCache = (
     },
     forget(username: string): void {
       entries.delete(username);
-      generations.set(username, generation(username) + 1);
+      generation += 1;
     },
   };
 };

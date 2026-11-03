@@ -88,14 +88,18 @@ export const createTenancyService = (deps: {
       const valid = validateNewTenant(input);
       if (!valid.ok) return err(valid.error);
       if (!(await users.exists(valid.value.username))) return err('user_missing');
-      const created = await store.createTenantWithGrant(
-        valid.value,
-        valid.value.label,
-        valid.value.username,
-        clock.now(),
-      );
-      if (created) requestGrants.forget(valid.value.username);
-      return created ? ok(formatScope(valid.value)) : err('exists');
+      // Forget even when the write fails after committing: a stale copy must not outlive it.
+      try {
+        const created = await store.createTenantWithGrant(
+          valid.value,
+          valid.value.label,
+          valid.value.username,
+          clock.now(),
+        );
+        return created ? ok(formatScope(valid.value)) : err('exists');
+      } finally {
+        requestGrants.forget(valid.value.username);
+      }
     },
 
     async revoke(
@@ -105,9 +109,11 @@ export const createTenancyService = (deps: {
       if (actor.role !== 'admin') return err('forbidden');
       if (!(await users.exists(input.username))) return err('user_missing');
       if (!(await store.tenantExists(input))) return err('tenant_missing');
-      const revoked = await store.revoke(input.username, input);
-      requestGrants.forget(input.username);
-      return revoked ? ok(true) : err('grant_missing');
+      try {
+        return (await store.revoke(input.username, input)) ? ok(true) : err('grant_missing');
+      } finally {
+        requestGrants.forget(input.username);
+      }
     },
 
     async grant(
@@ -117,9 +123,12 @@ export const createTenancyService = (deps: {
       if (actor.role !== 'admin') return err('forbidden');
       if (!(await users.exists(input.username))) return err('user_missing');
       if (!(await store.tenantExists(input))) return err('tenant_missing');
-      await store.grant(input.username, input, clock.now());
-      requestGrants.forget(input.username);
-      return ok(true);
+      try {
+        await store.grant(input.username, input, clock.now());
+        return ok(true);
+      } finally {
+        requestGrants.forget(input.username);
+      }
     },
   };
 };
