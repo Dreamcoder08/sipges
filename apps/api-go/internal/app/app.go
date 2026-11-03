@@ -15,6 +15,7 @@ import (
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	indicatorshttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/indicators/http"
+	managementhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/management/http"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
@@ -88,6 +89,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 			preventionhttp.Routes(mux, prevention.Service{Store: preventionsql.Actions{DB: pool}, Now: opts.Now}, opts.Logger)
 			situationshttp.Routes(mux, situationshttp.Options{DB: pool, Store: situationssql.Store{}, Now: opts.Now, Logger: opts.Logger})
 			referencehttp.Register(mux, referenceService, referenceScope, opts.Logger)
+			managementhttp.Register(mux, managementhttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
 			if opts.Routes != nil {
 				opts.Routes(mux)
 			}
