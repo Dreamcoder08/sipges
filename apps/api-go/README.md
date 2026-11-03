@@ -5,22 +5,23 @@ production route yet: routes move here one by one, each after a parity test agai
 
 ## Layout
 
-| Path                                | What it holds                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------- |
-| `cmd/api`                           | Composition root: configuration, pool, handler, graceful shutdown.      |
-| `internal/app`                      | The handler: platform middleware, auth gates in order, routes.          |
-| `internal/identity`                 | Session check, Origin and MFA gates, role gate (read-only).             |
-| `internal/tenancy`                  | Grant cache, project scope, `GET /system/auth/current-scope`.           |
-| `internal/identity/http/routes.go`  | `GET /system/auth/me` and `GET /system/auth/providers`.                 |
-| `internal/audit`                    | `GET /system/audit`, the `GET /system/events` activity stream (SSE).    |
-| `internal/management`               | Management overview and CSV report of the active project.               |
-| `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).             |
-| `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).      |
-| `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.              |
-| `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health; |
-|                                     | Hono-compatible path, cookie, query and Origin reading (`hono.go`).     |
-| `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                |
-| `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).           |
+| Path                                | What it holds                                                            |
+| ----------------------------------- | ------------------------------------------------------------------------ |
+| `cmd/api`                           | Composition root: configuration, pool, handler, graceful shutdown.       |
+| `internal/app`                      | The handler: platform middleware, auth gates in order, routes.           |
+| `internal/identity`                 | Session check, Origin and MFA gates, role gate (read-only).              |
+| `internal/tenancy`                  | Grant cache, project scope, `GET /system/auth/current-scope`.            |
+| `internal/identity/http/routes.go`  | `GET /system/auth/me` and `GET /system/auth/providers`.                  |
+| `internal/audit`                    | `GET /system/audit`, the `GET /system/events` activity stream (SSE).     |
+| `internal/management`               | Management overview and CSV report of the active project.                |
+| `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
+| `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).              |
+| `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).       |
+| `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.               |
+| `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health;  |
+|                                     | Hono-compatible path, cookie, query and Origin reading (`hono.go`).      |
+| `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                 |
+| `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).            |
 
 Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used.
 
