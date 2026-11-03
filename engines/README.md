@@ -71,9 +71,10 @@ The analytics module takes `records` as stored, `{module: [{id, payload}]}` (abs
 | `candidate_links` | `records` | `candidatePairs(extendedRecords(records))` |
 | `integrated` | `records`, `project_id`, `generated_at` | `integratedAnalysis(extendedRecords(records), …)` |
 
-A malformed `records` (not an object, a module that is neither an array nor `null`, an item
-without a string `id` and an object `payload`) or a non-string `project_id`/`generated_at` is
-`invalid_input`. `candidate_links` applies `normalize('NFKD')` with `unicode-normalization`
+A malformed `records` (not an object; a module the engine reads that is neither an array nor
+`null`; an item there without a string `id` and an object `payload`) or a non-string
+`project_id`/`generated_at` is `invalid_input`. Modules an engine does not read are not checked,
+as in TypeScript. `candidate_links` applies `normalize('NFKD')` with `unicode-normalization`
 0.1.25 (Unicode 17.0); a character whose decomposition changed between Unicode versions could
 differ from an older Node ICU, and no fixture uses one.
 
