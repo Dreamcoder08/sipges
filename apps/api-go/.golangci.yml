@@ -1,0 +1,42 @@
+version: '2'
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - contextcheck
+    - errorlint
+    - gocritic
+    - gosec
+    - misspell
+    - noctx
+    - nolintlint
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - unconvert
+    - unparam
+    - usestdlibvars
+  settings:
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: error-strings
+        - name: error-return
+        - name: context-as-argument
+        - name: unused-parameter
+  exclusions:
+    rules:
+      # Tests build SQL from synthetic, test-owned names (scratch databases and probe roles).
+      - path: _test\.go|dbtest/
+        linters: [gosec, noctx]
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/Dreamcoder08/sipges/apps/api-go
