@@ -1,0 +1,8 @@
+# Build context is the repository root (see Dockerfile): send only the Go API and the engines host.
+*
+!apps/api-go/go.mod
+!apps/api-go/go.sum
+!apps/api-go/cmd
+!apps/api-go/internal
+!engines/go
+**/*_test.go

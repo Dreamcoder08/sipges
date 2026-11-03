@@ -17,13 +17,16 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
 | `internal/situations`               | `GET /system/v4/settings` and `GET /system/v4/situations` (read-only).   |
 | `internal/reference`                | Project coordinates and canonical entities (embedded `data/*.json`).     |
+| `internal/indicators`               | IRSA and indicators read routes, computed by the Rust engine.            |
 | `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).              |
 | `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).       |
 | `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.               |
+| `internal/platform/engines`         | The Rust engines (indicators, analytics) as embedded WebAssembly.        |
 | `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health;  |
 |                                     | Hono-compatible path, cookie, query and Origin reading (`hono.go`).      |
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                 |
-| `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).            |
+| `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root); build      |
+|                                     | context is the repository root (`-f apps/api-go/Dockerfile .`).          |
 
 Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used. A ported
 context mounts its routes from its own file, `internal/app/context_<name>.go`, which calls `registerContext` from
@@ -34,6 +37,19 @@ context mounts its routes from its own file, `internal/app/context_<name>.go`, w
 `database.Open` keeps `DefaultMinConns` (2) connections open, created in the background at start, so
 a request never waits for a new connection (170–230 ms from the container to Neon). A `pool_min_conns`
 in `SIPGES_DATABASE_URL` overrides it, and it never exceeds `pool_max_conns`. Routing from the Worker: [the Go container guide](../../docs/deployment/go-container.md).
+
+## Rust engines
+
+`internal/platform/engines` embeds `wasm/indicators.wasm` and `wasm/analytics.wasm` and runs them
+with `engines/go/wasmengine` (wazero, no cgo); `engines.Shared` compiles both once per process
+(about 0.3 s, at start in `cmd/api`). The module replaces `engines/go` with its local copy, which
+is why the image builds from the repository root. Rebuild the files after changing `engines/`:
+
+```sh
+engines/build-wasm.sh   # pinned toolchain, machine paths remapped: same bytes on any machine
+```
+
+`rust.yml` rebuilds them and fails when the committed files differ.
 
 ## Tenant transaction
 

@@ -6,9 +6,11 @@ on:
   pull_request:
     paths:
       - 'engines/**'
+      - 'apps/api-go/internal/platform/engines/wasm/**'
       - '.github/workflows/rust.yml'
       - 'apps/api/src/contexts/indicators/domain/**'
       - 'apps/api/src/contexts/analytics/domain/**'
+      - 'apps/api/src/contexts/intelligence/domain/**'
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
@@ -16,9 +18,11 @@ on:
     branches: [main]
     paths:
       - 'engines/**'
+      - 'apps/api-go/internal/platform/engines/wasm/**'
       - '.github/workflows/rust.yml'
       - 'apps/api/src/contexts/indicators/domain/**'
       - 'apps/api/src/contexts/analytics/domain/**'
+      - 'apps/api/src/contexts/intelligence/domain/**'
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
@@ -56,6 +60,11 @@ jobs:
       - run: cargo test --locked
       - run: cargo build --locked --release --target wasm32-wasip1 -p sipges-indicators-wasm -p sipges-analytics-wasm
       - run: ls -l target/wasm32-wasip1/release/sipges_indicators_wasm.wasm target/wasm32-wasip1/release/sipges_analytics_wasm.wasm
+      # The Go API embeds these modules; a source change must ship with the rebuilt files.
+      - name: Embedded modules in apps/api-go match a reproducible build
+        run: |
+          ./build-wasm.sh
+          git diff --exit-code --stat -- ../apps/api-go/internal/platform/engines/wasm
       - uses: actions/setup-go@v5
         with:
           go-version-file: engines/go/go.mod
@@ -82,6 +91,7 @@ jobs:
       # Regenerates the fixtures from the TypeScript engines and fails on any drift.
       - run: |
           node engines/fixtures/generate.ts --check
-          for engine in situational strategic consensus candidate-links integrated; do
+          for engine in situational strategic consensus candidate-links integrated conflict-risk text-analysis; do
             node "engines/fixtures/$engine.ts" --check
           done
+          node engines/crates/text-analysis/unicode-tables.ts --check

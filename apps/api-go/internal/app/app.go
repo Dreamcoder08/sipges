@@ -3,6 +3,7 @@
 package app
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"time"
@@ -12,6 +13,7 @@ import (
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
@@ -29,6 +31,8 @@ type Options struct {
 	// Now is the clock for session expiry, the grant cache and "today" in prevention and
 	// situations; nil means time.Now.
 	Now func() time.Time
+	// Engines are the compiled Rust engines; nil means engines.Shared.
+	Engines *engines.Set
 	// Routes adds routes beyond the ones registered here (tests).
 	Routes func(mux *http.ServeMux)
 }
@@ -36,7 +40,14 @@ type Options struct {
 // NewHandler builds the API on pool. It fails only when the embedded reference files do not
 // match their contract.
 func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
-	routes, err := contextRoutes(Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
+	if opts.Engines == nil {
+		compiled, err := engines.Shared(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		opts.Engines = compiled
+	}
+	routes, err := contextRoutes(Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now, Engines: opts.Engines})
 	if err != nil {
 		return nil, err
 	}
