@@ -86,7 +86,12 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
     // The batched insert relies on postgres.js serializing one JSON parameter; PGlite does not
     // exercise that driver or the non-superuser role that enforces row-level security.
     const sql = open();
-    await buildContainer({ config: loadConfig(TEST_ENV), sql, clock: new TestClock() });
+    await buildContainer({
+      config: loadConfig(TEST_ENV),
+      sql,
+      clock: new TestClock(),
+      clientIp: () => '203.0.113.10',
+    });
     const tenant = 'SIPGES/PRJ-SECHURA';
     const store = createSqlRecordStore(sql);
     const at = new Date('2026-11-02T12:00:00Z');

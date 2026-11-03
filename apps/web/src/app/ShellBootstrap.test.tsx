@@ -4,7 +4,7 @@ import { beforeEach, expect, it } from 'vitest';
 import { server, resetApi } from '../test/server.ts';
 import { App } from './App.tsx';
 
-const ME = { username: 'analista', full_name: 'Analista sintética', role: 'analista' };
+const ME = { username: 'analista', full_name: 'Analista sintética', role: 'analista' } as const;
 
 beforeEach(() => resetApi({ me: ME }));
 
