@@ -105,6 +105,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "sipges-analytics-common"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-indicators",
+]
+
+[[package]]
+name = "sipges-analytics-wasm"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+ "sipges-candidate-links",
+ "sipges-consensus",
+ "sipges-integrated",
+ "sipges-situational",
+ "sipges-strategic",
+]
+
+[[package]]
+name = "sipges-candidate-links"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "sipges-consensus"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+]
+
+[[package]]
 name = "sipges-indicators"
 version = "0.1.0"
 dependencies = [
@@ -120,6 +158,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "sipges-integrated"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+ "sipges-candidate-links",
+ "sipges-consensus",
+]
+
+[[package]]
+name = "sipges-situational"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+]
+
+[[package]]
+name = "sipges-strategic"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+]
+
+[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -131,10 +195,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tinyvec"
+version = "1.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fd3ca314f692efd6c868f8408f53fe444634a845f96c028b97d35f6a1f79f0ee"
+
+[[package]]
 name = "unicode-ident"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
+
+[[package]]
+name = "unicode-normalization"
+version = "0.1.25"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fd4f6878c9cb28d874b009da9e8d183b5abc80117c40bbd187a1fde336be6e8"
+dependencies = [
+ "tinyvec",
+]
 
 [[package]]
 name = "zmij"

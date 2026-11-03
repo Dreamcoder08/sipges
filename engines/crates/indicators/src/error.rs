@@ -32,7 +32,8 @@ impl EngineError {
         }
     }
 
-    pub(crate) fn input(message: impl Into<String>) -> Self {
+    /// An `InvalidInput` error.
+    pub fn input(message: impl Into<String>) -> Self {
         Self::InvalidInput(message.into())
     }
 }

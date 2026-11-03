@@ -1,0 +1,15 @@
+[package]
+name = "sipges-consensus"
+version = "0.1.0"
+description = "SIPGES consensus engine (port of apps/api/src/contexts/analytics/domain/consensus.ts)."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+sipges-analytics-common = { path = "../analytics-common" }
+
+[lints]
+workspace = true

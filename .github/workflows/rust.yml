@@ -1,13 +1,14 @@
 name: Rust engines
 
 # engines/ (ADR 0032): Rust engines compiled to WebAssembly and run from Go with wazero. Runs when the
-# engines, this workflow or the TypeScript engine they port (and its fixture inputs) change.
+# engines, this workflow or the TypeScript engines they port (and their fixture inputs) change.
 on:
   pull_request:
     paths:
       - 'engines/**'
       - '.github/workflows/rust.yml'
       - 'apps/api/src/contexts/indicators/domain/**'
+      - 'apps/api/src/contexts/analytics/domain/**'
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
@@ -17,6 +18,7 @@ on:
       - 'engines/**'
       - '.github/workflows/rust.yml'
       - 'apps/api/src/contexts/indicators/domain/**'
+      - 'apps/api/src/contexts/analytics/domain/**'
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
@@ -52,8 +54,8 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
-      - run: cargo build --locked --release --target wasm32-wasip1 -p sipges-indicators-wasm
-      - run: ls -l target/wasm32-wasip1/release/sipges_indicators_wasm.wasm
+      - run: cargo build --locked --release --target wasm32-wasip1 -p sipges-indicators-wasm -p sipges-analytics-wasm
+      - run: ls -l target/wasm32-wasip1/release/sipges_indicators_wasm.wasm target/wasm32-wasip1/release/sipges_analytics_wasm.wasm
       - uses: actions/setup-go@v5
         with:
           go-version-file: engines/go/go.mod
@@ -77,5 +79,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # Regenerates the fixtures from apps/api/src/contexts/indicators/domain and fails on any drift.
-      - run: node engines/fixtures/generate.ts --check
+      # Regenerates the fixtures from the TypeScript engines and fails on any drift.
+      - run: |
+          node engines/fixtures/generate.ts --check
+          for engine in situational strategic consensus candidate-links integrated; do
+            node "engines/fixtures/$engine.ts" --check
+          done
