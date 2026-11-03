@@ -5,8 +5,9 @@
 import type { ParityCase } from '../types.ts';
 import * as audit from './audit.ts';
 import * as prevention from './prevention.ts';
+import * as situations from './situations.ts';
 
-const CONTEXTS = [audit, prevention];
+const CONTEXTS = [audit, prevention, situations];
 
 export const CONTEXT_CASES: readonly ParityCase[] = CONTEXTS.flatMap((c) => c.cases);
 export const SEEDS: readonly string[] = CONTEXTS.map((c) => c.seed).filter(Boolean);
