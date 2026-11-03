@@ -99,6 +99,46 @@ describe('automation runtime', () => {
       'finish:A/project:completed',
     ]);
   });
+  it('starts a fresh tick when the running one outlived its budget', async () => {
+    // On Workers a tick whose request was cancelled never ends; later writes must not wait for it.
+    const f = setup();
+    let elapsed = 0;
+    let ticks = 0;
+    const runtime = createAutomationRuntime({
+      ...f,
+      budgetMs: 20000,
+      monotonicNow: () => elapsed,
+      tick: async () => {
+        ticks += 1;
+        if (ticks === 1) await new Promise<void>(() => {});
+        return report;
+      },
+    });
+    await runtime.dispatch('A/project', () => undefined);
+    await new Promise((r) => setImmediate(r));
+    elapsed = 20001;
+    const pending: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => pending.push(task));
+    await Promise.all(pending);
+    expect(ticks).toBe(2);
+  });
+  it('bounds the rescans one tick owes to writes that keep arriving', async () => {
+    const f = setup();
+    let ticks = 0;
+    const runtime = createAutomationRuntime({
+      ...f,
+      tick: async () => {
+        ticks += 1;
+        // Every scan sees one more write arrive meanwhile.
+        await runtime.dispatch('A/project', () => undefined);
+        return report;
+      },
+    });
+    const pending: Promise<unknown>[] = [];
+    await runtime.dispatch('A/project', (task) => pending.push(task));
+    await Promise.all(pending);
+    expect(ticks).toBe(3);
+  });
   it('registers deferred work and records failures without rejecting committed writes', async () => {
     const f = setup(),
       pending: Promise<unknown>[] = [],

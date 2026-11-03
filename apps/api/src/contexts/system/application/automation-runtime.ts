@@ -28,6 +28,8 @@ const emptyReport = (): TickReport => ({
   retrying: 0,
   failed: 0,
 });
+/** Follow-up scans one tick runs for writes that arrived during it. */
+const MAX_RESCANS = 2;
 /** Bounded durable worker coordination; evidence describes attempts, never a latency SLA. */
 export const createAutomationRuntime = (deps: {
   store: RuntimeStore;
@@ -40,8 +42,13 @@ export const createAutomationRuntime = (deps: {
 }) => {
   // Ticks running in this isolate. Nothing ever awaits another request's tick: on Workers it
   // may never settle for a different request. The database serializes concurrent scans.
-  const running = new Map<string, { rescan: boolean }>();
+  const running = new Map<string, { rescan: boolean; startedAt: number }>();
   const now = deps.monotonicNow ?? (() => performance.now());
+  // A tick that outlived its budget belongs to a request that ended or was cancelled.
+  const live = (tenantId: string) => {
+    const entry = running.get(tenantId);
+    return entry && now() - entry.startedAt <= (deps.budgetMs ?? 20000) ? entry : undefined;
+  };
   const attempt = async (tenantId: string, source: RuntimeSource): Promise<TickReport> => {
     const token = randomUUID();
     await deps.store.start(tenantId, token, source, deps.clock.now());
@@ -71,11 +78,15 @@ export const createAutomationRuntime = (deps: {
       throw error;
     }
   };
-  /** A tick of its own; writes that arrive meanwhile ask for one more scan when it ends. */
+  /**
+   * A tick of its own; writes that arrive meanwhile ask for one more scan when it ends, at most
+   * MAX_RESCANS times so one request is not kept alive by a stream of writes (cron catches up).
+   */
   const run = async (tenantId: string, source: RuntimeSource): Promise<TickReport> => {
-    if (running.has(tenantId)) return attempt(tenantId, source);
-    const state = { rescan: false };
+    if (live(tenantId)) return attempt(tenantId, source);
+    const state = { rescan: false, startedAt: now() };
     running.set(tenantId, state);
+    let rounds = 0;
     try {
       let next = source;
       let outcome: { ok: true; report: TickReport } | { ok: false; error: unknown };
@@ -88,11 +99,13 @@ export const createAutomationRuntime = (deps: {
           outcome = { ok: false, error };
         }
         next = 'event';
-      } while (state.rescan);
+        rounds++;
+      } while (state.rescan && rounds <= MAX_RESCANS);
       if (!outcome.ok) throw outcome.error;
       return outcome.report;
     } finally {
-      running.delete(tenantId);
+      // A fresh tick may have replaced a stale entry; only the owner removes its own.
+      if (running.get(tenantId) === state) running.delete(tenantId);
     }
   };
   return {
@@ -100,7 +113,7 @@ export const createAutomationRuntime = (deps: {
     state: (tenantId: string) => deps.store.state(tenantId),
     async dispatch(tenantId: string, defer?: (task: Promise<unknown>) => void) {
       // A committed write needs a scan after it. A tick already running here will rescan.
-      const current = running.get(tenantId);
+      const current = live(tenantId);
       if (current) {
         current.rescan = true;
         return;
