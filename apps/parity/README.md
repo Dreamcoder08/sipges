@@ -56,7 +56,7 @@ path present on only one side is still a difference, and a path that names no fi
 | request reading                     | encoded `project_id` key, undecodable `project_id`, two `Origin` headers                                                                                                                |
 | paths as Hono reads them            | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                                    |
 | `GET /system/project-coordinates`   | 401 (no or unknown session); 200 (with and without `project_id`); 403 (ungranted project or `project_id`); 404 write; `available: false` for `consulta` on another project, via `multi` |
-| `GET /system/canonical-entities`    | the same eight cases                                                                                                                                                                    |
+| `GET /system/canonical-entities`    | the same nine cases                                                                                                                                                                     |
 
 The runner seeds `consulta` (read-only, one project) and `multi` (analista, two projects) through the
 TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
