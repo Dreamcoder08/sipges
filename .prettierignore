@@ -19,3 +19,6 @@
 
 apps/hosting-cloudflare/public/
 **/.wrangler/
+
+# Byte-identical copies of data/*.json embedded in the Go binary (a Go test compares them).
+apps/api-go/internal/reference/infrastructure/data/
