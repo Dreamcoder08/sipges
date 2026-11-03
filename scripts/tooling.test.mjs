@@ -48,8 +48,11 @@ const sipgesSkills = [
   'sipges-archify',
   'sipges-ci-triage',
   'sipges-code-quality',
+  'sipges-go-port',
   'sipges-odd-task',
+  'sipges-parallel-agents',
   'sipges-phone-check',
+  'sipges-rust-engine',
   'sipges-self-improve',
   'sipges-sync-main',
   'sipges-task-pr',
@@ -261,6 +264,39 @@ test('Claude Code discovers the SIPGES and Neon skills through links to .agents/
     );
   }
 });
+test('the tab watcher reports blocked tabs, text consent prompts, finished tabs and new merges', () =>
+  fixture((dir) => {
+    const bin = path.join(dir, 'bin');
+    mkdirSync(bin);
+    const terminals = [
+      { address: 't1', agent: 'claude-code', state: 'live', status: 'working', where: 's / a' },
+      { address: 't2', agent: 'claude-code', state: 'live', status: 'blocked', where: 's / b' },
+      { address: 't3', agent: 'claude-code', state: 'live', status: 'idle', where: 's / c' },
+      { address: 't4', agent: 'claude-code', state: 'live', status: 'done', where: 's / d' },
+    ];
+    writeFileSync(path.join(dir, 'ls.json'), JSON.stringify({ terminals }));
+    for (const [name, script] of Object.entries({
+      hc: `case "$1" in ls) cat '${dir}/ls.json';; read) [ "$2" = t3 ] && printf 'Revisión\\nRespondé con 1, 2 o 3\\n'; exit 0;; esac`,
+      gh: `printf '217 feat: one\\n225 feat: two\\n'`,
+    }))
+      writeFileSync(path.join(bin, name), '#!/bin/sh\n' + script + '\n', { mode: 0o755 });
+    const state = path.join(dir, 'seen');
+    writeFileSync(state, '217\n');
+    const env = { ...process.env, PATH: bin + ':' + process.env.PATH, WATCH_TABS_STATE: state };
+    const script = path.join(root, 'scripts/agents/watch-tabs.sh');
+    const result = spawnSync('bash', [script, '--once'], { env, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      result.stdout,
+      'BLOCKED t2 s / b\nCONSENT t3 s / c\nDONE t4 s / d\nMERGED #225 feat: two\n',
+    );
+    assert.equal(readFileSync(state, 'utf8'), '217\n225\n');
+    const again = spawnSync('bash', [script, '--once'], { env, encoding: 'utf8' });
+    assert.doesNotMatch(again.stdout, /MERGED/);
+    const help = spawnSync('bash', [script, '--help'], { encoding: 'utf8' });
+    assert.equal(help.status, 0);
+    assert.match(help.stdout, /^Usage: scripts\/agents\/watch-tabs\.sh/);
+  }));
 test('the main-merge helper keeps main first and renumbers the branch ODD log entry', () =>
   fixture((dir) => {
     mkdirSync(path.join(dir, 'odd/tasks'), { recursive: true });
