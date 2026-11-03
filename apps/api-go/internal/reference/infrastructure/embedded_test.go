@@ -14,8 +14,14 @@ import (
 // The embedded copies must stay the repository files the TypeScript readers serve
 // (data/*.json), byte for byte: go:embed cannot reach outside the module.
 func TestEmbeddedCopiesMatchTheRepositoryFiles(t *testing.T) {
+	root := filepath.Join("..", "..", "..", "..", "..")
+	// Only in the monorepo: a copy of apps/api-go alone has no data/ to compare against, and
+	// a missing directory must not read as drift.
+	if _, err := os.Stat(filepath.Join(root, "pnpm-workspace.yaml")); err != nil {
+		t.Skip("not inside the SIPGES repository: data/*.json is not available to compare")
+	}
 	for _, name := range []string{"project_coordinates.json", "canonical_entities.json"} {
-		repo, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "..", "data", name))
+		repo, err := os.ReadFile(filepath.Join(root, "data", name))
 		if err != nil {
 			t.Fatal(err)
 		}

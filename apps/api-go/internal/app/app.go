@@ -3,6 +3,8 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -13,6 +15,10 @@ import (
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	referenceapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/application"
+	referencedomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/domain"
+	referencehttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/http"
+	reference "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
@@ -30,8 +36,14 @@ type Options struct {
 	Routes func(mux *http.ServeMux)
 }
 
-// NewHandler builds the API on pool.
-func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
+// NewHandler builds the API on pool. It fails only when the embedded reference files do not
+// match their contract.
+func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
+	references, err := reference.NewEmbeddedReader()
+	if err != nil {
+		return nil, fmt.Errorf("reference: %w", err)
+	}
+	referenceService := referenceapp.NewService(references)
 	grants := application.NewGrantCache(tenancy.Grants{DB: pool}.List, opts.Now)
 	return httpx.NewHandler(httpx.Options{
 		Logger:       opts.Logger,
@@ -49,9 +61,16 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 		},
 		Routes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
+			referencehttp.Register(mux, referenceService, referenceScope, opts.Logger)
 			if opts.Routes != nil {
 				opts.Routes(mux)
 			}
 		},
-	})
+	}), nil
+}
+
+// referenceScope hands the tenancy middleware's project to the reference context.
+func referenceScope(ctx context.Context) (referencedomain.Scope, bool) {
+	s, ok := tenancyhttp.ScopeFrom(ctx)
+	return referencedomain.Scope{CompanyID: s.CompanyID, ProjectID: s.ProjectID}, ok
 }

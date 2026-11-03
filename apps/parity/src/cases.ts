@@ -79,6 +79,38 @@ export const CASES: readonly ParityCase[] = [
     sameOrigin: true,
     body: { json: { project_id: 'NORTE', payload: {} } },
   },
+  // Reference context (T15): repository references of the registered tenant only. Every role
+  // may read them, so the 403s come from the project scope, never from the role gate.
+  ...['/system/project-coordinates', '/system/canonical-entities'].flatMap((path): ParityCase[] => [
+    { name: `${path} without a session`, method: 'GET', path },
+    {
+      name: `${path} with an unknown session`,
+      method: 'GET',
+      path,
+      headers: { cookie: `sipges_session=${'0'.repeat(64)}` },
+    },
+    { name: `${path} with a session`, method: 'GET', path, auth: 'admin' },
+    {
+      name: `${path} with project_id of the scope`,
+      method: 'GET',
+      path: `${path}?project_id=PRJ-SECHURA`,
+      auth: 'admin',
+    },
+    {
+      name: `${path} of a project without a grant`,
+      method: 'GET',
+      path,
+      auth: 'admin',
+      headers: { 'x-sipges-scope': 'ACME/NORTE' },
+    },
+    {
+      name: `${path} with project_id outside the scope`,
+      method: 'GET',
+      path: `${path}?project_id=NORTE`,
+      auth: 'admin',
+    },
+    { name: `${path} rejects a write`, method: 'POST', path, auth: 'admin', sameOrigin: true },
+  ]),
 ];
 
 /** Problems in a route list; empty when it is valid. */

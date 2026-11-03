@@ -42,14 +42,16 @@ path present on only one side is still a difference, and a path that names no fi
 
 ## Covered routes
 
-| Route                            | Cases                                                                  |
-| -------------------------------- | ---------------------------------------------------------------------- |
-| `GET /health`                    | plain, with a query string                                             |
-| `GET /health/ready`              | database up                                                            |
-| unknown paths (JSON 404)         | `/no-such-route` and `/health/` with a session                         |
-| session and Origin gates         | 401 without a session or with an unknown one; 403 write without Origin |
-| `GET /system/auth/current-scope` | 200 with a session; 403 for an ungranted project or `project_id`       |
-| JSON body project check          | 403 for a body naming another project                                  |
+| Route                             | Cases                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `GET /health`                     | plain, with a query string                                                                                           |
+| `GET /health/ready`               | database up                                                                                                          |
+| unknown paths (JSON 404)          | `/no-such-route` and `/health/` with a session                                                                       |
+| session and Origin gates          | 401 without a session or with an unknown one; 403 write without Origin                                               |
+| `GET /system/auth/current-scope`  | 200 with a session; 403 for an ungranted project or `project_id`                                                     |
+| JSON body project check           | 403 for a body naming another project                                                                                |
+| `GET /system/project-coordinates` | 401 (no or unknown session); 200 (with and without `project_id`); 403 (ungranted project or `project_id`); 404 write |
+| `GET /system/canonical-entities`  | the same seven cases                                                                                                 |
 
 `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
 covered by each API's own tests (`apps/api-go/internal/app`).

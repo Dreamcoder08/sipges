@@ -11,6 +11,7 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/app`                      | The handler: platform middleware, auth gates in order, routes.          |
 | `internal/identity`                 | Session check, Origin and MFA gates, role gate (read-only).             |
 | `internal/tenancy`                  | Grant cache, project scope, `GET /system/auth/current-scope`.           |
+| `internal/reference`                | Project coordinates and canonical entities (embedded `data/*.json`).    |
 | `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).             |
 | `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).      |
 | `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.              |
