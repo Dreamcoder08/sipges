@@ -21,7 +21,7 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Host != "127.0.0.1" || cfg.Port != 8000 || !cfg.AccessLog || len(cfg.AllowedHosts) != 0 || cfg.DatabaseURL != synthURL {
+	if cfg.Host != "127.0.0.1" || cfg.Port != 8000 || !cfg.AccessLog || !cfg.RequireMFA || len(cfg.AllowedHosts) != 0 || cfg.DatabaseURL != synthURL {
 		t.Fatalf("defaults = %+v", cfg)
 	}
 }
@@ -34,11 +34,12 @@ func TestLoadReadsEveryVariable(t *testing.T) {
 		"SIPGES_PORT":          "8080",
 		"SIPGES_ALLOWED_HOSTS": " Sipges.Example.org , localhost ,",
 		"SIPGES_ACCESS_LOG":    "0",
+		"SIPGES_REQUIRE_MFA":   "0",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Host != "0.0.0.0" || cfg.Port != 8080 || cfg.AccessLog || !slices.Equal(cfg.AllowedHosts, []string{"sipges.example.org", "localhost"}) {
+	if cfg.Host != "0.0.0.0" || cfg.Port != 8080 || cfg.AccessLog || cfg.RequireMFA || !slices.Equal(cfg.AllowedHosts, []string{"sipges.example.org", "localhost"}) {
 		t.Fatalf("cfg = %+v", cfg)
 	}
 }
@@ -57,6 +58,7 @@ func TestLoadRejectsInvalidValues(t *testing.T) {
 		{"port signed", map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_PORT": "+80"}, "SIPGES_PORT must be an integer between 1 and 65535"},
 		{"port text", map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_PORT": "http"}, "SIPGES_PORT must be an integer between 1 and 65535"},
 		{"switch", map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_ACCESS_LOG": "true"}, "SIPGES_ACCESS_LOG must be unset or exactly '0' or '1'"},
+		{"mfa switch", map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_REQUIRE_MFA": "no"}, "SIPGES_REQUIRE_MFA must be unset or exactly '0' or '1'"},
 		{"host with port", map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_ALLOWED_HOSTS": "a.example:443"}, "SIPGES_ALLOWED_HOSTS has an invalid host name: a.example:443"},
 		{"host label", map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_ALLOWED_HOSTS": "-bad.example"}, "SIPGES_ALLOWED_HOSTS has an invalid host name: -bad.example"},
 	}

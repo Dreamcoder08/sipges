@@ -8,10 +8,14 @@ production route yet: routes move here one by one, each after a parity test agai
 | Path                                | What it holds                                                           |
 | ----------------------------------- | ----------------------------------------------------------------------- |
 | `cmd/api`                           | Composition root: configuration, pool, handler, graceful shutdown.      |
+| `internal/app`                      | The handler: platform middleware, auth gates in order, routes.          |
+| `internal/identity`                 | Session check, Origin and MFA gates, role gate (read-only).             |
+| `internal/tenancy`                  | Grant cache, project scope, `GET /system/auth/current-scope`.           |
 | `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).             |
 | `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).      |
 | `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.              |
-| `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health. |
+| `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health; |
+|                                     | Hono-compatible path, cookie, query and Origin reading (`hono.go`).     |
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                |
 | `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).           |
 
@@ -45,6 +49,33 @@ A panic in the work rolls the transaction back and releases the connection befor
 
 Known limits: pgx's `QueryTracer` does not see the pipelined first query, and a test run killed
 by `-timeout` skips the drop of its scratch database (`sipges_go_test_*`).
+
+## Authentication and project scope
+
+Every request passes the gates of the TypeScript API in its order (`apps/api/src/app.ts`):
+host allowlist, session (`auth-middleware.ts`), project scope (`tenancy-middleware.ts`), role
+gate. The Go API only verifies what TypeScript wrote: it reads `sessions`, `users`, `grants` and
+`tenants` and never writes them. Sign-in, MFA enrolment, Google sign-in and API keys stay in
+TypeScript until phase 4.
+
+- Session: cookie `sipges_session`, 64 lower-case hex characters, looked up by its SHA-256 with
+  `expires_at > now` (milliseconds, as JavaScript) and an active account. Public paths
+  (`/health`, `/login`, …) skip it; machine paths (`/mcp`, `/hooks/*`, the cron) skip it and
+  answer 404 until their routes move. Writes need `Origin` (or `Referer`) naming the Host.
+  With `SIPGES_REQUIRE_MFA` (default on) a session without TOTP or Google sign-in gets the
+  `mfa_required` 403.
+- Scope: `X-SIPGES-Scope`, then cookie `sipges_scope`, then the only grant; a `project_id`
+  query parameter or JSON body field naming another project is refused. Grants are cached for
+  30 s per process, as in each TypeScript isolate.
+- Handlers read tenant data with `tenancyhttp.WithRequestTenant(r, pool, fn)`: `WithTenant` with
+  the resolved project, the session's username as `app.actor` and its role's clearance.
+
+Paths, cookies, query parameters and headers are read the way Hono reads them
+(`internal/platform/httpx/hono.go`), so both APIs decide the same: `CanonicalPath` rewrites the
+path before any gate, and the gates and the router read that one string. `hono_cases_test.go`
+was recorded from raw requests to Hono 4.13.14 on @hono/node-server 2.1.4; regenerate it when
+either is upgraded. Where the port reads less than the WHATWG URL parser (an IDN or escaped
+`Origin`, an invalid escape Go's server refuses with 400), it fails closed.
 
 ## Run
 
