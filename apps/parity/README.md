@@ -55,6 +55,9 @@ path present on only one side is still a difference, and a path that names no fi
 | project choice and role gate        | one grant automatic, two need a choice, `X-SIPGES-Scope`, the encoded scope cookie, an ungranted scope; `consulta` writing or in an admin-only area; `reset-mfa` needs a project |
 | request reading                     | encoded `project_id` key, undecodable `project_id`, two `Origin` headers                                                                                                         |
 | paths as Hono reads them            | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                             |
+| `GET /system/v4/settings`           | saved settings (default project) and defaults (second); admin, `consulta`, both projects of `multi`; `PUT` refused for `consulta`                                                |
+| `GET /system/v4/situations`         | each project's synthetic records: rising topic, actors, territories, tone shift, lesson, undated, future and generated alert                                                     |
+| both situations routes              | 401; 403 for a choice, an ungranted scope or `project_id`; `project_id` of the scope; trailing slash; `HEAD`                                                                     |
 
 The runner seeds `consulta` (read-only, one project) and `multi` (analista, two projects) through the
 TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are

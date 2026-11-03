@@ -282,6 +282,66 @@ export const CASES: readonly ParityCase[] = [
     path: '//no-such-route',
     rawTarget: true,
   },
+
+  // Situations (seed-situations.ts): saved settings and records in the default project, other
+  // records and default settings in the second one.
+  ...(['settings', 'situations'] as const).flatMap((route): ParityCase[] => {
+    const path = `/system/v4/${route}`;
+    const normalize = route === 'situations' ? { normalize: ['generated_at'] } : {};
+    return [
+      { name: `${route}: one project`, method: 'GET', path, auth: 'admin', ...normalize },
+      { name: `${route}: read-only role`, method: 'GET', path, auth: 'consulta', ...normalize },
+      {
+        name: `${route}: second project`,
+        method: 'GET',
+        path,
+        auth: 'multi',
+        headers: SECOND,
+        ...normalize,
+      },
+      {
+        name: `${route}: default project of a two-project user`,
+        method: 'GET',
+        path,
+        auth: 'multi',
+        headers: { 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
+        ...normalize,
+      },
+      { name: `${route}: without a session`, method: 'GET', path },
+      { name: `${route}: two projects need a choice`, method: 'GET', path, auth: 'multi' },
+      {
+        name: `${route}: ungranted project`,
+        method: 'GET',
+        path,
+        auth: 'consulta',
+        headers: SECOND,
+      },
+      {
+        name: `${route}: project_id of another project`,
+        method: 'GET',
+        path: `${path}?project_id=PRJ-B`,
+        auth: 'admin',
+      },
+      {
+        name: `${route}: project_id of the scope`,
+        method: 'GET',
+        path: `${path}?project_id=PRJ-SECHURA`,
+        auth: 'admin',
+        ...normalize,
+      },
+      { name: `${route}: trailing slash`, method: 'GET', path: `${path}/`, auth: 'admin' },
+      { name: `${route}: HEAD`, method: 'HEAD', path, auth: 'admin' },
+    ];
+  }),
+  // The settings write stays in TypeScript: the Go API answers its JSON 404 to every role.
+  {
+    name: 'settings write: read-only role is refused',
+    method: 'PUT',
+    path: '/system/v4/settings',
+    auth: 'consulta',
+    sameOrigin: true,
+    body: { json: { window_days: 30 } },
+  },
 ];
 
 /** Problems in a route list; empty when it is valid. */

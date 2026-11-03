@@ -4,8 +4,10 @@
  *   admin    — SIPGES/PRJ-SECHURA only (chosen automatically);
  *   consulta — SIPGES/PRJ-SECHURA only; read-only role;
  *   multi    — SIPGES/PRJ-SECHURA and PARITY/PRJ-B (analista), so it must choose a project.
+ * Both projects also get situations records, and the default one saved settings (seed-situations.ts).
  */
 import { randomBytes } from 'node:crypto';
+import { seedSituations } from './seed-situations.ts';
 import { signIn } from './servers.ts';
 
 export const DEFAULT_SCOPE = 'SIPGES/PRJ-SECHURA';
@@ -58,5 +60,7 @@ export const seed = async (
   });
   const session = (name: keyof typeof users) =>
     signIn(tsUrl, users[name].username, passwords[users[name].username] ?? '');
-  return { admin: adminCookie, consulta: await session('consulta'), multi: await session('multi') };
+  const multi = await session('multi');
+  await seedSituations(tsUrl, adminCookie, multi, SECOND_SCOPE);
+  return { admin: adminCookie, consulta: await session('consulta'), multi };
 };
