@@ -80,3 +80,32 @@ func TestLoadErrorNeverEchoesTheDatabaseURL(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+// Same rules and messages as parseGoogle in apps/api/src/platform/config.ts.
+func TestLoadGoogleProvider(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		vars    map[string]string
+		enabled bool
+		err     string
+	}{
+		{map[string]string{}, false, ""},
+		{map[string]string{"SIPGES_GOOGLE_CLIENT_ID": " id ", "SIPGES_GOOGLE_CLIENT_SECRET": "synthetic"}, true, ""},
+		{map[string]string{"SIPGES_GOOGLE_CLIENT_ID": "  ", "SIPGES_GOOGLE_CLIENT_SECRET": ""}, false, ""},
+		{map[string]string{"SIPGES_GOOGLE_CLIENT_ID": "id"}, false, "Set both SIPGES_GOOGLE_CLIENT_ID and SIPGES_GOOGLE_CLIENT_SECRET, or neither"},
+		{map[string]string{"SIPGES_GOOGLE_ADMIN_EMAIL": "a@example.org"}, false, "SIPGES_GOOGLE_ADMIN_EMAIL requires a Google OAuth client"},
+	}
+	for _, c := range cases {
+		c.vars["SIPGES_DATABASE_URL"] = synthURL
+		cfg, err := Load(env(c.vars))
+		switch {
+		case c.err == "" && (err != nil || cfg.GoogleEnabled != c.enabled):
+			t.Errorf("%v: enabled=%v err=%v", c.vars, cfg.GoogleEnabled, err)
+		case c.err != "" && (err == nil || !strings.Contains(err.Error(), c.err)):
+			t.Errorf("%v: err=%v, want %q", c.vars, err, c.err)
+		}
+		if err != nil && strings.Contains(err.Error(), "synthetic") {
+			t.Errorf("error echoes the secret: %v", err)
+		}
+	}
+}

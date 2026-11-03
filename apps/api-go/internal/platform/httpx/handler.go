@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -67,8 +68,16 @@ func NewHandler(opts Options) http.Handler {
 		opts.Routes(mux)
 	}
 	// Unknown paths and methods answer the JSON 404 of the other APIs, not ServeMux's text 405.
-	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		WriteError(w, http.StatusNotFound, "Not Found")
+	notFound := func(w http.ResponseWriter, _ *http.Request) { WriteError(w, http.StatusNotFound, "Not Found") }
+	mux.HandleFunc("/", notFound)
+	// Hono routes a path with an empty segment (//x, /x//) as is and nothing matches it;
+	// ServeMux would redirect it to its cleaned form, so it gets the JSON 404 here.
+	routes := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.EscapedPath(), "//") {
+			notFound(w, r)
+			return
+		}
+		mux.ServeHTTP(w, r)
 	})
 	// CanonicalPath first: logs, gates and the router all read the path Hono would.
 	middleware := []Middleware{CanonicalPath(), RequestID()}
@@ -77,5 +86,5 @@ func NewHandler(opts Options) http.Handler {
 	}
 	middleware = append(middleware, Recover(opts.Logger), HostAllowlist(opts.AllowedHosts))
 	middleware = append(middleware, opts.Auth...)
-	return Chain(mux, middleware...)
+	return Chain(routes, middleware...)
 }

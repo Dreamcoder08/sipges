@@ -227,3 +227,19 @@ func TestServeShutsDownGracefully(t *testing.T) {
 		t.Fatalf("Serve = %v", err)
 	}
 }
+
+// Hono routes a path with an empty segment as is, and nothing matches it; ServeMux would
+// redirect it to its cleaned form instead (307 HTML), so the API answers the JSON 404.
+func TestEmptySegmentsAreJSON404NotRedirects(t *testing.T) {
+	t.Parallel()
+	h, _ := newHandler(t, Options{Ready: func(context.Context) error { return nil }})
+	for _, target := range []string{"/health//", "/x//health", "/health/ready//"} {
+		assertJSON(t, do(h, http.MethodGet, target, nil), 404, `{"detail":"Not Found"}`)
+	}
+	// A raw //health target (what the parity runner sends) reaches the handler the same way.
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.RequestURI, req.URL.Path = "//health", "//health"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	assertJSON(t, rec, 404, `{"detail":"Not Found"}`)
+}
