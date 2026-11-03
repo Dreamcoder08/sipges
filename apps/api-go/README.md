@@ -21,7 +21,7 @@ Bounded contexts go in `internal/<context>/{domain,application,infrastructure,ht
 
 `database.Open` keeps `DefaultMinConns` (2) connections open, created in the background at start, so
 a request never waits for a new connection (170–230 ms from the container to Neon). A `pool_min_conns`
-in `SIPGES_DATABASE_URL` overrides it. Routing from the Worker: [the Go container guide](../../docs/deployment/go-container.md).
+in `SIPGES_DATABASE_URL` overrides it, and it never exceeds `pool_max_conns`. Routing from the Worker: [the Go container guide](../../docs/deployment/go-container.md).
 
 ## Tenant transaction
 

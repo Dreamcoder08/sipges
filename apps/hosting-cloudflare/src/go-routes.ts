@@ -17,9 +17,10 @@ export const GO_ROUTES: readonly GoRoute[] = [];
 
 /**
  * Idle time before the container stops. Cold start measured at 0.74–0.88 s after sleep (ADR
- * 0032 §4), and each new database connection costs 170–230 ms, so a stop is felt. Ten minutes
- * keeps one work session warm (an open screen polls /system/events every 10 s, so it stays awake
- * while anyone uses SIPGES) and bounds billed idle time to ten minutes after the last request.
+ * 0032 §4), and each new database connection costs 170–230 ms, so a stop is felt. Only Go-routed
+ * requests keep the container awake: ten minutes covers the pauses between screens of one work
+ * session and bounds billed idle time to ten minutes after the last of them. (Once /system/events,
+ * polled every 10 s by an open screen, moves to Go, any open screen keeps it warm.)
  */
 export const GO_SLEEP_AFTER = '10m';
 

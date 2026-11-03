@@ -34,8 +34,8 @@ not get TypeScript's 401. Only routes whose parity cases include the unauthentic
 | Setting | Value | Why |
 | --- | --- | --- |
 | `constraints.regions` | `["ENAM"]` | Next to Neon `aws-us-east-1`; the spike landed in Toronto, Miami or Atlanta (26–33 ms warm p50). |
-| `sleepAfter` | `10m` | Cold start after sleep is 0.74–0.88 s and every new database connection 170–230 ms. An open SIPGES screen polls `/system/events` every 10 s, so the container stays warm while anyone works; 10 minutes bounds billed idle time after the last request. |
-| Warm pool | `pool_min_conns` default 2 | `apps/api-go` opens two connections in the background at start and pgx's health check replaces dropped ones, so a request does not pay for a new connection. The URL's `pool_min_conns` overrides it. |
+| `sleepAfter` | `10m` | Cold start after sleep is 0.74–0.88 s and every new database connection 170–230 ms. Only Go-routed requests keep it awake: 10 minutes covers the pauses between screens of a work session and bounds billed idle time after the last one. Once `/system/events` (polled every 10 s by an open screen) moves to Go, any open screen keeps it warm. |
+| Warm pool | `pool_min_conns` default 2 | `apps/api-go` opens two connections in the background at start and pgx's health check replaces dropped ones, so a request does not pay for a new connection. The URL's `pool_min_conns` overrides it; it never exceeds `pool_max_conns`. |
 | `instance_type` / `max_instances` | `lite` / `2` | One named instance serves; the second covers a rollout. |
 | Database | `SIPGES_GO_DATABASE_URL` secret | Hyperdrive is not documented for containers (ADR 0032 L3): the container connects to Neon over TLS. |
 

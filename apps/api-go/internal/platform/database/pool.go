@@ -5,7 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -15,6 +15,10 @@ import (
 // docs/adr/0032 §4). pgx's health check (every minute) replaces dropped ones; the URL's
 // pool_min_conns overrides it.
 const DefaultMinConns = 2
+
+// minConnsParam finds pool_min_conns as a URL query or keyword/value parameter, not as text
+// elsewhere (a password, a database name).
+var minConnsParam = regexp.MustCompile(`(^|[?&\s])pool_min_conns=`)
 
 // Open parses url and returns a pool that never blocks the start: the warm connections open in
 // the background, so a database outage shows in readiness instead of stopping the process. Pool
@@ -31,8 +35,8 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	if _, ok := cfg.ConnConfig.RuntimeParams["application_name"]; !ok {
 		cfg.ConnConfig.RuntimeParams["application_name"] = "sipges-api-go"
 	}
-	if !strings.Contains(url, "pool_min_conns") {
-		cfg.MinConns = DefaultMinConns
+	if !minConnsParam.MatchString(url) {
+		cfg.MinConns = min(DefaultMinConns, cfg.MaxConns)
 	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

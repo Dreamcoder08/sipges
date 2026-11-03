@@ -79,3 +79,27 @@ func TestOpenWarmsConnectionsBeforeTheFirstQuery(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 }
+
+func TestOpenNeverWarmsMoreConnectionsThanTheMaximum(t *testing.T) {
+	t.Parallel()
+	pool, err := database.Open(context.Background(), unreachable+"&pool_max_conns=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if got := pool.Config().MinConns; got != 1 {
+		t.Fatalf("MinConns = %d, want 1", got)
+	}
+}
+
+func TestOpenIgnoresTheWordPoolMinConnsOutsideAParameter(t *testing.T) {
+	t.Parallel()
+	pool, err := database.Open(context.Background(), "postgres://synthetic:pool_min_conns@127.0.0.1:1/synthetic?connect_timeout=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	if got := pool.Config().MinConns; got != 2 {
+		t.Fatalf("MinConns = %d, want 2", got)
+	}
+}
