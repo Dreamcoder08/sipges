@@ -200,11 +200,15 @@ verbatim after the first `=`. Run it only against a deployment whose owner autho
 | After #199 (typed parameters, no type catalogue) | 504 | 1371 / 1830 | 932 / 1295 |
 | #199 again (run labelled "after #200"; #200 was not deployed) | 497 | 1410 / 1991 | 927 / 1485 |
 | #199 again, this tool | 488 | 1396 / 1629 | 963 / 1634 |
+| After #200 + #201 (grant cache, pipelined tenant setup; `8538c2d`) | 682 | 1017 / 1341 | 668 / 1053 |
 
 From v1.1.0 to #199 the same load serves about 1.7× the requests, and Inicio p50 drops by ~1 s.
 CI failed on `main` after #200 and #201, so Deploy Workers skipped them: production stayed at
-`cd001ea` (#199) and the last three rows measure the same code. Their spread (488–504 requests,
-Inicio p95 1629–1991 ms) is the run-to-run noise. #200 and #201 have no production measurement yet.
+`cd001ea` (#199) and the three #199 rows measure the same code. Their spread (488–504 requests,
+Inicio p95 1629–1991 ms) is the run-to-run noise. With #200 and #201 deployed (the last row; the
+only other runtime change since #199, #208, is Node-only), the same load serves 682 requests, ~1.4×
+the #199 runs and well outside that noise; Inicio p50 drops by ~380 ms and Registros p50 by ~300 ms.
+One run cannot split the gain between the two PRs.
 The first four rows came from the ad-hoc script this tool replaces; it used the same screens,
 steps and account, with a `floor(p·n)` percentile index instead of nearest rank (a difference of
 at most one sample).
