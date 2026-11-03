@@ -155,7 +155,7 @@ func start(t *testing.T, requireMFA bool) *server {
 	}
 	t.Cleanup(pool.Close)
 	clk := &clock{at: t0.Add(-time.Hour)}
-	h := app.NewHandler(pool, app.Options{
+	h, err := app.NewHandler(pool, app.Options{
 		Logger:     slog.New(slog.DiscardHandler),
 		RequireMFA: requireMFA,
 		Now:        clk.now,
@@ -182,6 +182,9 @@ func start(t *testing.T, requireMFA bool) *server {
 			})
 		},
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	return &server{url: srv.URL, addr: srv.Listener.Addr().String(), clock: clk}

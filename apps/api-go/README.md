@@ -15,6 +15,8 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/audit`                    | `GET /system/audit`, the `GET /system/events` activity stream (SSE).     |
 | `internal/management`               | Management overview and CSV report of the active project.                |
 | `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
+| `internal/situations`               | `GET /system/v4/settings` and `GET /system/v4/situations` (read-only).   |
+| `internal/reference`                | Project coordinates and canonical entities (embedded `data/*.json`).     |
 | `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).              |
 | `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).       |
 | `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.               |
@@ -80,6 +82,22 @@ path before any gate, and the gates and the router read that one string. `hono_c
 was recorded from raw requests to Hono 4.13.14 on @hono/node-server 2.1.4; regenerate it when
 either is upgraded. Where the port reads less than the WHATWG URL parser (an IDN or escaped
 `Origin`, an invalid escape Go's server refuses with 400), it fails closed.
+
+## Situations
+
+`internal/situations` ports the read routes of `apps/api/src/contexts/situations`: the project
+settings with their recommendation catalogue, and the situations report (records grouped by topic,
+actor and territory, weighted by recency, with lessons). Both read `project_settings` and
+`module_records` in the scope's tenant transaction, so a read-only account never sees records
+marked `restringido`. `PUT /system/v4/settings` (admin-only, audited) stays in TypeScript.
+
+The rules read stored JSON the way JavaScript does (`domain/js.go`): `String()` and number
+formatting, `trim` and `\s`, full Unicode case mapping, UTF-16 ordering and lengths (a title cut
+inside an emoji keeps the lone surrogate, as `JSON.stringify` writes it), `Math.round`, and the `$`
+patterns of `replaceAll`. `0.5 ** e` is computed with 160 bits (`domain/pow.go`), because
+`math.Pow` and Node differ in the last bit for one input in eight. `testdata/generate.mjs` records
+the TypeScript routes' answers on synthetic scenarios (`fixtures.json`); rerun it after changing
+either side (`--check` reports drift).
 
 ## Run
 
