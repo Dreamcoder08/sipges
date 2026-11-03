@@ -13,9 +13,22 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.              |
 | `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health. |
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                |
+| `internal/identity`                 | Session lookup, role gate, `GET /system/auth/me` and `/providers`.      |
+| `internal/tenancy`                  | Project resolution from grants (30 s cache), project checks.            |
 | `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).           |
 
 Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used.
+
+## Request pipeline
+
+Every request that is not `/health…`, a public path or a machine path runs what `createApp` runs, in
+the same order and with the same messages: the session (the cookie's SHA-256 looked up on the base pool,
+never written), the Origin check on writes, the MFA requirement (`SIPGES_REQUIRE_MFA`, default on), the
+project (`X-SIPGES-Scope`, else the `sipges_scope` cookie, else the only grant; `project_id` and JSON
+bodies naming another project are refused), then the role gate. Cookies and the query are read as Hono
+reads them (first valid cookie, `decodeURIComponent` with its fallback), so both APIs decide alike on the
+same bytes. Grants are cached 30 s per process, like each TypeScript isolate. One deliberate difference:
+the JSON body read for the project check is capped at 32 MiB (413). `apps/parity` pins the behaviour.
 
 ## Warm pool
 

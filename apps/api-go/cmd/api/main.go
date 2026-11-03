@@ -8,16 +8,23 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
 	"time"
 
+	identityapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
+	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
+	identityinfra "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/logging"
+	tenancyapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
+	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
+	tenancyinfra "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
 )
 
 // shutdownGrace bounds how long in-flight requests may run after SIGTERM.
@@ -45,11 +52,30 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 	}
 	defer pool.Close()
 
+	// Sessions and grants are read on the base role's pool: sipges_tenant cannot see them.
+	identity := identityapp.NewService(identityinfra.SessionStore{DB: pool}, time.Now)
+	tenancy := tenancyapp.NewService(tenancyinfra.GrantStore{DB: pool}, time.Now)
+	username := func(r *http.Request) (string, bool) {
+		p := identityhttp.PrincipalFrom(r.Context())
+		if p == nil {
+			return "", false
+		}
+		return p.Username, true
+	}
 	handler := httpx.NewHandler(httpx.Options{
 		Logger:       log,
 		Ready:        database.Ping(pool),
 		AllowedHosts: cfg.AllowedHosts,
 		AccessLog:    cfg.AccessLog,
+		Routes: func(mux *http.ServeMux) {
+			identityhttp.Routes(mux, identity, cfg.GoogleEnabled, log)
+		},
+		// The order of createApp: session, tenancy, role gate.
+		Pipeline: []httpx.Middleware{
+			identityhttp.Session(identity, cfg.RequireMFA, log),
+			tenancyhttp.Tenancy(tenancy, username, log),
+			identityhttp.RoleGate(),
+		},
 	})
 	ln, err := listen("tcp", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)))
 	if err != nil {

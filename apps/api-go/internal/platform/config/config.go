@@ -26,6 +26,11 @@ type Config struct {
 	AllowedHosts []string
 	// AccessLog writes one JSON line per request (SIPGES_ACCESS_LOG, default on).
 	AccessLog bool
+	// RequireMFA makes every session enroll TOTP first (SIPGES_REQUIRE_MFA, default on, ADR 0009).
+	RequireMFA bool
+	// GoogleEnabled is true when the Google OAuth client is configured (SIPGES_GOOGLE_CLIENT_ID
+	// and SIPGES_GOOGLE_CLIENT_SECRET, both or neither). The secret itself is never kept here.
+	GoogleEnabled bool
 }
 
 // Load validates the environment and reports every invalid variable at once.
@@ -46,6 +51,10 @@ func Load(lookup Lookup) (Config, error) {
 	cfg.AccessLog, err = parseSwitch(lookup, "SIPGES_ACCESS_LOG", true)
 	errs = append(errs, err)
 	cfg.AllowedHosts, err = parseAllowedHosts(lookup)
+	errs = append(errs, err)
+	cfg.RequireMFA, err = parseSwitch(lookup, "SIPGES_REQUIRE_MFA", true)
+	errs = append(errs, err)
+	cfg.GoogleEnabled, err = parseGoogle(lookup)
 	errs = append(errs, err)
 	if err := errors.Join(errs...); err != nil {
 		return Config{}, fmt.Errorf("invalid configuration: %w", err)
@@ -96,4 +105,24 @@ func parseAllowedHosts(lookup Lookup) ([]string, error) {
 		hosts = append(hosts, host)
 	}
 	return hosts, nil
+}
+
+// parseGoogle follows parseGoogle of the TypeScript config: trimmed values, both or neither.
+func parseGoogle(lookup Lookup) (bool, error) {
+	trimmed := func(name string) string {
+		v, _ := lookup(name)
+		return strings.TrimSpace(v)
+	}
+	id, secret := trimmed("SIPGES_GOOGLE_CLIENT_ID"), trimmed("SIPGES_GOOGLE_CLIENT_SECRET")
+	if id == "" && secret == "" {
+		if trimmed("SIPGES_GOOGLE_ADMIN_EMAIL") != "" {
+			return false, errors.New("SIPGES_GOOGLE_ADMIN_EMAIL requires a Google OAuth client")
+		}
+		return false, nil
+	}
+	if id == "" || secret == "" {
+		// The TypeScript API's message, word for word.
+		return false, errors.New("Set both SIPGES_GOOGLE_CLIENT_ID and SIPGES_GOOGLE_CLIENT_SECRET, or neither") //nolint:staticcheck // ST1005: same text as config.ts
+	}
+	return true, nil
 }

@@ -18,6 +18,9 @@ linters:
     - unparam
     - usestdlibvars
   settings:
+    misspell:
+      # Spanish words of the user-facing messages, which are the API contract (role names, details).
+      ignore-rules: [administrativo, coordinador]
     revive:
       rules:
         - name: exported
