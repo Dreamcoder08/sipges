@@ -56,6 +56,13 @@ const RULE_COLUMNS = `id, name, enabled, trigger_module, trigger_actions, condit
 const audit = (tx: SqlClient, recordId: string | null, action: string, detail: string, at: Date) =>
   appendAudit(tx, { module: AUTOMATION_AUDIT_MODULE, recordId, action, detail, at });
 
+/**
+ * How long an audit event may stay uncommitted after its timestamp and still be scanned. Well
+ * above a request's lifetime on Workers (30 s); on Node nothing enforces it, so a transaction
+ * that writes audit rows must not stay open longer.
+ */
+const CURSOR_SETTLE_MS = 60_000;
+
 /** Rules, channels, runs and notifications under forced RLS (docs/adr/0014). */
 export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
   activeTenants: async () =>
@@ -266,9 +273,18 @@ export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
         );
         queued += inserted.length;
       }
-      await tx.query('UPDATE automation_cursors SET last_audit_id = $1', [
-        events[events.length - 1]?.auditId ?? cursor.last_audit_id,
-      ]);
+      // Ids are taken when a row is inserted, not when it commits, so a slower writer can commit
+      // a lower id after a higher one was scanned. The cursor only passes events older than the
+      // settle window; newer ones are read again next time and their runs are not duplicated
+      // (automation_runs is unique per rule, audit id and step).
+      const horizon = at.getTime() - CURSOR_SETTLE_MS;
+      let settled = cursor.last_audit_id;
+      for (const event of events) {
+        if (event.at.getTime() > horizon) break;
+        settled = event.auditId;
+      }
+      if (settled !== cursor.last_audit_id)
+        await tx.query('UPDATE automation_cursors SET last_audit_id = $1', [settled]);
       return { scanned: events.length, queued };
     }),
 
