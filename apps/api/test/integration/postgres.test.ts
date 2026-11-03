@@ -155,4 +155,47 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
       server.close();
     }
   });
+
+  it('sends a query whose parameters are all cast in one message', async () => {
+    // A parameter of unknown type makes postgres.js wait for the server to describe the
+    // statement before sending values: two round trips instead of one.
+    const target = new URL(url);
+    let writes = 0;
+    const server = createServer((client) => {
+      const upstream = connect(Number(target.port || 5432), target.hostname);
+      client.on('data', (chunk: Buffer) => {
+        writes++;
+        upstream.write(chunk);
+      });
+      upstream.on('data', (chunk: Buffer) => client.write(chunk));
+      client.on('close', () => upstream.destroy());
+      upstream.on('close', () => client.destroy());
+      client.on('error', () => upstream.destroy());
+      upstream.on('error', () => client.destroy());
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    const proxied = new URL(url);
+    proxied.hostname = '127.0.0.1';
+    proxied.port = String(typeof address === 'object' && address ? address.port : 0);
+    const fresh = postgresClient(proxied.toString(), { max: 1 });
+    try {
+      await fresh.client.query('SELECT 1');
+      const at = new Date('2026-11-02T12:00:00.123Z');
+      writes = 0;
+      const rows = await fresh.client.query<Record<string, unknown>>(
+        `SELECT $1::text AS t, $2::timestamptz AS at, $3::integer AS n, $4::boolean AS b,
+                $5::bigint AS big, $6::text AS missing`,
+        ['token', at, 7, true, 9, null],
+      );
+      expect(writes).toBe(1);
+      expect(rows).toEqual([{ t: 'token', at, n: 7, b: true, big: '9', missing: null }]);
+      writes = 0;
+      await fresh.client.query('SELECT $1 AS bare', ['x']);
+      expect(writes).toBe(2);
+    } finally {
+      await fresh.close();
+      server.close();
+    }
+  });
 });
