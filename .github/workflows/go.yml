@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'apps/api-go/**'
+      - 'engines/go/**'
       - 'apps/api/src/**'
       - 'apps/parity/**'
       - 'packages/**'
@@ -16,6 +17,7 @@ on:
     branches: [main]
     paths:
       - 'apps/api-go/**'
+      - 'engines/go/**'
       - 'apps/api/src/**'
       - 'apps/parity/**'
       - 'packages/**'
@@ -111,7 +113,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build apps/api-go/Dockerfile (the image the Go routing Worker deploys)
-        run: docker build --target runtime -t sipges-api-go:ci apps/api-go
+        run: docker build --target runtime -f apps/api-go/Dockerfile -t sipges-api-go:ci .
       # No database needed: /health is static and the warm pool connects in the background.
       - name: Smoke test /health as the non-root image user
         run: |

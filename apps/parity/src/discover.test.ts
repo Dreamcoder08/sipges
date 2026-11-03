@@ -10,6 +10,7 @@ test('every context file in src/contexts is discovered without editing index.ts'
   for (const name of [
     'audit',
     'geography',
+    'indicators',
     'management',
     'prevention',
     'reference',

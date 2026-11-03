@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 )
 
 // Deps is what the composition root hands every bounded context.
@@ -16,6 +18,8 @@ type Deps struct {
 	Logger *slog.Logger
 	// Now is the clock; nil means time.Now.
 	Now func() time.Time
+	// Engines are the compiled Rust engines (indicators, analytics).
+	Engines *engines.Set
 }
 
 // prepareRoutes builds a context's services and returns the function that mounts its routes.
