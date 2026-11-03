@@ -23,10 +23,12 @@ export const withTenant = async <T>(
     // Not awaited before the work starts: statements on one connection run in order, so the
     // work's first query is sent right behind the tenant settings and runs under them, saving
     // a round trip on every tenant request. If entering fails, PostgreSQL rejects every later
-    // statement of the transaction (25P02), and the entering error is the one reported.
-    const entered = tx.exec(statement);
-    const [, value] = await Promise.all([entered, fn(tx)]);
-    return value;
+    // statement of the transaction (25P02). Both are awaited to the end, so the transaction
+    // never settles while the work still runs, and a failure to enter is the error reported.
+    const [entered, worked] = await Promise.allSettled([tx.exec(statement), fn(tx)]);
+    if (entered.status === 'rejected') throw entered.reason;
+    if (worked.status === 'rejected') throw worked.reason;
+    return worked.value;
   });
 };
 

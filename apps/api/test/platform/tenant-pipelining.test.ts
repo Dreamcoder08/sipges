@@ -62,4 +62,37 @@ describe('withTenant on a remote database', () => {
     expect(called).toBe(false);
     expect(t.order).toEqual([]);
   });
+
+  it('does not settle before the work finishes when entering fails', async () => {
+    const t = held();
+    const steps: string[] = [];
+    let finishWork!: () => void;
+    const work = withTenant(t.sql, 'ACME/NORTE', async (tx) => {
+      await tx.query('SELECT 1').catch(() => undefined);
+      await new Promise<void>((r) => (finishWork = r));
+      steps.push('work done');
+      return 'done';
+    });
+    const settled = work.then(
+      () => steps.push('settled'),
+      () => steps.push('settled'),
+    );
+    t.answer(new Error('could not enter tenant'));
+    await new Promise((r) => setImmediate(r));
+    expect(steps).toEqual([]);
+    finishWork();
+    await settled;
+    expect(steps).toEqual(['work done', 'settled']);
+    await expect(work).rejects.toThrow('could not enter tenant');
+  });
+
+  it('reports the failure to enter even when the work failed first', async () => {
+    const t = held();
+    const work = withTenant(t.sql, 'ACME/NORTE', async () => {
+      throw new Error('work failed');
+    });
+    await new Promise((r) => setImmediate(r));
+    t.answer(new Error('could not enter tenant'));
+    await expect(work).rejects.toThrow('could not enter tenant');
+  });
 });
