@@ -50,6 +50,7 @@ it is installed locally; the repo does not require it.
 | `pnpm parity` | Go/TypeScript parity: same requests to both APIs on one synthetic database, diffs status and JSON ([apps/parity](apps/parity/README.md)). |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
 | `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
+| `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
 | `pnpm --filter @sipges/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @sipges/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
 | `pnpm --filter @sipges/api import:base-maestra -- --seed <file>` | Insert-only load of the prototype's Base Maestra (dry-run by default). |
@@ -87,6 +88,11 @@ when the user asks for it) and their own work-unit commit:
 Pick the review lens by what the change touched, not all of them: readability (naming, structure), reliability
 (behaviour, state, tests), resilience (external services, partial failures, degraded providers) and risk
 (security, permissions, data exposure or loss).
+
+## Parallel work
+
+Parallel pull requests add files instead of editing shared lists, and shared documents have one writer
+(the orchestrator): see [docs/agents/parallel-delivery.md](docs/agents/parallel-delivery.md).
 
 ## Rules
 
