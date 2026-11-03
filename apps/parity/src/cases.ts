@@ -4,37 +4,10 @@
  * runner does not change.
  */
 
-export type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+import { CONTEXT_CASES } from './contexts/index.ts';
+import type { ParityCase } from './types.ts';
 
-export type ParityCase = {
-  /** Unique, stable name shown in the report. */
-  readonly name: string;
-  readonly method: Method;
-  /** Path and query, starting with `/`. */
-  readonly path: string;
-  /** Extra headers; the value `{origin}` becomes the base URL of the API being called. */
-  readonly headers?: Readonly<Record<string, string>>;
-  readonly body?:
-    | { readonly json: unknown }
-    | { readonly form: Readonly<Record<string, string>> }
-    /** Sent byte for byte (application/json unless headers say otherwise). */
-    | { readonly raw: string };
-  /** Send `path` exactly as written (dot segments, backslashes), through node:http. */
-  readonly rawTarget?: boolean;
-  /**
-   * Sends the session of a synthetic user the runner seeds through the TypeScript API (seed.ts):
-   * `admin` holds the default project; `consulta` (read-only role) holds it too; `multi`
-   * (analista) holds two projects and must choose one. Both APIs read the same sessions.
-   */
-  readonly auth?: 'admin' | 'consulta' | 'multi';
-  /** Sends `Origin` set to each API's own base URL, as a same-origin browser write would. */
-  readonly sameOrigin?: true;
-  /**
-   * JSON paths whose value legitimately differs between two runs (ids, timestamps), such as
-   * `id` or `items.*.created_at`. Keep the list small: name fields, never whole objects.
-   */
-  readonly normalize?: readonly string[];
-};
+export type { Method, ParityCase } from './types.ts';
 
 const UNKNOWN_TOKEN = 'sipges_session=' + 'f'.repeat(64);
 const WITH_ORIGIN = { origin: '{origin}' };
@@ -283,46 +256,8 @@ export const CASES: readonly ParityCase[] = [
     rawTarget: true,
   },
 
-  // Reference context (T16): repository references of the registered tenant only. Every role
-  // may read them, so the 403s come from the project scope, never from the role gate.
-  ...['/system/project-coordinates', '/system/canonical-entities'].flatMap((path): ParityCase[] => [
-    { name: `${path} without a session`, method: 'GET', path },
-    {
-      name: `${path} with an unknown session`,
-      method: 'GET',
-      path,
-      headers: { cookie: UNKNOWN_TOKEN },
-    },
-    { name: `${path} with a session`, method: 'GET', path, auth: 'admin' },
-    {
-      name: `${path} with project_id of the scope`,
-      method: 'GET',
-      path: `${path}?project_id=PRJ-SECHURA`,
-      auth: 'admin',
-    },
-    {
-      name: `${path} of a project without a grant`,
-      method: 'GET',
-      path,
-      auth: 'admin',
-      headers: { 'x-sipges-scope': 'ACME/NORTE' },
-    },
-    {
-      name: `${path} with project_id outside the scope`,
-      method: 'GET',
-      path: `${path}?project_id=NORTE`,
-      auth: 'admin',
-    },
-    { name: `${path} rejects a write`, method: 'POST', path, auth: 'admin', sameOrigin: true },
-    { name: `${path} for a read-only user`, method: 'GET', path, auth: 'consulta' },
-    {
-      name: `${path} of another project is unavailable`,
-      method: 'GET',
-      path,
-      auth: 'multi',
-      headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
-    },
-  ]),
+  // Ported contexts (contexts/*.ts), reading the synthetic rows of fixtures.ts.
+  ...CONTEXT_CASES,
 ];
 
 /** Problems in a route list; empty when it is valid. */
