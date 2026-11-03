@@ -282,6 +282,64 @@ export const CASES: readonly ParityCase[] = [
     path: '//no-such-route',
     rawTarget: true,
   },
+
+  // Prevention, read-only (T19): plans of the seeded projects (seed.ts), tenant-scoped.
+  ...(['actions', 'situation-room', 'summary'] as const).flatMap((route): ParityCase[] => {
+    const path = `/system/prevention/${route}`;
+    return [
+      { name: `prevention ${route}`, method: 'GET', path, auth: 'admin' },
+      { name: `prevention ${route} without a session`, method: 'GET', path },
+      { name: `prevention ${route} read-only role`, method: 'GET', path, auth: 'consulta' },
+      {
+        name: `prevention ${route} of a project without a grant`,
+        method: 'GET',
+        path,
+        auth: 'admin',
+        headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
+      },
+      {
+        name: `prevention ${route} with project_id of another project`,
+        method: 'GET',
+        path: `${path}?project_id=PRJ-B`,
+        auth: 'admin',
+      },
+      {
+        name: `prevention ${route} with project_id of its project`,
+        method: 'GET',
+        path: `${path}?project_id=PRJ-SECHURA`,
+        auth: 'admin',
+      },
+      { name: `prevention ${route} before choosing a project`, method: 'GET', path, auth: 'multi' },
+      {
+        name: `prevention ${route} of the second project`,
+        method: 'GET',
+        path,
+        auth: 'multi',
+        headers: SECOND,
+      },
+      {
+        name: `prevention ${route} of the first project by a two-project user`,
+        method: 'GET',
+        path,
+        auth: 'multi',
+        headers: { 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
+      },
+    ];
+  }),
+  {
+    name: 'prevention actions with a trailing slash',
+    method: 'GET',
+    path: '/system/prevention/actions/',
+    auth: 'admin',
+  },
+  {
+    name: 'prevention plan write by the read-only role',
+    method: 'POST',
+    path: '/system/prevention/actions',
+    auth: 'consulta',
+    sameOrigin: true,
+    body: { json: { alert_id: 'x', title: 'Plan', responsible: 'Equipo', due_date: '2099-01-01' } },
+  },
 ];
 
 /** Problems in a route list; empty when it is valid. */
