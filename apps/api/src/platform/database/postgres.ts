@@ -14,6 +14,12 @@ const withDeclaredTypes = (typed: Typed, text: string, params: readonly unknown[
   }) as postgres.ParameterOrJSON<never>[];
 };
 
+/**
+ * `query` and `exec` must both stay `async` wrappers that await the driver: postgres.js hands a
+ * query to the connection a fixed number of microtasks after it is awaited, so statements keep
+ * the order they were called in. withTenant relies on that to send a transaction's first query
+ * right behind its tenant settings (tenant-transaction.ts).
+ */
 const wrap = (sql: Sql, typed: Typed, transaction: SqlClient['transaction']): SqlClient => ({
   query: async <Row>(text: string, params: readonly unknown[] = []) =>
     (await sql.unsafe(text, withDeclaredTypes(typed, text, params))) as unknown as Row[],
