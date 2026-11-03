@@ -44,9 +44,10 @@ const server = serve(
 // interval makes the next one skip instead of overlapping and holding more pool connections.
 const automationTick = skipWhileRunning(() => container.runtime.scheduled(), {
   onError: (error) => log('error', 'automation_tick_failed', { error }),
-  onSkip: () =>
+  onSkip: (runningForMs) =>
     log('warn', 'automation_tick_skipped', {
       reason: 'previous tick still running',
+      running_for_ms: runningForMs,
       interval_seconds: config.automation.intervalSeconds,
     }),
 });

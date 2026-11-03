@@ -6,7 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
-- Servidor Node: si una ronda de automatizaciones tarda más que `SIPGES_AUTOMATION_INTERVAL`, la siguiente se omite (con un aviso `automation_tick_skipped` en el registro) en lugar de superponerse y ocupar más conexiones de la base mientras espera.
+- Servidor Node: si una ronda de automatizaciones tarda más que `SIPGES_AUTOMATION_INTERVAL`, la siguiente se omite (con un aviso `automation_tick_skipped` en el registro que indica cuánto lleva la ronda anterior, para detectar una ronda colgada) en lugar de superponerse y ocupar más conexiones de la base mientras espera.
 - Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
 
 ### Rendimiento

@@ -32,6 +32,27 @@ describe('skipWhileRunning (Node automation interval)', () => {
     expect(task).toHaveBeenCalledTimes(1);
   });
 
+  it('tells a skip how long the previous run has been in flight, so a hung run is visible', async () => {
+    const first = deferred();
+    let now = 1_000;
+    const onSkip = vi.fn();
+    const trigger = skipWhileRunning(() => first.promise, {
+      onError: vi.fn(),
+      onSkip,
+      now: () => now,
+    });
+
+    trigger();
+    now = 61_000;
+    trigger();
+    now = 121_000;
+    trigger();
+
+    expect(onSkip.mock.calls).toEqual([[60_000], [120_000]]);
+    first.resolve();
+    await flush();
+  });
+
   it('runs again on the next trigger once the previous run has settled', async () => {
     const task = vi.fn(() => Promise.resolve());
     const trigger = skipWhileRunning(task, { onError: vi.fn() });
