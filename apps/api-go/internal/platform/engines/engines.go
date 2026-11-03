@@ -57,13 +57,3 @@ func open(ctx context.Context) (*Set, error) {
 	}
 	return &Set{Indicators: indicators, Analytics: analytics}, nil
 }
-
-// MustShared is Shared for composition code that cannot return an error: the modules are
-// embedded, so a failure to compile them is a build defect, not a runtime condition.
-func MustShared() *Set {
-	set, err := Shared(context.Background())
-	if err != nil {
-		panic(err)
-	}
-	return set
-}

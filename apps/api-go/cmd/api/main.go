@@ -51,7 +51,8 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		return err
 	}
 
-	handler := app.NewHandler(pool, app.Options{
+	// Engines is set, so NewHandler never compiles them with its own background context.
+	handler, err := app.NewHandler(pool, app.Options{ //nolint:contextcheck // see above
 		Engines:       compiled,
 		Logger:        log,
 		AllowedHosts:  cfg.AllowedHosts,
@@ -59,6 +60,9 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		RequireMFA:    cfg.RequireMFA,
 		GoogleEnabled: cfg.GoogleEnabled,
 	})
+	if err != nil {
+		return err
+	}
 	ln, err := listen("tcp", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)))
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)

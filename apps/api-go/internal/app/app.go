@@ -3,6 +3,8 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -19,6 +21,10 @@ import (
 	prevention "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/application"
 	preventionhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/http"
 	preventionsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/infrastructure"
+	referenceapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/application"
+	referencedomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/domain"
+	referencehttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/http"
+	reference "github.com/Dreamcoder08/sipges/apps/api-go/internal/reference/infrastructure"
 	situationshttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/http"
 	situationssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
@@ -37,18 +43,28 @@ type Options struct {
 	// Now is the clock for session expiry, the grant cache and "today" in prevention and
 	// situations; nil means time.Now.
 	Now func() time.Time
-	// Engines are the compiled Rust engines; nil means engines.MustShared().
+	// Engines are the compiled Rust engines; nil means engines.Shared.
 	Engines *engines.Set
 	// Routes adds routes beyond the ones registered here (tests).
 	Routes func(mux *http.ServeMux)
 }
 
-// NewHandler builds the API on pool.
-func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
+// NewHandler builds the API on pool. It fails only when the embedded reference files do not
+// match their contract.
+func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
+	references, err := reference.NewEmbeddedReader()
+	if err != nil {
+		return nil, fmt.Errorf("reference: %w", err)
+	}
+	referenceService := referenceapp.NewService(references)
 	grants := application.NewGrantCache(tenancy.Grants{DB: pool}.List, opts.Now)
 	sessions := identity.Sessions{DB: pool, Now: opts.Now}
 	if opts.Engines == nil {
-		opts.Engines = engines.MustShared()
+		compiled, err := engines.Shared(context.Background())
+		if err != nil {
+			return nil, err
+		}
+		opts.Engines = compiled
 	}
 	return httpx.NewHandler(httpx.Options{
 		Logger:       opts.Logger,
@@ -71,9 +87,16 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 			indicatorshttp.Register(mux, indicatorshttp.Deps{Pool: pool, Engine: opts.Engines.Indicators, Logger: opts.Logger})
 			preventionhttp.Routes(mux, prevention.Service{Store: preventionsql.Actions{DB: pool}, Now: opts.Now}, opts.Logger)
 			situationshttp.Routes(mux, situationshttp.Options{DB: pool, Store: situationssql.Store{}, Now: opts.Now, Logger: opts.Logger})
+			referencehttp.Register(mux, referenceService, referenceScope, opts.Logger)
 			if opts.Routes != nil {
 				opts.Routes(mux)
 			}
 		},
-	})
+	}), nil
+}
+
+// referenceScope hands the tenancy middleware's project to the reference context.
+func referenceScope(ctx context.Context) (referencedomain.Scope, bool) {
+	s, ok := tenancyhttp.ScopeFrom(ctx)
+	return referencedomain.Scope{CompanyID: s.CompanyID, ProjectID: s.ProjectID}, ok
 }

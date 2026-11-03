@@ -156,10 +156,14 @@ func start(t *testing.T) string {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	srv := httptest.NewServer(app.NewHandler(pool, app.Options{
+	h, err := app.NewHandler(pool, app.Options{
 		Logger: slog.New(slog.DiscardHandler),
 		Now:    func() time.Time { return t0 },
-	}))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	return srv.URL
 }
@@ -198,7 +202,11 @@ func expect(t *testing.T, gotStatus int, gotBody string, status int, body string
 // engine answers a request the way the routes should have built it.
 func engine(t *testing.T, request string) string {
 	t.Helper()
-	value, err := engines.MustShared().Indicators.Call(t.Context(), []byte(request))
+	set, err := engines.Shared(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	value, err := set.Indicators.Call(t.Context(), []byte(request))
 	if err != nil {
 		t.Fatal(err)
 	}

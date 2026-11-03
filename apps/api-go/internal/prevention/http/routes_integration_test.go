@@ -161,10 +161,14 @@ func start(t *testing.T) string {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
-	srv := httptest.NewServer(app.NewHandler(pool, app.Options{
+	h, err := app.NewHandler(pool, app.Options{
 		Logger: slog.New(slog.DiscardHandler),
 		Now:    func() time.Time { return t0 },
-	}))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
 	return srv.URL
 }
