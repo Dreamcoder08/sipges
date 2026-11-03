@@ -9,8 +9,12 @@
  *     targets two running APIs; cases with `auth` also need SIPGES_PARITY_ADMIN_USERNAME and
  *     SIPGES_PARITY_ADMIN_PASSWORD of a synthetic administrator.
  */
-import { CASES, type ParityCase, validateCases } from './cases.ts';
-import { type Body, type Mismatch, type Observed, compare } from './diff.ts';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { CASES, validateCases } from './cases.ts';
+import { type Mismatch, compare } from './diff.ts';
+import { REQUEST_TIMEOUT_MS, send } from './request.ts';
 import {
   type Running,
   scratchDatabase,
@@ -26,41 +30,6 @@ type Targets = {
   credentials?: { username: string; password: string };
 };
 
-const send = async (
-  baseUrl: string,
-  c: ParityCase,
-  cookie: string | undefined,
-): Promise<Observed> => {
-  const headers = new Headers(c.headers);
-  if (c.auth && cookie) headers.set('cookie', cookie);
-  if (c.sameOrigin) headers.set('origin', baseUrl);
-  let body: string | null = null;
-  if (c.body && 'json' in c.body) {
-    headers.set('content-type', 'application/json');
-    body = JSON.stringify(c.body.json);
-  } else if (c.body) {
-    headers.set('content-type', 'application/x-www-form-urlencoded');
-    body = new URLSearchParams(c.body.form).toString();
-  }
-  const response = await fetch(`${baseUrl}${c.path}`, {
-    method: c.method,
-    headers,
-    body,
-    redirect: 'manual',
-  });
-  const contentType = response.headers.get('content-type') ?? undefined;
-  const text = await response.text();
-  let parsed: Body = { kind: 'text', value: text };
-  if (contentType?.toLowerCase().includes('json')) {
-    try {
-      parsed = { kind: 'json', value: JSON.parse(text) };
-    } catch {
-      // A JSON media type with an invalid body compares as text, so the difference shows.
-    }
-  }
-  return { status: response.status, contentType, body: parsed };
-};
-
 const describe = (m: Mismatch) =>
   m.field === 'body'
     ? `  body ${m.path}: ts=${JSON.stringify(m.ts)} go=${JSON.stringify(m.go)}`
@@ -74,7 +43,10 @@ const runCases = async ({ tsUrl, goUrl, credentials }: Targets) => {
   }
   let failed = 0;
   for (const c of CASES) {
-    const [ts, go] = await Promise.all([send(tsUrl, c, cookie), send(goUrl, c, cookie)]);
+    const [ts, go] = await Promise.all([
+      send(tsUrl, c, cookie, REQUEST_TIMEOUT_MS),
+      send(goUrl, c, cookie, REQUEST_TIMEOUT_MS),
+    ]);
     const mismatches = compare(ts, go, c.normalize);
     if (mismatches.length === 0) {
       console.info(`ok    ${c.method} ${c.path} — ${c.name} (${ts.status})`);
@@ -110,12 +82,29 @@ const main = async () => {
   }
   const secrets = syntheticSecrets();
   const database = await scratchDatabase(serverUrl);
+  const scratch = await mkdtemp(path.join(tmpdir(), 'sipges-parity-'));
   const running: Running[] = [];
+  // Runs once: a signal during the run and the finally below share the same cleanup.
+  let cleaning: Promise<void> | undefined;
+  const cleanup = () =>
+    (cleaning ??= (async () => {
+      await Promise.allSettled(running.map((api) => api.stop()));
+      await rm(scratch, { recursive: true, force: true });
+      await database.drop();
+    })());
+
+  // Ctrl-C or a cancelled CI job still stops both APIs and drops the scratch database.
+  const interrupted = (signal: NodeJS.Signals) => {
+    console.error(`parity: ${signal}, cleaning up`);
+    void cleanup().finally(() => process.exit(130));
+  };
+  process.once('SIGINT', interrupted);
+  process.once('SIGTERM', interrupted);
   try {
     // TypeScript first: it applies the migrations the Go API expects.
     const ts = await startTypeScriptApi(database.url, secrets);
     running.push(ts);
-    const go = await startGoApi(database.url);
+    const go = await startGoApi(database.url, scratch);
     running.push(go);
     return await runCases({
       tsUrl: ts.url,
@@ -123,8 +112,9 @@ const main = async () => {
       credentials: { username: secrets.adminUsername, password: secrets.adminPassword },
     });
   } finally {
-    await Promise.allSettled(running.map((api) => api.stop()));
-    await database.drop();
+    process.off('SIGINT', interrupted);
+    process.off('SIGTERM', interrupted);
+    await cleanup();
   }
 };
 

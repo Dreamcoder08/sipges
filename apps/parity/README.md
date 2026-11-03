@@ -18,6 +18,8 @@ With a database server, the runner creates `sipges_parity_<random>`, starts `app
 applies the migrations and seeds a synthetic administrator with a password generated for the run), builds
 and starts `apps/api-go`, signs in through the TypeScript API and sends every case to both. It exits 1 on
 any difference and prints each one (`status`, `content-type`, or the JSON path with both values).
+A case without an answer in 15 s fails, an API that cannot start or dies before it is ready fails at once
+(with its exit code or signal), and Ctrl-C or a cancelled job still stops both APIs and drops the database.
 CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 
 ## Adding a route

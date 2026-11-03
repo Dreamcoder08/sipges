@@ -33,6 +33,12 @@ export type IdentityStore = {
   findUserByGoogleEmail(email: string): Promise<StoredUser | null>;
   /** Links (or with null unlinks) a Google address; ends the user's Google sessions on change. */
   setGoogleEmail(username: string, email: string | null): Promise<'set' | 'missing' | 'taken'>;
+  /**
+   * Links `email` to an administrator that has no Google address yet, in one statement: an
+   * address already linked (or linked concurrently) is kept, and no session ends (ADR 0010).
+   * `taken` means the administrator has no address and another account holds `email`.
+   */
+  linkBootstrapGoogleEmail(username: string, email: string): Promise<'linked' | 'kept' | 'taken'>;
   /** Atomically disables the user and deletes sessions; serializes the last-admin guard. */
   deactivateUser(username: string): Promise<'deactivated' | 'missing' | 'last_admin'>;
   updatePasswordHash(username: string, passwordHash: string): Promise<void>;

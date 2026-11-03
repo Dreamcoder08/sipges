@@ -1,8 +1,6 @@
 import { type ChildProcess, execFile, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -73,38 +71,57 @@ export const scratchDatabase = async (serverUrl: string) => {
   };
 };
 
-const startProcess = async (
+/** Last part of a child's output kept for error messages; older text is dropped. */
+const OUTPUT_LIMIT = 64 * 1024;
+
+/**
+ * Spawns `command` and waits until GET /health answers. Rejects at once when the process
+ * cannot start, exits (with a code or a signal) before it is ready, or misses the deadline.
+ */
+export const startProcess = async (
   label: string,
   command: string,
   args: string[],
   env: Record<string, string>,
   port: number,
-) => {
+): Promise<Running> => {
   let output = '';
+  const append = (chunk: Buffer) => {
+    output = (output + chunk.toString()).slice(-OUTPUT_LIMIT);
+  };
   const child: ChildProcess = spawn(command, args, {
     cwd: repoRoot,
     env: { ...baseEnv(), ...env, SIPGES_HOST: '127.0.0.1', SIPGES_PORT: String(port) },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
-  child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()));
-  const exited = new Promise<void>((resolve) => child.once('exit', () => resolve()));
+  child.stdout?.on('data', append);
+  child.stderr?.on('data', append);
+  // 'close' follows 'exit', and also follows 'error' when the process never started.
+  let ended: string | undefined;
+  const closed = new Promise<void>((resolve) => child.once('close', () => resolve()));
+  child.once('error', (error) => {
+    ended = `could not start (${error.message})`;
+  });
+  child.once('exit', (code, signal) => {
+    ended = signal ? `exited with signal ${signal}` : `exited with code ${code}`;
+  });
   const stop = async () => {
-    if (child.exitCode === null && child.signalCode === null) child.kill('SIGTERM');
+    if (ended === undefined) child.kill('SIGTERM');
     const timer = setTimeout(() => child.kill('SIGKILL'), 5_000);
-    await exited;
+    await closed;
     clearTimeout(timer);
   };
   const url = `http://127.0.0.1:${port}`;
   const deadline = Date.now() + 90_000;
   while (Date.now() < deadline) {
-    if (child.exitCode !== null) {
-      throw new Error(
-        `${label} exited with code ${child.exitCode} before it was ready:\n${output}`,
-      );
+    if (ended !== undefined) {
+      await closed;
+      throw new Error(`${label} ${ended} before it was ready:\n${output}`);
     }
     try {
-      if ((await fetch(`${url}/health`)).ok) return { url, stop };
+      if ((await fetch(`${url}/health`, { signal: AbortSignal.timeout(2_000) })).ok) {
+        return { url, stop };
+      }
     } catch {
       // Not listening yet.
     }
@@ -138,34 +155,21 @@ export const startTypeScriptApi = async (
     await freePort(),
   );
 
-/** Builds apps/api-go into a temporary directory and runs it against the same database. */
-export const startGoApi = async (databaseUrl: string): Promise<Running> => {
-  const dir = await mkdtemp(path.join(tmpdir(), 'sipges-parity-'));
+/** Builds apps/api-go into `dir` (removed by the caller) and runs it against the same database. */
+export const startGoApi = async (databaseUrl: string, dir: string): Promise<Running> => {
   const binary = path.join(dir, 'api-go');
-  try {
-    await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
-      cwd: path.join(repoRoot, 'apps/api-go'),
-      env: baseEnv(),
-    });
-    const api = await startProcess(
-      'Go API',
-      binary,
-      [],
-      // Same switch as the TypeScript API above: the parity session has no second factor.
-      { SIPGES_DATABASE_URL: databaseUrl, SIPGES_ACCESS_LOG: '0', SIPGES_REQUIRE_MFA: '0' },
-      await freePort(),
-    );
-    return {
-      url: api.url,
-      stop: async () => {
-        await api.stop();
-        await rm(dir, { recursive: true, force: true });
-      },
-    };
-  } catch (error) {
-    await rm(dir, { recursive: true, force: true });
-    throw error;
-  }
+  await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
+    cwd: path.join(repoRoot, 'apps/api-go'),
+    env: baseEnv(),
+  });
+  return startProcess(
+    'Go API',
+    binary,
+    [],
+    // Same switch as the TypeScript API above: the parity session has no second factor.
+    { SIPGES_DATABASE_URL: databaseUrl, SIPGES_ACCESS_LOG: '0', SIPGES_REQUIRE_MFA: '0' },
+    await freePort(),
+  );
 };
 
 /**

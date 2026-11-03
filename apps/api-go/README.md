@@ -17,8 +17,15 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/platform/httpx`           | `{"detail": …}` errors, request id, access log, host allowlist, health; |
 |                                     | Hono-compatible path, cookie, query and Origin reading (`hono.go`).     |
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                |
+| `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).           |
 
 Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used.
+
+## Warm pool
+
+`database.Open` keeps `DefaultMinConns` (2) connections open, created in the background at start, so
+a request never waits for a new connection (170–230 ms from the container to Neon). A `pool_min_conns`
+in `SIPGES_DATABASE_URL` overrides it, and it never exceeds `pool_max_conns`. Routing from the Worker: [the Go container guide](../../docs/deployment/go-container.md).
 
 ## Tenant transaction
 
