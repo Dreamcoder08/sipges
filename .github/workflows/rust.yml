@@ -10,6 +10,7 @@ on:
       - '.github/workflows/rust.yml'
       - 'apps/api/src/contexts/indicators/domain/**'
       - 'apps/api/src/contexts/analytics/domain/**'
+      - 'apps/api/src/contexts/intelligence/domain/**'
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
@@ -21,6 +22,7 @@ on:
       - '.github/workflows/rust.yml'
       - 'apps/api/src/contexts/indicators/domain/**'
       - 'apps/api/src/contexts/analytics/domain/**'
+      - 'apps/api/src/contexts/intelligence/domain/**'
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
@@ -89,6 +91,7 @@ jobs:
       # Regenerates the fixtures from the TypeScript engines and fails on any drift.
       - run: |
           node engines/fixtures/generate.ts --check
-          for engine in situational strategic consensus candidate-links integrated; do
+          for engine in situational strategic consensus candidate-links integrated conflict-risk text-analysis; do
             node "engines/fixtures/$engine.ts" --check
           done
+          node engines/crates/text-analysis/unicode-tables.ts --check

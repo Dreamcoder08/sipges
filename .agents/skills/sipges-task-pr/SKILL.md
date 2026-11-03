@@ -1,6 +1,6 @@
 ---
 name: sipges-task-pr
-description: "Use when verified SIPGES changes need to be pushed, a stacked draft PR opened, or an existing task PR resumed. Does not authorize merging, deployment, or messages to reviewers."
+description: "Use when verified SIPGES changes need to be pushed, a stacked draft PR opened, an existing task PR resumed, or an owner-authorized PR landed on main. Does not authorize merging, deployment, or messages to reviewers by itself."
 ---
 
 # Entregar un PR apilado
@@ -15,6 +15,13 @@ Consulta la rama, `git status`, la base ODD y los PR existentes antes de escribi
 6. Comprueba head/base, borrador, URL y CI del commit publicado. Ante CI roja, lee el primer fallo y corrige su causa antes de repetir.
 
 Si se fusionó la base, inspecciona la nueva relación antes de retarget/integración. Evalúa divisiones por unidades independientes revisables; un número de líneas por sí solo no exige duplicar PR.
+
+## Aterrizar (land), solo con merge autorizado
+
+1. Espera los checks: `gh pr checks <n> --watch`. Ante uno rojo aplica `sipges-ci-triage`.
+2. Si `gh pr view <n> --json mergeable,mergeStateStatus` dice `CONFLICTING`/`DIRTY`: `git fetch origin && git merge origin/main` en el worktree (nunca rebase ni force-push). El driver `union` de `.gitattributes` (T2 de `odd/tasks/conflict-free-delivery.md`) resuelve los logs de solo-agregado; lo que quede, con `sipges-sync-main`. Verifica, `git push` y vuelve al paso 1.
+3. En verde y `MERGEABLE`: `gh pr ready <n>` si es borrador, luego `gh pr merge <n> --merge` (commit de merge, sin squash ni rebase). Un PR a la vez cuando hay varios en paralelo.
+4. Confirma el despliegue: `Deploy Workers` arranca cuando termina la CI del push a main. `gh run list --branch main --workflow deploy-workers.yml --limit 1` y `gh run watch <id>` hasta que termine; informa su conclusión.
 
 Merge, despliegue, asignaciones, suscripciones o mensajes a otras personas requieren autorización específica. Publicar un borrador ya autorizado no requiere reconfirmar. `sipges-odd-task` registra el cierre después de tener evidencia.
 

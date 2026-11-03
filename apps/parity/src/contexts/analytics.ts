@@ -58,12 +58,12 @@ const DEFAULT_ROWS: readonly Row[] = [
 ];
 
 const OTHER_ROWS: readonly Row[] = [
-  ['Proyectos', 'AJENA-PR', { Proyecto_ID: 'PRJ-SECHURA', Nombre: 'Proyecto AJENA' }],
-  ['Eventos', 'AJENA-EV', { Territorio: 'Territorio AJENA' }],
-  ['Demandas', 'AJENA-DE', { Tema: 'Tema AJENA', Estado: 'Abierta' }],
-  ['Alertas', 'AJENA-AL', { Nivel_Preliminar: 'AJENA', Estado: 'Activa' }],
-  ['Intereses', 'AJENA-IN', { Actor: 'Actor AJENA', Interes: 'Pesca artesanal AJENA' }],
-  ['Dialogos', 'AJENA-DI', { Tema: 'Diálogo AJENA', Estado: 'Abierto' }],
+  ['Proyectos', 'AJENA-AN-PR', { Proyecto_ID: 'PRJ-SECHURA', Nombre: 'Proyecto AJENA' }],
+  ['Eventos', 'AJENA-AN-EV', { Territorio: 'Territorio AJENA' }],
+  ['Demandas', 'AJENA-AN-DE', { Tema: 'Tema AJENA', Estado: 'Abierta' }],
+  ['Alertas', 'AJENA-AN-AL', { Nivel_Preliminar: 'AJENA', Estado: 'Activa' }],
+  ['Intereses', 'AJENA-AN-IN', { Actor: 'Actor AJENA', Interes: 'Pesca artesanal AJENA' }],
+  ['Dialogos', 'AJENA-AN-DI', { Tema: 'Diálogo AJENA', Estado: 'Abierto' }],
 ];
 
 const quote = (value: string) => `'${value.replaceAll("'", "''")}'`;

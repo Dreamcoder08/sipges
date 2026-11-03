@@ -21,4 +21,5 @@ RUSTFLAGS="--remap-path-prefix=$cargo_home=/cargo --remap-path-prefix=$engines=/
 mkdir -p "$out"
 cp "$target/wasm32-wasip1/release/sipges_indicators_wasm.wasm" "$out/indicators.wasm"
 cp "$target/wasm32-wasip1/release/sipges_analytics_wasm.wasm" "$out/analytics.wasm"
+chmod 0644 "$out/indicators.wasm" "$out/analytics.wasm"
 sha256sum "$out/indicators.wasm" "$out/analytics.wasm" 2>/dev/null || shasum -a 256 "$out/indicators.wasm" "$out/analytics.wasm"

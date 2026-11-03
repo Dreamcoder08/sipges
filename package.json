@@ -18,6 +18,7 @@
     "e2e": "pnpm --filter @sipges/web build && pnpm --filter @sipges/e2e run e2e",
     "verify": "bash scripts/verify.sh",
     "verify:fast": "bash scripts/verify-fast.sh",
+    "odd:check": "node scripts/odd-check-ids.mjs",
     "odd:close": "node scripts/odd-close-task.mjs",
     "odd:status": "node scripts/odd-status.mjs",
     "parity": "node apps/parity/src/main.ts",

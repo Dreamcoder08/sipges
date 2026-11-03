@@ -20,7 +20,7 @@ linters:
   settings:
     misspell:
       # Spanish words of the API's messages and roles, kept verbatim from the TypeScript API.
-      ignore-rules: [coordinador, administrativo, descripcion]
+      ignore-rules: [coordinador, administrativo, descripcion, originales]
     revive:
       rules:
         - name: exported
