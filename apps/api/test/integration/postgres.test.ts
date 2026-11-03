@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { connect, createServer } from 'node:net';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../src/app.ts';
@@ -118,5 +119,40 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
       first: { a: 'x', n: 0, texto: '«0» "\\" ñ' },
       last: { n: 1199, texto: '«1199» "\\" ñ' },
     });
+  });
+
+  it('opens a connection without querying the type catalogue', async () => {
+    // The Worker opens a client per request: a type-catalogue query on connect would add a
+    // round trip to every request. SIPGES declares no custom types, so built-ins suffice.
+    const target = new URL(url);
+    let sent = '';
+    const server = createServer((client) => {
+      const upstream = connect(Number(target.port || 5432), target.hostname);
+      client.on('data', (chunk: Buffer) => {
+        sent += chunk.toString('latin1');
+        upstream.write(chunk);
+      });
+      upstream.on('data', (chunk: Buffer) => client.write(chunk));
+      client.on('close', () => upstream.destroy());
+      upstream.on('close', () => client.destroy());
+      client.on('error', () => upstream.destroy());
+      upstream.on('error', () => client.destroy());
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    const proxied = new URL(url);
+    proxied.hostname = '127.0.0.1';
+    proxied.port = String(typeof address === 'object' && address ? address.port : 0);
+    const fresh = postgresClient(proxied.toString(), { max: 1 });
+    try {
+      const rows = await fresh.client.query<{ ids: number[] }>('SELECT $1::integer[] AS ids', [
+        [1, 2],
+      ]);
+      expect(rows).toEqual([{ ids: [1, 2] }]);
+      expect(sent).not.toContain('pg_type');
+    } finally {
+      await fresh.close();
+      server.close();
+    }
   });
 });

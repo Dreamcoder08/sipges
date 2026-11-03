@@ -35,6 +35,10 @@ export const postgresClient = (
     max: options.max ?? 10,
     ssl: options.ssl ?? (local ? false : 'require'),
     prepare: options.prepare ?? false,
+    // On connect postgres.js would query pg_type for custom array types: one more round trip on
+    // every new connection, and the Worker opens one per request. SIPGES uses built-in types
+    // only (no CREATE TYPE or extension types), which postgres.js already knows.
+    fetch_types: false,
     types: {
       /**
        * Repositories pass JSON *text* for `json`/`jsonb` parameters (`$n::jsonb`). postgres.js
