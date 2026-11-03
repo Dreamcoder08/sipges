@@ -15,6 +15,7 @@ import type {
   TenantSummary,
   UserDirectory,
 } from './ports.ts';
+import { createGrantCache } from './grant-cache.ts';
 
 export type Actor = { readonly username: string; readonly role: string };
 
@@ -33,6 +34,9 @@ export const createTenancyService = (deps: {
   dataReader: TenantDataReader;
 }) => {
   const { store, users, clock } = deps;
+  // Only the per-request project resolution reads cached grants; authorization checks such as
+  // export and isGranted keep reading them fresh.
+  const requestGrants = createGrantCache((username) => store.listGrants(username), clock);
 
   return {
     /** Ensures the legacy default project exists and every admin can reach it (app.py bootstrap). */
@@ -70,7 +74,7 @@ export const createTenancyService = (deps: {
       header: string | undefined;
       cookie: string | undefined;
     }): Promise<ScopeResolution> {
-      const grants = await store.listGrants(input.username);
+      const grants = await requestGrants.get(input.username);
       const scope = resolveScope({ header: input.header, cookie: input.cookie, grants });
       return scope ? { ok: true, scope } : { ok: false, projects: grants.map(formatScope) };
     },
@@ -90,6 +94,7 @@ export const createTenancyService = (deps: {
         valid.value.username,
         clock.now(),
       );
+      if (created) requestGrants.forget(valid.value.username);
       return created ? ok(formatScope(valid.value)) : err('exists');
     },
 
@@ -100,7 +105,9 @@ export const createTenancyService = (deps: {
       if (actor.role !== 'admin') return err('forbidden');
       if (!(await users.exists(input.username))) return err('user_missing');
       if (!(await store.tenantExists(input))) return err('tenant_missing');
-      return (await store.revoke(input.username, input)) ? ok(true) : err('grant_missing');
+      const revoked = await store.revoke(input.username, input);
+      requestGrants.forget(input.username);
+      return revoked ? ok(true) : err('grant_missing');
     },
 
     async grant(
@@ -111,6 +118,7 @@ export const createTenancyService = (deps: {
       if (!(await users.exists(input.username))) return err('user_missing');
       if (!(await store.tenantExists(input))) return err('tenant_missing');
       await store.grant(input.username, input, clock.now());
+      requestGrants.forget(input.username);
       return ok(true);
     },
   };
