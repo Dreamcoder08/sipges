@@ -1,0 +1,66 @@
+name: Go
+
+# The Go backend (apps/api-go, docs/adr/0032). Its integration tests apply the TypeScript API's SQL
+# migrations to a scratch database, so a migration change runs them too.
+on:
+  pull_request:
+    paths:
+      - 'apps/api-go/**'
+      - 'apps/api/src/platform/database/migrations/**'
+      - '.github/workflows/go.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api-go/**'
+      - 'apps/api/src/platform/database/migrations/**'
+      - '.github/workflows/go.yml'
+
+concurrency:
+  group: go-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go (vet, test, lint)
+    # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/api-go
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        # Random host port, so two jobs can share one self-hosted machine.
+        ports: ['5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - name: Point the tests at the PostgreSQL service
+        run: echo "SIPGES_TEST_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
+        working-directory: .
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: apps/api-go/go.sum
+      - name: Verify module checksums
+        run: go mod verify
+      - name: go vet
+        run: go vet ./...
+      # -count=1: integration tests always hit the database, never the test cache.
+      - name: go test (race detector, PostgreSQL 17)
+        run: go test -race -count=1 ./...
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          # Pinned; built from source with the Go above so it understands this module's Go version.
+          version: v2.15.0
+          install-mode: goinstall
+          working-directory: apps/api-go

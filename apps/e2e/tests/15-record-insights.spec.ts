@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 for (const mobile of [false, true]) {
@@ -77,13 +77,7 @@ for (const mobile of [false, true]) {
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
         391,
       );
-    expect(
-      (
-        await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-          .analyze()
-      ).violations,
-    ).toEqual([]);
+    expect((await analyzeAccessibility(page)).violations).toEqual([]);
     await page.evaluate(() => window.scrollTo(0, 0));
     // Playwright WebKit screenshots inject body{} to sync animations, blocked by our CSP.
     // Keep all WebKit flow, axe and CSP assertions; capture artifacts with Chromium.
@@ -108,13 +102,7 @@ for (const mobile of [false, true]) {
     await expect(
       page.getByRole('button', { name: `Ficha de actor ${actorId}`, exact: true }),
     ).toBeFocused();
-    expect(
-      (
-        await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-          .analyze()
-      ).violations,
-    ).toEqual([]);
+    expect((await analyzeAccessibility(page)).violations).toEqual([]);
     await page.evaluate(() => window.scrollTo(0, 0));
     // Playwright WebKit screenshots inject body{} to sync animations, blocked by our CSP.
     // Keep all WebKit flow, axe and CSP assertions; capture artifacts with Chromium.

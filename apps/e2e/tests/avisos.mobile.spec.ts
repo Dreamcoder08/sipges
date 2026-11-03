@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 /**
@@ -36,7 +36,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         .boundingBox();
       expect(mark && mark.x + mark.width, `mark all at ${width}px`).toBeLessThanOrEqual(width);
       if (width === 360) {
-        const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+        const axe = await analyzeAccessibility(page, ['wcag2a', 'wcag2aa']);
         expect(axe.violations, `Avisos (${colorScheme})`).toEqual([]);
       }
     }

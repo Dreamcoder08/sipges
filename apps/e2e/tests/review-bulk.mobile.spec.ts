@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator, Page } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
@@ -12,9 +12,7 @@ const fits = async (page: Page, width: number, region: Locator) => {
   expect(scrollWidth, `page wider than ${width}px`).toBeLessThanOrEqual(viewport);
   const box = await region.boundingBox();
   expect(box && box.x + box.width, `right edge at ${width}px`).toBeLessThanOrEqual(width);
-  const axe = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
+  const axe = await analyzeAccessibility(page);
   expect(axe.violations.map((v) => v.id)).toEqual([]);
 };
 
