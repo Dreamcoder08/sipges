@@ -45,9 +45,12 @@ const fixture = (run) => {
   }
 };
 const sipgesSkills = [
+  'sipges-adr',
   'sipges-archify',
   'sipges-ci-triage',
   'sipges-code-quality',
+  'sipges-deps-bump',
+  'sipges-e2e-stabilize',
   'sipges-go-port',
   'sipges-odd-task',
   'sipges-parallel-agents',
