@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Añadido
+
+- Motores en Rust (ADR 0032): `engines/` con el primer motor, indicadores v0.4 + IRSA, portado del motor TypeScript con resultados idénticos byte a byte (mismo redondeo estilo Python, mismo texto de números y mismo orden de claves que `JSON.stringify`), compilado a WebAssembly (`wasm32-wasip1`) y ejecutado desde Go con wazero (`engines/go/wasmengine`). Las 41 pruebas de paridad se generan desde el motor TypeScript con datos sintéticos y CI (`Rust engines`) falla si dejan de coincidir. Aún no atiende tráfico: ninguna ruta lo usa todavía.
+
 ### Corregido
 
 - Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
