@@ -24,7 +24,12 @@ CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 
 ## Adding a route
 
-Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go:
+Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go, or, for a
+bounded context, a module in [`src/contexts/`](src/contexts/index.ts) exporting its `cases` (names prefixed
+with the context) and the synthetic `seed` SQL they read. [`src/fixtures.ts`](src/fixtures.ts) loads those
+rows straight into the database after the migrations, together with a project nobody in the run is granted
+(`PARITY/OTRO`), so a case can prove another project's rows stay invisible. Against two running APIs the
+rows load only with `SIPGES_PARITY_SEED_DATABASE_URL`.
 
 | Field        | Meaning                                                                              |
 | ------------ | ------------------------------------------------------------------------------------ |
@@ -55,7 +60,10 @@ path present on only one side is still a difference, and a path that names no fi
 | project choice and role gate        | one grant automatic, two need a choice, `X-SIPGES-Scope`, the encoded scope cookie, an ungranted scope; `consulta` writing or in an admin-only area; `reset-mfa` needs a project |
 | request reading                     | encoded `project_id` key, undecodable `project_id`, two `Origin` headers                                                                                                         |
 | paths as Hono reads them            | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                             |
+| `GET /system/audit`                 | trail, limits and 422s, 401, 403 read-only role and ungranted project                                                                                                            |
 
 The runner seeds `consulta` (read-only, one project) and `multi` (analista, two projects) through the
 TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
-covered by each API's own tests (`apps/api-go/internal/app`).
+covered by each API's own tests (`apps/api-go/internal/app`). So is the `/system/events` stream, which parity
+cannot compare. Rows of `PARITY/OTRO` are labelled, so a leak shows as a
+difference.

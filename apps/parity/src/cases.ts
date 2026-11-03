@@ -4,6 +4,8 @@
  * runner does not change.
  */
 
+import { CONTEXT_CASES } from './contexts/index.ts';
+
 export type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export type ParityCase = {
@@ -282,6 +284,9 @@ export const CASES: readonly ParityCase[] = [
     path: '//no-such-route',
     rawTarget: true,
   },
+
+  // Ported contexts (contexts/*.ts), reading the synthetic rows of fixtures.ts.
+  ...CONTEXT_CASES,
 ];
 
 /** Problems in a route list; empty when it is valid. */
