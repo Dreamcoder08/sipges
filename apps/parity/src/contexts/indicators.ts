@@ -51,10 +51,12 @@ INSERT INTO irsa_configs (tenant_id, config, updated_at) VALUES
   ('PARITY/OTRO', '{"version":"AJENA","weights":{"G":1},"thresholds":{"AJENA":[0,100]},"contributions":{}}',
    '2026-01-02 00:00:00+00');
 INSERT INTO project_settings (tenant_id, settings, updated_by, updated_at) VALUES
-  ('SIPGES/PRJ-SECHURA', '{"phase": "construccion", "phaseWeights": {"construccion": {"G": 0.3, "A": 0.1, "D": 0.2, "N": 0.1, "E": 0.2, "I": 0.1}, "cierre": {"G": 1}}}',
+  ('SIPGES/PRJ-SECHURA', '{"phase": "operacion", "phaseWeights": {"operacion": {"G": 0.3, "A": 0.1, "D": 0.2, "N": 0.1, "E": 0.2, "I": 0.1}, "cierre": {"G": 1}}}',
    'parity', '2026-01-03 00:00:00+00'),
   ('PARITY/OTRO', '{"phase": "operacion", "phaseWeights": {"operacion": {"E": 1}}}',
-   'AJENA', '2026-01-02 00:00:00+00');
+   'AJENA', '2026-01-02 00:00:00+00')
+  -- Another context's seed (situations) may own these rows: add the weights to its settings.
+  ON CONFLICT (tenant_id) DO UPDATE SET settings = project_settings.settings || EXCLUDED.settings;
 INSERT INTO irsa_snapshots (tenant_id, ts, irsa, level, scores, config_version, note) VALUES
   ('SIPGES/PRJ-SECHURA', '2026-01-05 10:00:00.789+00', 42.5, 'Amarillo', '{"G":40,"A":45.25}',
    '0.4-indicators', 'Corte de paridad'),
