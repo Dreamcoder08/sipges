@@ -27,8 +27,12 @@ never written), the Origin check on writes, the MFA requirement (`SIPGES_REQUIRE
 project (`X-SIPGES-Scope`, else the `sipges_scope` cookie, else the only grant; `project_id` and JSON
 bodies naming another project are refused), then the role gate. Cookies and the query are read as Hono
 reads them (first valid cookie, `decodeURIComponent` with its fallback), so both APIs decide alike on the
-same bytes. Grants are cached 30 s per process, like each TypeScript isolate. One deliberate difference:
-the JSON body read for the project check is capped at 32 MiB (413). `apps/parity` pins the behaviour.
+same bytes. Paths are decided as Hono sees them (`httpx.CanonicalPath`: WHATWG dot-segment removal, `\`
+as `/`, `%2F` kept), so `/system%2Fauth%2Fme` is not a public path and `/hooks/../system/x` not a machine
+path. Grants are cached 30 s per process, like each TypeScript isolate. Two deliberate differences, both
+failing closed: the JSON body read for the project check is capped at 32 MiB (413), and a body nested
+deeper than `encoding/json` reads (10,000 levels) is refused (400) because its project cannot be told.
+`apps/parity` pins the behaviour.
 
 ## Warm pool
 

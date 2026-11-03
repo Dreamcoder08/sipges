@@ -98,6 +98,23 @@ func TestTenancyMiddleware(t *testing.T) {
 	}
 }
 
+func TestTenancyRefusesABodyItCannotRead(t *testing.T) {
+	t.Parallel()
+	svc := application.NewService(grants{"one": {a}}, time.Now)
+	h := tenancyhttp.Tenancy(svc, user, quiet)(http.HandlerFunc(reached))
+	body := `{"project_id":"PRJ-B","x":` + strings.Repeat("[", 10001) + strings.Repeat("]", 10001) + `}`
+	r := httptest.NewRequest(http.MethodPost, "/api/x", strings.NewReader(body))
+	r.Header.Set("X-Test-User", "one")
+	r.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	var got map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &got)
+	if w.Code != http.StatusBadRequest || !reflect.DeepEqual(got, map[string]any{"detail": "Cuerpo JSON demasiado anidado"}) {
+		t.Fatalf("%d %v", w.Code, got)
+	}
+}
+
 func TestTenancyRefusesAnOversizedJSONBody(t *testing.T) {
 	t.Parallel()
 	svc := application.NewService(grants{"one": {a}}, time.Now)

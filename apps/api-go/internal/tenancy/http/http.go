@@ -23,7 +23,8 @@ import (
 const ScopeCookie = "sipges_scope"
 
 // MaxCheckedBody bounds the JSON body read for the project check. The TypeScript API has no
-// global limit; this is the one deliberate difference (413 instead of reading without bound).
+// global limit; this and the nesting limit of CheckBody are the deliberate differences (413 and
+// 400 instead of reading without bound): both fail closed.
 const MaxCheckedBody = 32 << 20
 
 // scopeFreePaths are authenticated and role-checked but need no project (ADR 0009).
@@ -88,9 +89,17 @@ func Tenancy(svc *application.Service, username Username, log *slog.Logger) http
 					return
 				}
 				// A body that cannot be read counts as {} (c.req.json() failing in TypeScript).
-				if err == nil && domain.BodyNamesOtherProject(body, scope.ProjectID) {
-					httpx.WriteError(w, http.StatusForbidden, "No se permite escribir en otro proyecto")
-					return
+				if err == nil {
+					switch domain.CheckBody(body, scope.ProjectID) {
+					case domain.BodyOtherProject:
+						httpx.WriteError(w, http.StatusForbidden, "No se permite escribir en otro proyecto")
+						return
+					case domain.BodyUndecidable:
+						// Deliberate difference: Go cannot read it, so it fails closed.
+						httpx.WriteError(w, http.StatusBadRequest, "Cuerpo JSON demasiado anidado")
+						return
+					case domain.BodyAllowed:
+					}
 				}
 				r.Body = io.NopCloser(bytes.NewReader(body))
 			}

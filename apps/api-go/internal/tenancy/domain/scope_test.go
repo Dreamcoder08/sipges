@@ -1,6 +1,7 @@
 package domain_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
@@ -38,7 +39,7 @@ func TestResolveScope(t *testing.T) {
 
 // BodyNamesOtherProject mirrors tenancy-middleware.ts: the first truthy of body.project_id,
 // body.payload.Proyecto_ID, body.payload.project_id (JavaScript truthiness), compared with !==.
-func TestBodyNamesOtherProject(t *testing.T) {
+func TestCheckBody(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		body string
@@ -71,8 +72,26 @@ func TestBodyNamesOtherProject(t *testing.T) {
 		{``, false},
 	}
 	for _, c := range cases {
-		if got := domain.BodyNamesOtherProject([]byte(c.body), "P1"); got != c.want {
-			t.Errorf("BodyNamesOtherProject(%s) = %v, want %v", c.body, got, c.want)
+		want := domain.BodyAllowed
+		if c.want {
+			want = domain.BodyOtherProject
 		}
+		if got := domain.CheckBody([]byte(c.body), "P1"); got != want {
+			t.Errorf("CheckBody(%s) = %v, want %v", c.body, got, want)
+		}
+	}
+}
+
+// encoding/json stops at 10,000 levels where JSON.parse goes on: the check cannot tell which
+// project such a body names, so it fails closed instead of letting it through.
+func TestCheckBodyFailsClosedOnNestingGoCannotRead(t *testing.T) {
+	t.Parallel()
+	deep := `{"project_id":"P1","x":` + strings.Repeat("[", 10001) + strings.Repeat("]", 10001) + `}`
+	if got := domain.CheckBody([]byte(deep), "P1"); got != domain.BodyUndecidable {
+		t.Fatalf("deep body = %v", got)
+	}
+	shallow := `{"project_id":"P1","x":` + strings.Repeat("[", 100) + strings.Repeat("]", 100) + `}`
+	if got := domain.CheckBody([]byte(shallow), "P1"); got != domain.BodyAllowed {
+		t.Fatalf("shallow body = %v", got)
 	}
 }

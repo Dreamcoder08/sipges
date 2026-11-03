@@ -5,7 +5,9 @@ package domain
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"strconv"
+	"strings"
 )
 
 // Scope is the company and project a request works in.
@@ -56,17 +58,37 @@ func truthy(v any) bool {
 	}
 }
 
-// BodyNamesOtherProject is the JSON-body check of tenancy-middleware.ts: the first truthy of
-// body.project_id, body.payload.Proyecto_ID, body.payload.project_id, compared with !== against
-// projectID (so only the identical string matches). It reads the body as Hono's c.req.json()
-// does (a leading UTF-8 BOM dropped, any number accepted); a body JSON.parse would refuse, or
-// that is not an object, names none, as TypeScript reads it as {}.
-func BodyNamesOtherProject(body []byte, projectID string) bool {
+// BodyCheck is the outcome of CheckBody.
+type BodyCheck int
+
+const (
+	// BodyAllowed means the body names the request's project, or none.
+	BodyAllowed BodyCheck = iota
+	// BodyOtherProject means the body names another project (403 in both APIs).
+	BodyOtherProject
+	// BodyUndecidable means JSON.parse would read the body but encoding/json cannot (nesting deeper
+	// than 10,000 levels), so the project it names is unknown and the request is refused.
+	BodyUndecidable
+)
+
+// CheckBody is the JSON-body check of tenancy-middleware.ts: the first truthy of
+// body.project_id, body.payload.Proyecto_ID, body.payload.project_id (JavaScript truthiness),
+// compared with !== against projectID (so only the identical string matches). It reads the body
+// as Hono's c.req.json() does (a leading UTF-8 BOM dropped, any number accepted); a body
+// JSON.parse would refuse, or that is not an object, names none, as TypeScript reads it as {}.
+func CheckBody(body []byte, projectID string) BodyCheck {
 	decoder := json.NewDecoder(bytes.NewReader(bytes.TrimPrefix(body, []byte("\xef\xbb\xbf"))))
 	decoder.UseNumber()
 	var record map[string]any
-	if decoder.Decode(&record) != nil || record == nil {
-		return false
+	if err := decoder.Decode(&record); err != nil {
+		var syntax *json.SyntaxError
+		if errors.As(err, &syntax) && strings.Contains(syntax.Error(), "exceeded max depth") {
+			return BodyUndecidable
+		}
+		return BodyAllowed
+	}
+	if record == nil {
+		return BodyAllowed
 	}
 	payload, _ := record["payload"].(map[string]any)
 	var supplied any
@@ -78,8 +100,10 @@ func BodyNamesOtherProject(body []byte, projectID string) bool {
 	case truthy(payload["project_id"]):
 		supplied = payload["project_id"]
 	default:
-		return false
+		return BodyAllowed
 	}
-	text, isString := supplied.(string)
-	return !isString || text != projectID
+	if text, isString := supplied.(string); isString && text == projectID {
+		return BodyAllowed
+	}
+	return BodyOtherProject
 }
