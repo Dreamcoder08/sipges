@@ -325,6 +325,7 @@ test('fast verification runs static checks in parallel, tests only affected pack
       `${affected} run typecheck`,
       'boundaries',
       'lint',
+      'odd:check',
     ]);
     const tooling = run('never-matches', 'scripts/verify.sh');
     assert.ok(tooling.calls.includes('test:tooling'));
