@@ -19,6 +19,8 @@ export type ParityCase = {
    * through the TypeScript API; both APIs read sessions from the same database.
    */
   readonly auth?: 'admin';
+  /** Sends `Origin` set to each API's own base URL, as a same-origin browser write would. */
+  readonly sameOrigin?: true;
   /**
    * JSON paths whose value legitimately differs between two runs (ids, timestamps), such as
    * `id` or `items.*.created_at`. Keep the list small: name fields, never whole objects.
@@ -30,11 +32,53 @@ export const CASES: readonly ParityCase[] = [
   { name: 'liveness', method: 'GET', path: '/health' },
   { name: 'liveness ignores the query string', method: 'GET', path: '/health?probe=1' },
   { name: 'readiness with the database up', method: 'GET', path: '/health/ready' },
-  // Unauthenticated unknown paths still differ (401 in TypeScript, 404 in Go) until identity
-  // moves to Go (phase 4); the Worker keeps routing them to TypeScript. With a session both
-  // reach the JSON 404.
   { name: 'unknown path with a session', method: 'GET', path: '/no-such-route', auth: 'admin' },
   { name: 'trailing slash is another path', method: 'GET', path: '/health/', auth: 'admin' },
+
+  // Session, Origin, project scope and role gates (identity and tenancy middleware, T8).
+  { name: 'unknown path without a session', method: 'GET', path: '/no-such-route' },
+  { name: 'current scope without a session', method: 'GET', path: '/system/auth/current-scope' },
+  {
+    name: 'current scope with an unknown session',
+    method: 'GET',
+    path: '/system/auth/current-scope',
+    headers: { cookie: `sipges_session=${'0'.repeat(64)}` },
+  },
+  {
+    name: 'current scope with a session',
+    method: 'GET',
+    path: '/system/auth/current-scope',
+    auth: 'admin',
+  },
+  {
+    name: 'current scope of a project without a grant',
+    method: 'GET',
+    path: '/system/auth/current-scope',
+    auth: 'admin',
+    headers: { 'x-sipges-scope': 'ACME/NORTE' },
+  },
+  {
+    name: 'query project_id outside the scope',
+    method: 'GET',
+    path: '/system/auth/current-scope?project_id=NORTE',
+    auth: 'admin',
+  },
+  { name: 'write without Origin', method: 'POST', path: '/no-such-route', auth: 'admin' },
+  {
+    name: 'same-origin write reaches routing',
+    method: 'POST',
+    path: '/no-such-route',
+    auth: 'admin',
+    sameOrigin: true,
+  },
+  {
+    name: 'JSON body naming another project',
+    method: 'POST',
+    path: '/api/eventos',
+    auth: 'admin',
+    sameOrigin: true,
+    body: { json: { project_id: 'NORTE', payload: {} } },
+  },
 ];
 
 /** Problems in a route list; empty when it is valid. */

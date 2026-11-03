@@ -21,6 +21,11 @@ type Options struct {
 	ReadyTimeout time.Duration
 	AllowedHosts []string
 	AccessLog    bool
+	// Auth runs after the host allowlist and before routing: the session, project scope and
+	// role gates. Without it every route is public (unit tests of this package).
+	Auth []Middleware
+	// Routes adds the bounded contexts' routes to the mux.
+	Routes func(mux *http.ServeMux)
 }
 
 // healthBody is the static liveness body, field for field (and in order) the TypeScript API's
@@ -37,8 +42,8 @@ type readyBody struct {
 
 var health = healthBody{Status: "ok", Service: "SIPGES", Version: "V0.5.1"}
 
-// NewHandler builds the API handler. It serves only /health and /health/ready: no production
-// route moves to Go before its parity test (docs/adr/0032 §6).
+// NewHandler builds the API handler: /health, /health/ready and whatever opts.Routes adds. No
+// production route moves to Go before its parity test (docs/adr/0032 §6).
 func NewHandler(opts Options) http.Handler {
 	timeout := opts.ReadyTimeout
 	if timeout <= 0 {
@@ -58,14 +63,19 @@ func NewHandler(opts Options) http.Handler {
 		}
 		WriteJSON(w, http.StatusOK, readyBody{Status: "ready"})
 	})
+	if opts.Routes != nil {
+		opts.Routes(mux)
+	}
 	// Unknown paths and methods answer the JSON 404 of the other APIs, not ServeMux's text 405.
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		WriteError(w, http.StatusNotFound, "Not Found")
 	})
-	middleware := []Middleware{RequestID()}
+	// CanonicalPath first: logs, gates and the router all read the path Hono would.
+	middleware := []Middleware{CanonicalPath(), RequestID()}
 	if opts.AccessLog {
 		middleware = append(middleware, AccessLog(opts.Logger))
 	}
 	middleware = append(middleware, Recover(opts.Logger), HostAllowlist(opts.AllowedHosts))
+	middleware = append(middleware, opts.Auth...)
 	return Chain(mux, middleware...)
 }

@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
@@ -45,11 +46,11 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 	}
 	defer pool.Close()
 
-	handler := httpx.NewHandler(httpx.Options{
+	handler := app.NewHandler(pool, app.Options{
 		Logger:       log,
-		Ready:        database.Ping(pool),
 		AllowedHosts: cfg.AllowedHosts,
 		AccessLog:    cfg.AccessLog,
+		RequireMFA:   cfg.RequireMFA,
 	})
 	ln, err := listen("tcp", net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port)))
 	if err != nil {
