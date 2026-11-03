@@ -4,6 +4,10 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ## [Sin publicar]
 
+### Corregido
+
+- Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
+
 ### Rendimiento
 
 - Menos viajes a la base de datos por pedido (cada viaje Lima ↔ us-east-1 cuesta ~130 ms): entrar al proyecto (tenant) en una transacción pasa de 3 viajes a 1 (mismos ajustes y rol `sipges_tenant`, valores escapados como literales); las notificaciones leen el contador y la lista en una sola transacción y sentencia; el resumen de Registros trae la página y los totales en una sola consulta; el canal de actividad (`/system/events`) consulta cada 10 s en lugar de cada 3 s.
