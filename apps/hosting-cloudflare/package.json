@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@cloudflare/containers": "0.3.7",
     "@sipges/api": "workspace:*",
     "hono": "^4.13.14"
   },

@@ -20,9 +20,19 @@ export type AssetFetcher = { fetch(request: Request): Promise<Response> };
 
 export type ExecutionContext = { waitUntil(promise: Promise<unknown>): void };
 
+/** The Durable Object namespace of the Go container (GoBackend), only in the `go` environment. */
+export type GoBackendNamespace = {
+  idFromName(name: string): unknown;
+  get(
+    id: unknown,
+    options?: { locationHint?: string },
+  ): { fetch(request: Request): Promise<Response> };
+};
+
 /** Bindings and variables declared in wrangler.jsonc; secrets arrive as strings too. */
 export type Env = {
   readonly HYPERDRIVE: Hyperdrive;
   readonly EVIDENCE: R2Bucket;
   readonly ASSETS: AssetFetcher;
+  readonly GO_BACKEND?: GoBackendNamespace;
 } & Readonly<Record<string, unknown>>;
