@@ -14,6 +14,7 @@ The two approving decisions are «Aceptado para revisión» and «Corroborado do
 
 | Finding theme | Module |
 | --- | --- |
+| Actor (extracción automática) | Actores (unidentified name; original excerpt in «Rol o relación») |
 | Representatividad y gobernanza | Actores (name «Por identificar», excerpt in «Rol o relación») |
 | Demandas e intereses | Demandas |
 | Compromisos y trazabilidad | Compromisos |
@@ -22,6 +23,10 @@ The two approving decisions are «Aceptado para revisión» and «Corroborado do
 | Oportunidades de valor compartido | Valor compartido |
 | Territorio y ambiente | Narrativas |
 | Any other theme | Hechos compartidos |
+
+An automatic actor finding is still an unverified extraction: acceptance routes it to Actores,
+but does not identify the person or organization or certify the excerpt. Review the original
+source before replacing the unidentified name; approval never infers identity or territory.
 
 Every record carries:
 
