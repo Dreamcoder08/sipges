@@ -151,6 +151,17 @@ func NewScratch(ctx context.Context, adminURL string) (*Scratch, error) {
 	if len(migrations) == 0 {
 		return nil, errors.Join(errors.New("no migrations found in "+MigrationsDir()), scratch.Drop(ctx))
 	}
+	// The migrations create, grant and rename cluster-wide roles, so scratch databases of
+	// packages tested in parallel must migrate one at a time. Advisory locks belong to one
+	// database, so the lock is held on the admin database every package shares.
+	lock, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		return nil, errors.Join(fmt.Errorf("connect admin database: %w", err), scratch.Drop(ctx))
+	}
+	defer func() { _ = lock.Close(ctx) }()
+	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", migrationLockKey); err != nil {
+		return nil, errors.Join(fmt.Errorf("lock migrations: %w", err), scratch.Drop(ctx))
+	}
 	conn, err := pgx.Connect(ctx, scratch.URL)
 	if err != nil {
 		return nil, errors.Join(fmt.Errorf("connect scratch database: %w", err), scratch.Drop(ctx))
