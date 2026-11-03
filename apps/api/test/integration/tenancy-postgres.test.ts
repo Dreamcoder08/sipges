@@ -165,4 +165,44 @@ describe.skipIf(!adminUrl)('pooled PostgreSQL tenant isolation', () => {
     const accounts = await container.identity.listAccounts();
     expect(accounts.filter((a) => a.active && a.role === 'admin')).toHaveLength(1);
   });
+
+  it('runs the first pipelined query under the tenant settings and role', async () => {
+    // withTenant sends the work's first query right behind the tenant statement on the real
+    // driver; ordering on the connection is what keeps it under RLS.
+    for (let i = 0; i < 5; i++) {
+      const [row] = await withTenant(pool.client, 'ACME/NORTE', (tx) =>
+        tx.query<{ role: string; tenant: string }>(
+          "SELECT current_user AS role, current_setting('app.tenant_id') AS tenant, $1::text AS n",
+          [String(i)],
+        ),
+      );
+      expect(row).toMatchObject({ role: 'sipges_tenant', tenant: 'ACME/NORTE' });
+    }
+  });
+
+  it('returns nothing from a pipelined query when entering the tenant fails', async () => {
+    // A login that is not a member of sipges_tenant cannot switch role: the query sent right
+    // behind the tenant statement must be rejected with the aborted transaction (25P02).
+    const role = `probe_${randomBytes(4).toString('hex')}`;
+    await admin.unsafe(`CREATE ROLE ${role} LOGIN PASSWORD 'synthetic-probe-password'`);
+    const url = new URL(adminUrl ?? '');
+    url.pathname = `/${name}`;
+    url.username = role;
+    url.password = 'synthetic-probe-password';
+    const outsider = postgresClient(url.toString(), { max: 1 });
+    try {
+      let reached: unknown = 'not reached';
+      const attempt = withTenant(outsider.client, 'ACME/NORTE', async (tx) => {
+        reached = await tx
+          .query("SELECT 'leaked' AS x")
+          .catch((error: { code?: string }) => error.code);
+        return reached;
+      });
+      await expect(attempt).rejects.toMatchObject({ code: '42501' });
+      expect(reached).toBe('25P02');
+    } finally {
+      await outsider.close();
+      await admin.unsafe(`DROP ROLE IF EXISTS ${role}`);
+    }
+  });
 });
