@@ -1,4 +1,4 @@
-import type { ParityCase } from '../cases.ts';
+import type { ParityCase } from '../types.ts';
 
 const SHA = 'a'.repeat(64);
 
