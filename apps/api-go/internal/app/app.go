@@ -9,6 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	audithttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/audit/http"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
@@ -57,6 +58,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 		Routes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
 			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)
+			audithttp.Register(mux, audithttp.Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now})
 			preventionhttp.Routes(mux, prevention.Service{Store: preventionsql.Actions{DB: pool}, Now: opts.Now}, opts.Logger)
 			if opts.Routes != nil {
 				opts.Routes(mux)

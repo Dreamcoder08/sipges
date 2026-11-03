@@ -4,37 +4,10 @@
  * runner does not change.
  */
 
-export type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+import { CONTEXT_CASES } from './contexts/index.ts';
+import type { ParityCase } from './types.ts';
 
-export type ParityCase = {
-  /** Unique, stable name shown in the report. */
-  readonly name: string;
-  readonly method: Method;
-  /** Path and query, starting with `/`. */
-  readonly path: string;
-  /** Extra headers; the value `{origin}` becomes the base URL of the API being called. */
-  readonly headers?: Readonly<Record<string, string>>;
-  readonly body?:
-    | { readonly json: unknown }
-    | { readonly form: Readonly<Record<string, string>> }
-    /** Sent byte for byte (application/json unless headers say otherwise). */
-    | { readonly raw: string };
-  /** Send `path` exactly as written (dot segments, backslashes), through node:http. */
-  readonly rawTarget?: boolean;
-  /**
-   * Sends the session of a synthetic user the runner seeds through the TypeScript API (seed.ts):
-   * `admin` holds the default project; `consulta` (read-only role) holds it too; `multi`
-   * (analista) holds two projects and must choose one. Both APIs read the same sessions.
-   */
-  readonly auth?: 'admin' | 'consulta' | 'multi';
-  /** Sends `Origin` set to each API's own base URL, as a same-origin browser write would. */
-  readonly sameOrigin?: true;
-  /**
-   * JSON paths whose value legitimately differs between two runs (ids, timestamps), such as
-   * `id` or `items.*.created_at`. Keep the list small: name fields, never whole objects.
-   */
-  readonly normalize?: readonly string[];
-};
+export type { Method, ParityCase } from './types.ts';
 
 const UNKNOWN_TOKEN = 'sipges_session=' + 'f'.repeat(64);
 const WITH_ORIGIN = { origin: '{origin}' };
@@ -283,63 +256,8 @@ export const CASES: readonly ParityCase[] = [
     rawTarget: true,
   },
 
-  // Prevention, read-only (T19): plans of the seeded projects (seed.ts), tenant-scoped.
-  ...(['actions', 'situation-room', 'summary'] as const).flatMap((route): ParityCase[] => {
-    const path = `/system/prevention/${route}`;
-    return [
-      { name: `prevention ${route}`, method: 'GET', path, auth: 'admin' },
-      { name: `prevention ${route} without a session`, method: 'GET', path },
-      { name: `prevention ${route} read-only role`, method: 'GET', path, auth: 'consulta' },
-      {
-        name: `prevention ${route} of a project without a grant`,
-        method: 'GET',
-        path,
-        auth: 'admin',
-        headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
-      },
-      {
-        name: `prevention ${route} with project_id of another project`,
-        method: 'GET',
-        path: `${path}?project_id=PRJ-B`,
-        auth: 'admin',
-      },
-      {
-        name: `prevention ${route} with project_id of its project`,
-        method: 'GET',
-        path: `${path}?project_id=PRJ-SECHURA`,
-        auth: 'admin',
-      },
-      { name: `prevention ${route} before choosing a project`, method: 'GET', path, auth: 'multi' },
-      {
-        name: `prevention ${route} of the second project`,
-        method: 'GET',
-        path,
-        auth: 'multi',
-        headers: SECOND,
-      },
-      {
-        name: `prevention ${route} of the first project by a two-project user`,
-        method: 'GET',
-        path,
-        auth: 'multi',
-        headers: { 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
-      },
-    ];
-  }),
-  {
-    name: 'prevention actions with a trailing slash',
-    method: 'GET',
-    path: '/system/prevention/actions/',
-    auth: 'admin',
-  },
-  {
-    name: 'prevention plan write by the read-only role',
-    method: 'POST',
-    path: '/system/prevention/actions',
-    auth: 'consulta',
-    sameOrigin: true,
-    body: { json: { alert_id: 'x', title: 'Plan', responsible: 'Equipo', due_date: '2099-01-01' } },
-  },
+  // Ported contexts (contexts/*.ts), reading the synthetic rows of fixtures.ts.
+  ...CONTEXT_CASES,
 ];
 
 /** Problems in a route list; empty when it is valid. */
