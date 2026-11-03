@@ -33,6 +33,7 @@ const send = async (
 ): Promise<Observed> => {
   const headers = new Headers(c.headers);
   if (c.auth && cookie) headers.set('cookie', cookie);
+  if (c.sameOrigin) headers.set('origin', baseUrl);
   let body: string | null = null;
   if (c.body && 'json' in c.body) {
     headers.set('content-type', 'application/json');

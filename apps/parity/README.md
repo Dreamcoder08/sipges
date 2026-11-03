@@ -24,27 +24,30 @@ CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 
 Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go:
 
-| Field       | Meaning                                                                   |
-| ----------- | ------------------------------------------------------------------------- |
-| `name`      | Unique name in the report.                                                |
-| `method`    | HTTP method.                                                              |
-| `path`      | Path and query, starting with `/`.                                        |
-| `headers`   | Extra request headers.                                                    |
-| `body`      | `{ json: … }` or `{ form: { … } }`.                                       |
-| `auth`      | `'admin'` sends the synthetic administrator's session to both APIs.       |
-| `normalize` | JSON paths that differ per run (`id`, `items.*.created_at`); fields only. |
+| Field        | Meaning                                                                   |
+| ------------ | ------------------------------------------------------------------------- |
+| `name`       | Unique name in the report.                                                |
+| `method`     | HTTP method.                                                              |
+| `path`       | Path and query, starting with `/`.                                        |
+| `headers`    | Extra request headers.                                                    |
+| `body`       | `{ json: … }` or `{ form: { … } }`.                                       |
+| `auth`       | `'admin'` sends the synthetic administrator's session to both APIs.       |
+| `sameOrigin` | `true` sends `Origin` set to each API's own base URL (same-origin write). |
+| `normalize`  | JSON paths that differ per run (`id`, `items.*.created_at`); fields only. |
 
 JSON compares as values: object key order does not count, `null` and a missing key differ. A normalized
 path present on only one side is still a difference, and a path that names no field (`*`) is refused.
 
 ## Covered routes
 
-| Route                    | Cases                                          |
-| ------------------------ | ---------------------------------------------- |
-| `GET /health`            | plain, with a query string                     |
-| `GET /health/ready`      | database up                                    |
-| unknown paths (JSON 404) | `/no-such-route` and `/health/` with a session |
+| Route                            | Cases                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| `GET /health`                    | plain, with a query string                                             |
+| `GET /health/ready`              | database up                                                            |
+| unknown paths (JSON 404)         | `/no-such-route` and `/health/` with a session                         |
+| session and Origin gates         | 401 without a session or with an unknown one; 403 write without Origin |
+| `GET /system/auth/current-scope` | 200 with a session; 403 for an ungranted project or `project_id`       |
+| JSON body project check          | 403 for a body naming another project                                  |
 
-Known difference, not covered: without a session, unknown paths answer 401 in TypeScript and 404 in Go
-until identity moves to Go (phase 4); such paths stay on TypeScript. `/health/ready` with the database
-down (503) is covered by each API's own tests.
+`/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
+covered by each API's own tests (`apps/api-go/internal/app`).

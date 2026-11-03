@@ -151,7 +151,8 @@ export const startGoApi = async (databaseUrl: string): Promise<Running> => {
       'Go API',
       binary,
       [],
-      { SIPGES_DATABASE_URL: databaseUrl, SIPGES_ACCESS_LOG: '0' },
+      // Same switch as the TypeScript API above: the parity session has no second factor.
+      { SIPGES_DATABASE_URL: databaseUrl, SIPGES_ACCESS_LOG: '0', SIPGES_REQUIRE_MFA: '0' },
       await freePort(),
     );
     return {

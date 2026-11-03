@@ -26,6 +26,9 @@ type Config struct {
 	AllowedHosts []string
 	// AccessLog writes one JSON line per request (SIPGES_ACCESS_LOG, default on).
 	AccessLog bool
+	// RequireMFA makes every session enrol TOTP before anything else (SIPGES_REQUIRE_MFA,
+	// default on, ADR 0009).
+	RequireMFA bool
 }
 
 // Load validates the environment and reports every invalid variable at once.
@@ -44,6 +47,8 @@ func Load(lookup Lookup) (Config, error) {
 	errs = append(errs, err)
 	cfg.Port = port
 	cfg.AccessLog, err = parseSwitch(lookup, "SIPGES_ACCESS_LOG", true)
+	errs = append(errs, err)
+	cfg.RequireMFA, err = parseSwitch(lookup, "SIPGES_REQUIRE_MFA", true)
 	errs = append(errs, err)
 	cfg.AllowedHosts, err = parseAllowedHosts(lookup)
 	errs = append(errs, err)
