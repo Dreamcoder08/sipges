@@ -5,13 +5,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Open parses url and returns a lazy pool: no connection opens until the first query, so a
-// database outage shows in readiness instead of stopping the process. Pool size and other pgx
-// settings come from the URL (pool_max_conns, …).
+// DefaultMinConns is the warm pool: connections pgx opens in the background at start and keeps
+// open, so a request never pays for a new connection (170–230 ms from the container to Neon,
+// docs/adr/0032 §4). pgx's health check (every minute) replaces dropped ones; the URL's
+// pool_min_conns overrides it.
+const DefaultMinConns = 2
+
+// minConnsParam finds pool_min_conns as a URL query or keyword/value parameter, not as text
+// elsewhere (a password, a database name).
+var minConnsParam = regexp.MustCompile(`(^|[?&\s])pool_min_conns=`)
+
+// Open parses url and returns a pool that never blocks the start: the warm connections open in
+// the background, so a database outage shows in readiness instead of stopping the process. Pool
+// size and other pgx settings come from the URL (pool_max_conns, pool_min_conns, …).
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
@@ -23,6 +34,9 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	cfg.ConnConfig.RuntimeParams["client_encoding"] = "UTF8"
 	if _, ok := cfg.ConnConfig.RuntimeParams["application_name"]; !ok {
 		cfg.ConnConfig.RuntimeParams["application_name"] = "sipges-api-go"
+	}
+	if !minConnsParam.MatchString(url) {
+		cfg.MinConns = min(DefaultMinConns, cfg.MaxConns)
 	}
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

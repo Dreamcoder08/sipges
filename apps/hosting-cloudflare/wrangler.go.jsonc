@@ -1,0 +1,46 @@
+// The Go routing Worker (docs/adr/0032 §4, T6): the same Worker code as wrangler.jsonc plus the
+// Go container. It is a separate Worker (`sipges-go`) for no-traffic trials, deployed by hand with
+// `wrangler deploy -c wrangler.go.jsonc`; no workflow deploys it, and production (wrangler.jsonc)
+// declares no container, no GO_BACKEND binding and no SIPGES_GO_ROUTING, so every route stays on
+// TypeScript there. Before its first deploy (docs/deployment/go-container.md): a Hyperdrive for a
+// Neon branch (never the production one), the R2 bucket, and the SIPGES_GO_DATABASE_URL secret.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "sipges-go",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "alias": { "@node-rs/argon2": "./src/native-argon2-unavailable.ts" },
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": false }],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "none",
+    "not_found_handling": "none",
+  },
+  // Placeholder: replace with the Hyperdrive of a Neon branch (`wrangler hyperdrive create`).
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" }],
+  "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "sipges-evidence-go" }],
+  // No cron trigger: scheduled automation runs only in the production Worker.
+  "vars": {
+    "SIPGES_ALLOWED_HOSTS": "sipges-go.dreamcoder-dev08.workers.dev",
+    "SIPGES_GO_ROUTING": "1",
+  },
+  "containers": [
+    {
+      "class_name": "GoBackend",
+      "image": "../api-go/Dockerfile",
+      "image_build_context": "../api-go",
+      // One named instance serves (src/go-routes.ts GO_INSTANCE); the second covers a rollout.
+      "max_instances": 2,
+      "instance_type": "lite",
+      // Next to Neon aws-us-east-1; ENAM placed the spike in Toronto, Miami or Atlanta.
+      "constraints": { "regions": ["ENAM"] },
+    },
+  ],
+  "durable_objects": { "bindings": [{ "name": "GO_BACKEND", "class_name": "GoBackend" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GoBackend"] }],
+  "limits": { "cpu_ms": 30000 },
+  "observability": { "enabled": true },
+}

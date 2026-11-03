@@ -14,6 +14,8 @@ import { createWebApp } from '../../api/src/platform/http/web-app.ts';
 import { getPath } from 'hono/utils/url';
 import { workerWebAssets } from './assets.ts';
 import type { Env, ExecutionContext } from './bindings.ts';
+import { createGoProxy } from './go-proxy.ts';
+import { GO_ROUTES, forwardToGo, goRoutingEnabled, routesToGo } from './go-routes.ts';
 import { MIGRATIONS } from './migrations.ts';
 // Workers have no filesystem: the repository references are bundled as JSON modules.
 import canonicalEntities from '../../../data/canonical_entities.json' with { type: 'json' };
@@ -120,6 +122,21 @@ const webAppFor = (env: Env) => {
   return webApp;
 };
 
+let goProxy: ReturnType<typeof createGoProxy> | undefined;
+
+/** Go-served routes skip the TypeScript backend and its Hyperdrive connection entirely. */
+const goProxyFor = (env: Env, backend: NonNullable<Env['GO_BACKEND']>) => {
+  if (!goProxy) {
+    const config = configFor(env);
+    goProxy = createGoProxy({
+      allowedHosts: config.allowedHosts,
+      hsts: config.cookieSecure,
+      forward: forwardToGo(backend),
+    });
+  }
+  return goProxy;
+};
+
 const backendFor = async (env: Env): Promise<Backend> => {
   if (backend) return backend;
   // Each request that finds no backend initializes on its own connection; concurrent cold
@@ -195,6 +212,19 @@ export default {
       }
       return web.fetch(request);
     }
+    if (
+      env.GO_BACKEND &&
+      goRoutingEnabled(env) &&
+      routesToGo(GO_ROUTES, request.method, getPath(request))
+    ) {
+      let proxy: ReturnType<typeof goProxyFor>;
+      try {
+        proxy = goProxyFor(env, env.GO_BACKEND);
+      } catch (error) {
+        return unavailable(error);
+      }
+      return proxy.fetch(request);
+    }
     return withConnection(env, ctx, async () => {
       let app: Backend['app'];
       try {
@@ -213,3 +243,6 @@ export default {
       return { value: undefined, ended: Promise.resolve() };
     }),
 };
+
+// The Durable Object class the `go` environment binds as GO_BACKEND; unused in production.
+export { GoBackend } from './go-container.ts';

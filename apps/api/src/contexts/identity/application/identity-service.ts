@@ -167,9 +167,8 @@ export const createIdentityService = ({
       const username = normalizeUsername(rawUsername);
       const email = normalizeGoogleEmail(rawEmail);
       if (!email.ok) throw new Error('SIPGES_GOOGLE_ADMIN_EMAIL is not a valid address');
-      const user = await store.findUser(username);
-      if (!user || user.role !== 'admin' || user.googleEmail !== null) return;
-      if ((await store.setGoogleEmail(username, email.value)) === 'taken') {
+      // Atomic in the store: concurrent cold starts or an administrator's link never get clobbered.
+      if ((await store.linkBootstrapGoogleEmail(username, email.value)) === 'taken') {
         console.error('SIPGES_GOOGLE_ADMIN_EMAIL is already linked to another account');
       }
     },
