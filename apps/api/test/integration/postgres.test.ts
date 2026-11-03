@@ -145,10 +145,29 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
     proxied.port = String(typeof address === 'object' && address ? address.port : 0);
     const fresh = postgresClient(proxied.toString(), { max: 1 });
     try {
-      const rows = await fresh.client.query<{ ids: number[] }>('SELECT $1::integer[] AS ids', [
-        [1, 2],
+      // Without the catalogue, arrays of built-in types still decode to JavaScript arrays.
+      const rows = await fresh.client.query<Record<string, unknown>>(
+        `SELECT $1::integer[] AS ids, $2::text[] AS words, array[9]::bigint[] AS bigs,
+                array[1.5]::real[] AS reals, array[true, false] AS flags,
+                array['{"a":1}'::jsonb] AS docs, array['2026-11-02T12:00:00Z'::timestamptz] AS times,
+                array['a b', 'c"d', null]::text[] AS quoted`,
+        [
+          [1, 2],
+          ['x', 'y,z', 'é'],
+        ],
+      );
+      expect(rows).toEqual([
+        {
+          ids: [1, 2],
+          words: ['x', 'y,z', 'é'],
+          bigs: ['9'],
+          reals: [1.5],
+          flags: [true, false],
+          docs: [{ a: 1 }],
+          times: [new Date('2026-11-02T12:00:00Z')],
+          quoted: ['a b', 'c"d', null],
+        },
       ]);
-      expect(rows).toEqual([{ ids: [1, 2] }]);
       expect(sent).not.toContain('pg_type');
     } finally {
       await fresh.close();
