@@ -42,7 +42,8 @@ export const send = async (
     }
     return { status: response.status, contentType, body: parsed };
   } catch (error) {
-    if (signal.aborted) throw new Error(`${c.method} ${c.path} timed out after ${timeoutMs} ms`);
+    if (signal.aborted)
+      throw new Error(`${c.method} ${c.path} timed out after ${timeoutMs} ms`, { cause: error });
     throw error;
   }
 };
