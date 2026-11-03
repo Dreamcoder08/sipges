@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { CASES, validateCases } from './cases.ts';
 import { type Mismatch, compare } from './diff.ts';
+import { seedDatabase } from './fixtures.ts';
 import { REQUEST_TIMEOUT_MS, send } from './request.ts';
 import { type Sessions, seed } from './seed.ts';
 import {
@@ -67,8 +68,13 @@ const main = async () => {
 
   const { SIPGES_PARITY_TS_URL: tsUrl, SIPGES_PARITY_GO_URL: goUrl } = process.env;
   if (tsUrl && goUrl) {
-    const { SIPGES_PARITY_ADMIN_USERNAME: username, SIPGES_PARITY_ADMIN_PASSWORD: password } =
-      process.env;
+    const {
+      SIPGES_PARITY_ADMIN_USERNAME: username,
+      SIPGES_PARITY_ADMIN_PASSWORD: password,
+      SIPGES_PARITY_SEED_DATABASE_URL: seedUrl,
+    } = process.env;
+    // The rows of fixtures.ts load only when asked for, into the database both APIs share.
+    if (seedUrl) await seedDatabase(seedUrl);
     return runCases({
       tsUrl,
       goUrl,
@@ -105,6 +111,7 @@ const main = async () => {
     // TypeScript first: it applies the migrations the Go API expects.
     const ts = await startTypeScriptApi(database.url, secrets);
     running.push(ts);
+    await seedDatabase(database.url);
     const go = await startGoApi(database.url, scratch);
     running.push(go);
     return await runCases({

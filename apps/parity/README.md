@@ -24,7 +24,12 @@ CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 
 ## Adding a route
 
-Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go:
+Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go, or, for a
+bounded context, a module in [`src/contexts/`](src/contexts/index.ts) exporting its `cases` (names prefixed
+with the context) and the synthetic `seed` SQL they read. [`src/fixtures.ts`](src/fixtures.ts) loads those
+rows straight into the database after the migrations, together with a project nobody in the run is granted
+(`PARITY/OTRO`), so a case can prove another project's rows stay invisible. Against two running APIs the
+rows load only with `SIPGES_PARITY_SEED_DATABASE_URL`.
 
 | Field        | Meaning                                                                              |
 | ------------ | ------------------------------------------------------------------------------------ |
@@ -43,22 +48,24 @@ path present on only one side is still a difference, and a path that names no fi
 
 ## Covered routes
 
-| Route                               | Cases                                                                                                                                                                            |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /health`                       | plain, with a query string                                                                                                                                                       |
-| `GET /health/ready`                 | database up                                                                                                                                                                      |
-| unknown paths (JSON 404)            | `/no-such-route` and `/health/` with a session                                                                                                                                   |
-| session and Origin gates            | 401 without a session or with an unknown one; 403 write without Origin                                                                                                           |
-| `GET /system/auth/current-scope`    | 200 with a session; 403 for an ungranted project or `project_id`                                                                                                                 |
-| JSON body project check             | 403 for a body or payload naming another project, also with a BOM, `1e400` or nesting deeper than 10,000 levels                                                                  |
-| `GET /system/auth/me`, `/providers` | no session, unknown session, a session; Google not configured                                                                                                                    |
-| project choice and role gate        | one grant automatic, two need a choice, `X-SIPGES-Scope`, the encoded scope cookie, an ungranted scope; `consulta` writing or in an admin-only area; `reset-mfa` needs a project |
-| request reading                     | encoded `project_id` key, undecodable `project_id`, two `Origin` headers                                                                                                         |
-| paths as Hono reads them            | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                             |
-| `GET /system/v4/settings`           | saved settings (default project) and defaults (second); admin, `consulta`, both projects of `multi`; `PUT` refused for `consulta`                                                |
-| `GET /system/v4/situations`         | each project's synthetic records: rising topic, actors, territories, tone shift, lesson, undated, future and generated alert                                                     |
-| both situations routes              | 401; 403 for a choice, an ungranted scope or `project_id`; `project_id` of the scope; trailing slash; `HEAD`                                                                     |
+| Route                                                           | Cases                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /health`                                                   | plain, with a query string                                                                                                                                                                                                                                                                      |
+| `GET /health/ready`                                             | database up                                                                                                                                                                                                                                                                                     |
+| unknown paths (JSON 404)                                        | `/no-such-route` and `/health/` with a session                                                                                                                                                                                                                                                  |
+| session and Origin gates                                        | 401 without a session or with an unknown one; 403 write without Origin                                                                                                                                                                                                                          |
+| `GET /system/auth/current-scope`                                | 200 with a session; 403 for an ungranted project or `project_id`                                                                                                                                                                                                                                |
+| JSON body project check                                         | 403 for a body or payload naming another project, also with a BOM, `1e400` or nesting deeper than 10,000 levels                                                                                                                                                                                 |
+| `GET /system/auth/me`, `/providers`                             | no session, unknown session, a session; Google not configured                                                                                                                                                                                                                                   |
+| project choice and role gate                                    | one grant automatic, two need a choice, `X-SIPGES-Scope`, the encoded scope cookie, an ungranted scope; `consulta` writing or in an admin-only area; `reset-mfa` needs a project                                                                                                                |
+| request reading                                                 | encoded `project_id` key, undecodable `project_id`, two `Origin` headers                                                                                                                                                                                                                        |
+| paths as Hono reads them                                        | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                                                                                                                                            |
+| `GET /system/audit`                                             | trail, limits and 422s, 401, 403 read-only role and ungranted project                                                                                                                                                                                                                           |
+| `GET /system/prevention/actions`, `/situation-room`, `/summary` | each: a session, no session, `consulta`, an ungranted project (also `PARITY/OTRO`, whose plan has the default project's id), `project_id` of another and of its own project, `multi` before choosing, in the second project and in the first; plus a trailing slash and a `consulta` plan write |
+| `GET /system/v4/settings`, `/situations`                        | each: active project (saved settings, records, a `restringido` row hidden from `consulta`), second project (defaults), `multi` on the default one, no session, a choice, an ungranted scope, `project_id` of another and the active project, trailing slash, `HEAD`                             |
 
 The runner seeds `consulta` (read-only, one project) and `multi` (analista, two projects) through the
-TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
-covered by each API's own tests (`apps/api-go/internal/app`).
+TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one project. Each project also gets a verified territorial alert and preventive plans (overdue, blocked by two parties, cancelled, in progress; one in the second project), so a read that crossed projects would differ. `/health/ready` with the database down (503), expiry, MFA, role gates and cross-tenant reads are
+covered by each API's own tests (`apps/api-go/internal/app`). So is the `/system/events` stream, which parity
+cannot compare. Rows of `PARITY/OTRO` are labelled, so a leak shows as a
+difference.
