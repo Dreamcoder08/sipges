@@ -172,6 +172,11 @@ describe('Indicadores e IRSA', () => {
     expect(await screen.findByRole('button', { name: 'Guardar corte IRSA' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Guardar configuración' })).not.toBeInTheDocument();
   });
+  it('aclara que las contribuciones del prototipo no intervienen en el IRSA V0.4', async () => {
+    renderPage(<IrsaPage {...context} />);
+    const group = await screen.findByRole('group', { name: 'Contribuciones del prototipo' });
+    expect(group).toHaveTextContent('No intervienen en el cálculo del IRSA V0.4');
+  });
   it('valida pesos antes de guardar y no modifica parámetros no editados', async () => {
     renderPage(<IrsaPage {...context} />);
     const weight = await screen.findByLabelText('Peso G');
