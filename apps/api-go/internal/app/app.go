@@ -30,6 +30,8 @@ type Options struct {
 	AllowedHosts []string
 	AccessLog    bool
 	RequireMFA   bool
+	// GoogleEnabled is what GET /system/auth/providers reports.
+	GoogleEnabled bool
 	// Now is the clock for session expiry and the grant cache; nil means time.Now.
 	Now func() time.Time
 	// Routes adds routes beyond the ones registered here (tests).
@@ -45,6 +47,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 	}
 	referenceService := referenceapp.NewService(references)
 	grants := application.NewGrantCache(tenancy.Grants{DB: pool}.List, opts.Now)
+	sessions := identity.Sessions{DB: pool, Now: opts.Now}
 	return httpx.NewHandler(httpx.Options{
 		Logger:       opts.Logger,
 		Ready:        database.Ping(pool),
@@ -52,7 +55,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		AccessLog:    opts.AccessLog,
 		Auth: []httpx.Middleware{
 			identityhttp.Session(identityhttp.SessionOptions{
-				Sessions:   identity.Sessions{DB: pool, Now: opts.Now},
+				Sessions:   sessions,
 				RequireMFA: opts.RequireMFA,
 				Logger:     opts.Logger,
 			}),
@@ -61,6 +64,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		},
 		Routes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
+			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)
 			referencehttp.Register(mux, referenceService, referenceScope, opts.Logger)
 			if opts.Routes != nil {
 				opts.Routes(mux)
