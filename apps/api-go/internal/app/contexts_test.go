@@ -8,7 +8,7 @@ import (
 )
 
 func TestEveryPortedContextRegistersFromItsOwnFile(t *testing.T) {
-	want := []string{"analytics", "audit", "indicators", "management", "prevention", "reference", "situations"}
+	want := []string{"analytics", "audit", "geography", "indicators", "management", "prevention", "reference", "situations"}
 	got := contextNames()
 	for _, name := range want {
 		if !slices.Contains(got, name) {
