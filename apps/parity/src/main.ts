@@ -6,8 +6,9 @@
  *   SIPGES_PARITY_DATABASE_URL=postgres://…/postgres pnpm parity
  *     creates sipges_parity_<random> there, starts both APIs on it, drops it at the end.
  *   SIPGES_PARITY_TS_URL=… SIPGES_PARITY_GO_URL=… pnpm parity
- *     targets two running APIs; cases with `auth` also need SIPGES_PARITY_ADMIN_USERNAME and
- *     SIPGES_PARITY_ADMIN_PASSWORD of a synthetic administrator.
+ *     targets two running APIs on a fresh synthetic database; SIPGES_PARITY_ADMIN_USERNAME and
+ *     SIPGES_PARITY_ADMIN_PASSWORD name its administrator, and the runner seeds the users of
+ *     seed.ts through the TypeScript API.
  */
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -15,10 +16,10 @@ import path from 'node:path';
 import { CASES, validateCases } from './cases.ts';
 import { type Mismatch, compare } from './diff.ts';
 import { REQUEST_TIMEOUT_MS, send } from './request.ts';
+import { type Sessions, seed } from './seed.ts';
 import {
   type Running,
   scratchDatabase,
-  signIn,
   startGoApi,
   startTypeScriptApi,
   syntheticSecrets,
@@ -36,16 +37,16 @@ const describe = (m: Mismatch) =>
     : `  ${m.field}: ts=${JSON.stringify(m.ts)} go=${JSON.stringify(m.go)}`;
 
 const runCases = async ({ tsUrl, goUrl, credentials }: Targets) => {
-  let cookie: string | undefined;
+  let sessions: Sessions | undefined;
   if (CASES.some((c) => c.auth)) {
     if (!credentials) throw new Error('cases with auth need SIPGES_PARITY_ADMIN_USERNAME/PASSWORD');
-    cookie = await signIn(tsUrl, credentials.username, credentials.password);
+    sessions = await seed(tsUrl, credentials);
   }
   let failed = 0;
   for (const c of CASES) {
     const [ts, go] = await Promise.all([
-      send(tsUrl, c, cookie, REQUEST_TIMEOUT_MS),
-      send(goUrl, c, cookie, REQUEST_TIMEOUT_MS),
+      send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS),
+      send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS),
     ]);
     const mismatches = compare(ts, go, c.normalize);
     if (mismatches.length === 0) {
