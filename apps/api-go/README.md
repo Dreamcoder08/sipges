@@ -15,6 +15,7 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/audit`                    | `GET /system/audit`, the `GET /system/events` activity stream (SSE).     |
 | `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
 | `internal/situations`               | `GET /system/v4/settings` and `GET /system/v4/situations` (read-only).   |
+| `internal/reference`                | Project coordinates and canonical entities (embedded `data/*.json`).     |
 | `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).              |
 | `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).       |
 | `internal/platform/database/dbtest` | Test-only scratch database with the `apps/api` migrations.               |
