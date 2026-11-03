@@ -119,14 +119,25 @@ dependencies = [
  "serde_json",
  "sipges-analytics-common",
  "sipges-candidate-links",
+ "sipges-conflict-risk",
  "sipges-consensus",
  "sipges-integrated",
  "sipges-situational",
  "sipges-strategic",
+ "sipges-text-analysis",
 ]
 
 [[package]]
 name = "sipges-candidate-links"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "sipges-conflict-risk"
 version = "0.1.0"
 dependencies = [
  "serde_json",
