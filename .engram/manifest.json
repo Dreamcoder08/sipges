@@ -232,6 +232,14 @@
       "sessions": 2,
       "memories": 2,
       "prompts": 0
+    },
+    {
+      "id": "9bc536fd",
+      "created_by": "vm",
+      "created_at": "2026-11-03T19:05:57.509250845Z",
+      "sessions": 1,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }
