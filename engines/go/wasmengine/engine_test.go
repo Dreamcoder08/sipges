@@ -376,16 +376,11 @@ func TestCloseDuringCallsLeavesNoCallerWaiting(t *testing.T) {
 			}
 			request := bigRequest(t, 4)
 			const callers = 6 // more than the pool: some are waiting for an instance when Close runs
-			var closeReturned atomic.Bool
-			type outcome struct {
-				err        error
-				afterClose bool
-			}
-			done := make(chan outcome, callers)
+			done := make(chan error, callers)
 			for range callers {
 				go func() {
 					_, err := engine.Invoke(ctx, request)
-					done <- outcome{err: err, afterClose: closeReturned.Load()}
+					done <- err
 				}()
 			}
 			// Close while both instances are busy, so calls are running guest code.
@@ -399,18 +394,17 @@ func TestCloseDuringCallsLeavesNoCallerWaiting(t *testing.T) {
 			if err := engine.Close(ctx); err != nil {
 				t.Fatalf("close: %v", err)
 			}
-			closeReturned.Store(true)
+			// Close waits for calls in flight: by the time it returns, every instance was released.
+			if got := engine.Stats(); got != (wasmengine.Stats{}) {
+				t.Errorf("Close returned with calls still holding instances: Stats = %+v", got)
+			}
 			timeout := time.After(30 * time.Second)
 			for range callers {
 				select {
-				case got := <-done:
-					// Close waits for calls in flight, so none finishes after it returned; a call
-					// that did not run to completion reports ErrClosed.
-					if got.afterClose {
-						t.Errorf("a call finished after Close returned: %v", got.err)
-					}
-					if got.err != nil && !errors.Is(got.err, wasmengine.ErrClosed) {
-						t.Errorf("call during Close = %v, want success or ErrClosed", got.err)
+				case err := <-done:
+					// A call that did not run to completion reports ErrClosed.
+					if err != nil && !errors.Is(err, wasmengine.ErrClosed) {
+						t.Errorf("call during Close = %v, want success or ErrClosed", err)
 					}
 				case <-timeout:
 					t.Fatal("a call was still waiting 30 s after Close")
@@ -420,6 +414,46 @@ func TestCloseDuringCallsLeavesNoCallerWaiting(t *testing.T) {
 				t.Fatalf("Invoke after Close = %v, want ErrClosed", err)
 			}
 		})
+	}
+}
+
+func TestConcurrentCloseWaitsForTheFirstOne(t *testing.T) {
+	ctx := context.Background()
+	engine, err := wasmengine.New(ctx, loadWasm(t), wasmengine.Options{MaxInstances: 1})
+	if err != nil {
+		t.Fatalf("new engine: %v", err)
+	}
+	request := bigRequest(t, 8)
+	// Warm the instance so the call below takes it from the pool and starts at once.
+	if _, err := engine.Call(ctx, []byte(`{"op":"defaults"}`)); err != nil {
+		t.Fatalf("warm-up call: %v", err)
+	}
+	done := make(chan error, 1)
+	go func() {
+		_, err := engine.Invoke(ctx, request)
+		done <- err
+	}()
+	for deadline := time.Now().Add(10 * time.Second); engine.Stats() != (wasmengine.Stats{Live: 1}); {
+		if time.Now().After(deadline) {
+			t.Fatalf("the call never started: %+v", engine.Stats())
+		}
+		time.Sleep(time.Millisecond)
+	}
+	first := make(chan error, 1)
+	go func() { first <- engine.Close(ctx) }()
+	time.Sleep(5 * time.Millisecond) // let the call start and the first Close start waiting
+	if err := engine.Close(ctx); err != nil {
+		t.Fatalf("second close: %v", err)
+	}
+	// The second Close returns only once the first one has finished shutting the engine down.
+	if got := engine.Stats(); got != (wasmengine.Stats{}) {
+		t.Errorf("second Close returned while a call still held an instance: Stats = %+v", got)
+	}
+	if err := <-first; err != nil {
+		t.Fatalf("first close: %v", err)
+	}
+	if err := <-done; err != nil {
+		t.Fatalf("uninterruptible call during Close = %v, want it to run to completion", err)
 	}
 }
 

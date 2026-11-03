@@ -63,16 +63,19 @@ func (e *Error) Error() string { return fmt.Sprintf("engine error %s: %s", e.Cod
 
 // Engine is safe for concurrent use.
 type Engine struct {
-	retain   uint64 // bytes of linear memory an idle instance may keep
-	runtime  wazero.Runtime
-	compiled wazero.CompiledModule
-	idle     chan *instance
-	slots    chan struct{} // one token per live instance
-	mu       sync.RWMutex  // guards closed and orders calls.Add before Close's calls.Wait
-	closed   bool
-	calls    sync.WaitGroup     // calls between begin and their end, waited for by Close
-	stop     context.Context    // done once Close starts
-	halt     context.CancelFunc // ends stop
+	retain    uint64 // bytes of linear memory an idle instance may keep
+	runtime   wazero.Runtime
+	compiled  wazero.CompiledModule
+	idle      chan *instance
+	slots     chan struct{} // one token per live instance
+	mu        sync.RWMutex  // guards closed and orders calls.Add before Close's calls.Wait
+	closed    bool
+	calls     sync.WaitGroup     // calls between begin and their end, waited for by Close
+	stop      context.Context    // done once Close starts
+	halt      context.CancelFunc // ends stop
+	shut      chan struct{}      // closed once Close has finished
+	shutErr   error              // runtime.Close's error, read after shut is closed
+	stoppable bool               // Options.Interruptible: Close stops calls in flight
 }
 
 type instance struct {
@@ -112,13 +115,15 @@ func New(ctx context.Context, wasm []byte, opts Options) (*Engine, error) {
 	}
 	stop, halt := context.WithCancel(context.WithoutCancel(ctx))
 	return &Engine{
-		stop:     stop,
-		halt:     halt,
-		retain:   uint64(opts.RetainMemoryPages) * pageSize,
-		runtime:  runtime,
-		compiled: compiled,
-		idle:     make(chan *instance, opts.MaxInstances),
-		slots:    make(chan struct{}, opts.MaxInstances),
+		stop:      stop,
+		halt:      halt,
+		shut:      make(chan struct{}),
+		stoppable: opts.Interruptible,
+		retain:    uint64(opts.RetainMemoryPages) * pageSize,
+		runtime:   runtime,
+		compiled:  compiled,
+		idle:      make(chan *instance, opts.MaxInstances),
+		slots:     make(chan struct{}, opts.MaxInstances),
 	}, nil
 }
 
@@ -150,9 +155,13 @@ func (e *Engine) Invoke(ctx context.Context, request []byte) ([]byte, error) {
 		return nil, fmt.Errorf("wasmengine: %w", err)
 	}
 	// An interruptible call also stops when Close starts; an uninterruptible one runs to the end.
-	callCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	defer context.AfterFunc(e.stop, cancel)()
+	callCtx := ctx
+	if e.stoppable {
+		var cancel context.CancelFunc
+		callCtx, cancel = context.WithCancel(ctx)
+		defer cancel()
+		defer context.AfterFunc(e.stop, cancel)()
+	}
 	response, err := in.invoke(callCtx, request)
 	e.release(ctx, in, err == nil)
 	if err != nil && e.stop.Err() != nil && ctx.Err() == nil {
@@ -192,21 +201,26 @@ func (e *Engine) Stats() Stats {
 
 // Close releases the runtime and every instance; later calls get ErrClosed. It returns once the
 // calls in flight have ended: an uninterruptible one runs to completion, an interruptible one is
-// stopped and gets ErrClosed, and callers waiting for an instance get ErrClosed.
+// stopped and gets ErrClosed, and callers waiting for an instance get ErrClosed. A concurrent
+// or later Close waits for the first one and returns its result. Close does not give up when
+// ctx ends: uninterruptible calls are bounded by their input, and stopping the wait early
+// would close the runtime under running guest code.
 func (e *Engine) Close(ctx context.Context) error {
 	e.mu.Lock()
 	if e.closed {
 		e.mu.Unlock()
-		return nil
+		<-e.shut
+		return e.shutErr
 	}
 	e.closed = true
 	e.mu.Unlock()
 	e.halt()
 	e.calls.Wait()
 	if err := e.runtime.Close(ctx); err != nil {
-		return fmt.Errorf("wasmengine: close runtime: %w", err)
+		e.shutErr = fmt.Errorf("wasmengine: close runtime: %w", err)
 	}
-	return nil
+	close(e.shut)
+	return e.shutErr
 }
 
 // begin registers a call unless Close has started.
