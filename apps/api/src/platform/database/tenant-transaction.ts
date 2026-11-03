@@ -25,10 +25,13 @@ export const withTenant = async <T>(
     // a round trip on every tenant request. If entering fails, PostgreSQL rejects every later
     // statement of the transaction (25P02). Both are awaited to the end, so the transaction
     // never settles while the work still runs, and a failure to enter is the error reported.
-    const [entered, worked] = await Promise.allSettled([tx.exec(statement), fn(tx)]);
-    if (entered.status === 'rejected') throw entered.reason;
-    if (worked.status === 'rejected') throw worked.reason;
-    return worked.value;
+    const entered = tx.exec(statement);
+    // An async wrapper turns a synchronous throw from fn into a rejection, so both are awaited.
+    const work = (async () => fn(tx))();
+    const [enteredResult, workResult] = await Promise.allSettled([entered, work]);
+    if (enteredResult.status === 'rejected') throw enteredResult.reason;
+    if (workResult.status === 'rejected') throw workResult.reason;
+    return workResult.value;
   });
 };
 

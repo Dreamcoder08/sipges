@@ -95,4 +95,13 @@ describe('withTenant on a remote database', () => {
     t.answer(new Error('could not enter tenant'));
     await expect(work).rejects.toThrow('could not enter tenant');
   });
+
+  it('still waits for the tenant statement when the work throws synchronously', async () => {
+    const t = held();
+    const work = withTenant(t.sql, 'ACME/NORTE', (() => {
+      throw new Error('sync failure');
+    }) as unknown as () => Promise<string>);
+    t.answer(new Error('could not enter tenant'));
+    await expect(work).rejects.toThrow('could not enter tenant');
+  });
 });

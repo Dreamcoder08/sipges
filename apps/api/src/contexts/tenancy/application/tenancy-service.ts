@@ -15,6 +15,7 @@ import type {
   TenantSummary,
   UserDirectory,
 } from './ports.ts';
+import { createGrantCache } from './grant-cache.ts';
 
 export type Actor = { readonly username: string; readonly role: string };
 
@@ -33,6 +34,9 @@ export const createTenancyService = (deps: {
   dataReader: TenantDataReader;
 }) => {
   const { store, users, clock } = deps;
+  // Only the per-request project resolution reads cached grants; authorization checks such as
+  // export and isGranted keep reading them fresh.
+  const requestGrants = createGrantCache((username) => store.listGrants(username), clock);
 
   return {
     /** Ensures the legacy default project exists and every admin can reach it (app.py bootstrap). */
@@ -70,7 +74,7 @@ export const createTenancyService = (deps: {
       header: string | undefined;
       cookie: string | undefined;
     }): Promise<ScopeResolution> {
-      const grants = await store.listGrants(input.username);
+      const grants = await requestGrants.get(input.username);
       const scope = resolveScope({ header: input.header, cookie: input.cookie, grants });
       return scope ? { ok: true, scope } : { ok: false, projects: grants.map(formatScope) };
     },
@@ -84,13 +88,18 @@ export const createTenancyService = (deps: {
       const valid = validateNewTenant(input);
       if (!valid.ok) return err(valid.error);
       if (!(await users.exists(valid.value.username))) return err('user_missing');
-      const created = await store.createTenantWithGrant(
-        valid.value,
-        valid.value.label,
-        valid.value.username,
-        clock.now(),
-      );
-      return created ? ok(formatScope(valid.value)) : err('exists');
+      // Forget even when the write fails after committing: a stale copy must not outlive it.
+      try {
+        const created = await store.createTenantWithGrant(
+          valid.value,
+          valid.value.label,
+          valid.value.username,
+          clock.now(),
+        );
+        return created ? ok(formatScope(valid.value)) : err('exists');
+      } finally {
+        requestGrants.forget(valid.value.username);
+      }
     },
 
     async revoke(
@@ -100,7 +109,11 @@ export const createTenancyService = (deps: {
       if (actor.role !== 'admin') return err('forbidden');
       if (!(await users.exists(input.username))) return err('user_missing');
       if (!(await store.tenantExists(input))) return err('tenant_missing');
-      return (await store.revoke(input.username, input)) ? ok(true) : err('grant_missing');
+      try {
+        return (await store.revoke(input.username, input)) ? ok(true) : err('grant_missing');
+      } finally {
+        requestGrants.forget(input.username);
+      }
     },
 
     async grant(
@@ -110,8 +123,12 @@ export const createTenancyService = (deps: {
       if (actor.role !== 'admin') return err('forbidden');
       if (!(await users.exists(input.username))) return err('user_missing');
       if (!(await store.tenantExists(input))) return err('tenant_missing');
-      await store.grant(input.username, input, clock.now());
-      return ok(true);
+      try {
+        await store.grant(input.username, input, clock.now());
+        return ok(true);
+      } finally {
+        requestGrants.forget(input.username);
+      }
     },
   };
 };
