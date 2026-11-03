@@ -68,8 +68,10 @@ keys first, then insertion order), same number spelling (`String(number)`), same
 
 `wasmengine.New(ctx, wasm, Options{})` compiles the module once; `Invoke` returns the raw response
 bytes and `Call` decodes them into the `value` or a typed `*wasmengine.Error`. Options:
-`MaxInstances` (pool size, default 4), `MemoryLimitPages` (default 2048 = 128 MiB per instance) and
-`Interruptible`. Interruption is off by default because wazero's `WithCloseOnContextDone` made the
+`MaxInstances` (pool size, default 4), `MemoryLimitPages` (default 2048 = 128 MiB per instance),
+`RetainMemoryPages` (default 256 = 16 MiB: an instance whose memory grew past it is discarded
+instead of pooled, because linear memory never shrinks) and `Interruptible`. `Stats()` reports
+live and idle instances. Interruption is off by default because wazero's `WithCloseOnContextDone` made the
 engine 5.3x slower (2.28 → 12.09 ms per 1x request); without it the context is checked before
 each call and a call runs to completion. A trapped or interrupted instance is discarded.
 

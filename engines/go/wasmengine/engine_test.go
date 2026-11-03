@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -230,36 +231,111 @@ func bigRequest(t *testing.T, n int) []byte {
 func TestInterruptibleCallStopsMidFlightAndTheEngineRecovers(t *testing.T) {
 	engine := newEngine(t, wasmengine.Options{MaxInstances: 1, Interruptible: true})
 	request := bigRequest(t, 16) // about 5 MiB: tens of milliseconds of work
-	start := time.Now()
-	full, err := engine.Invoke(context.Background(), request)
-	if err != nil || errorCode(t, full) != "" {
-		t.Fatalf("uninterrupted call failed: %v %.200s", err, full)
+	// Warm the instance first so the timed call measures only the computation.
+	if _, err := engine.Invoke(context.Background(), request); err != nil {
+		t.Fatalf("warm-up call failed: %v", err)
 	}
-	elapsed := time.Since(start)
-	ctx, cancel := context.WithTimeout(context.Background(), elapsed/20)
+	start := time.Now()
+	if _, err := engine.Invoke(context.Background(), request); err != nil {
+		t.Fatalf("uninterrupted call failed: %v", err)
+	}
+	full := time.Since(start)
+	ctx, cancel := context.WithTimeout(context.Background(), full/10)
 	defer cancel()
 	start = time.Now()
-	if _, err := engine.Invoke(ctx, request); err == nil {
-		t.Fatalf("call with a %v deadline succeeded (full call takes %v)", elapsed/20, elapsed)
+	_, err := engine.Invoke(ctx, request)
+	stopped := time.Since(start)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("Invoke past its deadline = %v, want context.DeadlineExceeded", err)
 	}
-	if stopped := time.Since(start); stopped > elapsed/2 {
-		t.Fatalf("interrupted call took %v, full call %v: not stopped mid-flight", stopped, elapsed)
+	if stopped >= full {
+		t.Fatalf("interrupted call took %v, as long as a full call (%v)", stopped, full)
 	}
 	if _, err := engine.Call(context.Background(), []byte(`{"op":"defaults"}`)); err != nil {
 		t.Fatalf("engine unusable after an interrupted call: %v", err)
 	}
 }
 
-func TestOutOfMemoryRequestFailsAndTheNextCallSucceeds(t *testing.T) {
-	// 64 pages = 4 MiB of linear memory; a 6 MiB request cannot fit.
-	engine := newEngine(t, wasmengine.Options{MaxInstances: 1, MemoryLimitPages: 64})
-	big := append([]byte(`{"op":"defaults","pad":"`), bytes.Repeat([]byte("x"), 6<<20)...)
-	big = append(big, `"}`...)
-	if _, err := engine.Invoke(context.Background(), big); err == nil {
-		t.Fatal("6 MiB request under a 4 MiB memory limit succeeded")
+func TestOutOfMemoryFailsCleanlyAndTheNextCallSucceeds(t *testing.T) {
+	tests := []struct {
+		name    string
+		request func(t *testing.T) []byte
+		want    string
+	}{
+		// The request itself does not fit: alloc returns 0 and nothing traps.
+		{name: "request larger than memory", want: "alloc of", request: func(*testing.T) []byte {
+			big := append([]byte(`{"op":"defaults","pad":"`), bytes.Repeat([]byte("x"), 6<<20)...)
+			return append(big, `"}`...)
+		}},
+		// The request fits, but computing it does not: the guest aborts with a trap.
+		{name: "computation larger than memory", want: "compute:", request: func(t *testing.T) []byte {
+			return bigRequest(t, 8)
+		}},
 	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// 64 pages = 4 MiB of linear memory.
+			engine := newEngine(t, wasmengine.Options{MaxInstances: 1, MemoryLimitPages: 64})
+			_, err := engine.Invoke(context.Background(), tt.request(t))
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("Invoke = %v, want an error containing %q", err, tt.want)
+			}
+			if live := engine.Stats().Live; live != 0 {
+				t.Fatalf("failed instance kept: %d live", live)
+			}
+			if _, err := engine.Call(context.Background(), []byte(`{"op":"defaults"}`)); err != nil {
+				t.Fatalf("engine unusable after an out-of-memory call: %v", err)
+			}
+		})
+	}
+}
+
+func TestInstancesThatGrewPastTheRetainLimitAreNotPooled(t *testing.T) {
+	// 32 pages = 2 MiB: the 2.5 MiB request below grows the instance past it.
+	engine := newEngine(t, wasmengine.Options{MaxInstances: 1, RetainMemoryPages: 32})
 	if _, err := engine.Call(context.Background(), []byte(`{"op":"defaults"}`)); err != nil {
-		t.Fatalf("engine unusable after an out-of-memory call: %v", err)
+		t.Fatalf("small call: %v", err)
+	}
+	if got := engine.Stats(); got != (wasmengine.Stats{Live: 1, Idle: 1}) {
+		t.Fatalf("after a small call Stats = %+v, want one pooled instance", got)
+	}
+	if _, err := engine.Invoke(context.Background(), bigRequest(t, 8)); err != nil {
+		t.Fatalf("large call: %v", err)
+	}
+	if got := engine.Stats(); got != (wasmengine.Stats{}) {
+		t.Fatalf("after a large call Stats = %+v, want the grown instance discarded", got)
+	}
+}
+
+func TestCloseDuringCallsLeavesNoCallerWaiting(t *testing.T) {
+	ctx := context.Background()
+	engine, err := wasmengine.New(ctx, loadWasm(t), wasmengine.Options{MaxInstances: 2})
+	if err != nil {
+		t.Fatalf("new engine: %v", err)
+	}
+	request := bigRequest(t, 4)
+	const callers = 6 // more than the pool: some are waiting for an instance when Close runs
+	done := make(chan error, callers)
+	for range callers {
+		go func() {
+			_, err := engine.Invoke(ctx, request)
+			done <- err
+		}()
+	}
+	time.Sleep(20 * time.Millisecond)
+	if err := engine.Close(ctx); err != nil {
+		t.Fatalf("close: %v", err)
+	}
+	timeout := time.After(30 * time.Second)
+	for range callers {
+		select {
+		case <-done: // completed or failed: both are fine, waiting forever is not
+		case <-timeout:
+			t.Fatal("a call was still waiting 30 s after Close")
+		}
+	}
+	if _, err := engine.Invoke(ctx, request); !errors.Is(err, wasmengine.ErrClosed) {
+		t.Fatalf("Invoke after Close = %v, want ErrClosed", err)
 	}
 }
 

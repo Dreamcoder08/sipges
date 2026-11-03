@@ -25,6 +25,11 @@ var ErrClosed = errors.New("wasmengine: engine is closed")
 // DefaultMemoryLimitPages caps each instance's linear memory at 128 MiB (64 KiB pages).
 const DefaultMemoryLimitPages = 2048
 
+// DefaultRetainMemoryPages is the largest linear memory (16 MiB) an idle instance may keep.
+const DefaultRetainMemoryPages = 256
+
+const pageSize = 64 << 10
+
 // Options tunes an Engine. The zero value is valid.
 type Options struct {
 	// MaxInstances bounds concurrent calls (default 4). Callers beyond it wait for a free instance.
@@ -36,6 +41,16 @@ type Options struct {
 	// (2.28 → 12.09 ms per 1x request), so it is off by default: the context is then checked
 	// before each call, and a call runs to completion (engine calls are bounded by the input).
 	Interruptible bool
+	// RetainMemoryPages is the largest linear memory an instance may keep when it goes back to
+	// the pool (default DefaultRetainMemoryPages). Linear memory never shrinks, so an instance
+	// that served a large request is discarded instead of holding its peak memory while idle.
+	RetainMemoryPages uint32
+}
+
+// Stats reports the pool: Live instances exist (idle or busy), Idle ones wait in the pool.
+type Stats struct {
+	Live int
+	Idle int
 }
 
 // Error is an engine-reported failure: {"ok":false,"error":{"code","message"}}.
@@ -48,6 +63,7 @@ func (e *Error) Error() string { return fmt.Sprintf("engine error %s: %s", e.Cod
 
 // Engine is safe for concurrent use.
 type Engine struct {
+	retain   uint64 // bytes of linear memory an idle instance may keep
 	runtime  wazero.Runtime
 	compiled wazero.CompiledModule
 	idle     chan *instance
@@ -72,6 +88,9 @@ func New(ctx context.Context, wasm []byte, opts Options) (*Engine, error) {
 	if opts.MemoryLimitPages == 0 {
 		opts.MemoryLimitPages = DefaultMemoryLimitPages
 	}
+	if opts.RetainMemoryPages == 0 {
+		opts.RetainMemoryPages = DefaultRetainMemoryPages
+	}
 	config := wazero.NewRuntimeConfig().
 		WithCloseOnContextDone(opts.Interruptible).
 		WithMemoryLimitPages(opts.MemoryLimitPages)
@@ -89,6 +108,7 @@ func New(ctx context.Context, wasm []byte, opts Options) (*Engine, error) {
 		}
 	}
 	return &Engine{
+		retain:   uint64(opts.RetainMemoryPages) * pageSize,
 		runtime:  runtime,
 		compiled: compiled,
 		idle:     make(chan *instance, opts.MaxInstances),
@@ -106,6 +126,12 @@ func (e *Engine) Invoke(ctx context.Context, request []byte) ([]byte, error) {
 	in, err := e.acquire(ctx)
 	if err != nil {
 		return nil, err
+	}
+	// select picks randomly among ready cases, so a caller whose context ended while it waited
+	// may still have been handed an instance: do not start the call then.
+	if err := ctx.Err(); err != nil {
+		e.release(ctx, in, true)
+		return nil, fmt.Errorf("wasmengine: %w", err)
 	}
 	response, err := in.invoke(ctx, request)
 	e.release(ctx, in, err == nil)
@@ -136,7 +162,13 @@ func (e *Engine) Call(ctx context.Context, request []byte) (json.RawMessage, err
 	return envelope.Value, nil
 }
 
-// Close releases the runtime and every instance. Calls in flight fail; later calls get ErrClosed.
+// Stats returns a snapshot of the instance pool.
+func (e *Engine) Stats() Stats {
+	return Stats{Live: len(e.slots), Idle: len(e.idle)}
+}
+
+// Close releases the runtime and every instance; later calls get ErrClosed. A call in flight
+// either completes or fails (an interruptible one is stopped); none is left waiting.
 func (e *Engine) Close(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -182,7 +214,7 @@ func (e *Engine) acquire(ctx context.Context) (*instance, error) {
 
 // release returns a healthy instance to the pool, or discards it and frees its slot.
 func (e *Engine) release(ctx context.Context, in *instance, healthy bool) {
-	if healthy && !e.isClosed() {
+	if healthy && !e.isClosed() && uint64(in.memory.Size()) <= e.retain {
 		e.idle <- in // never blocks: at most cap(slots) instances exist
 		return
 	}
