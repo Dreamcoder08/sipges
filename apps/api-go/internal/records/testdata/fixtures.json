@@ -1,0 +1,564 @@
+{
+  "slugs": ["eventos", "actores", "directorio", "demandas", "narrativas", "fuentes", "buzon"],
+  "cases": [
+    {
+      "payload": "{}",
+      "list": "{\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
+      "list": "{\"Fecha\":\"2026-01-02\",\"Territorio\":\" Sechura \",\"Estado_Validacion\":\"Validado\",\"Descripcion_Hecho\":\"Bloqueo de vía\",\"Nivel_Verificacion\":\"B - Corroborada\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Fecha\":\"2026-01-02\",\"Territorio\":\" Sechura \",\"Estado_Validacion\":\"Validado\",\"Descripcion_Hecho\":\"Bloqueo de vía\",\"Nivel_Verificacion\":\"B - Corroborada\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"Bloqueo de vía\",\"territory\":\"Sechura\",\"date\":\"2026-01-02\",\"verification\":\"B\",\"validation\":\"Validado\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Sechura\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Sechura\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Sechura\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":\"B\",\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Sechura\",\"date\":\"2026-01-02\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
+      "list": "{\"Fecha\":20260102,\"Territorio\":null,\"Descripcion_Hecho\":\"\",\"Nivel_Verificacion\":\"Por verificar\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Fecha\":20260102,\"Territorio\":null,\"Descripcion_Hecho\":\"\",\"Nivel_Verificacion\":\"Por verificar\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"20260102\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"20260102\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"2\": \"dos\", \"10\": \"diez\", \"b\": 1, \"a\": 2, \"01\": \"cero uno\", \"_id\": \"propio\", \"4294967295\": \"no índice\", \"4294967294\": \"índice\"}",
+      "list": "{\"2\":\"dos\",\"10\":\"diez\",\"4294967294\":\"índice\",\"b\":1,\"a\":2,\"01\":\"cero uno\",\"_id\":\"REC-1\",\"4294967295\":\"no índice\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"2\":\"dos\",\"10\":\"diez\",\"4294967294\":\"índice\",\"b\":1,\"a\":2,\"01\":\"cero uno\",\"_id\":\"REC-1\",\"4294967295\":\"no índice\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Nombre\": \"\", \"Territorio\": \"\", \"Lugar / ámbito\": \"  Bayóvar  \", \"Nombre actualizado 2026\": \"Junta vecinal\"}",
+      "list": "{\"Nombre\":\"\",\"Territorio\":\"\",\"Lugar / ámbito\":\"  Bayóvar  \",\"Nombre actualizado 2026\":\"Junta vecinal\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Nombre\":\"\",\"Territorio\":\"\",\"Lugar / ámbito\":\"  Bayóvar  \",\"Nombre actualizado 2026\":\"Junta vecinal\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Nombre\": null, \"Ciudad\": \"Piura\", \"Distrito\": \"Vice\"}",
+      "list": "{\"Nombre\":null,\"Ciudad\":\"Piura\",\"Distrito\":\"Vice\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Nombre\":null,\"Ciudad\":\"Piura\",\"Distrito\":\"Vice\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Piura\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Nombre actualizado 2026\": {\"z\": 1, \"a\": [1, 2.5, 1e21, 1e-7, -0, true, null, \"x\"]}, \"Localidad\": [\" a \", {\"10\": 1, \"9\": 2}]}",
+      "list": "{\"Nombre actualizado 2026\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]},\"Localidad\":[\" a \",{\"9\":2,\"10\":1}],\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Nombre actualizado 2026\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]},\"Localidad\":[\" a \",{\"9\":2,\"10\":1}],\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"{\\\"z\\\":1,\\\"a\\\":[1,2.5,1e+21,1e-7,0,true,null,\\\"x\\\"]}\",\"territory\":\"[\\\" a \\\",{\\\"9\\\":2,\\\"10\\\":1}]\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Descripcion\": 1.0, \"Fecha_Registro\": 123456789012345678901234567890, \"Territorio\": 1e400}",
+      "list": "{\"Descripcion\":1,\"Fecha_Registro\":1.2345678901234568e+29,\"Territorio\":null,\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Descripcion\":1,\"Fecha_Registro\":1.2345678901234568e+29,\"Territorio\":null,\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Infinity\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Infinity\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Infinity\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"1\",\"territory\":\"Infinity\",\"date\":\"1.2345678901234568e+29\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"Infinity\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Asunto\": \"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f \\u007f \\u2028 <b>&amp;</b> 😀\", \"Fecha\": false, \"Territorio\": true}",
+      "list": "{\"Asunto\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\",\"Fecha\":false,\"Territorio\":true,\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Asunto\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\",\"Fecha\":false,\"Territorio\":true,\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"true\",\"date\":\"false\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"true\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"true\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"true\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\",\"territory\":\"true\",\"date\":\"false\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Archivo_Fuente\": \"acta.pdf\", \"Fecha_Documento\": \"2025-12-31\", \"Nivel_Base_Verificacion\": \"A - Confirmada\"}",
+      "list": "{\"Archivo_Fuente\":\"acta.pdf\",\"Fecha_Documento\":\"2025-12-31\",\"Nivel_Base_Verificacion\":\"A - Confirmada\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Archivo_Fuente\":\"acta.pdf\",\"Fecha_Documento\":\"2025-12-31\",\"Nivel_Base_Verificacion\":\"A - Confirmada\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"acta.pdf\",\"territory\":\"\",\"date\":\"2025-12-31\",\"verification\":\"A\",\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Archivo_Fuente\": \"  \", \"Nivel_Base_Verificacion\": \"F - Otra\", \"Nivel_Verificacion\": \"C -\"}",
+      "list": "{\"Archivo_Fuente\":\"  \",\"Nivel_Base_Verificacion\":\"F - Otra\",\"Nivel_Verificacion\":\"C -\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Archivo_Fuente\":\"  \",\"Nivel_Base_Verificacion\":\"F - Otra\",\"Nivel_Verificacion\":\"C -\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":\"C\",\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":\"C\",\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Descripcion\": \"Narrativa\", \"Fecha_Inicio\": \"2026-02-01\", \"Nivel_Verificacion\": \"E - Falsa\", \"Territorio\": \"ignorado\"}",
+      "list": "{\"Descripcion\":\"Narrativa\",\"Fecha_Inicio\":\"2026-02-01\",\"Nivel_Verificacion\":\"E - Falsa\",\"Territorio\":\"ignorado\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Descripcion\":\"Narrativa\",\"Fecha_Inicio\":\"2026-02-01\",\"Nivel_Verificacion\":\"E - Falsa\",\"Territorio\":\"ignorado\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"ignorado\",\"date\":\"\",\"verification\":\"E\",\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"ignorado\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"ignorado\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"Narrativa\",\"territory\":\"ignorado\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"Narrativa\",\"territory\":\"\",\"date\":\"2026-02-01\",\"verification\":\"E\",\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"ignorado\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"Nombre_Actor/Organizacion\": \"\\u00a0\\ufeff Comunidad \\u3000\", \"Territorio\": \"La Unión\"}",
+      "list": "{\"Nombre_Actor/Organizacion\":\" ﻿ Comunidad 　\",\"Territorio\":\"La Unión\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"Nombre_Actor/Organizacion\":\" ﻿ Comunidad 　\",\"Territorio\":\"La Unión\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"La Unión\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"Comunidad\",\"territory\":\"La Unión\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"La Unión\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"La Unión\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"La Unión\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "list": "{\"__proto__\":{\"a\":1},\"constructor\":\"c\",\"toString\":2,\"Asunto\":\"proto\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"__proto__\":{\"a\":1},\"constructor\":\"c\",\"toString\":2,\"Asunto\":\"proto\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"proto\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"__proto__\": {}, \"valueOf\": null, \"Asunto\": \"proto vacío\"}",
+      "list": "{\"__proto__\":{},\"valueOf\":null,\"Asunto\":\"proto vacío\",\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"__proto__\":{},\"valueOf\":null,\"Asunto\":\"proto vacío\",\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"proto vacío\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"x\": 0.1, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 1e-400, \"v\": 100000000000000000000, \"u\": 123e-20}",
+      "list": "{\"x\":0.1,\"y\":5e-324,\"z\":1.7976931348623157e+308,\"w\":0,\"v\":100000000000000000000,\"u\":1.23e-18,\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"x\":0.1,\"y\":5e-324,\"z\":1.7976931348623157e+308,\"w\":0,\"v\":100000000000000000000,\"u\":1.23e-18,\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"x\": 0.10, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 0, \"v\": 1e20, \"u\": 1.23e-18, \"t\": 2e400}",
+      "list": "{\"x\":0.1,\"y\":5e-324,\"z\":1.7976931348623157e+308,\"w\":0,\"v\":100000000000000000000,\"u\":1.23e-18,\"t\":null,\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"x\":0.1,\"y\":5e-324,\"z\":1.7976931348623157e+308,\"w\":0,\"v\":100000000000000000000,\"u\":1.23e-18,\"t\":null,\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"x\": [1, {\"b\": 2, \"a\": 1}], \"y\": \"Ä\", \"z\": {}}",
+      "list": "{\"x\":[1,{\"b\":2,\"a\":1}],\"y\":\"Ä\",\"z\":{},\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"x\":[1,{\"b\":2,\"a\":1}],\"y\":\"Ä\",\"z\":{},\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    },
+    {
+      "payload": "{\"x\": [1, {\"a\": 1, \"b\": 2}], \"y\": \"Z\", \"ä\": 1, \"Z\": 2, \"😀\": 3, \"\\uffff\": 4}",
+      "list": "{\"x\":[1,{\"a\":1,\"b\":2}],\"y\":\"Z\",\"ä\":1,\"Z\":2,\"😀\":3,\"￿\":4,\"_id\":\"REC-1\",\"_updated_at\":\"2026-01-02T03:04:05Z\"}",
+      "get": "{\"x\":[1,{\"a\":1,\"b\":2}],\"y\":\"Z\",\"ä\":1,\"Z\":2,\"😀\":3,\"￿\":4,\"_id\":\"REC-1\"}",
+      "summaries": [
+        "{\"slug\":\"eventos\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"actores\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"directorio\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"demandas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"narrativas\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"fuentes\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}",
+        "{\"slug\":\"buzon\",\"id\":\"REC-1\",\"title\":\"REC-1\",\"territory\":\"\",\"date\":\"\",\"verification\":null,\"validation\":\"\"}"
+      ]
+    }
+  ],
+  "diffs": [
+    {
+      "before": "{}",
+      "after": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"after\":\"Bloqueo de vía\"},{\"field\":\"Estado_Validacion\",\"after\":\"Validado\"},{\"field\":\"Fecha\",\"after\":\"2026-01-02\"},{\"field\":\"Nivel_Verificacion\",\"after\":\"B - Corroborada\"},{\"field\":\"Territorio\",\"after\":\" Sechura \"}]"
+    },
+    {
+      "before": "{}",
+      "after": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"after\":\"\"},{\"field\":\"Fecha\",\"after\":20260102},{\"field\":\"Nivel_Verificacion\",\"after\":\"Por verificar\"},{\"field\":\"Territorio\",\"after\":null}]"
+    },
+    { "before": null, "after": null, "changes": "[]" },
+    {
+      "before": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
+      "after": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"before\":\"Bloqueo de vía\",\"after\":\"\"},{\"field\":\"Estado_Validacion\",\"before\":\"Validado\"},{\"field\":\"Fecha\",\"before\":\"2026-01-02\",\"after\":20260102},{\"field\":\"Nivel_Verificacion\",\"before\":\"B - Corroborada\",\"after\":\"Por verificar\"},{\"field\":\"Territorio\",\"before\":\" Sechura \",\"after\":null}]"
+    },
+    {
+      "before": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
+      "after": "{\"2\": \"dos\", \"10\": \"diez\", \"b\": 1, \"a\": 2, \"01\": \"cero uno\", \"_id\": \"propio\", \"4294967295\": \"no índice\", \"4294967294\": \"índice\"}",
+      "changes": "[{\"field\":\"01\",\"after\":\"cero uno\"},{\"field\":\"10\",\"after\":\"diez\"},{\"field\":\"2\",\"after\":\"dos\"},{\"field\":\"4294967294\",\"after\":\"índice\"},{\"field\":\"4294967295\",\"after\":\"no índice\"},{\"field\":\"Descripcion_Hecho\",\"before\":\"Bloqueo de vía\"},{\"field\":\"Estado_Validacion\",\"before\":\"Validado\"},{\"field\":\"Fecha\",\"before\":\"2026-01-02\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"B - Corroborada\"},{\"field\":\"Territorio\",\"before\":\" Sechura \"},{\"field\":\"_id\",\"after\":\"propio\"},{\"field\":\"a\",\"after\":2},{\"field\":\"b\",\"after\":1}]"
+    },
+    {
+      "before": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"before\":\"Bloqueo de vía\"},{\"field\":\"Estado_Validacion\",\"before\":\"Validado\"},{\"field\":\"Fecha\",\"before\":\"2026-01-02\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"B - Corroborada\"},{\"field\":\"Territorio\",\"before\":\" Sechura \"}]"
+    },
+    {
+      "before": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
+      "after": "{\"2\": \"dos\", \"10\": \"diez\", \"b\": 1, \"a\": 2, \"01\": \"cero uno\", \"_id\": \"propio\", \"4294967295\": \"no índice\", \"4294967294\": \"índice\"}",
+      "changes": "[{\"field\":\"01\",\"after\":\"cero uno\"},{\"field\":\"10\",\"after\":\"diez\"},{\"field\":\"2\",\"after\":\"dos\"},{\"field\":\"4294967294\",\"after\":\"índice\"},{\"field\":\"4294967295\",\"after\":\"no índice\"},{\"field\":\"Descripcion_Hecho\",\"before\":\"\"},{\"field\":\"Fecha\",\"before\":20260102},{\"field\":\"Nivel_Verificacion\",\"before\":\"Por verificar\"},{\"field\":\"Territorio\",\"before\":null},{\"field\":\"_id\",\"after\":\"propio\"},{\"field\":\"a\",\"after\":2},{\"field\":\"b\",\"after\":1}]"
+    },
+    {
+      "before": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
+      "after": "{\"Nombre\": \"\", \"Territorio\": \"\", \"Lugar / ámbito\": \"  Bayóvar  \", \"Nombre actualizado 2026\": \"Junta vecinal\"}",
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"before\":\"\"},{\"field\":\"Fecha\",\"before\":20260102},{\"field\":\"Lugar / ámbito\",\"after\":\"  Bayóvar  \"},{\"field\":\"Nivel_Verificacion\",\"before\":\"Por verificar\"},{\"field\":\"Nombre\",\"after\":\"\"},{\"field\":\"Nombre actualizado 2026\",\"after\":\"Junta vecinal\"},{\"field\":\"Territorio\",\"before\":null,\"after\":\"\"}]"
+    },
+    {
+      "before": "{\"Fecha\": 20260102, \"Territorio\": null, \"Descripcion_Hecho\": \"\", \"Nivel_Verificacion\": \"Por verificar\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"before\":\"\"},{\"field\":\"Fecha\",\"before\":20260102},{\"field\":\"Nivel_Verificacion\",\"before\":\"Por verificar\"},{\"field\":\"Territorio\",\"before\":null}]"
+    },
+    {
+      "before": "{\"2\": \"dos\", \"10\": \"diez\", \"b\": 1, \"a\": 2, \"01\": \"cero uno\", \"_id\": \"propio\", \"4294967295\": \"no índice\", \"4294967294\": \"índice\"}",
+      "after": "{\"Nombre\": \"\", \"Territorio\": \"\", \"Lugar / ámbito\": \"  Bayóvar  \", \"Nombre actualizado 2026\": \"Junta vecinal\"}",
+      "changes": "[{\"field\":\"01\",\"before\":\"cero uno\"},{\"field\":\"10\",\"before\":\"diez\"},{\"field\":\"2\",\"before\":\"dos\"},{\"field\":\"4294967294\",\"before\":\"índice\"},{\"field\":\"4294967295\",\"before\":\"no índice\"},{\"field\":\"Lugar / ámbito\",\"after\":\"  Bayóvar  \"},{\"field\":\"Nombre\",\"after\":\"\"},{\"field\":\"Nombre actualizado 2026\",\"after\":\"Junta vecinal\"},{\"field\":\"Territorio\",\"after\":\"\"},{\"field\":\"_id\",\"before\":\"propio\"},{\"field\":\"a\",\"before\":2},{\"field\":\"b\",\"before\":1}]"
+    },
+    {
+      "before": "{\"2\": \"dos\", \"10\": \"diez\", \"b\": 1, \"a\": 2, \"01\": \"cero uno\", \"_id\": \"propio\", \"4294967295\": \"no índice\", \"4294967294\": \"índice\"}",
+      "after": "{\"Nombre\": null, \"Ciudad\": \"Piura\", \"Distrito\": \"Vice\"}",
+      "changes": "[{\"field\":\"01\",\"before\":\"cero uno\"},{\"field\":\"10\",\"before\":\"diez\"},{\"field\":\"2\",\"before\":\"dos\"},{\"field\":\"4294967294\",\"before\":\"índice\"},{\"field\":\"4294967295\",\"before\":\"no índice\"},{\"field\":\"Ciudad\",\"after\":\"Piura\"},{\"field\":\"Distrito\",\"after\":\"Vice\"},{\"field\":\"Nombre\",\"after\":null},{\"field\":\"_id\",\"before\":\"propio\"},{\"field\":\"a\",\"before\":2},{\"field\":\"b\",\"before\":1}]"
+    },
+    {
+      "before": "{\"2\": \"dos\", \"10\": \"diez\", \"b\": 1, \"a\": 2, \"01\": \"cero uno\", \"_id\": \"propio\", \"4294967295\": \"no índice\", \"4294967294\": \"índice\"}",
+      "after": null,
+      "changes": "[{\"field\":\"01\",\"before\":\"cero uno\"},{\"field\":\"10\",\"before\":\"diez\"},{\"field\":\"2\",\"before\":\"dos\"},{\"field\":\"4294967294\",\"before\":\"índice\"},{\"field\":\"4294967295\",\"before\":\"no índice\"},{\"field\":\"_id\",\"before\":\"propio\"},{\"field\":\"a\",\"before\":2},{\"field\":\"b\",\"before\":1}]"
+    },
+    {
+      "before": "{\"Nombre\": \"\", \"Territorio\": \"\", \"Lugar / ámbito\": \"  Bayóvar  \", \"Nombre actualizado 2026\": \"Junta vecinal\"}",
+      "after": "{\"Nombre\": null, \"Ciudad\": \"Piura\", \"Distrito\": \"Vice\"}",
+      "changes": "[{\"field\":\"Ciudad\",\"after\":\"Piura\"},{\"field\":\"Distrito\",\"after\":\"Vice\"},{\"field\":\"Lugar / ámbito\",\"before\":\"  Bayóvar  \"},{\"field\":\"Nombre\",\"before\":\"\",\"after\":null},{\"field\":\"Nombre actualizado 2026\",\"before\":\"Junta vecinal\"},{\"field\":\"Territorio\",\"before\":\"\"}]"
+    },
+    {
+      "before": "{\"Nombre\": \"\", \"Territorio\": \"\", \"Lugar / ámbito\": \"  Bayóvar  \", \"Nombre actualizado 2026\": \"Junta vecinal\"}",
+      "after": "{\"Nombre actualizado 2026\": {\"z\": 1, \"a\": [1, 2.5, 1e21, 1e-7, -0, true, null, \"x\"]}, \"Localidad\": [\" a \", {\"10\": 1, \"9\": 2}]}",
+      "changes": "[{\"field\":\"Localidad\",\"after\":[\" a \",{\"9\":2,\"10\":1}]},{\"field\":\"Lugar / ámbito\",\"before\":\"  Bayóvar  \"},{\"field\":\"Nombre\",\"before\":\"\"},{\"field\":\"Nombre actualizado 2026\",\"before\":\"Junta vecinal\",\"after\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]}},{\"field\":\"Territorio\",\"before\":\"\"}]"
+    },
+    {
+      "before": "{\"Nombre\": \"\", \"Territorio\": \"\", \"Lugar / ámbito\": \"  Bayóvar  \", \"Nombre actualizado 2026\": \"Junta vecinal\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Lugar / ámbito\",\"before\":\"  Bayóvar  \"},{\"field\":\"Nombre\",\"before\":\"\"},{\"field\":\"Nombre actualizado 2026\",\"before\":\"Junta vecinal\"},{\"field\":\"Territorio\",\"before\":\"\"}]"
+    },
+    {
+      "before": "{\"Nombre\": null, \"Ciudad\": \"Piura\", \"Distrito\": \"Vice\"}",
+      "after": "{\"Nombre actualizado 2026\": {\"z\": 1, \"a\": [1, 2.5, 1e21, 1e-7, -0, true, null, \"x\"]}, \"Localidad\": [\" a \", {\"10\": 1, \"9\": 2}]}",
+      "changes": "[{\"field\":\"Ciudad\",\"before\":\"Piura\"},{\"field\":\"Distrito\",\"before\":\"Vice\"},{\"field\":\"Localidad\",\"after\":[\" a \",{\"9\":2,\"10\":1}]},{\"field\":\"Nombre\",\"before\":null},{\"field\":\"Nombre actualizado 2026\",\"after\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]}}]"
+    },
+    {
+      "before": "{\"Nombre\": null, \"Ciudad\": \"Piura\", \"Distrito\": \"Vice\"}",
+      "after": "{\"Descripcion\": 1.0, \"Fecha_Registro\": 123456789012345678901234567890, \"Territorio\": 1e400}",
+      "changes": "[{\"field\":\"Ciudad\",\"before\":\"Piura\"},{\"field\":\"Descripcion\",\"after\":1},{\"field\":\"Distrito\",\"before\":\"Vice\"},{\"field\":\"Fecha_Registro\",\"after\":1.2345678901234568e+29},{\"field\":\"Nombre\",\"before\":null},{\"field\":\"Territorio\",\"after\":null}]"
+    },
+    {
+      "before": "{\"Nombre\": null, \"Ciudad\": \"Piura\", \"Distrito\": \"Vice\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Ciudad\",\"before\":\"Piura\"},{\"field\":\"Distrito\",\"before\":\"Vice\"},{\"field\":\"Nombre\",\"before\":null}]"
+    },
+    {
+      "before": "{\"Nombre actualizado 2026\": {\"z\": 1, \"a\": [1, 2.5, 1e21, 1e-7, -0, true, null, \"x\"]}, \"Localidad\": [\" a \", {\"10\": 1, \"9\": 2}]}",
+      "after": "{\"Descripcion\": 1.0, \"Fecha_Registro\": 123456789012345678901234567890, \"Territorio\": 1e400}",
+      "changes": "[{\"field\":\"Descripcion\",\"after\":1},{\"field\":\"Fecha_Registro\",\"after\":1.2345678901234568e+29},{\"field\":\"Localidad\",\"before\":[\" a \",{\"9\":2,\"10\":1}]},{\"field\":\"Nombre actualizado 2026\",\"before\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]}},{\"field\":\"Territorio\",\"after\":null}]"
+    },
+    {
+      "before": "{\"Nombre actualizado 2026\": {\"z\": 1, \"a\": [1, 2.5, 1e21, 1e-7, -0, true, null, \"x\"]}, \"Localidad\": [\" a \", {\"10\": 1, \"9\": 2}]}",
+      "after": "{\"Asunto\": \"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f \\u007f \\u2028 <b>&amp;</b> 😀\", \"Fecha\": false, \"Territorio\": true}",
+      "changes": "[{\"field\":\"Asunto\",\"after\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\"},{\"field\":\"Fecha\",\"after\":false},{\"field\":\"Localidad\",\"before\":[\" a \",{\"9\":2,\"10\":1}]},{\"field\":\"Nombre actualizado 2026\",\"before\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]}},{\"field\":\"Territorio\",\"after\":true}]"
+    },
+    {
+      "before": "{\"Nombre actualizado 2026\": {\"z\": 1, \"a\": [1, 2.5, 1e21, 1e-7, -0, true, null, \"x\"]}, \"Localidad\": [\" a \", {\"10\": 1, \"9\": 2}]}",
+      "after": null,
+      "changes": "[{\"field\":\"Localidad\",\"before\":[\" a \",{\"9\":2,\"10\":1}]},{\"field\":\"Nombre actualizado 2026\",\"before\":{\"z\":1,\"a\":[1,2.5,1e+21,1e-7,0,true,null,\"x\"]}}]"
+    },
+    {
+      "before": "{\"Descripcion\": 1.0, \"Fecha_Registro\": 123456789012345678901234567890, \"Territorio\": 1e400}",
+      "after": "{\"Asunto\": \"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f \\u007f \\u2028 <b>&amp;</b> 😀\", \"Fecha\": false, \"Territorio\": true}",
+      "changes": "[{\"field\":\"Asunto\",\"after\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\"},{\"field\":\"Descripcion\",\"before\":1},{\"field\":\"Fecha\",\"after\":false},{\"field\":\"Fecha_Registro\",\"before\":1.2345678901234568e+29},{\"field\":\"Territorio\",\"before\":null,\"after\":true}]"
+    },
+    {
+      "before": "{\"Descripcion\": 1.0, \"Fecha_Registro\": 123456789012345678901234567890, \"Territorio\": 1e400}",
+      "after": "{\"Archivo_Fuente\": \"acta.pdf\", \"Fecha_Documento\": \"2025-12-31\", \"Nivel_Base_Verificacion\": \"A - Confirmada\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"after\":\"acta.pdf\"},{\"field\":\"Descripcion\",\"before\":1},{\"field\":\"Fecha_Documento\",\"after\":\"2025-12-31\"},{\"field\":\"Fecha_Registro\",\"before\":1.2345678901234568e+29},{\"field\":\"Nivel_Base_Verificacion\",\"after\":\"A - Confirmada\"},{\"field\":\"Territorio\",\"before\":null}]"
+    },
+    {
+      "before": "{\"Descripcion\": 1.0, \"Fecha_Registro\": 123456789012345678901234567890, \"Territorio\": 1e400}",
+      "after": null,
+      "changes": "[{\"field\":\"Descripcion\",\"before\":1},{\"field\":\"Fecha_Registro\",\"before\":1.2345678901234568e+29},{\"field\":\"Territorio\",\"before\":null}]"
+    },
+    {
+      "before": "{\"Asunto\": \"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f \\u007f \\u2028 <b>&amp;</b> 😀\", \"Fecha\": false, \"Territorio\": true}",
+      "after": "{\"Archivo_Fuente\": \"acta.pdf\", \"Fecha_Documento\": \"2025-12-31\", \"Nivel_Base_Verificacion\": \"A - Confirmada\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"after\":\"acta.pdf\"},{\"field\":\"Asunto\",\"before\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\"},{\"field\":\"Fecha\",\"before\":false},{\"field\":\"Fecha_Documento\",\"after\":\"2025-12-31\"},{\"field\":\"Nivel_Base_Verificacion\",\"after\":\"A - Confirmada\"},{\"field\":\"Territorio\",\"before\":true}]"
+    },
+    {
+      "before": "{\"Asunto\": \"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f \\u007f \\u2028 <b>&amp;</b> 😀\", \"Fecha\": false, \"Territorio\": true}",
+      "after": "{\"Archivo_Fuente\": \"  \", \"Nivel_Base_Verificacion\": \"F - Otra\", \"Nivel_Verificacion\": \"C -\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"after\":\"  \"},{\"field\":\"Asunto\",\"before\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\"},{\"field\":\"Fecha\",\"before\":false},{\"field\":\"Nivel_Base_Verificacion\",\"after\":\"F - Otra\"},{\"field\":\"Nivel_Verificacion\",\"after\":\"C -\"},{\"field\":\"Territorio\",\"before\":true}]"
+    },
+    {
+      "before": "{\"Asunto\": \"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f \\u007f \\u2028 <b>&amp;</b> 😀\", \"Fecha\": false, \"Territorio\": true}",
+      "after": null,
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"\\\"comillas\\\" \\\\ barra \\n línea \\t tab \\u0001 \\u001f    <b>&amp;</b> 😀\"},{\"field\":\"Fecha\",\"before\":false},{\"field\":\"Territorio\",\"before\":true}]"
+    },
+    {
+      "before": "{\"Archivo_Fuente\": \"acta.pdf\", \"Fecha_Documento\": \"2025-12-31\", \"Nivel_Base_Verificacion\": \"A - Confirmada\"}",
+      "after": "{\"Archivo_Fuente\": \"  \", \"Nivel_Base_Verificacion\": \"F - Otra\", \"Nivel_Verificacion\": \"C -\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"before\":\"acta.pdf\",\"after\":\"  \"},{\"field\":\"Fecha_Documento\",\"before\":\"2025-12-31\"},{\"field\":\"Nivel_Base_Verificacion\",\"before\":\"A - Confirmada\",\"after\":\"F - Otra\"},{\"field\":\"Nivel_Verificacion\",\"after\":\"C -\"}]"
+    },
+    {
+      "before": "{\"Archivo_Fuente\": \"acta.pdf\", \"Fecha_Documento\": \"2025-12-31\", \"Nivel_Base_Verificacion\": \"A - Confirmada\"}",
+      "after": "{\"Descripcion\": \"Narrativa\", \"Fecha_Inicio\": \"2026-02-01\", \"Nivel_Verificacion\": \"E - Falsa\", \"Territorio\": \"ignorado\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"before\":\"acta.pdf\"},{\"field\":\"Descripcion\",\"after\":\"Narrativa\"},{\"field\":\"Fecha_Documento\",\"before\":\"2025-12-31\"},{\"field\":\"Fecha_Inicio\",\"after\":\"2026-02-01\"},{\"field\":\"Nivel_Base_Verificacion\",\"before\":\"A - Confirmada\"},{\"field\":\"Nivel_Verificacion\",\"after\":\"E - Falsa\"},{\"field\":\"Territorio\",\"after\":\"ignorado\"}]"
+    },
+    {
+      "before": "{\"Archivo_Fuente\": \"acta.pdf\", \"Fecha_Documento\": \"2025-12-31\", \"Nivel_Base_Verificacion\": \"A - Confirmada\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"before\":\"acta.pdf\"},{\"field\":\"Fecha_Documento\",\"before\":\"2025-12-31\"},{\"field\":\"Nivel_Base_Verificacion\",\"before\":\"A - Confirmada\"}]"
+    },
+    {
+      "before": "{\"Archivo_Fuente\": \"  \", \"Nivel_Base_Verificacion\": \"F - Otra\", \"Nivel_Verificacion\": \"C -\"}",
+      "after": "{\"Descripcion\": \"Narrativa\", \"Fecha_Inicio\": \"2026-02-01\", \"Nivel_Verificacion\": \"E - Falsa\", \"Territorio\": \"ignorado\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"before\":\"  \"},{\"field\":\"Descripcion\",\"after\":\"Narrativa\"},{\"field\":\"Fecha_Inicio\",\"after\":\"2026-02-01\"},{\"field\":\"Nivel_Base_Verificacion\",\"before\":\"F - Otra\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"C -\",\"after\":\"E - Falsa\"},{\"field\":\"Territorio\",\"after\":\"ignorado\"}]"
+    },
+    {
+      "before": "{\"Archivo_Fuente\": \"  \", \"Nivel_Base_Verificacion\": \"F - Otra\", \"Nivel_Verificacion\": \"C -\"}",
+      "after": "{\"Nombre_Actor/Organizacion\": \"\\u00a0\\ufeff Comunidad \\u3000\", \"Territorio\": \"La Unión\"}",
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"before\":\"  \"},{\"field\":\"Nivel_Base_Verificacion\",\"before\":\"F - Otra\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"C -\"},{\"field\":\"Nombre_Actor/Organizacion\",\"after\":\" ﻿ Comunidad 　\"},{\"field\":\"Territorio\",\"after\":\"La Unión\"}]"
+    },
+    {
+      "before": "{\"Archivo_Fuente\": \"  \", \"Nivel_Base_Verificacion\": \"F - Otra\", \"Nivel_Verificacion\": \"C -\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Archivo_Fuente\",\"before\":\"  \"},{\"field\":\"Nivel_Base_Verificacion\",\"before\":\"F - Otra\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"C -\"}]"
+    },
+    {
+      "before": "{\"Descripcion\": \"Narrativa\", \"Fecha_Inicio\": \"2026-02-01\", \"Nivel_Verificacion\": \"E - Falsa\", \"Territorio\": \"ignorado\"}",
+      "after": "{\"Nombre_Actor/Organizacion\": \"\\u00a0\\ufeff Comunidad \\u3000\", \"Territorio\": \"La Unión\"}",
+      "changes": "[{\"field\":\"Descripcion\",\"before\":\"Narrativa\"},{\"field\":\"Fecha_Inicio\",\"before\":\"2026-02-01\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"E - Falsa\"},{\"field\":\"Nombre_Actor/Organizacion\",\"after\":\" ﻿ Comunidad 　\"},{\"field\":\"Territorio\",\"before\":\"ignorado\",\"after\":\"La Unión\"}]"
+    },
+    {
+      "before": "{\"Descripcion\": \"Narrativa\", \"Fecha_Inicio\": \"2026-02-01\", \"Nivel_Verificacion\": \"E - Falsa\", \"Territorio\": \"ignorado\"}",
+      "after": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "changes": "[{\"field\":\"Asunto\",\"after\":\"proto\"},{\"field\":\"Descripcion\",\"before\":\"Narrativa\"},{\"field\":\"Fecha_Inicio\",\"before\":\"2026-02-01\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"E - Falsa\"},{\"field\":\"Territorio\",\"before\":\"ignorado\"},{\"field\":\"__proto__\",\"before\":{},\"after\":{\"a\":1}},{\"field\":\"constructor\",\"after\":\"c\"},{\"field\":\"toString\",\"after\":2}]"
+    },
+    {
+      "before": "{\"Descripcion\": \"Narrativa\", \"Fecha_Inicio\": \"2026-02-01\", \"Nivel_Verificacion\": \"E - Falsa\", \"Territorio\": \"ignorado\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Descripcion\",\"before\":\"Narrativa\"},{\"field\":\"Fecha_Inicio\",\"before\":\"2026-02-01\"},{\"field\":\"Nivel_Verificacion\",\"before\":\"E - Falsa\"},{\"field\":\"Territorio\",\"before\":\"ignorado\"}]"
+    },
+    {
+      "before": "{\"Nombre_Actor/Organizacion\": \"\\u00a0\\ufeff Comunidad \\u3000\", \"Territorio\": \"La Unión\"}",
+      "after": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "changes": "[{\"field\":\"Asunto\",\"after\":\"proto\"},{\"field\":\"Nombre_Actor/Organizacion\",\"before\":\" ﻿ Comunidad 　\"},{\"field\":\"Territorio\",\"before\":\"La Unión\"},{\"field\":\"__proto__\",\"before\":{},\"after\":{\"a\":1}},{\"field\":\"constructor\",\"after\":\"c\"},{\"field\":\"toString\",\"after\":2}]"
+    },
+    {
+      "before": "{\"Nombre_Actor/Organizacion\": \"\\u00a0\\ufeff Comunidad \\u3000\", \"Territorio\": \"La Unión\"}",
+      "after": "{\"__proto__\": {}, \"valueOf\": null, \"Asunto\": \"proto vacío\"}",
+      "changes": "[{\"field\":\"Asunto\",\"after\":\"proto vacío\"},{\"field\":\"Nombre_Actor/Organizacion\",\"before\":\" ﻿ Comunidad 　\"},{\"field\":\"Territorio\",\"before\":\"La Unión\"},{\"field\":\"valueOf\",\"after\":null}]"
+    },
+    {
+      "before": "{\"Nombre_Actor/Organizacion\": \"\\u00a0\\ufeff Comunidad \\u3000\", \"Territorio\": \"La Unión\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Nombre_Actor/Organizacion\",\"before\":\" ﻿ Comunidad 　\"},{\"field\":\"Territorio\",\"before\":\"La Unión\"}]"
+    },
+    {
+      "before": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "after": "{\"__proto__\": {}, \"valueOf\": null, \"Asunto\": \"proto vacío\"}",
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"proto\",\"after\":\"proto vacío\"},{\"field\":\"__proto__\",\"before\":{\"a\":1},\"after\":{}},{\"field\":\"constructor\",\"before\":\"c\"},{\"field\":\"toString\",\"before\":2},{\"field\":\"valueOf\",\"after\":null}]"
+    },
+    {
+      "before": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "after": "{\"x\": 0.1, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 1e-400, \"v\": 100000000000000000000, \"u\": 123e-20}",
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"proto\"},{\"field\":\"__proto__\",\"before\":{\"a\":1},\"after\":{}},{\"field\":\"constructor\",\"before\":\"c\"},{\"field\":\"toString\",\"before\":2},{\"field\":\"u\",\"after\":1.23e-18},{\"field\":\"v\",\"after\":100000000000000000000},{\"field\":\"w\",\"after\":0},{\"field\":\"x\",\"after\":0.1},{\"field\":\"y\",\"after\":5e-324},{\"field\":\"z\",\"after\":1.7976931348623157e+308}]"
+    },
+    {
+      "before": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"proto\"},{\"field\":\"__proto__\",\"before\":{\"a\":1},\"after\":{}},{\"field\":\"constructor\",\"before\":\"c\"},{\"field\":\"toString\",\"before\":2}]"
+    },
+    {
+      "before": "{\"__proto__\": {}, \"valueOf\": null, \"Asunto\": \"proto vacío\"}",
+      "after": "{\"x\": 0.1, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 1e-400, \"v\": 100000000000000000000, \"u\": 123e-20}",
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"proto vacío\"},{\"field\":\"u\",\"after\":1.23e-18},{\"field\":\"v\",\"after\":100000000000000000000},{\"field\":\"valueOf\",\"before\":null},{\"field\":\"w\",\"after\":0},{\"field\":\"x\",\"after\":0.1},{\"field\":\"y\",\"after\":5e-324},{\"field\":\"z\",\"after\":1.7976931348623157e+308}]"
+    },
+    {
+      "before": "{\"__proto__\": {}, \"valueOf\": null, \"Asunto\": \"proto vacío\"}",
+      "after": "{\"x\": 0.10, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 0, \"v\": 1e20, \"u\": 1.23e-18, \"t\": 2e400}",
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"proto vacío\"},{\"field\":\"t\",\"after\":null},{\"field\":\"u\",\"after\":1.23e-18},{\"field\":\"v\",\"after\":100000000000000000000},{\"field\":\"valueOf\",\"before\":null},{\"field\":\"w\",\"after\":0},{\"field\":\"x\",\"after\":0.1},{\"field\":\"y\",\"after\":5e-324},{\"field\":\"z\",\"after\":1.7976931348623157e+308}]"
+    },
+    {
+      "before": "{\"__proto__\": {}, \"valueOf\": null, \"Asunto\": \"proto vacío\"}",
+      "after": null,
+      "changes": "[{\"field\":\"Asunto\",\"before\":\"proto vacío\"},{\"field\":\"valueOf\",\"before\":null}]"
+    },
+    {
+      "before": "{\"x\": 0.1, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 1e-400, \"v\": 100000000000000000000, \"u\": 123e-20}",
+      "after": "{\"x\": 0.10, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 0, \"v\": 1e20, \"u\": 1.23e-18, \"t\": 2e400}",
+      "changes": "[{\"field\":\"t\",\"after\":null}]"
+    },
+    {
+      "before": "{\"x\": 0.1, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 1e-400, \"v\": 100000000000000000000, \"u\": 123e-20}",
+      "after": "{\"x\": [1, {\"b\": 2, \"a\": 1}], \"y\": \"Ä\", \"z\": {}}",
+      "changes": "[{\"field\":\"u\",\"before\":1.23e-18},{\"field\":\"v\",\"before\":100000000000000000000},{\"field\":\"w\",\"before\":0},{\"field\":\"x\",\"before\":0.1,\"after\":[1,{\"b\":2,\"a\":1}]},{\"field\":\"y\",\"before\":5e-324,\"after\":\"Ä\"},{\"field\":\"z\",\"before\":1.7976931348623157e+308,\"after\":{}}]"
+    },
+    {
+      "before": "{\"x\": 0.1, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 1e-400, \"v\": 100000000000000000000, \"u\": 123e-20}",
+      "after": null,
+      "changes": "[{\"field\":\"u\",\"before\":1.23e-18},{\"field\":\"v\",\"before\":100000000000000000000},{\"field\":\"w\",\"before\":0},{\"field\":\"x\",\"before\":0.1},{\"field\":\"y\",\"before\":5e-324},{\"field\":\"z\",\"before\":1.7976931348623157e+308}]"
+    },
+    {
+      "before": "{\"x\": 0.10, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 0, \"v\": 1e20, \"u\": 1.23e-18, \"t\": 2e400}",
+      "after": "{\"x\": [1, {\"b\": 2, \"a\": 1}], \"y\": \"Ä\", \"z\": {}}",
+      "changes": "[{\"field\":\"t\",\"before\":null},{\"field\":\"u\",\"before\":1.23e-18},{\"field\":\"v\",\"before\":100000000000000000000},{\"field\":\"w\",\"before\":0},{\"field\":\"x\",\"before\":0.1,\"after\":[1,{\"b\":2,\"a\":1}]},{\"field\":\"y\",\"before\":5e-324,\"after\":\"Ä\"},{\"field\":\"z\",\"before\":1.7976931348623157e+308,\"after\":{}}]"
+    },
+    {
+      "before": "{\"x\": 0.10, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 0, \"v\": 1e20, \"u\": 1.23e-18, \"t\": 2e400}",
+      "after": "{\"x\": [1, {\"a\": 1, \"b\": 2}], \"y\": \"Z\", \"ä\": 1, \"Z\": 2, \"😀\": 3, \"\\uffff\": 4}",
+      "changes": "[{\"field\":\"Z\",\"after\":2},{\"field\":\"t\",\"before\":null},{\"field\":\"u\",\"before\":1.23e-18},{\"field\":\"v\",\"before\":100000000000000000000},{\"field\":\"w\",\"before\":0},{\"field\":\"x\",\"before\":0.1,\"after\":[1,{\"a\":1,\"b\":2}]},{\"field\":\"y\",\"before\":5e-324,\"after\":\"Z\"},{\"field\":\"z\",\"before\":1.7976931348623157e+308},{\"field\":\"ä\",\"after\":1},{\"field\":\"😀\",\"after\":3},{\"field\":\"￿\",\"after\":4}]"
+    },
+    {
+      "before": "{\"x\": 0.10, \"y\": 5e-324, \"z\": 1.7976931348623157e308, \"w\": 0, \"v\": 1e20, \"u\": 1.23e-18, \"t\": 2e400}",
+      "after": null,
+      "changes": "[{\"field\":\"t\",\"before\":null},{\"field\":\"u\",\"before\":1.23e-18},{\"field\":\"v\",\"before\":100000000000000000000},{\"field\":\"w\",\"before\":0},{\"field\":\"x\",\"before\":0.1},{\"field\":\"y\",\"before\":5e-324},{\"field\":\"z\",\"before\":1.7976931348623157e+308}]"
+    },
+    {
+      "before": "{\"x\": [1, {\"b\": 2, \"a\": 1}], \"y\": \"Ä\", \"z\": {}}",
+      "after": "{\"x\": [1, {\"a\": 1, \"b\": 2}], \"y\": \"Z\", \"ä\": 1, \"Z\": 2, \"😀\": 3, \"\\uffff\": 4}",
+      "changes": "[{\"field\":\"Z\",\"after\":2},{\"field\":\"x\",\"before\":[1,{\"b\":2,\"a\":1}],\"after\":[1,{\"a\":1,\"b\":2}]},{\"field\":\"y\",\"before\":\"Ä\",\"after\":\"Z\"},{\"field\":\"z\",\"before\":{}},{\"field\":\"ä\",\"after\":1},{\"field\":\"😀\",\"after\":3},{\"field\":\"￿\",\"after\":4}]"
+    },
+    {
+      "before": "{\"x\": [1, {\"b\": 2, \"a\": 1}], \"y\": \"Ä\", \"z\": {}}",
+      "after": "{}",
+      "changes": "[{\"field\":\"x\",\"before\":[1,{\"b\":2,\"a\":1}]},{\"field\":\"y\",\"before\":\"Ä\"},{\"field\":\"z\",\"before\":{}}]"
+    },
+    {
+      "before": "{\"x\": [1, {\"b\": 2, \"a\": 1}], \"y\": \"Ä\", \"z\": {}}",
+      "after": null,
+      "changes": "[{\"field\":\"x\",\"before\":[1,{\"b\":2,\"a\":1}]},{\"field\":\"y\",\"before\":\"Ä\"},{\"field\":\"z\",\"before\":{}}]"
+    },
+    {
+      "before": "{\"x\": [1, {\"a\": 1, \"b\": 2}], \"y\": \"Z\", \"ä\": 1, \"Z\": 2, \"😀\": 3, \"\\uffff\": 4}",
+      "after": "{}",
+      "changes": "[{\"field\":\"Z\",\"before\":2},{\"field\":\"x\",\"before\":[1,{\"a\":1,\"b\":2}]},{\"field\":\"y\",\"before\":\"Z\"},{\"field\":\"ä\",\"before\":1},{\"field\":\"😀\",\"before\":3},{\"field\":\"￿\",\"before\":4}]"
+    },
+    {
+      "before": "{\"x\": [1, {\"a\": 1, \"b\": 2}], \"y\": \"Z\", \"ä\": 1, \"Z\": 2, \"😀\": 3, \"\\uffff\": 4}",
+      "after": "{\"Fecha\": \"2026-01-02\", \"Territorio\": \" Sechura \", \"Estado_Validacion\": \"Validado\", \"Descripcion_Hecho\": \"Bloqueo de vía\", \"Nivel_Verificacion\": \"B - Corroborada\"}",
+      "changes": "[{\"field\":\"Descripcion_Hecho\",\"after\":\"Bloqueo de vía\"},{\"field\":\"Estado_Validacion\",\"after\":\"Validado\"},{\"field\":\"Fecha\",\"after\":\"2026-01-02\"},{\"field\":\"Nivel_Verificacion\",\"after\":\"B - Corroborada\"},{\"field\":\"Territorio\",\"after\":\" Sechura \"},{\"field\":\"Z\",\"before\":2},{\"field\":\"x\",\"before\":[1,{\"a\":1,\"b\":2}]},{\"field\":\"y\",\"before\":\"Z\"},{\"field\":\"ä\",\"before\":1},{\"field\":\"😀\",\"before\":3},{\"field\":\"￿\",\"before\":4}]"
+    },
+    {
+      "before": "{\"x\": [1, {\"a\": 1, \"b\": 2}], \"y\": \"Z\", \"ä\": 1, \"Z\": 2, \"😀\": 3, \"\\uffff\": 4}",
+      "after": null,
+      "changes": "[{\"field\":\"Z\",\"before\":2},{\"field\":\"x\",\"before\":[1,{\"a\":1,\"b\":2}]},{\"field\":\"y\",\"before\":\"Z\"},{\"field\":\"ä\",\"before\":1},{\"field\":\"😀\",\"before\":3},{\"field\":\"￿\",\"before\":4}]"
+    },
+    {
+      "before": null,
+      "after": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "changes": "[{\"field\":\"Asunto\",\"after\":\"proto\"},{\"field\":\"__proto__\",\"before\":{},\"after\":{\"a\":1}},{\"field\":\"constructor\",\"after\":\"c\"},{\"field\":\"toString\",\"after\":2}]"
+    },
+    {
+      "before": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "after": "{\"__proto__\": {\"a\": 1}, \"constructor\": \"c\", \"toString\": 2, \"Asunto\": \"proto\"}",
+      "changes": "[]"
+    }
+  ]
+}
