@@ -31,7 +31,7 @@
     {
       "class_name": "GoBackend",
       "image": "../api-go/Dockerfile",
-      "image_build_context": "../api-go",
+      "image_build_context": "../..",
       // One named instance serves (src/go-routes.ts GO_INSTANCE); the second covers a rollout.
       "max_instances": 2,
       "instance_type": "lite",
