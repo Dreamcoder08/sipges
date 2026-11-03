@@ -1,14 +1,20 @@
 # engines — Rust computation engines (ADR 0032)
 
 Pure computation engines in Rust, compiled to WebAssembly (`wasm32-wasip1`) and run inside the
-Go backend with [wazero](https://github.com/tetratelabs/wazero) (pure Go, no cgo). First engine:
-indicators v0.4 + IRSA, a byte-for-byte port of `apps/api/src/contexts/indicators/domain`.
+Go backend with [wazero](https://github.com/tetratelabs/wazero) (pure Go, no cgo). Engines, each a byte-for-byte port of its TypeScript source:
+indicators v0.4 + IRSA (`apps/api/src/contexts/indicators/domain`) and the analytics engines
+situational, strategic, consensus, candidate links and integrated
+(`apps/api/src/contexts/analytics/domain`).
 
 | Path | What it is |
 | --- | --- |
 | `crates/indicators` | `sipges-indicators`: the engine (no I/O, `unsafe` forbidden). |
-| `crates/indicators-wasm` | `sipges-indicators-wasm`: the WebAssembly ABI shim (the only `unsafe`). |
+| `crates/indicators-wasm` | `sipges-indicators-wasm`: the WebAssembly ABI shim of the indicators engine (with `analytics-wasm`, the only `unsafe`). |
+| `crates/analytics-common` | Python value semantics, record shapes and constants shared by the analytics engines. |
+| `crates/{situational,strategic,consensus,candidate-links,integrated}` | One analytics engine each; `integrated` calls `consensus` and `candidate-links`. |
+| `crates/analytics-wasm` | `sipges-analytics-wasm`: one WebAssembly module for the five analytics engines, selected by `op`. |
 | `fixtures/generate.ts` | Runs the TypeScript engine on synthetic inputs and writes `fixtures/indicators.json` and `crates/indicators/src/defaults.json`. |
+| `fixtures/<engine>.ts` | Same for each analytics engine: writes `fixtures/<engine>.json` (`--check` fails when stale). |
 | `go/wasmengine` | Go host: loads the `.wasm`, pools instances, calls the ABI. |
 
 Toolchain: Rust 1.98.0 pinned in `rust-toolchain.toml` (edition 2024); Go ≥ 1.25 (wazero v1.12.0).
@@ -21,8 +27,8 @@ Run from `engines/` unless noted.
 | --- | --- |
 | `cargo fmt --check` / `cargo clippy --all-targets -- -D warnings` | Format and lint (pedantic, no `unwrap`/`expect`/`panic`). |
 | `cargo test` | Unit tests and the parity suite against `fixtures/indicators.json`. |
-| `cargo build --release --target wasm32-wasip1 -p sipges-indicators-wasm` | Builds `target/wasm32-wasip1/release/sipges_indicators_wasm.wasm`. |
-| `cd go && go test -race ./...` | Runs the same fixtures through the `.wasm` from Go (`SIPGES_ENGINE_WASM` overrides the path). |
+| `cargo build --release --target wasm32-wasip1 -p sipges-indicators-wasm -p sipges-analytics-wasm` | Builds `target/wasm32-wasip1/release/sipges_{indicators,analytics}_wasm.wasm`. |
+| `cd go && go test -race ./...` | Runs the same fixtures through both `.wasm` modules from Go (`SIPGES_ENGINE_WASM` and `SIPGES_ANALYTICS_WASM` override the paths). |
 | `cd go && go test -run '^$' -bench . ./wasmengine` | Benchmarks through WebAssembly. |
 | `node engines/fixtures/generate.ts` (repo root, after `pnpm install`) | Regenerates fixtures and defaults from the TypeScript engine; `--check` fails when they are stale. |
 
@@ -53,6 +59,23 @@ A trap (for example memory exhausted) leaves the instance unusable; discard it.
 | `defaults` | — | `{"indicator_config", "irsa_config"}`. |
 
 `config` defaults to `DEFAULT_IRSA_CONFIG` and `meta` to `INDICATOR_CONFIG` when absent or `null`.
+
+The analytics module takes `records` as stored, `{module: [{id, payload}]}` (absent, `null` or a
+`null` module means none), and returns the TypeScript function's result as `value`:
+
+| `op` | Fields | TypeScript function |
+| --- | --- | --- |
+| `situational` | `records`, `project_id`, `generated_at`, `tenant_label`? (string or `null`) | `buildSituational` |
+| `strategic` | `records`, `project_id`, `generated_at` | `strategicAssessment(extendedRecords(records), …)` |
+| `consensus` | `records`, `project_id`, `generated_at` | `automatedConsensus(extendedRecords(records), …)` |
+| `candidate_links` | `records` | `candidatePairs(extendedRecords(records))` |
+| `integrated` | `records`, `project_id`, `generated_at` | `integratedAnalysis(extendedRecords(records), …)` |
+
+A malformed `records` (not an object, a module that is neither an array nor `null`, an item
+without a string `id` and an object `payload`) or a non-string `project_id`/`generated_at` is
+`invalid_input`. `candidate_links` applies `normalize('NFKD')` with `unicode-normalization`
+0.1.25 (Unicode 17.0); a character whose decomposition changed between Unicode versions could
+differ from an older Node ICU, and no fixture uses one.
 
 ### Responses
 
@@ -114,6 +137,11 @@ coercion; lone UTF-16 surrogates (`"\ud800"`) and numbers beyond `f64` (`1e400`)
 the JSON parser instead of becoming `U+FFFD`-free strings or `Infinity`.
 
 ## Fixtures
+
+The analytics fixtures (`fixtures/{situational,strategic,consensus,candidate-links,integrated}.json`)
+hold `{name, request, value}` per case: the request text and `JSON.stringify` of the TypeScript
+result. Inputs are synthetic (`syntheticRecords`, the domain tests' inputs, edge cases such as
+`null` and object values, U+FEFF, `İ`/`Σ`, compatibility characters); 138 cases in all.
 
 `fixtures/indicators.json` holds raw request/response text per case (one per line), the Python
 reference values of `apps/api/test/indicators/python-parity.fixture.json`, and scalar checks for

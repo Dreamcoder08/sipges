@@ -285,7 +285,10 @@ mod tests {
             js::stringify(&ext.counts()),
             r#"{"intereses":1,"dialogos":0,"oportunidades":0,"hechos":0,"aarc":0}"#
         );
-        assert_eq!(module_records(&json!({"Intereses": null}), "Intereses"), Ok(Vec::new()));
+        assert_eq!(
+            module_records(&json!({"Intereses": null}), "Intereses"),
+            Ok(Vec::new())
+        );
         assert!(module_records(&json!({"Intereses": "x"}), "Intereses").is_err());
         assert!(module_records(&json!([]), "Intereses").is_err());
         assert!(

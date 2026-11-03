@@ -113,6 +113,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sipges-analytics-wasm"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+ "sipges-candidate-links",
+ "sipges-consensus",
+ "sipges-integrated",
+ "sipges-situational",
+ "sipges-strategic",
+]
+
+[[package]]
 name = "sipges-candidate-links"
 version = "0.1.0"
 dependencies = [
@@ -142,6 +155,16 @@ name = "sipges-indicators-wasm"
 version = "0.1.0"
 dependencies = [
  "sipges-indicators",
+]
+
+[[package]]
+name = "sipges-integrated"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "sipges-analytics-common",
+ "sipges-candidate-links",
+ "sipges-consensus",
 ]
 
 [[package]]
