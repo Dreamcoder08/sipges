@@ -8,7 +8,7 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0002](0002-hexagonal-architecture-and-bounded-contexts.md) | Hexagonal architecture and bounded contexts | Accepted |
 | [0003](0003-persistence-and-tenant-isolation.md) | Persistence and tenant isolation | Accepted |
 | [0004](0004-identity-and-session-security.md) | Identity and session security | Accepted |
-| [0005](0005-processing-ports-and-native-adapters.md) | Processing ports and Go/Rust adapter policy | Accepted |
+| [0005](0005-processing-ports-and-native-adapters.md) | Processing ports and Go/Rust adapter policy | Superseded by 0032 |
 | [0006](0006-frontend-architecture.md) | Frontend architecture | Accepted |
 | [0007](0007-http-contract-and-errors.md) | HTTP contract compatibility and errors | Accepted |
 | [0008](0008-behavior-contract-corrections.md) | Corrections to Python behavior defects | Accepted |
@@ -31,10 +31,11 @@ Format: [Michael Nygard ADR](https://cognitect.com/blog/2011/11/15/documenting-a
 | [0025](0025-postgis-areas-of-influence.md) | Areas of influence around concessions with PostGIS and a geodesic fallback | Accepted |
 | [0026](0026-territorial-3d-view.md) | 3D terrain with CesiumJS and open elevation, under the strict CSP | Accepted |
 | [0027](0027-mascli-4-only.md) | SIPGES is the only behaviour: the per-project switch is retired | Accepted |
-| [0028](0028-cloudflare-workers-hosting.md) | Cloudflare Workers as the host, through Hyperdrive to PostgreSQL | Accepted |
+| [0028](0028-cloudflare-workers-hosting.md) | Cloudflare Workers as the host, through Hyperdrive to PostgreSQL | Accepted; backend hosting amended by 0032 |
 | [0029](0029-retire-vercel-host.md) | Retire the Vercel host: Workers is the only host | Accepted |
 | [0030](0030-external-ai-egress-guard.md) | External AI egress guard: switch, allowlists, pseudonyms and access log | Accepted |
 | [0031](0031-conflict-risk-prediction.md) | Conflict-risk prediction: transparent score calibrated on the project's history | Accepted |
+| [0032](0032-go-backend-rust-engines.md) | Go backend, Rust engines and tools, TypeScript frontend | Accepted |
 
 Behavioral baseline: [`docs/migration/behavior-contract.md`](../migration/behavior-contract.md).
 
