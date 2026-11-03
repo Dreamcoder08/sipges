@@ -9,11 +9,11 @@ import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const ENGRAM_VERSION = '3.4.0';
-// From the v3.4.0 release checksums.txt; a download that does not match is discarded.
+export const ENGRAM_VERSION = '3.6.1';
+// From the v3.6.1 release checksums.txt; a download that does not match is discarded.
 const SHA256 = {
-  'linux-x64': '715fda625556e46d65ddb4526bb7f88a3fee5339ca3c44ce44cc652f17fa57f1',
-  'linux-arm64': '3309e9c0bbb539d183fd5aa9f9a13cd7aa0e81ec2512b5bedefb8b2bdd35b3e5',
+  'linux-x64': 'b06d6436ce5c7f1e838b9ec454870e7ec9e5b3e0f89b6edc5e5d2e41fe13edcf',
+  'linux-arm64': '14fce398ebdaed8b11d6116f4c14795f77ed5d160e74de0ae3f9a77a01e390bc',
 };
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const exe = process.platform === 'win32' ? 'engram.exe' : 'engram';

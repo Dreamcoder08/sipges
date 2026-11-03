@@ -11,13 +11,16 @@ move to `odd/archive/`); decisions live in `docs/adr/`.
 | --- | --- |
 | `sipges-verify` | Run the full gate (`pnpm verify`) with real PostgreSQL when available. |
 | `sipges-odd-task` | Pick and close ODD tasks; append log entries with `pnpm odd:close`. |
-| `sipges-task-pr` | Commit, push and resume or open a stacked draft PR with the repo conventions. |
+| `sipges-task-pr` | Commit, push, resume or open a stacked draft PR; land it on main when the merge is authorized. |
 | `sipges-archify` | Refresh the TypeScript architecture viewer and pinned ODD evidence. |
 | `sipges-sync-main` | Merge `main` into a feature branch and resolve CHANGELOG/ODD log conflicts. |
 | `sipges-ci-triage` | Diagnose failing or stuck CI checks: infrastructure rerun vs. code fix. |
 | `sipges-phone-check` | Check layouts at 360/412 px with the PGlite e2e and catch overflow. |
 | `sipges-self-improve` | Refresh skills, docs and workflows against current official sources, with evidence. |
 | `sipges-code-quality` | Review architecture, modularity, patterns, performance and tests against the ADRs. |
+| `sipges-go-port` | Port one TypeScript context's read routes to `apps/api-go` with parity cases. |
+| `sipges-rust-engine` | Port a pure TypeScript engine to Rust → WebAssembly → Go, byte-identical. |
+| `sipges-parallel-agents` | Run units as parallel Herdr tabs; watch, relay prompts, land and close them. |
 
 Skills require at least three independent uses evidenced in [docs/agents/skills.md](docs/agents/skills.md). Benchmarking has only two archived runs and remains a documented procedure. Load only the matching SKILL.md; repository skills do not grant permissions.
 
@@ -50,6 +53,7 @@ it is installed locally; the repo does not require it.
 | `pnpm parity` | Go/TypeScript parity: same requests to both APIs on one synthetic database, diffs status and JSON ([apps/parity](apps/parity/README.md)). |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
 | `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
+| `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
 | `pnpm --filter @sipges/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @sipges/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
 | `pnpm --filter @sipges/api import:base-maestra -- --seed <file>` | Insert-only load of the prototype's Base Maestra (dry-run by default). |
@@ -87,6 +91,11 @@ when the user asks for it) and their own work-unit commit:
 Pick the review lens by what the change touched, not all of them: readability (naming, structure), reliability
 (behaviour, state, tests), resilience (external services, partial failures, degraded providers) and risk
 (security, permissions, data exposure or loss).
+
+## Parallel work
+
+Parallel pull requests add files instead of editing shared lists, and shared documents have one writer
+(the orchestrator): see [docs/agents/parallel-delivery.md](docs/agents/parallel-delivery.md).
 
 ## Rules
 

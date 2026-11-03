@@ -13,7 +13,6 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/tenancy`                  | Grant cache, project scope, `GET /system/auth/current-scope`.            |
 | `internal/identity/http/routes.go`  | `GET /system/auth/me` and `GET /system/auth/providers`.                  |
 | `internal/audit`                    | `GET /system/audit`, the `GET /system/events` activity stream (SSE).     |
-| `internal/geography`                | INGEMMET catalogue and read-only area query (fixed official origin).     |
 | `internal/management`               | Management overview and CSV report of the active project.                |
 | `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
 | `internal/situations`               | `GET /system/v4/settings` and `GET /system/v4/situations` (read-only).   |
@@ -26,7 +25,9 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/platform/logging`         | JSON `log/slog` logger that redacts secret-looking keys.                 |
 | `Dockerfile`                        | Static image for Cloudflare Containers (port 8080, non-root).            |
 
-Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used.
+Bounded contexts go in `internal/<context>/{domain,application,infrastructure,http}` when first used. A ported
+context mounts its routes from its own file, `internal/app/context_<name>.go`, which calls `registerContext` from
+`init`; `app.go` is not edited, so parallel ports do not conflict ([parallel delivery](../../docs/agents/parallel-delivery.md)).
 
 ## Warm pool
 
