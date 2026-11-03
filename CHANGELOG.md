@@ -6,6 +6,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- Entrar con Google: un arranque en frío del Worker podía reemplazar la dirección de Google que un administrador acababa de vincular al administrador inicial por `SIPGES_GOOGLE_ADMIN_EMAIL`, y cerrar sus sesiones de Google. Ahora el arranque vincula la dirección en una sola sentencia y solo si la cuenta aún no tiene ninguna; nunca reemplaza otra ni cierra sesiones. Si otra cuenta toma esa dirección durante el arranque, el arranque ya no falla: deja el administrador sin vincular, como indica el ADR 0010.
 - Automatizaciones: un evento cuya transacción terminaba después de la de otro evento con número mayor no se procesaba nunca (por ejemplo, dos registros guardados casi a la vez). El cursor ahora solo avanza sobre eventos con más de 60 s; los más recientes se vuelven a leer sin duplicar acciones.
 
 ### Rendimiento

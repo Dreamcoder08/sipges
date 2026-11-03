@@ -86,6 +86,34 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     });
   },
 
+  async linkBootstrapGoogleEmail(username, email) {
+    // A single conditional UPDATE: under concurrent writers PostgreSQL re-checks
+    // `google_email IS NULL` on the latest row version, so a link committed meanwhile wins.
+    try {
+      const [row] = await sql.query<{ linked: boolean; taken: boolean }>(
+        `WITH linked AS (
+           UPDATE users SET google_email = $2::text
+            WHERE username = $1::text AND role = 'admin' AND google_email IS NULL
+              AND NOT EXISTS (SELECT 1 FROM users WHERE google_email = $2::text)
+           RETURNING 1)
+         SELECT EXISTS (SELECT 1 FROM linked) AS linked,
+                -- Only an administrator still waiting for an address reports the conflict, so
+                -- cold starts stay quiet once an administrator linked a different one.
+                EXISTS (SELECT 1 FROM users
+                         WHERE username = $1::text AND role = 'admin' AND google_email IS NULL)
+                AND EXISTS (SELECT 1 FROM users
+                             WHERE google_email = $2::text AND username <> $1::text) AS taken`,
+        [username, email],
+      );
+      if (row?.linked) return 'linked';
+      return row?.taken ? 'taken' : 'kept';
+    } catch (error) {
+      // Another account took the address between the snapshot and the unique index check.
+      if ((error as { code?: unknown } | null)?.code === '23505') return 'taken';
+      throw error;
+    }
+  },
+
   async createUser(account, at) {
     const rows = await sql.query(
       `INSERT INTO users (username, full_name, password_hash, role, created_at)
