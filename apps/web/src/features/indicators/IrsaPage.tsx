@@ -366,7 +366,11 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
         </div>
       </fieldset>
       <fieldset disabled={save.isPending}>
-        <legend>Contribuciones configuradas</legend>
+        <legend>Contribuciones del prototipo</legend>
+        <p className={styles.hint}>
+          No intervienen en el cálculo del IRSA V0.4, que usa solo los 32 indicadores. Se conservan
+          para comparar con el prototipo MASCLI.
+        </p>
         <div className={styles.grid}>
           {Object.entries(contributions).map(([name, value]) => (
             <Field

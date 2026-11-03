@@ -1,6 +1,7 @@
 {
   "name": "sipges",
   "private": true,
+  "version": "1.1.0",
   "type": "module",
   "packageManager": "pnpm@12.11.2",
   "engines": {

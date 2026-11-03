@@ -201,7 +201,7 @@ export const INDICATOR_CONFIG: Readonly<Record<string, readonly IndicatorMeta[]>
 };
 
 export const DEFAULT_IRSA_CONFIG: IrsaConfig = {
-  version: '0.3-provisional',
+  version: '0.4-indicators',
   status: 'PENDIENTE_DE_VALIDACION_METODOLOGICA',
   weights: {
     G: 0.1666667,
@@ -229,6 +229,7 @@ export const DEFAULT_IRSA_CONFIG: IrsaConfig = {
     'Los pesos son iguales únicamente como línea base de prototipado.',
     'Los pesos definitivos deberán validarse mediante el método aprobado en la tesis (p. ej., AHP/Delphi).',
     'Los umbrales del semáforo son provisionales y requieren calibración y análisis de sensibilidad.',
+    'Las contribuciones se conservan del prototipo y no intervienen en el cálculo del IRSA V0.4.',
     'El cálculo no sustituye la evaluación del equipo.',
   ],
 };

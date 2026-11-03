@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CONFIG_VERSION,
   DEFAULT_IRSA_CONFIG,
   type IndicatorsReport,
   type ModuleRecords,
@@ -114,6 +115,15 @@ describe('computeIndicators (app.py compute_indicators v0.4)', () => {
     expect(by.I4?.score).toBe(100);
     // 1 of 4 key records (2 demands, 1 alert, 1 action) has evidence: 100 - 25.
     expect(by.I5?.score).toBe(75);
+  });
+});
+
+describe('DEFAULT_IRSA_CONFIG', () => {
+  it('carries the engine version and says the prototype contributions are not used', () => {
+    expect(DEFAULT_IRSA_CONFIG.version).toBe(CONFIG_VERSION);
+    expect(DEFAULT_IRSA_CONFIG.notes).toContain(
+      'Las contribuciones se conservan del prototipo y no intervienen en el cálculo del IRSA V0.4.',
+    );
   });
 });
 
