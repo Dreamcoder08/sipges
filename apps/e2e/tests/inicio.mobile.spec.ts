@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
@@ -71,9 +71,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await chips.first().tap();
     await expect(page.getByLabel('Pregunta a SIPGES')).toHaveValue(/\S/);
 
-    const result = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .analyze();
+    const result = await analyzeAccessibility(page);
     expect(result.violations.map((v) => v.id)).toEqual([]);
   });
 }

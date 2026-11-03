@@ -1,0 +1,4 @@
+node_modules/
+.wrangler/
+.wrangler.generated.json
+worker-configuration.d.ts
