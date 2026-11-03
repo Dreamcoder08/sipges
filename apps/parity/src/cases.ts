@@ -1,0 +1,55 @@
+/**
+ * The parity route list (docs/adr/0032 §6): every route the Go API serves gets at least one case
+ * here, and a route switches to Go only while its cases pass. Later phases add entries; the
+ * runner does not change.
+ */
+
+export type Method = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+export type ParityCase = {
+  /** Unique, stable name shown in the report. */
+  readonly name: string;
+  readonly method: Method;
+  /** Path and query, starting with `/`. */
+  readonly path: string;
+  readonly headers?: Readonly<Record<string, string>>;
+  readonly body?: { readonly json: unknown } | { readonly form: Readonly<Record<string, string>> };
+  /**
+   * `admin` sends the session of the synthetic administrator the runner seeds and signs in
+   * through the TypeScript API; both APIs read sessions from the same database.
+   */
+  readonly auth?: 'admin';
+  /**
+   * JSON paths whose value legitimately differs between two runs (ids, timestamps), such as
+   * `id` or `items.*.created_at`. Keep the list small: name fields, never whole objects.
+   */
+  readonly normalize?: readonly string[];
+};
+
+export const CASES: readonly ParityCase[] = [
+  { name: 'liveness', method: 'GET', path: '/health' },
+  { name: 'liveness ignores the query string', method: 'GET', path: '/health?probe=1' },
+  { name: 'readiness with the database up', method: 'GET', path: '/health/ready' },
+  // Unauthenticated unknown paths still differ (401 in TypeScript, 404 in Go) until identity
+  // moves to Go (phase 4); the Worker keeps routing them to TypeScript. With a session both
+  // reach the JSON 404.
+  { name: 'unknown path with a session', method: 'GET', path: '/no-such-route', auth: 'admin' },
+  { name: 'trailing slash is another path', method: 'GET', path: '/health/', auth: 'admin' },
+];
+
+/** Problems in a route list; empty when it is valid. */
+export const validateCases = (cases: readonly ParityCase[]): string[] => {
+  const errors: string[] = [];
+  const seen = new Set<string>();
+  for (const c of cases) {
+    if (seen.has(c.name)) errors.push(`${c.name}: duplicate case name`);
+    seen.add(c.name);
+    if (!c.path.startsWith('/')) errors.push(`${c.name}: path must start with /`);
+    for (const path of c.normalize ?? []) {
+      if (path.split('.').every((part) => part === '*' || part === '')) {
+        errors.push(`${c.name}: normalize path "${path}" is too broad (name a field)`);
+      }
+    }
+  }
+  return errors;
+};

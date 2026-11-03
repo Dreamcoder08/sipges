@@ -1,18 +1,25 @@
 name: Go
 
 # The Go backend (apps/api-go, docs/adr/0032). Its integration tests apply the TypeScript API's SQL
-# migrations to a scratch database, so a migration change runs them too.
+# migrations to a scratch database, so a migration change runs them too. The parity job compares the
+# Go API with the TypeScript API on the same database, so a TypeScript API change runs it too.
 on:
   pull_request:
     paths:
       - 'apps/api-go/**'
-      - 'apps/api/src/platform/database/migrations/**'
+      - 'apps/api/src/**'
+      - 'apps/parity/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/go.yml'
   push:
     branches: [main]
     paths:
       - 'apps/api-go/**'
-      - 'apps/api/src/platform/database/migrations/**'
+      - 'apps/api/src/**'
+      - 'apps/parity/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/go.yml'
 
 concurrency:
@@ -64,3 +71,34 @@ jobs:
           version: v2.15.0
           install-mode: goinstall
           working-directory: apps/api-go
+
+  parity:
+    name: Go/TypeScript parity (same requests, same status and JSON)
+    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ['5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      # The runner creates sipges_parity_<random> on this server, starts both APIs on it and drops it.
+      - name: Point the runner at the PostgreSQL service
+        run: echo "SIPGES_PARITY_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: apps/api-go/go.sum
+      - run: pnpm install --frozen-lockfile
+      - name: pnpm parity
+        run: pnpm parity
