@@ -175,15 +175,23 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
     }
   });
 
-  it('sends a query whose parameters are all cast in one message', async () => {
-    // A parameter of unknown type makes postgres.js wait for the server to describe the
-    // statement before sending values: two round trips instead of one.
+  it('sends a query whose parameters are all cast without waiting for a describe', async () => {
+    // A parameter of unknown type makes postgres.js send Parse/Describe/Flush and wait for the
+    // server's answer before Bind/Execute: two round trips instead of one. The Flush ('H')
+    // message marks that wait, whatever the TCP chunking.
     const target = new URL(url);
-    let writes = 0;
+    let sent = Buffer.alloc(0);
+    /** Frontend message types after startup: one type byte, then a length that includes itself. */
+    const messageTypes = () => {
+      const types: string[] = [];
+      for (let at = 0; at + 5 <= sent.length; at += 1 + sent.readInt32BE(at + 1))
+        types.push(String.fromCharCode(sent[at] ?? 0));
+      return types;
+    };
     const server = createServer((client) => {
       const upstream = connect(Number(target.port || 5432), target.hostname);
       client.on('data', (chunk: Buffer) => {
-        writes++;
+        sent = Buffer.concat([sent, chunk]);
         upstream.write(chunk);
       });
       upstream.on('data', (chunk: Buffer) => client.write(chunk));
@@ -201,17 +209,17 @@ describe.skipIf(!adminUrl)('PostgreSQL integration', () => {
     try {
       await fresh.client.query('SELECT 1');
       const at = new Date('2026-11-02T12:00:00.123Z');
-      writes = 0;
+      sent = Buffer.alloc(0);
       const rows = await fresh.client.query<Record<string, unknown>>(
         `SELECT $1::text AS t, $2::timestamptz AS at, $3::integer AS n, $4::boolean AS b,
                 $5::bigint AS big, $6::text AS missing`,
         ['token', at, 7, true, 9, null],
       );
-      expect(writes).toBe(1);
+      expect(messageTypes()).not.toContain('H');
       expect(rows).toEqual([{ t: 'token', at, n: 7, b: true, big: '9', missing: null }]);
-      writes = 0;
+      sent = Buffer.alloc(0);
       await fresh.client.query('SELECT $1 AS bare', ['x']);
-      expect(writes).toBe(2);
+      expect(messageTypes()).toContain('H');
     } finally {
       await fresh.close();
       server.close();
