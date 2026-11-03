@@ -56,13 +56,14 @@ const RULE_COLUMNS = `id, name, enabled, trigger_module, trigger_actions, condit
 const audit = (tx: SqlClient, recordId: string | null, action: string, detail: string, at: Date) =>
   appendAudit(tx, { module: AUTOMATION_AUDIT_MODULE, recordId, action, detail, at });
 
-/** Rules, channels, runs and notifications under forced RLS (docs/adr/0014). */
 /**
  * How long an audit event may stay uncommitted after its timestamp and still be scanned. Well
- * above a request's lifetime on Workers (30 s) or a tenant transaction on Node.
+ * above a request's lifetime on Workers (30 s); on Node nothing enforces it, so a transaction
+ * that writes audit rows must not stay open longer.
  */
 const CURSOR_SETTLE_MS = 60_000;
 
+/** Rules, channels, runs and notifications under forced RLS (docs/adr/0014). */
 export const createSqlAutomationStore = (sql: SqlClient): AutomationStore => ({
   activeTenants: async () =>
     (
