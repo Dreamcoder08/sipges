@@ -102,3 +102,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: pnpm parity
         run: pnpm parity
+
+  image:
+    name: Go image (build and smoke test)
+    # GitHub-hosted on purpose: it needs Docker with buildx, which the self-hosted runner lacks.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build apps/api-go/Dockerfile (the image the Go routing Worker deploys)
+        run: docker build --target runtime -t sipges-api-go:ci apps/api-go
+      # No database needed: /health is static and the warm pool connects in the background.
+      - name: Smoke test /health as the non-root image user
+        run: |
+          docker run -d --name api-go -p 127.0.0.1:8080:8080 \
+            -e SIPGES_DATABASE_URL='postgres://synthetic@127.0.0.1:1/synthetic?connect_timeout=1' sipges-api-go:ci
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs api-go
+          exit 1
