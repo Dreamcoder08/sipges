@@ -1,7 +1,7 @@
 import type { ParityCase } from '../types.ts';
 
 /**
- * Reference, read-only (T20): the repository references of `data/*.json`, registered to the
+ * Reference, read-only (T21): the repository references of `data/*.json`, registered to the
  * default project (SIPGES/PRJ-SECHURA) only; any other project gets `available: false`. Every role
  * may read them, so the 403s come from the project scope, never from the role gate. No seed: the
  * data is embedded in both APIs.
