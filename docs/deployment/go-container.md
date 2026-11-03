@@ -51,6 +51,6 @@ workflow deploys it. Before the first deploy:
 4. Set the secrets with `wrangler secret put … -c wrangler.go.jsonc`: `SIPGES_DATA_KEY`, the admin
    variables of the deployment guide, and `SIPGES_GO_DATABASE_URL` (the branch's direct or pooled URL,
    `sslmode=verify-full`).
-5. `wrangler deploy -c wrangler.go.jsonc` (needs Docker with buildx; it builds `apps/api-go/Dockerfile`).
+5. `wrangler deploy -c wrangler.go.jsonc` (needs Docker with buildx; it builds `apps/api-go/Dockerfile` from the repository root, sending only `apps/api-go` and `engines/go` per `Dockerfile.dockerignore`).
 
 CI builds the same image and smoke-tests `/health` in the `Go image` job of `.github/workflows/go.yml`.

@@ -17,6 +17,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/logging"
 )
@@ -45,8 +46,13 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		return err
 	}
 	defer pool.Close()
+	compiled, err := engines.Shared(ctx)
+	if err != nil {
+		return err
+	}
 
 	handler := app.NewHandler(pool, app.Options{
+		Engines:       compiled,
 		Logger:        log,
 		AllowedHosts:  cfg.AllowedHosts,
 		AccessLog:     cfg.AccessLog,

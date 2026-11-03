@@ -13,6 +13,7 @@ import (
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	prevention "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/application"
 	preventionhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/http"
@@ -33,6 +34,8 @@ type Options struct {
 	// Now is the clock for session expiry, the grant cache and "today" in prevention; nil
 	// means time.Now.
 	Now func() time.Time
+	// Engines are the compiled Rust engines; nil means engines.MustShared().
+	Engines *engines.Set
 	// Routes adds routes beyond the ones registered here (tests).
 	Routes func(mux *http.ServeMux)
 }
@@ -41,6 +44,9 @@ type Options struct {
 func NewHandler(pool *pgxpool.Pool, opts Options) http.Handler {
 	grants := application.NewGrantCache(tenancy.Grants{DB: pool}.List, opts.Now)
 	sessions := identity.Sessions{DB: pool, Now: opts.Now}
+	if opts.Engines == nil {
+		opts.Engines = engines.MustShared()
+	}
 	return httpx.NewHandler(httpx.Options{
 		Logger:       opts.Logger,
 		Ready:        database.Ping(pool),
