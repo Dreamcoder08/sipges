@@ -1,7 +1,7 @@
 import type { ParityCase } from '../types.ts';
 
 /**
- * Records, read-only (T25): GET /api/registros/summary, /api/:module, /api/:module/:id and
+ * Records (T25 reads, T36 writes): GET /api/registros/summary, /api/:module, /api/:module/:id and
  * /api/:module/:id/history. The default project gets records whose payloads exercise how both
  * APIs read stored JSON (key order, numbers past float64, `__proto__`, control characters,
  * aliases of the Registros columns), a record marked 'restringido' (hidden from `consulta`), a
@@ -118,6 +118,22 @@ ${[
     '2026-02-01T00:00:00Z',
   ),
   row(OTHER, 'Buzon', 'PARITY-REC-AJENA', { Asunto: 'Fila AJENA' }, '2026-02-01T00:00:00Z'),
+  // Write targets (T36): replaced and imported into; only the write cases read them.
+  row(
+    SECHURA,
+    'Compromisos',
+    'PARITY-W-PUT',
+    { Texto: 'antes', Queda: 'no' },
+    '2026-01-08T00:00:00Z',
+  ),
+  row(
+    SECHURA,
+    'Compromisos',
+    'PARITY-W-IMP-1',
+    { Texto: 'uno', Extra: 'se queda' },
+    '2026-01-08T00:00:00Z',
+  ),
+  row(SECHURA, 'Compromisos', 'PARITY-W-IMP-2', { Texto: 'dos' }, '2026-01-08T00:00:00Z'),
 ].join(',\n')};
 UPDATE module_records SET payload = payload - 'Territorio' || '{"Asunto": "Consulta revisada", "Estado": "Abierto", "constructor": 1}',
   updated_at = '2026-01-06T00:00:00Z' WHERE tenant_id = '${SECHURA}' AND module = 'Buzon' AND id = 'PARITY-REC-BZ-1';
@@ -269,13 +285,291 @@ export const cases: readonly ParityCase[] = [
     'consulta',
   ),
   get('history with a trailing segment', '/api/buzon/PARITY-REC-BZ-1/history/x'),
-  // Writes stay in TypeScript; the read-only role is refused before any route.
-  {
-    name: 'records create by the read-only role',
-    method: 'POST',
-    path: '/api/buzon',
-    auth: 'consulta',
-    sameOrigin: true,
-    body: { json: { payload: { Asunto: 'x' } } },
-  },
+  // Writes (T36) follow every read above, so no read case sees their effect.
+  ...writeCases(),
 ];
+
+/**
+ * The runner sends each case to both APIs at once, on one database: a write case must answer the
+ * same whichever API runs first. So successes replace or merge seeded records (idempotent), and a
+ * create normalizes the id it got (the second one collides and takes `<id>-<4 hex>`, which is the
+ * concurrent-duplicate outcome TypeScript defines). The reads after them show the stored effect of
+ * both writes together, so they cannot tell a wrong Go write from the TypeScript one; what each
+ * API stores is pinned by apps/api-go/internal/records (the fixtures recorded from TypeScript and
+ * the PostgreSQL integration tests). A successful delete cannot answer the same twice (the second
+ * finds nothing), so it is covered there too.
+ */
+function writeCases(): ParityCase[] {
+  const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };
+  const write = (
+    name: string,
+    method: ParityCase['method'],
+    path: string,
+    body?: ParityCase['body'],
+    extra: Partial<ParityCase> = {},
+  ): ParityCase => ({
+    name: `records ${name}`,
+    method,
+    path,
+    auth: 'admin',
+    sameOrigin: true,
+    ...(body ? { body } : {}),
+    ...extra,
+  });
+  const create = (name: string, raw: string, extra: Partial<ParityCase> = {}) =>
+    write(name, 'POST', '/api/buzon', { raw }, extra);
+  const imported = (name: string, raw: string, extra: Partial<ParityCase> = {}) =>
+    write(name, 'POST', '/system/import/compromisos', { raw }, extra);
+  const PUT = '/api/compromisos/PARITY-W-PUT';
+  const NEW = { auth: 'multi', headers: SECOND } as const;
+  return [
+    // Session, Origin, project scope and role gates, before any route.
+    {
+      name: 'records create without a session',
+      method: 'POST',
+      path: '/api/buzon',
+      sameOrigin: true,
+      body: { json: { payload: {} } },
+    },
+    {
+      name: 'records create without Origin',
+      method: 'POST',
+      path: '/api/buzon',
+      auth: 'admin',
+      body: { json: { payload: {} } },
+    },
+    write(
+      'create by the read-only role',
+      'POST',
+      '/api/buzon',
+      { json: { payload: { Asunto: 'x' } } },
+      { auth: 'consulta' },
+    ),
+    write(
+      'replace by the read-only role',
+      'PUT',
+      PUT,
+      { json: { payload: {} } },
+      { auth: 'consulta' },
+    ),
+    write('delete by the read-only role', 'DELETE', PUT, undefined, { auth: 'consulta' }),
+    write(
+      'import by the read-only role',
+      'POST',
+      '/system/import/compromisos',
+      { json: { rows: [] } },
+      { auth: 'consulta' },
+    ),
+    write(
+      'create before choosing a project',
+      'POST',
+      '/api/buzon',
+      { json: { payload: {} } },
+      { auth: 'multi' },
+    ),
+    write(
+      'create in the ungranted fixture project',
+      'POST',
+      '/api/buzon',
+      { json: { payload: {} } },
+      { auth: 'multi', headers: { 'x-sipges-scope': OTHER } },
+    ),
+    create('create naming another project', '{"payload":{"Proyecto_ID":"PRJ-B"}}'),
+    create('create with project_id of another project', '{"project_id":"PRJ-B","payload":{}}'),
+    write(
+      'create with query project_id of another project',
+      'POST',
+      '/api/buzon?project_id=PRJ-B',
+      { json: { payload: {} } },
+    ),
+    create('create naming another project as plain text', '{"payload":{"Proyecto_ID":"PRJ-B"}}', {
+      headers: { 'content-type': 'text/plain' },
+    }),
+    create('create naming project zero', '{"payload":{"Proyecto_ID":0}}'),
+    write('create a user as analyst', 'POST', '/api/usuarios', { json: { payload: {} } }, NEW),
+    write('create a project as analyst', 'POST', '/api/proyectos', { json: { payload: {} } }, NEW),
+    write(
+      'import users as analyst',
+      'POST',
+      '/system/import/usuarios',
+      { json: { rows: [] } },
+      NEW,
+    ),
+    // Modules and paths.
+    create('create in an unknown module', '{', { path: '/api/nada' }),
+    create('create in the hub', '{"payload":{}}', { path: '/api/registros' }),
+    create('create with a trailing slash', '{"payload":{}}', { path: '/api/buzon/' }),
+    write('replace without an id', 'PUT', '/api/buzon', { json: { payload: {} } }),
+    write('patch a record', 'PATCH', PUT, { json: { payload: {} } }),
+    imported('import into an unknown module', '{', { path: '/system/import/nada' }),
+    imported('import projects', '{"rows":[]}', { path: '/system/import/proyectos' }),
+    // Bodies refused before any write (TypeScript's zod messages and loc paths).
+    create('create with invalid JSON', '{"payload":'),
+    create('create with an empty body', ''),
+    create('create with a top-level array', '[]'),
+    create('create without payload', '{"x":1}'),
+    create('create with an array payload', '{"payload":[]}'),
+    create('create with a NUL value', '{"payload":{"a":"x\\u0000"}}'),
+    create('create with a NUL key', '{"payload":{"a\\u0000":1}}'),
+    create('create with a boolean id', '{"payload":{"ID_Caso":true}}'),
+    create(
+      'create with an over-long id',
+      JSON.stringify({ payload: { ID_Caso: 'I'.repeat(201) } }),
+    ),
+    create(
+      'create with 101 emoji as id',
+      JSON.stringify({ payload: { ID_Caso: '😀'.repeat(101) } }),
+    ),
+    create(
+      'create with a lone surrogate (jsonb refuses it)',
+      '{"payload":{"ID_Caso":"PARITY-W-SUR","a":"\\ud800"}}',
+    ),
+    // Replace: idempotent, then read back.
+    write('replace a missing record with a bad id field', 'PUT', '/api/compromisos/PARITY-W-NADA', {
+      raw: '{"payload":{"ID_Compromiso":[]}}',
+    }),
+    write('replace a missing record', 'PUT', '/api/compromisos/PARITY-W-NADA', {
+      json: { payload: {} },
+    }),
+    write('replace another project record', 'PUT', '/api/buzon/PARITY-REC-AJENA', {
+      json: { payload: {} },
+    }),
+    write('replace an over-long id', 'PUT', `/api/buzon/${LONG_ID}`, { json: { payload: {} } }),
+    write(
+      'replace naming another project',
+      'PUT',
+      PUT,
+      { raw: '{"payload":{"Proyecto_ID":"OTRO"}}' },
+      { headers: { 'content-type': 'text/plain' } },
+    ),
+    write('replace a record', 'PUT', PUT, {
+      raw: '{"payload":{"Texto":"después","n":1.50,"__proto__":{"x":1},"Lista":[1e400,-0,{"b":1,"a":2}],"2":"dos"}}',
+    }),
+    write('replace a record again', 'PUT', PUT, {
+      raw: '﻿ {"payload":{"2":"dos","Texto":"después","n":1.5,"Lista":[null,0,{"a":2,"b":1}]}} ',
+    }),
+    get('get a replaced record', PUT),
+    { ...get('history of a replaced record', `${PUT}/history`), normalize: ['*.at'] },
+    // Delete: refused or missing (a success is not the same twice).
+    write('delete a missing record', 'DELETE', '/api/compromisos/PARITY-W-NADA'),
+    write('delete another project record', 'DELETE', '/api/buzon/PARITY-REC-AJENA'),
+    write('delete an over-long id', 'DELETE', `/api/buzon/${LONG_ID}`),
+    write('delete in an unknown module', 'DELETE', '/api/nada/x'),
+    // Create: both APIs store one record each; the second takes `<id>-<4 hex>`.
+    {
+      ...create(
+        'create with its id',
+        '{"payload":{"ID_Caso":"PARITY-W-NUEVO","Asunto":"Nuevo"}}',
+        NEW,
+      ),
+      normalize: ['id'],
+    },
+    get('created record before choosing a project', '/api/buzon/PARITY-W-NUEVO', 'multi'),
+    {
+      ...get('created record in its project', '/api/buzon/PARITY-W-NUEVO', 'multi'),
+      headers: SECOND,
+    },
+    {
+      ...get('created records listed', '/api/buzon?q=PARITY-W-NUEVO', 'multi'),
+      headers: SECOND,
+      normalize: ['*._id', '*._updated_at'],
+    },
+    {
+      ...get('created record history', '/api/buzon/PARITY-W-NUEVO/history', 'multi'),
+      headers: SECOND,
+      normalize: ['*.at'],
+    },
+    get('created record never in the first project', '/api/buzon/PARITY-W-NUEVO'),
+    {
+      ...create('create with a generated id', '{"payload":{"Descripcion_Hecho":"generado"}}', {
+        ...NEW,
+        path: '/api/eventos',
+      }),
+      normalize: ['id'],
+    },
+    {
+      ...get('generated records listed', '/api/eventos?q=generado', 'multi'),
+      headers: SECOND,
+      normalize: ['*._id', '*._updated_at'],
+    },
+    {
+      ...create('create with a numeric id', '{"payload":{"ID_Demanda":42.50}}', {
+        ...NEW,
+        path: '/api/demandas',
+      }),
+      normalize: ['id'],
+    },
+    {
+      ...get('numeric id listed', '/api/demandas', 'multi'),
+      headers: SECOND,
+      normalize: ['*._id', '*._updated_at'],
+    },
+    {
+      ...create(
+        'create with an id only another project holds',
+        '{"payload":{"ID_Caso":"PARITY-REC-AJENA","Asunto":"propia"}}',
+      ),
+      normalize: ['id'],
+    },
+    get('get the id another project also holds', '/api/buzon/PARITY-REC-AJENA'),
+    // Import: dry runs and refusals write nothing; a merge into seeded ids is idempotent.
+    imported(
+      'import dry run by default',
+      JSON.stringify({
+        rows: [
+          { ID_Compromiso: 'PARITY-W-IMP-1' },
+          { ID_Compromiso: 'PARITY-W-IMP-2' },
+          { Texto: 'nuevo' },
+        ],
+      }),
+    ),
+    imported(
+      'import dry run with problems',
+      JSON.stringify({
+        dry_run: true,
+        rows: [
+          { ID_Compromiso: 'PARITY-W-IMP-1' },
+          { ID_Compromiso: ' PARITY-W-IMP-1 ' },
+          { a: 'x\u0000' },
+          { Proyecto_ID: 'PRJ-B' },
+          { v: 'x'.repeat(10001) },
+        ],
+      }),
+    ),
+    imported(
+      'import with problems',
+      JSON.stringify({
+        dry_run: false,
+        rows: [{ ID_Compromiso: 'PARITY-W-NO' }, { ID_Compromiso: 'I'.repeat(201) }],
+      }),
+    ),
+    get('refused import wrote nothing', '/api/compromisos/PARITY-W-NO'),
+    imported('import only blank rows', JSON.stringify({ dry_run: false, rows: [{}, { a: '  ' }] })),
+    imported('import with wrong types', '{"rows":"x","dry_run":null,"source":5}'),
+    imported(
+      'import with bad rows',
+      '{"rows":[{"a":1},{"b":"x","c":null},[],null,{"__proto__":5,"d":true}],"dry_run":"no"}',
+    ),
+    imported(
+      'import too many rows',
+      JSON.stringify({ rows: Array(2001).fill({}), source: 's'.repeat(201) }),
+    ),
+    imported('import a long source', JSON.stringify({ rows: [], source: '😀'.repeat(201) })),
+    imported(
+      'import merges into its records',
+      JSON.stringify({
+        dry_run: false,
+        source: '  hoja sintética.xlsx  ',
+        rows: [
+          { ID_Compromiso: 'PARITY-W-IMP-1', Texto: ' uno nuevo ', Vacio: ' ' },
+          { ID_Compromiso: 'PARITY-W-IMP-2', '10': 'diez' },
+        ],
+      }),
+    ),
+    get('get an imported record', '/api/compromisos/PARITY-W-IMP-1'),
+    {
+      ...get('history of an imported record', '/api/compromisos/PARITY-W-IMP-2/history'),
+      normalize: ['*.at'],
+    },
+  ];
+}
