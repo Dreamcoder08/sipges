@@ -1,6 +1,6 @@
-// Package infrastructure reads the indicators context's rows from PostgreSQL with the queries of
-// apps/api/src/contexts/indicators/infrastructure (module records, IRSA configuration and
-// snapshots) and the project phase of the situations context's settings, inside the tenant
+// Package infrastructure reads and writes the indicators context's rows in PostgreSQL with the
+// queries of apps/api/src/contexts/indicators/infrastructure (module records, IRSA configuration
+// and snapshots, and their audit rows) and the project phase of the situations context's settings, inside the tenant
 // transaction (docs/adr/0003).
 package infrastructure
 
@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -162,4 +163,43 @@ func phase(ctx context.Context, q database.Querier, tenantID string) (*domain.Ph
 		return nil, nil
 	}
 	return &p, nil
+}
+
+const (
+	saveConfig = `INSERT INTO irsa_configs (tenant_id, config, updated_at) VALUES ($1, $2::text::json, $3)
+ ON CONFLICT (tenant_id) DO UPDATE SET config = EXCLUDED.config, updated_at = EXCLUDED.updated_at`
+
+	insertSnapshot = `INSERT INTO irsa_snapshots (tenant_id, ts, irsa, level, scores, config_version, note)
+ VALUES ($1, $2, $3, $4, $5::text::json, $6, $7) RETURNING id`
+
+	// appendAudit of platform/database/audit-trail.ts: the tenant is the transaction's own.
+	insertAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
+ VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
+)
+
+// SaveConfig is createSqlIrsaConfigStore.save: the configuration's exact text into the json
+// column (so its key order survives) and the CONFIG_UPDATE audit row, in one tenant transaction.
+func (s Store) SaveConfig(ctx context.Context, tenantID string, config json.RawMessage, at time.Time, auditDetail string) error {
+	_, err := database.WithTenant(ctx, s.DB, tenantID, func(ctx context.Context, q database.Querier) (struct{}, error) {
+		if _, err := q.Exec(ctx, saveConfig, tenantID, string(config), at); err != nil {
+			return struct{}{}, err
+		}
+		_, err := q.Exec(ctx, insertAudit, at, "IRSA", nil, "CONFIG_UPDATE", auditDetail)
+		return struct{}{}, err
+	})
+	return err
+}
+
+// InsertSnapshot is createSqlIrsaSnapshotStore.insert: the snapshot and its SNAPSHOT audit row
+// (record_id the new id) in one tenant transaction.
+func (s Store) InsertSnapshot(ctx context.Context, tenantID string, n application.NewSnapshot) (int64, error) {
+	return database.WithTenant(ctx, s.DB, tenantID, func(ctx context.Context, q database.Querier) (int64, error) {
+		var id int32
+		err := q.QueryRow(ctx, insertSnapshot, tenantID, n.TS, n.Irsa, n.Level, string(n.Scores), n.ConfigVersion, n.Note).Scan(&id)
+		if err != nil {
+			return 0, err
+		}
+		_, err = q.Exec(ctx, insertAudit, n.TS, "IRSA", strconv.FormatInt(int64(id), 10), "SNAPSHOT", n.AuditDetail)
+		return int64(id), err
+	})
 }
