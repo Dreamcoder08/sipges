@@ -1,5 +1,6 @@
 import type { Attachment, ModuleRecord } from '@sipges/contracts';
 import { foldText } from '../../../shared/lib/text.ts';
+import { isPendingActorIdentity } from '../insights/actor-identity.ts';
 import { actorGroups, actorName, positionTone } from '../insights/actor-map.ts';
 import { alertTerritory, MISSING_TERRITORY, recordedLevel } from '../insights/alert-heatmap.ts';
 import type { RecordModule } from '../modules.ts';
@@ -50,6 +51,13 @@ export const qualityIssues = (data: QualityData): QualityIssue[] => {
     for (const ref of new Set([source._id, text(source.ID_Fuente)].filter(Boolean)))
       sources.set(ref, (sources.get(ref) ?? 0) + 1);
   for (const row of data.actores) {
+    if (isPendingActorIdentity(row))
+      add(
+        'actores',
+        row,
+        'Nombre_Actor/Organizacion',
+        'Mención documental pendiente de identificar; conservar la evidencia original',
+      );
     if (unconfirmed(row.Tipo_Actor))
       add('actores', row, 'Tipo_Actor', 'Tipo de actor pendiente de verificar');
     if (!text(row.Territorio)) add('actores', row, 'Territorio', 'Sin territorio registrado');
