@@ -145,3 +145,16 @@ Run the same command again: records already created are counted as `ya_existente
 rest are created. Nothing else needs cleaning up.
 
 Pending items («Pendiente») are not touched: the AMSAC queue still needs human review (T25).
+
+## Actor names and pending documentary mentions
+
+The actor workspace opens the **Padrón con nombre** view. Records without a name or with the
+`Por identificar (...)` placeholder remain accessible under **Menciones pendientes**, with
+the original excerpt and record detail. They are excluded from the strategic actor map and
+flagged in the data-quality queue. Switching views does not rewrite or delete records.
+
+A supplied name does not imply corroborated identity. Workspace counts describe the current
+search result; generic API, hub and dashboard totals still count stored records, including
+pending mentions. Use the named register, not the raw stored-record total, when describing
+identified actors. Complete names only from directly supporting source evidence; do not infer
+identity, territory or responsible people from nearby document mentions.

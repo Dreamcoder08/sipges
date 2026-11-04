@@ -6,6 +6,7 @@ it('uses only exact accessible evidence and event references and never changes r
     actores: [
       {
         _id: 'A',
+        'Nombre_Actor/Organizacion': 'Actor sintético',
         Tipo_Actor: 'Comunal',
         Influencia: 'Alta',
         Posicion_Proyecto: 'Favorable',
@@ -75,4 +76,31 @@ it('inventories metadata without claiming recoverability and makes truncation ex
   expect(sourceInventory(sources, [], true)[0]?.status).toBe(
     'Asociación no comprobada: inventario limitado',
   );
+});
+
+it('keeps documentary placeholder identities in the quality queue without altering evidence', () => {
+  const row = {
+    _id: 'A',
+    'Nombre_Actor/Organizacion': 'Por identificar (fuente sintética.pdf)',
+    Revision_Documental_ID: 'R',
+    'Rol/Relacion': 'Fragmento sintético',
+  };
+  const before = structuredClone(row);
+  const issues = qualityIssues({
+    actores: [row],
+    alertas: [],
+    eventos: [],
+    demandas: [],
+    acciones: [],
+    compromisos: [],
+    fuentes: [],
+  });
+  expect(issues).toContainEqual(
+    expect.objectContaining({
+      id: 'A',
+      field: 'Nombre_Actor/Organizacion',
+      reason: 'Mención documental pendiente de identificar; conservar la evidencia original',
+    }),
+  );
+  expect(row).toEqual(before);
 });
