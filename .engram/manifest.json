@@ -296,6 +296,38 @@
       "sessions": 1,
       "memories": 3,
       "prompts": 0
+    },
+    {
+      "id": "4a62c7ec",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-04T01:49:43.782468978Z",
+      "sessions": 1,
+      "memories": 8,
+      "prompts": 0
+    },
+    {
+      "id": "90367636",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-04T01:50:03.147000045Z",
+      "sessions": 1,
+      "memories": 1,
+      "prompts": 0
+    },
+    {
+      "id": "d5972a16",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-04T06:00:40.879077262Z",
+      "sessions": 1,
+      "memories": 12,
+      "prompts": 0
+    },
+    {
+      "id": "e87da0c3",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-04T06:12:10.249468331Z",
+      "sessions": 1,
+      "memories": 4,
+      "prompts": 0
     }
   ]
 }

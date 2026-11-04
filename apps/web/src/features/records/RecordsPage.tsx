@@ -17,6 +17,7 @@ import { moduleAttachmentsQuery } from './evidence-api.ts';
 import { HistoryPanel } from './HistoryPanel.tsx';
 import { ImportPanel } from './ImportPanel.tsx';
 import { LinksPanel } from './LinksPanel.tsx';
+import { isPendingActorIdentity } from './insights/actor-identity.ts';
 import { ActorMap } from './insights/ActorMap.tsx';
 import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
@@ -93,6 +94,7 @@ const RecordsWorkspace = ({
   onView,
   start,
 }: Props) => {
+  const [pendingActors, setPendingActors] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [facets, setFacets] = useState<Record<string, string>>({});
@@ -338,7 +340,13 @@ const RecordsWorkspace = ({
         </form>
         <QueryState query={rows} label="los registros">
           {(data) => {
-            const visible = data.filter((row) =>
+            const pendingCount =
+              module === 'actores' ? data.filter(isPendingActorIdentity).length : 0;
+            const identityRows =
+              module === 'actores'
+                ? data.filter((row) => isPendingActorIdentity(row) === pendingActors)
+                : data;
+            const visible = identityRows.filter((row) =>
               moduleFacets.every(
                 ({ key }) => !facets[key] || facetValue(row, module, key) === facets[key],
               ),
@@ -353,7 +361,38 @@ const RecordsWorkspace = ({
                 {module === 'acciones' || module === 'compromisos' ? (
                   <FollowupPanel rows={visible} module={module} onOpen={openInsight} />
                 ) : null}
-                {module === 'actores' ? <ActorMap rows={visible} onOpen={openInsight} /> : null}
+                {module === 'actores' ? (
+                  <>
+                    <div className={styles.actions} aria-label="Identidad de actores">
+                      <Button
+                        variant={!pendingActors ? 'primary' : 'secondary'}
+                        aria-pressed={!pendingActors}
+                        onClick={() => {
+                          setPendingActors(false);
+                          setPageIndex(0);
+                        }}
+                      >
+                        Padrón con nombre ({data.length - pendingCount})
+                      </Button>
+                      <Button
+                        variant={pendingActors ? 'primary' : 'secondary'}
+                        aria-pressed={pendingActors}
+                        onClick={() => {
+                          setPendingActors(true);
+                          setPageIndex(0);
+                        }}
+                      >
+                        Menciones pendientes ({pendingCount})
+                      </Button>
+                    </div>
+                    <p>
+                      Un nombre registrado no implica identidad corroborada. Las menciones
+                      pendientes conservan su extracto y fuente, pero no representan actores
+                      identificados en el mapa.
+                    </p>
+                    {!pendingActors ? <ActorMap rows={visible} onOpen={openInsight} /> : null}
+                  </>
+                ) : null}
                 {moduleFacets.length ? (
                   <div className={styles.filters}>
                     {moduleFacets.map(({ key, label }) => {
@@ -437,6 +476,9 @@ const RecordsWorkspace = ({
                               </th>
                             );
                           })}
+                          {module === 'actores' && pendingActors ? (
+                            <th scope="col">Extracto documental</th>
+                          ) : null}
                           {module === 'fuentes' ? <th scope="col">Archivos</th> : null}
                           <th scope="col">Acciones</th>
                         </tr>
@@ -461,6 +503,9 @@ const RecordsWorkspace = ({
                                 </td>
                               );
                             })}
+                            {module === 'actores' && pendingActors ? (
+                              <td>{String(row['Rol/Relacion'] || 'Sin extracto registrado')}</td>
+                            ) : null}
                             {module === 'fuentes' ? (
                               <td data-label="Archivos">
                                 {files.isPending
