@@ -296,6 +296,22 @@
       "sessions": 1,
       "memories": 3,
       "prompts": 0
+    },
+    {
+      "id": "4a62c7ec",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-04T01:49:43.782468978Z",
+      "sessions": 1,
+      "memories": 8,
+      "prompts": 0
+    },
+    {
+      "id": "90367636",
+      "created_by": "dreamcoder08",
+      "created_at": "2026-11-04T01:50:03.147000045Z",
+      "sessions": 1,
+      "memories": 1,
+      "prompts": 0
     }
   ]
 }
