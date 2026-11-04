@@ -1,0 +1,3029 @@
+{
+  "allowed": [
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".csv",
+    ".txt",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp"
+  ],
+  "max_bytes": 32,
+  "bodies": {
+    "empty": [],
+    "pdf": [37, 80, 68, 70, 45, 49, 46, 55, 10, 37, 115, 121, 110, 116, 104, 101, 116, 105, 99],
+    "pdf_short": [37, 80, 68, 70],
+    "zip": [80, 75, 3, 4, 115, 121, 110, 116, 104, 101, 116, 105, 99],
+    "ole": [208, 207, 17, 224, 161, 177, 26, 225, 115, 121, 110, 116, 104, 101, 116, 105, 99],
+    "jpeg": [255, 216, 255, 224, 115, 121, 110, 116, 104, 101, 116, 105, 99],
+    "png": [137, 80, 78, 71, 13, 10, 26, 10, 115, 121, 110, 116, 104, 101, 116, 105, 99],
+    "webp": [82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80, 86, 80, 56, 32],
+    "riff_only": [82, 73, 70, 70, 0, 0, 0, 0, 87, 65, 86, 69],
+    "text": [
+      70, 101, 99, 104, 97, 44, 84, 101, 109, 97, 10, 50, 48, 50, 54, 45, 48, 49, 45, 48, 49, 44,
+      65, 103, 117, 97, 13, 10, 9, 99, 111, 110, 32, 116, 97, 98, 12
+    ],
+    "text_bom": [239, 187, 191, 116, 195, 173, 116, 117, 108, 111],
+    "text_nul": [97, 0, 98],
+    "text_del": [97, 127, 98],
+    "text_vt": [97, 11, 98],
+    "text_esc": [97, 27, 98],
+    "text_c1": [97, 194, 133, 98],
+    "text_bad_utf8": [97, 195, 40],
+    "text_overlong": [192, 175],
+    "text_surrogate": [237, 160, 128],
+    "text_truncated": [111, 107, 226, 130],
+    "html": [
+      60, 33, 100, 111, 99, 116, 121, 112, 101, 32, 104, 116, 109, 108, 62, 60, 115, 99, 114, 105,
+      112, 116, 62, 120, 60, 47, 115, 99, 114, 105, 112, 116, 62
+    ],
+    "exe": [77, 90, 194, 144, 0],
+    "big": [
+      37, 80, 68, 70, 45, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120,
+      120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120, 120,
+      120, 120, 120, 120, 120, 120
+    ]
+  },
+  "extensions": [
+    { "name": "", "extension": "" },
+    { "name": "archivo", "extension": "" },
+    { "name": "acta.pdf", "extension": ".pdf" },
+    { "name": "ACTA.PDF", "extension": ".pdf" },
+    { "name": ".pdf", "extension": "" },
+    { "name": ".hidden", "extension": "" },
+    { "name": "a.", "extension": "." },
+    { "name": "a..pdf", "extension": ".pdf" },
+    { "name": "informe final 2026.docx", "extension": ".docx" },
+    { "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx", "extension": ".xlsx" },
+    { "name": "../../etc/passwd", "extension": "./etc/passwd" },
+    { "name": "/tmp/../foto.JPG", "extension": ".jpg" },
+    { "name": "dir/sub\\nombre con espacios.txt", "extension": ".txt" },
+    { "name": "Señalización vía pública.csv", "extension": ".csv" },
+    { "name": "ÁÉÍÓÚ ñ ü.jpeg", "extension": ".jpeg" },
+    { "name": "ﬁcha técnica.png", "extension": ".png" },
+    { "name": "①②③.webp", "extension": ".webp" },
+    { "name": "😀 emoji 😀.pdf", "extension": ".pdf" },
+    { "name": "---___...nombre...___---.doc", "extension": ".doc" },
+    { "name": "___.pdf", "extension": ".pdf" },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "extension": ".pdf"
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "extension": ".xls"
+    },
+    { "name": "tab\there.pdf", "extension": ".pdf" },
+    { "name": "nul\u0000.pdf", "extension": ".pdf" },
+    { "name": "ẞ straße.txt", "extension": ".txt" },
+    { "name": "İstanbul.csv", "extension": ".csv" },
+    { "name": "mapa.geojson", "extension": ".geojson" },
+    { "name": "virus.exe", "extension": ".exe" },
+    { "name": "page.html", "extension": ".html" },
+    { "name": "archivo.PdF", "extension": ".pdf" },
+    { "name": "x.tar.gz", "extension": ".gz" },
+    { "name": "名前.pdf", "extension": ".pdf" },
+    { "name": "نص عربي.txt", "extension": ".txt" },
+    { "name": "á̧.pdf", "extension": ".pdf" },
+    { "name": "Ω≈ç√∫.pdf", "extension": ".pdf" },
+    { "name": "   espacios   .pdf", "extension": ".pdf" },
+    { "name": "trailing/", "extension": "" },
+    { "name": "only\\", "extension": "" },
+    { "name": "..", "extension": "." },
+    { "name": ".", "extension": "" }
+  ],
+  "safe_names": [
+    { "name": "", "safe": "archivo" },
+    { "name": "archivo", "safe": "archivo" },
+    { "name": "acta.pdf", "safe": "acta.pdf" },
+    { "name": "ACTA.PDF", "safe": "ACTA.pdf" },
+    { "name": ".pdf", "safe": "pdf" },
+    { "name": ".hidden", "safe": "hidden" },
+    { "name": "a.", "safe": "a." },
+    { "name": "a..pdf", "safe": "a.pdf" },
+    { "name": "informe final 2026.docx", "safe": "informe-final-2026.docx" },
+    { "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx", "safe": "reporte.xlsx" },
+    { "name": "../../etc/passwd", "safe": "passwd" },
+    { "name": "/tmp/../foto.JPG", "safe": "foto.jpg" },
+    { "name": "dir/sub\\nombre con espacios.txt", "safe": "nombre-con-espacios.txt" },
+    { "name": "Señalización vía pública.csv", "safe": "Senalizacion-via-publica.csv" },
+    { "name": "ÁÉÍÓÚ ñ ü.jpeg", "safe": "AEIOU-n-u.jpeg" },
+    { "name": "ﬁcha técnica.png", "safe": "ficha-tecnica.png" },
+    { "name": "①②③.webp", "safe": "123.webp" },
+    { "name": "😀 emoji 😀.pdf", "safe": "emoji.pdf" },
+    { "name": "---___...nombre...___---.doc", "safe": "nombre.doc" },
+    { "name": "___.pdf", "safe": "archivo.pdf" },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "safe": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf"
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "safe": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.xls"
+    },
+    { "name": "tab\there.pdf", "safe": "tab-here.pdf" },
+    { "name": "nul\u0000.pdf", "safe": "nul.pdf" },
+    { "name": "ẞ straße.txt", "safe": "strae.txt" },
+    { "name": "İstanbul.csv", "safe": "Istanbul.csv" },
+    { "name": "mapa.geojson", "safe": "mapa.geojson" },
+    { "name": "virus.exe", "safe": "virus.exe" },
+    { "name": "page.html", "safe": "page.html" },
+    { "name": "archivo.PdF", "safe": "archivo.pdf" },
+    { "name": "x.tar.gz", "safe": "x.tar.gz" },
+    { "name": "名前.pdf", "safe": "archivo.pdf" },
+    { "name": "نص عربي.txt", "safe": "archivo.txt" },
+    { "name": "á̧.pdf", "safe": "a.pdf" },
+    { "name": "Ω≈ç√∫.pdf", "safe": "c.pdf" },
+    { "name": "   espacios   .pdf", "safe": "espacios.pdf" },
+    { "name": "trailing/", "safe": "archivo" },
+    { "name": "only\\", "safe": "archivo" },
+    { "name": "..", "safe": "archivo." },
+    { "name": ".", "safe": "archivo" }
+  ],
+  "checks": [
+    { "name": "", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "acta.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "acta.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "acta.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "acta.pdf", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "acta.pdf", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "acta.pdf", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "acta.pdf", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "acta.pdf", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "acta.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "acta.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "acta.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "acta.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "acta.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "acta.pdf", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "acta.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "ACTA.PDF", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "ACTA.PDF",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "ACTA.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ACTA.PDF", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "ACTA.PDF", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "ACTA.PDF", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "ACTA.PDF", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "ACTA.PDF", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "ACTA.PDF",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ACTA.PDF", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ACTA.PDF",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ACTA.PDF", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "ACTA.PDF", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "ACTA.PDF", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": ".pdf", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".pdf", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".hidden", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a.", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "a..pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "a..pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "a.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "a..pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "a..pdf", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "a..pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "a..pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "a..pdf", "body": "text_bom", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "text_nul", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "text_del", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "text_vt", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "text_esc", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "text_c1", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "a..pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "a..pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "a..pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "a..pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "a..pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "a..pdf", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "a..pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "informe final 2026.docx",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "zip",
+      "result": {
+        "ok": true,
+        "safeName": "informe-final-2026.docx",
+        "contentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "informe final 2026.docx",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "zip",
+      "result": {
+        "ok": true,
+        "safeName": "reporte.xlsx",
+        "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "C:\\Users\\x\\Escritorio\\reporte.xlsx",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    { "name": "../../etc/passwd", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "../../etc/passwd",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "../../etc/passwd", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "../../etc/passwd",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "../../etc/passwd", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "../../etc/passwd",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "../../etc/passwd", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "../../etc/passwd", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "/tmp/../foto.JPG", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "jpeg",
+      "result": { "ok": true, "safeName": "foto.jpg", "contentType": "image/jpeg" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "/tmp/../foto.JPG", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "/tmp/../foto.JPG", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "/tmp/../foto.JPG",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "/tmp/../foto.JPG", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "nombre-con-espacios.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "pdf_short",
+      "result": { "ok": true, "safeName": "nombre-con-espacios.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_bom",
+      "result": { "ok": true, "safeName": "nombre-con-espacios.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_c1",
+      "result": { "ok": true, "safeName": "nombre-con-espacios.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "dir/sub\\nombre con espacios.txt",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "pdf",
+      "result": {
+        "ok": true,
+        "safeName": "Senalizacion-via-publica.csv",
+        "contentType": "text/csv"
+      }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "pdf_short",
+      "result": {
+        "ok": true,
+        "safeName": "Senalizacion-via-publica.csv",
+        "contentType": "text/csv"
+      }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_bom",
+      "result": {
+        "ok": true,
+        "safeName": "Senalizacion-via-publica.csv",
+        "contentType": "text/csv"
+      }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_c1",
+      "result": {
+        "ok": true,
+        "safeName": "Senalizacion-via-publica.csv",
+        "contentType": "text/csv"
+      }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Señalización vía pública.csv",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    { "name": "ÁÉÍÓÚ ñ ü.jpeg", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "jpeg",
+      "result": { "ok": true, "safeName": "AEIOU-n-u.jpeg", "contentType": "image/jpeg" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ÁÉÍÓÚ ñ ü.jpeg", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ÁÉÍÓÚ ñ ü.jpeg", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ÁÉÍÓÚ ñ ü.jpeg",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ÁÉÍÓÚ ñ ü.jpeg", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "ﬁcha técnica.png", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "png",
+      "result": { "ok": true, "safeName": "ficha-tecnica.png", "contentType": "image/png" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ﬁcha técnica.png", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ﬁcha técnica.png", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ﬁcha técnica.png",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ﬁcha técnica.png", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "①②③.webp", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    { "name": "①②③.webp", "body": "pdf", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "①②③.webp",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "①②③.webp", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "①②③.webp", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "①②③.webp", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "①②③.webp", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "①②③.webp",
+      "body": "webp",
+      "result": { "ok": true, "safeName": "123.webp", "contentType": "image/webp" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "①②③.webp", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "①②③.webp",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "①②③.webp",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "①②③.webp", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "①②③.webp", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "①②③.webp", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "😀 emoji 😀.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "emoji.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "😀 emoji 😀.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "😀 emoji 😀.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "😀 emoji 😀.pdf",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "😀 emoji 😀.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "ole",
+      "result": { "ok": true, "safeName": "nombre.doc", "contentType": "application/msword" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "---___...nombre...___---.doc",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    { "name": "___.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "___.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "archivo.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "___.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "___.pdf", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "___.pdf", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "___.pdf", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "___.pdf", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "___.pdf", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "___.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "___.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "___.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "___.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "___.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "___.pdf", "body": "text_vt", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "___.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "___.pdf", "body": "text_c1", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "___.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "___.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "___.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "___.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "___.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "___.pdf", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "___.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "pdf",
+      "result": {
+        "ok": true,
+        "safeName": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+        "contentType": "application/pdf"
+      }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pdf",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "empty",
+      "result": { "ok": false, "kind": "empty" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "pdf",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "ole",
+      "result": {
+        "ok": true,
+        "safeName": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.xls",
+        "contentType": "application/vnd.ms-excel"
+      }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé.xls",
+      "body": "big",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    { "name": "tab\there.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "tab\there.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "tab-here.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "tab\there.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "tab\there.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "tab\there.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "tab\there.pdf",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "tab\there.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "nul\u0000.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "nul.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "nul\u0000.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "nul\u0000.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "nul\u0000.pdf",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "nul\u0000.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "ẞ straße.txt", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "ẞ straße.txt",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "strae.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "pdf_short",
+      "result": { "ok": true, "safeName": "strae.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ẞ straße.txt", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_bom",
+      "result": { "ok": true, "safeName": "strae.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_c1",
+      "result": { "ok": true, "safeName": "strae.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "ẞ straße.txt",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ẞ straße.txt", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "ẞ straße.txt",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "ẞ straße.txt", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "İstanbul.csv", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "İstanbul.csv",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "Istanbul.csv", "contentType": "text/csv" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "pdf_short",
+      "result": { "ok": true, "safeName": "Istanbul.csv", "contentType": "text/csv" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "İstanbul.csv", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_bom",
+      "result": { "ok": true, "safeName": "Istanbul.csv", "contentType": "text/csv" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_c1",
+      "result": { "ok": true, "safeName": "Istanbul.csv", "contentType": "text/csv" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "İstanbul.csv",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "İstanbul.csv", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "İstanbul.csv",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "İstanbul.csv", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "mapa.geojson", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "mapa.geojson",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "mapa.geojson",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "mapa.geojson",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "mapa.geojson",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "mapa.geojson", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "mapa.geojson", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "virus.exe",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "virus.exe",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "virus.exe",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "virus.exe",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "virus.exe", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "virus.exe", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "page.html",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "page.html",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "page.html",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "page.html",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "page.html", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "page.html", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "archivo.PdF", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "archivo.PdF",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "archivo.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "archivo.PdF", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "archivo.PdF", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "archivo.PdF",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "archivo.PdF", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "archivo.PdF",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "archivo.PdF", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "archivo.PdF",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "archivo.PdF",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "archivo.PdF", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "archivo.PdF", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "archivo.PdF", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "x.tar.gz", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "x.tar.gz",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "x.tar.gz",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "x.tar.gz", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "x.tar.gz", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "名前.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "名前.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "archivo.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "名前.pdf", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "名前.pdf", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "名前.pdf", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "名前.pdf", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "名前.pdf", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "名前.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "名前.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "名前.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "名前.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "名前.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "名前.pdf", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "名前.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "نص عربي.txt", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "نص عربي.txt",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "archivo.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "pdf_short",
+      "result": { "ok": true, "safeName": "archivo.txt", "contentType": "text/plain" }
+    },
+    { "name": "نص عربي.txt", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "نص عربي.txt", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "نص عربي.txt",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "نص عربي.txt", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "نص عربي.txt",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "نص عربي.txt", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_bom",
+      "result": { "ok": true, "safeName": "archivo.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_c1",
+      "result": { "ok": true, "safeName": "archivo.txt", "contentType": "text/plain" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "نص عربي.txt",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "نص عربي.txt", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "نص عربي.txt", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "نص عربي.txt", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "á̧.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "á̧.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "a.pdf", "contentType": "application/pdf" }
+    },
+    { "name": "á̧.pdf", "body": "pdf_short", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "riff_only", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "á̧.pdf", "body": "text_bom", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "text_nul", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "text_del", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "text_vt", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "text_esc", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "text_c1", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "á̧.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "á̧.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "á̧.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "á̧.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "á̧.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "á̧.pdf", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "á̧.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "c.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "Ω≈ç√∫.pdf", "body": "zip", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "ole", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "jpeg", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "png", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "webp", "result": { "ok": false, "kind": "content_mismatch" } },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "Ω≈ç√∫.pdf", "body": "text", "result": { "ok": false, "kind": "too_large" } },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "Ω≈ç√∫.pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "Ω≈ç√∫.pdf", "body": "html", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "exe", "result": { "ok": false, "kind": "content_mismatch" } },
+    { "name": "Ω≈ç√∫.pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "   espacios   .pdf", "body": "empty", "result": { "ok": false, "kind": "empty" } },
+    {
+      "name": "   espacios   .pdf",
+      "body": "pdf",
+      "result": { "ok": true, "safeName": "espacios.pdf", "contentType": "application/pdf" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "pdf_short",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "zip",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "ole",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "jpeg",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "png",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "webp",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "riff_only",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_bom",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_nul",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_del",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_vt",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_esc",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_c1",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "html",
+      "result": { "ok": false, "kind": "too_large" }
+    },
+    {
+      "name": "   espacios   .pdf",
+      "body": "exe",
+      "result": { "ok": false, "kind": "content_mismatch" }
+    },
+    { "name": "   espacios   .pdf", "body": "big", "result": { "ok": false, "kind": "too_large" } },
+    { "name": "trailing/", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    {
+      "name": "trailing/",
+      "body": "text_bad_utf8",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "trailing/",
+      "body": "text_overlong",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "trailing/",
+      "body": "text_surrogate",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    {
+      "name": "trailing/",
+      "body": "text_truncated",
+      "result": { "ok": false, "kind": "extension" }
+    },
+    { "name": "trailing/", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "trailing/", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "only\\", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": "..", "body": "big", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "empty", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "pdf", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "pdf_short", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "zip", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "ole", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "jpeg", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "png", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "webp", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "riff_only", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_bom", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_nul", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_del", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_vt", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_esc", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_c1", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_bad_utf8", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_overlong", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_surrogate", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "text_truncated", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "html", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "exe", "result": { "ok": false, "kind": "extension" } },
+    { "name": ".", "body": "big", "result": { "ok": false, "kind": "extension" } }
+  ]
+}

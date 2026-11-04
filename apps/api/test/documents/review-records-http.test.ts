@@ -113,6 +113,50 @@ describe('approving a document review item (T23)', () => {
     expect(listed?.record).toEqual({ module: 'compromisos', id: `REV-${pending?.id}` });
   });
 
+  it('routes imported automatic actor findings to actors without claiming corroboration', async () => {
+    const { json, importItems, list, recordsIn } = await setup();
+    await importItems([finding('Actor (extracción automática)', 1)]);
+    const [pending] = await list();
+    expect(pending).toMatchObject({
+      status: 'pendiente',
+      target: { module: 'actores', label: 'Actores' },
+      record: null,
+    });
+    const id = `REV-${pending?.id}`;
+    expect((await recordsIn('actores')).some((row) => row._id === id)).toBe(false);
+
+    const accept = () =>
+      json('PATCH', `/system/document-lab/review/${pending?.id}`, {
+        status: 'aceptado_para_revision',
+      });
+    const response = await accept();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      record: { module: 'actores', id, created: true },
+    });
+    const actorResponse = await json('GET', `/api/actores/${id}`);
+    expect(actorResponse.status).toBe(200);
+    const actor = (await actorResponse.json()) as Record<string, unknown>;
+    expect(actor).toMatchObject({
+      _id: id,
+      ID_Actor: id,
+      Proyecto_ID: 'PRJ-SECHURA',
+      'Nombre_Actor/Organizacion': 'Por identificar (acta-sintetica.txt)',
+      'Rol/Relacion': 'Fragmento sintético número 1 sobre Actor (extracción automática).',
+      Revision_Documental_ID: pending?.id,
+      Fuente_ID: 'acta-sintetica.txt · Línea 1',
+    });
+    expect(String(actor.Observaciones)).toContain('aceptado para revisión');
+    expect(String(actor.Observaciones)).toContain(SHA);
+    expect((await recordsIn('hechos')).some((row) => row._id === id)).toBe(false);
+    const repeated = await accept();
+    expect(repeated.status).toBe(200);
+    expect(await repeated.json()).toMatchObject({
+      record: { module: 'actores', id, created: false },
+    });
+    expect((await recordsIn('actores')).filter((row) => row._id === id)).toHaveLength(1);
+  });
+
   it('maps every lexical theme to its module and keeps unknown themes as facts to verify', async () => {
     const { importItems, list, approve } = await setup();
     const themes = {
