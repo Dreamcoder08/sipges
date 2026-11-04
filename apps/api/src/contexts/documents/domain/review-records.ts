@@ -25,6 +25,7 @@ const OPORTUNIDADES = { module: 'oportunidades', label: 'Valor compartido' } as 
 const NARRATIVAS = { module: 'narrativas', label: 'Narrativas' } as const;
 
 const TARGETS: Readonly<Record<string, ReviewTarget>> = {
+  'Actor (extracción automática)': ACTORES,
   'Representatividad y gobernanza': ACTORES,
   'Demandas e intereses': DEMANDAS,
   'Compromisos y trazabilidad': COMPROMISOS,
