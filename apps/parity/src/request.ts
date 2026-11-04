@@ -5,16 +5,44 @@ import type { Body, Observed } from './diff.ts';
 /** A case whose answer takes longer than this fails instead of hanging the run (and CI). */
 export const REQUEST_TIMEOUT_MS = 15_000;
 
+/** Which API a request goes to: a case's `vary` values are chosen by it. */
+export type Side = 'ts' | 'go';
+
+/** The case as one API receives it: each `{name}` of its `vary` replaced by that API's value. */
+const forSide = (c: ParityCase, side: Side): ParityCase => {
+  if (!c.vary) return c;
+  const vary = Object.entries(c.vary);
+  const fill = (text: string) =>
+    vary.reduce((current, [name, values]) => current.replaceAll(`{${name}}`, values[side]), text);
+  const filled: ParityCase = { ...c, path: fill(c.path) };
+  const headers = c.headers
+    ? { headers: Object.fromEntries(Object.entries(c.headers).map(([k, v]) => [k, fill(v)])) }
+    : {};
+  if (!c.body) return { ...filled, ...headers };
+  const body =
+    'json' in c.body
+      ? { raw: fill(JSON.stringify(c.body.json)) }
+      : 'raw' in c.body
+        ? { raw: fill(c.body.raw) }
+        : { form: Object.fromEntries(Object.entries(c.body.form).map(([k, v]) => [k, fill(v)])) };
+  return { ...filled, ...headers, body };
+};
+
 /** Sends one case to one API and reads its status, media type and body. */
 export const send = async (
   baseUrl: string,
-  c: ParityCase,
+  original: ParityCase,
   cookie: string | undefined,
   timeoutMs: number,
+  side: Side = 'ts',
 ): Promise<Observed> => {
+  const c = forSide(original, side);
   // `{origin}` stands for the base URL of the API being called (each listens on its own port).
   const headers = new Headers(
-    Object.entries(c.headers ?? {}).map(([k, v]) => [k, v === '{origin}' ? baseUrl : v]),
+    Object.entries(c.headers ?? {}).map(([k, v]): [string, string] => [
+      k,
+      v === '{origin}' ? baseUrl : v,
+    ]),
   );
   if (c.auth && cookie) {
     const own = headers.get('cookie');
