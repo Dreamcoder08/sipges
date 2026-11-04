@@ -344,6 +344,14 @@
       "sessions": 1,
       "memories": 2,
       "prompts": 0
+    },
+    {
+      "id": "b2e94dc3",
+      "created_by": "vm",
+      "created_at": "2026-11-04T23:26:54.369905388Z",
+      "sessions": 1,
+      "memories": 2,
+      "prompts": 0
     }
   ]
 }
