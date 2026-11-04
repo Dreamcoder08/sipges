@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf16"
+	"unicode/utf8"
 )
 
 // A decoded JSON value is nil, bool, float64 (±Inf for numbers past float64, as JSON.parse
@@ -202,10 +203,27 @@ func appendJSON(b []byte, v any) []byte {
 	panic(fmt.Sprintf("records: no JSON form for %T", v))
 }
 
-// appendString is JSON.stringify for a string: only '"', '\\' and control characters escape.
+// appendString is JSON.stringify for a string: only '"', '\\', control characters and lone
+// surrogates (held as WTF-8, see body.go) escape.
 func appendString(b []byte, s string) []byte {
 	b = append(b, '"')
-	for _, r := range s {
+	for i, r := range s {
+		if r == utf8.RuneError {
+			if u, ok := surrogateAt(s, i); ok {
+				b = fmt.Appendf(b, `\u%04x`, u)
+				continue
+			}
+			if i > 0 {
+				if _, ok := surrogateAt(s, i-1); ok {
+					continue // the second byte of a surrogate written above
+				}
+				if i > 1 {
+					if _, ok := surrogateAt(s, i-2); ok {
+						continue // its third byte
+					}
+				}
+			}
+		}
 		switch r {
 		case '"':
 			b = append(b, `\"`...)

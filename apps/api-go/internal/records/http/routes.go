@@ -1,8 +1,8 @@
 // Package http serves the read routes of apps/api/src/contexts/records/http/records-routes.ts
 // with the same JSON: GET /api/registros/summary, /api/{module}, /api/{module}/{id} and
 // /api/{module}/{id}/history. The scope's tenant is always used; the session, project scope and
-// role gate ran before (internal/app). POST, PUT and DELETE of records and POST
-// /system/import/{module} stay in TypeScript.
+// role gate ran before (internal/app). The writes (POST, PUT and DELETE of records and POST
+// /system/import/{module}) are in writes.go.
 package http
 
 import (
