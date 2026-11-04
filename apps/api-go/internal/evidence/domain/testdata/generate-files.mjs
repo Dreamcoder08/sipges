@@ -12,7 +12,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { format, resolveConfig } from 'prettier';
 import { createEvidenceService } from '../../../../../api/src/contexts/evidence/application/index.ts';
-import { linkIntoPayload, projectOf } from '../../../../../api/src/contexts/evidence/domain/index.ts';
+import {
+  linkIntoPayload,
+  projectOf,
+} from '../../../../../api/src/contexts/evidence/domain/index.ts';
 
 const OUT = fileURLToPath(new URL('./files.json', import.meta.url));
 
@@ -37,7 +40,12 @@ const PAYLOADS = [
   '{"Adjuntos":{"0":"x"},"__proto__":{"y":1},"constructor":"c"}',
 ];
 const SLUGS = ['eventos', 'fuentes', 'alertas'];
-const LINK = { id: 'ADJ-0123456789AB', fileName: 'acta.pdf', documentType: 'Acta <b>', verification: 'A - Verificada' };
+const LINK = {
+  id: 'ADJ-0123456789AB',
+  fileName: 'acta.pdf',
+  documentType: 'Acta <b>',
+  verification: 'A - Verificada',
+};
 
 const payloads = [];
 for (const text of PAYLOADS) {
@@ -63,13 +71,19 @@ const TEXTS = {
   plain: { count: 0, tail: utf8('hola\nmundo') },
   bom: { count: 0, tail: [0xef, 0xbb, 0xbf, ...utf8('hola')] },
   two_boms: { count: 0, tail: [0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, ...utf8('hola')] },
-  three_boms: { count: 0, tail: [0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, ...utf8('hola')] },
+  three_boms: {
+    count: 0,
+    tail: [0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, ...utf8('hola')],
+  },
   blank: { count: 0, tail: utf8(' \t\n\u00a0\u3000\ufeff\u2028') },
   nel_is_text: { count: 0, tail: utf8('\u0085') },
   empty: { count: 0, tail: [] },
   invalid: {
     count: 0,
-    tail: [0x61, 0xe2, 0x82, 0x62, 0xff, 0xc0, 0xaf, 0xed, 0xa0, 0x80, 0xf0, 0x9f, 0x98, 0xf4, 0x90, 0x80, 0x80, 0xe0, 0x80, 0xaf, 0xc2],
+    tail: [
+      0x61, 0xe2, 0x82, 0x62, 0xff, 0xc0, 0xaf, 0xed, 0xa0, 0x80, 0xf0, 0x9f, 0x98, 0xf4, 0x90,
+      0x80, 0x80, 0xe0, 0x80, 0xaf, 0xc2,
+    ],
   },
   exactly_the_limit: { count: 200_000, tail: [] },
   one_over: { count: 200_001, tail: [] },
