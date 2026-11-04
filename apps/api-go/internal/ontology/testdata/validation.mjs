@@ -261,6 +261,61 @@ const NEIGHBOURHOODS = [
   nb({ seeds: [{ length: 0 }] }),
 ];
 
+/**
+ * Bodies with bytes that are not UTF-8, or byte order marks, as hex: Request.json() decodes
+ * them as WHATWG UTF-8 (one U+FFFD per maximal ill-formed subpart) and drops two leading BOMs.
+ */
+const hex = (...parts) =>
+  parts.map((p) => (typeof p === 'string' ? Buffer.from(p).toString('hex') : p.hex)).join('');
+const bytes = (h, n = 1) => ({ hex: h.repeat(n) });
+const BOM = bytes('efbbbf');
+const BYTES = {
+  marking: [
+    hex(BOM, '{}'),
+    hex(BOM, BOM, '{}'),
+    hex(BOM, BOM, BOM, '{}'),
+    hex(' ', BOM, '{}'),
+    hex('{"module":"', bytes('e282', 25), '","id":"A1","marking":"publico"}'),
+    hex('{"module":"', bytes('f09f98', 14), '","id":"A1","marking":"publico"}'),
+    hex('{"module":"', bytes('e282', 41), '","id":"A1","marking":"publico"}'),
+    ...[
+      '80',
+      'bf',
+      'c0af',
+      'c1bf',
+      'e080af',
+      'eda080',
+      'edbfbf',
+      'f08080af',
+      'f4908080',
+      'f5',
+      'ff',
+      'fe',
+      'e2',
+      'f0',
+      'c2',
+      'e28228',
+      'f09f9828',
+      'c3a9',
+    ].map((b) => hex('{"module":"', bytes(b, 21), '","id":"A1","marking":"publico"}')),
+  ],
+  link: [
+    hex(
+      '{"link_type":"aliado_de","source":{"module":"actores","id":"A1"},"target":{"module":"actores","id":"A2"},"note":"',
+      bytes('e282', 300),
+      '"}',
+    ),
+  ],
+  neighbourhood: [
+    hex(
+      '{"seeds":[{"module":"actores","id":"A1"}],"hops":[["aliado_de"]],"fields":["',
+      bytes('e282', 40),
+      '"]}',
+    ),
+  ],
+  evidence: [hex(BOM, BOM, '{"evidence":null}')],
+};
+
 const SCHEMAS = {
   link: LinkIn,
   evidence: LinkEvidenceIn,
@@ -308,7 +363,15 @@ for (const linkType of [...LINK_TYPES.map((t) => t.id), 'no_existe', '']) {
   }
 }
 
-const text = await format(JSON.stringify({ cases, checks }), {
+const rawBytes = [];
+for (const [name, inputs] of Object.entries(BYTES)) {
+  for (const h of inputs) {
+    const { status, body } = await run(SCHEMAS[name], Buffer.from(h, 'hex'));
+    rawBytes.push({ schema: name, hex: h, status, body: JSON.stringify(body) });
+  }
+}
+
+const text = await format(JSON.stringify({ cases, checks, bytes: rawBytes }), {
   ...(await resolveConfig(OUT)),
   filepath: OUT,
 });

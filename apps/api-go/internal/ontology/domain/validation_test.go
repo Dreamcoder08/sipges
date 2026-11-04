@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"reflect"
@@ -61,12 +62,25 @@ func TestBodyValidationMatchesTypeScript(t *testing.T) {
 	}
 	var f struct {
 		Cases []validationCase `json:"cases"`
+		// Bytes are bodies that are not UTF-8 or carry byte order marks, as hex.
+		Bytes []struct {
+			validationCase
+			Hex string `json:"hex"`
+		} `json:"bytes"`
 	}
 	if err := json.Unmarshal(raw, &f); err != nil {
 		t.Fatal(err)
 	}
-	if len(f.Cases) < 150 {
-		t.Fatalf("only %d recorded cases", len(f.Cases))
+	if len(f.Cases) < 150 || len(f.Bytes) < 20 {
+		t.Fatalf("only %d recorded cases and %d byte bodies", len(f.Cases), len(f.Bytes))
+	}
+	for _, b := range f.Bytes {
+		decoded, err := hex.DecodeString(b.Hex)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b.Raw = string(decoded)
+		f.Cases = append(f.Cases, b.validationCase)
 	}
 	for _, c := range f.Cases {
 		var want map[string]any

@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -60,12 +59,16 @@ type undefined struct{}
 // infinity is a JSON number JSON.parse reads as ±Infinity (1e400).
 type infinity struct{ negative bool }
 
-// ParseBody is c.req.json() as parseJson reads it: Request.json() drops a UTF-8 byte order mark,
+// ParseBody is c.req.json() as parseJson reads it: Request.json() decodes the bytes as WHATWG
+// UTF-8 (one U+FFFD per maximal invalid subpart) and drops up to two leading byte order marks,
 // then JSON.parse reads the whole text. ok is false when it throws (json_invalid). Numbers stay
 // json.Number, or infinity where JSON.parse overflows.
 func ParseBody(body []byte) (any, bool) {
-	body = bytes.TrimPrefix(body, []byte("\xef\xbb\xbf"))
-	dec := json.NewDecoder(bytes.NewReader(body))
+	text := decodeUTF8(body)
+	for range 2 {
+		text = strings.TrimPrefix(text, "\ufeff")
+	}
+	dec := json.NewDecoder(strings.NewReader(text))
 	dec.UseNumber()
 	var v any
 	if err := dec.Decode(&v); err != nil {
@@ -75,6 +78,57 @@ func ParseBody(body []byte) (any, bool) {
 		return nil, false // trailing data
 	}
 	return jsValue(v), true
+}
+
+// decodeUTF8 is the WHATWG UTF-8 decoder: each maximal subpart of an ill-formed sequence
+// becomes one U+FFFD (Go's own decoding gives one per byte).
+func decodeUTF8(b []byte) string {
+	if utf8.Valid(b) {
+		return string(b)
+	}
+	var out strings.Builder
+	for i := 0; i < len(b); {
+		c := b[i]
+		if c < 0x80 {
+			out.WriteByte(c)
+			i++
+			continue
+		}
+		need, lo, hi := 0, byte(0x80), byte(0xbf)
+		switch {
+		case c >= 0xc2 && c <= 0xdf:
+			need = 1
+		case c == 0xe0:
+			need, lo = 2, 0xa0
+		case c >= 0xe1 && c <= 0xec, c == 0xee, c == 0xef:
+			need = 2
+		case c == 0xed:
+			need, hi = 2, 0x9f
+		case c == 0xf0:
+			need, lo = 3, 0x90
+		case c >= 0xf1 && c <= 0xf3:
+			need = 3
+		case c == 0xf4:
+			need, hi = 3, 0x8f
+		}
+		j := i + 1
+		for k := 0; need > 0 && k < need; k++ {
+			if j >= len(b) || b[j] < lo || b[j] > hi {
+				need = -1
+				break
+			}
+			lo, hi = 0x80, 0xbf
+			j++
+		}
+		if need <= 0 {
+			out.WriteRune(utf8.RuneError)
+			i = max(j, i+1)
+			continue
+		}
+		out.Write(b[i:j])
+		i = j
+	}
+	return out.String()
 }
 
 func jsValue(v any) any {

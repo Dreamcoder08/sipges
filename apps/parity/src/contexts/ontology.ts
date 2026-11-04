@@ -311,10 +311,17 @@ const admin = (name: string, path: string, auth: ParityCase['auth'] = 'admin'): 
 const LONG_QUERY = encodeURIComponent(`${'o'.repeat(199)}😀 ontoparidad`);
 
 /** Each API's own rows of the writes (see writeSeed). */
+/** Every character of a number percent-encoded: 39101 → %33%39%31%30%31. */
+const encodeAll = (n: number) =>
+  [...String(n)].map((c) => `%${c.charCodeAt(0).toString(16)}`).join('');
+
 const W = {
   w: { ts: 'WT', go: 'WG' },
   del: { ts: String(WRITE_IDS.WT.del), go: String(WRITE_IDS.WG.del) },
   ev: { ts: String(WRITE_IDS.WT.ev), go: String(WRITE_IDS.WG.ev) },
+  // The same ids percent-encoded: Hono decodes the path parameter before the /^\d{1,9}$/ check.
+  evEncoded: { ts: encodeAll(WRITE_IDS.WT.ev), go: encodeAll(WRITE_IDS.WG.ev) },
+  delEncoded: { ts: encodeAll(WRITE_IDS.WT.del), go: encodeAll(WRITE_IDS.WG.del) },
 } as const;
 const actor = (n: string) => ({ module: 'actores', id: `PARITY-ONT-{w}-${n}` });
 const LINKS_OF = (n: string) => `/system/links?module=actores&id=PARITY-ONT-{w}-${n}`;
@@ -518,7 +525,7 @@ const WRITES: ParityCase[] = [
     path: `/system/links/${OTHER_LINK}/evidence`,
     body: { json: { evidence: null } },
   }),
-  ...['abc', '-1', '1234567890', '999999999', '%31', '1.0'].map((id) =>
+  ...['abc', '-1', '1234567890', '999999999', '{evEncoded}', '1.0'].map((id) =>
     write(`evidence: link id ${id}`, {
       method: 'PUT',
       path: `/system/links/${id}/evidence`,
@@ -676,7 +683,7 @@ const WRITES: ParityCase[] = [
     method: 'DELETE',
     path: `/system/links/${OTHER_LINK}`,
   }),
-  ...['abc', '-1', '1234567890', '%31%32'].map((id) =>
+  ...['abc', '-1', '1234567890', '{delEncoded}'].map((id) =>
     write(`delete: link id ${id}`, { method: 'DELETE', path: `/system/links/${id}` }),
   ),
   write('delete: no id', { method: 'DELETE', path: '/system/links/' }),
