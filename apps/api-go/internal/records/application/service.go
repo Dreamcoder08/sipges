@@ -1,6 +1,6 @@
 // Package application is the read side of apps/api/src/contexts/records/application
 // (records-service.ts, records-summary.ts): a module's records, one record, its history and the
-// Registros «Todos» page. Creating, replacing, deleting and importing stay in TypeScript.
+// Registros «Todos» page. Creating, replacing, deleting and importing are in writes.go.
 package application
 
 import (

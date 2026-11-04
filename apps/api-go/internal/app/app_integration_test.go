@@ -310,7 +310,7 @@ func TestChecksTheOriginOfWrites(t *testing.T) {
 	expect(t, s.do(t, req{method: "POST", path: "/api/eventos", user: "solo"}), http.StatusForbidden, badOrigin)
 	expect(t, s.do(t, req{method: "POST", path: "/api/eventos", user: "solo",
 		headers: map[string]string{"Origin": "https://evil.example"}}), http.StatusForbidden, badOrigin)
-	expect(t, s.do(t, req{method: "DELETE", path: "/api/eventos/1", user: "solo",
+	expect(t, s.do(t, req{method: "DELETE", path: unserved, user: "solo",
 		headers: map[string]string{"Referer": s.url + "/page"}}), http.StatusNotFound, notFound)
 }
 
@@ -364,10 +364,14 @@ func TestResolvesTheProjectScope(t *testing.T) {
 	})
 }
 
+// unserved is a write path under /api/ that the gates check and no route serves, so a request
+// the gates let through answers the router's 404 (the records writes now serve /api/eventos).
+const unserved = "/api/eventos/1/unserved"
+
 func TestRefusesJSONBodiesThatNameAnotherProject(t *testing.T) {
 	s := start(t, false)
 	post := func(body string, contentType string) reply {
-		return s.do(t, req{method: "POST", path: "/api/eventos", user: "solo", sameOrigin: true,
+		return s.do(t, req{method: "POST", path: unserved, user: "solo", sameOrigin: true,
 			headers: map[string]string{"Content-Type": contentType}, body: body})
 	}
 	for _, body := range []string{
