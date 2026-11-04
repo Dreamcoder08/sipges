@@ -453,6 +453,8 @@ func TestDecisionErrorsAndScope(t *testing.T) {
 	}{
 		{"writer", "W-ALTA-4", `{"status":"Cerrado"}`, nil, 422, `{"detail":"Estado inválido"}`},
 		{"writer", "W-ALTA-4", `{"status":"Descartado","reviewer_note":"` + strings.Repeat("ñ", 2001) + `"}`, nil, 422, `{"detail":"Nota demasiado extensa"}`},
+		// Invalid UTF-8 decodes as TextDecoder does: one U+FFFD per invalid byte here, 2001 code points.
+		{"writer", "W-ALTA-4", `{"status":"Descartado","reviewer_note":"` + strings.Repeat("ñ", 1999) + "\xff\xff" + `"}`, nil, 422, `{"detail":"Nota demasiado extensa"}`},
 		{"writer", strings.Repeat("A", 65), ok, nil, 404, `{"detail":"Evaluación no encontrada"}`},
 		{"writer", "W-NADA", ok, nil, 404, `{"detail":"Evaluación no encontrada"}`},
 		// Another project of the tenant, and another tenant's alert (DIG-A of SIPGES/PRJ-SECHURA).

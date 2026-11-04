@@ -63,7 +63,7 @@ func parseBody(w http.ResponseWriter, r *http.Request, fields []field) (body, bo
 	}
 	raw = bytes.TrimPrefix(raw, []byte("\xef\xbb\xbf"))
 	if !utf8.Valid(raw) {
-		raw = bytes.ToValidUTF8(raw, []byte("�"))
+		raw = decodeUTF8(raw)
 	}
 	if !validJSON(raw) {
 		// Also a body nested beyond encoding/json's depth limit, which JSON.parse would read;
@@ -141,4 +141,57 @@ func jsonType(raw json.RawMessage) string {
 
 func writeIssues(w http.ResponseWriter, found ...issue) {
 	writeJSON(w, http.StatusUnprocessableEntity, issuesBody{Detail: found})
+}
+
+// decodeUTF8 is the WHATWG UTF-8 decoder (TextDecoder, behind Response.text()): each maximal
+// subpart of an ill-formed sequence becomes one U+FFFD, so the code point counts of the
+// TypeScript checks (the note length) see the same text.
+func decodeUTF8(raw []byte) []byte {
+	const replacement = "\uFFFD"
+	out := make([]byte, 0, len(raw)+8)
+	for i := 0; i < len(raw); {
+		b := raw[i]
+		if b < 0x80 {
+			out = append(out, b)
+			i++
+			continue
+		}
+		var need int
+		lower, upper := byte(0x80), byte(0xbf)
+		switch {
+		case b >= 0xc2 && b <= 0xdf:
+			need = 1
+		case b == 0xe0:
+			need, lower = 2, 0xa0
+		case b == 0xed:
+			need, upper = 2, 0x9f
+		case b >= 0xe1 && b <= 0xef:
+			need = 2
+		case b == 0xf0:
+			need, lower = 3, 0x90
+		case b == 0xf4:
+			need, upper = 3, 0x8f
+		case b >= 0xf1 && b <= 0xf3:
+			need = 3
+		default:
+			out = append(out, replacement...)
+			i++
+			continue
+		}
+		j := i + 1
+		for range need {
+			if j >= len(raw) || raw[j] < lower || raw[j] > upper {
+				break
+			}
+			lower, upper = 0x80, 0xbf
+			j++
+		}
+		if j-i == need+1 {
+			out = append(out, raw[i:j]...)
+		} else {
+			out = append(out, replacement...)
+		}
+		i = j
+	}
+	return out
 }
