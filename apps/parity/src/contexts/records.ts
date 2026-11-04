@@ -291,11 +291,13 @@ export const cases: readonly ParityCase[] = [
 
 /**
  * The runner sends each case to both APIs at once, on one database: a write case must answer the
- * same whichever API runs first. So successes replace or merge seeded records (idempotent), a
+ * same whichever API runs first. So successes replace or merge seeded records (idempotent), and a
  * create normalizes the id it got (the second one collides and takes `<id>-<4 hex>`, which is the
- * concurrent-duplicate outcome TypeScript defines), and the reads after them prove what both
- * stored. A successful delete cannot answer the same twice (the second finds nothing); it is
- * covered by the Go integration tests and the fixtures recorded from TypeScript.
+ * concurrent-duplicate outcome TypeScript defines). The reads after them show the stored effect of
+ * both writes together, so they cannot tell a wrong Go write from the TypeScript one; what each
+ * API stores is pinned by apps/api-go/internal/records (the fixtures recorded from TypeScript and
+ * the PostgreSQL integration tests). A successful delete cannot answer the same twice (the second
+ * finds nothing), so it is covered there too.
  */
 function writeCases(): ParityCase[] {
   const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };

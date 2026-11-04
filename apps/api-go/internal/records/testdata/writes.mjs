@@ -10,6 +10,10 @@
 //   node apps/api-go/internal/records/testdata/writes.mjs --check  # exit 1 when it drifted
 //
 // Every payload is synthetic: no real record is read.
+//
+// app.request decodes bodies with undici's Request, not @hono/node-server: unusual leading bytes
+// (two byte order marks) and unmatched paths (Hono's text 404) answer differently there than on
+// the real server, so such cases belong in the parity runner, not here.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { format, resolveConfig } from 'prettier';

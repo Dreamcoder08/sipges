@@ -81,7 +81,11 @@ func record(o *Object) *Object {
 	return out
 }
 
-// hasNUL is hasNul of the contracts: a NUL in any key or string, at any depth.
+// hasNUL is hasNul of the contracts: a NUL in any key or string, at any depth. Known divergence:
+// hasNul recurses on the JavaScript stack, so TypeScript answers 500 for a payload nested a few
+// thousand levels deep (the depth depends on V8's JIT: 2,500 always passes, 5,000 may not), and
+// this loop does not overflow, so Go stores it. Past 10,000 levels both refuse it before the route
+// (the tenancy body check answers 403).
 func hasNUL(v any) bool {
 	switch x := v.(type) {
 	case string:
