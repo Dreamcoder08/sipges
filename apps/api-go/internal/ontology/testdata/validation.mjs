@@ -56,13 +56,13 @@ const COMMON = [
   'true',
   '1e400',
   '{}',
-  '﻿{}',
+  '\uFEFF{}',
 ];
 
 const LINKS = [
   ...COMMON,
   link({}),
-  `﻿${link({})}`,
+  `\uFEFF${link({})}`,
   link({ note: 'Nota' }),
   link({ note: null }),
   link({ note: 5 }),
