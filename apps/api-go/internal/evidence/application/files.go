@@ -164,7 +164,8 @@ func (f Files) Upload(ctx context.Context, in UploadInput) (*domain.Attachment, 
 		return nil, "", err
 	}
 	if attachment == nil {
-		if err := f.Storage.Delete(ctx, key); err != nil {
+		// Not cancelled with the request, as the TypeScript cleanup never is: no orphan object.
+		if err := f.Storage.Delete(context.WithoutCancel(ctx), key); err != nil {
 			return nil, "", err
 		}
 		return nil, UploadRecord, nil
