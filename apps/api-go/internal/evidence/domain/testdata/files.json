@@ -1,0 +1,506 @@
+{
+  "payloads": [
+    {
+      "payload": "{}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"PRJ-SECHURA\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"PRJ-SECHURA\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Nombre propio" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Nombre propio" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"PRJ-SECHURA\",\"Proyecto\":\"Nombre propio\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "OTRO", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "OTRO", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"OTRO\",\"Proyecto\":\"\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "Solo nombre" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Solo nombre" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"\",\"Proyecto\":\"Solo nombre\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":0,\"Proyecto\":0}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":0,\"Proyecto\":0,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":0,\"Proyecto\":0,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":0,\"Proyecto\":0,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":0,\"Proyecto\":0}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":0,\"Proyecto\":0,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":0,\"Proyecto\":0,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":0,\"Proyecto\":0,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":-0.0,\"Proyecto\":false}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":0,\"Proyecto\":false,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":0,\"Proyecto\":false,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":0,\"Proyecto\":false,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":-0.0,\"Proyecto\":false}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":0,\"Proyecto\":false,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":0,\"Proyecto\":false,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":0,\"Proyecto\":false,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "7", "projectName": "1.5e-7" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "7", "projectName": "1.5e-7" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":7,\"Proyecto\":1.5e-7,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":1e21,\"Proyecto\":123456789012345678901234567890}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "1e+21", "projectName": "1.2345678901234568e+29" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":1e+21,\"Proyecto\":1.2345678901234568e+29,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":1e+21,\"Proyecto\":1.2345678901234568e+29,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":1e+21,\"Proyecto\":1.2345678901234568e+29,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":1e21,\"Proyecto\":123456789012345678901234567890}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "1e+21", "projectName": "1.2345678901234568e+29" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":1e+21,\"Proyecto\":1.2345678901234568e+29,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":1e+21,\"Proyecto\":1.2345678901234568e+29,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":1e+21,\"Proyecto\":1.2345678901234568e+29,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":1e400,\"Proyecto\":-1e400}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "Infinity", "projectName": "-Infinity" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":null,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":null,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":null,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":1e400,\"Proyecto\":-1e400}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "Infinity", "projectName": "-Infinity" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":null,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":null,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":null,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":true,\"Proyecto\":null}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "true", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":true,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":true,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":true,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":true,\"Proyecto\":null}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "true", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":true,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":true,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":true,\"Proyecto\":null,\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}]}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "[object Object]", "projectName": "1,,x,2,3,[object Object]" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}]}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "[object Object]", "projectName": "1,,x,2,3,[object Object]" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":{\"a\":1},\"Proyecto\":[1,null,\"x\",[2,3],{\"b\":1}],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":[],\"Proyecto\":[null]}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":[],\"Proyecto\":[null],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":[],\"Proyecto\":[null],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":[],\"Proyecto\":[null],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":[],\"Proyecto\":[null]}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "", "projectName": "" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":[],\"Proyecto\":[null],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":[],\"Proyecto\":[null],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":[],\"Proyecto\":[null],\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "  ", "projectName": "ñ😀" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "  ", "projectName": "ñ😀" },
+      "links": {
+        "eventos": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Proyecto_ID\":\"  \",\"Proyecto\":\"ñ😀\",\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}]}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"}],\"Titulo\":\"x\",\"n\":0.1}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"},{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Titulo\":\"x\",\"n\":0.1,\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"},{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Titulo\":\"x\",\"n\":0.1,\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"},{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Titulo\":\"x\",\"n\":0.1}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"}],\"Titulo\":\"x\",\"n\":0.1}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"},{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Titulo\":\"x\",\"n\":0.1,\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"},{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Titulo\":\"x\",\"n\":0.1,\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"OLD\",\"archivo\":\"a.pdf\"},{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Titulo\":\"x\",\"n\":0.1}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":\"texto\",\"Evidencia/Resultado\":\"previo\",\"Archivo_Fuente\":\"previo\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\",\"Archivo_Fuente\":\"previo\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"previo\",\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"previo\",\"Archivo_Fuente\":\"previo\"}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":\"texto\",\"Evidencia/Resultado\":\"previo\",\"Archivo_Fuente\":\"previo\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"acta.pdf\",\"Archivo_Fuente\":\"previo\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"previo\",\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Evidencia/Resultado\":\"previo\",\"Archivo_Fuente\":\"previo\"}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":null,\"Monto\":12345678901234567890,\"Cero\":-0,\"Lista\":[1e400,2.50,1E+2]}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Monto\":12345678901234567000,\"Cero\":0,\"Lista\":[null,2.5,100],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Monto\":12345678901234567000,\"Cero\":0,\"Lista\":[null,2.5,100],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Monto\":12345678901234567000,\"Cero\":0,\"Lista\":[null,2.5,100]}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":null,\"Monto\":12345678901234567890,\"Cero\":-0,\"Lista\":[1e400,2.50,1E+2]}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Monto\":12345678901234567000,\"Cero\":0,\"Lista\":[null,2.5,100],\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Monto\":12345678901234567000,\"Cero\":0,\"Lista\":[null,2.5,100],\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"Monto\":12345678901234567000,\"Cero\":0,\"Lista\":[null,2.5,100]}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":{\"0\":\"x\"},\"__proto__\":{\"y\":1},\"constructor\":\"c\"}",
+      "scope": "SUBIDAS",
+      "project": { "projectId": "SUBIDAS", "projectName": "" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"__proto__\":{\"y\":1},\"constructor\":\"c\",\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"__proto__\":{\"y\":1},\"constructor\":\"c\",\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"__proto__\":{\"y\":1},\"constructor\":\"c\"}"
+      }
+    },
+    {
+      "payload": "{\"Adjuntos\":{\"0\":\"x\"},\"__proto__\":{\"y\":1},\"constructor\":\"c\"}",
+      "scope": "PRJ-SECHURA",
+      "project": { "projectId": "PRJ-SECHURA", "projectName": "Proyecto Sechura" },
+      "links": {
+        "eventos": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"__proto__\":{\"y\":1},\"constructor\":\"c\",\"Evidencia/Resultado\":\"acta.pdf\"}",
+        "fuentes": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"__proto__\":{\"y\":1},\"constructor\":\"c\",\"Archivo_Fuente\":\"acta.pdf\"}",
+        "alertas": "{\"Adjuntos\":[{\"id\":\"ADJ-0123456789AB\",\"archivo\":\"acta.pdf\",\"tipo\":\"Acta <b>\",\"verificacion\":\"A - Verificada\"}],\"__proto__\":{\"y\":1},\"constructor\":\"c\"}"
+      }
+    }
+  ],
+  "previews": {
+    "plain": {
+      "count": 0,
+      "tail": [104, 111, 108, 97, 10, 109, 117, 110, 100, 111],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [{ "length": 10, "tail": [108, 97, 10, 109, 117, 110, 100, 111] }]
+      }
+    },
+    "bom": {
+      "count": 0,
+      "tail": [239, 187, 191, 104, 111, 108, 97],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [{ "length": 4, "tail": [104, 111, 108, 97] }]
+      }
+    },
+    "two_boms": {
+      "count": 0,
+      "tail": [239, 187, 191, 239, 187, 191, 104, 111, 108, 97],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [{ "length": 4, "tail": [104, 111, 108, 97] }]
+      }
+    },
+    "three_boms": {
+      "count": 0,
+      "tail": [239, 187, 191, 239, 187, 191, 239, 187, 191, 104, 111, 108, 97],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [{ "length": 5, "tail": [65279, 104, 111, 108, 97] }]
+      }
+    },
+    "blank": {
+      "count": 0,
+      "tail": [32, 9, 10, 194, 160, 227, 128, 128, 239, 187, 191, 226, 128, 168],
+      "result": { "kind": "no_text" }
+    },
+    "nel_is_text": {
+      "count": 0,
+      "tail": [194, 133],
+      "result": { "kind": "text", "truncated": false, "pages": [{ "length": 1, "tail": [133] }] }
+    },
+    "empty": { "count": 0, "tail": [], "result": { "kind": "no_text" } },
+    "invalid": {
+      "count": 0,
+      "tail": [
+        97, 226, 130, 98, 255, 192, 175, 237, 160, 128, 240, 159, 152, 244, 144, 128, 128, 224, 128,
+        175, 194
+      ],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [
+          { "length": 18, "tail": [65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533] }
+        ]
+      }
+    },
+    "exactly_the_limit": {
+      "count": 200000,
+      "tail": [],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [{ "length": 200000, "tail": [97, 97, 97, 97, 97, 97, 97, 97] }]
+      }
+    },
+    "one_over": {
+      "count": 200001,
+      "tail": [],
+      "result": {
+        "kind": "text",
+        "truncated": true,
+        "pages": [{ "length": 200000, "tail": [97, 97, 97, 97, 97, 97, 97, 97] }]
+      }
+    },
+    "cut_in_a_pair": {
+      "count": 199999,
+      "tail": [240, 159, 152, 128, 98],
+      "result": {
+        "kind": "text",
+        "truncated": true,
+        "pages": [{ "length": 200000, "tail": [97, 97, 97, 97, 97, 97, 97, 55357] }]
+      }
+    },
+    "pair_at_the_end": {
+      "count": 199998,
+      "tail": [240, 159, 152, 128],
+      "result": {
+        "kind": "text",
+        "truncated": false,
+        "pages": [{ "length": 200000, "tail": [97, 97, 97, 97, 97, 97, 55357, 56832] }]
+      }
+    }
+  },
+  "decodes": {
+    "plain": {
+      "bytes": [104, 111, 108, 97, 10, 109, 117, 110, 100, 111],
+      "strip": [104, 111, 108, 97, 10, 109, 117, 110, 100, 111],
+      "keep": [104, 111, 108, 97, 10, 109, 117, 110, 100, 111]
+    },
+    "bom": {
+      "bytes": [239, 187, 191, 104, 111, 108, 97],
+      "strip": [104, 111, 108, 97],
+      "keep": [65279, 104, 111, 108, 97]
+    },
+    "two_boms": {
+      "bytes": [239, 187, 191, 239, 187, 191, 104, 111, 108, 97],
+      "strip": [65279, 104, 111, 108, 97],
+      "keep": [65279, 65279, 104, 111, 108, 97]
+    },
+    "three_boms": {
+      "bytes": [239, 187, 191, 239, 187, 191, 239, 187, 191, 104, 111, 108, 97],
+      "strip": [65279, 65279, 104, 111, 108, 97],
+      "keep": [65279, 65279, 65279, 104, 111, 108, 97]
+    },
+    "blank": {
+      "bytes": [32, 9, 10, 194, 160, 227, 128, 128, 239, 187, 191, 226, 128, 168],
+      "strip": [32, 9, 10, 160, 12288, 65279, 8232],
+      "keep": [32, 9, 10, 160, 12288, 65279, 8232]
+    },
+    "nel_is_text": { "bytes": [194, 133], "strip": [133], "keep": [133] },
+    "empty": { "bytes": [], "strip": [], "keep": [] },
+    "invalid": {
+      "bytes": [
+        97, 226, 130, 98, 255, 192, 175, 237, 160, 128, 240, 159, 152, 244, 144, 128, 128, 224, 128,
+        175, 194
+      ],
+      "strip": [
+        97, 65533, 98, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533,
+        65533, 65533, 65533, 65533
+      ],
+      "keep": [
+        97, 65533, 98, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533, 65533,
+        65533, 65533, 65533, 65533
+      ]
+    }
+  }
+}
