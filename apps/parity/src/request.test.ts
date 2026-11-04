@@ -144,3 +144,41 @@ test('sameOrigin sends each API its own base URL as Origin', async () => {
     server.close();
   }
 });
+
+test('{api} names each API in a perApi case and reads back as {api} in the answer', async () => {
+  const seen: { url: string | undefined; scope: string | undefined; body: string }[] = [];
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk: Buffer) => (body += chunk.toString()));
+    req.on('end', () => {
+      seen.push({ url: req.url, scope: req.headers['x-sipges-scope'] as string, body });
+      const echoed = JSON.parse(body) as { project_id: string };
+      res
+        .writeHead(200, { 'content-type': 'application/json' })
+        .end(JSON.stringify({ scope: `P/${echoed.project_id}`, plain: 'TS' }));
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  try {
+    const url = `http://127.0.0.1:${port}`;
+    const c = {
+      name: 'per api',
+      method: 'POST' as const,
+      path: '/x?p=N-{api}',
+      headers: { 'x-sipges-scope': 'P/N-{api}' },
+      body: { json: { project_id: 'N-{api}' } },
+      perApi: true as const,
+    };
+    const ts = await send(url, c, undefined, 1_000, 'ts');
+    const go = await send(url, c, undefined, 1_000, 'go');
+    assert.deepEqual(seen, [
+      { url: '/x?p=N-TSAPI', scope: 'P/N-TSAPI', body: '{"project_id":"N-TSAPI"}' },
+      { url: '/x?p=N-GOAPI', scope: 'P/N-GOAPI', body: '{"project_id":"N-GOAPI"}' },
+    ]);
+    assert.deepEqual(ts.body, { kind: 'json', value: { scope: 'P/N-{api}', plain: 'TS' } });
+    assert.deepEqual(go.body, ts.body);
+  } finally {
+    server.close();
+  }
+});

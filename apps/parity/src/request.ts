@@ -1,12 +1,68 @@
 import { request as httpRequest } from 'node:http';
 import type { ParityCase } from './cases.ts';
 import type { Body, Observed } from './diff.ts';
+import type { Api } from './types.ts';
+
+const API_TOKENS: Readonly<Record<Api, string>> = { ts: 'TSAPI', go: 'GOAPI' };
+
+/** A perApi case with every `{api}` replaced by the token of `api`. */
+const forApi = (c: ParityCase, api: Api): ParityCase => {
+  const token = API_TOKENS[api];
+  const swap = (text: string) => text.replaceAll('{api}', token);
+  let body = c.body;
+  if (body && 'json' in body)
+    body = { json: JSON.parse(swap(JSON.stringify(body.json))) as unknown };
+  else if (body && 'raw' in body) body = { raw: swap(body.raw) };
+  else if (body)
+    body = {
+      form: Object.fromEntries(Object.entries(body.form).map(([k, v]) => [swap(k), swap(v)])),
+    };
+  return {
+    ...c,
+    path: swap(c.path),
+    ...(c.headers
+      ? { headers: Object.fromEntries(Object.entries(c.headers).map(([k, v]) => [k, swap(v)])) }
+      : {}),
+    ...(body ? { body } : {}),
+  };
+};
+
+/**
+ * Reads both API tokens back as `{api}` in every answer: rows a perApi case created (one per
+ * API) then compare equal in the reads that follow it, such as a list of projects.
+ */
+const readBack = (observed: Observed): Observed => {
+  const swap = (text: string) =>
+    Object.values(API_TOKENS).reduce((out, token) => out.replaceAll(token, '{api}'), text);
+  const swapValue = (value: unknown): unknown =>
+    typeof value === 'string'
+      ? swap(value)
+      : Array.isArray(value)
+        ? value.map(swapValue)
+        : value && typeof value === 'object'
+          ? Object.fromEntries(Object.entries(value).map(([k, v]) => [swap(k), swapValue(v)]))
+          : value;
+  const body: Body =
+    observed.body.kind === 'json'
+      ? { kind: 'json', value: swapValue(observed.body.value) }
+      : { kind: 'text', value: swap(observed.body.value) };
+  return { ...observed, body };
+};
 
 /** A case whose answer takes longer than this fails instead of hanging the run (and CI). */
 export const REQUEST_TIMEOUT_MS = 15_000;
 
 /** Sends one case to one API and reads its status, media type and body. */
 export const send = async (
+  baseUrl: string,
+  c: ParityCase,
+  cookie: string | undefined,
+  timeoutMs: number,
+  api: Api = 'ts',
+): Promise<Observed> =>
+  readBack(await sendOne(baseUrl, c.perApi ? forApi(c, api) : c, cookie, timeoutMs));
+
+const sendOne = async (
   baseUrl: string,
   c: ParityCase,
   cookie: string | undefined,
