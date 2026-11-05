@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	js "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 )
@@ -154,13 +155,24 @@ func embeddable(value any) (string, bool) {
 	return "", false
 }
 
+// firstCodePoints is Array.from(text).slice(0, limit).join(""). A title cut in the middle of an emoji
+// holds half of it as three bytes of WTF-8, which are one code point to JavaScript.
 func firstCodePoints(text string, limit int) string {
 	count := 0
-	for i := range text {
+	for i := 0; i < len(text); count++ {
 		if count == limit {
 			return text[:i]
 		}
-		count++
+		if isSurrogate(text[i:]) {
+			i += 3
+			continue
+		}
+		_, size := utf8.DecodeRuneInString(text[i:])
+		i += size
 	}
 	return text
+}
+
+func isSurrogate(s string) bool {
+	return len(s) >= 3 && s[0] == 0xED && s[1] >= 0xA0
 }

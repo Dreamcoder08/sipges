@@ -103,6 +103,17 @@ func TestEmbeddingTextKeepsStringsAndNumbers(t *testing.T) {
 	}
 }
 
+func TestEmbeddingTextCountsHalfAnEmojiAsOneCodePoint(t *testing.T) {
+	t.Parallel()
+	const half = "\xed\xa0\xbd" // a lone surrogate, kept as WTF-8
+	const head = "T: t\nC: "
+	got := domain.EmbeddingText("T", "t", []domain.Entry{{Name: "C", Value: strings.Repeat(half, 5000)}})
+	want := head + strings.Repeat(half, 4000-len(head))
+	if got != want {
+		t.Fatalf("got %d bytes, want %d", len(got), len(want))
+	}
+}
+
 func TestEmbeddingTextIsCutAtFourThousandCodePoints(t *testing.T) {
 	t.Parallel()
 	const head = "T: t\nC: "
