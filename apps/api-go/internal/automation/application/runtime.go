@@ -1,0 +1,285 @@
+package application
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"sync"
+	"time"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+)
+
+// The automation runtime: apps/api/src/contexts/system/application/automation-runtime.ts.
+
+// RuntimeSource is who started an attempt: a committed write (event) or the scheduler (cron).
+type RuntimeSource string
+
+// Runtime sources.
+const (
+	SourceEvent RuntimeSource = "event"
+	SourceCron  RuntimeSource = "cron"
+)
+
+// MaxRescans is MAX_RESCANS: follow-up scans one tick runs for writes that arrived during it.
+const MaxRescans = 2
+
+// DefaultBudget is the runtime's default budget (budgetMs ?? 20000).
+const DefaultBudget = 20 * time.Second
+
+// TickReport is TickReport, in the field order of the contract.
+type TickReport struct {
+	Tenants   int64 `json:"tenants"`
+	Scanned   int64 `json:"scanned"`
+	Queued    int64 `json:"queued"`
+	Delivered int64 `json:"delivered"`
+	Retrying  int64 `json:"retrying"`
+	Failed    int64 `json:"failed"`
+}
+
+func (r *TickReport) add(o TickReport) {
+	r.Tenants += o.Tenants
+	r.Scanned += o.Scanned
+	r.Queued += o.Queued
+	r.Delivered += o.Delivered
+	r.Retrying += o.Retrying
+	r.Failed += o.Failed
+}
+
+// Attempt is RuntimeAttempt: the latest attempt recorded on the tenant's cursor.
+type Attempt struct {
+	StartedAt  time.Time
+	FinishedAt *time.Time
+	Source     RuntimeSource
+	Status     string
+	Report     *TickReport
+	Error      string
+}
+
+// RuntimeStore is RuntimeStore: attempt bookkeeping on automation_cursors.
+type RuntimeStore interface {
+	DueTenants(ctx context.Context, limit int) ([]string, error)
+	Start(ctx context.Context, tenantID, token string, source RuntimeSource, at time.Time) error
+	Finish(ctx context.Context, tenantID, token, status string, report *TickReport, errText string, at time.Time) error
+}
+
+// Runtime is createAutomationRuntime: bounded, durable worker coordination per tenant.
+//
+// Ticks running in this process are tracked in a map. Nothing ever waits for a tick another
+// request started: a write that finds one running asks it for one more scan. The database
+// serializes concurrent scans (the cursor row lock) and claims (FOR UPDATE SKIP LOCKED), so
+// ticks of this process, of other Go processes and of the TypeScript API may overlap safely.
+type Runtime struct {
+	Store RuntimeStore
+	// Tick runs one tenant's tick (Service.Tick).
+	Tick func(ctx context.Context, tenantID string) (TickReport, error)
+	// BeforeTick runs before a cron tick (TypeScript polls public sources and media feeds
+	// there); nil skips it.
+	BeforeTick func(ctx context.Context, tenantID string, source RuntimeSource) error
+	// Now is the wall clock recorded on the cursor; nil means time.Now.
+	Now func() time.Time
+	// Monotonic is the clock budgets are measured on (performance.now); nil means the time
+	// since the process started.
+	Monotonic func() time.Duration
+	// Budget is how long a tick counts as live; zero means DefaultBudget.
+	Budget time.Duration
+	// Background is the context event ticks run in (the worker's actor); nil means
+	// context.Background.
+	Background func() context.Context
+	// TaskTimeout bounds an event tick started in the background; zero means no bound.
+	TaskTimeout time.Duration
+	// OnError reports a failed event tick (automation_processing_failed).
+	OnError func(err error)
+	// Spawn runs an event tick without blocking the request; nil means a goroutine.
+	Spawn func(task func())
+
+	mu      sync.Mutex
+	running map[string]*entry
+}
+
+// entry is one tick of this process: rescan is set by writes that arrive while it runs.
+type entry struct {
+	rescan    bool
+	startedAt time.Duration
+}
+
+var processStart = time.Now()
+
+func (rt *Runtime) budget() time.Duration {
+	if rt.Budget > 0 {
+		return rt.Budget
+	}
+	return DefaultBudget
+}
+
+func (rt *Runtime) now() time.Time {
+	if rt.Now != nil {
+		return rt.Now()
+	}
+	return time.Now()
+}
+
+func (rt *Runtime) mono() time.Duration {
+	if rt.Monotonic != nil {
+		return rt.Monotonic()
+	}
+	return time.Since(processStart)
+}
+
+// live returns the tenant's entry while it is within its budget; the caller holds mu. A tick
+// that outlived its budget belongs to a request that ended or was cancelled.
+func (rt *Runtime) live(tenantID string) *entry {
+	e := rt.running[tenantID]
+	if e != nil && rt.mono()-e.startedAt <= rt.budget() {
+		return e
+	}
+	return nil
+}
+
+func newToken() string {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	b[6] = b[6]&0x0f | 0x40
+	b[8] = b[8]&0x3f | 0x80
+	h := hex.EncodeToString(b[:])
+	return h[:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:]
+}
+
+// attempt records one attempt on the cursor around the tick.
+func (rt *Runtime) attempt(ctx context.Context, tenantID string, source RuntimeSource) (TickReport, error) {
+	token := newToken()
+	if err := rt.Store.Start(ctx, tenantID, token, source, rt.now()); err != nil {
+		return TickReport{}, err
+	}
+	var preparation error
+	if rt.BeforeTick != nil {
+		preparation = rt.BeforeTick(ctx, tenantID, source)
+	}
+	report, err := rt.Tick(ctx, tenantID)
+	if err == nil {
+		err = preparation
+	}
+	if err != nil {
+		if finishErr := rt.Store.Finish(ctx, tenantID, token, "failed", nil, "processing_failed", rt.now()); finishErr != nil {
+			return TickReport{}, finishErr
+		}
+		return TickReport{}, err
+	}
+	if err := rt.Store.Finish(ctx, tenantID, token, "completed", &report, "", rt.now()); err != nil {
+		return TickReport{}, err
+	}
+	return report, nil
+}
+
+// register makes a new entry the tenant's live tick, unless one is live already, in which case
+// rescan (a committed write) asks that one for another scan. The check and the registration
+// are one critical section, as they are one synchronous step in JavaScript.
+func (rt *Runtime) register(tenantID string, rescan bool) (*entry, bool) {
+	rt.mu.Lock()
+	defer rt.mu.Unlock()
+	if live := rt.live(tenantID); live != nil {
+		if rescan {
+			live.rescan = true
+		}
+		return nil, false
+	}
+	if rt.running == nil {
+		rt.running = map[string]*entry{}
+	}
+	e := &entry{startedAt: rt.mono()}
+	rt.running[tenantID] = e
+	return e, true
+}
+
+// loop is the body of run once e is registered: a tick of its own, then the rescans writes
+// asked for meanwhile, at most MaxRescans so one request is not kept alive by a stream of
+// writes (cron catches up). The entry is removed by its owner only, in the same critical
+// section as the last rescan check, so no request's rescan is lost between the two.
+func (rt *Runtime) loop(ctx context.Context, tenantID string, source RuntimeSource, e *entry) (TickReport, error) {
+	next := source
+	for rounds := 1; ; rounds++ {
+		rt.mu.Lock()
+		e.rescan = false
+		rt.mu.Unlock()
+		report, err := rt.attempt(ctx, tenantID, next)
+		next = SourceEvent
+		rt.mu.Lock()
+		again := e.rescan && rounds <= MaxRescans
+		if !again && rt.running[tenantID] == e {
+			// A fresh tick may have replaced a stale entry; only the owner removes its own.
+			delete(rt.running, tenantID)
+		}
+		rt.mu.Unlock()
+		if !again {
+			return report, err // a failed tick still owed the rescans asked before it ended
+		}
+	}
+}
+
+// Run is run: a tick of the tenant, or a concurrent attempt when one is live here already.
+func (rt *Runtime) Run(ctx context.Context, tenantID string, source RuntimeSource) (TickReport, error) {
+	e, ok := rt.register(tenantID, false)
+	if !ok {
+		return rt.attempt(ctx, tenantID, source)
+	}
+	return rt.loop(ctx, tenantID, source, e)
+}
+
+// Dispatch is dispatch: a committed write needs a scan after it. A tick already live here
+// rescans; otherwise an event tick starts in the background and the caller does not wait.
+func (rt *Runtime) Dispatch(tenantID string) {
+	e, ok := rt.register(tenantID, true)
+	if !ok {
+		return
+	}
+	task := func() {
+		ctx := context.Background()
+		if rt.Background != nil {
+			ctx = rt.Background()
+		}
+		if rt.TaskTimeout > 0 {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, rt.TaskTimeout)
+			defer cancel()
+		}
+		if _, err := rt.loop(ctx, tenantID, SourceEvent, e); err != nil && rt.OnError != nil {
+			rt.OnError(err)
+		}
+	}
+	if rt.Spawn != nil {
+		rt.Spawn(task)
+		return
+	}
+	go task()
+}
+
+// Scheduled is scheduled: every due tenant in turn within one budget, the reports summed. A
+// tenant that fails does not stop the others; their errors are joined.
+func (rt *Runtime) Scheduled(ctx context.Context) (TickReport, error) {
+	deadline := rt.mono() + rt.budget()
+	var total TickReport
+	tenants, err := rt.Store.DueTenants(ctx, 100)
+	if err != nil {
+		return total, err
+	}
+	var errs []error
+	for _, tenantID := range tenants {
+		if rt.mono() >= deadline {
+			break
+		}
+		report, err := rt.Run(ctx, tenantID, SourceCron)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		total.add(report)
+	}
+	return total, errors.Join(errs...)
+}
+
+// WorkerContext is ctx running as the automation worker: actor 'automation' with full
+// clearance, as the TypeScript composition root runs ticks (runWithRequestContext).
+func WorkerContext(ctx context.Context) context.Context {
+	return database.WithActor(ctx, database.Actor{Name: "automation", Clearance: database.ClearanceFull})
+}
