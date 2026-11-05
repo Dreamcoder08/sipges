@@ -58,3 +58,17 @@ func TestAdminUsername(t *testing.T) {
 		}
 	}
 }
+
+// The CHECK of users.username (migration 0001): char_length counts code points.
+func TestStorableUsername(t *testing.T) {
+	for _, username := range []string{"a", strings.Repeat("a", 120), strings.Repeat("😀", 120)} {
+		if !StorableUsername(username) {
+			t.Errorf("%d code points refused", len([]rune(username)))
+		}
+	}
+	for _, username := range []string{"", strings.Repeat("a", 121), strings.Repeat("😀", 121)} {
+		if StorableUsername(username) {
+			t.Errorf("%d code points passed", len([]rune(username)))
+		}
+	}
+}

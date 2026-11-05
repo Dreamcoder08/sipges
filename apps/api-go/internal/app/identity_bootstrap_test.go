@@ -92,7 +92,7 @@ func TestBootstrapBacksOffUpToItsCap(t *testing.T) {
 }
 
 func TestBootstrapStopsOnPermanentErrors(t *testing.T) {
-	for _, permanent := range []error{application.ErrBootstrapPassword, application.ErrBootstrapGoogleEmail} {
+	for _, permanent := range []error{application.ErrBootstrapPassword, application.ErrBootstrapUsername, application.ErrBootstrapGoogleEmail} {
 		var out bytes.Buffer
 		s := &scripted{answers: []error{permanent}}
 		b, waits := newLoop(s, &out)
