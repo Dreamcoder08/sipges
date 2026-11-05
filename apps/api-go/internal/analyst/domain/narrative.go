@@ -36,7 +36,7 @@ func refMarks(refs []int) string {
 	for i, ref := range refs {
 		marks[i] = "[" + strconv.Itoa(ref) + "]"
 	}
-	return strings.Join(marks, " ")
+	return strings.Join(marks, "")
 }
 
 // TrimNarrative is trim().slice(0, 4000): UTF-16 units, so the cut can leave half an emoji.

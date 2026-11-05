@@ -160,13 +160,16 @@ const main = async () => {
     );
 
     const urls = { tsUrl: hybridTs.url, goUrl: hybridGo.url };
+    // Earlier cases may have left the switch on.
+    await setExternalAi(hybridTs.url, sessions.admin, false);
     const off = await compareCases(urls, assistedBriefingCases('switch off'), sessions);
+    const leaked = embedder.narrated.length;
     await setExternalAi(hybridTs.url, sessions.admin, true);
     const on = await compareCases(urls, assistedBriefingCases('switch on'), sessions);
     const unpaired = unpairedNarrations(embedder.narrated);
-    const narrated = embedder.narrated.length > 0 && unpaired === 0;
+    const narrated = leaked === 0 && embedder.narrated.length > 0 && unpaired === 0;
     console.info(
-      `${narrated ? 'ok  ' : 'FAIL'}  narrated briefings: ${embedder.narrated.length} requests, ${unpaired} unpaired`,
+      `${narrated ? 'ok  ' : 'FAIL'}  narrated briefings: ${leaked} with the switch off, ${embedder.narrated.length} with it on, ${unpaired} unpaired`,
     );
     return passed && indexes.same && hybrid && off && on && narrated;
   } finally {
