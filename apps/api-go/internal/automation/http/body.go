@@ -532,7 +532,8 @@ type pushSubscriptionInput struct {
 	Endpoint, P256dh, Auth string
 }
 
-// plainText is z.string().max(max): unlike Text, a NUL is allowed; the checks after it refuse one.
+// plainText is z.string().max(max): unlike Text, a NUL is allowed. subscribePush refuses one; in
+// unsubscribe it reaches PostgreSQL, which rejects it, as in TypeScript.
 func plainText(v any, maxLen int) (string, result) {
 	var p result
 	s, ok := v.(string)

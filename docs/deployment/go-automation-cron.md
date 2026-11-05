@@ -34,6 +34,7 @@ Go, or two Go instances, tick the same tenant:
 | Settle window | The cursor passes an event only when it is 60 s old | Late commits are read again, and the unique run absorbs the repeat |
 | Claim | `FOR UPDATE … SKIP LOCKED`, sets the attempt and a 120 s lease in one statement | A run goes to one runner; the other takes the next |
 | Send | The lease outlasts the 10 s send timeout | No live send is claimed again |
+| Browser push | `FOR UPDATE OF d SKIP LOCKED`, sets the attempt and a 120 s lease in one statement | A delivery goes to one runner |
 | Polling | `UPDATE … WHERE` due, on the feed and on the connector's settings | Each source is fetched by one runner |
 | Narratives | Id derived from the feed URL and item key | The same item is never imported twice |
 | Attempt record | `last_tick_token` | The cursor shows only the newest attempt of either API |
@@ -43,9 +44,11 @@ statement, read from its source file, on one PostgreSQL database. Its scans, sen
 clock is frozen, so leases never expire. Removing the claim's row lock makes it fail with a message sent twice;
 removing the cursor lock does not, because the unique run absorbs the repeat. `TestTwoRunnersPollEachSourceOnce`
 proves the polling between Go runners; the statements TypeScript runs are the same.
+`TestBothAPIsRunningSendEachPushOnce` does for browser pushes what the first test does for channels, with TypeScript's
+claim read from `sql-push-store.ts`; removing the row lock makes it fail with pushes sent twice.
 
-**Messages can still repeat, with one runner or two, in either API.** Slack, Teams, Discord and Telegram do not
-deduplicate, and a run left pending is sent again after its lease:
+**Messages can still repeat, with one runner or two, in either API.** Slack, Teams, Discord, Telegram and browser
+push services do not deduplicate, and a run left pending is sent again after its lease:
 
 - **A hard kill** between the send and `FinishRun`.
 - **A database failure** in `FinishRun` after a successful send.
@@ -53,6 +56,10 @@ deduplicate, and a run left pending is sent again after its lease:
 - **Clock skew.** The settle window and the lease use each runner's clock. A runner about 110 s ahead (the lease
   minus the send timeout) can claim a run still being sent. Smaller skew narrows the settle window instead, so a
   commit later than 60 s minus the skew could be passed over and never queued. Hosts on NTP are far below both.
+
+One case differs between the APIs. When settling an accepted push fails, TypeScript marks it pending, so it goes out
+again. Go retries the `accepted` state once and leaves the row alone if that fails too, so the lease alone can repeat
+it.
 
 ## Shutdown
 
@@ -74,7 +81,8 @@ Every step needs the owner's go-ahead. **The procedure cannot run on Cloudflare 
 made:** with `GO_ROUTES` empty no request reaches the container, so it never starts and the flag has no effect.
 
 1. Apply decision 1, so that something starts the container and keeps it ticking.
-2. Forward the flag, `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS` and `SIPGES_CRON_SECRET` in `goContainerEnv`
+2. Forward the flag, `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS`, `SIPGES_CRON_SECRET` and `SIPGES_VAPID_*` in
+   `goContainerEnv`
    (`apps/hosting-cloudflare/src/go-routes.ts`). None reaches the container today, so the flag cannot turn on there
    by accident.
 3. Set `SIPGES_GO_AUTOMATION_CRON=1` on the `sipges-go` trial Worker, on a Neon branch.
@@ -100,8 +108,8 @@ stop with no error.
   longer than the 10-minute sleep, so each call pays a cold start.
 
 **2. What happens to the work only TypeScript does.** Go leaves `evaluate` steps unclaimed, because they need the
-intelligence context's `createAlert`, and only TypeScript delivers browser pushes, because that needs the VAPID
-keys. Removing the Cron Trigger does not stop TypeScript either: `eventAutomation: true` makes every write it serves
+intelligence context's `createAlert`. Go delivers browser pushes when it has `SIPGES_VAPID_*`; without those keys
+they wait for TypeScript. Removing the Cron Trigger does not stop TypeScript either: `eventAutomation: true` makes every write it serves
 scan, claim and send. Those runs and `push_deliveries` would move only when the next TypeScript write wakes a tick,
 and never once writes move to Go. Until both are ported, either TypeScript keeps ticking beside Go, which the table
 above shows is safe, or those features stop.
