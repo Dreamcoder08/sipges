@@ -44,6 +44,11 @@ pub fn connect(url: &str) -> Result<Client, ConnectError> {
     let mut config: Config = url.parse().map_err(|_| ConnectError::Url)?;
     // postgres.js logs every notice with console.log; so do the tools.
     config.notice_callback(|notice| println!("{}", crate::notice::format(&notice)));
+    // postgres.js gives up connecting after `connect_timeout` (30 s by default); without a
+    // timeout an unreachable host would hang the tool. A URL `connect_timeout` still wins.
+    if config.get_connect_timeout().is_none() {
+        config.connect_timeout(std::time::Duration::from_secs(30));
+    }
     if is_local(url) {
         config.ssl_mode(SslMode::Disable);
         return config.connect(NoTls).map_err(ConnectError::Driver);
