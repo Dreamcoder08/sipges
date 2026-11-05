@@ -5,6 +5,7 @@ export {
   RECORD_MODULES,
   moduleForSlug,
   validatePayload,
+  withTenantProject,
 } from '../domain/modules.ts';
 export type { StoredRecord } from './ports.ts';
 export { type FieldChange, diffPayloads } from '../domain/history.ts';

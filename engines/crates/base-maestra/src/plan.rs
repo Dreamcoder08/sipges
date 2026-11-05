@@ -169,6 +169,16 @@ fn invalid_id(module: &str, payload: &Object) -> Option<&'static str> {
     }
 }
 
+/// `withTenantProject` of `records/domain/modules.ts` refuses the row: `Proyecto_ID` is neither
+/// empty (absent, `null`, `''`) nor exactly the target project. `0`, `false` and objects are refused.
+fn foreign_project(payload: &Object, project: &str) -> bool {
+    match get(payload, "Proyecto_ID") {
+        None | Some(Json::Null) => false,
+        Some(Json::Str(s)) => !s.is_empty() && s != project,
+        Some(_) => true,
+    }
+}
+
 /// UTF-16 code unit order, as `Array.prototype.sort` compares strings.
 fn utf16_cmp(a: &str, b: &str) -> std::cmp::Ordering {
     a.encode_utf16().cmp(b.encode_utf16())
@@ -251,10 +261,12 @@ pub struct Plan {
     pub problems: Vec<String>,
 }
 
-/// `planBaseMaestra`.
+/// `planBaseMaestra`. `project` is the project of the target tenant: a row naming another one is
+/// a problem. Only the check is shared with the records import: rows are stored as written, so a
+/// missing `Proyecto_ID` stays missing and the row keeps its content-derived id.
 /// # Errors
 /// A row of an importable module nested beyond [`MAX_ROW_DEPTH`].
-pub fn plan(seed: &Json) -> Result<Plan, TooDeep> {
+pub fn plan(seed: &Json, project: &str) -> Result<Plan, TooDeep> {
     let Json::Obj(seed) = seed else {
         return Ok(Plan {
             modules: Vec::new(),
@@ -295,6 +307,12 @@ pub fn plan(seed: &Json) -> Result<Plan, TooDeep> {
             if let Some(field) = invalid_id(module, payload) {
                 out.problems
                     .push(format!("{position}: {field} no es un código válido"));
+                continue;
+            }
+            if foreign_project(payload, project) {
+                out.problems.push(format!(
+                    "{position}: Proyecto_ID no corresponde al proyecto activo"
+                ));
                 continue;
             }
             let id = base_maestra_id(module, payload);
@@ -345,7 +363,7 @@ mod tests {
         let seed =
             parse(r#"{"Eventos":[{"__proto__":"a\u0000b"},{"x":{"__proto__":"a\u0000b"}}]}"#);
         assert_eq!(
-            plan(&seed).map(|p| p.problems),
+            plan(&seed, "PRJ-T").map(|p| p.problems),
             Ok(vec!["Eventos[1]: contiene caracteres NUL".to_owned()])
         );
         let deep = format!(
@@ -353,19 +371,19 @@ mod tests {
             "[".repeat(1000),
             "]".repeat(1000)
         );
-        assert_eq!(plan(&parse(&deep)).err(), Some(TooDeep));
+        assert_eq!(plan(&parse(&deep), "PRJ-T").err(), Some(TooDeep));
         let ok = format!(
             r#"{{"Intereses":[{{"x":{}1{}}}]}}"#,
             "[".repeat(998),
             "]".repeat(998)
         );
-        assert!(plan(&parse(&ok)).is_ok());
+        assert!(plan(&parse(&ok), "PRJ-T").is_ok());
         // Unknown modules are never walked (parsing this deep needs the binary's large stack).
         let walked = std::thread::Builder::new()
             .stack_size(64 * 1024 * 1024)
             .spawn(|| {
                 let unknown = format!(r#"{{"Otro":[{}]}}"#, "[".repeat(5000) + &"]".repeat(5000));
-                plan(&parse(&unknown)).is_ok()
+                plan(&parse(&unknown), "PRJ-T").is_ok()
             })
             .ok()
             .and_then(|handle| handle.join().ok());
@@ -377,7 +395,7 @@ mod tests {
         let seed = parse(
             r#"{"Eventos":[{"ID_Evento":"E1"},{"ID_Evento":"E1"},[],{"ID_Evento":true},{"x":"a\u0000"}],"7":[],"Usuarios":5,"Actores":{}}"#,
         );
-        let plan = plan(&seed).unwrap_or_default();
+        let plan = plan(&seed, "PRJ-T").unwrap_or_default();
         assert_eq!(
             plan.problems,
             [
@@ -390,5 +408,50 @@ mod tests {
             ]
         );
         assert_eq!(plan.modules.len(), 1);
+    }
+
+    #[test]
+    fn refuses_a_row_of_another_project_without_echoing_it() {
+        for value in [
+            r#""PRJ-OTRO""#,
+            r#"" ""#,
+            r#""prj-t""#,
+            "0",
+            "-0",
+            "5",
+            "false",
+            "true",
+            "{}",
+            "[]",
+        ] {
+            let seed = parse(&format!(
+                r#"{{"Eventos":[{{"ID_Evento":"E1"}},{{"ID_Evento":"E2","Proyecto_ID":{value}}}]}}"#
+            ));
+            let plan = plan(&seed, "PRJ-T").unwrap_or_default();
+            assert_eq!(
+                plan.problems,
+                ["Eventos[1]: Proyecto_ID no corresponde al proyecto activo"],
+                "{value}"
+            );
+            let kept: Vec<usize> = plan.modules.iter().map(|m| m.items.len()).collect();
+            assert_eq!(kept, [1], "{value}");
+        }
+    }
+
+    #[test]
+    fn keeps_a_row_with_an_empty_missing_or_matching_project() {
+        let seed = parse(
+            r#"{"Eventos":[{"ID_Evento":"E1"},{"ID_Evento":"E2","Proyecto_ID":null},{"ID_Evento":"E3","Proyecto_ID":""},{"ID_Evento":"E4","Proyecto_ID":"PRJ-T"}],"Proyectos":[{"Proyecto_ID":"PRJ-OTRO"}]}"#,
+        );
+        let plan = plan(&seed, "PRJ-T").unwrap_or_default();
+        assert!(plan.problems.is_empty(), "{:?}", plan.problems);
+        let items: Vec<&(String, Object)> = plan.modules.iter().flat_map(|m| &m.items).collect();
+        assert_eq!(items.len(), 4);
+        // Stored as written: the import never fills the field in.
+        assert!(
+            items
+                .first()
+                .is_some_and(|(_, row)| get(row, "Proyecto_ID").is_none())
+        );
     }
 }

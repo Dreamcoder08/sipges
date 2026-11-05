@@ -47,7 +47,10 @@ describe('Base Maestra import', () => {
   });
 
   it('reports unknown modules and malformed rows without record values', () => {
-    const plan = planBaseMaestra({ Desconocido: [], Eventos: ['texto', { ID_Evento: {} }] });
+    const plan = planBaseMaestra(
+      { Desconocido: [], Eventos: ['texto', { ID_Evento: {} }] },
+      'PRJ-T',
+    );
     expect(plan.problems).toEqual([
       'Módulo desconocido (clave omitida por privacidad)',
       'Eventos[0]: no es un objeto',
@@ -152,10 +155,13 @@ it('keeps a concurrent insert intact instead of merging the seed over it', async
 });
 it('never echoes unknown keys or duplicate record identifiers in validation output', () => {
   const secret = 'valor-privado-de-prueba';
-  const plan = planBaseMaestra({
-    [secret]: [],
-    Demandas: [{ ID_Demanda: secret }, { ID_Demanda: secret }],
-  });
+  const plan = planBaseMaestra(
+    {
+      [secret]: [],
+      Demandas: [{ ID_Demanda: secret }, { ID_Demanda: secret }],
+    },
+    'PRJ-T',
+  );
   expect(plan.problems).toHaveLength(2);
   expect(JSON.stringify(plan.problems)).not.toContain(secret);
 });
@@ -166,9 +172,78 @@ it('rejects actual NULs in nested values and keys, but allows a literal escape s
     { 'Clave\u0000': 'Texto' },
     { Detalle: ['Texto\u0000'] },
   ]) {
-    const plan = planBaseMaestra({ Demandas: [payload] });
+    const plan = planBaseMaestra({ Demandas: [payload] }, 'PRJ-T');
     expect(plan.problems).toEqual(['Demandas[0]: contiene caracteres NUL']);
     expect(plan.modules[0]?.items).toHaveLength(0);
   }
-  expect(planBaseMaestra({ Demandas: [{ Descripcion: 'Texto\\u0000' }] }).problems).toEqual([]);
+  expect(
+    planBaseMaestra({ Demandas: [{ Descripcion: 'Texto\\u0000' }] }, 'PRJ-T').problems,
+  ).toEqual([]);
+});
+
+describe('rows naming another project', () => {
+  const FOREIGN = 'Eventos[1]: Proyecto_ID no corresponde al proyecto activo';
+
+  it.each([['PRJ-OTRO'], [' '], ['prj-t'], [0], [5], [false], [true], [{}], [[]]])(
+    'refuses %j by position without echoing the value',
+    (value) => {
+      const plan = planBaseMaestra(
+        { Eventos: [{ ID_Evento: 'EV-1' }, { ID_Evento: 'EV-2', Proyecto_ID: value }] },
+        'PRJ-T',
+      );
+      expect(plan.problems).toEqual([FOREIGN]);
+      expect(plan.modules[0]?.items.map((item) => item.id)).toEqual(['EV-1']);
+    },
+  );
+
+  it('keeps a row with an empty, missing or matching Proyecto_ID exactly as it is', () => {
+    const rows = [
+      { ID_Evento: 'EV-1' },
+      { ID_Evento: 'EV-2', Proyecto_ID: null },
+      { ID_Evento: 'EV-3', Proyecto_ID: '' },
+      { ID_Evento: 'EV-4', Proyecto_ID: 'PRJ-T' },
+    ];
+    const plan = planBaseMaestra({ Eventos: rows }, 'PRJ-T');
+    expect(plan.problems).toEqual([]);
+    expect(plan.modules[0]?.items.map((item) => item.payload)).toEqual(rows);
+  });
+
+  it('never compares the Proyecto_ID of the modules it does not import', () => {
+    expect(planBaseMaestra({ Proyectos: [{ Proyecto_ID: 'PRJ-OTRO' }] }, 'PRJ-T').problems).toEqual(
+      [],
+    );
+  });
+
+  it('reports the row in a dry run and refuses to write with --apply', async () => {
+    const { sql, store } = await database();
+    const seed = {
+      Eventos: [{ ID_Evento: 'EV-1' }, { ID_Evento: 'EV-2', Proyecto_ID: 'PRJ-OTRO' }],
+    };
+    const options = { source: 'seed.json', now };
+    const dry = await importBaseMaestra(store, 'SIPGES/PRJ-T', seed, { ...options, apply: false });
+    expect(dry).toEqual({
+      applied: false,
+      modules: [{ module: 'Eventos', en_archivo: 2, nuevos: 1, ya_existentes: 0 }],
+      problems: [FOREIGN],
+    });
+    const applied = await importBaseMaestra(store, 'SIPGES/PRJ-T', seed, {
+      ...options,
+      apply: true,
+    });
+    expect(applied.applied).toBe(false);
+    expect(applied.problems).toEqual([FOREIGN]);
+    expect(await sql.query('SELECT 1 FROM module_records')).toHaveLength(0);
+    expect(await sql.query('SELECT 1 FROM audit')).toHaveLength(0);
+  });
+
+  it('compares against the project of the target scope, not the default one', async () => {
+    const { store } = await database();
+    const seed = { Eventos: [{ ID_Evento: 'EV-1', Proyecto_ID: 'PRJ-T' }] };
+    const options = { apply: false, source: 'seed.json', now };
+    expect((await importBaseMaestra(store, 'SIPGES/PRJ-T', seed, options)).problems).toEqual([]);
+    expect((await importBaseMaestra(store, 'OTRA/PRJ-T', seed, options)).problems).toEqual([]);
+    expect((await importBaseMaestra(store, 'SIPGES/PRJ-B', seed, options)).problems).toEqual([
+      'Eventos[0]: Proyecto_ID no corresponde al proyecto activo',
+    ]);
+  });
 });
