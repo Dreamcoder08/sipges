@@ -73,9 +73,9 @@ func LoadMigrations(fsys fs.FS) ([]Migration, error) {
 	return migrations, nil
 }
 
-// Migrate applies the pending migrations, each in its own transaction, with the semantics of
+// migrate applies the pending migrations, each in its own transaction, with the semantics of
 // migrator.ts: an advisory lock, a re-check inside the lock, and the applied versions returned.
-func Migrate(ctx context.Context, conn *pgx.Conn, migrations []Migration) ([]string, error) {
+func migrate(ctx context.Context, conn *pgx.Conn, migrations []Migration) ([]string, error) {
 	for i := 1; i < len(migrations); i++ {
 		if migrations[i].Version <= migrations[i-1].Version {
 			return nil, errors.New("migrations must be sorted by version")
@@ -144,32 +144,38 @@ func NewScratch(ctx context.Context, adminURL string) (*Scratch, error) {
 	parsed.Path = "/" + name
 	scratch.URL = parsed.String()
 
-	migrations, err := LoadMigrations(os.DirFS(MigrationsDir()))
-	if err != nil {
-		return nil, errors.Join(err, scratch.Drop(ctx))
-	}
-	if len(migrations) == 0 {
-		return nil, errors.Join(errors.New("no migrations found in "+MigrationsDir()), scratch.Drop(ctx))
-	}
-	// Migrations create and rename roles, which are cluster-wide: test packages running in
-	// parallel (go test ./...) migrate one at a time, under a lock on the shared admin database.
-	lock, err := pgx.Connect(ctx, adminURL)
-	if err != nil {
-		return nil, errors.Join(fmt.Errorf("connect admin database: %w", err), scratch.Drop(ctx))
-	}
-	defer func() { _ = lock.Close(context.WithoutCancel(ctx)) }() // closing releases the lock
-	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", scratchLockKey); err != nil {
-		return nil, errors.Join(fmt.Errorf("lock migrations: %w", err), scratch.Drop(ctx))
-	}
-	conn, err := pgx.Connect(ctx, scratch.URL)
-	if err != nil {
-		return nil, errors.Join(fmt.Errorf("connect scratch database: %w", err), scratch.Drop(ctx))
-	}
-	defer func() { _ = conn.Close(ctx) }()
-	if _, err := Migrate(ctx, conn, migrations); err != nil {
+	if err := MigrateDatabase(ctx, adminURL, scratch.URL); err != nil {
 		return nil, errors.Join(err, scratch.Drop(ctx))
 	}
 	return scratch, nil
+}
+
+// MigrateDatabase applies every migration to the database at url. Migrations create and rename
+// roles, which are cluster-wide: test packages running in parallel (go test ./...) migrate one at
+// a time, under a lock on the shared admin database. Every test migrates through here.
+func MigrateDatabase(ctx context.Context, adminURL, url string) error {
+	migrations, err := LoadMigrations(os.DirFS(MigrationsDir()))
+	if err != nil {
+		return err
+	}
+	if len(migrations) == 0 {
+		return errors.New("no migrations found in " + MigrationsDir())
+	}
+	lock, err := pgx.Connect(ctx, adminURL)
+	if err != nil {
+		return fmt.Errorf("connect admin database: %w", err)
+	}
+	defer func() { _ = lock.Close(context.WithoutCancel(ctx)) }() // closing releases the lock
+	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", scratchLockKey); err != nil {
+		return fmt.Errorf("lock migrations: %w", err)
+	}
+	conn, err := pgx.Connect(ctx, url)
+	if err != nil {
+		return fmt.Errorf("connect database: %w", err)
+	}
+	defer func() { _ = conn.Close(ctx) }()
+	_, err = migrate(ctx, conn, migrations)
+	return err
 }
 
 // scratchLockKey serializes scratch migrations across databases of one server. migrationLockKey
