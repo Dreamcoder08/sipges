@@ -4,6 +4,7 @@ package application
 
 import (
 	"context"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -47,6 +48,14 @@ type Store interface {
 	ClearFailures(ctx context.Context, subject string) error
 	FindUser(ctx context.Context, username string) (*StoredUser, error)
 	UpdatePasswordHash(ctx context.Context, username, passwordHash string) error
+	// ConsumeTOTPStep records a used step only if it is newer than the stored one; false means
+	// replay.
+	ConsumeTOTPStep(ctx context.Context, username string, step int64) (bool, error)
+	// StartTOTPEnrollment stores a new pending secret only while MFA is disabled.
+	StartTOTPEnrollment(ctx context.Context, username, sealedSecret string) (bool, error)
+	// EnableTOTP enables MFA, records the used step and revokes every other session of the
+	// user, atomically.
+	EnableTOTP(ctx context.Context, username string, step int64, keepTokenHash string) error
 	// CreateSession is false when deactivation won the race.
 	CreateSession(ctx context.Context, tokenHash, username string, expiresAt, at time.Time, viaGoogle bool) (bool, error)
 	PurgeExpiredSessions(ctx context.Context, at time.Time) error
@@ -65,11 +74,30 @@ type SessionTokens interface {
 	Hash(token string) string
 }
 
+// TOTPService is TotpService of ports.ts. Verify's error is a stored secret that cannot be
+// decoded, which TypeScript throws.
+type TOTPService interface {
+	GenerateSecret() (string, error)
+	URI(username, secret string) string
+	Verify(secret, code string, at time.Time, lastStep *int64) (step int64, ok bool, err error)
+}
+
+// SecretCipher is SecretCipher of ports.ts; secrets.Cipher satisfies it.
+type SecretCipher interface {
+	Seal(plaintext string) (string, error)
+	Open(sealed string) (string, error)
+}
+
 // Deps is what the identity service needs.
 type Deps struct {
 	Store  Store
 	Hasher PasswordHasher
 	Tokens SessionTokens
+	TOTP   TOTPService
+	// Cipher is nil without SIPGES_DATA_KEY: the second factor then fails closed, and enrolment
+	// is not served.
+	Cipher SecretCipher
+	Logger *slog.Logger
 	// Now is the clock; nil means time.Now.
 	Now func() time.Time
 }
@@ -96,6 +124,23 @@ func (s *Service) now() time.Time {
 		return s.deps.Now().Truncate(time.Millisecond)
 	}
 	return time.Now().Truncate(time.Millisecond)
+}
+
+// openSecret: a sealed secret that cannot be opened (corruption, rotated key) fails the factor,
+// never the request.
+func (s *Service) openSecret(ctx context.Context, sealed *string) string {
+	if sealed == nil || *sealed == "" {
+		return ""
+	}
+	if s.deps.Cipher != nil {
+		if secret, err := s.deps.Cipher.Open(*sealed); err == nil {
+			return secret
+		}
+	}
+	if s.deps.Logger != nil {
+		s.deps.Logger.LogAttrs(ctx, slog.LevelError, "unreadable sealed TOTP secret; check SIPGES_DATA_KEY")
+	}
+	return ""
 }
 
 // LoginFailure is LoginError's kind; empty means the login succeeded.
@@ -173,8 +218,18 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (LoginResult, err
 	}
 
 	if user.TOTPEnabled {
-		// The second factor is not ported yet: fail closed, never skip it.
-		return LoginResult{Failure: InvalidOTP}, nil
+		step, ok, err := s.deps.TOTP.Verify(s.openSecret(ctx, user.TOTPSecretSealed), input.OTP, now, user.TOTPLastStep)
+		if err != nil {
+			return LoginResult{}, err
+		}
+		if ok {
+			if ok, err = s.deps.Store.ConsumeTOTPStep(ctx, username, step); err != nil {
+				return LoginResult{}, err
+			}
+		}
+		if !ok {
+			return LoginResult{Failure: InvalidOTP}, nil
+		}
 	}
 
 	if s.deps.Hasher.NeedsRehash(user.PasswordHash) {
@@ -208,4 +263,46 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (LoginResult, err
 		return LoginResult{}, err
 	}
 	return LoginResult{Token: token, Username: username, FullName: user.FullName, Role: user.Role}, nil
+}
+
+// CanEnrol reports whether enrolment can seal a secret.
+func (s *Service) CanEnrol() bool { return s.deps.Cipher != nil }
+
+// TOTPEnrollment is what setupTotp hands the user, once.
+type TOTPEnrollment struct {
+	Secret string
+	URI    string
+}
+
+// SetupTOTP is setupTotp: a new sealed secret, refused (nil) while MFA is enabled.
+func (s *Service) SetupTOTP(ctx context.Context, username string) (*TOTPEnrollment, error) {
+	secret, err := s.deps.TOTP.GenerateSecret()
+	if err != nil {
+		return nil, err
+	}
+	sealed, err := s.deps.Cipher.Seal(secret)
+	if err != nil {
+		return nil, err
+	}
+	started, err := s.deps.Store.StartTOTPEnrollment(ctx, username, sealed)
+	if err != nil || !started {
+		return nil, err
+	}
+	return &TOTPEnrollment{Secret: secret, URI: s.deps.TOTP.URI(username, secret)}, nil
+}
+
+// EnableTOTP is enableTotp: false for a wrong code. currentToken's session stays open.
+func (s *Service) EnableTOTP(ctx context.Context, username, code, currentToken string) (bool, error) {
+	user, err := s.deps.Store.FindUser(ctx, username)
+	if err != nil || user == nil {
+		return false, err
+	}
+	step, ok, err := s.deps.TOTP.Verify(s.openSecret(ctx, user.TOTPSecretSealed), code, s.now(), user.TOTPLastStep)
+	if err != nil || !ok {
+		return false, err
+	}
+	if err := s.deps.Store.EnableTOTP(ctx, username, step, s.deps.Tokens.Hash(currentToken)); err != nil {
+		return false, err
+	}
+	return true, nil
 }

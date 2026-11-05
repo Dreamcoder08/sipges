@@ -70,6 +70,41 @@ func (s Store) UpdatePasswordHash(ctx context.Context, username, passwordHash st
 	return err
 }
 
+// ConsumeTOTPStep records a used step only if it is newer than the stored one, in one statement,
+// so of two logins racing with one code only the first passes.
+func (s Store) ConsumeTOTPStep(ctx context.Context, username string, step int64) (bool, error) {
+	tag, err := s.DB.Exec(ctx, `UPDATE users SET totp_last_step = $2
+	  WHERE username = $1 AND (totp_last_step IS NULL OR totp_last_step < $2)`, username, step)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// StartTOTPEnrollment replaces a pending secret; it is false while MFA is enabled.
+func (s Store) StartTOTPEnrollment(ctx context.Context, username, sealedSecret string) (bool, error) {
+	tag, err := s.DB.Exec(ctx, `UPDATE users SET totp_secret_sealed = $2, totp_last_step = NULL
+	  WHERE username = $1 AND totp_enabled = false`, username, sealedSecret)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// EnableTOTP enables MFA and revokes every other session of the user, atomically.
+func (s Store) EnableTOTP(ctx context.Context, username string, step int64, keepTokenHash string) error {
+	_, err := transaction(ctx, s.DB, func(tx pgx.Tx) (struct{}, error) {
+		if _, err := tx.Exec(ctx, `UPDATE users SET totp_enabled = true, totp_last_step = $2 WHERE username = $1`, username, step); err != nil {
+			return struct{}{}, fmt.Errorf("enable totp: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM sessions WHERE username = $1 AND token_hash <> $2`, username, keepTokenHash); err != nil {
+			return struct{}{}, fmt.Errorf("revoke sessions: %w", err)
+		}
+		return struct{}{}, nil
+	})
+	return err
+}
+
 // CreateSession holds a row lock on the active user through the insert, so a deactivation
 // cannot pass between them; false means it won the race.
 func (s Store) CreateSession(ctx context.Context, tokenHash, username string, expiresAt, at time.Time, viaGoogle bool) (bool, error) {

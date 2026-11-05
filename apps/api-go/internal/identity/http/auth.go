@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
@@ -18,6 +19,10 @@ var loginDetails = map[application.LoginFailure]string{
 	application.InvalidOTP:         "Código de autenticación inválido",
 	application.Throttled:          "Demasiados intentos fallidos; intente más tarde",
 }
+
+// loginTimeout bounds a login detached from its client, so it cannot hold a connection forever
+// while it waits on a throttle lock.
+const loginTimeout = 30 * time.Second
 
 // maxLoginBody bounds the form held in memory before any check, on a route anyone can reach. A
 // longer body answers 422 instead of the TypeScript API's 401, which sets no limit of its own.
@@ -39,7 +44,17 @@ type issue struct {
 	Msg  string `json:"msg"`
 }
 
-var formInvalid = []issue{{Type: "value_error", Loc: []any{"body"}, Msg: "Invalid form body"}}
+var (
+	formInvalid = []issue{{Type: "value_error", Loc: []any{"body"}, Msg: "Invalid form body"}}
+	jsonInvalid = []issue{{Type: "json_invalid", Loc: []any{"body"}, Msg: "JSON decode error"}}
+)
+
+// The answers of the enrolment routes, byte for byte.
+const (
+	totpInstruction  = "Añada el código en una aplicación TOTP y confirme con /system/auth/totp/enable."
+	totpEnabledError = "MFA ya está activado; no se permite reiniciar la configuración"
+	totpCodeError    = "Código TOTP incorrecto"
+)
 
 type loginResponse struct {
 	OK   bool   `json:"ok"`
@@ -51,6 +66,10 @@ type loginResponse struct {
 func RegisterAuth(mux *http.ServeMux, deps AuthDeps) {
 	h := authHandlers(deps)
 	mux.HandleFunc("POST /login", h.login)
+	if deps.Identity.CanEnrol() {
+		mux.HandleFunc("POST /system/auth/totp/setup", h.totpSetup)
+		mux.HandleFunc("POST /system/auth/totp/enable", h.totpEnable)
+	}
 }
 
 type authHandlers AuthDeps
@@ -112,7 +131,9 @@ func (h authHandlers) login(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	result, err := h.Identity.Login(context.WithoutCancel(r.Context()), application.LoginInput{
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), loginTimeout)
+	defer cancel()
+	result, err := h.Identity.Login(ctx, application.LoginInput{
 		Username: username,
 		Password: password,
 		OTP:      otp,
@@ -129,5 +150,95 @@ func (h authHandlers) login(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.Header().Add("Set-Cookie", httpx.AuthCookie(SessionCookie, result.Token, h.CookieSecure, application.SessionSeconds))
 		httpx.WriteJSON(w, http.StatusOK, loginResponse{OK: true, Name: result.FullName, Role: string(result.Role)})
+	}
+}
+
+// readJSON is parseJson over a z.object of required strings: 422 for a body JSON.parse refuses
+// or the schema rejects. A field absent from the input is "missing".
+func readJSON(w http.ResponseWriter, r *http.Request, names ...string) ([]string, bool) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		httpx.WriteError(w, http.StatusUnprocessableEntity, jsonInvalid)
+		return nil, false
+	}
+	parsed, ok := httpx.ParseJSONBody(body)
+	if !ok {
+		httpx.WriteError(w, http.StatusUnprocessableEntity, jsonInvalid)
+		return nil, false
+	}
+	if parsed.Kind != httpx.JSONObject {
+		httpx.WriteError(w, http.StatusUnprocessableEntity, []issue{{Type: "invalid_type", Loc: []any{"body"},
+			Msg: "Invalid input: expected object, received " + string(parsed.Kind)}})
+		return nil, false
+	}
+	var issues []issue
+	values := make([]string, len(names))
+	for i, name := range names {
+		switch v, present := parsed.Fields[name]; {
+		case !present:
+			issues = append(issues, issue{Type: "missing", Loc: []any{"body", name}, Msg: "Field required"})
+		case v.Kind != httpx.JSONString:
+			issues = append(issues, issue{Type: "invalid_type", Loc: []any{"body", name},
+				Msg: "Invalid input: expected string, received " + string(v.Kind)})
+		default:
+			values[i] = v.Text
+		}
+	}
+	if issues != nil {
+		httpx.WriteError(w, http.StatusUnprocessableEntity, issues)
+		return nil, false
+	}
+	return values, true
+}
+
+type totpSetupResponse struct {
+	Secret      string `json:"secret"`
+	OtpauthURI  string `json:"otpauth_uri"`
+	Instruction string `json:"instruction"`
+}
+
+type totpEnabledResponse struct {
+	OK          bool `json:"ok"`
+	TOTPEnabled bool `json:"totp_enabled"`
+}
+
+// totpSetup is POST /system/auth/totp/setup; the secret leaves the server only here.
+func (h authHandlers) totpSetup(w http.ResponseWriter, r *http.Request) {
+	p, ok := PrincipalFrom(r.Context())
+	if !ok {
+		h.fail(w, r, "totp setup failed")
+		return
+	}
+	enrollment, err := h.Identity.SetupTOTP(r.Context(), p.Username)
+	switch {
+	case err != nil:
+		h.fail(w, r, "totp setup failed")
+	case enrollment == nil:
+		httpx.WriteError(w, http.StatusConflict, totpEnabledError)
+	default:
+		httpx.WriteJSON(w, http.StatusOK, totpSetupResponse{enrollment.Secret, enrollment.URI, totpInstruction})
+	}
+}
+
+// totpEnable is POST /system/auth/totp/enable.
+func (h authHandlers) totpEnable(w http.ResponseWriter, r *http.Request) {
+	values, ok := readJSON(w, r, "code")
+	if !ok {
+		return
+	}
+	p, ok := PrincipalFrom(r.Context())
+	if !ok {
+		h.fail(w, r, "totp enable failed")
+		return
+	}
+	token, _ := httpx.Cookie(r, SessionCookie)
+	enabled, err := h.Identity.EnableTOTP(r.Context(), p.Username, values[0], token)
+	switch {
+	case err != nil:
+		h.fail(w, r, "totp enable failed")
+	case !enabled:
+		httpx.WriteError(w, http.StatusUnprocessableEntity, totpCodeError)
+	default:
+		httpx.WriteJSON(w, http.StatusOK, totpEnabledResponse{true, true})
 	}
 }

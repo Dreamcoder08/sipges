@@ -1,0 +1,84 @@
+{
+  "key": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=",
+  "previous": "CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=",
+  "codes": [
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 0, "code": "755224" },
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 29999, "code": "755224" },
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 30000, "code": "287082" },
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 59000, "code": "287082" },
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 1111111109000, "code": "081804" },
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 1234567890000, "code": "005924" },
+    { "secret": "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", "at": 2000000000000, "code": "279037" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 0, "code": "282760" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 29999, "code": "282760" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 30000, "code": "996554" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 59000, "code": "996554" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 1111111109000, "code": "071271" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 1234567890000, "code": "742275" },
+    { "secret": "JBSWY3DPEHPK3PXP", "at": 2000000000000, "code": "890699" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 0, "code": "282760" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 29999, "code": "282760" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 30000, "code": "996554" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 59000, "code": "996554" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 1111111109000, "code": "071271" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 1234567890000, "code": "742275" },
+    { "secret": "jbswy3dpehpk3pxp", "at": 2000000000000, "code": "890699" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 0, "code": "282760" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 29999, "code": "282760" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 30000, "code": "996554" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 59000, "code": "996554" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 1111111109000, "code": "071271" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 1234567890000, "code": "742275" },
+    { "secret": "JBSWY3DPEHPK3PXP====", "at": 2000000000000, "code": "890699" },
+    { "secret": "MFRGG", "at": 0, "code": "670717" },
+    { "secret": "MFRGG", "at": 29999, "code": "670717" },
+    { "secret": "MFRGG", "at": 30000, "code": "151739" },
+    { "secret": "MFRGG", "at": 59000, "code": "151739" },
+    { "secret": "MFRGG", "at": 1111111109000, "code": "380173" },
+    { "secret": "MFRGG", "at": 1234567890000, "code": "089828" },
+    { "secret": "MFRGG", "at": 2000000000000, "code": "445247" },
+    { "secret": "A", "at": 0, "code": "328482" },
+    { "secret": "A", "at": 29999, "code": "328482" },
+    { "secret": "A", "at": 30000, "code": "812658" },
+    { "secret": "A", "at": 59000, "code": "812658" },
+    { "secret": "A", "at": 1111111109000, "code": "743009" },
+    { "secret": "A", "at": 1234567890000, "code": "712049" },
+    { "secret": "A", "at": 2000000000000, "code": "543824" }
+  ],
+  "uris": [
+    {
+      "username": "ana.perez",
+      "uri": "otpauth://totp/SIPGES:ana.perez?secret=JBSWY3DPEHPK3PXP&issuer=SIPGES&algorithm=SHA1&digits=6&period=30"
+    },
+    {
+      "username": "ñandú pérez",
+      "uri": "otpauth://totp/SIPGES:%C3%B1and%C3%BA%20p%C3%A9rez?secret=JBSWY3DPEHPK3PXP&issuer=SIPGES&algorithm=SHA1&digits=6&period=30"
+    },
+    {
+      "username": "a/b?c&d",
+      "uri": "otpauth://totp/SIPGES:a%2Fb%3Fc%26d?secret=JBSWY3DPEHPK3PXP&issuer=SIPGES&algorithm=SHA1&digits=6&period=30"
+    },
+    {
+      "username": "😀",
+      "uri": "otpauth://totp/SIPGES:%F0%9F%98%80?secret=JBSWY3DPEHPK3PXP&issuer=SIPGES&algorithm=SHA1&digits=6&period=30"
+    },
+    {
+      "username": "it's(a)~*!",
+      "uri": "otpauth://totp/SIPGES:it's(a)~*!?secret=JBSWY3DPEHPK3PXP&issuer=SIPGES&algorithm=SHA1&digits=6&period=30"
+    }
+  ],
+  "sealed": [
+    {
+      "plain": "JBSWY3DPEHPK3PXP",
+      "value": "v1.xLxIuHjbto_Br4eCSvzni5x4PyMjJMusX9wQpedaWMkLHq_O4oTo6VTtqs0"
+    },
+    {
+      "plain": "JBSWY3DPEHPK3PXP",
+      "value": "v1.eZEb8A5O5ppy6QmSUvOFPkttuXXGsk3_uw2QO8fi_4tiIH3ElITOvL9Tg-Q"
+    },
+    { "plain": "ñandú 😀", "value": "v1.MrefMPrryX_cJq21U_H22csBJPLWKcBBlEK9DxOOzeRI1eKIRZhd4Q" },
+    { "plain": "ñandú 😀", "value": "v1.aXfHFJJj1IRfMypKDD_JU0bnoYjMPne95jbws66NmwFih0Kiz9KJWw" },
+    { "plain": "", "value": "v1.Wi2myny3i95xGIqDLDOh3wXR2kJQXhXCz98oTQ" },
+    { "plain": "", "value": "v1.T4FqaGQNFZE6qflJtJdmmgyKx6uorYybn3maJQ" }
+  ]
+}
