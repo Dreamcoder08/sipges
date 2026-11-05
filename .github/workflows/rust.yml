@@ -14,6 +14,11 @@ on:
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
+      - 'apps/api/src/tools/**'
+      - 'apps/api/src/platform/database/**'
+      - 'apps/api/src/platform/config.ts'
+      - 'apps/api/src/contexts/records/**'
+      - 'apps/api/src/contexts/documents/**'
   push:
     branches: [main]
     paths:
@@ -26,6 +31,11 @@ on:
       - 'apps/api/bench/synthetic.ts'
       - 'apps/api/test/indicators/python-parity.fixture.json'
       - 'packages/kernel/src/**'
+      - 'apps/api/src/tools/**'
+      - 'apps/api/src/platform/database/**'
+      - 'apps/api/src/platform/config.ts'
+      - 'apps/api/src/contexts/records/**'
+      - 'apps/api/src/contexts/documents/**'
 
 concurrency:
   group: rust-${{ github.ref }}
@@ -95,3 +105,44 @@ jobs:
             node "engines/fixtures/$engine.ts" --check
           done
           node engines/crates/text-analysis/unicode-tables.ts --check
+
+  tools:
+    # T43: the Rust operator tools against their TypeScript originals on synthetic databases
+    # (engines/tools-parity). The PostgreSQL service is a throwaway CI server; no real data.
+    name: Rust tools match the TypeScript tools (synthetic PostgreSQL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        ports: ['5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point the harness at the PostgreSQL service
+        run: echo "SIPGES_TOOLS_DATABASE_URL=postgres://postgres:ci-only-password@127.0.0.1:${{ job.services.postgres.ports['5432'] }}/postgres" >> "$GITHUB_ENV"
+      - working-directory: engines
+        run: rustup toolchain install && rustc --version
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            engines/target
+          key: cargo-tools-${{ runner.os }}-${{ hashFiles('engines/rust-toolchain.toml', 'engines/Cargo.lock') }}
+          restore-keys: cargo-tools-${{ runner.os }}-
+      - working-directory: engines
+        run: cargo build --locked -p sipges-review-materialize
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Differential runs (exit code, output and written rows)
+        run: node engines/tools-parity/review-materialize.ts
