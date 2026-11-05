@@ -75,7 +75,7 @@ channel. A visit counts one failure per tenant, and a tenant's failure does not 
 
 | Class               | What failed                                                                                                    |
 | ------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `panic`             | The rules tick panicked. Its attempt ends `failed`, and a rescan that works afterwards does not hide it.       |
+| `panic`             | The rules tick panicked. Its attempt ends `failed`, and no later rescan hides it.       |
 | `store`             | The tenant list or the attempt record on `automation_cursors`.                                                 |
 | `polling`           | A source failed or panicked. The rules still ran. A feed's failure stays on the feed, in `last_poll_error`.    |
 | `polling_cancelled` | A shutdown cut the polling short.                                                                              |

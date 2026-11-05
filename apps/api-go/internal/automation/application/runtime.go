@@ -243,15 +243,16 @@ func (rt *Runtime) loop(ctx context.Context, tenantID string, source RuntimeSour
 			panicErr = err
 		}
 		rt.mu.Lock()
-		again := e.rescan && rounds <= MaxRescans && !rt.stopping()
+		// A rescan on an ended context could only fail in its place; the next tick catches up.
+		again := e.rescan && rounds <= MaxRescans && !rt.stopping() && ctx.Err() == nil
 		if !again && rt.running[tenantID] == e {
 			// A fresh tick may have replaced a stale entry; only the owner removes its own.
 			delete(rt.running, tenantID)
 		}
 		rt.mu.Unlock()
 		if !again {
-			if err == nil {
-				err = panicErr // a rescan that worked does not undo a panic: its send may repeat
+			if panicErr != nil {
+				err = panicErr // a later round does not undo a panic: its send may repeat
 			}
 			return report, err // a failed tick still owed the rescans asked before it ended
 		}

@@ -258,3 +258,63 @@ func TestATenantCountsOneFailureEvenWithAJoinedError(t *testing.T) {
 		t.Fatalf("classes %v (%v)", got, err)
 	}
 }
+
+func TestAPanicOutranksAFailingRescan(t *testing.T) {
+	store := &fakeRuntimeStore{tenants: []string{"T/P"}}
+	rt := &Runtime{Store: store}
+	var calls int
+	rt.Tick = func(context.Context, string) (TickReport, error) {
+		calls++
+		if calls == 1 {
+			rt.Dispatch("T/P") //nolint:contextcheck // a write during the tick
+			panic("synthetic")
+		}
+		return TickReport{}, errors.New("synthetic failure")
+	}
+	_, err := rt.Scheduled(t.Context())
+	if got := Failures(err); !reflect.DeepEqual(got, []string{"panic"}) {
+		t.Fatalf("classes %v (%v)", got, err)
+	}
+}
+
+func TestATickCutByItsTimeoutDoesNotRescanOnTheEndedContext(t *testing.T) {
+	for name, c := range map[string]struct {
+		tick func(context.Context, string) (TickReport, error)
+		want string
+	}{
+		"hung": {func(ctx context.Context, _ string) (TickReport, error) {
+			<-ctx.Done()
+			return TickReport{}, ctx.Err()
+		}, "timeout"},
+		"panic after the timeout": {func(ctx context.Context, _ string) (TickReport, error) {
+			<-ctx.Done()
+			panic("synthetic")
+		}, "panic"},
+	} {
+		store := &startFailsOnEndedContext{ctxStore{fakeRuntimeStore{tenants: []string{"T/P"}}}}
+		rt := &Runtime{Store: store, TaskTimeout: 10 * time.Millisecond}
+		var calls int
+		rt.Tick = func(ctx context.Context, tenant string) (TickReport, error) {
+			calls++
+			rt.Dispatch(tenant) //nolint:contextcheck // a write during the tick
+			return c.tick(ctx, tenant)
+		}
+		_, err := rt.Scheduled(t.Context())
+		if got := Failures(err); !reflect.DeepEqual(got, []string{c.want}) {
+			t.Errorf("%s: classes %v (%v)", name, got, err)
+		}
+		if calls != 1 {
+			t.Errorf("%s: %d rounds, want no rescan on the ended context", name, calls)
+		}
+	}
+}
+
+// startFailsOnEndedContext fails a new attempt on an ended context, as the SQL store does.
+type startFailsOnEndedContext struct{ ctxStore }
+
+func (s *startFailsOnEndedContext) Start(ctx context.Context, tenant, token string, source RuntimeSource, at time.Time) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return s.ctxStore.Start(ctx, tenant, token, source, at)
+}
