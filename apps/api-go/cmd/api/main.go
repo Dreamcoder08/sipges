@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -54,6 +55,7 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		return err
 	}
 
+	bootstrap := app.NewIdentityBootstrap(pool, lookup, log, nil)
 	// Engines is set, so NewHandler never compiles them with its own background context.
 	handler, err := app.NewHandler(pool, app.Options{ //nolint:contextcheck // see above
 		Engines:       compiled,
@@ -62,6 +64,7 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		AccessLog:     cfg.AccessLog,
 		RequireMFA:    cfg.RequireMFA,
 		GoogleEnabled: cfg.GoogleEnabled,
+		ReadyGate:     bootstrap.Ready,
 	})
 	if err != nil {
 		return err
@@ -71,13 +74,32 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		return fmt.Errorf("listen: %w", err)
 	}
 	log.Info("listening", slog.String("address", ln.Addr().String()))
-	serveErr := httpx.Serve(ctx, httpx.NewServer(handler), ln, shutdownGrace)
+	// The API listens first: /health stays up while the bootstrap retries, and a bootstrap that
+	// can never succeed stops the server gracefully through this context.
+	serveCtx, stopServing := context.WithCancelCause(ctx)
+	defer stopServing(nil)
+	bootstrap.Start(serveCtx)
+	go func() {
+		select {
+		case err := <-bootstrap.Failed():
+			stopServing(err)
+		case <-serveCtx.Done():
+		}
+	}()
+	serveErr := httpx.Serve(serveCtx, httpx.NewServer(handler), ln, shutdownGrace)
+	stopServing(nil) // a server that failed on its own also ends the retries
 	// The signal already cancelled ctx: ticks get their own bound, and the deferred pool.Close
 	// waits for this. A tick still running past it is retried after its lease.
 	drainCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), drainGrace)
 	defer cancel()
+	if err := bootstrap.Wait(drainCtx); err != nil {
+		log.Error("identity_bootstrap_drain_incomplete")
+	}
 	if err := app.DrainBackground(drainCtx, pool); err != nil {
 		log.Error("automation_drain_incomplete", slog.String("error", err.Error()))
+	}
+	if cause := context.Cause(serveCtx); !errors.Is(cause, context.Canceled) {
+		return cause
 	}
 	if serveErr != nil {
 		return serveErr

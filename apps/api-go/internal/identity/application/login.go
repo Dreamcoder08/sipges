@@ -120,6 +120,10 @@ func NewService(deps Deps) *Service {
 	return s
 }
 
+// NewBootstrapper is a Service for the bootstrap steps alone: it skips the dummy hash, so a start
+// allocates no Argon2 memory for logins it will never serve.
+func NewBootstrapper(deps Deps) *Service { return &Service{deps: deps} }
+
 // now is clock.now(): JavaScript dates carry milliseconds, so the same instant compares the
 // same way in PostgreSQL.
 func (s *Service) now() time.Time {

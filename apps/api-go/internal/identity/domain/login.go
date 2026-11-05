@@ -51,10 +51,11 @@ func isJSSpace(r rune) bool {
 // U+0130 rules, which strings.ToLower lacks. A Caser holds state, so each call gets a fresh one.
 func lower(s string) string { return cases.Lower(language.Und).String(s) }
 
+// TrimJS is String.prototype.trim.
+func TrimJS(s string) string { return strings.TrimFunc(s, isJSSpace) }
+
 // NormalizeUsername is user.ts normalizeUsername: trim, then lower case.
-func NormalizeUsername(raw string) string {
-	return lower(strings.TrimFunc(raw, isJSSpace))
-}
+func NormalizeUsername(raw string) string { return lower(TrimJS(raw)) }
 
 // units16 is a string's JavaScript length, in UTF-16 code units.
 func units16(s string) int {

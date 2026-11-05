@@ -35,6 +35,8 @@ type Options struct {
 	Now func() time.Time
 	// Engines are the compiled Rust engines; nil means engines.Shared.
 	Engines *engines.Set
+	// ReadyGate holds /health/ready at 503 until it answers nil; nil means no gate.
+	ReadyGate httpx.ReadyFunc
 	// Routes adds routes beyond the ones registered here (tests).
 	Routes func(mux *http.ServeMux)
 }
@@ -62,7 +64,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 	sessions := identity.Sessions{DB: pool, Now: opts.Now}
 	return httpx.NewHandler(httpx.Options{
 		Logger:       opts.Logger,
-		Ready:        database.Ping(pool),
+		Ready:        readiness(opts.ReadyGate, database.Ping(pool)),
 		AllowedHosts: opts.AllowedHosts,
 		AccessLog:    opts.AccessLog,
 		Auth: append([]httpx.Middleware{
@@ -90,4 +92,16 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 			}
 		},
 	}), nil
+}
+
+// readiness asks the gate first: it costs no round trip.
+func readiness(gate, ping httpx.ReadyFunc) httpx.ReadyFunc {
+	return func(ctx context.Context) error {
+		if gate != nil {
+			if err := gate(ctx); err != nil {
+				return err
+			}
+		}
+		return ping(ctx)
+	}
 }
