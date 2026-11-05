@@ -220,7 +220,8 @@ const signal = (extra) =>
   });
 
 const REQUESTS = [];
-const add = (method, path, body, headers = JSON_TYPE) => REQUESTS.push({ method, path, headers, body });
+const add = (method, path, body, headers = JSON_TYPE) =>
+  REQUESTS.push({ method, path, headers, body });
 
 // Media feeds: MediaFeedIn and the service's own URL rules.
 const FEED_BODIES = [
@@ -317,7 +318,20 @@ const FEED_BODIES = [
   feed({ extra: 1, project_id: 'PRJ-SECHURA' }),
 ];
 for (const body of FEED_BODIES) add('POST', '/system/v4/media/feeds', body);
-for (const id of ['7', '404', '0', '-1', '1.5', '2147483648', 'abc', '0x7', '1e1', '%37', '07', '%207'])
+for (const id of [
+  '7',
+  '404',
+  '0',
+  '-1',
+  '1.5',
+  '2147483648',
+  'abc',
+  '0x7',
+  '1e1',
+  '%37',
+  '07',
+  '%207',
+])
   add('PUT', `/system/v4/media/feeds/${id}`, feed({}));
 add('PUT', '/system/v4/media/feeds/7', feed({ url: 'https://duplicada.example/rss' }));
 add('PUT', '/system/v4/media/feeds/7', feed({ url: 'http://x.example/' }));
@@ -328,7 +342,10 @@ for (const id of ['7', '404', '0', 'abc', '2147483647', '2147483648', '%207'])
   add('DELETE', `/system/v4/media/feeds/${id}`, undefined, {});
 for (const body of [
   json({ url: 'https://diario.example/rss' }),
-  json({ url: 'https://diario.example/rss', keywords: ['agua', 'MINERÍA', 'nada', 'Contaminación'] }),
+  json({
+    url: 'https://diario.example/rss',
+    keywords: ['agua', 'MINERÍA', 'nada', 'Contaminación'],
+  }),
   json({ url: ' https://diario.example/rss ', keywords: [' agua '] }),
   json({ url: 'https://error-timeout.example/rss' }),
   json({ url: 'https://error-redirect.example/rss' }),
@@ -432,10 +449,26 @@ const SIGNALS = [
   '[]',
 ];
 for (const body of SIGNALS) add('POST', '/hooks/signals', body, { ...JSON_TYPE, authorization: W });
-add('POST', '/hooks/signals', signal({}), { ...JSON_TYPE, authorization: W, 'idempotency-key': 'k-1' });
-add('POST', '/hooks/signals', signal({}), { ...JSON_TYPE, authorization: W, 'idempotency-key': 'con espacio' });
-add('POST', '/hooks/signals', signal({}), { ...JSON_TYPE, authorization: W, 'idempotency-key': 'repetida' });
-add('POST', '/hooks/signals', 'no es json', { ...JSON_TYPE, authorization: W, 'idempotency-key': 'con espacio' });
+add('POST', '/hooks/signals', signal({}), {
+  ...JSON_TYPE,
+  authorization: W,
+  'idempotency-key': 'k-1',
+});
+add('POST', '/hooks/signals', signal({}), {
+  ...JSON_TYPE,
+  authorization: W,
+  'idempotency-key': 'con espacio',
+});
+add('POST', '/hooks/signals', signal({}), {
+  ...JSON_TYPE,
+  authorization: W,
+  'idempotency-key': 'repetida',
+});
+add('POST', '/hooks/signals', 'no es json', {
+  ...JSON_TYPE,
+  authorization: W,
+  'idempotency-key': 'con espacio',
+});
 add('POST', '/hooks/signals', signal({}), { ...JSON_TYPE, authorization: R });
 add('POST', '/hooks/signals', signal({}), { ...JSON_TYPE });
 add('POST', '/hooks/signals', signal({}), { 'content-type': 'text/plain', authorization: W });
@@ -466,7 +499,7 @@ ingestCase(json({ Descripcion: 'x' }), { 'webhook-id': 'msg_1' });
 ingestCase(json({ Descripcion: 'x' }), { 'webhook-id': 'con espacio' });
 ingestCase(json({ Descripcion: 'x' }), { 'idempotency-key': 'a', 'webhook-id': 'b' });
 for (const body of [
-  json({ Descripcion: 'x', '10': 'diez', 2: 'dos', __proto__: 1 }),
+  json({ Descripcion: 'x', 10: 'diez', 2: 'dos', __proto__: 1 }),
   '{"__proto__":{"x":1},"b":1,"a":2,"b":3}',
   json([{ a: 1 }, { b: 2 }]),
   json({ records: [{ a: 1 }] }),
@@ -527,9 +560,7 @@ export const expand = (body) =>
 const cases = [];
 for (const r of REQUESTS) {
   captured.length = 0;
-  const headers = Object.fromEntries(
-    Object.entries(r.headers).filter(([, v]) => v !== undefined),
-  );
+  const headers = Object.fromEntries(Object.entries(r.headers).filter(([, v]) => v !== undefined));
   const response = await app.request(`http://parity.invalid${r.path}`, {
     method: r.method,
     headers,

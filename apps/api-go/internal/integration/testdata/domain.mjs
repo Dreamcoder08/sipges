@@ -190,9 +190,20 @@ const FEEDS = [
   '<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Atom uno</title><id>urn:uno</id><link href="https://atom.example/1"/><updated>2026-11-01T00:00:00Z</updated><summary type="html">&lt;b&gt;Resumen&lt;/b&gt;</summary></entry><entry><title>Atom dos</title><link rel="self" href="https://atom.example/self"/><link rel="alternate" href="https://atom.example/2?a=1&amp;b=2"/><published>Mon, 02 Nov 2026 10:00:00 GMT</published><content>Contenido</content></entry><entry><title>Atom tres</title><link rel="alternate" href="javascript:alert(1)"/><link href="https://atom.example/3"/></entry><entry><title>Atom cuatro</title><link href=\'https://atom.example/4\' rel=\'alternate\'/></entry></feed>',
   '<rdf:RDF><item><title>RDF</title><link>https://rdf.example/1</link><dc:date>2026-11-01</dc:date></item></rdf:RDF>',
   '<rss><item><title>Sin cierre</title><link>https://x.example/</link>',
-  '<rss><item><title>' + 'T'.repeat(600) + '</title><link>https://x.example/</link><guid>' + 'G'.repeat(600) + '</guid><description>' + 'D'.repeat(2000) + '</description></item></rss>',
+  '<rss><item><title>' +
+    'T'.repeat(600) +
+    '</title><link>https://x.example/</link><guid>' +
+    'G'.repeat(600) +
+    '</guid><description>' +
+    'D'.repeat(2000) +
+    '</description></item></rss>',
   '<rss><item><title>' + 'T'.repeat(499) + '😀</title><link>https://x.example/</link></item></rss>',
-  '<rss>' + Array.from({ length: 60 }, (_, i) => `<item><title>N${i}</title><link>https://x.example/${i}</link></item>`).join('') + '</rss>',
+  '<rss>' +
+    Array.from(
+      { length: 60 },
+      (_, i) => `<item><title>N${i}</title><link>https://x.example/${i}</link></item>`,
+    ).join('') +
+    '</rss>',
   '<rss><item ><title  lang="es">Con atributos</title><link>https://x.example/a</link><guid isPermaLink="true">https://x.example/a</guid></item><itemx><title>No</title></itemx></rss>',
   '<rss><item>\n<title>Espacios y　raros</title>\n<link>\nhttps://x.example/b\n</link></item></rss>',
   '<rss><item><title><![CDATA[ <b>Negrita</b> &amp; CDATA ]]></title><link>https://x.example/c</link><description><![CDATA[a]]> b]]></description></item></rss>',
@@ -205,8 +216,14 @@ const FEEDS = [
 ];
 
 const KEYWORDS = [
-  [{ title: 'Contaminación del río', summary: '' }, ['contaminacion', 'RÍO', 'rio', 'agua', '', '  ', 'del río', 'ción']],
-  [{ title: 'MINERÍA ilegal', summary: 'en la región' }, ['minería', 'mineria ilegal', 'region', 'ilegal en']],
+  [
+    { title: 'Contaminación del río', summary: '' },
+    ['contaminacion', 'RÍO', 'rio', 'agua', '', '  ', 'del río', 'ción'],
+  ],
+  [
+    { title: 'MINERÍA ilegal', summary: 'en la región' },
+    ['minería', 'mineria ilegal', 'region', 'ilegal en'],
+  ],
   [{ title: 'ΣΟΦΟΣ', summary: 'Straße' }, ['σοφος', 'σοφοσ', 'strasse', 'straße']],
   [{ title: 'agua-potable', summary: '' }, ['agua potable', 'agua-potable', 'agua_potable']],
   [{ title: 'Año 2026', summary: '' }, ['2026', 'ano', 'año']],
@@ -241,9 +258,35 @@ const RSS_CASES = [
   { addresses: ['93.184.216.34'], status: 404, body: '' },
   { addresses: ['93.184.216.34'], status: 204, body: null },
   { addresses: ['93.184.216.34'], status: 200, large: 1024 * 1024 + 1 },
-  { addresses: ['93.184.216.34'], status: 200, headers: { 'content-length': String(2 * 1024 * 1024) }, body: '<rss></rss>' },
-  { addresses: ['93.184.216.34'], status: 200, bytes: [...Buffer.from('<?xml version="1.0" encoding="ISO-8859-1"?><rss><item><title>Caf'), 0xe9, 0x80, 0x81, ...Buffer.from('</title><link>https://x.example/</link></item></rss>')] },
-  { addresses: ['93.184.216.34'], status: 200, bytes: [0xef, 0xbb, 0xbf, ...Buffer.from('<rss><item><title>BOM '), 0xff, ...Buffer.from('</title><link>https://x.example/</link></item></rss>')] },
+  {
+    addresses: ['93.184.216.34'],
+    status: 200,
+    headers: { 'content-length': String(2 * 1024 * 1024) },
+    body: '<rss></rss>',
+  },
+  {
+    addresses: ['93.184.216.34'],
+    status: 200,
+    bytes: [
+      ...Buffer.from('<?xml version="1.0" encoding="ISO-8859-1"?><rss><item><title>Caf'),
+      0xe9,
+      0x80,
+      0x81,
+      ...Buffer.from('</title><link>https://x.example/</link></item></rss>'),
+    ],
+  },
+  {
+    addresses: ['93.184.216.34'],
+    status: 200,
+    bytes: [
+      0xef,
+      0xbb,
+      0xbf,
+      ...Buffer.from('<rss><item><title>BOM '),
+      0xff,
+      ...Buffer.from('</title><link>https://x.example/</link></item></rss>'),
+    ],
+  },
   { addresses: [], status: 200, body: FEED },
   { addresses: ['10.0.0.1'], status: 200, body: FEED },
   { addresses: ['93.184.216.34', '127.0.0.1'], status: 200, body: FEED },
@@ -272,22 +315,39 @@ const post = (extra) => ({
 const OFFICIAL_CASES = [
   { status: 200, body: JSON.stringify([post({})]) },
   { status: 200, body: JSON.stringify([]) },
-  { status: 200, body: JSON.stringify([post({}), post({ id: 8, link: 'https://www.defensoria.gob.pe/a/../b?x=ñ' })]) },
+  {
+    status: 200,
+    body: JSON.stringify([
+      post({}),
+      post({ id: 8, link: 'https://www.defensoria.gob.pe/a/../b?x=ñ' }),
+    ]),
+  },
   { status: 200, body: JSON.stringify(Array.from({ length: 11 }, (_, i) => post({ id: i + 1 }))) },
   { status: 200, body: JSON.stringify([post({ id: 0 })]) },
   { status: 200, body: JSON.stringify([post({ id: 1.5 })]) },
   { status: 200, body: JSON.stringify([post({ id: '7' })]) },
   { status: 200, body: JSON.stringify([post({ link: 'https://evil.example/' })]) },
-  { status: 200, body: JSON.stringify([post({ link: 'https://www.defensoria.gob.pe.evil.example/' })]) },
+  {
+    status: 200,
+    body: JSON.stringify([post({ link: 'https://www.defensoria.gob.pe.evil.example/' })]),
+  },
   { status: 200, body: JSON.stringify([post({ link: 'http://www.defensoria.gob.pe/x' })]) },
   { status: 200, body: JSON.stringify([post({ link: 'https://www.defensoria.gob.pe:8443/x' })]) },
-  { status: 200, body: JSON.stringify([post({ link: 'https://www.defensoria.gob.pe@evil.example/' })]) },
+  {
+    status: 200,
+    body: JSON.stringify([post({ link: 'https://www.defensoria.gob.pe@evil.example/' })]),
+  },
   { status: 200, body: JSON.stringify([post({ date_gmt: '2026-02-30T00:00:00' })]) },
   { status: 200, body: JSON.stringify([post({ date_gmt: '2026-10-01T24:00:00' })]) },
   { status: 200, body: JSON.stringify([post({ date_gmt: '2026-10-01 10:00:00' })]) },
   { status: 200, body: JSON.stringify([post({ title: 'plano' })]) },
   { status: 200, longTitle: 100001 },
-  { status: 200, body: JSON.stringify([post({ title: { rendered: 'T'.repeat(600) }, excerpt: { rendered: 'E'.repeat(2000) } })]) },
+  {
+    status: 200,
+    body: JSON.stringify([
+      post({ title: { rendered: 'T'.repeat(600) }, excerpt: { rendered: 'E'.repeat(2000) } }),
+    ]),
+  },
   { status: 200, body: JSON.stringify({ id: 7 }) },
   { status: 200, body: 'no es json' },
   { status: 200, body: '﻿[]' },
@@ -300,7 +360,8 @@ const OFFICIAL_CASES = [
 
 const respond = (c) => {
   if (c.throws) throw new TypeError('fetch failed');
-  if (c.longTitle) c = { ...c, body: JSON.stringify([post({ title: { rendered: 'x'.repeat(c.longTitle) } })]) };
+  if (c.longTitle)
+    c = { ...c, body: JSON.stringify([post({ title: { rendered: 'x'.repeat(c.longTitle) } })]) };
   const body = c.large ? 'x'.repeat(c.large) : c.bytes ? new Uint8Array(c.bytes) : c.body;
   return new Response(body, { status: c.status, headers: c.headers ?? {} });
 };
@@ -348,15 +409,29 @@ for (const c of OFFICIAL_CASES) {
     ['get', () => gateway.get(7)],
   ]) {
     try {
-      official.push({ call, case: { ...c, body: undefined }, hex: hexOf(c), posts: [await run()].flat(), url: requested });
+      official.push({
+        call,
+        case: { ...c, body: undefined },
+        hex: hexOf(c),
+        posts: [await run()].flat(),
+        url: requested,
+      });
     } catch (error) {
-      official.push({ call, case: { ...c, body: undefined }, hex: hexOf(c), error: error.message, url: requested });
+      official.push({
+        call,
+        case: { ...c, body: undefined },
+        hex: hexOf(c),
+        error: error.message,
+        url: requested,
+      });
     }
   }
 }
 for (const query of ['x'.repeat(101), 'a\u0000b', '😀'.repeat(50), '😀'.repeat(51)]) {
   try {
-    await createOfficialSourceGateway({ fetch: async () => respond({ status: 200, body: '[]' }) }).preview(query);
+    await createOfficialSourceGateway({
+      fetch: async () => respond({ status: 200, body: '[]' }),
+    }).preview(query);
     official.push({ call: 'query', query, posts: [] });
   } catch (error) {
     official.push({ call: 'query', query, error: error.message });
@@ -377,7 +452,10 @@ const fixture = {
   official,
 };
 
-const text = await format(JSON.stringify(fixture), { ...(await resolveConfig(OUT)), filepath: OUT });
+const text = await format(JSON.stringify(fixture), {
+  ...(await resolveConfig(OUT)),
+  filepath: OUT,
+});
 if (process.argv.includes('--check')) {
   if (readFileSync(OUT, 'utf8') !== text) {
     console.error('domain.json drifted from the TypeScript domain; rerun without --check');
