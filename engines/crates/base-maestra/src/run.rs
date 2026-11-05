@@ -185,7 +185,8 @@ fn rewrite_count(detail: &str, created: usize) -> String {
     }
 }
 
-/// `importBaseMaestra`.
+/// `importBaseMaestra`. A tenant id without a project (the CLI refuses one) compares whole, so it
+/// never lets a foreign row through.
 ///
 /// # Errors
 /// Driver errors.
@@ -197,7 +198,10 @@ pub fn import(
     source: &str,
     now: &dyn Fn() -> SystemTime,
 ) -> Result<Report, Failure> {
-    let plan = plan(seed).map_err(|_| Failure::TooDeep)?;
+    let project = tenant
+        .split_once('/')
+        .map_or(tenant, |(_, project)| project);
+    let plan = plan(seed, project).map_err(|_| Failure::TooDeep)?;
     let apply = apply && plan.problems.is_empty();
     let mut modules = Vec::new();
     for planned in &plan.modules {

@@ -6,6 +6,7 @@ import {
   RECORD_MODULES,
   isImportable,
   validatePayload,
+  withTenantProject,
 } from '../../contexts/records/application/index.ts';
 
 /**
@@ -71,7 +72,12 @@ export const baseMaestraId = (module: ModuleName, payload: Payload) => {
   return `${prefix}-${digest.slice(0, 8).toUpperCase()}`;
 };
 
-export const planBaseMaestra = (seed: unknown): BaseMaestraPlan => {
+/**
+ * `projectId` is the project of the target tenant: a row naming another one is a problem, as in
+ * the records import. Only the check is shared: rows are stored as written, so a missing
+ * `Proyecto_ID` stays missing here and the row keeps its content-derived id.
+ */
+export const planBaseMaestra = (seed: unknown, projectId: string): BaseMaestraPlan => {
   if (!seed || typeof seed !== 'object' || Array.isArray(seed))
     return { modules: [], problems: ['El archivo no es un objeto {Módulo: [registros]}'] };
   const modules: BaseMaestraPlan['modules'][number][] = [];
@@ -104,6 +110,11 @@ export const planBaseMaestra = (seed: unknown): BaseMaestraPlan => {
       const invalid = validatePayload(module, payload);
       if (invalid) {
         problems.push(`${position}: ${invalid.field} no es un código válido`);
+        return;
+      }
+      const owned = withTenantProject(module, payload, projectId);
+      if (!owned.ok) {
+        problems.push(`${position}: ${owned.message}`);
         return;
       }
       const id = baseMaestraId(module, payload);

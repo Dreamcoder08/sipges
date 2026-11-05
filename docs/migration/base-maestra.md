@@ -13,7 +13,11 @@ explícita y reversible.
 - `Usuarios`, `Roles` y `Proyectos` no se importan (se administran en la aplicación).
 - Una entrada `IMPORT` de auditoría por módulo («Base Maestra: N registros nuevos desde …»).
 - La salida contiene módulos, conteos y posiciones; nunca valores de registros.
-- Cualquier problema del archivo bloquea toda la escritura.
+- Una fila cuyo `Proyecto_ID` no esté vacío y sea distinto del proyecto de `--scope` es un problema:
+  se informa por posición, sin el valor, también en la simulación. Se compara el valor exacto, de
+  modo que `0`, `false` o un texto con otras mayúsculas o espacios tampoco coinciden. Las filas sin
+  `Proyecto_ID` (ausente, `null` o `""`) se guardan como están, sin rellenar el campo.
+- Cualquier problema del archivo bloquea toda la escritura, y la herramienta termina con código 1.
 
 Si la instalación legacy aún tiene `data/sipges.db` y `data/uploads`, use primero
 `migrate:legacy` (docs/migration/data-migration.md): trae los registros ya editados y los
