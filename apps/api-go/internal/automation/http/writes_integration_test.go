@@ -277,6 +277,33 @@ func TestTheCronNeedsItsBearerSecretAndVisitsEveryCursor(t *testing.T) {
 	}
 }
 
+func TestTheCronPollsThroughTheRealGateways(t *testing.T) {
+	e := startCron(t)
+	if status, _ := e.do(t, "POST", "/system/automations/rules", "boss", ruleBody, nil); status != 200 {
+		t.Fatal(status)
+	}
+	eventually(t, "the cursor", func() bool {
+		return e.count(t, `SELECT count(*) FROM automation_cursors WHERE last_tick_status = 'completed'`) == 1
+	})
+	// The real RSS gateway cannot resolve this reserved name (RFC 2606), and nothing else writes
+	// this message, so the flag's composition reached it. The connector stays disabled, because
+	// its real gateway has one fixed public host.
+	if _, err := e.pool.Exec(t.Context(), `INSERT INTO media_feeds (tenant_id, name, url, authorization_note, updated_by, updated_at)
+		VALUES ('SIPGES/PRJ-SECHURA', 'Fuente sintética', 'https://sintetico.invalid/rss', 'Pública', 'boss', now())`); err != nil {
+		t.Fatal(err)
+	}
+	status, body := e.do(t, "POST", "/system/automations/cron", "", "", map[string]string{"Authorization": "Bearer " + cronSecret})
+	if status != 200 {
+		t.Fatalf("cron %d %s", status, body)
+	}
+	if n := e.count(t, `SELECT count(*) FROM media_feeds WHERE last_poll_at IS NOT NULL
+		AND last_poll_error = 'No se encontró el sitio de la fuente.'`); n != 1 {
+		var text string
+		_ = e.pool.QueryRow(t.Context(), `SELECT last_poll_error FROM media_feeds`).Scan(&text)
+		t.Fatalf("%d feeds polled through the real gateway: %q", n, text)
+	}
+}
+
 func TestTheTickRouteRunsTheProjectsTick(t *testing.T) {
 	e := startWrites(t)
 	status, body := e.do(t, "POST", "/system/automations/tick", "boss", "", nil)
