@@ -335,3 +335,48 @@ func TestPushRoutesKeepTheGates(t *testing.T) {
 		t.Fatalf("%d subscriptions saved without a session", n)
 	}
 }
+
+func (e pushEnv) queueDelivery(t *testing.T, device string) {
+	t.Helper()
+	if status, body := e.do(t, "POST", pushPath, "boss", subscription(device)); status != 200 && status != 409 {
+		t.Fatalf("subscribe: %d %s", status, body)
+	}
+	if _, err := e.pool.Exec(t.Context(), `INSERT INTO push_subscriptions (endpoint, username, p256dh, auth, created_at)
+		VALUES ($1, 'boss', $2, $3, now()) ON CONFLICT (endpoint) DO NOTHING`, pushEndpoint(device), pushP256dh, pushAuth); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.pool.Exec(t.Context(), `WITH n AS (INSERT INTO notifications (tenant_id, title, body, marking, created_at)
+		VALUES ('SIPGES/PRJ-SECHURA', 'Aviso', '', 'interno', now()) RETURNING id)
+		INSERT INTO push_deliveries (tenant_id, notification_id, endpoint, username, restricted, payload, next_attempt_at)
+		SELECT 'SIPGES/PRJ-SECHURA', n.id, $1, 'boss', false, '{"title":"Aviso","body":"","url":"/"}', now() FROM n`, pushEndpoint(device)); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTheComposedTickDeliversWithVapidKeys(t *testing.T) {
+	e := startPush(t, true)
+	e.queueDelivery(t, "a")
+	if status, body := e.do(t, "POST", "/system/automations/tick", "boss", ""); status != 200 {
+		t.Fatalf("tick: %d %s", status, body)
+	}
+	if got := e.service.requests(); len(got) != 1 || got[0] != pushEndpoint("a") {
+		t.Fatalf("sent to %v", got)
+	}
+	if n := e.count(t, `SELECT count(*) FROM push_deliveries WHERE status = 'accepted'`); n != 1 {
+		t.Fatalf("%d accepted", n)
+	}
+}
+
+func TestTheComposedTickLeavesPushesForTypeScriptWithoutKeys(t *testing.T) {
+	e := startPush(t, false)
+	e.queueDelivery(t, "a")
+	if status, body := e.do(t, "POST", "/system/automations/tick", "boss", ""); status != 200 {
+		t.Fatalf("tick: %d %s", status, body)
+	}
+	if len(e.service.requests()) != 0 {
+		t.Fatal("a push went out without keys")
+	}
+	if n := e.count(t, `SELECT count(*) FROM push_deliveries WHERE status = 'pending' AND attempts = 0`); n != 1 {
+		t.Fatalf("%d untouched deliveries", n)
+	}
+}

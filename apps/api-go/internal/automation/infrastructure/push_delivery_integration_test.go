@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"regexp"
 	"strings"
@@ -160,7 +161,56 @@ func TestTickSkipsWhoCanNoLongerReceiveThePush(t *testing.T) {
 	}
 }
 
+// failingTransport fails as a network does; the HTTP client quotes the URL in its error.
+type failingTransport struct{}
+
+func (failingTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, errors.New("dial failed")
+}
+
+func realSender(t *testing.T) *infrastructure.WebPushSender {
+	t.Helper()
+	settings := map[string]string{
+		"SIPGES_VAPID_PUBLIC_KEY":  "BHS-uwl3nFpzgNoW0kjmSZB4-vUfabJkKg8ysBCV9GIZIzv22PTxzM0uQcgahdjwpxOaPcnfVtaILHUT6mAyu8o",
+		"SIPGES_VAPID_PRIVATE_KEY": "Hxm3lKNdyp0lyYD4wbrlQmxH0T0mWnqeVdhx3-OrMEQ",
+		"SIPGES_VAPID_SUBJECT":     "mailto:ops@example.org",
+	}
+	keys, err := infrastructure.LoadVapid(func(key string) (string, bool) { v, ok := settings[key]; return v, ok })
+	if err != nil {
+		t.Fatal(err)
+	}
+	sender, err := infrastructure.NewWebPushSender(keys, infrastructure.NewPushClient(failingTransport{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sender
+}
+
 func TestFailedPushKeepsNoEndpointOrPayloadInItsError(t *testing.T) {
+	pool := scratchPool(t, tenant)
+	c := &clock{now: time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)}
+	s := pushing(pool, c, &pushDouble{})
+	s.PushSender = realSender(t)
+	subscribe(t, pool, "persona", "analista", "secreta")
+	saveRule(t, s, tenant, notifyRule("Aviso interno", "Eventos"))
+	audit(t, pool, tenant, c.now.Add(-5*time.Minute), "Eventos", "EV-PERSONA", "CREATE")
+	if _, err := s.Tick(t.Context(), tenant); err != nil {
+		t.Fatal(err)
+	}
+	if n := scalar(t, pool, tenant, `SELECT count(*) FROM push_deliveries WHERE status = 'pending' AND attempts = 1 AND last_error = 'Servicio de push sin conexión'`); n != 1 {
+		t.Fatalf("%d retrying deliveries", n)
+	}
+	for _, sql := range []string{
+		`SELECT count(*) FROM push_deliveries WHERE last_error LIKE '%secreta%' OR last_error LIKE '%EV-PERSONA%'`,
+		`SELECT count(*) FROM audit WHERE action = 'PUSH_SEND' AND detail LIKE '%secreta%'`,
+	} {
+		if n := scalar(t, pool, tenant, sql); n != 0 {
+			t.Fatalf("%d rows leak: %s", n, sql)
+		}
+	}
+}
+
+func TestFailedPushRetriesOnceItIsDue(t *testing.T) {
 	pool := scratchPool(t, tenant)
 	c := &clock{now: time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)}
 	double := &pushDouble{err: errors.New("Servicio de push sin conexión")}
@@ -171,14 +221,10 @@ func TestFailedPushKeepsNoEndpointOrPayloadInItsError(t *testing.T) {
 	if _, err := s.Tick(t.Context(), tenant); err != nil {
 		t.Fatal(err)
 	}
-	if n := scalar(t, pool, tenant, `SELECT count(*) FROM push_deliveries WHERE status = 'pending' AND attempts = 1 AND last_error = 'Servicio de push sin conexión'`); n != 1 {
-		t.Fatalf("%d retrying deliveries", n)
-	}
 	due := scalar(t, pool, tenant, fmt.Sprintf(`SELECT count(*) FROM push_deliveries WHERE next_attempt_at = '%s'`, c.now.Add(time.Minute).Format(time.RFC3339)))
 	if due != 1 {
 		t.Fatalf("%d deliveries due in a minute", due)
 	}
-	// Retried once it is due, not before.
 	double.mu.Lock()
 	double.err = nil
 	double.mu.Unlock()
@@ -194,6 +240,30 @@ func TestFailedPushKeepsNoEndpointOrPayloadInItsError(t *testing.T) {
 	}
 	if len(double.sent) != 1 {
 		t.Fatalf("sent %d pushes after the delay", len(double.sent))
+	}
+}
+
+func TestACorruptPayloadStopsNoOtherPush(t *testing.T) {
+	pool := scratchPool(t, tenant)
+	c := &clock{now: time.Date(2026, 11, 5, 12, 0, 0, 0, time.UTC)}
+	double := &pushDouble{}
+	s := pushing(pool, c, double)
+	endpoint := subscribe(t, pool, "persona", "analista", "a")
+	notification := scalar(t, pool, tenant, fmt.Sprintf(`INSERT INTO notifications (tenant_id, title, body, marking, created_at) VALUES ('%s', 'N', '', 'interno', now()) RETURNING id`, tenant))
+	if _, err := pool.Exec(t.Context(), `INSERT INTO push_deliveries (tenant_id, notification_id, endpoint, username, restricted, payload, next_attempt_at)
+		VALUES ($1, $2, $3, 'persona', false, '{"title":5}', $4)`, tenant, notification, endpoint, c.now); err != nil {
+		t.Fatal(err)
+	}
+	saveRule(t, s, tenant, notifyRule("Aviso interno", "Eventos"))
+	audit(t, pool, tenant, c.now.Add(-5*time.Minute), "Eventos", "EV-1", "CREATE")
+	if _, err := s.Tick(t.Context(), tenant); err != nil {
+		t.Fatalf("the corrupt row failed the tick: %v", err)
+	}
+	if len(double.sent) != 1 {
+		t.Fatalf("sent %d pushes", len(double.sent))
+	}
+	if n := scalar(t, pool, tenant, `SELECT count(*) FROM push_deliveries WHERE status = 'failed' AND attempts = 1 AND last_error = 'Contenido push no válido'`); n != 1 {
+		t.Fatalf("%d settled corrupt rows", n)
 	}
 }
 
