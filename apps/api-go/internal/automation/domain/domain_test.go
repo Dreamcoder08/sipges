@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"encoding/json"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -98,6 +100,30 @@ func TestPushOrigin(t *testing.T) {
 	for _, endpoint := range []string{"http://fcm.googleapis.com/x", "not a url", "https://user@fcm.googleapis.com/x"} {
 		if got, ok := PushOrigin(endpoint); ok {
 			t.Errorf("%s: %q", endpoint, got)
+		}
+	}
+}
+
+func TestPushEndpointsMatchTheTypeScriptCheck(t *testing.T) {
+	raw, err := os.ReadFile("../testdata/fixtures.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		Endpoints []struct {
+			Endpoint string `json:"endpoint"`
+			OK       bool   `json:"ok"`
+		} `json:"push_endpoints"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Endpoints) == 0 {
+		t.Fatal("no recorded endpoints")
+	}
+	for _, c := range f.Endpoints {
+		if got := IsPushEndpoint(c.Endpoint); got != c.OK {
+			t.Errorf("%.60q: got %v, TypeScript %v", c.Endpoint, got, c.OK)
 		}
 	}
 }

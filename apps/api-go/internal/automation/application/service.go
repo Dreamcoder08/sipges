@@ -139,8 +139,12 @@ type Service struct {
 	Store    Writes
 	InTenant InTenant
 	// Push queues browser pushes; nil queues none.
-	Push   PushOutbox
-	Sender Sender
+	Push PushOutbox
+	// Subscriptions holds the browsers' push subscriptions.
+	Subscriptions PushStore
+	// PushSender sends browser pushes; nil means no VAPID keys, which leaves push off.
+	PushSender PushSender
+	Sender     Sender
 	// Sealer seals channel settings; nil means channel runs are left for the TypeScript API
 	// and channel writes fail.
 	Sealer Sealer
@@ -189,7 +193,11 @@ func (s Service) ExecutableKinds() []string {
 // audited is audited: best effort by design. The send already happened (or failed), so a
 // failing audit write is logged and swallowed; failing the run would repeat the message.
 func (s Service) audited(ctx context.Context, tenantID, detail string) {
-	const action = "CHANNEL_SEND"
+	s.auditedAs(ctx, tenantID, "CHANNEL_SEND", detail)
+}
+
+// auditedAs is audited with its action: CHANNEL_SEND or PUSH_SEND.
+func (s Service) auditedAs(ctx context.Context, tenantID, action, detail string) {
 	err := s.InTenant(ctx, tenantID, func(ctx context.Context, q database.Querier) error {
 		return s.Store.AppendAudit(ctx, q, AuditEntry{Action: action, Detail: detail, At: s.now()})
 	})
