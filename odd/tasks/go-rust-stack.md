@@ -65,9 +65,9 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T39 [x] — S2, S6, S7: IRSA write routes (independent verifier approved). #246.
 - T33 [x] — S2, S6: tenancy administration routes (grants, roles, projects) (#253). Independent verifier approved.
 - T34 [x] — S2, S6: privacy context and egress guard (#257). Independent verifier and native review approved.
-- T35 [ ] — S2, S6: identity in full (login, argon2id and legacy PBKDF2 hashes, TOTP, sealed secrets, sessions, Google sign-in, API keys), byte-compatible with stored data. High risk: independent verifier. Route: delegated, tab go-identity, five slices.
+- T35 [x] — S2, S6: identity in full, byte-compatible with stored data (#269, #272, #273, #274, #276, #278, #280). Independent verifier on every slice.
 - T36 [x] — S2, S6, S7: records writes and import (#247). Independent verifier approved.
-- T37 [ ] — S2, S6, S7: prevention and situations writes. Route: cloud session.
+- T37 [x] — S2, S6, S7: prevention and settings writes (#282). Independent verifier approved; landed without native approval, see the Log.
 - T38 [x] — S2, S6, S7: ontology writes and marking (#249). Independent verifier approved.
 - T40 [x] — S2, S6, S7: intelligence writes without embeddings (#248). `PATCH /system/intelligence/territorial-alerts/{id}` must not switch to Go before T42.
 - T41 [x] — S2, S6, S7: evidence upload, download and preview with R2 (#252). Independent verifier approved; see its advisories in the Log before switching.
@@ -76,8 +76,11 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T44 [ ] — S7: switch routes in production by exact path, measuring before and after with the owner, then retire the TypeScript API.
 - T45 [x] — S2, S7: integration runtime (#264). Independent verifier: one blocker fixed (the 8 KiB source limit is mounted in the real handler).
 - T46 [x] — S2, S6, S7: documents uploads, Word report and review writes (#266). PDF text and OCR stay in TypeScript.
-- T47 [ ] — S3: `import:base-maestra` refuses rows of another project in both versions (high risk). Route: tab `bm-guard`.
-- T48 [ ] — S7: prepare, without performing, the switch of Inicio and Registros reads. Route: tab `go-activate`.
+- T47 [x] — S3: `import:base-maestra` refuses rows of another project in both versions (#279). Independent verifier and review approved.
+- T48 [x] — S7: prepared the switch of Inicio and Registros reads (#277). Verdict: NO-GO, see `docs/deployment/go-activation-reads.md`.
+- T49 [ ] — S2: global request body limit in Go. Route: tab `go-body`.
+- T50 [ ] — S2, S7: automation cron and polling in Go, off by default (high risk). Route: tab `go-cron`.
+- T51 [ ] — S2, S6, S7: analyst, semantic analysis and embeddings still in TypeScript. Route: tab `go-ai`.
 
 ## Log
 
@@ -125,3 +128,7 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - L45 — T46 (#266): PDF text and OCR stay in TypeScript, because no maintained Go or Rust library reproduces how pdf.js splits text and the findings depend on it. Retiring the TypeScript API needs a decision on this: a small service or a different extraction result.
 - L46 — CI (#268, 2026-11-05): #265 merged with `Go (vet, test, lint)` red because the ruleset did not require Go, parity or Rust checks. `go.yml` and `rust.yml` now report on every pull request and the `main` ruleset requires 14 checks.
 - L47 — Container memory (2026-11-05, #271): `lite` is killed out of memory at 4 clients; `basic` with `GOMEMLIMIT=800MiB` and a 64 MiB analytics retain ran 2.2–2.5 req/s, p95 3.5–5.3 s, peak 443 MiB, cold start 1.9 s, measured locally with no Neon latency and no RLS. The limit and the retain were not measured under load. Owner, verbatim: «yes haslo tu», for T37 locally (no cloud session had opened a PR), T47 and T48. Activation itself still needs the owner's word.
+- L48 — Identity closed (2026-11-05): T35 slices #269–#276, then the bootstrap at Go's start (#278): listen first, bootstrap in the background with bounded backoff, `/health/ready` 503 until it finishes, and an impossible `SIPGES_ADMIN_USERNAME` stops the start (#280). The orchestrator chose option B and the username rule under the owner's authorization. The container still needs `SIPGES_GOOGLE_ADMIN_EMAIL` and the Google client values before those routes switch. #281: CHECK and NOT NULL errors no longer carry the failing row, so the hash and sealed secret stop reaching stderr on the TypeScript start; a pre-existing leak.
+- L49 — T47 (#279): a row whose non-empty `Proyecto_ID` differs from the target refuses the whole write, dry run included; rows without one stay unchanged. Tools parity 280 comparisons, 0 differences. A real load must run the dry run first.
+- L50 — T37 (#282): parity 1995/1995, Go `-race` 63 packages with `PGTZ=UTC`, independent verifier approved. Owner, verbatim: «Abandon and land». Reviews `review-48d5dcaa85058448` and `review-1c2ff2c7ee52d6aa` closed on the false finding `R3-missing-recorded-fixture`, caused by the orchestrator's fixture split; `review-0887cfb11e013c2f` was refused for size and never ran. So T37 has no native approval. Advisories before switching: `%` in a path id gets 400 text in Go and 404 JSON in TypeScript; a body deeper than 10,000 levels gets 403 in Go and 200 in TypeScript; parity cannot compare stored or audit rows of writes because both APIs share one database.
+- L51 — T48 (#277): NO-GO at `3e6f60ff`. Blockers: no Cloudflare trial of this image, no S7 measurement, `basic` unproven (local 2.2–2.5 req/s against about 34 req/s the document cites for production), no container, binding or buildx in production, container failures reach the browser as text, the smoke test does not reach Go, and parity never saw production-shaped rows, which is the owner's call. Parity with the container environment: 1866/1888; the 22 differences are uploads and TOTP.
