@@ -47,9 +47,9 @@ func TestValidateNewAccount(t *testing.T) {
 }
 
 func TestAdminUsername(t *testing.T) {
-	for raw, want := range map[string]string{" Ana.Perez ": "ana.perez", "Kana": "kana"} {
-		if got, ok := AdminUsername(raw); !ok || got != want {
-			t.Errorf("%q: %q %v", raw, got, ok)
+	for _, c := range [][2]string{{" Ana.Perez ", "ana.perez"}, {"\u212Aana", "kana"}} {
+		if got, ok := AdminUsername(c[0]); !ok || got != c[1] {
+			t.Errorf("%q: %q %v", c[0], got, ok)
 		}
 	}
 	for _, raw := range []string{"", "   ", "a\x00", strings.Repeat("a", 121)} {
