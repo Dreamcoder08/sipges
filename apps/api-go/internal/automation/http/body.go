@@ -526,3 +526,52 @@ func parse[T any](body []byte, schema func(any) (T, result)) (T, []issue) {
 	}
 	return zero, issues
 }
+
+// pushSubscriptionInput is PushSubscriptionIn.
+type pushSubscriptionInput struct {
+	Endpoint, P256dh, Auth string
+}
+
+// plainText is z.string().max(max): unlike Text, a NUL is allowed; the checks after it refuse one.
+func plainText(v any, maxLen int) (string, result) {
+	var p result
+	s, ok := v.(string)
+	if !ok {
+		p.invalidType("string", v)
+	}
+	p.length(v, maxLen, false)
+	return s, p
+}
+
+func pushSubscriptionIn(v any) (pushSubscriptionInput, result) {
+	var p result
+	o, ok := object(v, &p)
+	if !ok {
+		return pushSubscriptionInput{}, p
+	}
+	var in pushSubscriptionInput
+	var child result
+	in.Endpoint, child = plainText(field(o, "endpoint"), 1000)
+	p.merge("endpoint", child)
+	var keys result
+	if k, ok := object(field(o, "keys"), &keys); ok {
+		var inner result
+		in.P256dh, inner = plainText(field(k, "p256dh"), 200)
+		keys.merge("p256dh", inner)
+		in.Auth, inner = plainText(field(k, "auth"), 100)
+		keys.merge("auth", inner)
+	}
+	p.merge("keys", keys)
+	return in, p
+}
+
+func pushUnsubscribeIn(v any) (string, result) {
+	var p result
+	o, ok := object(v, &p)
+	if !ok {
+		return "", p
+	}
+	endpoint, child := plainText(field(o, "endpoint"), 1000)
+	p.merge("endpoint", child)
+	return endpoint, p
+}
