@@ -4,7 +4,7 @@
 
 ## Blockers
 
-Each one stops the switch on its own. Order is the order to clear them.
+Each one stops the switch on its own. The numbers are names, not a sequence: [Order of work](#order-of-work) says when each is cleared.
 
 | # | Blocker | Evidence | What clears it |
 | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ These no longer block the reads. Measured here on synthetic data unless marked.
 | Does Go accept a session TypeScript issued? | Yes. Same cookie (`sipges_session`), same SHA-256 lookup, no key involved. | Real browser login through TypeScript, then 82 Go responses with that cookie, 0 errors. `Secure` was off locally; **a cookie issued on Workers is unverified** until the trial. |
 | Does the MFA gate match with it on, as production? | Yes, with the default on and a session without TOTP. | 26 of 26 URLs identical (25 `403`, `me` `200`). Parity itself runs with MFA off, so it does not show this. |
 | Are security headers and `no-store` applied? | Yes, by the Worker. Go sets neither, so Go must only be reached through `go-proxy.ts`. | `no-store`, `nosniff`, CSP and HSTS seen on a proxied answer, also on the plain-text failures. |
-| Does the container env start Go and serve the reads? | Yes. | 1630 of 1652 parity cases with exactly `goContainerEnv` plus `SIPGES_REQUIRE_MFA=0`; all 22 differences are `POST` uploads and TOTP. |
+| Does the container env start Go and serve the reads? | Yes, locally. | 1866 of 1888 parity cases with Go on `goContainerEnv` plus `SIPGES_REQUIRE_MFA=0`, which the parity session needs and the container does not get; all 22 differences are `POST` uploads and TOTP, none in `screens.ts`. The MFA-on row above covers the default. |
 | Do writes need Go first? | No. Every write stays on TypeScript, so L36 and T37 do not apply. | Proposed list is `GET` only, enforced by `go-activation-reads.test.ts`. |
 
 ## Routes of the two screens
@@ -158,7 +158,7 @@ GET /system/auth/scopes
 GET /system/auth/current-scope
 ```
 
-Exact URLs the browser sends, each with a parity case:
+URLs of a first paint that carry `X-SIPGES-Scope`, copied by hand from `apps/web`, each with a parity case. Nothing ties this block to the web code: re-read it when a URL builder changes. The three Wave C calls send no project header and have their own cases.
 
 ```text first-paint
 /system/notifications?limit=30
@@ -204,14 +204,25 @@ Exact URLs the browser sends, each with a parity case:
 
 ## What must be true first
 
-- [ ] B1 to B7 cleared, or B7 accepted in writing by the owner.
+Before the trial on `sipges-go`:
+
+- [ ] B5 and B6 fixed on `main`, so the trial exercises the failure path production will have.
+- [ ] `SCREENS` aligned with the real first paint.
+
+During the trial:
+
 - [ ] `sipges-go` deployed with `instance_type: "basic"`, `regions: ["ENAM"]`, `sleepAfter: 10m`.
 - [ ] Secret `SIPGES_GO_DATABASE_URL` set with `sslmode=verify-full`, on the same login role the Hyperdrive of that environment uses, never a superuser or `BYPASSRLS` role. Pool size comes from `pool_max_conns` in the URL; pgx's default was not measured under load.
 - [ ] A session issued by TypeScript on Workers is accepted by a Go-routed route on `sipges-go`, with TOTP, and the Secure cookie reaches the container.
 - [ ] A session expired or revoked in TypeScript gets 401 from Go on the next request.
+- [ ] Rollback rehearsed on `sipges-go` and timed.
+- [ ] B2 and B3 measured and passed.
+
+Before the first production entry:
+
+- [ ] B1 to B6 cleared, and B7 cleared or accepted in writing by the owner.
 - [ ] `SIPGES_GO_ROUTING=1` set only in the change that adds the first entries.
 - [ ] Proposed entries copied by wave, `go-routing.test.ts` green with the real list.
-- [ ] Rollback rehearsed on `sipges-go` and timed.
 
 ### Rollback
 
@@ -270,7 +281,7 @@ None blocks the reads. Check them when reading the trial's results.
 
 1. Clear B5 and B6, and align `SCREENS`, in code PRs that change no route.
 2. Take the production baseline with the owner.
-3. Deploy `sipges-go` (B1) and run the checklist.
+3. Deploy `sipges-go` (B1) and work through the trial checklist.
 4. Measure Wave A, then A+B, then A+B+C on `sipges-go` (B2, B3).
 5. Owner decides B7 and the go/no-go.
 6. Add the production container (B4) with `GO_ROUTES` still empty, and confirm production is unchanged.
@@ -284,7 +295,7 @@ Local, 2026-11-05, Node 22.19, synthetic PostgreSQL 18.6. No deployment, no real
 | --- | --- |
 | `pnpm parity` at `3e6f60ff` | 1652/1652 |
 | `pnpm parity` with `screens.ts` | 1888/1888; the 236 new cases answer 200 (140), 401, 403 and 404 (32 each) |
-| Parity against Go started with `goContainerEnv` only, from a read-only working directory | 1630/1652; 15 `POST /system/uploads`, 7 TOTP |
+| Parity against Go started with `goContainerEnv` plus `SIPGES_REQUIRE_MFA=0`, from a read-only working directory | 1866/1888; 15 `POST /system/uploads`, 7 TOTP, none in `screens.ts` |
 | Real Chromium through a local stand-in for the route table, all three waves on: 9 screens and one record | 82 answers from Go, 11 from TypeScript, 0 failures, 0 console errors; visible text identical to TypeScript alone on all ten |
 | MFA on, both APIs, session without TOTP | 26/26 identical |
 | `go-proxy.ts` with the library's failure responses | plain text passes through (B5) |

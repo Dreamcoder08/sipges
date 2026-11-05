@@ -6,13 +6,11 @@ import { GO_ROUTES, type GoRoute, validateGoRoutes } from '../src/go-routes.ts';
 /**
  * docs/deployment/go-activation-reads.md proposes the routes of the Inicio and Registros screens
  * for GO_ROUTES (T48). The proposal is prose until someone acts on it, so these tests hold the
- * doc to what the Worker would accept the day it is copied in, and to the URLs the browser sends.
+ * doc to what the Worker would accept the day it is copied in. Its first-paint URLs are copied by
+ * hand from apps/web: these tests do not read the web code.
  */
 const doc = () =>
-  readFile(
-    new URL('../../../docs/deployment/go-activation-reads.md', import.meta.url),
-    'utf8',
-  ).catch(() => '');
+  readFile(new URL('../../../docs/deployment/go-activation-reads.md', import.meta.url), 'utf8');
 
 const block = (text: string, info: string) =>
   [...text.matchAll(new RegExp(`^\`\`\`text ${info}\\n([\\s\\S]*?)^\`\`\`$`, 'gm'))]
@@ -53,7 +51,7 @@ describe('Proposed Go routes for Inicio and Registros', () => {
     expect(paths.filter((path) => /\/(preview|download)$/.test(path))).toEqual([]);
   });
 
-  it('has a parity case for every URL the browser sends, scope header included', async () => {
+  it('has a parity case for every URL the document lists, scope header included', async () => {
     const urls = block(await doc(), 'first-paint');
     expect(urls.length).toBeGreaterThan(0);
     const uncovered = urls.filter(
