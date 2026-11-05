@@ -1,7 +1,7 @@
 import type { ParityCase } from '../types.ts';
 
 /**
- * Automation, read-only (T31): GET /system/automations (rules, channels, latest runs), GET
+ * Automation (T31 reads, T42 writes, below): GET /system/automations (rules, channels, latest runs), GET
  * /system/automations/runs and the inbox, GET /system/notifications. Rows go straight into
  * DEFAULT_TENANT and OTHER_TENANT (see ../fixtures.ts): rules and channels (a disabled rule, an
  * evaluate, a notify and a channel step), a delivered and a retrying run (the retrying one about
@@ -146,6 +146,229 @@ const limitCases = (route: string, path: string, auth: 'admin' | 'consulta'): Pa
   })),
 ];
 
+/** A rule both APIs can create side by side: paused, so it never matches another case's event. */
+const newRule = (name: string) => ({
+  name,
+  enabled: false,
+  module: 'Eventos',
+  actions: ['CREATE'],
+  conditions: [{ field: 'Nivel', op: 'eq', value: 'Alto' }],
+  steps: [{ kind: 'notify', title: 'Paridad {id}' }],
+});
+
+const ruleWrite = (name: string, json: unknown, extra: Partial<ParityCase> = {}): ParityCase => ({
+  name: `automation rule write ${name}`,
+  method: 'POST',
+  path: '/system/automations/rules',
+  auth: 'admin',
+  sameOrigin: true,
+  body: { json },
+  ...extra,
+});
+
+const channelWrite = (name: string, json: unknown): ParityCase => ({
+  name: `automation channel write ${name}`,
+  method: 'POST',
+  path: '/system/automations/channels',
+  auth: 'admin',
+  sameOrigin: true,
+  body: { json },
+});
+
+/**
+ * Writes (T42): every refusal (schema 422s in Zod's words, rule and channel errors, missing ids,
+ * role gate, Origin, project scope), a rule created by each API under a name of its own, marking
+ * notifications read, the project's tick and the cron's bearer check. Channel creation needs
+ * SIPGES_DATA_KEY, which the runner gives the TypeScript API only, so only its refusals run here.
+ */
+const writeCases: ParityCase[] = [
+  ruleWrite('by the read-only role', {}, { auth: 'consulta' }),
+  {
+    name: 'automation rule write without a session',
+    method: 'POST',
+    path: '/system/automations/rules',
+    sameOrigin: true,
+    body: { json: newRule('x') },
+  },
+  {
+    name: 'automation rule write without Origin',
+    method: 'POST',
+    path: '/system/automations/rules',
+    auth: 'admin',
+    body: { json: newRule('x') },
+  },
+  ruleWrite('before choosing a project', newRule('x'), { auth: 'multi' }),
+  ruleWrite('naming another project', { ...newRule('x'), project_id: 'PRJ-B' }),
+  ruleWrite('creates a paused rule', newRule('{rule}'), {
+    vary: { rule: { ts: 'Regla paridad TS', go: 'Regla paridad Go' } },
+    normalize: ['id'],
+  }),
+  ruleWrite('with a duplicate name', newRule('Avisos paridad')),
+  ruleWrite('with an unknown module', { ...newRule('x'), module: 'Desconocido' }),
+  ruleWrite('with an unknown action', { ...newRule('x'), actions: ['BORRAR'] }),
+  ruleWrite('with an invalid condition field', {
+    ...newRule('x'),
+    conditions: [{ field: 'campo:x', op: 'eq' }],
+  }),
+  ruleWrite('evaluating outside Narrativas', {
+    ...newRule('x'),
+    steps: [{ kind: 'evaluate', title: 't', minimum_level: 'Alta' }],
+  }),
+  ruleWrite('to a missing channel', {
+    ...newRule('x'),
+    steps: [{ kind: 'channel', channel_id: 999999, title: 't' }],
+  }),
+  ruleWrite('with an empty body', {}),
+  ruleWrite('that is not an object', [1, 2]),
+  { ...ruleWrite('that is not JSON', null), body: { raw: '{"name":' } },
+  ruleWrite('with every field wrong', {
+    name: '  ',
+    enabled: 'si',
+    module: 'x'.repeat(61),
+    actions: Array(11).fill('CREATE'),
+    conditions: [{ field: '', op: 'like', value: 5 }, null],
+    steps: [{ kind: 'otro' }, { kind: 'channel', channel_id: 1.5, title: '' }, { kind: 'notify' }],
+  }),
+  ruleWrite('with a NUL in its name and an emoji-long title', {
+    ...newRule('a\u0000b'),
+    steps: [{ kind: 'notify', title: '😀'.repeat(201) }],
+  }),
+  {
+    name: 'automation rule update with a non-numeric id',
+    method: 'PUT',
+    path: '/system/automations/rules/abc',
+    auth: 'admin',
+    sameOrigin: true,
+    body: { json: newRule('x') },
+  },
+  {
+    name: 'automation rule update of a missing rule',
+    method: 'PUT',
+    path: '/system/automations/rules/999999',
+    auth: 'admin',
+    sameOrigin: true,
+    body: { json: newRule('Regla inexistente') },
+  },
+  {
+    name: 'automation rule delete of a missing rule',
+    method: 'DELETE',
+    path: '/system/automations/rules/999999',
+    auth: 'admin',
+    sameOrigin: true,
+  },
+  {
+    name: 'automation rule delete with a ten-digit id',
+    method: 'DELETE',
+    path: '/system/automations/rules/1234567890',
+    auth: 'admin',
+    sameOrigin: true,
+  },
+  channelWrite('to the wrong host', {
+    kind: 'slack',
+    name: 'x',
+    settings: { url: 'https://evil.example.org/x' },
+  }),
+  channelWrite('to a private host', {
+    kind: 'webhook',
+    name: 'x',
+    settings: { url: 'https://10.0.0.1/x', secret: 's'.repeat(24) },
+  }),
+  channelWrite('over http', {
+    kind: 'teams',
+    name: 'x',
+    settings: { url: 'http://example.org/x' },
+  }),
+  channelWrite('with a short secret', {
+    kind: 'webhook',
+    name: 'x',
+    settings: { url: 'https://hooks.example.org/x', secret: 'corto' },
+  }),
+  channelWrite('with a bad telegram token', {
+    kind: 'telegram',
+    name: 'x',
+    settings: { bot_token: 'x', chat_id: '1' },
+  }),
+  channelWrite('with a bad e-mail list', {
+    kind: 'email',
+    name: 'x',
+    settings: { api_key: `re_${'a'.repeat(12)}`, from: 'avisos@example.org', to: 'no-es-correo' },
+  }),
+  channelWrite('of an unknown kind', { kind: 'fax', name: 5, settings: [] }),
+  channelWrite('with mixed settings', {
+    kind: 'slack',
+    name: 'x',
+    settings: { 10: 5, b: 'ok', 2: 'x'.repeat(1001), a: [1] },
+  }),
+  {
+    name: 'automation channel write by the read-only role',
+    method: 'POST',
+    path: '/system/automations/channels',
+    auth: 'consulta',
+    sameOrigin: true,
+    body: { json: {} },
+  },
+  {
+    name: 'automation channel delete of a missing channel',
+    method: 'DELETE',
+    path: '/system/automations/channels/999999',
+    auth: 'admin',
+    sameOrigin: true,
+  },
+  {
+    name: 'automation channel test with a non-numeric id',
+    method: 'POST',
+    path: '/system/automations/channels/x/test',
+    auth: 'admin',
+    sameOrigin: true,
+  },
+  {
+    name: 'automation channel test of a missing channel',
+    method: 'POST',
+    path: '/system/automations/channels/999999/test',
+    auth: 'admin',
+    sameOrigin: true,
+  },
+  ...[
+    { all: true },
+    { ids: [1, 2] },
+    { ids: [] },
+    { ids: [0] },
+    { ids: [1.5] },
+    { all: false },
+    {},
+  ].map((json): ParityCase => ({
+    name: `automation notifications read ${JSON.stringify(json)}`,
+    method: 'POST',
+    path: '/system/notifications/read',
+    auth: 'consulta',
+    sameOrigin: true,
+    body: { json },
+  })),
+  {
+    name: 'automation tick of the project',
+    method: 'POST',
+    path: '/system/automations/tick',
+    auth: 'admin',
+    sameOrigin: true,
+    // Both ticks run at once on one database: which one queues or delivers a run differs.
+    normalize: ['scanned', 'queued', 'delivered', 'retrying', 'failed'],
+  },
+  {
+    name: 'automation tick by the read-only role',
+    method: 'POST',
+    path: '/system/automations/tick',
+    auth: 'consulta',
+    sameOrigin: true,
+  },
+  { name: 'automation cron without a bearer', method: 'POST', path: '/system/automations/cron' },
+  {
+    name: 'automation cron with a bearer when no secret is configured',
+    method: 'GET',
+    path: '/system/automations/cron',
+    headers: { authorization: `Bearer ${'s'.repeat(32)}` },
+  },
+];
+
 export const cases: readonly ParityCase[] = [
   ...scopeCases('automation overview', '/system/automations'),
   ...scopeCases('automation runs', '/system/automations/runs'),
@@ -165,13 +388,5 @@ export const cases: readonly ParityCase[] = [
     auth: 'multi',
     headers: { 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
   },
-  // Writes and the runtime stay in TypeScript; the role gate answers the same in both APIs.
-  {
-    name: 'automation rule write by the read-only role',
-    method: 'POST',
-    path: '/system/automations/rules',
-    auth: 'consulta',
-    sameOrigin: true,
-    body: { json: {} },
-  },
+  ...writeCases,
 ];

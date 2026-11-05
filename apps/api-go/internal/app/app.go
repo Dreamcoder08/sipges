@@ -49,7 +49,12 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		}
 		opts.Engines = compiled
 	}
-	routes, err := contextRoutes(Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now, Engines: opts.Engines})
+	deps := Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now, Engines: opts.Engines}
+	routes, err := contextRoutes(deps)
+	if err != nil {
+		return nil, err
+	}
+	wrap, err := contextMiddleware(deps)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +65,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		Ready:        database.Ping(pool),
 		AllowedHosts: opts.AllowedHosts,
 		AccessLog:    opts.AccessLog,
-		Auth: []httpx.Middleware{
+		Auth: append([]httpx.Middleware{
 			identityhttp.Session(identityhttp.SessionOptions{
 				Sessions:   sessions,
 				RequireMFA: opts.RequireMFA,
@@ -73,7 +78,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 			integrationhttp.RequestLimit(),
 			tenancyhttp.Middleware(grants, opts.Logger),
 			identityhttp.RoleGate(),
-		},
+		}, wrap...),
 		Routes: func(mux *http.ServeMux) {
 			mux.HandleFunc("GET /system/auth/current-scope", tenancyhttp.CurrentScope)
 			identityhttp.Routes(mux, sessions, opts.GoogleEnabled, opts.Logger)

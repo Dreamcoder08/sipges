@@ -1,0 +1,3120 @@
+{
+  "rule_bodies": [
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"enabled\":false,\"conditions\":[{\"field\":\"Nivel\",\"op\":\"eq\",\"value\":\"Alto\"}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": false,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "Nivel", "op": "eq", "value": "Alto" }],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"  Regla con espacios  \",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla con espacios",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"   \",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "name"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "name"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 200,
+      "value": {
+        "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "name"],
+          "msg": "Too big: expected string to have <=80 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\" aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "name"],
+          "msg": "Too big: expected string to have <=80 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 200,
+      "value": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 200,
+      "value": {
+        "name": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"a\\u0000b\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        { "type": "custom", "loc": ["body", "name"], "msg": "Text must not contain NUL characters" }
+      ]
+    },
+    {
+      "raw": "{\"name\":5,\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "name"],
+          "msg": "Invalid input: expected string, received number"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":null,\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "name"],
+          "msg": "Invalid input: expected string, received null"
+        }
+      ]
+    },
+    {
+      "raw": "{\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [{ "type": "missing", "loc": ["body", "name"], "msg": "Field required" }]
+    },
+    {
+      "raw": "{}",
+      "status": 422,
+      "detail": [
+        { "type": "missing", "loc": ["body", "name"], "msg": "Field required" },
+        { "type": "missing", "loc": ["body", "module"], "msg": "Field required" },
+        { "type": "missing", "loc": ["body", "actions"], "msg": "Field required" },
+        { "type": "missing", "loc": ["body", "steps"], "msg": "Field required" }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"enabled\":\"yes\"}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "enabled"],
+          "msg": "Invalid input: expected boolean, received string"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "module"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "module"],
+          "msg": "Too big: expected string to have <=60 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "actions"],
+          "msg": "Too small: expected array to have >=1 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\",\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "actions"],
+          "msg": "Too big: expected array to have <=10 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\",\"aaaaaaaaaaaaaaaaaaaaa\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "actions", 1],
+          "msg": "Too big: expected string to have <=20 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":\"CREATE\",\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "actions"],
+          "msg": "Invalid input: expected array, received string"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[1],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "actions", 0],
+          "msg": "Invalid input: expected string, received number"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"},{\"field\":\"a\",\"op\":\"eq\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "conditions"],
+          "msg": "Too big: expected array to have <=10 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"field\":\"\",\"op\":\"eq\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "conditions", 0, "field"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"field\":\"a\",\"op\":\"like\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_value",
+          "loc": ["body", "conditions", 0, "op"],
+          "msg": "Invalid option: expected one of \"eq\"|\"neq\"|\"contains\"|\"gte\"|\"lte\"|\"present\"|\"absent\""
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"op\":\"eq\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "conditions", 0, "field"],
+          "msg": "Invalid input: expected string, received undefined"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"field\":\"a\",\"op\":\"eq\",\"value\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "conditions", 0, "value"],
+          "msg": "Too big: expected string to have <=200 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"field\":\"a\",\"op\":\"eq\",\"value\":5}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "conditions", 0, "value"],
+          "msg": "Invalid input: expected string, received number"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[null]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "conditions", 0],
+          "msg": "Invalid input: expected object, received null"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":null}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "conditions"],
+          "msg": "Invalid input: expected array, received null"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "steps"],
+          "msg": "Too small: expected array to have >=1 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"},{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"},{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"},{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"},{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"},{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "steps"],
+          "msg": "Too big: expected array to have <=5 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"other\",\"title\":\"x\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_union",
+          "loc": ["body", "steps", 0, "kind"],
+          "msg": "Invalid discriminator value. Expected 'evaluate' | 'notify' | 'channel'"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"title\":\"x\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_union",
+          "loc": ["body", "steps", 0, "kind"],
+          "msg": "Invalid discriminator value. Expected 'evaluate' | 'notify' | 'channel'"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "title"],
+          "msg": "Invalid input: expected string, received undefined"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "steps", 0, "title"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "steps", 0, "title"],
+          "msg": "Too big: expected string to have <=200 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"x\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Invalid input: expected number, received undefined"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"x\",\"channel_id\":0}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Too small: expected number to be >0"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"x\",\"channel_id\":1.5}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Invalid input: expected int, received number"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"x\",\"channel_id\":\"1\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Invalid input: expected number, received string"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"x\",\"channel_id\":3,\"extra\":1}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "channel", "channel_id": 3, "title": "x" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"evaluate\",\"title\":\"x\"}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "evaluate", "title": "x", "minimum_level": "Media" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"evaluate\",\"title\":\"x\",\"minimum_level\":\"Baja\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_value",
+          "loc": ["body", "steps", 0, "minimum_level"],
+          "msg": "Invalid option: expected one of \"Media\"|\"Alta\""
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"evaluate\",\"title\":\"x\",\"minimum_level\":\"Alta\"}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "evaluate", "title": "x", "minimum_level": "Alta" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[null]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0],
+          "msg": "Invalid input: expected object, received null"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":\"x\"}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps"],
+          "msg": "Invalid input: expected array, received string"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"project_id\":\"PRJ-SECHURA\",\"extra\":true}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "Aviso {modulo}" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":\"CREATE_UPDATE_DELETE\",\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "actions"],
+          "msg": "Invalid input: expected array, received string"
+        },
+        {
+          "type": "too_big",
+          "loc": ["body", "actions"],
+          "msg": "Too big: expected string to have <=10 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "name"],
+          "msg": "Invalid input: expected string, received array"
+        },
+        {
+          "type": "too_big",
+          "loc": ["body", "name"],
+          "msg": "Too big: expected array to have <=80 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":{\"length\":0}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps"],
+          "msg": "Invalid input: expected array, received object"
+        },
+        {
+          "type": "too_small",
+          "loc": ["body", "steps"],
+          "msg": "Too small: expected unknown to be >=1"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":[\"a\"]}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "title"],
+          "msg": "Invalid input: expected string, received array"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"conditions\":[{\"field\":\"a\",\"op\":\"eq\",\"value\":\"x\\u0000\"},{\"field\":\"b\\u0000\",\"op\":5}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "custom",
+          "loc": ["body", "conditions", 0, "value"],
+          "msg": "Text must not contain NUL characters"
+        },
+        {
+          "type": "custom",
+          "loc": ["body", "conditions", 1, "field"],
+          "msg": "Text must not contain NUL characters"
+        },
+        {
+          "type": "invalid_value",
+          "loc": ["body", "conditions", 1, "op"],
+          "msg": "Invalid option: expected one of \"eq\"|\"neq\"|\"contains\"|\"gte\"|\"lte\"|\"present\"|\"absent\""
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"　Regla﻿\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"Aviso {modulo}\"}],\"enabled\":null}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "enabled"],
+          "msg": "Invalid input: expected boolean, received null"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"\",\"channel_id\":-1.5}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Invalid input: expected int, received number"
+        },
+        {
+          "type": "too_small",
+          "loc": ["body", "steps", 0, "title"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "",
+      "status": 422,
+      "detail": [{ "type": "json_invalid", "loc": ["body"], "msg": "JSON decode error" }]
+    },
+    {
+      "raw": "null",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received null"
+        }
+      ]
+    },
+    {
+      "raw": "[]",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received array"
+        }
+      ]
+    },
+    {
+      "raw": "\"x\"",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received string"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":",
+      "status": 422,
+      "detail": [{ "type": "json_invalid", "loc": ["body"], "msg": "JSON decode error" }]
+    },
+    {
+      "raw": "5",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received number"
+        }
+      ]
+    },
+    {
+      "raw": "true",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received boolean"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"a\",\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"notify\",\"title\":\"t\"}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"t\",\"channel_id\":1e400}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Invalid input: expected number, received Infinity"
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"t\",\"channel_id\":2.0}]}",
+      "status": 200,
+      "value": {
+        "name": "Regla",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "channel", "channel_id": 2, "title": "t" }]
+      }
+    },
+    {
+      "raw": "{\"name\":\"Regla\",\"module\":\"Alertas\",\"actions\":[\"CREATE\"],\"steps\":[{\"kind\":\"channel\",\"title\":\"t\",\"channel_id\":9007199254740993}]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "steps", 0, "channel_id"],
+          "msg": "Too big: expected int to be <=9007199254740991"
+        }
+      ]
+    }
+  ],
+  "channel_bodies": [
+    {
+      "raw": "{\"kind\":\"webhook\",\"name\":\"Web\",\"settings\":{\"url\":\"https://hooks.example.org/x\",\"secret\":\"aaaaaaaaaaaaaaaaaaaaaaaa\"}}",
+      "status": 200,
+      "value": {
+        "kind": "webhook",
+        "name": "Web",
+        "settings": { "url": "https://hooks.example.org/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" }
+      }
+    },
+    {
+      "raw": "{\"kind\":\"webhook\",\"name\":\"  Web  \",\"settings\":{}}",
+      "status": 200,
+      "value": { "kind": "webhook", "name": "Web", "settings": {} }
+    },
+    {
+      "raw": "{\"kind\":\"fax\",\"name\":\"x\",\"settings\":{}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_value",
+          "loc": ["body", "kind"],
+          "msg": "Invalid option: expected one of \"webhook\"|\"slack\"|\"teams\"|\"discord\"|\"gchat\"|\"telegram\"|\"email\""
+        }
+      ]
+    },
+    {
+      "raw": "{\"name\":\"x\",\"settings\":{}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_value",
+          "loc": ["body", "kind"],
+          "msg": "Invalid option: expected one of \"webhook\"|\"slack\"|\"teams\"|\"discord\"|\"gchat\"|\"telegram\"|\"email\""
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"settings\":{}}",
+      "status": 422,
+      "detail": [{ "type": "missing", "loc": ["body", "name"], "msg": "Field required" }]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\" \",\"settings\":{}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "name"],
+          "msg": "Too small: expected string to have >=1 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"settings\":{}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "name"],
+          "msg": "Too big: expected string to have <=80 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\"}",
+      "status": 422,
+      "detail": [{ "type": "missing", "loc": ["body", "settings"], "msg": "Field required" }]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\",\"settings\":[]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body", "settings"],
+          "msg": "Invalid input: expected record, received array"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\",\"settings\":{\"url\":5}}",
+      "status": 422,
+      "detail": [
+        { "type": "invalid_union", "loc": ["body", "settings", "url"], "msg": "Invalid input" }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\",\"settings\":{\"url\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "settings", "url"],
+          "msg": "Too big: expected string to have <=1000 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"email\",\"name\":\"x\",\"settings\":{\"to\":[\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\",\"a@b.co\"]}}",
+      "status": 422,
+      "detail": [
+        { "type": "invalid_union", "loc": ["body", "settings", "to"], "msg": "Invalid input" }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"email\",\"name\":\"x\",\"settings\":{\"to\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"]}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "settings", "to", 0],
+          "msg": "Too big: expected string to have <=200 characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"email\",\"name\":\"x\",\"settings\":{\"to\":[5]}}",
+      "status": 422,
+      "detail": [
+        { "type": "invalid_union", "loc": ["body", "settings", "to"], "msg": "Invalid input" }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"email\",\"name\":\"x\",\"settings\":{\"to\":[\"a\\u0000\"]}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "custom",
+          "loc": ["body", "settings", "to", 0],
+          "msg": "Text must not contain NUL characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\",\"settings\":{\"url\":\"a\\u0000\"}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "custom",
+          "loc": ["body", "settings", "url"],
+          "msg": "Text must not contain NUL characters"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\",\"settings\":{\"url\":null}}",
+      "status": 422,
+      "detail": [
+        { "type": "invalid_union", "loc": ["body", "settings", "url"], "msg": "Invalid input" }
+      ]
+    },
+    {
+      "raw": "{\"kind\":5,\"name\":5,\"settings\":5}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_value",
+          "loc": ["body", "kind"],
+          "msg": "Invalid option: expected one of \"webhook\"|\"slack\"|\"teams\"|\"discord\"|\"gchat\"|\"telegram\"|\"email\""
+        },
+        {
+          "type": "invalid_type",
+          "loc": ["body", "name"],
+          "msg": "Invalid input: expected string, received number"
+        },
+        {
+          "type": "invalid_type",
+          "loc": ["body", "settings"],
+          "msg": "Invalid input: expected record, received number"
+        }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"slack\",\"name\":\"x\",\"settings\":{\"2\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"10\":5,\"b\":\"ok\",\"a\":[1]}}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "settings", "2"],
+          "msg": "Too big: expected string to have <=1000 characters"
+        },
+        { "type": "invalid_union", "loc": ["body", "settings", "10"], "msg": "Invalid input" },
+        { "type": "invalid_union", "loc": ["body", "settings", "a"], "msg": "Invalid input" }
+      ]
+    },
+    {
+      "raw": "{\"kind\":\"teams\",\"name\":\" Equipo \",\"settings\":{\"url\":[\"a\",\"b\"]}}",
+      "status": 200,
+      "value": { "kind": "teams", "name": "Equipo", "settings": { "url": ["a", "b"] } }
+    },
+    {
+      "raw": "",
+      "status": 422,
+      "detail": [{ "type": "json_invalid", "loc": ["body"], "msg": "JSON decode error" }]
+    },
+    {
+      "raw": "null",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received null"
+        }
+      ]
+    },
+    {
+      "raw": "[1]",
+      "status": 422,
+      "detail": [
+        {
+          "type": "invalid_type",
+          "loc": ["body"],
+          "msg": "Invalid input: expected object, received array"
+        }
+      ]
+    }
+  ],
+  "read_bodies": [
+    { "raw": "{\"ids\":[1,2]}", "status": 200, "value": { "ids": [1, 2] } },
+    { "raw": "{\"all\":true}", "status": 200, "value": { "all": true } },
+    {
+      "raw": "{\"all\":false}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "{\"ids\":[]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "ids"],
+          "msg": "Too small: expected array to have >=1 items"
+        }
+      ]
+    },
+    {
+      "raw": "{\"ids\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "{\"ids\":[0]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "ids", 0],
+          "msg": "Too small: expected number to be >0"
+        }
+      ]
+    },
+    {
+      "raw": "{\"ids\":[1.5]}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "{\"ids\":[\"1\"]}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    { "raw": "{\"ids\":[1],\"all\":true}", "status": 200, "value": { "ids": [1] } },
+    {
+      "raw": "{}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "{\"ids\":null}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "{\"all\":\"true\"}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "{\"ids\":[1e+300]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_big",
+          "loc": ["body", "ids", 0],
+          "msg": "Too big: expected int to be <=9007199254740991"
+        }
+      ]
+    },
+    {
+      "raw": "{\"ids\":[-1]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "ids", 0],
+          "msg": "Too small: expected number to be >0"
+        }
+      ]
+    },
+    {
+      "raw": "{\"ids\":[1,0,2.5]}",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    { "raw": "{\"ids\":[5],\"extra\":1}", "status": 200, "value": { "ids": [5] } },
+    {
+      "raw": "{\"ids\":[-1e+300]}",
+      "status": 422,
+      "detail": [
+        {
+          "type": "too_small",
+          "loc": ["body", "ids", 0],
+          "msg": "Too small: expected int to be >=-9007199254740991"
+        },
+        {
+          "type": "too_small",
+          "loc": ["body", "ids", 0],
+          "msg": "Too small: expected number to be >0"
+        }
+      ]
+    },
+    {
+      "raw": "",
+      "status": 422,
+      "detail": [{ "type": "json_invalid", "loc": ["body"], "msg": "JSON decode error" }]
+    },
+    {
+      "raw": "null",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "[]",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    },
+    {
+      "raw": "5",
+      "status": 422,
+      "detail": [{ "type": "invalid_union", "loc": ["body"], "msg": "Invalid input" }]
+    }
+  ],
+  "validate_rule": [
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "*",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Desconocido",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_module"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["BORRAR"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_action"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE", "CONFIG_UPDATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "$marking", "op": "eq", "value": "x" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "Año fiscal/2026.v-1", "op": "gte", "value": "1" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "$$a", "op": "eq", "value": "" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_condition"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "a$", "op": "eq", "value": "" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_condition"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "campo:x", "op": "eq", "value": "" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_condition"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "Ⅻ٣", "op": "eq", "value": "" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [{ "field": "a\tb", "op": "eq", "value": "" }],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_condition"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [
+          {
+            "field": "ññññññññññññññññññññññññññññññññññññññññññññññññññññññññññññ",
+            "op": "eq",
+            "value": ""
+          }
+        ],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [
+          {
+            "field": "$aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "op": "eq",
+            "value": ""
+          }
+        ],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [
+          {
+            "field": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+            "op": "eq",
+            "value": ""
+          }
+        ],
+        "steps": [{ "kind": "notify", "title": "t" }]
+      },
+      "error": "invalid_condition"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "   " }]
+      },
+      "error": "invalid_step"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "notify", "title": "　" }]
+      },
+      "error": "invalid_step"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "channel", "channelId": 3, "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "channel", "channelId": 4, "title": "t" }]
+      },
+      "error": "invalid_step"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Alertas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "evaluate", "minimumLevel": "Media", "title": "t" }]
+      },
+      "error": "invalid_step"
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Narrativas",
+        "actions": ["CREATE"],
+        "conditions": [],
+        "steps": [{ "kind": "evaluate", "minimumLevel": "Alta", "title": "t" }]
+      },
+      "error": null
+    },
+    {
+      "input": {
+        "name": "R",
+        "enabled": true,
+        "module": "Narrativas",
+        "actions": ["CREATE", "DELETE"],
+        "conditions": [],
+        "steps": [{ "kind": "evaluate", "minimumLevel": "Alta", "title": "t" }]
+      },
+      "error": "invalid_step"
+    }
+  ],
+  "retry": [
+    { "attempts": 0, "minutes": 1 },
+    { "attempts": 1, "minutes": 1 },
+    { "attempts": 2, "minutes": 4 },
+    { "attempts": 3, "minutes": 16 },
+    { "attempts": 4, "minutes": 64 },
+    { "attempts": 5, "minutes": null },
+    { "attempts": 6, "minutes": null }
+  ],
+  "events": [
+    {
+      "auditId": 7,
+      "at": "2026-10-01T10:00:00.250Z",
+      "module": "Alertas",
+      "recordId": "AL-1",
+      "action": "CREATE",
+      "detail": "Alerta creada",
+      "record": {
+        "payload": {
+          "Nivel": " Alto ",
+          "Puntaje": 12,
+          "Monto": "1e3",
+          "Hex": "0x1F",
+          "Fecha": "2026-10-01",
+          "Activo": true,
+          "Lista": ["a", 2],
+          "Objeto": { "b": 1, "a": "Ñ" },
+          "Vacio": "",
+          "Nulo": null,
+          "Turco": "İSTANBUL",
+          "Sigma": "ΟΔΟΣ",
+          "Emoji": "😀x",
+          "Privado": "",
+          "Espacio": " 12 ",
+          "Grande": 1e21,
+          "Pequeno": 1.5e-7,
+          "Neg": 0
+        },
+        "marking": "interno"
+      }
+    },
+    {
+      "auditId": 7,
+      "at": "2026-10-01T10:00:00.250Z",
+      "module": "Alertas",
+      "recordId": null,
+      "action": "CREATE",
+      "detail": "",
+      "record": null
+    },
+    {
+      "auditId": 7,
+      "at": "2026-10-01T10:00:00.250Z",
+      "module": "Alertas",
+      "recordId": "AL-1",
+      "action": "CREATE",
+      "detail": "Alerta creada",
+      "record": { "payload": { "Nivel": "Alto" }, "marking": "restringido" }
+    },
+    {
+      "auditId": 7,
+      "at": "2026-10-01T10:00:00.250Z",
+      "module": "Automatizaciones",
+      "recordId": "AL-1",
+      "action": "CREATE",
+      "detail": "Alerta creada",
+      "record": {
+        "payload": {
+          "Nivel": " Alto ",
+          "Puntaje": 12,
+          "Monto": "1e3",
+          "Hex": "0x1F",
+          "Fecha": "2026-10-01",
+          "Activo": true,
+          "Lista": ["a", 2],
+          "Objeto": { "b": 1, "a": "Ñ" },
+          "Vacio": "",
+          "Nulo": null,
+          "Turco": "İSTANBUL",
+          "Sigma": "ΟΔΟΣ",
+          "Emoji": "😀x",
+          "Privado": "",
+          "Espacio": " 12 ",
+          "Grande": 1e21,
+          "Pequeno": 1.5e-7,
+          "Neg": 0
+        },
+        "marking": "interno"
+      }
+    },
+    {
+      "auditId": 7,
+      "at": "2026-10-01T10:00:00.250Z",
+      "module": "InteligenciaDigital",
+      "recordId": "AL-1",
+      "action": "UPDATE",
+      "detail": "Alerta creada",
+      "record": {
+        "payload": {
+          "Nivel": " Alto ",
+          "Puntaje": 12,
+          "Monto": "1e3",
+          "Hex": "0x1F",
+          "Fecha": "2026-10-01",
+          "Activo": true,
+          "Lista": ["a", 2],
+          "Objeto": { "b": 1, "a": "Ñ" },
+          "Vacio": "",
+          "Nulo": null,
+          "Turco": "İSTANBUL",
+          "Sigma": "ΟΔΟΣ",
+          "Emoji": "😀x",
+          "Privado": "",
+          "Espacio": " 12 ",
+          "Grande": 1e21,
+          "Pequeno": 1.5e-7,
+          "Neg": 0
+        },
+        "marking": "interno"
+      }
+    }
+  ],
+  "operators": ["eq", "neq", "contains", "gte", "lte", "present", "absent"],
+  "conditions": [
+    { "event": 0, "field": "$action", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "a", "holds": "0111010" },
+    { "event": 0, "field": "$action", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "$action", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "$action", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "a", "holds": "0111010" },
+    { "event": 0, "field": "$detail", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "$detail", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "$detail", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "a", "holds": "0111010" },
+    { "event": 0, "field": "$module", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "$module", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "$module", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "a", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "$marking", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "$marking", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "alto", "holds": "1011110" },
+    { "event": 0, "field": "Nivel", "value": " ALTO ", "holds": "1011110" },
+    { "event": 0, "field": "Nivel", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "a", "holds": "0111010" },
+    { "event": 0, "field": "Nivel", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Nivel", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Nivel", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "12", "holds": "1011110" },
+    { "event": 0, "field": "Puntaje", "value": "12.0", "holds": "0101110" },
+    { "event": 0, "field": "Puntaje", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": "0x0c", "holds": "0101110" },
+    { "event": 0, "field": "Puntaje", "value": "1000", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "999", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": " 12 ", "holds": "1011110" },
+    { "event": 0, "field": "Puntaje", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "1e21", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Puntaje", "value": "+12", "holds": "0101110" },
+    { "event": 0, "field": "Puntaje", "value": "0b1100", "holds": "0101110" },
+    { "event": 0, "field": "Puntaje", "value": "0o14", "holds": "0101110" },
+    { "event": 0, "field": "Puntaje", "value": "1_2", "holds": "0100110" },
+    { "event": 0, "field": "Puntaje", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "1000", "holds": "0101110" },
+    { "event": 0, "field": "Monto", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "1e21", "holds": "0100110" },
+    { "event": 0, "field": "Monto", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Monto", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "1000", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "999", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "1e21", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "0", "holds": "0111010" },
+    { "event": 0, "field": "Hex", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Hex", "value": "1_2", "holds": "0100110" },
+    { "event": 0, "field": "Hex", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "999", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "0", "holds": "0111010" },
+    { "event": 0, "field": "Fecha", "value": "-0", "holds": "0111010" },
+    { "event": 0, "field": "Fecha", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "5.", "holds": "0100110" },
+    { "event": 0, "field": "Fecha", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Fecha", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Activo", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "true", "holds": "1011110" },
+    { "event": 0, "field": "Activo", "value": "a", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Activo", "value": "i̇stanbul", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "istanbul", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Activo", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Activo", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Activo", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Activo", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Activo", "value": "NaN", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "a", "holds": "0110110" },
+    { "event": 0, "field": "Lista", "value": "[\"a\",2]", "holds": "1011110" },
+    { "event": 0, "field": "Lista", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Lista", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Lista", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Objeto", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "true", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "a", "holds": "0111010" },
+    { "event": 0, "field": "Objeto", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "1011110" },
+    { "event": 0, "field": "Objeto", "value": "i̇stanbul", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "istanbul", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Objeto", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Objeto", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Objeto", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Objeto", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Objeto", "value": "NaN", "holds": "0101010" },
+    { "event": 0, "field": "Vacio", "value": "", "holds": "1000001" },
+    { "event": 0, "field": "Vacio", "value": "alto", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": " ALTO ", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "12", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "12.0", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "011", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "0x0c", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "1000", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "999", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "2026-09-30", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "2026-10-02", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "true", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "a", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "[\"a\",2]", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "i̇stanbul", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "istanbul", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "οδος", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "οδοσ", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "😀", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": " 12 ", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "Infinity", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "1e21", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "1.5e-7", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "0", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "-0", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": ".5", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "5.", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "+12", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "0b1100", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "0o14", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "1_2", "holds": "0100001" },
+    { "event": 0, "field": "Vacio", "value": "NaN", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "", "holds": "1000001" },
+    { "event": 0, "field": "Nulo", "value": "alto", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": " ALTO ", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "12", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "12.0", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "011", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "0x0c", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "1000", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "999", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "2026-09-30", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "2026-10-02", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "true", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "a", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "[\"a\",2]", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "i̇stanbul", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "istanbul", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "οδος", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "οδοσ", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "😀", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": " 12 ", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "Infinity", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "1e21", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "1.5e-7", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "0", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "-0", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": ".5", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "5.", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "+12", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "0b1100", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "0o14", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "1_2", "holds": "0100001" },
+    { "event": 0, "field": "Nulo", "value": "NaN", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "", "holds": "1000001" },
+    { "event": 0, "field": "Falta", "value": "alto", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": " ALTO ", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "12", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "12.0", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "011", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "0x0c", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "1000", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "999", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "2026-09-30", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "2026-10-02", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "true", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "a", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "[\"a\",2]", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "i̇stanbul", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "istanbul", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "οδος", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "οδοσ", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "😀", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": " 12 ", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "Infinity", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "1e21", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "1.5e-7", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "0", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "-0", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": ".5", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "5.", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "+12", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "0b1100", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "0o14", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "1_2", "holds": "0100001" },
+    { "event": 0, "field": "Falta", "value": "NaN", "holds": "0100001" },
+    { "event": 0, "field": "Turco", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Turco", "value": "a", "holds": "0111010" },
+    { "event": 0, "field": "Turco", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Turco", "value": "i̇stanbul", "holds": "1011110" },
+    { "event": 0, "field": "Turco", "value": "istanbul", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Turco", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Turco", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Turco", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Turco", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Turco", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Sigma", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "true", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "a", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "i̇stanbul", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "istanbul", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "οδος", "holds": "1011110" },
+    { "event": 0, "field": "Sigma", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Sigma", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Sigma", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Sigma", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Sigma", "value": "NaN", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "true", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "a", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "i̇stanbul", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "istanbul", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "οδος", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "οδοσ", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "😀", "holds": "0111010" },
+    { "event": 0, "field": "Emoji", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Emoji", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Emoji", "value": "NaN", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "alto", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": " ALTO ", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "2026-09-30", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "2026-10-02", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "true", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "a", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "[\"a\",2]", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "i̇stanbul", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "istanbul", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "οδος", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "οδοσ", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "😀", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "", "holds": "1011110" },
+    { "event": 0, "field": "Privado", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "Infinity", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "1e21", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Privado", "value": "NaN", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "12", "holds": "1011110" },
+    { "event": 0, "field": "Espacio", "value": "12.0", "holds": "0101110" },
+    { "event": 0, "field": "Espacio", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "0x0c", "holds": "0101110" },
+    { "event": 0, "field": "Espacio", "value": "1000", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "999", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": " 12 ", "holds": "1011110" },
+    { "event": 0, "field": "Espacio", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "1e21", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Espacio", "value": "+12", "holds": "0101110" },
+    { "event": 0, "field": "Espacio", "value": "0b1100", "holds": "0101110" },
+    { "event": 0, "field": "Espacio", "value": "0o14", "holds": "0101110" },
+    { "event": 0, "field": "Espacio", "value": "1_2", "holds": "0100110" },
+    { "event": 0, "field": "Espacio", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "12", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "12.0", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "011", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "0x0c", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "1000", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "999", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": " 12 ", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Grande", "value": "1e21", "holds": "0101110" },
+    { "event": 0, "field": "Grande", "value": "1.5e-7", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": ".5", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "5.", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "+12", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "0b1100", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "0o14", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "1_2", "holds": "0101010" },
+    { "event": 0, "field": "Grande", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Pequeno", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "12", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "12.0", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "011", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "0x0c", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "1000", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "999", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": " 12 ", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "1e21", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "1.5e-7", "holds": "1011110" },
+    { "event": 0, "field": "Pequeno", "value": "0", "holds": "0101010" },
+    { "event": 0, "field": "Pequeno", "value": "-0", "holds": "0101010" },
+    { "event": 0, "field": "Pequeno", "value": ".5", "holds": "0110110" },
+    { "event": 0, "field": "Pequeno", "value": "5.", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "+12", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "0b1100", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "0o14", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "1_2", "holds": "0100110" },
+    { "event": 0, "field": "Pequeno", "value": "NaN", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "", "holds": "0101010" },
+    { "event": 0, "field": "Neg", "value": "alto", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": " ALTO ", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "12", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "12.0", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "011", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "0x0c", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "1000", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "999", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "2026-09-30", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "2026-10-02", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "true", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "a", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "[\"a\",2]", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "{\"b\":1,\"a\":\"ñ\"}", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "i̇stanbul", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "istanbul", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "οδος", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "οδοσ", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "😀", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": " 12 ", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "Infinity", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "1e21", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "1.5e-7", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "0", "holds": "1011110" },
+    { "event": 0, "field": "Neg", "value": "-0", "holds": "0101110" },
+    { "event": 0, "field": "Neg", "value": ".5", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "5.", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "+12", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "0b1100", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "0o14", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "1_2", "holds": "0100110" },
+    { "event": 0, "field": "Neg", "value": "NaN", "holds": "0100110" },
+    { "event": 1, "field": "$action", "value": "", "holds": "0101010" },
+    { "event": 1, "field": "$action", "value": "alto", "holds": "0101010" },
+    { "event": 1, "field": "$detail", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "$detail", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "$module", "value": "", "holds": "0101010" },
+    { "event": 1, "field": "$module", "value": "alto", "holds": "0100110" },
+    { "event": 1, "field": "$marking", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "$marking", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Nivel", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Nivel", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Puntaje", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Puntaje", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Monto", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Monto", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Hex", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Hex", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Fecha", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Fecha", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Activo", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Activo", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Lista", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Lista", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Objeto", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Objeto", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Vacio", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Vacio", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Nulo", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Nulo", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Falta", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Falta", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Turco", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Turco", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Sigma", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Sigma", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Emoji", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Emoji", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Privado", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Privado", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Espacio", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Espacio", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Grande", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Grande", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Pequeno", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Pequeno", "value": "alto", "holds": "0100001" },
+    { "event": 1, "field": "Neg", "value": "", "holds": "1000001" },
+    { "event": 1, "field": "Neg", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "$action", "value": "", "holds": "0101010" },
+    { "event": 2, "field": "$action", "value": "alto", "holds": "0101010" },
+    { "event": 2, "field": "$detail", "value": "", "holds": "0101010" },
+    { "event": 2, "field": "$detail", "value": "alto", "holds": "0100110" },
+    { "event": 2, "field": "$module", "value": "", "holds": "0101010" },
+    { "event": 2, "field": "$module", "value": "alto", "holds": "0100110" },
+    { "event": 2, "field": "$marking", "value": "", "holds": "0101010" },
+    { "event": 2, "field": "$marking", "value": "alto", "holds": "0101010" },
+    { "event": 2, "field": "Nivel", "value": "", "holds": "0101010" },
+    { "event": 2, "field": "Nivel", "value": "alto", "holds": "1011110" },
+    { "event": 2, "field": "Puntaje", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Puntaje", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Monto", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Monto", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Hex", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Hex", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Fecha", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Fecha", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Activo", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Activo", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Lista", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Lista", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Objeto", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Objeto", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Vacio", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Vacio", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Nulo", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Nulo", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Falta", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Falta", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Turco", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Turco", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Sigma", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Sigma", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Emoji", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Emoji", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Privado", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Privado", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Espacio", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Espacio", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Grande", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Grande", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Pequeno", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Pequeno", "value": "alto", "holds": "0100001" },
+    { "event": 2, "field": "Neg", "value": "", "holds": "1000001" },
+    { "event": 2, "field": "Neg", "value": "alto", "holds": "0100001" },
+    { "event": 3, "field": "$action", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "$action", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "$detail", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "$detail", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "$module", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "$module", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "$marking", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "$marking", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Nivel", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Nivel", "value": "alto", "holds": "1011110" },
+    { "event": 3, "field": "Puntaje", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Puntaje", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Monto", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Monto", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Hex", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Hex", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Fecha", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Fecha", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Activo", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Activo", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Lista", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Lista", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Objeto", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Objeto", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Vacio", "value": "", "holds": "1000001" },
+    { "event": 3, "field": "Vacio", "value": "alto", "holds": "0100001" },
+    { "event": 3, "field": "Nulo", "value": "", "holds": "1000001" },
+    { "event": 3, "field": "Nulo", "value": "alto", "holds": "0100001" },
+    { "event": 3, "field": "Falta", "value": "", "holds": "1000001" },
+    { "event": 3, "field": "Falta", "value": "alto", "holds": "0100001" },
+    { "event": 3, "field": "Turco", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Turco", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Sigma", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Sigma", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Emoji", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Emoji", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Privado", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Privado", "value": "alto", "holds": "0101010" },
+    { "event": 3, "field": "Espacio", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Espacio", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Grande", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Grande", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Pequeno", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Pequeno", "value": "alto", "holds": "0100110" },
+    { "event": 3, "field": "Neg", "value": "", "holds": "0101010" },
+    { "event": 3, "field": "Neg", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "$action", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "$action", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "$detail", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "$detail", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "$module", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "$module", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "$marking", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "$marking", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Nivel", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Nivel", "value": "alto", "holds": "1011110" },
+    { "event": 4, "field": "Puntaje", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Puntaje", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Monto", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Monto", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Hex", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Hex", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Fecha", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Fecha", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Activo", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Activo", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Lista", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Lista", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Objeto", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Objeto", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Vacio", "value": "", "holds": "1000001" },
+    { "event": 4, "field": "Vacio", "value": "alto", "holds": "0100001" },
+    { "event": 4, "field": "Nulo", "value": "", "holds": "1000001" },
+    { "event": 4, "field": "Nulo", "value": "alto", "holds": "0100001" },
+    { "event": 4, "field": "Falta", "value": "", "holds": "1000001" },
+    { "event": 4, "field": "Falta", "value": "alto", "holds": "0100001" },
+    { "event": 4, "field": "Turco", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Turco", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Sigma", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Sigma", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Emoji", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Emoji", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Privado", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Privado", "value": "alto", "holds": "0101010" },
+    { "event": 4, "field": "Espacio", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Espacio", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Grande", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Grande", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Pequeno", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Pequeno", "value": "alto", "holds": "0100110" },
+    { "event": 4, "field": "Neg", "value": "", "holds": "0101010" },
+    { "event": 4, "field": "Neg", "value": "alto", "holds": "0100110" }
+  ],
+  "rules": [
+    {
+      "id": 1,
+      "name": "r",
+      "enabled": true,
+      "module": "*",
+      "actions": ["CREATE"],
+      "conditions": [],
+      "steps": []
+    },
+    {
+      "id": 1,
+      "name": "r",
+      "enabled": false,
+      "module": "*",
+      "actions": ["CREATE"],
+      "conditions": [],
+      "steps": []
+    },
+    {
+      "id": 1,
+      "name": "r",
+      "enabled": true,
+      "module": "Alertas",
+      "actions": ["UPDATE", "CREATE"],
+      "conditions": [],
+      "steps": []
+    },
+    {
+      "id": 1,
+      "name": "r",
+      "enabled": true,
+      "module": "Eventos",
+      "actions": ["CREATE"],
+      "conditions": [],
+      "steps": []
+    },
+    {
+      "id": 1,
+      "name": "r",
+      "enabled": true,
+      "module": "*",
+      "actions": ["CREATE", "UPDATE"],
+      "conditions": [
+        { "field": "Nivel", "op": "eq", "value": "alto" },
+        { "field": "Puntaje", "op": "gte", "value": "10" }
+      ],
+      "steps": []
+    }
+  ],
+  "matches": [
+    { "event": 0, "rule": 0, "matches": true },
+    { "event": 0, "rule": 1, "matches": false },
+    { "event": 0, "rule": 2, "matches": true },
+    { "event": 0, "rule": 3, "matches": false },
+    { "event": 0, "rule": 4, "matches": true },
+    { "event": 1, "rule": 0, "matches": true },
+    { "event": 1, "rule": 1, "matches": false },
+    { "event": 1, "rule": 2, "matches": true },
+    { "event": 1, "rule": 3, "matches": false },
+    { "event": 1, "rule": 4, "matches": false },
+    { "event": 2, "rule": 0, "matches": true },
+    { "event": 2, "rule": 1, "matches": false },
+    { "event": 2, "rule": 2, "matches": true },
+    { "event": 2, "rule": 3, "matches": false },
+    { "event": 2, "rule": 4, "matches": false },
+    { "event": 3, "rule": 0, "matches": false },
+    { "event": 3, "rule": 1, "matches": false },
+    { "event": 3, "rule": 2, "matches": false },
+    { "event": 3, "rule": 3, "matches": false },
+    { "event": 3, "rule": 4, "matches": false },
+    { "event": 4, "rule": 0, "matches": false },
+    { "event": 4, "rule": 1, "matches": false },
+    { "event": 4, "rule": 2, "matches": false },
+    { "event": 4, "rule": 3, "matches": false },
+    { "event": 4, "rule": 4, "matches": true }
+  ],
+  "titles": [
+    { "event": 0, "title": "Aviso {modulo} {id} {accion}", "out": "Aviso Alertas AL-1 CREATE" },
+    {
+      "event": 0,
+      "title": "{ modulo }/{Nivel}/{Puntaje}/{Activo}/{Lista}/{Objeto}/{Nulo}/{Falta}/{Grande}/{Pequeno}/{Neg}",
+      "out": "Alertas/ Alto /12/true/[\"a\",2]/{\"b\":1,\"a\":\"Ñ\"}///1e+21/1.5e-7/0"
+    },
+    { "event": 0, "title": "{{Nivel}} {} {Nivel {Nivel}}", "out": "{ Alto } {} {Nivel  Alto }" },
+    {
+      "event": 0,
+      "title": "{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}",
+      "out": " {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
+    },
+    {
+      "event": 0,
+      "title": "{😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}",
+      "out": "  {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}"
+    },
+    {
+      "event": 0,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+    },
+    {
+      "event": 0,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀"
+    },
+    { "event": 0, "title": "Línea\n{Nivel}\t$&$1", "out": "Línea\n Alto \t$&$1" },
+    { "event": 0, "title": "{Emoji}{Turco}", "out": "😀xİSTANBUL" },
+    { "event": 1, "title": "Aviso {modulo} {id} {accion}", "out": "Aviso Alertas  CREATE" },
+    {
+      "event": 1,
+      "title": "{ modulo }/{Nivel}/{Puntaje}/{Activo}/{Lista}/{Objeto}/{Nulo}/{Falta}/{Grande}/{Pequeno}/{Neg}",
+      "out": "Alertas//////////"
+    },
+    { "event": 1, "title": "{{Nivel}} {} {Nivel {Nivel}}", "out": "{} {} {Nivel }" },
+    {
+      "event": 1,
+      "title": "{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}",
+      "out": " {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
+    },
+    {
+      "event": 1,
+      "title": "{😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}",
+      "out": "  {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}"
+    },
+    {
+      "event": 1,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+    },
+    {
+      "event": 1,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀"
+    },
+    { "event": 1, "title": "Línea\n{Nivel}\t$&$1", "out": "Línea\n\t$&$1" },
+    { "event": 1, "title": "{Emoji}{Turco}", "out": "" },
+    { "event": 2, "title": "Aviso {modulo} {id} {accion}", "out": "Aviso Alertas AL-1 CREATE" },
+    {
+      "event": 2,
+      "title": "{ modulo }/{Nivel}/{Puntaje}/{Activo}/{Lista}/{Objeto}/{Nulo}/{Falta}/{Grande}/{Pequeno}/{Neg}",
+      "out": "Alertas/[restringido]/[restringido]/[restringido]/[restringido]/[restringido]/[restringido]/[restringido]/[restringido]/[restringido]/[restringido]"
+    },
+    {
+      "event": 2,
+      "title": "{{Nivel}} {} {Nivel {Nivel}}",
+      "out": "{[restringido]} {} {Nivel [restringido]}"
+    },
+    {
+      "event": 2,
+      "title": "{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}",
+      "out": "[restringido] {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
+    },
+    {
+      "event": 2,
+      "title": "{😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}",
+      "out": "[restringido] [restringido] {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}"
+    },
+    {
+      "event": 2,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+    },
+    {
+      "event": 2,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀"
+    },
+    { "event": 2, "title": "Línea\n{Nivel}\t$&$1", "out": "Línea\n[restringido]\t$&$1" },
+    { "event": 2, "title": "{Emoji}{Turco}", "out": "[restringido][restringido]" },
+    {
+      "event": 3,
+      "title": "Aviso {modulo} {id} {accion}",
+      "out": "Aviso Automatizaciones AL-1 CREATE"
+    },
+    {
+      "event": 3,
+      "title": "{ modulo }/{Nivel}/{Puntaje}/{Activo}/{Lista}/{Objeto}/{Nulo}/{Falta}/{Grande}/{Pequeno}/{Neg}",
+      "out": "Automatizaciones/ Alto /12/true/[\"a\",2]/{\"b\":1,\"a\":\"Ñ\"}///1e+21/1.5e-7/0"
+    },
+    { "event": 3, "title": "{{Nivel}} {} {Nivel {Nivel}}", "out": "{ Alto } {} {Nivel  Alto }" },
+    {
+      "event": 3,
+      "title": "{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}",
+      "out": " {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
+    },
+    {
+      "event": 3,
+      "title": "{😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}",
+      "out": "  {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}"
+    },
+    {
+      "event": 3,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+    },
+    {
+      "event": 3,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀"
+    },
+    { "event": 3, "title": "Línea\n{Nivel}\t$&$1", "out": "Línea\n Alto \t$&$1" },
+    { "event": 3, "title": "{Emoji}{Turco}", "out": "😀xİSTANBUL" },
+    {
+      "event": 4,
+      "title": "Aviso {modulo} {id} {accion}",
+      "out": "Aviso InteligenciaDigital AL-1 UPDATE"
+    },
+    {
+      "event": 4,
+      "title": "{ modulo }/{Nivel}/{Puntaje}/{Activo}/{Lista}/{Objeto}/{Nulo}/{Falta}/{Grande}/{Pequeno}/{Neg}",
+      "out": "InteligenciaDigital/ Alto /12/true/[\"a\",2]/{\"b\":1,\"a\":\"Ñ\"}///1e+21/1.5e-7/0"
+    },
+    { "event": 4, "title": "{{Nivel}} {} {Nivel {Nivel}}", "out": "{ Alto } {} {Nivel  Alto }" },
+    {
+      "event": 4,
+      "title": "{aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa} {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}",
+      "out": " {aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
+    },
+    {
+      "event": 4,
+      "title": "{😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀} {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}",
+      "out": "  {😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀x}"
+    },
+    {
+      "event": 4,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\ud83d"
+    },
+    {
+      "event": 4,
+      "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀 tail",
+      "out": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀"
+    },
+    { "event": 4, "title": "Línea\n{Nivel}\t$&$1", "out": "Línea\n Alto \t$&$1" },
+    { "event": 4, "title": "{Emoji}{Turco}", "out": "😀xİSTANBUL" }
+  ],
+  "described": [
+    { "event": 0, "out": "CREATE en Alertas AL-1: Alerta creada" },
+    { "event": 1, "out": "CREATE en Alertas" },
+    { "event": 2, "out": "CREATE en Alertas AL-1" },
+    { "event": 3, "out": "CREATE en Automatizaciones AL-1: Alerta creada" },
+    { "event": 4, "out": "UPDATE en InteligenciaDigital AL-1: Alerta creada" },
+    {
+      "event": -1,
+      "detail": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+      "out": "CREATE en Alertas AL-1: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa😀😀😀"
+    }
+  ],
+  "channels": [
+    {
+      "kind": "webhook",
+      "settings": {
+        "url": "https://hooks.example.org/a?b=1#frag",
+        "secret": " aaaaaaaaaaaaaaaaaaaaaaaa "
+      },
+      "out": {
+        "config": {
+          "kind": "webhook",
+          "url": "https://hooks.example.org/a?b=1#frag",
+          "secret": "aaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "targetHint": "hooks.example.org"
+      }
+    },
+    {
+      "kind": "webhook",
+      "settings": {
+        "url": "https://HOOKS.Example.ORG:8443/a/../b",
+        "secret": "aaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "out": {
+        "config": {
+          "kind": "webhook",
+          "url": "https://hooks.example.org:8443/b",
+          "secret": "aaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "targetHint": "hooks.example.org:8443"
+      }
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://hooks.example.org", "secret": "aaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "webhook",
+      "settings": {
+        "url": "https://hooks.example.org",
+        "secret": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "http://hooks.example.org", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "invalid_url"
+    },
+    {
+      "kind": "webhook",
+      "settings": {
+        "url": "https://user:pw@hooks.example.org",
+        "secret": "aaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "out": "invalid_url"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "notaurl", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "invalid_url"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://localhost/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "private_host"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://10.0.0.1/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "private_host"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://[::1]/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "private_host"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://intranet/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "private_host"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://svc.internal/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "private_host"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://100.64.0.1/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": "private_host"
+    },
+    {
+      "kind": "webhook",
+      "settings": { "url": "https://8.8.8.8/x", "secret": "aaaaaaaaaaaaaaaaaaaaaaaa" },
+      "out": {
+        "config": {
+          "kind": "webhook",
+          "url": "https://8.8.8.8/x",
+          "secret": "aaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "targetHint": "8.8.8.8"
+      }
+    },
+    {
+      "kind": "webhook",
+      "settings": {
+        "url": "https://hooks.example.org/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "secret": "aaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "out": "invalid_url"
+    },
+    {
+      "kind": "slack",
+      "settings": { "url": "https://hooks.slack.com/services/T0/B0/xyz" },
+      "out": {
+        "config": { "kind": "slack", "url": "https://hooks.slack.com/services/T0/B0/xyz" },
+        "targetHint": "hooks.slack.com"
+      }
+    },
+    {
+      "kind": "slack",
+      "settings": { "url": "https://evil.example.org/services" },
+      "out": "wrong_host"
+    },
+    {
+      "kind": "discord",
+      "settings": { "url": "https://discord.com/api/webhooks/1/abc" },
+      "out": {
+        "config": { "kind": "discord", "url": "https://discord.com/api/webhooks/1/abc" },
+        "targetHint": "discord.com"
+      }
+    },
+    {
+      "kind": "discord",
+      "settings": { "url": "https://discordapp.com/api/webhooks/1/abc" },
+      "out": {
+        "config": { "kind": "discord", "url": "https://discordapp.com/api/webhooks/1/abc" },
+        "targetHint": "discordapp.com"
+      }
+    },
+    {
+      "kind": "gchat",
+      "settings": { "url": "https://chat.googleapis.com/v1/spaces/x/messages?key=k" },
+      "out": {
+        "config": {
+          "kind": "gchat",
+          "url": "https://chat.googleapis.com/v1/spaces/x/messages?key=k"
+        },
+        "targetHint": "chat.googleapis.com"
+      }
+    },
+    {
+      "kind": "teams",
+      "settings": { "url": "https://prod-00.westus.logic.azure.com/workflows/x" },
+      "out": {
+        "config": { "kind": "teams", "url": "https://prod-00.westus.logic.azure.com/workflows/x" },
+        "targetHint": "prod-00.westus.logic.azure.com"
+      }
+    },
+    {
+      "kind": "telegram",
+      "settings": {
+        "bot_token": "123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "chat_id": "-1001234"
+      },
+      "out": {
+        "config": {
+          "kind": "telegram",
+          "botToken": "123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "chatId": "-1001234"
+        },
+        "targetHint": "chat -1001234"
+      }
+    },
+    {
+      "kind": "telegram",
+      "settings": {
+        "bot_token": "123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "chat_id": "@canal_sipges"
+      },
+      "out": {
+        "config": {
+          "kind": "telegram",
+          "botToken": "123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "chatId": "@canal_sipges"
+        },
+        "targetHint": "chat @canal_sipges"
+      }
+    },
+    {
+      "kind": "telegram",
+      "settings": { "bot_token": "bad", "chat_id": "1" },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "telegram",
+      "settings": { "bot_token": "123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "chat_id": "@abc" },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "email",
+      "settings": {
+        "api_key": "re_aaaaaaaaaaaa",
+        "from": "SIPGES <avisos@example.org>",
+        "to": "uno@example.org, dos@example.org"
+      },
+      "out": {
+        "config": {
+          "kind": "email",
+          "apiKey": "re_aaaaaaaaaaaa",
+          "from": "SIPGES <avisos@example.org>",
+          "to": ["uno@example.org", "dos@example.org"]
+        },
+        "targetHint": "un…@example.org y 1 más"
+      }
+    },
+    {
+      "kind": "email",
+      "settings": {
+        "api_key": "re_aaaaaaaaaaaa",
+        "from": "avisos@example.org",
+        "to": ["uno@example.org"]
+      },
+      "out": {
+        "config": {
+          "kind": "email",
+          "apiKey": "re_aaaaaaaaaaaa",
+          "from": "avisos@example.org",
+          "to": ["uno@example.org"]
+        },
+        "targetHint": "un…@example.org"
+      }
+    },
+    {
+      "kind": "email",
+      "settings": { "api_key": "re_aaaaaaaaaaaa", "from": "avisos@example.org", "to": ["x"] },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "email",
+      "settings": { "api_key": "sk_x", "from": "avisos@example.org", "to": ["uno@example.org"] },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "email",
+      "settings": { "api_key": "re_aaaaaaaaaaaa", "from": "avisos@example.org", "to": "" },
+      "out": "invalid_settings"
+    },
+    {
+      "kind": "email",
+      "settings": {
+        "api_key": "re_aaaaaaaaaaaa",
+        "from": "avisos@example.org",
+        "to": [" ", "tres@example.org"]
+      },
+      "out": {
+        "config": {
+          "kind": "email",
+          "apiKey": "re_aaaaaaaaaaaa",
+          "from": "avisos@example.org",
+          "to": ["tres@example.org"]
+        },
+        "targetHint": "tr…@example.org"
+      }
+    }
+  ],
+  "private_hosts": [
+    { "host": "localhost", "private": true },
+    { "host": "a.localhost", "private": true },
+    { "host": "x.local", "private": true },
+    { "host": "x.internal", "private": true },
+    { "host": "127.0.0.1", "private": true },
+    { "host": "172.16.0.1", "private": true },
+    { "host": "172.32.0.1", "private": false },
+    { "host": "192.168.1.1", "private": true },
+    { "host": "169.254.1.1", "private": true },
+    { "host": "0.1.2.3", "private": true },
+    { "host": "100.127.255.255", "private": true },
+    { "host": "100.128.0.1", "private": false },
+    { "host": "[::1]", "private": true },
+    { "host": "::", "private": true },
+    { "host": "fc00::1", "private": true },
+    { "host": "fe80::1", "private": true },
+    { "host": "feb0::1", "private": true },
+    { "host": "fec0::1", "private": false },
+    { "host": "::ffff:1.2.3.4", "private": true },
+    { "host": "2001:db8::1", "private": false },
+    { "host": "example", "private": true },
+    { "host": "example.org", "private": false },
+    { "host": "EXAMPLE.LOCAL", "private": true },
+    { "host": "999.1.1.1", "private": false }
+  ],
+  "message": {
+    "id": "msg_SIPGES_PRJ_SECHURA_42",
+    "title": "Aviso <Alertas> & \"equipo\"",
+    "text": "CREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀",
+    "tenantId": "SIPGES/PRJ-SECHURA",
+    "at": "2026-10-01T10:00:00.999Z",
+    "event": {
+      "type": "sipges.alertas.create",
+      "tenant": "SIPGES/PRJ-SECHURA",
+      "audit_id": 7,
+      "at": "2026-10-01T10:00:00.250Z",
+      "module": "Alertas",
+      "record_id": "AL-1",
+      "action": "CREATE",
+      "detail": "Alerta creada",
+      "marking": "interno",
+      "record": { "2": [1.5, null, true], "10": "x", "b": 1, "a": "Ñ" }
+    }
+  },
+  "long_message": {
+    "title": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "text": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"
+  },
+  "configs": [
+    {
+      "kind": "webhook",
+      "url": "https://hooks.example.org/a",
+      "secret": "ssssssssssssssssssssssss"
+    },
+    { "kind": "slack", "url": "https://hooks.slack.com/services/x" },
+    { "kind": "discord", "url": "https://discord.com/api/webhooks/1/x" },
+    { "kind": "gchat", "url": "https://chat.googleapis.com/v1/x" },
+    { "kind": "teams", "url": "https://prod.logic.azure.com/x" },
+    {
+      "kind": "telegram",
+      "botToken": "123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "chatId": "-100"
+    },
+    {
+      "kind": "email",
+      "apiKey": "re_aaaaaaaaaaaa",
+      "from": "avisos@example.org",
+      "to": ["uno@example.org", "dos@example.org"]
+    }
+  ],
+  "requests": [
+    {
+      "config": 0,
+      "long": false,
+      "url": "https://hooks.example.org/a",
+      "headers": {
+        "content-type": "application/json",
+        "user-agent": "SIPGES-Automation/1",
+        "webhook-id": "msg_SIPGES_PRJ_SECHURA_42",
+        "webhook-timestamp": "1790848800",
+        "webhook-signature": "v1,hYtf5MdnGFup6/e+hx6PXuYhC7fStu3cSmHUZMsKMXc="
+      },
+      "body": "{\"id\":\"msg_SIPGES_PRJ_SECHURA_42\",\"title\":\"Aviso <Alertas> & \\\"equipo\\\"\",\"text\":\"CREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\",\"type\":\"sipges.alertas.create\",\"tenant\":\"SIPGES/PRJ-SECHURA\",\"audit_id\":7,\"at\":\"2026-10-01T10:00:00.250Z\",\"module\":\"Alertas\",\"record_id\":\"AL-1\",\"action\":\"CREATE\",\"detail\":\"Alerta creada\",\"marking\":\"interno\",\"record\":{\"2\":[1.5,null,true],\"10\":\"x\",\"b\":1,\"a\":\"Ñ\"}}"
+    },
+    {
+      "config": 1,
+      "long": false,
+      "url": "https://hooks.slack.com/services/x",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"text\":\"*Aviso <Alertas> & \\\"equipo\\\"*\\nCREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\"}"
+    },
+    {
+      "config": 2,
+      "long": false,
+      "url": "https://discord.com/api/webhooks/1/x",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"content\":\"Aviso <Alertas> & \\\"equipo\\\"\\nCREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\",\"allowed_mentions\":{\"parse\":[]}}"
+    },
+    {
+      "config": 3,
+      "long": false,
+      "url": "https://chat.googleapis.com/v1/x",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"text\":\"Aviso <Alertas> & \\\"equipo\\\"\\nCREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\"}"
+    },
+    {
+      "config": 4,
+      "long": false,
+      "url": "https://prod.logic.azure.com/x",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"type\":\"message\",\"attachments\":[{\"contentType\":\"application/vnd.microsoft.card.adaptive\",\"content\":{\"$schema\":\"http://adaptivecards.io/schemas/adaptive-card.json\",\"type\":\"AdaptiveCard\",\"version\":\"1.4\",\"body\":[{\"type\":\"TextBlock\",\"text\":\"Aviso <Alertas> & \\\"equipo\\\"\",\"weight\":\"Bolder\",\"wrap\":true},{\"type\":\"TextBlock\",\"text\":\"CREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\",\"wrap\":true}]}}]}"
+    },
+    {
+      "config": 5,
+      "long": false,
+      "url": "https://api.telegram.org/bot123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sendMessage",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"chat_id\":\"-100\",\"text\":\"Aviso <Alertas> & \\\"equipo\\\"\\nCREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\",\"disable_web_page_preview\":true}"
+    },
+    {
+      "config": 6,
+      "long": false,
+      "url": "https://api.resend.com/emails",
+      "headers": {
+        "content-type": "application/json",
+        "user-agent": "SIPGES-Automation/1",
+        "authorization": "Bearer re_aaaaaaaaaaaa",
+        "idempotency-key": "msg_SIPGES_PRJ_SECHURA_42"
+      },
+      "body": "{\"from\":\"avisos@example.org\",\"to\":[\"uno@example.org\",\"dos@example.org\"],\"subject\":\"Aviso <Alertas> & \\\"equipo\\\"\",\"text\":\"CREATE en Alertas AL-1: Línea dos 😀😀😀😀😀😀😀😀😀😀\\n\\n— Automatización de SIPGES\"}"
+    },
+    {
+      "config": 2,
+      "long": true,
+      "url": "https://discord.com/api/webhooks/1/x",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"content\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n😀😀😀😀\\ud83d\",\"allowed_mentions\":{\"parse\":[]}}"
+    },
+    {
+      "config": 5,
+      "long": true,
+      "url": "https://api.telegram.org/bot123456:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/sendMessage",
+      "headers": { "content-type": "application/json", "user-agent": "SIPGES-Automation/1" },
+      "body": "{\"chat_id\":\"-100\",\"text\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\\ud83d\",\"disable_web_page_preview\":true}"
+    }
+  ]
+}
