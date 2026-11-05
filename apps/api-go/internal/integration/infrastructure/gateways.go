@@ -68,7 +68,8 @@ const (
 
 func feedError(code string) error { return &domain.FeedError{Code: code} }
 
-var legacyEncoding = regexp.MustCompile(`encoding=["']((?i:iso-8859-1|latin1|windows-1252))["']`)
+// legacyEncoding is /encoding=["'](iso-8859-1|latin1|windows-1252)["']/i, ASCII case-insensitive.
+var legacyEncoding = regexp.MustCompile(`[eE][nN][cC][oO][dD][iI][nN][gG]=["']((?i:iso-8859-1|latin1|windows-1252))["']`)
 
 // Read is gateway.read: the feed's items or a *domain.FeedError.
 func (g RSS) Read(ctx context.Context, url string) ([]domain.FeedItem, error) {
@@ -275,7 +276,10 @@ func (o Official) read(ctx context.Context, pairs ...string) ([]domain.OfficialP
 		maxBytes = officialMaxBytes
 	}
 	if client == nil {
-		client = &http.Client{Transport: &http.Transport{Proxy: nil, ForceAttemptHTTP2: true}}
+		// One connection per read, closed with it: nothing idles between polls.
+		transport := &http.Transport{Proxy: nil, ForceAttemptHTTP2: true, DisableKeepAlives: true}
+		defer transport.CloseIdleConnections()
+		client = &http.Client{Transport: transport}
 	}
 	// redirect: 'error': any redirect fails the request.
 	strict := *client

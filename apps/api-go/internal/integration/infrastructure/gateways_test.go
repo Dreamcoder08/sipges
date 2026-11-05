@@ -310,3 +310,11 @@ func TestRSSGatewayConnectsOnlyToCheckedPublicAddresses(t *testing.T) {
 		t.Errorf("%v, want feed_blocked_address", err)
 	}
 }
+
+func TestLegacyEncodingIgnoresCaseLikeTheRegExpFlag(t *testing.T) {
+	for _, head := range []string{`<?xml ENCODING="ISO-8859-1"?>`, `<?xml Encoding='latin1'?>`, `<?xml encoding="Windows-1252"?>`} {
+		if got := decodeFeed([]byte(head + "\xe9")); !strings.HasSuffix(got, "é") {
+			t.Errorf("%s: %q, want windows-1252", head, got)
+		}
+	}
+}
