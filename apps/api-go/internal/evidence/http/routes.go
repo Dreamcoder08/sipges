@@ -1,9 +1,10 @@
-// Package http serves the metadata read routes of
-// apps/api/src/contexts/evidence/http/evidence-routes.ts with the same JSON: GET /system/uploads
-// and GET /system/uploads/{id}. The session, project scope and role gate ran before
-// (internal/app); every read is one tenant transaction of the request (WithRequestTenant), so
-// row-level security decides which attachments exist. POST /system/uploads and the preview and
-// download routes read or write file bytes in object storage and stay in TypeScript.
+// Package http serves the routes of apps/api/src/contexts/evidence/http/evidence-routes.ts with
+// the same status, headers and JSON: the metadata reads (GET /system/uploads and
+// GET /system/uploads/{id}) and the file routes (POST /system/uploads,
+// GET /system/uploads/{id}/download and /preview, files.go). The session, Origin, project scope
+// and role gate ran before (internal/app); every database step is one tenant transaction of the
+// request (WithRequestTenant), so row-level security decides which records and attachments
+// exist.
 package http
 
 import (
@@ -31,12 +32,25 @@ import (
 type Deps struct {
 	DB     database.Beginner
 	Logger *slog.Logger
+	// Storage holds the file bytes (R2 through its S3 API, a local directory, or a fake).
+	Storage application.ObjectStorage
+	// MaxUploadBytes is SIPGES_MAX_UPLOAD_BYTES.
+	MaxUploadBytes int
+	// Text reads PDF and DOCX for the preview; nil answers 501 for those formats.
+	Text application.TextExtractor
+	// Now is the clock of new uploads; nil means time.Now.
+	Now func() time.Time
+	// RandomHex makes attachment ids and object keys; nil means crypto/rand.
+	RandomHex func(n int) (string, error)
 }
 
-// Register adds the evidence read routes to mux.
+// Register adds the evidence routes to mux.
 func Register(mux *http.ServeMux, deps Deps) {
 	mux.HandleFunc("GET /system/uploads", listHandler(deps))
 	mux.HandleFunc("GET /system/uploads/{id}", getHandler(deps))
+	mux.HandleFunc("POST /system/uploads", uploadHandler(deps))
+	mux.HandleFunc("GET /system/uploads/{id}/download", downloadHandler(deps))
+	mux.HandleFunc("GET /system/uploads/{id}/preview", previewHandler(deps))
 }
 
 // requestStore is the SQL store bound to one request's tenant transaction.
@@ -109,7 +123,7 @@ func listHandler(deps Deps) http.HandlerFunc {
 			Limit:          limit,
 		})
 		if err != nil {
-			internalError(w, r, deps.Logger)
+			internalError(w, r, deps.Logger, "evidence read failed")
 			return
 		}
 		out := make([]attachmentJSON, 0, len(rows))
@@ -125,7 +139,7 @@ func getHandler(deps Deps) http.HandlerFunc {
 		a, err := service(r, deps).Get(r.Context(), httpx.PathParam(r, "id"))
 		switch {
 		case err != nil:
-			internalError(w, r, deps.Logger)
+			internalError(w, r, deps.Logger, "evidence read failed")
 		case a == nil:
 			writeJSON(w, http.StatusNotFound, notFound)
 		default:
@@ -145,9 +159,9 @@ func query(r *http.Request, name string) *string {
 
 // internalError is the TypeScript API's onError 500; only the event is logged, since driver
 // errors may carry connection details.
-func internalError(w http.ResponseWriter, r *http.Request, log *slog.Logger) {
+func internalError(w http.ResponseWriter, r *http.Request, log *slog.Logger, event string) {
 	if log != nil {
-		log.LogAttrs(r.Context(), slog.LevelError, "evidence read failed",
+		log.LogAttrs(r.Context(), slog.LevelError, event,
 			slog.String("request_id", httpx.RequestIDFrom(r.Context())))
 	}
 	httpx.WriteError(w, http.StatusInternalServerError, "Internal Server Error")
