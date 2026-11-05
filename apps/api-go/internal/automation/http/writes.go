@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/application"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
@@ -145,7 +146,9 @@ func WriteRoutes(mux *http.ServeMux, opts WriteOptions) {
 			writeDetail(w, http.StatusUnauthorized, "Credencial de cron no válida")
 			return
 		}
-		report, err := opts.Runtime.Scheduled(workerContext(r.Context()))
+		ctx, cancel := detached(workerContext(r.Context()))
+		defer cancel()
+		report, err := opts.Runtime.Scheduled(ctx)
 		if err != nil {
 			fail(w, r, err)
 			return
@@ -281,7 +284,9 @@ func WriteRoutes(mux *http.ServeMux, opts WriteOptions) {
 		if !ok {
 			return
 		}
-		report, err := opts.Service.Tick(r.Context(), tenant)
+		ctx, cancel := detached(r.Context())
+		defer cancel()
+		report, err := opts.Service.Tick(ctx, tenant)
 		if err != nil {
 			fail(w, r, err)
 			return
@@ -309,6 +314,17 @@ func WriteRoutes(mux *http.ServeMux, opts WriteOptions) {
 		}
 		httpx.WriteJSONText(w, http.StatusOK, okOnly{OK: true})
 	})
+}
+
+// TickTimeout bounds a tick a request runs (the cron, POST /system/automations/tick).
+const TickTimeout = 5 * time.Minute
+
+// detached keeps ctx's values (actor, request id) without its cancellation: a client that
+// disconnects mid-tick must not stop it between a channel send and the run's bookkeeping, which
+// would resend the message after the lease. On Node a client abort does not cancel the tick
+// either.
+func detached(ctx context.Context) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(ctx), TickTimeout)
 }
 
 // workerContext is the context the scheduler's ticks run in: the request's cancellation, the
