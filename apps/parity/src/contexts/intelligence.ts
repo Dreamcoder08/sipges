@@ -332,7 +332,7 @@ const alertCases: ParityCase[] = [
   alert('several invalid fields', { text: 1, mode: 2, territory: 3 }),
   alert('project_id of another project', { text: 'Texto', project_id: 'PRJ-B' }),
   raw('alert not JSON', 'POST', LIST, '{'),
-  ...refusals('alert', 'POST', LIST, { text: 'Texto', mode: 'rules' }),
+  ...refusals('new alert', 'POST', LIST, { text: 'Texto', mode: 'rules' }),
 ];
 
 const writeCases: ParityCase[] = [

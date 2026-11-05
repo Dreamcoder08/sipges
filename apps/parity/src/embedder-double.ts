@@ -7,10 +7,13 @@ const DIMENSIONS = 16;
 /** A text containing this makes the double fail, so both APIs take their fallback path. */
 export const EMBEDDER_DOWN = 'PARITY-EMBEDDER-DOWN';
 
-/** Counts each code point in one of 16 buckets: the same text always gets the same vector. */
+/**
+ * Counts each code point in one of 16 buckets: the same text always gets the same vector. The
+ * tokens of a `perApi` case are left out, so both APIs' copies of a text rank the same.
+ */
 export const vectorOf = (text: string) => {
   const vector = new Array<number>(DIMENSIONS).fill(0);
-  for (const char of text) {
+  for (const char of text.replace(/TSAPI|GOAPI/g, '')) {
     const bucket = (char.codePointAt(0) ?? 0) % DIMENSIONS;
     vector[bucket] = (vector[bucket] ?? 0) + 1;
   }
