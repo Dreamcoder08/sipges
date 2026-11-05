@@ -46,6 +46,9 @@ func init() {
 			intelligencehttp.WriteRoutes(mux, writes, d.Logger)
 			semantic.Text = writes
 			intelligencehttp.SemanticRoute(mux, semantic, d.Logger)
+			intelligencehttp.AlertRoute(mux, intelligence.AlertCreation{
+				Semantic: semantic, Store: intelligencesql.Alerts{DB: d.Pool}, Now: d.Now, RandomHex: randomHexUpper,
+			}, d.Logger)
 		}, nil
 	})
 }

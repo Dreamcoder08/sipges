@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"unicode/utf8"
 )
 
@@ -34,6 +35,10 @@ type field struct {
 	name     string
 	kind     fieldKind
 	optional bool
+	// nullable is .nullable(): JSON null passes.
+	nullable bool
+	// maxCodePoints is .max(n) on a string, which Zod counts in code points; 0 is no limit.
+	maxCodePoints int
 }
 
 // body is a parsed JSON object: each key's raw JSON value (the last duplicate wins, as
@@ -92,6 +97,9 @@ func parseBody(w http.ResponseWriter, r *http.Request, fields []field) (body, bo
 		}
 		got := jsonType(value)
 		switch {
+		case f.nullable && got == "null":
+		case f.kind == stringField && got == "string" && tooLong(value, f.maxCodePoints):
+			found = append(found, issue{Type: "too_big", Loc: []any{"body", f.name}, Msg: "Too big: expected string to have <=" + strconv.Itoa(f.maxCodePoints) + " characters"})
 		case f.kind == stringField && got != "string":
 			found = append(found, issue{Type: "invalid_type", Loc: []any{"body", f.name}, Msg: "Invalid input: expected string, received " + got})
 		case f.kind == recordField && got != "object":
@@ -103,6 +111,16 @@ func parseBody(w http.ResponseWriter, r *http.Request, fields []field) (body, bo
 		return nil, false
 	}
 	return parsed, true
+}
+
+// tooLong says the JSON string raw holds more than limit code points; a limit of 0 is none.
+func tooLong(raw json.RawMessage, limit int) bool {
+	if limit == 0 {
+		return false
+	}
+	var s string
+	_ = json.Unmarshal(raw, &s) // the caller checked it is a JSON string
+	return utf8.RuneCountInString(s) > limit
 }
 
 // validJSON is whether JSON.parse reads raw: one JSON value and nothing after it.
