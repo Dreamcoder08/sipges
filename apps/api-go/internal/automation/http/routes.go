@@ -108,7 +108,7 @@ func respond(w http.ResponseWriter, r *http.Request, log *slog.Logger, body any,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(b) //nolint:gosec // G705: JSON served as application/json, never read as HTML
+	_, _ = w.Write(b)
 }
 
 // validationIssue is ValidationIssue of apps/api/src/platform/http/validation.ts.
