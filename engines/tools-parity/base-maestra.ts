@@ -34,7 +34,6 @@ const MIXED = `{
   ],
   "Hechos_Compartidos": [
     {"Asunto": "hecho", "Estado": "pendiente"},
-    {"Estado": "pendiente", "Asunto": "hecho"},
     {"Asunto": "otro", "Lista": [{"y": 1, "x": 2}, null, true, false, "texto"]}
   ],
   "Buzon": [{"ID_Caso": "BZ-NO-SE-USA", "Asunto": "Buzón usa hash"}],
@@ -51,7 +50,8 @@ const PROBLEMS = `{
   "Desconocido": [],
   "Actores": {},
   "Fuentes": [{"ID_Fuente": 1e400}],
-  "Indicadores": [{"Codigo": "IND-1", "Valor": 3}]
+  "Indicadores": [{"Codigo": "IND-1", "Valor": 3}],
+  "Hechos_Compartidos": [{"Asunto": "hecho", "Estado": "pendiente"}, {"Estado": "pendiente", "Asunto": "hecho"}]
 }`;
 
 const large = () => {
@@ -101,6 +101,11 @@ const files = {
   bom: write('bom.json', '﻿{}'),
   latin1: write('latin1.json', Buffer.from([0x7b, 0x22, 0x48, 0x65, 0x63, 0x68, 0x6f, 0x73, 0x5f, 0x43, 0x6f, 0x6d, 0x70, 0x61, 0x72, 0x74, 0x69, 0x64, 0x6f, 0x73, 0x22, 0x3a, 0x5b, 0x7b, 0x22, 0x41, 0x22, 0x3a, 0x22, 0xf1, 0x22, 0x7d, 0x5d, 0x7d])),
   empty: write('empty.json', '{}'),
+  // Verifier reproducers: TypeScript's recursive hasNul overflows (RangeError, nothing written);
+  // an unknown module is never walked; Zod drops a top-level __proto__ before the NUL check.
+  deep: write('deep.json', `{"Intereses":[{"x":${'['.repeat(5000)}1${']'.repeat(5000)}}]}`),
+  deepUnknown: write('deep-unknown.json', `{"Otro":[${'['.repeat(90000)}${']'.repeat(90000)}],"Eventos":[{"ID_Evento":"E-HONDO"}]}`),
+  protoNul: write('proto-nul.json', '{"Actores":[{"ID_Actor":"A9"}],"Eventos":[{"__proto__":"a\\u0000b"}]}'),
 };
 
 const scenarios: Scenario[] = [
@@ -129,6 +134,10 @@ const scenarios: Scenario[] = [
       { args: ['--seed', files.mixed, '--apply'] },
       { args: ['--seed', files.mixed, '--scope=SYN/PRJ-B', '--apply'] },
       { args: ['--seed', files.latin1, '--apply'] },
+      { args: ['--seed', files.deep, '--apply'] },
+      { args: ['--seed', files.deepUnknown, '--apply'] },
+      { args: ['--seed', files.protoNul] },
+      { args: ['--seed', files.protoNul, '--apply'] },
     ],
   },
   {

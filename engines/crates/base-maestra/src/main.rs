@@ -37,7 +37,19 @@ fn basename(path: &str) -> &str {
     trimmed.rsplit('/').next().unwrap_or(trimmed)
 }
 
+/// Stack for the parser's recursion (JSON nested up to 100,000 levels).
+const STACK_BYTES: usize = 512 * 1024 * 1024;
+
 fn main() -> ExitCode {
+    std::thread::Builder::new()
+        .stack_size(STACK_BYTES)
+        .spawn(run_cli)
+        .ok()
+        .and_then(|handle| handle.join().ok())
+        .unwrap_or_else(|| fail("Error"))
+}
+
+fn run_cli() -> ExitCode {
     let options = [
         ("seed", Kind::String),
         ("scope", Kind::String),

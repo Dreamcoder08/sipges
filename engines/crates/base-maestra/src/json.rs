@@ -87,6 +87,8 @@ impl Parser<'_> {
             b'{' => {
                 self.at += 1;
                 let mut entries: Vec<(String, Json)> = Vec::new();
+                let mut positions: std::collections::HashMap<String, usize> =
+                    std::collections::HashMap::new();
                 self.skip_ws();
                 if self.peek() == Some(b'}') {
                     self.at += 1;
@@ -104,9 +106,11 @@ impl Parser<'_> {
                     }
                     self.at += 1;
                     let value = self.value(depth + 1)?;
-                    match entries.iter_mut().find(|(k, _)| *k == key) {
-                        Some(slot) => slot.1 = value,
-                        None => entries.push((key, value)),
+                    if let Some(slot) = positions.get(&key).and_then(|&at| entries.get_mut(at)) {
+                        slot.1 = value;
+                    } else {
+                        positions.insert(key.clone(), entries.len());
+                        entries.push((key, value));
                     }
                     self.skip_ws();
                     match self.peek() {
