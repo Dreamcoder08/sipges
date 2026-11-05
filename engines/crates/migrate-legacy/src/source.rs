@@ -486,6 +486,188 @@ impl Source {
 mod tests {
     use super::*;
 
+    use crate::json::units;
+    use std::os::unix::fs::symlink;
+    use std::path::PathBuf;
+
+    /// A legacy installation in the system temp directory, removed on drop.
+    struct Install {
+        root: PathBuf,
+    }
+
+    impl Drop for Install {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    impl Install {
+        fn new(name: &str) -> Option<Self> {
+            let root = std::env::temp_dir().join(format!(
+                "sipges-migrate-legacy-{}-{name}",
+                std::process::id()
+            ));
+            let install = Self { root };
+            fs::create_dir_all(install.path("data/uploads")).ok()?;
+            fs::create_dir_all(install.path("data/tenants")).ok()?;
+            for db in ["data/auth_global.db", "data/sipges.db"] {
+                Connection::open(install.path(db)).ok()?;
+            }
+            Some(install)
+        }
+
+        fn path(&self, relative: &str) -> PathBuf {
+            self.root.join(relative)
+        }
+
+        fn write(&self, relative: &str, content: &str) -> Option<()> {
+            let path = self.path(relative);
+            fs::create_dir_all(path.parent()?).ok()?;
+            fs::write(path, content).ok()
+        }
+
+        fn source(&self) -> Option<Source> {
+            let root = self.root.to_string_lossy();
+            Source::open(legacy_layout(&root, Overrides::default()).ok()?).ok()
+        }
+
+        fn tenant(&self, scope: &Scope) -> Option<TenantReader> {
+            self.source()?.open_tenant(scope).ok()
+        }
+    }
+
+    fn scope(company: &str, project: &str) -> Scope {
+        Scope {
+            company: company.to_owned(),
+            project: project.to_owned(),
+            label: String::new(),
+        }
+    }
+
+    fn default_scope() -> Scope {
+        scope(DEFAULT_COMPANY, DEFAULT_PROJECT)
+    }
+
+    #[test]
+    fn read_object_stays_inside_the_tenants_root() -> Result<(), &'static str> {
+        let install = Install::new("read-object").ok_or("install")?;
+        install
+            .write("data/uploads/abc_a.txt", "bytes")
+            .ok_or("write")?;
+        install.write("data/uploads/vacio.txt", "").ok_or("write")?;
+        install.write("data/fuera.txt", "fuera").ok_or("write")?;
+        let digest = scope_digest("A/B");
+        install
+            .write(&format!("data/uploads/{digest}/ajeno.txt"), "ajeno")
+            .ok_or("write")?;
+        fs::create_dir(install.path("data/uploads/carpeta")).map_err(|_| "dir")?;
+        symlink(
+            install.path("data/fuera.txt"),
+            install.path("data/uploads/enlace.txt"),
+        )
+        .map_err(|_| "symlink")?;
+        let reader = install.tenant(&default_scope()).ok_or("tenant")?;
+
+        assert_eq!(reader.read_object("abc_a.txt"), Some(b"bytes".to_vec()));
+        assert_eq!(reader.read_object("vacio.txt"), Some(Vec::new()));
+        for refused in [
+            "no-esta.txt",
+            "enlace.txt",
+            "carpeta",
+            "../fuera.txt",
+            "..",
+            ".",
+            "",
+            "a\\b",
+            "a\0",
+            "/etc/hostname",
+        ] {
+            assert_eq!(reader.read_object(refused), None, "{refused:?}");
+        }
+        // The default scope's root holds every other tenant's folder.
+        let foreign = format!("{digest}/ajeno.txt");
+        assert_eq!(reader.read_object(&foreign), None);
+        Ok(())
+    }
+
+    #[test]
+    fn read_object_reads_only_a_tenants_own_folder() -> Result<(), &'static str> {
+        let install = Install::new("own-folder").ok_or("install")?;
+        let digest = scope_digest("A/B");
+        Connection::open(install.path(&format!("data/tenants/{digest}.db"))).map_err(|_| "db")?;
+        install
+            .write(&format!("data/uploads/{digest}/propio.txt"), "propio")
+            .ok_or("write")?;
+        install
+            .write("data/uploads/del-defecto.txt", "ajeno")
+            .ok_or("write")?;
+        let reader = install.tenant(&scope("A", "B")).ok_or("tenant")?;
+        assert_eq!(reader.read_object("propio.txt"), Some(b"propio".to_vec()));
+        assert_eq!(reader.read_object("del-defecto.txt"), None);
+        Ok(())
+    }
+
+    #[test]
+    fn a_tenant_without_a_database_reads_nothing() -> Result<(), &'static str> {
+        let install = Install::new("no-database").ok_or("install")?;
+        let digest = scope_digest("A/B");
+        install
+            .write(&format!("data/uploads/{digest}/x.txt"), "x")
+            .ok_or("write")?;
+        let reader = install.tenant(&scope("A", "B")).ok_or("tenant")?;
+        assert!(!reader.present());
+        assert_eq!(reader.read_object("x.txt"), None);
+        assert_eq!(reader.records().map(|rows| rows.len()), Ok(0));
+        Ok(())
+    }
+
+    fn object(key: &str, value: f64) -> IrsaConfig {
+        IrsaConfig::Object(Json::Obj(vec![(units(key), Json::Num(value))]))
+    }
+
+    #[test]
+    fn irsa_config_reads_each_state() -> Result<(), &'static str> {
+        let install = Install::new("irsa").ok_or("install")?;
+        let other = scope("A", "B");
+        let settings = format!(
+            "data/tenants/{}_settings/irsa_config.json",
+            scope_digest("A/B")
+        );
+        let default_file = "data/irsa_config.json";
+
+        let read = |who: &Scope| install.tenant(who).map(|reader| reader.irsa_config());
+        assert_eq!(read(&default_scope()), Some((IrsaConfig::Absent, false)));
+        assert_eq!(read(&other), Some((IrsaConfig::Absent, false)));
+
+        install.write(default_file, "{\"v\":1}").ok_or("write")?;
+        assert_eq!(read(&default_scope()), Some((object("v", 1.0), false)));
+        assert_eq!(read(&other), Some((object("v", 1.0), true)));
+
+        install.write(&settings, "{\"v\":2}").ok_or("write")?;
+        assert_eq!(read(&other), Some((object("v", 2.0), false)));
+
+        for invalid in ["{mal", "[1]", "null", "\u{feff}{}"] {
+            install.write(&settings, invalid).ok_or("write")?;
+            assert_eq!(
+                read(&other),
+                Some((IrsaConfig::Invalid, false)),
+                "{invalid}"
+            );
+        }
+        let deep = format!("{{\"x\":{}1{}}}", "[".repeat(1001), "]".repeat(1001));
+        install.write(&settings, &deep).ok_or("write")?;
+        assert_eq!(read(&other), Some((IrsaConfig::TooDeep, false)));
+        fs::remove_file(install.path(&settings)).map_err(|_| "remove")?;
+        fs::create_dir(install.path(&settings)).map_err(|_| "dir")?;
+        assert_eq!(read(&other), Some((IrsaConfig::Invalid, false)));
+        fs::remove_dir(install.path(&settings)).map_err(|_| "remove")?;
+
+        // An invalid default still counts as inherited: the scope has no file of its own.
+        install.write(default_file, "{mal").ok_or("write")?;
+        assert_eq!(read(&other), Some((IrsaConfig::Invalid, true)));
+        Ok(())
+    }
+
     #[test]
     fn refuses_integers_javascript_cannot_hold() {
         let read = |n: i64| {

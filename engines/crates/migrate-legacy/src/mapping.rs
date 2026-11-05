@@ -1123,6 +1123,342 @@ mod tests {
         }
     }
 
+    const NOW: &str = "2026-10-01T09:00:00";
+
+    fn sha() -> String {
+        "a".repeat(64)
+    }
+
+    /// `base` with `overrides` replacing or adding columns.
+    fn with(base: &[(&'static str, Legacy)], overrides: &[(&'static str, Legacy)]) -> Row {
+        let mut columns: Vec<(&str, Legacy)> = base.to_vec();
+        for (name, value) in overrides {
+            columns.retain(|(known, _)| known != name);
+            columns.push((name, value.clone()));
+        }
+        make(&columns)
+    }
+
+    fn record_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("module", s("Eventos")),
+            ("record_id", s("EV-1")),
+            ("payload", s("{\"b\":1,\"a\":[2,\"ñ\"]}")),
+            ("created_at", s(NOW)),
+            ("updated_at", Legacy::Num(1_790_000_000.5)),
+        ]
+    }
+
+    fn audit_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("ts", s(NOW)),
+            ("module", s("M")),
+            ("action", s("X")),
+            ("detail", s("d")),
+        ]
+    }
+
+    fn snapshot_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("ts", s(NOW)),
+            ("irsa", Legacy::Num(42.5)),
+            ("level", s("A")),
+            ("scores", s("{\"z\":1,\"a\":2}")),
+            ("note", s("n")),
+        ]
+    }
+
+    fn attachment_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("id", s("ADJ")),
+            ("stored_name", s("a b.txt")),
+            ("size_bytes", Legacy::Num(3.0)),
+            ("linked_module", s(" EVENTOS ")),
+            ("linked_record_id", s("EV-1")),
+            ("created_at", s(NOW)),
+        ]
+    }
+
+    fn review_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("id", s("D")),
+            ("source_sha256", s(&sha())),
+            ("status", s("pendiente")),
+            ("created_at", s(NOW)),
+            ("updated_at", s(NOW)),
+        ]
+    }
+
+    fn alert_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("id", s("AL")),
+            ("created_at", s(NOW)),
+            ("status", s("Corroborado")),
+            ("sha256", s(&sha())),
+            ("score", Legacy::Num(45.9)),
+            ("themes_json", s("[]")),
+            ("signals_json", s("null")),
+            ("suggestions_json", s("{\"k\":1}")),
+            ("semantic_active", Legacy::Num(1.0)),
+            ("reviewed_at", s(NOW)),
+        ]
+    }
+
+    fn action_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("id", s("ACC")),
+            ("alert_id", s("AL")),
+            ("due_date", s("2026-11-15")),
+            ("status", s("Pendiente")),
+            ("progress", Legacy::Num(40.0)),
+            ("created_at", s(NOW)),
+            ("updated_at", s(NOW)),
+        ]
+    }
+
+    fn log_row() -> Vec<(&'static str, Legacy)> {
+        vec![
+            ("id", s("L")),
+            ("action_id", s("ACC")),
+            ("created_at", s(NOW)),
+            ("status", s("x")),
+            ("progress", Legacy::Num(1.0)),
+        ]
+    }
+
+    #[test]
+    fn fingerprints_match_typescript() {
+        // Observed with Node: sha256(rowFingerprint.<table>(map<Table>(row))) on these rows, which
+        // leave optional columns out, so the defaults are pinned too.
+        let hash = |fingerprint: String| sha256_hex(fingerprint.as_bytes());
+        let fingerprints = [
+            map_record(&make(&record_row())).map(|r| fingerprint_record(&r)),
+            map_audit(&make(&audit_row())).map(|a| fingerprint_audit(&a)),
+            map_snapshot(&make(&snapshot_row())).map(|x| fingerprint_snapshot(&x)),
+            map_attachment(&make(&attachment_row()), "A/B").map(|a| fingerprint_attachment(&a)),
+            map_document_review(&make(&review_row())).map(|r| fingerprint_review(&r)),
+            map_alert(&make(&alert_row())).map(|a| fingerprint_alert(&a)),
+            map_action(&make(&action_row())).map(|a| fingerprint_action(&a)),
+            map_action_log(&make(&log_row())).map(|l| fingerprint_action_log(&l)),
+        ];
+        let expected = [
+            "779fabb14144d7821e27fde442616bfb2c0c92c81ef0db5a1c9456ae63ee3bc8",
+            "dc84d6c46e4af3ea29b7a1c67022e4c869add77169e43d869d46e0204230ce8e",
+            "2ae10d80334e5f312cdc457f8aca783bb4d2c5b2dd146769c69783a8d19e314b",
+            "8355621b330584e509509138326360ab7f385305396470be73af9f464b416899",
+            "135e30b1c3afd728ee667b8bf23a406348a8713c9f8e63a5ce35a3b6d5e277fb",
+            "255870f8b5d4fca75496dbde698a0e0e611882a14a9bedc36bc56626336af63a",
+            "360c8d2934505504e97788756b89919a348dd83eb67d7e547fc8335862816b05",
+            "9303f2721c9b31f142febfc34becc93ac321e3b5d008c44898b1fd807324dffd",
+        ];
+        for (fingerprint, expected) in fingerprints.into_iter().zip(expected) {
+            assert_eq!(fingerprint.map(hash).as_deref(), Ok(expected));
+        }
+    }
+
+    #[test]
+    fn refuses_records_in_order() {
+        let base = record_row();
+        for (column, value, expected) in [
+            ("module", s(""), "record_key_invalid"),
+            ("record_id", Legacy::Null, "record_key_invalid"),
+            ("record_id", s(&"é".repeat(201)), "record_key_invalid"),
+            ("record_id", s("a\0"), "record_key_invalid"),
+            ("payload", s("[1]"), "record_payload_invalid"),
+            ("payload", s("{mal"), "record_payload_invalid"),
+            (
+                "payload",
+                s("{\"a\":\"\\u0000\"}"),
+                "record_payload_invalid",
+            ),
+            ("created_at", s("ayer"), "record_timestamp_invalid"),
+            ("updated_at", Legacy::Null, "record_timestamp_invalid"),
+        ] {
+            assert_eq!(
+                code(map_record(&with(&base, &[(column, value)]))),
+                Some(expected)
+            );
+        }
+    }
+
+    #[test]
+    fn audit_keeps_optional_columns_and_refuses_nul() {
+        let mapped = map_audit(&with(&audit_row(), &[("detail", Legacy::Null)]));
+        assert!(mapped.is_ok_and(|a| a.detail.is_none() && a.record_id.is_none()));
+        for (column, value) in [
+            ("ts", s("ayer")),
+            ("module", Legacy::Null),
+            ("action", Legacy::Null),
+            ("record_id", s("r\0")),
+            ("detail", s("d\0")),
+        ] {
+            let row = with(&audit_row(), &[(column, value)]);
+            assert_eq!(code(map_audit(&row)), Some("audit_row_invalid"));
+        }
+    }
+
+    #[test]
+    fn snapshots_read_text_numbers_and_refuse_the_rest() {
+        let mapped = map_snapshot(&with(&snapshot_row(), &[("irsa", s(" 0x10 "))]));
+        assert!(mapped.is_ok_and(|x| (x.irsa - 16.0).abs() < f64::EPSILON));
+        for (column, value) in [
+            ("ts", s("ayer")),
+            ("irsa", s("Infinity")),
+            ("irsa", Legacy::Null),
+            ("level", Legacy::Null),
+            ("scores", s("[1]")),
+            ("level", s("A\0")),
+            ("config_version", s("v\0")),
+            ("note", s("n\0")),
+        ] {
+            let row = with(&snapshot_row(), &[(column, value)]);
+            assert_eq!(code(map_snapshot(&row)), Some("snapshot_row_invalid"));
+        }
+    }
+
+    #[test]
+    fn attachments_default_and_refuse_in_order() {
+        let mapped = map_attachment(&make(&attachment_row()), "A/B");
+        assert!(mapped.as_ref().is_ok_and(|a| {
+            a.original_name == "a b.txt"
+                && a.content_type == "application/octet-stream"
+                && a.project_id == "PRJ-SECHURA"
+                && a.project_name == "Proyecto Sechura"
+                && a.linked_module == "eventos"
+                && a.record_module == "Eventos"
+                && a.sha256.is_none()
+        }));
+        let other = with(&attachment_row(), &[("project_id", s("P"))]);
+        assert!(map_attachment(&other, "A/B").is_ok_and(|a| a.project_name.is_empty()));
+        let bad_sha = with(&attachment_row(), &[("sha256", s("ABC"))]);
+        assert!(map_attachment(&bad_sha, "A/B").is_ok_and(|a| a.sha256.is_none()));
+        let invalid = "attachment_row_invalid";
+        let unsafe_name = "attachment_stored_name_unsafe";
+        let unknown = "attachment_module_unknown";
+        for (column, value, expected) in [
+            ("id", Legacy::Null, invalid),
+            ("id", s("a\0"), invalid),
+            ("stored_name", s(""), invalid),
+            ("linked_record_id", Legacy::Null, invalid),
+            ("created_at", s("ayer"), invalid),
+            ("size_bytes", Legacy::Null, invalid),
+            ("size_bytes", Legacy::Num(0.0), invalid),
+            ("size_bytes", Legacy::Num(1.5), invalid),
+            ("size_bytes", Legacy::Num(-1.0), invalid),
+            ("stored_name", s("../fuera.txt"), unsafe_name),
+            ("stored_name", s("a\\b"), unsafe_name),
+            ("linked_module", s("desconocido"), unknown),
+            ("linked_module", s("constructor"), unknown),
+            ("content_type", s("t\0"), invalid),
+            ("notes", s("n\0"), invalid),
+        ] {
+            let row = with(&attachment_row(), &[(column, value)]);
+            assert_eq!(code(map_attachment(&row, "A/B")), Some(expected));
+        }
+        // The unsafe name is reported before the unknown module, the size before both.
+        let both = [("stored_name", s("a/b")), ("linked_module", s("x"))];
+        assert_eq!(
+            code(map_attachment(&with(&attachment_row(), &both), "A/B")),
+            Some(unsafe_name)
+        );
+        let all = [
+            ("size_bytes", Legacy::Num(0.0)),
+            ("stored_name", s("a/b")),
+            ("linked_module", s("x")),
+        ];
+        assert_eq!(
+            code(map_attachment(&with(&attachment_row(), &all), "A/B")),
+            Some(invalid)
+        );
+    }
+
+    #[test]
+    fn document_reviews_default_and_refuse() {
+        let mapped = map_document_review(&make(&review_row()));
+        assert!(mapped.is_ok_and(|r| r.project_id == "PRJ-SECHURA" && r.note.is_empty()));
+        for (column, value) in [
+            ("id", Legacy::Null),
+            ("source_sha256", s("corto")),
+            ("source_sha256", s(&sha().to_uppercase())),
+            ("status", s("otro")),
+            ("created_at", s("ayer")),
+            ("updated_at", Legacy::Null),
+            ("note", s("n\0")),
+            ("project_id", s("p\0")),
+        ] {
+            let row = with(&review_row(), &[(column, value)]);
+            assert_eq!(
+                code(map_document_review(&row)),
+                Some("document_review_row_invalid")
+            );
+        }
+    }
+
+    #[test]
+    fn alerts_truncate_scores_and_refuse_unreadable_json() {
+        let mapped = map_alert(&make(&alert_row()));
+        assert!(mapped.is_ok_and(|a| (a.score - 45.0).abs() < f64::EPSILON && a.semantic_active));
+        let negative = with(&alert_row(), &[("score", Legacy::Num(-0.5))]);
+        assert!(map_alert(&negative).is_ok_and(|a| a.score == 0.0));
+        let blank = with(&alert_row(), &[("reviewed_at", s("  "))]);
+        assert!(map_alert(&blank).is_ok_and(|a| a.reviewed_at.is_none()));
+        // A number goes through the text path, unlike every other timestamp column.
+        let number = with(
+            &alert_row(),
+            &[("reviewed_at", Legacy::Num(1_790_000_000.0))],
+        );
+        assert_eq!(code(map_alert(&number)), Some("alert_row_invalid"));
+        for (column, value) in [
+            ("id", s("")),
+            ("created_at", s("ayer")),
+            ("sha256", s("x")),
+            ("status", s("Otro")),
+            ("themes_json", s("mal")),
+            ("signals_json", Legacy::Null),
+            ("suggestions_json", s("[\"a\\u0000\"]")),
+            ("reviewed_at", s("ayer")),
+            ("reviewer_note", s("r\0")),
+        ] {
+            let row = with(&alert_row(), &[(column, value)]);
+            assert_eq!(code(map_alert(&row)), Some("alert_row_invalid"));
+        }
+    }
+
+    #[test]
+    fn actions_and_their_log_check_progress() {
+        let action = with(&action_row(), &[("progress", Legacy::Null)]);
+        assert!(map_action(&action).is_ok_and(|a| a.progress == 0.0));
+        let text = with(&action_row(), &[("progress", s("40"))]);
+        assert!(map_action(&text).is_ok_and(|a| (a.progress - 40.0).abs() < f64::EPSILON));
+        for (column, value) in [
+            ("id", s("")),
+            ("alert_id", Legacy::Null),
+            ("due_date", s("mañana")),
+            ("due_date", s("2026-11-15\n")),
+            ("status", s("Otro")),
+            ("progress", Legacy::Num(101.0)),
+            ("progress", Legacy::Num(-1.0)),
+            ("progress", Legacy::Num(1.5)),
+            ("created_at", s("ayer")),
+            ("title", s("t\0")),
+        ] {
+            let row = with(&action_row(), &[(column, value)]);
+            assert_eq!(code(map_action(&row)), Some("action_row_invalid"));
+        }
+        for (column, value) in [
+            ("id", s("")),
+            ("action_id", Legacy::Null),
+            ("status", s("")),
+            ("created_at", s("ayer")),
+            ("progress", Legacy::Num(101.0)),
+            ("note", s("n\0")),
+            ("evidence_url", s("u\0")),
+        ] {
+            let row = with(&log_row(), &[(column, value)]);
+            assert_eq!(code(map_action_log(&row)), Some("action_log_row_invalid"));
+        }
+    }
+
     #[test]
     fn maps_users_with_defaults() {
         let mapped = map_user(&user(&[]));
