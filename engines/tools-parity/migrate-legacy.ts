@@ -58,7 +58,9 @@ const hideTimes = (text: string) => {
   for (const match of text.matchAll(/"code":"(\w+)"/g)) seenCodes.add(match[1] ?? '');
   for (const secret of [...fixture.secrets, fixture.totpSecret, 'synthetic failure with value'])
     if (text.includes(secret)) leaks.add(secret);
-  return text.replace(/"(finishedAt|startedAt)":"[^"]+"/g, '"$1":"<time>"');
+  return text
+    .replace(/"(finishedAt|startedAt)":"[^"]+"/g, '"$1":"<time>"')
+    .replace(/^\(node:\d+\) ExperimentalWarning: .*\n\(Use `node --trace-warnings.*\n/gm, '');
 };
 
 /** Local storage under each tool's own directory; the time zone TypeScript reads local dates in. */

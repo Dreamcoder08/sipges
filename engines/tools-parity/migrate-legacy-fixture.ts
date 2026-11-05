@@ -45,8 +45,18 @@ const open = (path: string, tables: readonly Table[]) => {
   return db;
 };
 
+/** Node 22's node:sqlite cuts text at the first NUL; later versions read the whole value. */
+const KEEPS_NUL = (() => {
+  const db = new DatabaseSync(':memory:');
+  const row = db.prepare(`SELECT CAST(x'610062' AS TEXT) AS value`).get();
+  db.close();
+  return row?.['value'] === 'a\0b';
+})();
+
 const insert = (db: DatabaseSync, table: Table, rows: readonly (readonly Cell[])[]) => {
   for (const row of rows) {
+    // Rust matches the versions that read the whole value (docs/migration/data-migration.md).
+    if (!KEEPS_NUL && row.some((cell) => typeof cell === 'string' && cell.includes('\0'))) continue;
     const marks = row.map(() => '?').join(',');
     db.prepare(`INSERT INTO ${table} VALUES (${marks})`).run(...row);
   }
