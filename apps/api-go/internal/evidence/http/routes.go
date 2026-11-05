@@ -36,7 +36,8 @@ type Deps struct {
 	Storage application.ObjectStorage
 	// MaxUploadBytes is SIPGES_MAX_UPLOAD_BYTES.
 	MaxUploadBytes int
-	// Text reads PDF and DOCX for the preview; nil answers 501 for those formats.
+	// Text reads PDF and DOCX for the preview; nil means infrastructure.DocText (DOCX read,
+	// PDF answered 501).
 	Text application.TextExtractor
 	// Now is the clock of new uploads; nil means time.Now.
 	Now func() time.Time

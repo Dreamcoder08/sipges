@@ -54,6 +54,7 @@ var hechos = ReviewTarget{"hechos", "Hechos compartidos"}
 
 // targets is TARGETS of review-records.ts: the lexical theme decides the module.
 var targets = map[string]ReviewTarget{
+	"Actor (extracción automática)":       {"actores", "Actores"},
 	"Representatividad y gobernanza":      {"actores", "Actores"},
 	"Demandas e intereses":                {"demandas", "Demandas"},
 	"Compromisos y trazabilidad":          {"compromisos", "Compromisos"},
@@ -152,6 +153,9 @@ func (c *ThemeCounts) Add(theme string, count int64) {
 
 // Len is the number of themes.
 func (c ThemeCounts) Len() int { return len(c.keys) }
+
+// Keys returns the themes in insertion order.
+func (c ThemeCounts) Keys() []string { return c.keys }
 
 // Get returns theme's count.
 func (c ThemeCounts) Get(theme string) (int64, bool) {
