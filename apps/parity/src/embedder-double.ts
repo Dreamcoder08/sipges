@@ -55,7 +55,10 @@ export const startEmbedderDouble = async (): Promise<Running & { narrated: strin
     request.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8');
       if ((request.url ?? '').startsWith('/v1/messages')) {
-        narrated.push(raw);
+        // The two SDKs name themselves, so each body is attributed to the API that sent it.
+        narrated.push(
+          `${/go/i.test(request.headers['user-agent'] ?? '') ? 'go' : 'ts'}\u0000${raw}`,
+        );
         const down = raw.includes(NARRATOR_DOWN);
         response.writeHead(down ? 400 : 200, { 'content-type': 'application/json' });
         response.end(JSON.stringify(down ? { type: 'error' } : narrationOf(JSON.parse(raw))));

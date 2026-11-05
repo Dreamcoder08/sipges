@@ -145,3 +145,14 @@ func TestNarrateNeverFollowsARedirect(t *testing.T) {
 		t.Fatal("the text reached the redirect target")
 	}
 }
+
+func TestNarrateRefusesANullAnswer(t *testing.T) {
+	t.Parallel()
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `null`)
+	})
+	if got, err := claude.Narrate(t.Context(), cleared("b")); err == nil {
+		t.Fatalf("got %q", got)
+	}
+}

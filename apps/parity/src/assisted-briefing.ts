@@ -52,9 +52,13 @@ export const setExternalAi = async (url: string, session: string, enabled: boole
   if (status !== 200) throw new Error(`the switch answered ${status}`);
 };
 
-/** Each narrated briefing must have arrived twice, once from each API, byte for byte. */
-export const unpairedNarrations = (bodies: readonly string[]) => {
+/** How many bodies one API sent and the other did not, byte for byte, with their repeats. */
+export const unpairedNarrations = (entries: readonly string[]) => {
   const count = new Map<string, number>();
-  for (const body of bodies) count.set(body, (count.get(body) ?? 0) + 1);
-  return [...count.values()].filter((n) => n % 2 !== 0).length;
+  for (const entry of entries) {
+    const [api, ...rest] = entry.split('\u0000');
+    const body = rest.join('\u0000');
+    count.set(body, (count.get(body) ?? 0) + (api === 'go' ? 1 : -1));
+  }
+  return [...count.values()].reduce((total, n) => total + Math.abs(n), 0);
 };

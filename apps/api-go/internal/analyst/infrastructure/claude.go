@@ -70,6 +70,9 @@ func (c *Claude) Narrate(ctx context.Context, briefing privacy.Sanitised[string]
 	if err != nil {
 		return "", err
 	}
+	if response == nil { // the SDK decodes a JSON null into no message and no error
+		return "", errors.New("narrator: empty answer")
+	}
 	switch string(response.StopReason) {
 	case stopRefusal:
 		return "", errors.New("narrator: the model declined the briefing")
