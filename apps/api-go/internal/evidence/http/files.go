@@ -138,27 +138,27 @@ func uploadHandler(deps Deps) http.HandlerFunc {
 			return
 		}
 		contentType, present := httpx.Header(r, "Content-Type")
-		entries, ok := parseForm(contentType, present, body)
+		entries, ok := httpx.ParseForm(contentType, present, body)
 		if !ok {
 			writeJSON(w, http.StatusUnprocessableEntity, httpx.ErrorBody{Detail: []issue{{Type: "value_error", Loc: []string{"body"}, Msg: "Invalid form body"}}})
 			return
 		}
 		// convertFormDataToBodyData: the last entry of a name wins (names ending in [] become
 		// lists, which are neither text nor a file).
-		form := map[string]formEntry{}
+		form := map[string]httpx.FormEntry{}
 		for _, e := range entries {
-			if !strings.HasSuffix(e.name, "[]") {
-				form[e.name] = e
+			if !strings.HasSuffix(e.Name, "[]") {
+				form[e.Name] = e
 			}
 		}
 		text := func(name string) *string {
-			if e, ok := form[name]; ok && !e.file {
-				return &e.text
+			if e, ok := form[name]; ok && !e.File {
+				return &e.Text
 			}
 			return nil
 		}
 		file, ok := form["file"]
-		if !ok || !file.file {
+		if !ok || !file.File {
 			missingField(w, "file")
 			return
 		}
@@ -180,8 +180,8 @@ func uploadHandler(deps Deps) http.HandlerFunc {
 		a, refused, err := files(r, deps).Upload(r.Context(), application.UploadInput{
 			TenantID:       scope.TenantID(),
 			ScopeProjectID: scope.ProjectID,
-			FileName:       file.text,
-			Data:           file.data,
+			FileName:       file.Text,
+			Data:           file.Data,
 			LinkedModule:   *linkedModule,
 			LinkedRecordID: *linkedRecordID,
 			DocumentType:   text("document_type"),

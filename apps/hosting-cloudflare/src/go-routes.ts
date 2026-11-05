@@ -78,7 +78,12 @@ export const validateGoRoutes = (
  * container connects to Neon over TLS itself.
  */
 export const goContainerEnv = (env: Readonly<Record<string, unknown>>) => {
-  const vars: Record<string, string> = { SIPGES_HOST: '0.0.0.0', SIPGES_PORT: '8080' };
+  const vars: Record<string, string> = {
+    SIPGES_HOST: '0.0.0.0',
+    SIPGES_PORT: '8080',
+    // Only this Worker reaches the container, and Cloudflare's edge sets the header.
+    SIPGES_TRUST_CF_CONNECTING_IP: '1',
+  };
   if (typeof env.SIPGES_ALLOWED_HOSTS === 'string') {
     vars.SIPGES_ALLOWED_HOSTS = env.SIPGES_ALLOWED_HOSTS;
   }

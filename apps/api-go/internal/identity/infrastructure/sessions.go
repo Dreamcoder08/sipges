@@ -1,6 +1,6 @@
-// Package infrastructure reads the identity tables the TypeScript API writes. It only verifies
-// existing sessions: sign-in, MFA enrolment, Google sign-in and API keys stay in TypeScript
-// until phase 4 of docs/adr/0032.
+// Package infrastructure holds the identity tables, password hashes and session tokens, byte
+// compatible with what the TypeScript API stores. MFA enrolment, Google sign-in and API keys stay
+// in TypeScript until the next slices of T35 (docs/adr/0032 phase 4).
 package infrastructure
 
 import (

@@ -297,9 +297,9 @@ func TestPublicAndMachinePathsNeedNoSession(t *testing.T) {
 	if got := s.do(t, req{path: "/health"}); got.status != http.StatusOK {
 		t.Fatalf("/health: %d", got.status)
 	}
-	// Public writes still need the Origin check; the Go API does not serve /login yet.
-	expect(t, s.do(t, req{method: "POST", path: "/login"}), http.StatusForbidden, badOrigin)
-	expect(t, s.do(t, req{method: "POST", path: "/login", sameOrigin: true}), http.StatusNotFound, notFound)
+	// Public writes still need the Origin check; /logout is not served yet.
+	expect(t, s.do(t, req{method: "POST", path: "/logout"}), http.StatusForbidden, badOrigin)
+	expect(t, s.do(t, req{method: "POST", path: "/logout", sameOrigin: true}), http.StatusNotFound, notFound)
 	// Machine paths authenticate with their own credential in their route (none served yet).
 	expect(t, s.do(t, req{method: "POST", path: "/mcp"}), http.StatusNotFound, notFound)
 	expect(t, s.do(t, req{method: "POST", path: "/hooks/feed"}), http.StatusNotFound, notFound)

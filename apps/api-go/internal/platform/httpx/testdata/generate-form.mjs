@@ -1,9 +1,9 @@
-// Records how the TypeScript upload route reads its body (`c.req.parseBody()` of Hono over the
-// undici that Node bundles) on synthetic requests, for the Go port's test (../form_test.go).
+// Records how the TypeScript routes read a form body (`c.req.parseBody()` of Hono over the
+// undici that Node bundles) on synthetic requests, for the Go port's test (../form_body_test.go).
 // Run from the repository root with the Node version CI uses (22) after upgrading Hono or Node:
 //
-//   node apps/api-go/internal/evidence/http/testdata/generate-form.mjs          # rewrites form.json
-//   node apps/api-go/internal/evidence/http/testdata/generate-form.mjs --check  # exit 1 when it drifted
+//   node apps/api-go/internal/platform/httpx/testdata/generate-form.mjs          # rewrites form.json
+//   node apps/api-go/internal/platform/httpx/testdata/generate-form.mjs --check  # exit 1 when it drifted
 //
 // Every body is synthetic, written here.
 import { readFileSync, writeFileSync } from 'node:fs';

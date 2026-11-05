@@ -1,33 +1,31 @@
-package http
+package httpx
 
 import (
 	"bytes"
 	"regexp"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/domain"
 )
 
-// The upload body as `c.req.parseBody()` reads it on @hono/node-server (Hono 4.13.14 over the
+// A form body as `c.req.parseBody()` reads it on @hono/node-server (Hono 4.13.14 over the
 // undici 6.29 that Node 22 bundles): Hono's media type check, then Response#formData() with
 // undici's MIME type extraction and its multipart/form-data and urlencoded parsers, ported line
 // for line from lib/web/fetch/{body,util,data-url,formdata-parser}.js. Strings there are
 // UTF-16; header values here are their bytes, one Latin-1 character each, as Node reads them.
 // testdata/form.json was recorded from Hono on synthetic bodies and pins this port.
 
-// formEntry is one FormData entry: text, or a File with its name and bytes.
-type formEntry struct {
-	name string
-	file bool
-	// text is the value, or the file's name.
-	text string
-	data []byte
+// FormEntry is one FormData entry: text, or a File with its name and bytes.
+type FormEntry struct {
+	Name string
+	File bool
+	// Text is the value, or the file's name.
+	Text string
+	Data []byte
 }
 
-// parseForm is `await c.req.parseBody()` as an entry list: ok=false when it throws (the
+// ParseForm is `await c.req.parseBody()` as an entry list: ok=false when it throws (the
 // route's 422 "Invalid form body"); an empty list when the media type is not a form one.
-func parseForm(contentType string, present bool, body []byte) ([]formEntry, bool) {
+func ParseForm(contentType string, present bool, body []byte) ([]FormEntry, bool) {
 	if !present {
 		return nil, true
 	}
@@ -322,9 +320,9 @@ var (
 // multipartFormData is multipartFormDataParser of formdata-parser.js (undici 6.29.1), quirks
 // included: leading and trailing CRLFs are ignored, a part's body ends four bytes before the
 // next occurrence of the bare boundary string, and a header line ends at CR or LF.
-func multipartFormData(input []byte, boundaryString string) ([]formEntry, bool) {
+func multipartFormData(input []byte, boundaryString string) ([]FormEntry, bool) {
 	boundary := append([]byte("--"), latin1ToUTF8(boundaryString)...)
-	entries := []formEntry{}
+	entries := []FormEntry{}
 	pos := 0
 	for pos+1 < len(input) && input[pos] == '\r' && input[pos+1] == '\n' {
 		pos += 2
@@ -343,7 +341,7 @@ func multipartFormData(input []byte, boundaryString string) ([]formEntry, bool) 
 			(pos == len(input)-4 && bytes.HasPrefix(input[pos:], []byte("--\r\n"))) {
 			return entries, true
 		}
-		if at(input, pos) != '\r' || at(input, pos+1) != '\n' {
+		if formAt(input, pos) != '\r' || formAt(input, pos+1) != '\n' {
 			return nil, false
 		}
 		pos += 2
@@ -364,22 +362,22 @@ func multipartFormData(input []byte, boundaryString string) ([]formEntry, bool) 
 		}
 		pos += len(body)
 		if h.encoding == "base64" {
-			body = nodeBase64(domain.DecodeUTF8(body, false))
+			body = nodeBase64(decodeUTF8(body, false))
 		}
-		if at(input, pos) != '\r' || at(input, pos+1) != '\n' {
+		if formAt(input, pos) != '\r' || formAt(input, pos+1) != '\n' {
 			return nil, false
 		}
 		pos += 2
 		if h.filename != nil {
-			entries = append(entries, formEntry{name: h.name, file: true, text: *h.filename, data: append([]byte{}, body...)})
+			entries = append(entries, FormEntry{Name: h.name, File: true, Text: *h.filename, Data: append([]byte{}, body...)})
 		} else {
-			entries = append(entries, formEntry{name: h.name, text: utf8DecodeBytes(body)})
+			entries = append(entries, FormEntry{Name: h.name, Text: utf8DecodeBytes(body)})
 		}
 	}
 }
 
 // at is input[i] in JavaScript: undefined (here -1) past the end.
-func at(input []byte, i int) int {
+func formAt(input []byte, i int) int {
 	if i < 0 || i >= len(input) {
 		return -1
 	}
@@ -398,7 +396,7 @@ func multipartHeaders(input []byte, pos int) (partHeaders, int, bool) {
 	var h partHeaders
 	hasName := false
 	for {
-		if at(input, pos) == '\r' && at(input, pos+1) == '\n' {
+		if formAt(input, pos) == '\r' && formAt(input, pos+1) == '\n' {
 			if !hasName {
 				return h, 0, false
 			}
@@ -414,7 +412,7 @@ func multipartHeaders(input []byte, pos int) (partHeaders, int, bool) {
 		if !isToken(headerName) {
 			return h, 0, false
 		}
-		if at(input, pos) != ':' {
+		if formAt(input, pos) != ':' {
 			return h, 0, false
 		}
 		pos++
@@ -435,11 +433,11 @@ func multipartHeaders(input []byte, pos int) (partHeaders, int, bool) {
 			h.name, hasName, pos = name, true, next
 			if bytes.HasPrefix(input[pos:], filenameAttr) {
 				check := pos + len(filenameAttr)
-				if at(input, check) == '*' {
+				if formAt(input, check) == '*' {
 					pos++
 					check++
 				}
-				if at(input, check) != '=' || at(input, check+1) != '"' {
+				if formAt(input, check) != '=' || formAt(input, check+1) != '"' {
 					return h, 0, false
 				}
 				pos += 12
@@ -461,7 +459,7 @@ func multipartHeaders(input []byte, pos int) (partHeaders, int, bool) {
 			}
 		}
 		// The original's condition: failure only when neither byte matches.
-		if at(input, pos) != '\r' && at(input, pos+1) != '\n' {
+		if formAt(input, pos) != '\r' && formAt(input, pos+1) != '\n' {
 			return h, 0, false
 		}
 		pos += 2
@@ -475,10 +473,10 @@ func multipartName(input []byte, pos int) (string, int, bool) {
 	for pos < len(input) && input[pos] != '\n' && input[pos] != '\r' && input[pos] != '"' {
 		pos++
 	}
-	if at(input, pos) != '"' {
+	if formAt(input, pos) != '"' {
 		return "", 0, false
 	}
-	name := domain.DecodeUTF8(input[start:pos], true)
+	name := decodeUTF8(input[start:pos], true)
 	name = strings.NewReplacer("%0A", "\n", "%0a", "\n").Replace(name)
 	name = strings.NewReplacer("%0D", "\r", "%0d", "\r").Replace(name)
 	name = strings.ReplaceAll(name, "%22", `"`)
@@ -491,7 +489,7 @@ func utf8DecodeBytes(b []byte) string {
 	if len(b) >= 3 && b[0] == 0xef && b[1] == 0xbb && b[2] == 0xbf {
 		b = b[3:]
 	}
-	return domain.DecodeUTF8(b, true)
+	return decodeUTF8(b, true)
 }
 
 // nodeBase64 is Buffer.from(string, 'base64'): characters of either alphabet are decoded,
@@ -553,16 +551,16 @@ func base64Value(c byte) (byte, bool) {
 // urlencoded is `new URLSearchParams(body.toString())` (Node's parser): the body decoded as
 // UTF-8, a leading '?' dropped, pairs split on '&', '+' read as a space, percent escapes
 // decoded to bytes and those decoded as UTF-8 (a BOM kept).
-func urlencoded(body []byte) []formEntry {
-	s := domain.DecodeUTF8(body, false)
+func urlencoded(body []byte) []FormEntry {
+	s := decodeUTF8(body, false)
 	s = strings.TrimPrefix(s, "?")
-	entries := []formEntry{}
+	entries := []FormEntry{}
 	for pair := range strings.SplitSeq(s, "&") {
 		if pair == "" {
 			continue
 		}
 		name, value, _ := strings.Cut(pair, "=")
-		entries = append(entries, formEntry{name: formDecode(name), text: formDecode(value)})
+		entries = append(entries, FormEntry{Name: formDecode(name), Text: formDecode(value)})
 	}
 	return entries
 }
@@ -572,8 +570,8 @@ func formDecode(s string) string {
 	out := make([]byte, 0, len(b))
 	for i := 0; i < len(b); i++ {
 		if b[i] == '%' && i+2 < len(b) {
-			if hi, ok := unhex(b[i+1]); ok {
-				if lo, ok := unhex(b[i+2]); ok {
+			if hi, ok := formHex(b[i+1]); ok {
+				if lo, ok := formHex(b[i+2]); ok {
 					out = append(out, hi<<4|lo)
 					i += 2
 					continue
@@ -582,10 +580,10 @@ func formDecode(s string) string {
 		}
 		out = append(out, b[i])
 	}
-	return domain.DecodeUTF8(out, false)
+	return decodeUTF8(out, false)
 }
 
-func unhex(c byte) (byte, bool) {
+func formHex(c byte) (byte, bool) {
 	switch {
 	case '0' <= c && c <= '9':
 		return c - '0', true
@@ -595,4 +593,67 @@ func unhex(c byte) (byte, bool) {
 		return c - 'A' + 10, true
 	}
 	return 0, false
+}
+
+// decodeUTF8 is the WHATWG UTF-8 decoder with replacement, as evidence DecodeUTF8 and TextDecoder
+// read bytes: one U+FFFD per maximal invalid sequence, the BOM dropped when stripBOM is set.
+func decodeUTF8(b []byte, stripBOM bool) string {
+	if stripBOM && len(b) >= 3 && b[0] == 0xef && b[1] == 0xbb && b[2] == 0xbf {
+		b = b[3:]
+	}
+	if utf8.Valid(b) {
+		return string(b)
+	}
+	out := make([]rune, 0, len(b))
+	var cp rune
+	needed, seen := 0, 0
+	lower, upper := byte(0x80), byte(0xbf)
+	for i := 0; i < len(b); i++ {
+		c := b[i]
+		if needed == 0 {
+			switch {
+			case c <= 0x7f:
+				out = append(out, rune(c))
+			case c >= 0xc2 && c <= 0xdf:
+				needed, cp = 1, rune(c&0x1f)
+			case c >= 0xe0 && c <= 0xef:
+				if c == 0xe0 {
+					lower = 0xa0
+				}
+				if c == 0xed {
+					upper = 0x9f
+				}
+				needed, cp = 2, rune(c&0x0f)
+			case c >= 0xf0 && c <= 0xf4:
+				if c == 0xf0 {
+					lower = 0x90
+				}
+				if c == 0xf4 {
+					upper = 0x8f
+				}
+				needed, cp = 3, rune(c&0x07)
+			default:
+				out = append(out, utf8.RuneError)
+			}
+			continue
+		}
+		if c < lower || c > upper {
+			cp, needed, seen = 0, 0, 0
+			lower, upper = 0x80, 0xbf
+			out = append(out, utf8.RuneError)
+			i-- // the byte starts the next sequence
+			continue
+		}
+		lower, upper = 0x80, 0xbf
+		cp = cp<<6 | rune(c&0x3f)
+		seen++
+		if seen == needed {
+			out = append(out, cp)
+			cp, needed, seen = 0, 0, 0
+		}
+	}
+	if needed != 0 {
+		out = append(out, utf8.RuneError)
+	}
+	return string(out)
 }
