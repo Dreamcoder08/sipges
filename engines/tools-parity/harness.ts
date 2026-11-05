@@ -69,7 +69,7 @@ const spawn = (command: string, args: readonly string[], env: Record<string, str
     env: { PATH: process.env.PATH ?? '', ...env },
     timeout: 300_000,
   });
-  return { code: result.status, stdout: result.stdout, stderr: result.stderr };
+  return { code: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '' };
 };
 
 export type Tool = {
@@ -88,9 +88,12 @@ export const runRust = (tool: Tool, args: readonly string[], env: Record<string,
 /** One step: the same arguments to both tools, each against its own database. */
 export type Step = {
   readonly args: readonly string[];
-  /** Extra environment (the database URL and data key are set by the harness). */
-  readonly env?: Record<string, string>;
-  /** Replaces run-dependent text in stdout/stderr before comparing. */
+  /**
+   * Extra environment (the database URL and data key are set by the harness); a function gives
+   * each tool its own values, for example its own object storage directory.
+   */
+  readonly env?: Record<string, string> | ((tool: 'ts' | 'rs') => Record<string, string>);
+  /** Replaces run-dependent text in stdout, stderr and written files before comparing. */
   readonly normalize?: (text: string) => string;
   /**
    * Skip stderr: errors the TypeScript CLI does not catch print Node's stack trace (file paths,
@@ -100,7 +103,7 @@ export type Step = {
   /** Files (relative to the repository root) each tool may write; compared, then deleted. */
   readonly files?: readonly string[];
   /** Runs on both databases right before this step. */
-  readonly before?: (sql: SqlClient) => Promise<void>;
+  readonly before?: (sql: SqlClient, tool: 'ts' | 'rs') => Promise<void>;
 };
 
 export type Scenario = {
@@ -111,7 +114,9 @@ export type Scenario = {
    * Tables to compare after every step: SQL returning rows in a stable order, or a function for
    * values that must be computed (for example decrypted) before comparing.
    */
-  readonly dumps: Readonly<Record<string, string | ((sql: SqlClient) => Promise<unknown>)>>;
+  readonly dumps: Readonly<
+    Record<string, string | ((sql: SqlClient, tool: 'ts' | 'rs') => Promise<unknown>)>
+  >;
   /** Runs on both sides between seeding and the first step (for example a failure trigger). */
   readonly prepare?: (sql: SqlClient) => Promise<void>;
 };
@@ -130,10 +135,10 @@ export const runScenarios = async (tool: Tool, scenarios: readonly Scenario[]): 
       await scenario.prepare?.(rust.sql);
       for (const [index, step] of scenario.steps.entries()) {
         const label = `${scenario.name} #${index + 1} (${step.args.join(' ') || 'no args'})`;
-        const env = (side: Side): Record<string, string> => ({
+        const env = (side: Side, tool: 'ts' | 'rs'): Record<string, string> => ({
           SIPGES_DATA_KEY: SYNTHETIC_DATA_KEY,
           SIPGES_DATABASE_URL: side.url,
-          ...step.env,
+          ...(typeof step.env === 'function' ? step.env(tool) : step.env),
         });
         const normalize = step.normalize ?? ((text: string) => text);
         const takeFiles = () =>
@@ -142,13 +147,13 @@ export const runScenarios = async (tool: Tool, scenarios: readonly Scenario[]): 
             if (!existsSync(path)) return null;
             const text = readFileSync(path, 'utf8');
             rmSync(path);
-            return text;
+            return normalize(text);
           });
-        await step.before?.(ts.sql);
-        await step.before?.(rust.sql);
-        const a = runTs(tool, step.args, env(ts));
+        await step.before?.(ts.sql, 'ts');
+        await step.before?.(rust.sql, 'rs');
+        const a = runTs(tool, step.args, env(ts, 'ts'));
         const aFiles = takeFiles();
-        const b = runRust(tool, step.args, env(rust));
+        const b = runRust(tool, step.args, env(rust, 'rs'));
         const bFiles = takeFiles();
         const outputs: [string, unknown, unknown][] = [
           ['exit code', a.code, b.code],
@@ -156,11 +161,18 @@ export const runScenarios = async (tool: Tool, scenarios: readonly Scenario[]): 
           ['files', aFiles, bFiles],
         ];
         if (!step.uncaught) outputs.push(['stderr', normalize(a.stderr), normalize(b.stderr)]);
-        else if (!a.stderr || !b.stderr) outputs.push(['stderr present', !!a.stderr, !!b.stderr]);
-        const dump = (sql: SqlClient, query: string | ((sql: SqlClient) => Promise<unknown>)) =>
-          typeof query === 'string' ? sql.query(query) : query(sql);
+        else if (!a.stderr || !normalize(b.stderr)) outputs.push(['stderr present', !!a.stderr, !!b.stderr]);
+        const dump = (
+          sql: SqlClient,
+          query: string | ((sql: SqlClient, tool: 'ts' | 'rs') => Promise<unknown>),
+          tool: 'ts' | 'rs',
+        ) => (typeof query === 'string' ? sql.query(query) : query(sql, tool));
         for (const [table, query] of Object.entries(scenario.dumps))
-          outputs.push([`table ${table}`, await dump(ts.sql, query), await dump(rust.sql, query)]);
+          outputs.push([
+            `table ${table}`,
+            await dump(ts.sql, query, 'ts'),
+            await dump(rust.sql, query, 'rs'),
+          ]);
         for (const [what, left, right] of outputs) {
           compared++;
           if (show(left) === show(right)) continue;

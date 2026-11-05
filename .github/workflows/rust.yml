@@ -22,6 +22,8 @@ on:
       - 'apps/api/src/contexts/records/**'
       - 'apps/api/src/contexts/documents/**'
       - 'apps/api/src/contexts/identity/infrastructure/secret-cipher.ts'
+      - 'apps/api/src/contexts/evidence/infrastructure/**'
+      - 'apps/api/test/support/legacy-fixture.ts'
       - 'packages/contracts/src/records.ts'
 
 concurrency:
@@ -49,7 +51,7 @@ jobs:
           if [ -z "$BASE" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
           if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
-          code=$(git diff --name-only "$BASE" HEAD | grep -E '^(engines/|apps/api-go/internal/platform/engines/wasm/|\.github/workflows/rust\.yml$|apps/api/src/contexts/indicators/domain/|apps/api/src/contexts/analytics/domain/|apps/api/src/contexts/intelligence/domain/|apps/api/bench/synthetic\.ts$|apps/api/test/indicators/python-parity\.fixture\.json$|packages/kernel/src/|apps/api/src/tools/|apps/api/src/platform/database/|apps/api/src/platform/config\.ts$|apps/api/src/contexts/records/|apps/api/src/contexts/documents/|apps/api/src/contexts/identity/infrastructure/secret-cipher\.ts$|packages/contracts/src/records\.ts$)' | head -1)
+          code=$(git diff --name-only "$BASE" HEAD | grep -E '^(engines/|apps/api-go/internal/platform/engines/wasm/|\.github/workflows/rust\.yml$|apps/api/src/contexts/indicators/domain/|apps/api/src/contexts/analytics/domain/|apps/api/src/contexts/intelligence/domain/|apps/api/bench/synthetic\.ts$|apps/api/test/indicators/python-parity\.fixture\.json$|packages/kernel/src/|apps/api/src/tools/|apps/api/src/platform/database/|apps/api/src/platform/config\.ts$|apps/api/src/contexts/records/|apps/api/src/contexts/documents/|apps/api/src/contexts/identity/infrastructure/secret-cipher\.ts$|apps/api/src/contexts/evidence/infrastructure/|apps/api/test/support/legacy-fixture\.ts$|packages/contracts/src/records\.ts$)' | head -1)
           if [ -n "$code" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
 
   engines:
@@ -150,7 +152,7 @@ jobs:
           key: cargo-tools-${{ runner.os }}-${{ hashFiles('engines/rust-toolchain.toml', 'engines/Cargo.lock') }}
           restore-keys: cargo-tools-${{ runner.os }}-
       - working-directory: engines
-        run: cargo build --locked -p sipges-review-materialize -p sipges-rotate-data-key -p sipges-base-maestra
+        run: cargo build --locked -p sipges-review-materialize -p sipges-rotate-data-key -p sipges-base-maestra -p sipges-migrate-legacy
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -162,3 +164,4 @@ jobs:
           node engines/tools-parity/review-materialize.ts
           node engines/tools-parity/rotate-data-key.ts
           node engines/tools-parity/base-maestra.ts
+          node engines/tools-parity/migrate-legacy.ts
