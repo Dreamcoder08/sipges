@@ -94,8 +94,7 @@ type Writes interface {
 	AppendAudit(ctx context.Context, q database.Querier, e AuditEntry) error
 }
 
-// PushOutbox queues browser pushes for a notification (push_deliveries); delivering them needs
-// the VAPID keys and stays in TypeScript.
+// PushOutbox queues browser pushes for a notification (push_deliveries).
 type PushOutbox interface {
 	Enqueue(ctx context.Context, tenantID string, notificationID int64, restricted bool, payload PushPayload, at time.Time) error
 }
@@ -144,6 +143,8 @@ type Service struct {
 	Subscriptions PushStore
 	// PushSender sends browser pushes; nil means no VAPID keys, which leaves push off.
 	PushSender PushSender
+	// Deliveries claims and settles the queued pushes; nil delivers none.
+	Deliveries PushDeliveries
 	Sender     Sender
 	// Sealer seals channel settings; nil means channel runs are left for the TypeScript API
 	// and channel writes fail.
@@ -428,7 +429,7 @@ func (s Service) deliver(ctx context.Context, tenantID string, deadline time.Dur
 // Tick is tickTenant: up to three rounds of scanning new audit rows and delivering due runs.
 // No in-flight tick is shared, and concurrent ticks of one tenant are safe: the scan locks the
 // cursor and runs are claimed with SKIP LOCKED, so each event is queued and delivered once.
-// Browser push delivery stays in TypeScript.
+// The queued browser pushes go out last, with what remains of the budget.
 func (s Service) Tick(ctx context.Context, tenantID string) (TickReport, error) {
 	budget := s.ExecutionBudget
 	if budget <= 0 {
@@ -458,6 +459,9 @@ func (s Service) Tick(ctx context.Context, tenantID string) (TickReport, error) 
 		if scanned == 0 && sent.delivered == 0 {
 			break
 		}
+	}
+	if err := s.deliverPush(ctx, tenantID, deadline); err != nil {
+		return report, err
 	}
 	return report, nil
 }
