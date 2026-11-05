@@ -30,7 +30,7 @@ func columns(refs []application.NodeRef) (modules, ids []string) {
 }
 
 var (
-	nodesSQL = `SELECT module, id, payload, marking, updated_at FROM module_records WHERE ` + inRefs("module", "id", 1)
+	nodesSQL = `SELECT module, id, payload, marking, updated_at FROM module_records WHERE ` + inRefs("module", "id", 1) + ` ORDER BY module, id`
 
 	searchSQL = `SELECT module, id, payload, marking, updated_at
            FROM module_records,

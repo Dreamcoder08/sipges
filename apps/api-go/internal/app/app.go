@@ -13,6 +13,7 @@ import (
 	geographyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/geography/http"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
+	integrationhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/http"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/engines"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
@@ -68,6 +69,8 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 			// Geography's 100 kB body limit runs before the project scope reads the body, as
 			// geographyRequestLimit does in apps/api/src/app.ts.
 			geographyhttp.RequestLimit(),
+			// The source routes' 8 KiB limit runs at the same point, as sourceRequestLimit does.
+			integrationhttp.RequestLimit(),
 			tenancyhttp.Middleware(grants, opts.Logger),
 			identityhttp.RoleGate(),
 		},

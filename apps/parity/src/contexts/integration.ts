@@ -1,4 +1,53 @@
+import { createHash } from 'node:crypto';
 import type { ParityCase } from '../types.ts';
+
+/**
+ * Runtime (T45): API keys with synthetic secrets stored as SHA-256 hex (keyCrypto.hash), so both
+ * APIs verify the same rows: a write key, a read-only key, a revoked key and a key of
+ * OTHER_TENANT; and one key per API to revoke. Feeds per API to update and delete, and a feed
+ * only OTHER_TENANT holds.
+ */
+const secret = (letter: string) => letter.repeat(43);
+const sha256 = (text: string) => createHash('sha256').update(text).digest('hex');
+const KEYS = {
+  write: ['c0ffee101001', secret('w')],
+  read: ['c0ffee101002', secret('r')],
+  revoked: ['c0ffee101003', secret('v')],
+  other: ['c0ffee101004', secret('o')],
+  revokeTs: ['c0ffee101005', secret('t')],
+  revokeGo: ['c0ffee101006', secret('g')],
+} as const;
+const bearer = ([prefix, value]: readonly [string, string]) => `Bearer mscli_${prefix}_${value}`;
+const RUNTIME_SEED = `
+INSERT INTO api_keys (id, tenant_id, name, prefix, secret_hash, access, clearance, created_by,
+  created_at, last_used_at, revoked_at) OVERRIDING SYSTEM VALUE VALUES
+  (32101, 'SIPGES/PRJ-SECHURA', 'parity-ingest', '${KEYS.write[0]}', '${sha256(KEYS.write[1])}',
+   'write', 'full', 'parity', '2026-10-01 00:00:00+00', NULL, NULL),
+  (32102, 'SIPGES/PRJ-SECHURA', 'parity-lectura', '${KEYS.read[0]}', '${sha256(KEYS.read[1])}',
+   'read', 'full', 'parity', '2026-10-01 00:00:00+00', NULL, NULL),
+  (32103, 'SIPGES/PRJ-SECHURA', 'parity-revocada', '${KEYS.revoked[0]}', '${sha256(KEYS.revoked[1])}',
+   'write', 'full', 'parity', '2026-10-01 00:00:00+00', NULL, '2026-10-02 00:00:00+00'),
+  (32104, 'PARITY/OTRO', 'parity-ajena', '${KEYS.other[0]}', '${sha256(KEYS.other[1])}',
+   'write', 'full', 'AJENA', '2026-10-01 00:00:00+00', NULL, NULL),
+  (32105, 'SIPGES/PRJ-SECHURA', 'parity-revocar-ts', '${KEYS.revokeTs[0]}', '${sha256(KEYS.revokeTs[1])}',
+   'write', 'full', 'parity', '2026-10-01 00:00:00+00', NULL, NULL),
+  (32106, 'SIPGES/PRJ-SECHURA', 'parity-revocar-go', '${KEYS.revokeGo[0]}', '${sha256(KEYS.revokeGo[1])}',
+   'write', 'full', 'parity', '2026-10-01 00:00:00+00', NULL, NULL)
+ON CONFLICT DO NOTHING;
+INSERT INTO media_feeds (tenant_id, id, name, url, keywords, territory, authorization_note, enabled,
+  updated_by, updated_at) OVERRIDING SYSTEM VALUE VALUES
+  ('SIPGES/PRJ-SECHURA', 32111, 'Editar TS', 'https://editar-ts.example/rss', '[]', '', 'Nota', true,
+   'parity', '2026-10-01 00:00:00+00'),
+  ('SIPGES/PRJ-SECHURA', 32112, 'Editar GO', 'https://editar-go.example/rss', '[]', '', 'Nota', true,
+   'parity', '2026-10-01 00:00:00+00'),
+  ('SIPGES/PRJ-SECHURA', 32113, 'Borrar TS', 'https://borrar-ts.example/rss', '[]', '', 'Nota', true,
+   'parity', '2026-10-01 00:00:00+00'),
+  ('SIPGES/PRJ-SECHURA', 32114, 'Borrar GO', 'https://borrar-go.example/rss', '[]', '', 'Nota', true,
+   'parity', '2026-10-01 00:00:00+00'),
+  ('PARITY/OTRO', 32120, 'Solo AJENA', 'https://ajena.example/rss', '[]', '', 'AJENA', true,
+   'AJENA', '2026-10-01 00:00:00+00')
+ON CONFLICT DO NOTHING;
+`;
 
 /**
  * Integration, admin reads only (T32): API key metadata, media feeds and the authorized-source
@@ -42,7 +91,7 @@ INSERT INTO source_import_settings (tenant_id, source_id, enabled, query, territ
   ('PARITY/OTRO', 'defensoria', true, 'AJENA', 'AJENA', 'AJENA', 9, 'AJENA',
    '2026-10-01 00:00:00+00', NULL, '', 0, 0)
 ON CONFLICT DO NOTHING;
-`;
+${RUNTIME_SEED}`;
 
 const API_KEYS = '/system/integrations/api-keys';
 
@@ -101,6 +150,311 @@ const scoped = (label: string, path: string): ParityCase[] => [
   { name: `integration ${label} HEAD`, method: 'HEAD', path, auth: 'admin' },
 ];
 
+/** Each API's own rows of the runtime writes. */
+const W = {
+  w: { ts: 'TS', go: 'GO' },
+  feed: { ts: '32111', go: '32112' },
+  del: { ts: '32113', go: '32114' },
+  revoke: { ts: '32105', go: '32106' },
+  revoked: { ts: bearer(KEYS.revokeTs), go: bearer(KEYS.revokeGo) },
+} as const;
+const json = { 'content-type': 'application/json' };
+const INGEST = '/hooks/ingest/narrativas';
+
+/** A webhook call: no session, the API key in Authorization. */
+const hook = (
+  name: string,
+  key: string | null,
+  body: ParityCase['body'] | undefined,
+  extra: Partial<ParityCase> = {},
+): ParityCase => ({
+  name: `integration runtime: ${name}`,
+  method: 'POST',
+  path: INGEST,
+  vary: W,
+  ...(body ? { body } : {}),
+  ...extra,
+  headers: { ...json, ...(key ? { authorization: key } : {}), ...(extra.headers ?? {}) },
+});
+
+/** An administrator's write in the default project, same origin. */
+const admin = (
+  name: string,
+  method: ParityCase['method'],
+  path: string,
+  body?: ParityCase['body'],
+  extra: Partial<ParityCase> = {},
+): ParityCase => ({
+  name: `integration runtime: ${name}`,
+  method,
+  path,
+  auth: 'admin',
+  sameOrigin: true,
+  vary: W,
+  ...(body ? { body } : {}),
+  ...extra,
+});
+
+const FEEDS = '/system/v4/media/feeds';
+const feed = (extra: Record<string, unknown>) => ({
+  json: {
+    name: 'Diario {w}',
+    url: 'https://paridad-{w}.example/rss',
+    authorization_note: 'Nota',
+    ...extra,
+  },
+});
+const SOURCES = '/system/intelligence/sources/defensoria';
+const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };
+const signal = (extra: Record<string, unknown>) => ({
+  json: {
+    source_name: 'Fuente sintética',
+    source_url: 'https://fuente.example/paridad',
+    external_id: 'paridad-{w}',
+    text: 'Señal sintética {w}',
+    observed_at: '2026-11-01T10:00:00Z',
+    ...extra,
+  },
+});
+
+const RUNTIME_CASES: readonly ParityCase[] = [
+  // Ingest webhook: credentials first (no session, Origin or project scope applies).
+  hook(
+    'ingest creates a record in the key project',
+    bearer(KEYS.write),
+    {
+      json: { ID_Narrativa: 'PARITY-ING-{w}', Descripcion: 'Ingesta sintética' },
+    },
+    { normalize: ['ids.*'] },
+  ),
+  {
+    name: 'integration runtime: the ingested record is stored',
+    method: 'GET',
+    path: '/api/narrativas/PARITY-ING-{w}',
+    auth: 'admin',
+    vary: W,
+    normalize: ['ID_Narrativa', '_id'],
+  },
+  {
+    name: 'integration runtime: the ingested record history names the key',
+    method: 'GET',
+    path: '/api/narrativas/PARITY-ING-{w}/history',
+    auth: 'admin',
+    vary: W,
+    normalize: ['*.at', '*.payload.ID_Narrativa', '*.changes.*.after'],
+  },
+  hook('ingest with a forged secret', bearer([KEYS.write[0], secret('x')]), { json: { a: 1 } }),
+  hook('ingest with a revoked key', bearer(KEYS.revoked), { json: { a: 1 } }),
+  hook('ingest with a read-only key', bearer(KEYS.read), { json: { a: 1 } }),
+  hook('ingest without a key', null, { json: { a: 1 } }),
+  hook('ingest with the Basic scheme', `Basic mscli_${KEYS.write[0]}_${KEYS.write[1]}`, {
+    json: { a: 1 },
+  }),
+  hook('ingest with a session and no key', null, { json: { a: 1 } }, { auth: 'admin' }),
+  hook('ingest by another project naming this one', bearer(KEYS.other), {
+    json: { ID_Narrativa: 'PARITY-ING-AJENA-{w}', Proyecto_ID: 'PRJ-SECHURA' },
+  }),
+  hook(
+    'ingest by another project',
+    bearer(KEYS.other),
+    {
+      json: { ID_Narrativa: 'PARITY-ING-AJENA-{w}', Descripcion: 'AJENA' },
+    },
+    { normalize: ['ids.*'] },
+  ),
+  {
+    name: "integration runtime: another project's ingested record is invisible",
+    method: 'GET',
+    path: '/api/narrativas/PARITY-ING-AJENA-{w}',
+    auth: 'admin',
+    vary: W,
+  },
+  hook(
+    'ingest with an idempotency key',
+    bearer(KEYS.write),
+    { json: { ID_Narrativa: 'PARITY-IDEM-{w}' } },
+    { headers: { 'idempotency-key': 'paridad-{w}' }, normalize: ['ids.*'] },
+  ),
+  hook(
+    'ingest replays an idempotency key',
+    bearer(KEYS.write),
+    { json: { ID_Narrativa: 'PARITY-IDEM-{w}', Descripcion: 'otra' } },
+    { headers: { 'idempotency-key': 'paridad-{w}' }, normalize: ['ids.*'] },
+  ),
+  hook(
+    'ingest with an invalid idempotency key',
+    bearer(KEYS.write),
+    { json: { a: 1 } },
+    { headers: { 'idempotency-key': 'con espacio' } },
+  ),
+  hook(
+    'ingest a form',
+    bearer(KEYS.write),
+    {
+      form: { ID_Narrativa: 'PARITY-FORM-{w}', Descripcion: 'Formulario', 'f[]': 'x' },
+    },
+    { normalize: ['ids.*'] },
+  ),
+  {
+    name: 'integration runtime: the form record is stored',
+    method: 'GET',
+    path: '/api/narrativas/PARITY-FORM-{w}',
+    auth: 'admin',
+    vary: W,
+    normalize: ['ID_Narrativa', '_id'],
+  },
+  hook(
+    'ingest as text/plain',
+    bearer(KEYS.write),
+    { raw: '{"a":1}' },
+    { headers: { 'content-type': 'text/plain' } },
+  ),
+  hook('ingest invalid JSON', bearer(KEYS.write), { raw: '{"a":' }),
+  hook('ingest no records', bearer(KEYS.write), { json: [] }),
+  hook('ingest an empty record', bearer(KEYS.write), { json: [{ a: 1 }, {}] }),
+  hook(
+    'ingest into an unknown module',
+    bearer(KEYS.write),
+    { json: { a: 1 } },
+    { path: '/hooks/ingest/nada' },
+  ),
+  // An oversize body (413) is covered by the Go integration test: the server closes the
+  // connection unread, which the runner's pooled socket cannot reuse.
+  hook('ingest GET', bearer(KEYS.write), undefined, { method: 'GET' }),
+  // Signals webhook.
+  hook('signal becomes a narrative', bearer(KEYS.write), signal({}), {
+    path: '/hooks/signals',
+    normalize: ['ids.*'],
+  }),
+  hook('signal replayed by its fingerprint', bearer(KEYS.write), signal({}), {
+    path: '/hooks/signals',
+    normalize: ['ids.*'],
+  }),
+  hook('signal refused', bearer(KEYS.write), signal({ observed_at: '2026-11-01' }), {
+    path: '/hooks/signals',
+  }),
+  hook('signal with a non-URL reference', bearer(KEYS.write), signal({ source_url: 'no es url' }), {
+    path: '/hooks/signals',
+  }),
+  hook('signal with a read-only key', bearer(KEYS.read), signal({}), { path: '/hooks/signals' }),
+  // Media feeds (admin only): create, read back, update, delete, refusals.
+  admin('create a media feed', 'POST', FEEDS, feed({ keywords: [' agua ', 'agua'] }), {
+    normalize: ['id', 'name', 'url', 'updated_at'],
+  }),
+  admin('duplicate media feed', 'POST', FEEDS, feed({})),
+  {
+    name: 'integration runtime: media feeds after the writes',
+    method: 'GET',
+    path: '/system/v4/media',
+    auth: 'admin',
+  },
+  ...[
+    'http://x.example/rss',
+    'https://127.0.0.1/rss',
+    'https://0x7f000001/rss',
+    'https://[::1]/rss',
+    'https://localhost/rss',
+    'https://router.local/rss',
+    'https://x.example:8443/rss',
+    'https://u:p@x.example/rss',
+    'no es url',
+  ].map((url) => admin(`media feed refused: ${url}`, 'POST', FEEDS, feed({ url }))),
+  admin('media feed with missing fields', 'POST', FEEDS, { json: { name: 5 } }),
+  admin('media feed oversize body', 'POST', FEEDS, { json: { name: 'x'.repeat(9000) } }),
+  admin('update a media feed', 'PUT', `${FEEDS}/{feed}`, feed({ enabled: false }), {
+    normalize: ['updated_at'],
+  }),
+  admin('update a missing media feed', 'PUT', `${FEEDS}/999999`, feed({})),
+  admin('update with an invalid id', 'PUT', `${FEEDS}/abc`, feed({})),
+  admin('delete a media feed', 'DELETE', `${FEEDS}/{del}`),
+  admin('delete it again', 'DELETE', `${FEEDS}/{del}`),
+  admin("delete another project's feed", 'DELETE', `${FEEDS}/32120`),
+  {
+    name: 'integration runtime: media feeds after update and delete',
+    method: 'GET',
+    path: '/system/v4/media',
+    auth: 'admin',
+    normalize: ['feeds.*.updated_at'],
+  },
+  {
+    ...admin('media feed write by an analyst', 'POST', FEEDS, feed({})),
+    auth: 'multi',
+    headers: { 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
+  },
+  admin('preview refused URL', 'POST', '/system/v4/media/preview', {
+    json: { url: 'http://x.example/' },
+  }),
+  admin('preview invalid body', 'POST', '/system/v4/media/preview', { json: { keywords: 5 } }),
+  admin('preview an unresolvable host', 'POST', '/system/v4/media/preview', {
+    json: { url: 'https://sipges-paridad.invalid/rss' },
+  }),
+  {
+    ...admin('media poll by the read-only role', 'POST', '/system/v4/media/poll'),
+    auth: 'consulta',
+  },
+  // Defensoría connector: configuration in the second project, read back; refusals.
+  {
+    name: 'integration runtime: configure the connector',
+    method: 'PUT',
+    path: `${SOURCES}/config`,
+    auth: 'multi',
+    sameOrigin: true,
+    headers: SECOND,
+    body: {
+      json: { enabled: true, query: ' agua ', territory: 'Costa', authorization_note: 'Convenio' },
+    },
+    normalize: ['revision', 'updated_at'],
+  },
+  {
+    name: 'integration runtime: the connector configuration is stored',
+    method: 'GET',
+    path: '/system/intelligence/sources',
+    auth: 'multi',
+    headers: SECOND,
+    normalize: ['state.revision', 'state.updated_at'],
+  },
+  {
+    name: 'integration runtime: enabling without a note',
+    method: 'PUT',
+    path: `${SOURCES}/config`,
+    auth: 'multi',
+    sameOrigin: true,
+    headers: SECOND,
+    body: { json: { enabled: true } },
+  },
+  admin('connector config validation', 'PUT', `${SOURCES}/config`, {
+    json: { enabled: 'si', query: 5 },
+  }),
+  {
+    ...admin('connector config by the read-only role', 'PUT', `${SOURCES}/config`, {
+      json: { enabled: false },
+    }),
+    auth: 'consulta',
+  },
+  admin('import validation', 'POST', `${SOURCES}/import`, { json: { post_id: 1.5 } }),
+  admin('import without a post', 'POST', `${SOURCES}/import`, { json: {} }),
+  {
+    name: 'integration runtime: preview with a long query',
+    method: 'GET',
+    path: `${SOURCES}/preview?query=${'x'.repeat(101)}`,
+    auth: 'admin',
+  },
+  { ...admin('connector poll by the read-only role', 'POST', `${SOURCES}/poll`), auth: 'consulta' },
+  // API key revocation: audited, immediate, only in the active project.
+  admin('revoke a key', 'DELETE', `${API_KEYS}/{revoke}`),
+  admin('revoke it again', 'DELETE', `${API_KEYS}/{revoke}`),
+  admin("revoke another project's key", 'DELETE', `${API_KEYS}/32104`),
+  admin('revoke an invalid id', 'DELETE', `${API_KEYS}/abc`),
+  hook('ingest with the key just revoked', '{revoked}', { json: { a: 1 } }),
+  {
+    name: 'integration runtime: keys after the revocation',
+    method: 'GET',
+    path: API_KEYS,
+    auth: 'admin',
+    normalize: ['*.revoked_at', '*.last_used_at'],
+  },
+];
+
 export const cases: readonly ParityCase[] = [
   // Admin only: consulta and the analista (multi) get the role gate's 403.
   ...scoped('api-keys', API_KEYS),
@@ -122,4 +476,5 @@ export const cases: readonly ParityCase[] = [
     sameOrigin: true,
     headers: { 'x-sipges-scope': 'SIPGES/PRJ-SECHURA' },
   },
+  ...RUNTIME_CASES,
 ];

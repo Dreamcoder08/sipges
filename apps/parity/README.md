@@ -43,6 +43,7 @@ rows load only with `SIPGES_PARITY_SEED_DATABASE_URL`.
 | `auth`       | `'admin'`, `'consulta'` or `'multi'`: that seeded user's session, sent to both APIs. |
 | `sameOrigin` | `true` sends `Origin` set to each API's own base URL (same-origin write).            |
 | `normalize`  | JSON paths that differ per run (`id`, `items.*.created_at`); fields only.            |
+| `perApi`     | `true` runs a write once per API; `{api}` becomes `TSAPI` or `GOAPI`.                |
 
 JSON compares as values: object key order does not count, `null` and a missing key differ. A normalized
 path present on only one side is still a difference, and a path that names no field (`*`) is refused.
@@ -58,6 +59,7 @@ path present on only one side is still a difference, and a path that names no fi
 | `GET /system/auth/current-scope`                                | 200 with a session; 403 for an ungranted project or `project_id`                                                                                                                                                                                                                                |
 | JSON body project check                                         | 403 for a body or payload naming another project, also with a BOM, `1e400` or nesting deeper than 10,000 levels                                                                                                                                                                                 |
 | `GET /system/auth/me`, `/providers`                             | no session, unknown session, a session; Google not configured                                                                                                                                                                                                                                   |
+| `/select-project`, `/system/auth/scopes`, `/system/auth/grants` | gates, validation, cross-project grants, revocation (`src/contexts/tenancy.ts`)                                                                                                                                                                                                                 |
 | project choice and role gate                                    | one grant automatic, two need a choice, `X-SIPGES-Scope`, the encoded scope cookie, an ungranted scope; `consulta` writing or in an admin-only area; `reset-mfa` needs a project                                                                                                                |
 | request reading                                                 | encoded `project_id` key, undecodable `project_id`, two `Origin` headers                                                                                                                                                                                                                        |
 | paths as Hono reads them                                        | `%2F`, dot segments (also `%2e`), `\`, trailing dot, `//` (JSON 404, not a redirect)                                                                                                                                                                                                            |
@@ -73,3 +75,7 @@ TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one proje
 covered by each API's own tests (`apps/api-go/internal/app`). So are the bodies parity cannot compare: the
 management CSV (it holds the wall-clock second) and the `/system/events` stream. Rows of `PARITY/OTRO` are labelled, so a leak shows as a
 difference.
+
+## Node version
+
+The runner refuses any Node major other than the one in `.node-version`, which is the one CI uses: multipart cases answer differently on Node 26. `SIPGES_PARITY_ANY_NODE=1` runs anyway. Parity runs the TypeScript API on Node, while production runs it on Workers, so a route that depends on the runtime needs its own check before it switches.

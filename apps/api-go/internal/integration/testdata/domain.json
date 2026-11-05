@@ -1,0 +1,1891 @@
+{
+  "urls": [
+    {
+      "input": "https://diario.example/rss",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/rss"
+    },
+    {
+      "input": "HTTPS://Diario.EXAMPLE:443/a/../b/./c?q=1 2#f g",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/b/c?q=1%202#f%20g"
+    },
+    {
+      "input": "https:diario.example",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/"
+    },
+    {
+      "input": "https:\\\\diario.example\\a\\b",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/a/b"
+    },
+    {
+      "input": "https:///diario.example",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/"
+    },
+    {
+      "input": "https://diario.example:0080/x",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "80",
+      "href": "https://diario.example:80/x"
+    },
+    { "input": "https://diario.example:65536/x", "ok": false },
+    {
+      "input": "https://diario.example:/x",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/x"
+    },
+    {
+      "input": "https://u:p@diario.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "u",
+      "password": "p",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://u:p@diario.example/"
+    },
+    {
+      "input": "https://u@diario.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "u",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://u@diario.example/"
+    },
+    {
+      "input": "https://:p@diario.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "p",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://:p@diario.example/"
+    },
+    {
+      "input": "https://@diario.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/"
+    },
+    {
+      "input": "https://a@b@diario.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "a%40b",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://a%40b@diario.example/"
+    },
+    {
+      "input": "https://u:p:q@diario.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "u",
+      "password": "p%3Aq",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://u:p%3Aq@diario.example/"
+    },
+    {
+      "input": "https://diario.example/%zz/%41",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/%zz/%41"
+    },
+    {
+      "input": "https://diario.example/ñ/😀?ñ=😀#ñ",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/%C3%B1/%F0%9F%98%80?%C3%B1=%F0%9F%98%80#%C3%B1"
+    },
+    {
+      "input": "https://diario.example/a'b?c'd#e'f",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/a'b?c%27d#e'f"
+    },
+    {
+      "input": "https://diario.example/{x}|y^z`?{x}|y^z`#{x}|y^z`",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/%7Bx%7D|y^z%60?{x}|y^z`#{x}|y^z%60"
+    },
+    {
+      "input": "https://diario.example/.%2E/%2e/x",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/x"
+    },
+    {
+      "input": "https://diario.example/a/b/..",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/a/"
+    },
+    {
+      "input": "https://diario.example/a/b/.",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/a/b/"
+    },
+    {
+      "input": "https://diario.example/..",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/"
+    },
+    {
+      "input": "https://diario.example?",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/?"
+    },
+    {
+      "input": "https://diario.example#",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/#"
+    },
+    {
+      "input": "https://diario.example/?#",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/?#"
+    },
+    {
+      "input": "https://127.0.0.1/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "127.0.0.1",
+      "port": "",
+      "href": "https://127.0.0.1/"
+    },
+    {
+      "input": "https://127.1/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "127.0.0.1",
+      "port": "",
+      "href": "https://127.0.0.1/"
+    },
+    {
+      "input": "https://0x7f.1/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "127.0.0.1",
+      "port": "",
+      "href": "https://127.0.0.1/"
+    },
+    {
+      "input": "https://0177.0.0.1/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "127.0.0.1",
+      "port": "",
+      "href": "https://127.0.0.1/"
+    },
+    {
+      "input": "https://2130706433/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "127.0.0.1",
+      "port": "",
+      "href": "https://127.0.0.1/"
+    },
+    {
+      "input": "https://0x7f000001/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "127.0.0.1",
+      "port": "",
+      "href": "https://127.0.0.1/"
+    },
+    {
+      "input": "https://4294967295/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "255.255.255.255",
+      "port": "",
+      "href": "https://255.255.255.255/"
+    },
+    { "input": "https://4294967296/", "ok": false },
+    { "input": "https://1.2.3.4.5/", "ok": false },
+    { "input": "https://1.2.3.256/", "ok": false },
+    { "input": "https://256.1.1.1/", "ok": false },
+    {
+      "input": "https://1.2.3.4./",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "1.2.3.4",
+      "port": "",
+      "href": "https://1.2.3.4/"
+    },
+    { "input": "https://1.2.3.09/", "ok": false },
+    {
+      "input": "https://0x/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "0.0.0.0",
+      "port": "",
+      "href": "https://0.0.0.0/"
+    },
+    { "input": "https://diario.0x10/", "ok": false },
+    { "input": "https://diario.10/", "ok": false },
+    {
+      "input": "https://10.diario/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "10.diario",
+      "port": "",
+      "href": "https://10.diario/"
+    },
+    {
+      "input": "https://[::1]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[::1]",
+      "port": "",
+      "href": "https://[::1]/"
+    },
+    {
+      "input": "https://[::]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[::]",
+      "port": "",
+      "href": "https://[::]/"
+    },
+    {
+      "input": "https://[0:0:0:0:0:0:0:1]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[::1]",
+      "port": "",
+      "href": "https://[::1]/"
+    },
+    {
+      "input": "https://[::ffff:127.0.0.1]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[::ffff:7f00:1]",
+      "port": "",
+      "href": "https://[::ffff:7f00:1]/"
+    },
+    {
+      "input": "https://[::FFFF:7F00:1]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[::ffff:7f00:1]",
+      "port": "",
+      "href": "https://[::ffff:7f00:1]/"
+    },
+    {
+      "input": "https://[1:0:0:2:0:0:0:3]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[1:0:0:2::3]",
+      "port": "",
+      "href": "https://[1:0:0:2::3]/"
+    },
+    {
+      "input": "https://[1:0:0:0:2:0:0:3]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[1::2:0:0:3]",
+      "port": "",
+      "href": "https://[1::2:0:0:3]/"
+    },
+    { "input": "https://[1::2::3]/", "ok": false },
+    { "input": "https://[::1/", "ok": false },
+    { "input": "https://[::1]x/", "ok": false },
+    { "input": "https://[fe80::1%25eth0]/", "ok": false },
+    { "input": "https://[1:2:3:4:5:6:7:8:9]/", "ok": false },
+    {
+      "input": "https://[1:2:3:4:5:6:1.2.3.4]/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "[1:2:3:4:5:6:102:304]",
+      "port": "",
+      "href": "https://[1:2:3:4:5:6:102:304]/"
+    },
+    { "input": "https://[1:2:3:4:5:6:7:1.2.3.4]/", "ok": false },
+    { "input": "https://[::1.2.3]/", "ok": false },
+    { "input": "https://[::01.2.3.4]/", "ok": false },
+    {
+      "input": "https://di%61rio.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/"
+    },
+    { "input": "https://di%2Frio.example/", "ok": false },
+    { "input": "https://di%25rio.example/", "ok": false },
+    { "input": "https://dia rio.example/", "ok": false },
+    { "input": "https://dia<rio.example/", "ok": false },
+    {
+      "input": "https://dia\"rio.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "dia\"rio.example",
+      "port": "",
+      "href": "https://dia\"rio.example/"
+    },
+    { "input": "https://diario.example\u0000/", "ok": false },
+    { "input": "https://dirio.example/", "ok": false },
+    {
+      "input": "https://ñandú.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "xn--and-6ma2c.example",
+      "port": "",
+      "href": "https://xn--and-6ma2c.example/"
+    },
+    {
+      "input": "https://xn--and-6ma2c.example/",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "xn--and-6ma2c.example",
+      "port": "",
+      "href": "https://xn--and-6ma2c.example/"
+    },
+    {
+      "input": "  \t https://diario.example/\n ",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/"
+    },
+    {
+      "input": "https://dia\nrio.example/r\tss",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/rss"
+    },
+    { "input": "https://", "ok": false },
+    { "input": "https:", "ok": false },
+    { "input": "https://:443/", "ok": false },
+    {
+      "input": "http://diario.example",
+      "ok": true,
+      "protocol": "http:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "http://diario.example/"
+    },
+    {
+      "input": "ftp://diario.example/x",
+      "ok": true,
+      "protocol": "ftp:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "ftp://diario.example/x"
+    },
+    {
+      "input": "ws://diario.example/x",
+      "ok": true,
+      "protocol": "ws:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "ws://diario.example/x"
+    },
+    {
+      "input": "file:///etc/passwd",
+      "ok": true,
+      "protocol": "file:",
+      "username": "",
+      "password": "",
+      "hostname": "",
+      "port": "",
+      "href": "file:///etc/passwd"
+    },
+    {
+      "input": "javascript:alert(1)",
+      "ok": true,
+      "protocol": "javascript:",
+      "username": "",
+      "password": "",
+      "hostname": "",
+      "port": "",
+      "href": "javascript:alert(1)"
+    },
+    {
+      "input": "mailto:a@b.example",
+      "ok": true,
+      "protocol": "mailto:",
+      "username": "",
+      "password": "",
+      "hostname": "",
+      "port": "",
+      "href": "mailto:a@b.example"
+    },
+    { "input": "foo://bar baz/", "ok": false },
+    { "input": "foo://[x]/", "ok": false },
+    { "input": "foo://a:99999/", "ok": false },
+    {
+      "input": "foo://a:12/",
+      "ok": true,
+      "protocol": "foo:",
+      "username": "",
+      "password": "",
+      "hostname": "a",
+      "port": "12",
+      "href": "foo://a:12/"
+    },
+    {
+      "input": "foo:",
+      "ok": true,
+      "protocol": "foo:",
+      "username": "",
+      "password": "",
+      "hostname": "",
+      "port": "",
+      "href": "foo:"
+    },
+    { "input": "1http://x", "ok": false },
+    { "input": "no es url", "ok": false },
+    { "input": "", "ok": false },
+    { "input": "//diario.example/", "ok": false },
+    {
+      "input": "https://diario.example/xxxxxxxxxx",
+      "ok": true,
+      "protocol": "https:",
+      "username": "",
+      "password": "",
+      "hostname": "diario.example",
+      "port": "",
+      "href": "https://diario.example/xxxxxxxxxx"
+    }
+  ],
+  "dates": [
+    { "input": "2026-11-02T15:04:05Z", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "2026-11-02T15:04:05.123456Z", "iso": "2026-11-02T15:04:05.123Z" },
+    { "input": "2026-11-02T15:04:05+05:30", "iso": "2026-11-02T09:34:05.000Z" },
+    { "input": "2026-11-02T15:04:05-03:00", "iso": "2026-11-02T18:04:05.000Z" },
+    { "input": "2026-11-02T15:04", "iso": "2026-11-02T15:04:00.000Z" },
+    { "input": "2026-11-02", "iso": "2026-11-02T00:00:00.000Z" },
+    { "input": "2026-11", "iso": "2026-11-01T00:00:00.000Z" },
+    { "input": "2026", "iso": "2026-01-01T00:00:00.000Z" },
+    { "input": "+002026-11-02T00:00:00Z", "iso": "2026-11-02T00:00:00.000Z" },
+    { "input": "-000001-01-01T00:00:00Z", "iso": "-000001-01-01T00:00:00.000Z" },
+    { "input": "2026-02-30T00:00:00Z", "iso": "2026-03-02T00:00:00.000Z" },
+    { "input": "2026-13-01", "iso": null },
+    { "input": "2026-11-02T24:00:00Z", "iso": "2026-11-03T00:00:00.000Z" },
+    { "input": "2026-11-02T24:00:01Z", "iso": null },
+    { "input": "2026-11-02T23:60:00Z", "iso": null },
+    { "input": "2026-11-02t15:04:05z", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "2026-11-02 15:04:05", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "2026-11-02 15:04:05 -0500", "iso": "2026-11-02T20:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 GMT", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 +0000", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 -0500", "iso": "2026-11-02T20:04:05.000Z" },
+    { "input": "Mon, 2 Nov 2026 15:04:05 EST", "iso": "2026-11-02T20:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 EDT", "iso": "2026-11-02T19:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 CST", "iso": "2026-11-02T21:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 PDT", "iso": "2026-11-02T22:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 UT", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 02 Nov 2026 15:04:05 Z", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 02 Nov 26 15:04:05 GMT", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 02 Nov 96 15:04:05 GMT", "iso": "1996-11-02T15:04:05.000Z" },
+    { "input": "02 Nov 2026 15:04 GMT", "iso": "2026-11-02T15:04:00.000Z" },
+    { "input": "02 Nov 2026", "iso": "2026-11-02T00:00:00.000Z" },
+    { "input": "Monday, 02-Nov-26 15:04:05 GMT", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 02 November 2026 15:04:05 GMT", "iso": "2026-11-02T15:04:05.000Z" },
+    { "input": "Mon, 31 Feb 2026 15:04:05 GMT", "iso": "2026-03-03T15:04:05.000Z" },
+    { "input": "Mon, 32 Nov 2026 15:04:05 GMT", "iso": null },
+    { "input": "Mon, 02 Nov 2026 25:04:05 GMT", "iso": null },
+    { "input": "Mon, 02 Nov 2026 15:04:05 +0100 (CET)", "iso": "2026-11-02T14:04:05.000Z" },
+    { "input": "Nov 2 2026 15:04:05 GMT+0200", "iso": "2026-11-02T13:04:05.000Z" },
+    { "input": "Nov 2, 2026", "iso": "2026-11-02T00:00:00.000Z" },
+    { "input": "Mon Nov 02 2026 15:04:05 GMT-0500", "iso": "2026-11-02T20:04:05.000Z" },
+    { "input": "garbage", "iso": null },
+    { "input": "", "iso": null },
+    { "input": "fecha rara", "iso": null }
+  ],
+  "feeds": [
+    {
+      "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\" xmlns:content=\"http://purl.org/rss/1.0/modules/content/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">\n<channel>\n<title>Diario sintético</title>\n<item>\n  <title>Corte de &lt;b&gt;agua&lt;/b&gt; en la Costa &amp; zonas altas</title>\n  <link>https://diario.example/notas/1</link>\n  <guid isPermaLink=\"false\">nota-1</guid>\n  <pubDate>Mon, 02 Nov 2026 15:04:05 -0500</pubDate>\n  <description><![CDATA[<p>Vecinos reclaman por la <script>alert(1)</script>contaminación del río.</p><style>p{}</style>]]></description>\n</item>\n<item>\n  <title><![CDATA[Minería: nueva mesa de diálogo]]></title>\n  <link> https://diario.example/notas/2?x=1&amp;y=2 </link>\n  <dc:date>2026-11-01T08:00:00Z</dc:date>\n  <content:encoded>&lt;p&gt;Texto &#233;&#x00E9; &#0; &#1114112; &nbsp;con   espacios&#x1F600;&lt;/p&gt;</content:encoded>\n</item>\n<item>\n  <title>Sin enlace</title>\n  <guid>nota-3</guid>\n</item>\n<item>\n  <title>Enlace no http</title>\n  <link>ftp://diario.example/3</link>\n</item>\n<ITEM>\n  <TITLE>Mayúsculas</TITLE>\n  <LINK>HTTPS://DIARIO.EXAMPLE/Notas/5</LINK>\n  <pubDate>fecha rara</pubDate>\n</ITEM>\n<item><title>Contaminacion sin tilde</title><link>https://diario.example/6</link><description>agua potable</description></item>\n</channel>\n</rss>\n",
+      "items": [
+        {
+          "key": "nota-1",
+          "title": "Corte de agua en la Costa & zonas altas",
+          "link": "https://diario.example/notas/1",
+          "summary": "Vecinos reclaman por la contaminación del río.",
+          "publishedAt": "2026-11-02T20:04:05.000Z"
+        },
+        {
+          "key": "https://diario.example/notas/2?x=1&y=2",
+          "title": "Minería: nueva mesa de diálogo",
+          "link": "https://diario.example/notas/2?x=1&y=2",
+          "summary": "Texto éé con espacios😀",
+          "publishedAt": "2026-11-01T08:00:00.000Z"
+        },
+        {
+          "key": "https://diario.example/Notas/5",
+          "title": "Mayúsculas",
+          "link": "https://diario.example/Notas/5",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://diario.example/6",
+          "title": "Contaminacion sin tilde",
+          "link": "https://diario.example/6",
+          "summary": "agua potable",
+          "publishedAt": null
+        }
+      ]
+    },
+    { "xml": "", "items": [] },
+    { "xml": "texto sin xml", "items": [] },
+    { "xml": "<rss><channel></channel></rss>", "items": [] },
+    {
+      "xml": "<feed xmlns=\"http://www.w3.org/2005/Atom\"><entry><title>Atom uno</title><id>urn:uno</id><link href=\"https://atom.example/1\"/><updated>2026-11-01T00:00:00Z</updated><summary type=\"html\">&lt;b&gt;Resumen&lt;/b&gt;</summary></entry><entry><title>Atom dos</title><link rel=\"self\" href=\"https://atom.example/self\"/><link rel=\"alternate\" href=\"https://atom.example/2?a=1&amp;b=2\"/><published>Mon, 02 Nov 2026 10:00:00 GMT</published><content>Contenido</content></entry><entry><title>Atom tres</title><link rel=\"alternate\" href=\"javascript:alert(1)\"/><link href=\"https://atom.example/3\"/></entry><entry><title>Atom cuatro</title><link href='https://atom.example/4' rel='alternate'/></entry></feed>",
+      "items": [
+        {
+          "key": "urn:uno",
+          "title": "Atom uno",
+          "link": "https://atom.example/1",
+          "summary": "Resumen",
+          "publishedAt": "2026-11-01T00:00:00.000Z"
+        },
+        {
+          "key": "https://atom.example/2?a=1&b=2",
+          "title": "Atom dos",
+          "link": "https://atom.example/2?a=1&b=2",
+          "summary": "Contenido",
+          "publishedAt": "2026-11-02T10:00:00.000Z"
+        },
+        {
+          "key": "https://atom.example/4",
+          "title": "Atom cuatro",
+          "link": "https://atom.example/4",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rdf:RDF><item><title>RDF</title><link>https://rdf.example/1</link><dc:date>2026-11-01</dc:date></item></rdf:RDF>",
+      "items": [
+        {
+          "key": "https://rdf.example/1",
+          "title": "RDF",
+          "link": "https://rdf.example/1",
+          "summary": "",
+          "publishedAt": "2026-11-01T00:00:00.000Z"
+        }
+      ]
+    },
+    { "xml": "<rss><item><title>Sin cierre</title><link>https://x.example/</link>", "items": [] },
+    {
+      "xml": "<rss><item><title>TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT</title><link>https://x.example/</link><guid>GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG</guid><description>DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD</description></item></rss>",
+      "items": [
+        {
+          "key": "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+          "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+          "link": "https://x.example/",
+          "summary": "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item><title>TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT😀</title><link>https://x.example/</link></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/",
+          "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT\ud83d",
+          "link": "https://x.example/",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item><title>N0</title><link>https://x.example/0</link></item><item><title>N1</title><link>https://x.example/1</link></item><item><title>N2</title><link>https://x.example/2</link></item><item><title>N3</title><link>https://x.example/3</link></item><item><title>N4</title><link>https://x.example/4</link></item><item><title>N5</title><link>https://x.example/5</link></item><item><title>N6</title><link>https://x.example/6</link></item><item><title>N7</title><link>https://x.example/7</link></item><item><title>N8</title><link>https://x.example/8</link></item><item><title>N9</title><link>https://x.example/9</link></item><item><title>N10</title><link>https://x.example/10</link></item><item><title>N11</title><link>https://x.example/11</link></item><item><title>N12</title><link>https://x.example/12</link></item><item><title>N13</title><link>https://x.example/13</link></item><item><title>N14</title><link>https://x.example/14</link></item><item><title>N15</title><link>https://x.example/15</link></item><item><title>N16</title><link>https://x.example/16</link></item><item><title>N17</title><link>https://x.example/17</link></item><item><title>N18</title><link>https://x.example/18</link></item><item><title>N19</title><link>https://x.example/19</link></item><item><title>N20</title><link>https://x.example/20</link></item><item><title>N21</title><link>https://x.example/21</link></item><item><title>N22</title><link>https://x.example/22</link></item><item><title>N23</title><link>https://x.example/23</link></item><item><title>N24</title><link>https://x.example/24</link></item><item><title>N25</title><link>https://x.example/25</link></item><item><title>N26</title><link>https://x.example/26</link></item><item><title>N27</title><link>https://x.example/27</link></item><item><title>N28</title><link>https://x.example/28</link></item><item><title>N29</title><link>https://x.example/29</link></item><item><title>N30</title><link>https://x.example/30</link></item><item><title>N31</title><link>https://x.example/31</link></item><item><title>N32</title><link>https://x.example/32</link></item><item><title>N33</title><link>https://x.example/33</link></item><item><title>N34</title><link>https://x.example/34</link></item><item><title>N35</title><link>https://x.example/35</link></item><item><title>N36</title><link>https://x.example/36</link></item><item><title>N37</title><link>https://x.example/37</link></item><item><title>N38</title><link>https://x.example/38</link></item><item><title>N39</title><link>https://x.example/39</link></item><item><title>N40</title><link>https://x.example/40</link></item><item><title>N41</title><link>https://x.example/41</link></item><item><title>N42</title><link>https://x.example/42</link></item><item><title>N43</title><link>https://x.example/43</link></item><item><title>N44</title><link>https://x.example/44</link></item><item><title>N45</title><link>https://x.example/45</link></item><item><title>N46</title><link>https://x.example/46</link></item><item><title>N47</title><link>https://x.example/47</link></item><item><title>N48</title><link>https://x.example/48</link></item><item><title>N49</title><link>https://x.example/49</link></item><item><title>N50</title><link>https://x.example/50</link></item><item><title>N51</title><link>https://x.example/51</link></item><item><title>N52</title><link>https://x.example/52</link></item><item><title>N53</title><link>https://x.example/53</link></item><item><title>N54</title><link>https://x.example/54</link></item><item><title>N55</title><link>https://x.example/55</link></item><item><title>N56</title><link>https://x.example/56</link></item><item><title>N57</title><link>https://x.example/57</link></item><item><title>N58</title><link>https://x.example/58</link></item><item><title>N59</title><link>https://x.example/59</link></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/0",
+          "title": "N0",
+          "link": "https://x.example/0",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/1",
+          "title": "N1",
+          "link": "https://x.example/1",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/2",
+          "title": "N2",
+          "link": "https://x.example/2",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/3",
+          "title": "N3",
+          "link": "https://x.example/3",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/4",
+          "title": "N4",
+          "link": "https://x.example/4",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/5",
+          "title": "N5",
+          "link": "https://x.example/5",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/6",
+          "title": "N6",
+          "link": "https://x.example/6",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/7",
+          "title": "N7",
+          "link": "https://x.example/7",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/8",
+          "title": "N8",
+          "link": "https://x.example/8",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/9",
+          "title": "N9",
+          "link": "https://x.example/9",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/10",
+          "title": "N10",
+          "link": "https://x.example/10",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/11",
+          "title": "N11",
+          "link": "https://x.example/11",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/12",
+          "title": "N12",
+          "link": "https://x.example/12",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/13",
+          "title": "N13",
+          "link": "https://x.example/13",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/14",
+          "title": "N14",
+          "link": "https://x.example/14",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/15",
+          "title": "N15",
+          "link": "https://x.example/15",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/16",
+          "title": "N16",
+          "link": "https://x.example/16",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/17",
+          "title": "N17",
+          "link": "https://x.example/17",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/18",
+          "title": "N18",
+          "link": "https://x.example/18",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/19",
+          "title": "N19",
+          "link": "https://x.example/19",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/20",
+          "title": "N20",
+          "link": "https://x.example/20",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/21",
+          "title": "N21",
+          "link": "https://x.example/21",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/22",
+          "title": "N22",
+          "link": "https://x.example/22",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/23",
+          "title": "N23",
+          "link": "https://x.example/23",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/24",
+          "title": "N24",
+          "link": "https://x.example/24",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/25",
+          "title": "N25",
+          "link": "https://x.example/25",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/26",
+          "title": "N26",
+          "link": "https://x.example/26",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/27",
+          "title": "N27",
+          "link": "https://x.example/27",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/28",
+          "title": "N28",
+          "link": "https://x.example/28",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/29",
+          "title": "N29",
+          "link": "https://x.example/29",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/30",
+          "title": "N30",
+          "link": "https://x.example/30",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/31",
+          "title": "N31",
+          "link": "https://x.example/31",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/32",
+          "title": "N32",
+          "link": "https://x.example/32",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/33",
+          "title": "N33",
+          "link": "https://x.example/33",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/34",
+          "title": "N34",
+          "link": "https://x.example/34",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/35",
+          "title": "N35",
+          "link": "https://x.example/35",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/36",
+          "title": "N36",
+          "link": "https://x.example/36",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/37",
+          "title": "N37",
+          "link": "https://x.example/37",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/38",
+          "title": "N38",
+          "link": "https://x.example/38",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/39",
+          "title": "N39",
+          "link": "https://x.example/39",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/40",
+          "title": "N40",
+          "link": "https://x.example/40",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/41",
+          "title": "N41",
+          "link": "https://x.example/41",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/42",
+          "title": "N42",
+          "link": "https://x.example/42",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/43",
+          "title": "N43",
+          "link": "https://x.example/43",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/44",
+          "title": "N44",
+          "link": "https://x.example/44",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/45",
+          "title": "N45",
+          "link": "https://x.example/45",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/46",
+          "title": "N46",
+          "link": "https://x.example/46",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/47",
+          "title": "N47",
+          "link": "https://x.example/47",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/48",
+          "title": "N48",
+          "link": "https://x.example/48",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://x.example/49",
+          "title": "N49",
+          "link": "https://x.example/49",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item ><title  lang=\"es\">Con atributos</title><link>https://x.example/a</link><guid isPermaLink=\"true\">https://x.example/a</guid></item><itemx><title>No</title></itemx></rss>",
+      "items": [
+        {
+          "key": "https://x.example/a",
+          "title": "Con atributos",
+          "link": "https://x.example/a",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item>\n<title>Espacios y　raros</title>\n<link>\nhttps://x.example/b\n</link></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/b",
+          "title": "Espacios y raros",
+          "link": "https://x.example/b",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item><title><![CDATA[ <b>Negrita</b> &amp; CDATA ]]></title><link>https://x.example/c</link><description><![CDATA[a]]> b]]></description></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/c",
+          "title": "Negrita & CDATA",
+          "link": "https://x.example/c",
+          "summary": "a]]> b",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item><title>&#65;&#x42;&#X43;&#0;&#9999999;&#xD800;&unknown;&AMP;&Lt;</title><link>https://x.example/d</link></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/d",
+          "title": "ABC\ud800&unknown;&<",
+          "link": "https://x.example/d",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item><title>Script</title><link>https://x.example/e</link><description>&lt;SCRIPT type=\"x\"&gt;mal()&lt;/script&gt;bien &lt;style&gt;x&lt;/STYLE&gt;fin</description></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/e",
+          "title": "Script",
+          "link": "https://x.example/e",
+          "summary": "bien fin",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "xml": "<rss><ITEM><Title>Caso</Title><LINK>https://x.example/f</LINK><PUBDATE>Mon, 02 Nov 2026 15:04:05 GMT</PUBDATE></ITEM></rss>",
+      "items": [
+        {
+          "key": "https://x.example/f",
+          "title": "Caso",
+          "link": "https://x.example/f",
+          "summary": "",
+          "publishedAt": "2026-11-02T15:04:05.000Z"
+        }
+      ]
+    },
+    {
+      "xml": "<rss><item><title>Fecha mala</title><link>https://x.example/g</link><pubDate>no es fecha</pubDate></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/g",
+          "title": "Fecha mala",
+          "link": "https://x.example/g",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    { "xml": "<feed><entry><title>Sin link</title><id>x</id></entry></feed>", "items": [] },
+    {
+      "xml": "<rss><entry><title>Mezcla</title><link href=\"https://x.example/h\"/></entry><item><title>Item</title><link>https://x.example/i</link></item></rss>",
+      "items": [
+        {
+          "key": "https://x.example/i",
+          "title": "Item",
+          "link": "https://x.example/i",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    }
+  ],
+  "keywords": [
+    {
+      "item": { "title": "Contaminación del río", "summary": "" },
+      "keywords": ["contaminacion", "RÍO", "rio", "agua", "", "  ", "del río", "ción"],
+      "matched": ["contaminacion", "RÍO", "rio", "del río"]
+    },
+    {
+      "item": { "title": "MINERÍA ilegal", "summary": "en la región" },
+      "keywords": ["minería", "mineria ilegal", "region", "ilegal en"],
+      "matched": ["minería", "mineria ilegal", "region", "ilegal en"]
+    },
+    {
+      "item": { "title": "ΣΟΦΟΣ", "summary": "Straße" },
+      "keywords": ["σοφος", "σοφοσ", "strasse", "straße"],
+      "matched": ["σοφος", "straße"]
+    },
+    {
+      "item": { "title": "agua-potable", "summary": "" },
+      "keywords": ["agua potable", "agua-potable", "agua_potable"],
+      "matched": ["agua potable", "agua-potable", "agua_potable"]
+    },
+    {
+      "item": { "title": "Año 2026", "summary": "" },
+      "keywords": ["2026", "ano", "año"],
+      "matched": ["2026", "ano", "año"]
+    }
+  ],
+  "problems": [
+    { "input": "https://diario.example/rss", "problem": null },
+    { "input": "http://diario.example/rss", "problem": "La URL debe empezar con https://" },
+    {
+      "input": "https://xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "problem": "La URL es demasiado larga"
+    },
+    { "input": "https://ñandú.example/", "problem": null },
+    { "input": "https://localhost", "problem": "La URL debe ser de un sitio público" },
+    { "input": "https://LOCALHOST", "problem": "La URL debe ser de un sitio público" },
+    { "input": "https://diario", "problem": "La URL debe ser de un sitio público" },
+    { "input": "https://a.local", "problem": "La URL debe ser de un sitio público" },
+    { "input": "https://a.localhost.", "problem": null },
+    { "input": "https://[::1]", "problem": "Usa el nombre del sitio, no una dirección IP" },
+    { "input": "https://1.2.3.4", "problem": "Usa el nombre del sitio, no una dirección IP" },
+    { "input": "https://0x7f.1", "problem": "Usa el nombre del sitio, no una dirección IP" },
+    {
+      "input": "https://a:b@c.example",
+      "problem": "La URL no puede incluir usuario ni contraseña"
+    },
+    { "input": "https://c.example:8443", "problem": "La URL no puede indicar un puerto" },
+    { "input": "https://c.example:443", "problem": null },
+    { "input": "no es url", "problem": "La URL no es válida" }
+  ],
+  "rss": [
+    {
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "items": [
+        {
+          "key": "nota-1",
+          "title": "Corte de agua en la Costa & zonas altas",
+          "link": "https://diario.example/notas/1",
+          "summary": "Vecinos reclaman por la contaminación del río.",
+          "publishedAt": "2026-11-02T20:04:05.000Z"
+        },
+        {
+          "key": "https://diario.example/notas/2?x=1&y=2",
+          "title": "Minería: nueva mesa de diálogo",
+          "link": "https://diario.example/notas/2?x=1&y=2",
+          "summary": "Texto éé con espacios😀",
+          "publishedAt": "2026-11-01T08:00:00.000Z"
+        },
+        {
+          "key": "https://diario.example/Notas/5",
+          "title": "Mayúsculas",
+          "link": "https://diario.example/Notas/5",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://diario.example/6",
+          "title": "Contaminacion sin tilde",
+          "link": "https://diario.example/6",
+          "summary": "agua potable",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "hex": "3c68746d6c3e6e6f20666565643c2f68746d6c3e",
+      "error": "feed_not_a_feed"
+    },
+    { "addresses": ["93.184.216.34"], "status": 200, "hex": "3c7273733e3c2f7273733e", "items": [] },
+    { "addresses": ["93.184.216.34"], "status": 301, "hex": "", "error": "feed_redirect" },
+    { "addresses": ["93.184.216.34"], "status": 404, "hex": "", "error": "feed_unavailable" },
+    { "addresses": ["93.184.216.34"], "status": 204, "hex": null, "error": "feed_unavailable" },
+    {
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "large": 1048577,
+      "hex": null,
+      "error": "feed_too_large"
+    },
+    {
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "headers": { "content-length": "2097152" },
+      "hex": "3c7273733e3c2f7273733e",
+      "error": "feed_too_large"
+    },
+    {
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d2249534f2d383835392d31223f3e3c7273733e3c6974656d3e3c7469746c653e436166e980813c2f7469746c653e3c6c696e6b3e68747470733a2f2f782e6578616d706c652f3c2f6c696e6b3e3c2f6974656d3e3c2f7273733e",
+      "items": [
+        {
+          "key": "https://x.example/",
+          "title": "Café€",
+          "link": "https://x.example/",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "hex": "efbbbf3c7273733e3c6974656d3e3c7469746c653e424f4d20ff3c2f7469746c653e3c6c696e6b3e68747470733a2f2f782e6578616d706c652f3c2f6c696e6b3e3c2f6974656d3e3c2f7273733e",
+      "items": [
+        {
+          "key": "https://x.example/",
+          "title": "BOM �",
+          "link": "https://x.example/",
+          "summary": "",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "addresses": [],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_unresolved"
+    },
+    {
+      "addresses": ["10.0.0.1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["93.184.216.34", "127.0.0.1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["::ffff:192.168.1.1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["fd00::1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["100.64.0.1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["198.18.0.1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["169.254.169.254"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["224.0.0.1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_blocked_address"
+    },
+    {
+      "addresses": ["2606:4700::1"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "items": [
+        {
+          "key": "nota-1",
+          "title": "Corte de agua en la Costa & zonas altas",
+          "link": "https://diario.example/notas/1",
+          "summary": "Vecinos reclaman por la contaminación del río.",
+          "publishedAt": "2026-11-02T20:04:05.000Z"
+        },
+        {
+          "key": "https://diario.example/notas/2?x=1&y=2",
+          "title": "Minería: nueva mesa de diálogo",
+          "link": "https://diario.example/notas/2?x=1&y=2",
+          "summary": "Texto éé con espacios😀",
+          "publishedAt": "2026-11-01T08:00:00.000Z"
+        },
+        {
+          "key": "https://diario.example/Notas/5",
+          "title": "Mayúsculas",
+          "link": "https://diario.example/Notas/5",
+          "summary": "",
+          "publishedAt": null
+        },
+        {
+          "key": "https://diario.example/6",
+          "title": "Contaminacion sin tilde",
+          "link": "https://diario.example/6",
+          "summary": "agua potable",
+          "publishedAt": null
+        }
+      ]
+    },
+    {
+      "addresses": "throw",
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_unresolved"
+    },
+    { "addresses": ["93.184.216.34"], "throws": true, "hex": null, "error": "feed_unavailable" },
+    {
+      "url": "http://diario.example/rss",
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_invalid_url"
+    },
+    {
+      "url": "https://localhost/rss",
+      "addresses": ["93.184.216.34"],
+      "status": 200,
+      "hex": "3c3f786d6c2076657273696f6e3d22312e302220656e636f64696e673d225554462d38223f3e0a3c7273732076657273696f6e3d22322e302220786d6c6e733a636f6e74656e743d22687474703a2f2f7075726c2e6f72672f7273732f312e302f6d6f64756c65732f636f6e74656e742f2220786d6c6e733a64633d22687474703a2f2f7075726c2e6f72672f64632f656c656d656e74732f312e312f223e0a3c6368616e6e656c3e0a3c7469746c653e44696172696f2073696e74c3a97469636f3c2f7469746c653e0a3c6974656d3e0a20203c7469746c653e436f72746520646520266c743b622667743b61677561266c743b2f622667743b20656e206c6120436f7374612026616d703b207a6f6e617320616c7461733c2f7469746c653e0a20203c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f313c2f6c696e6b3e0a20203c677569642069735065726d614c696e6b3d2266616c7365223e6e6f74612d313c2f677569643e0a20203c707562446174653e4d6f6e2c203032204e6f7620323032362031353a30343a3035202d303530303c2f707562446174653e0a20203c6465736372697074696f6e3e3c215b43444154415b3c703e566563696e6f73207265636c616d616e20706f72206c61203c7363726970743e616c6572742831293c2f7363726970743e636f6e74616d696e616369c3b36e2064656c2072c3ad6f2e3c2f703e3c7374796c653e707b7d3c2f7374796c653e5d5d3e3c2f6465736372697074696f6e3e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e3c215b43444154415b4d696e6572c3ad613a206e75657661206d657361206465206469c3a16c6f676f5d5d3e3c2f7469746c653e0a20203c6c696e6b3e2068747470733a2f2f64696172696f2e6578616d706c652f6e6f7461732f323f783d3126616d703b793d32203c2f6c696e6b3e0a20203c64633a646174653e323032362d31312d30315430383a30303a30305a3c2f64633a646174653e0a20203c636f6e74656e743a656e636f6465643e266c743b702667743b546578746f2026233233333b262378303045393b202623303b202623313131343131323b20266e6273703b636f6e2020206573706163696f7326237831463630303b266c743b2f702667743b3c2f636f6e74656e743a656e636f6465643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e53696e20656e6c6163653c2f7469746c653e0a20203c677569643e6e6f74612d333c2f677569643e0a3c2f6974656d3e0a3c6974656d3e0a20203c7469746c653e456e6c616365206e6f20687474703c2f7469746c653e0a20203c6c696e6b3e6674703a2f2f64696172696f2e6578616d706c652f333c2f6c696e6b3e0a3c2f6974656d3e0a3c4954454d3e0a20203c5449544c453e4d6179c3ba7363756c61733c2f5449544c453e0a20203c4c494e4b3e48545450533a2f2f44494152494f2e4558414d504c452f4e6f7461732f353c2f4c494e4b3e0a20203c707562446174653e666563686120726172613c2f707562446174653e0a3c2f4954454d3e0a3c6974656d3e3c7469746c653e436f6e74616d696e6163696f6e2073696e2074696c64653c2f7469746c653e3c6c696e6b3e68747470733a2f2f64696172696f2e6578616d706c652f363c2f6c696e6b3e3c6465736372697074696f6e3e6167756120706f7461626c653c2f6465736372697074696f6e3e3c2f6974656d3e0a3c2f6368616e6e656c3e0a3c2f7273733e0a",
+      "error": "feed_invalid_url"
+    }
+  ],
+  "official": [
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "posts": [
+        {
+          "id": 7,
+          "url": "https://www.defensoria.gob.pe/nota-7/",
+          "title": "T&iacute;tulo & negrita “cita”",
+          "excerpt": "Extracto con espacio",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        }
+      ],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "posts": [
+        {
+          "id": 7,
+          "url": "https://www.defensoria.gob.pe/nota-7/",
+          "title": "T&iacute;tulo & negrita “cita”",
+          "excerpt": "Extracto con espacio",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        }
+      ],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b5d",
+      "posts": [],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b5d",
+      "error": "source_not_found",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a382c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f612f2e2e2f623f783dc3b1222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "posts": [
+        {
+          "id": 7,
+          "url": "https://www.defensoria.gob.pe/nota-7/",
+          "title": "T&iacute;tulo & negrita “cita”",
+          "excerpt": "Extracto con espacio",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        },
+        {
+          "id": 8,
+          "url": "https://www.defensoria.gob.pe/b?x=%C3%B1",
+          "title": "T&iacute;tulo & negrita “cita”",
+          "excerpt": "Extracto con espacio",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        }
+      ],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a382c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f612f2e2e2f623f783dc3b1222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "posts": [
+        {
+          "id": 7,
+          "url": "https://www.defensoria.gob.pe/nota-7/",
+          "title": "T&iacute;tulo & negrita “cita”",
+          "excerpt": "Extracto con espacio",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        }
+      ],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a312c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a322c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a332c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a342c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a352c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a362c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a382c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a392c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a31302c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a31312c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a312c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a322c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a332c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a342c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a352c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a362c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a382c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a392c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a31302c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d2c7b226964223a31312c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a302c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a302c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a312e352c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a312e352c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a2237222c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a2237222c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f6576696c2e6578616d706c652f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f6576696c2e6578616d706c652f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652e6576696c2e6578616d706c652f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652e6576696c2e6578616d706c652f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a22687474703a2f2f7777772e646566656e736f7269612e676f622e70652f78222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a22687474703a2f2f7777772e646566656e736f7269612e676f622e70652f78222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70653a383434332f78222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70653a383434332f78222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e7065406576696c2e6578616d706c652f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e7065406576696c2e6578616d706c652f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d30322d33305430303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d30322d33305430303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315432343a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315432343a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30312031303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30312031303a30303a3030222c227469746c65223a7b2272656e6465726564223a2254266961637574653b74756c6f2026616d703b203c623e6e6567726974613c2f623e202623383232303b636974612623383232313b227d2c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a22706c616e6f222c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a22706c616e6f222c2265786365727074223a7b2272656e6465726564223a223c703e457874726163746f3c7363726970743e7828293c2f7363726970743e20636f6e266e6273703b6573706163696f3c2f703e5c6e227d2c226578747261223a2269676e6f7261646f227d5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200, "longTitle": 100001 },
+      "hex": null,
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200, "longTitle": 100001 },
+      "hex": null,
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a22545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454227d2c2265786365727074223a7b2272656e6465726564223a224545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545227d2c226578747261223a2269676e6f7261646f227d5d",
+      "posts": [
+        {
+          "id": 7,
+          "url": "https://www.defensoria.gob.pe/nota-7/",
+          "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+          "excerpt": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        }
+      ],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "5b7b226964223a372c226c696e6b223a2268747470733a2f2f7777772e646566656e736f7269612e676f622e70652f6e6f74612d372f222c22646174655f676d74223a22323032362d31302d30315431303a30303a3030222c227469746c65223a7b2272656e6465726564223a22545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454227d2c2265786365727074223a7b2272656e6465726564223a224545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545454545227d2c226578747261223a2269676e6f7261646f227d5d",
+      "posts": [
+        {
+          "id": 7,
+          "url": "https://www.defensoria.gob.pe/nota-7/",
+          "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+          "excerpt": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE",
+          "published_at": "2026-10-01T10:00:00.000Z"
+        }
+      ],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "7b226964223a377d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "7b226964223a377d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "6e6f206573206a736f6e",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "6e6f206573206a736f6e",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200 },
+      "hex": "efbbbf5b5d",
+      "posts": [],
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200 },
+      "hex": "efbbbf5b5d",
+      "error": "source_not_found",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 500 },
+      "hex": "5b5d",
+      "error": "source_unavailable",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 500 },
+      "hex": "5b5d",
+      "error": "source_unavailable",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 302 },
+      "hex": "5b5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 302 },
+      "hex": "5b5d",
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200, "large": 524289 },
+      "hex": null,
+      "error": "source_response_too_large",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200, "large": 524289 },
+      "hex": null,
+      "error": "source_response_too_large",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "status": 200, "headers": { "content-length": "614400" } },
+      "hex": "5b5d",
+      "error": "source_response_too_large",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "status": 200, "headers": { "content-length": "614400" } },
+      "hex": "5b5d",
+      "error": "source_response_too_large",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "preview",
+      "case": { "throws": true },
+      "hex": null,
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?per_page=10&search=agua+%26+%C3%B1%2Bx&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "get",
+      "case": { "throws": true },
+      "hex": null,
+      "error": "source_invalid_data",
+      "url": "https://www.defensoria.gob.pe/wp-json/wp/v2/posts?include=7&per_page=1&_fields=id%2Clink%2Cdate_gmt%2Ctitle%2Cexcerpt"
+    },
+    {
+      "call": "query",
+      "query": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "error": "source_invalid_query"
+    },
+    { "call": "query", "query": "a\u0000b", "error": "source_invalid_query" },
+    {
+      "call": "query",
+      "query": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+      "posts": []
+    },
+    {
+      "call": "query",
+      "query": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+      "error": "source_invalid_query"
+    }
+  ]
+}

@@ -326,8 +326,8 @@ func TestNeighbourhoodFollowsTheHopsOfTheVisibleSeeds(t *testing.T) {
 	nb := `{"seeds":[{"module":"eventos","id":"E1"},{"module":"eventos","id":"E1"},{"module":"nada","id":"E1"},{"module":"alertas","id":"R1"}],"hops":[["origina"]],"fields":["Fecha"]}`
 	status, out := send(t, base, "POST", "/system/graph/neighbourhood", "solo", nb, nil)
 	expect(t, status, out, http.StatusOK, `{"seeds":[{"module":"eventos","id":"E1"},{"module":"eventos","id":"E1"},{"module":"alertas","id":"R1"}],"nodes":[`+
-		`{"module":"eventos","id":"E1","type_label":"Evento","title":"Reunión clave PROPIA","date":"2026-02-03","marking":"interno","fields":{"Fecha":"2026-02-03"}},`+
-		`{"module":"alertas","id":"R1","type_label":"Alerta","title":"Alerta clave PROPIA","date":"2026-02-04","marking":"restringido","fields":{"Fecha":"2026-02-04"}}],"edges":[`+origin+`],"truncated":false}`)
+		`{"module":"alertas","id":"R1","type_label":"Alerta","title":"Alerta clave PROPIA","date":"2026-02-04","marking":"restringido","fields":{"Fecha":"2026-02-04"}},`+
+		`{"module":"eventos","id":"E1","type_label":"Evento","title":"Reunión clave PROPIA","date":"2026-02-03","marking":"interno","fields":{"Fecha":"2026-02-03"}}],"edges":[`+origin+`],"truncated":false}`)
 	// The read-only role may send it (a read-only POST) and never sees the restricted alert.
 	status, out = send(t, base, "POST", "/system/graph/neighbourhood", "reader", nb, nil)
 	expect(t, status, out, http.StatusOK, `{"seeds":[{"module":"eventos","id":"E1"},{"module":"eventos","id":"E1"}],"nodes":[`+

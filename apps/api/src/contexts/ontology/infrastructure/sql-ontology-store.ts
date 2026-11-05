@@ -63,7 +63,7 @@ export const createSqlOntologyStore = (sql: SqlClient): OntologyStore => ({
           marking: string;
           updated_at: Date | string;
         }>(
-          `SELECT module, id, payload, marking, updated_at FROM module_records WHERE ${inRefs('module', 'id', 1)}`,
+          `SELECT module, id, payload, marking, updated_at FROM module_records WHERE ${inRefs('module', 'id', 1)} ORDER BY module, id`,
           columns(refs),
         )
       ).map((row) => ({ ...row, updatedAt: new Date(row.updated_at) })),
