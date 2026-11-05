@@ -53,6 +53,8 @@ const declaredCodes = [
   ...readFileSync(`${ROOT}apps/api/src/tools/migrate-legacy/domain/mapping.ts`, 'utf8')
     .matchAll(/^ {2}\| '(\w+)'/gm),
 ].map((match) => match[1] ?? '');
+// An empty list would make the every-code check below pass without checking anything.
+if (declaredCodes.length === 0) throw new Error('No problem codes found in domain/mapping.ts');
 
 const hideTimes = (text: string) => {
   for (const match of text.matchAll(/"code":"(\w+)"/g)) seenCodes.add(match[1] ?? '');

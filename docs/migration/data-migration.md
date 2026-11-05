@@ -216,6 +216,7 @@ tenants, damaged SQLite files and S3 through a local server that checks each req
 | An object in JSON nested past 100,000 levels with a syntax error | row rejected | `RangeError`, exit 1 |
 | A `0x`, `0o` or `0b` number longer than 128 bits | exactly rounded | accumulated in floating point |
 | `SIPGES_S3_ENDPOINT` that is not plainly `http(s)://host[:port][/…]`: credentials, no `//`, surrounding spaces, an empty port, an abbreviated address such as `127.1`, or an underscore in the host | accepted by `new URL` | refused, exit 1 |
+| A stalled S3 transfer | fails after 300 s without data | fails when the whole body takes over 900 s, which also stops a very slow transfer of a large object |
 | An S3 redirect | followed | not followed: the reply counts as a failure |
 | TLS to PostgreSQL | encrypts without verifying | verifies against the Mozilla roots |
 | Connection lost mid-run | a new connection, from a pool | a new connection, one at a time |
