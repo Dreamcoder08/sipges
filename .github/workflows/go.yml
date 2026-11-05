@@ -5,14 +5,6 @@ name: Go
 # Go API with the TypeScript API on the same database, so a TypeScript API change runs it too.
 on:
   pull_request:
-    paths:
-      - 'apps/api-go/**'
-      - 'engines/go/**'
-      - 'apps/api/src/**'
-      - 'apps/parity/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - '.github/workflows/go.yml'
   push:
     branches: [main]
     paths:
@@ -32,7 +24,29 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect Go changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: diff
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          # Pushes to main are filtered by paths above; a pull request always reports its checks so
+          # the ruleset can require them, and a job with nothing to do is skipped, which counts as passed.
+          if [ -z "$BASE" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git fetch --no-tags --depth=1 origin "$BASE" 2>/dev/null || true
+          if ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          code=$(git diff --name-only "$BASE" HEAD | grep -E '^(apps/api-go/|engines/go/|apps/api/src/|apps/parity/|packages/|pnpm-lock\.yaml$|\.github/workflows/go\.yml$)' | head -1)
+          if [ -n "$code" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+
   go:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Go (vet, test, lint)
     # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
@@ -75,6 +89,8 @@ jobs:
           working-directory: apps/api-go
 
   parity:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Go/TypeScript parity (same requests, same status and JSON)
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
     timeout-minutes: 15
@@ -106,6 +122,8 @@ jobs:
         run: pnpm parity
 
   image:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     name: Go image (build and smoke test)
     # GitHub-hosted on purpose: it needs Docker with buildx, which the self-hosted runner lacks.
     runs-on: ubuntu-latest
