@@ -4,6 +4,7 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -462,6 +463,11 @@ func (m Media) Poll(ctx context.Context, tenantID string, force bool) (PollRepor
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					reads[i] = read{nil, fmt.Errorf("feed read panicked: %v", r)}
+				}
+			}()
 			items, err := m.Gateway.Read(ctx, feed.URL)
 			reads[i] = read{items, err}
 		}()
@@ -638,7 +644,7 @@ func (s Sources) Poll(ctx context.Context, tenantID string) (SourcePoll, error) 
 // Runtime is the integration half of the automation runtime's beforeTick (compose.ts): on a
 // cron tick, before the rules run, each visited tenant polls the Defensoría connector and its
 // due media feeds, as the `automation` actor with full clearance. The Go automation runtime
-// calls it once it exists; until then the TypeScript cron keeps polling.
+// calls it only with SIPGES_GO_AUTOMATION_CRON; until then the TypeScript cron keeps polling.
 type Runtime struct {
 	Sources Sources
 	Media   Media
@@ -646,14 +652,23 @@ type Runtime struct {
 
 // BeforeTick polls both sources of tenantID; media feeds are polled even when the Defensoría
 // connector fails, and vice versa. The first failure (the connector's, then the feeds') is
-// returned.
+// returned. A panic in either is a failure: Promise.allSettled keeps one from ending the process.
 func (rt Runtime) BeforeTick(ctx context.Context, tenantID string) error {
 	ctx = database.WithActor(ctx, database.Actor{Name: "automation", Clearance: database.ClearanceFull})
 	var official, feeds error
 	var wg sync.WaitGroup
 	wg.Add(2)
-	go func() { defer wg.Done(); _, official = rt.Sources.Poll(ctx, tenantID) }()
-	go func() { defer wg.Done(); _, feeds = rt.Media.Poll(ctx, tenantID, false) }()
+	settled := func(result *error, poll func() error) {
+		defer wg.Done()
+		defer func() {
+			if r := recover(); r != nil {
+				*result = fmt.Errorf("source poll panicked: %v", r)
+			}
+		}()
+		*result = poll()
+	}
+	go settled(&official, func() error { _, err := rt.Sources.Poll(ctx, tenantID); return err })
+	go settled(&feeds, func() error { _, err := rt.Media.Poll(ctx, tenantID, false); return err })
 	wg.Wait()
 	if official != nil {
 		return official

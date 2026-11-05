@@ -58,13 +58,14 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 	bootstrap := app.NewIdentityBootstrap(pool, lookup, log, nil)
 	// Engines is set, so NewHandler never compiles them with its own background context.
 	handler, err := app.NewHandler(pool, app.Options{ //nolint:contextcheck // see above
-		Engines:       compiled,
-		Logger:        log,
-		AllowedHosts:  cfg.AllowedHosts,
-		AccessLog:     cfg.AccessLog,
-		RequireMFA:    cfg.RequireMFA,
-		GoogleEnabled: cfg.GoogleEnabled,
-		ReadyGate:     bootstrap.Ready,
+		Engines:            compiled,
+		Logger:             log,
+		AllowedHosts:       cfg.AllowedHosts,
+		AccessLog:          cfg.AccessLog,
+		RequireMFA:         cfg.RequireMFA,
+		GoogleEnabled:      cfg.GoogleEnabled,
+		ReadyGate:          bootstrap.Ready,
+		AutomationInterval: cfg.AutomationInterval,
 	})
 	if err != nil {
 		return err
@@ -79,6 +80,7 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 	serveCtx, stopServing := context.WithCancelCause(ctx)
 	defer stopServing(nil)
 	bootstrap.Start(serveCtx)
+	app.StartAutomationSchedule(serveCtx, pool, log)
 	go func() {
 		select {
 		case err := <-bootstrap.Failed():
