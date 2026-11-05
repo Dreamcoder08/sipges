@@ -19,6 +19,7 @@ on:
       - 'apps/api/src/platform/config.ts'
       - 'apps/api/src/contexts/records/**'
       - 'apps/api/src/contexts/documents/**'
+      - 'apps/api/src/contexts/identity/infrastructure/secret-cipher.ts'
   push:
     branches: [main]
     paths:
@@ -36,6 +37,7 @@ on:
       - 'apps/api/src/platform/config.ts'
       - 'apps/api/src/contexts/records/**'
       - 'apps/api/src/contexts/documents/**'
+      - 'apps/api/src/contexts/identity/infrastructure/secret-cipher.ts'
 
 concurrency:
   group: rust-${{ github.ref }}
@@ -137,7 +139,7 @@ jobs:
           key: cargo-tools-${{ runner.os }}-${{ hashFiles('engines/rust-toolchain.toml', 'engines/Cargo.lock') }}
           restore-keys: cargo-tools-${{ runner.os }}-
       - working-directory: engines
-        run: cargo build --locked -p sipges-review-materialize
+        run: cargo build --locked -p sipges-review-materialize -p sipges-rotate-data-key
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -145,4 +147,6 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Differential runs (exit code, output and written rows)
-        run: node engines/tools-parity/review-materialize.ts
+        run: |
+          node engines/tools-parity/review-materialize.ts
+          node engines/tools-parity/rotate-data-key.ts

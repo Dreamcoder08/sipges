@@ -745,6 +745,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sipges-rotate-data-key"
+version = "0.1.0"
+dependencies = [
+ "postgres",
+ "ring",
+ "serde_json",
+ "sipges-tools-common",
+]
+
+[[package]]
 name = "sipges-situational"
 version = "0.1.0"
 dependencies = [

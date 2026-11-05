@@ -1,0 +1,21 @@
+[package]
+name = "sipges-rotate-data-key"
+version = "0.1.0"
+description = "Rust port of apps/api/src/tools/rotate-data-key: re-encrypts sealed secrets with a new SIPGES_DATA_KEY."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "rotate-data-key"
+path = "src/main.rs"
+
+[dependencies]
+postgres.workspace = true
+ring.workspace = true
+serde_json.workspace = true
+sipges-tools-common = { path = "../tools-common" }
+
+[lints]
+workspace = true
