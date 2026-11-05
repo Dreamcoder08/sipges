@@ -82,6 +82,10 @@ func automationModule(d Deps) (*automation, error) {
 		ExecutionBudget: application.DefaultExecutionBudget,
 		Logger:          d.Logger,
 	}
+	service, err = withPush(service, d.Pool)
+	if err != nil {
+		return nil, err
+	}
 	if d.AutomationInterval > 0 && !configured {
 		// Channel runs would wait forever for a TypeScript tick that may no longer come.
 		return nil, errors.New("SIPGES_GO_AUTOMATION_CRON requires SIPGES_DATA_KEY")
@@ -164,6 +168,7 @@ func init() {
 		return func(mux *http.ServeMux) {
 			automationhttp.Routes(mux, options)
 			automationhttp.WriteRoutes(mux, writes)
+			automationhttp.PushRoutes(mux, writes)
 		}, nil
 	})
 	registerMiddleware("automation", func(d Deps) (httpx.Middleware, error) {

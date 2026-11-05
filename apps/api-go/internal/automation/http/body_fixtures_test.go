@@ -16,6 +16,35 @@ type bodyCase struct {
 	Detail json.RawMessage `json:"detail"`
 }
 
+func loadPushBodies(t *testing.T) (subscribe, unsubscribe []bodyCase) {
+	t.Helper()
+	raw, err := os.ReadFile("../testdata/fixtures.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		Subscribe   []bodyCase `json:"push_bodies"`
+		Unsubscribe []bodyCase `json:"unsubscribe_bodies"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil {
+		t.Fatal(err)
+	}
+	return f.Subscribe, f.Unsubscribe
+}
+
+func TestPushBodiesMatchTheTypeScriptSchemas(t *testing.T) {
+	subscribe, unsubscribe := loadPushBodies(t)
+	if len(subscribe) == 0 || len(unsubscribe) == 0 {
+		t.Fatal("no recorded push bodies")
+	}
+	check(t, subscribe, pushSubscriptionIn, func(in pushSubscriptionInput) any {
+		return map[string]any{"endpoint": in.Endpoint, "keys": map[string]any{"p256dh": in.P256dh, "auth": in.Auth}}
+	})
+	check(t, unsubscribe, pushUnsubscribeIn, func(in string) any {
+		return map[string]any{"endpoint": in}
+	})
+}
+
 func loadBodies(t *testing.T) (rules, channels, reads []bodyCase) {
 	t.Helper()
 	raw, err := os.ReadFile("../testdata/fixtures.json")

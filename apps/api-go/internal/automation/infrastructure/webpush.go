@@ -105,8 +105,8 @@ type WebPushSender struct {
 
 var _ application.PushSender = (*WebPushSender)(nil)
 
-// NewWebPushSender builds the sender; client overrides the HTTP client (tests), nil means one
-// with SendTimeout and no redirects. It refuses a pair whose private key is not the public key's.
+// NewWebPushSender builds the sender; client overrides the HTTP client, nil means one with
+// SendTimeout and no redirects. It refuses a pair whose private key is not the public key's.
 func NewWebPushSender(keys *VapidKeys, client *http.Client) (*WebPushSender, error) {
 	public, err := base64.RawURLEncoding.DecodeString(keys.PublicKey)
 	if err != nil || len(public) != 65 || public[0] != 4 {
@@ -131,6 +131,11 @@ func NewWebPushSender(keys *VapidKeys, client *http.Client) (*WebPushSender, err
 }
 
 var errVapidPair = errors.New("SIPGES_VAPID_PRIVATE_KEY must be the private key of SIPGES_VAPID_PUBLIC_KEY")
+
+// NewPushClient is the sender's client over a transport: the same timeout and redirect refusal.
+func NewPushClient(transport http.RoundTripper) *http.Client {
+	return &http.Client{Timeout: SendTimeout, CheckRedirect: defaultClient.CheckRedirect, Transport: transport}
+}
 
 // PublicKey is the key browsers subscribe with.
 func (s *WebPushSender) PublicKey() string { return s.publicKey }

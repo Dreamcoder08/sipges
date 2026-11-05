@@ -12,6 +12,8 @@ import { format, resolveConfig } from 'prettier';
 import {
   ChannelIn,
   NotificationReadIn,
+  PushSubscriptionIn,
+  PushUnsubscribeIn,
   RuleIn,
 } from '../../../../../packages/contracts/src/automation.ts';
 import {
@@ -24,6 +26,7 @@ import {
 } from '../../../../api/src/contexts/automation/domain/rules.ts';
 import {
   isPrivateHost,
+  isPushEndpoint,
   validateChannel,
 } from '../../../../api/src/contexts/automation/domain/channels.ts';
 import { createHttpChannelSender } from '../../../../api/src/contexts/automation/infrastructure/http-channel-sender.ts';
@@ -190,6 +193,72 @@ const readBodies = [
   { ids: [-1e300] },
 ];
 const readRaw = [...readBodies.map((b) => JSON.stringify(b)), '', 'null', '[]', '5'];
+
+// Browser push subscriptions: the schemas, then the endpoint check of subscribePush.
+const pushKeys = { p256dh: `B${'a'.repeat(86)}`, auth: 'b'.repeat(22) };
+const pushEndpointOk = 'https://fcm.googleapis.com/fcm/send/synthetic';
+const pushRaw = [
+  ...[
+    { endpoint: pushEndpointOk, keys: pushKeys },
+    { endpoint: pushEndpointOk, keys: pushKeys, expirationTime: null },
+    { endpoint: pushEndpointOk, keys: { ...pushKeys, extra: 1 } },
+    { endpoint: '', keys: { p256dh: '', auth: '' } },
+    { endpoint: 'a\u0000b', keys: pushKeys },
+    { endpoint: 'x'.repeat(1000), keys: pushKeys },
+    { endpoint: 'x'.repeat(1001), keys: pushKeys },
+    { endpoint: '😀'.repeat(1001), keys: pushKeys },
+    { endpoint: pushEndpointOk, keys: { p256dh: 'x'.repeat(201), auth: 'y'.repeat(101) } },
+    { endpoint: pushEndpointOk, keys: { p256dh: 5, auth: null } },
+    { endpoint: pushEndpointOk, keys: { p256dh: 'x' } },
+    { endpoint: pushEndpointOk, keys: {} },
+    { endpoint: pushEndpointOk, keys: [] },
+    { endpoint: pushEndpointOk, keys: null },
+    { endpoint: pushEndpointOk },
+    { endpoint: 5, keys: pushKeys },
+    { keys: pushKeys },
+    {},
+  ].map((b) => JSON.stringify(b)),
+  '',
+  'null',
+  '[]',
+  '5',
+  '{bad',
+];
+const unsubscribeRaw = [
+  ...[
+    { endpoint: pushEndpointOk },
+    { endpoint: '' },
+    { endpoint: 'x'.repeat(1000) },
+    { endpoint: 'x'.repeat(1001) },
+    { endpoint: null },
+    {},
+  ].map((b) => JSON.stringify(b)),
+  '',
+  '[]',
+];
+const pushEndpoints = [
+  pushEndpointOk,
+  'https://updates.push.services.mozilla.com/wpush/v2/synthetic',
+  'https://web.push.apple.com/synthetic',
+  'https://api.push.apple.com/3/device/synthetic',
+  'https://wns2-db5p.notify.windows.com/w/?token=synthetic',
+  'https://FCM.googleapis.com/fcm/send/synthetic',
+  'https://fcm.googleapis.com:443/fcm/send/synthetic',
+  'https://fcm.googleapis.com:8443/fcm/send/synthetic',
+  'https://evil.example/fcm.googleapis.com',
+  'http://fcm.googleapis.com/x',
+  'https://169.254.169.254/latest',
+  'https://user@fcm.googleapis.com/x',
+  'https://user:pw@fcm.googleapis.com/x',
+  'https://fcm.googleapis.com.evil.example/x',
+  'https://a.b.push.apple.com/x',
+  'https://a_b.push.apple.com/x',
+  'https://notify.windows.com/x',
+  `https://fcm.googleapis.com/${'x'.repeat(973)}`,
+  `https://fcm.googleapis.com/${'x'.repeat(974)}`,
+  'not a url',
+  '',
+];
 
 // Rule validation after the schema (validateRule).
 const known = new Set(['Alertas', 'Narrativas', 'Eventos', 'InteligenciaDigital']);
@@ -539,6 +608,9 @@ const fixture = {
   rule_bodies: ruleRaw.map((raw) => ({ raw, ...parse(RuleIn, raw) })),
   channel_bodies: channelRaw.map((raw) => ({ raw, ...parse(ChannelIn, raw) })),
   read_bodies: readRaw.map((raw) => ({ raw, ...parse(NotificationReadIn, raw) })),
+  push_bodies: pushRaw.map((raw) => ({ raw, ...parse(PushSubscriptionIn, raw) })),
+  unsubscribe_bodies: unsubscribeRaw.map((raw) => ({ raw, ...parse(PushUnsubscribeIn, raw) })),
+  push_endpoints: pushEndpoints.map((endpoint) => ({ endpoint, ok: isPushEndpoint(endpoint) })),
   validate_rule: ruleInputs.map((input) => ({
     input,
     error: validateRule(input, known, channels),

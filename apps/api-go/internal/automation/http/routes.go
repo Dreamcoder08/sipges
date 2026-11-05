@@ -4,8 +4,8 @@
 // role, as its own user). The session, project scope and role gate ran before (internal/app).
 //
 // writes.go adds the rule and channel writes, marking notifications read, the project's tick and
-// the cron; wakeup.go wakes the runtime after business writes. Every push route stays in
-// TypeScript (VAPID keys), as does GET /system/automations/runtime.
+// the cron; push.go adds one's own device notifications; wakeup.go wakes the runtime after
+// business writes. GET /system/automations/runtime stays in TypeScript.
 package http
 
 import (
@@ -108,7 +108,7 @@ func respond(w http.ResponseWriter, r *http.Request, log *slog.Logger, body any,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(b) //nolint:gosec // G705: JSON served as application/json, never read as HTML
+	_, _ = w.Write(b)
 }
 
 // validationIssue is ValidationIssue of apps/api/src/platform/http/validation.ts.
