@@ -7,12 +7,12 @@ owner. Nothing here changes production: the flag is off by default, so TypeScrip
 
 `SIPGES_GO_AUTOMATION_CRON` is the only switch. It accepts unset, `0` or `1`.
 
-| | Unset or `0` (default) | `1` |
-| --- | --- | --- |
-| Schedule | Not started | Every `SIPGES_AUTOMATION_INTERVAL` seconds, 5 to 3600, default 30 |
-| Feed and Defensoría polling | Not wired | Runs before each cron tick, per tenant |
-| `/system/automations/cron` | 401 for every caller, even with `SIPGES_CRON_SECRET` | Accepts the secret |
-| `SIPGES_DATA_KEY` | Optional | Required: the API refuses to start without it |
+|                             | Unset or `0` (default)                               | `1`                                                               |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| Schedule                    | Not started                                          | Every `SIPGES_AUTOMATION_INTERVAL` seconds, 5 to 3600, default 30 |
+| Feed and Defensoría polling | Not wired                                            | Runs before each cron tick, per tenant                            |
+| `/system/automations/cron`  | 401 for every caller, even with `SIPGES_CRON_SECRET` | Accepts the secret                                                |
+| `SIPGES_DATA_KEY`           | Optional                                             | Required: the API refuses to start without it                     |
 
 - `SIPGES_AUTOMATION_INTERVAL` alone never starts anything, because the Go API reads it only after the flag.
   An environment shared with TypeScript cannot start a second runner.
@@ -27,16 +27,16 @@ owner. Nothing here changes production: the flag is off by default, so TypeScrip
 Two runners are safe by design, not by coordination. This is what happens at each step when TypeScript and
 Go, or two Go instances, tick the same tenant:
 
-| Step | Guard | Result |
-| --- | --- | --- |
-| Scan | `SELECT … FROM automation_cursors FOR UPDATE` | Scans of a tenant run one at a time |
-| Queue | Unique run per rule, event and step, `ON CONFLICT DO NOTHING` | An event scanned twice is queued once |
-| Settle window | The cursor passes an event only when it is 60 s old | Late commits are read again, and the unique run absorbs the repeat |
-| Claim | `FOR UPDATE … SKIP LOCKED`, sets the attempt and a 120 s lease in one statement | A run goes to one runner; the other takes the next |
-| Send | The lease outlasts the 10 s send timeout | No live send is claimed again |
-| Polling | `UPDATE … WHERE` due, on the feed and on the connector's settings | Each source is fetched by one runner |
-| Narratives | Id derived from the feed URL and item key | The same item is never imported twice |
-| Attempt record | `last_tick_token` | The cursor shows only the newest attempt of either API |
+| Step           | Guard                                                                           | Result                                                             |
+| -------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Scan           | `SELECT … FROM automation_cursors FOR UPDATE`                                   | Scans of a tenant run one at a time                                |
+| Queue          | Unique run per rule, event and step, `ON CONFLICT DO NOTHING`                   | An event scanned twice is queued once                              |
+| Settle window  | The cursor passes an event only when it is 60 s old                             | Late commits are read again, and the unique run absorbs the repeat |
+| Claim          | `FOR UPDATE … SKIP LOCKED`, sets the attempt and a 120 s lease in one statement | A run goes to one runner; the other takes the next                 |
+| Send           | The lease outlasts the 10 s send timeout                                        | No live send is claimed again                                      |
+| Polling        | `UPDATE … WHERE` due, on the feed and on the connector's settings               | Each source is fetched by one runner                               |
+| Narratives     | Id derived from the feed URL and item key                                       | The same item is never imported twice                              |
+| Attempt record | `last_tick_token`                                                               | The cursor shows only the newest attempt of either API             |
 
 `TestBothAPIsRunningDeliverEachMessageOnce` runs two Go schedules and a third runner that claims with TypeScript's
 statement, read from its source file, on one PostgreSQL database. Its scans, sends and finishes are Go's, and its
@@ -61,8 +61,8 @@ schedule ticks and the ticks of the cron and tick routes:
 
 1. No further tenant starts, and rescans are dropped; the next runner catches up.
 2. Polling is cancelled. It sends nothing. A cancelled feed waits 30 minutes and the Defensoría connector 15 for
-   their next turn. The attempt ends `failed` and logs `automation_tick_failed` with the class `polling_cancelled`, which
-   is expected at a shutdown.
+   their next turn. The attempt ends `failed`, and the schedule logs `automation_tick_failed` with the class
+   `polling_cancelled`, which is expected at a shutdown.
 3. The tick in flight keeps its context, because cutting it between the send and `FinishRun` would repeat the
    message. It needs at most 18 s: the 8 s execution budget plus one 10 s send.
 
@@ -73,14 +73,16 @@ A request slower than the 10 s server grace still makes the process exit with an
 `automation_tick_failed` carries `failures` and `classes`, never the error's text, which may name a feed or a
 channel. A visit counts one failure per tenant, and a tenant's failure does not stop the others.
 
-| Class | What failed |
-| --- | --- |
-| `panic` | A tick or a source panicked. Its attempt ends `failed`. |
-| `store` | The tenant list or the attempt record on `automation_cursors`. |
-| `polling` | A source failed. The rules still ran. |
-| `polling_cancelled` | A shutdown cut the polling short. |
-| `timeout` | The tick outlasted `TaskTimeout`, 5 minutes per tenant. A send cut here repeats after its lease. |
-| `rules` | Any other failure of the rules tick. |
+| Class               | What failed                                                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `panic`             | The rules tick panicked. Its attempt ends `failed`, and a rescan that works afterwards does not hide it.       |
+| `store`             | The tenant list or the attempt record on `automation_cursors`.                                                 |
+| `polling`           | A source failed or panicked. The rules still ran. A feed's failure stays on the feed, in `last_poll_error`.    |
+| `polling_cancelled` | A shutdown cut the polling short.                                                                              |
+| `timeout`           | The tick outlasted `TaskTimeout`, 5 minutes per tenant of a schedule. A send cut here repeats after its lease. |
+| `rules`             | Any other failure of the rules tick.                                                                           |
+
+The schedule writes this line. A tick of the cron route answers 500 and logs `automation write failed` instead.
 
 ## How the switch happens
 

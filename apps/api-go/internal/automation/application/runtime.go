@@ -29,6 +29,9 @@ const MaxRescans = 2
 // DefaultBudget is the runtime's default budget (budgetMs ?? 20000).
 const DefaultBudget = 20 * time.Second
 
+// finishTimeout bounds recording an attempt's end.
+const finishTimeout = 5 * time.Second
+
 // TickReport is TickReport, in the field order of the contract.
 type TickReport struct {
 	Tenants   int64 `json:"tenants"`
@@ -85,10 +88,11 @@ type Runtime struct {
 	Monotonic func() time.Duration
 	// Budget is how long a tick counts as live; zero means DefaultBudget.
 	Budget time.Duration
-	// Background is the context event ticks run in (the worker's actor); nil means
+	// Background is the context ticks of no request run in (the worker's actor); nil means
 	// context.Background.
 	Background func() context.Context
-	// TaskTimeout bounds an event tick started in the background; zero means no bound.
+	// TaskTimeout bounds an event tick started in the background and each tenant of a visit;
+	// zero means no bound.
 	TaskTimeout time.Duration
 	// OnError reports a failed event tick (automation_processing_failed).
 	OnError func(err error)
@@ -167,15 +171,24 @@ func (rt *Runtime) attempt(ctx context.Context, tenantID string, source RuntimeS
 		err = preparation
 	}
 	if err != nil {
-		if finishErr := rt.Store.Finish(ctx, tenantID, token, "failed", nil, "processing_failed", rt.now()); finishErr != nil {
-			return TickReport{}, failure{ErrStore, finishErr}
+		if finishErr := rt.finish(ctx, tenantID, token, "failed", nil, "processing_failed"); finishErr != nil {
+			// The tick's failure stays the cause: its chain, and so its class, is what counts.
+			return TickReport{}, failure{finishErr, err}
 		}
 		return TickReport{}, err
 	}
-	if err := rt.Store.Finish(ctx, tenantID, token, "completed", &report, "", rt.now()); err != nil {
+	if err := rt.finish(ctx, tenantID, token, "completed", &report, ""); err != nil {
 		return TickReport{}, failure{ErrStore, err}
 	}
 	return report, nil
+}
+
+// finish records the attempt's end on a context of its own: a tick cut by its bound must still
+// end its attempt, or the cursor stays running.
+func (rt *Runtime) finish(ctx context.Context, tenantID, token, status string, report *TickReport, errText string) error {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), finishTimeout)
+	defer cancel()
+	return rt.Store.Finish(ctx, tenantID, token, status, report, errText, rt.now())
 }
 
 // tick is Tick with a panic as its error: the attempt ends failed, the tick stops counting as
@@ -186,7 +199,11 @@ func (rt *Runtime) tick(ctx context.Context, tenantID string) (report TickReport
 			report, err = TickReport{}, panicked(r)
 		}
 	}()
-	return rt.Tick(ctx, tenantID)
+	report, err = rt.Tick(ctx, tenantID)
+	if err != nil {
+		return report, failure{ErrRules, err}
+	}
+	return report, nil
 }
 
 // register makes a new entry the tenant's live tick, unless one is live already, in which case
@@ -215,12 +232,16 @@ func (rt *Runtime) register(tenantID string, rescan bool) (*entry, bool) {
 // section as the last rescan check, so no request's rescan is lost between the two.
 func (rt *Runtime) loop(ctx context.Context, tenantID string, source RuntimeSource, e *entry) (TickReport, error) {
 	next := source
+	var panicErr error
 	for rounds := 1; ; rounds++ {
 		rt.mu.Lock()
 		e.rescan = false
 		rt.mu.Unlock()
 		report, err := rt.attempt(ctx, tenantID, next)
 		next = SourceEvent
+		if panicErr == nil && errors.Is(err, ErrPanicked) {
+			panicErr = err
+		}
 		rt.mu.Lock()
 		again := e.rescan && rounds <= MaxRescans && !rt.stopping()
 		if !again && rt.running[tenantID] == e {
@@ -229,6 +250,9 @@ func (rt *Runtime) loop(ctx context.Context, tenantID string, source RuntimeSour
 		}
 		rt.mu.Unlock()
 		if !again {
+			if err == nil {
+				err = panicErr // a rescan that worked does not undo a panic: its send may repeat
+			}
 			return report, err // a failed tick still owed the rescans asked before it ended
 		}
 	}

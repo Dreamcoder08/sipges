@@ -168,3 +168,93 @@ func TestFailuresAreClassifiedWithoutTheirText(t *testing.T) {
 		t.Fatalf("no failure: %v", got)
 	}
 }
+
+// ctxStore fails on an ended context, as the SQL store does.
+type ctxStore struct{ fakeRuntimeStore }
+
+func (c *ctxStore) Finish(ctx context.Context, tenant, token, status string, report *TickReport, text string, at time.Time) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.fakeRuntimeStore.Finish(ctx, tenant, token, status, report, text, at)
+}
+
+func TestAPanicIsReportedEvenWhenARescanSucceedsAfterIt(t *testing.T) {
+	store := &fakeRuntimeStore{tenants: []string{"T/P"}}
+	rt := &Runtime{Store: store}
+	var calls int
+	rt.Tick = func(context.Context, string) (TickReport, error) {
+		calls++
+		if calls == 1 {
+			rt.Dispatch("T/P") //nolint:contextcheck // a write during the tick asks for a rescan
+			panic("synthetic")
+		}
+		return TickReport{Tenants: 1}, nil
+	}
+	_, err := rt.Scheduled(t.Context())
+	if !errors.Is(err, ErrPanicked) {
+		t.Fatalf("scheduled: %v, want the panic of the first round", err)
+	}
+	if calls != 2 {
+		t.Fatalf("%d rounds, want the rescan too", calls)
+	}
+}
+
+func TestAnEventTickReportsAPanicEvenWhenARescanSucceedsAfterIt(t *testing.T) {
+	store := &fakeRuntimeStore{}
+	var wg sync.WaitGroup
+	var reported error
+	rt := &Runtime{Store: store, Spawn: syncSpawn(&wg), OnError: func(err error) { reported = err }}
+	var calls int
+	rt.Tick = func(context.Context, string) (TickReport, error) {
+		calls++
+		if calls == 1 {
+			rt.Dispatch("T/P") //nolint:contextcheck // a write during the tick
+			panic("synthetic")
+		}
+		return TickReport{}, nil
+	}
+	rt.Dispatch("T/P")
+	wg.Wait()
+	if !errors.Is(reported, ErrPanicked) {
+		t.Fatalf("reported %v", reported)
+	}
+}
+
+func TestATickCutByItsTimeoutStillRecordsItsEndAndItsClass(t *testing.T) {
+	for name, c := range map[string]struct {
+		tick func(context.Context, string) (TickReport, error)
+		want string
+	}{
+		"hung": {func(ctx context.Context, _ string) (TickReport, error) {
+			<-ctx.Done()
+			return TickReport{}, ctx.Err()
+		}, "timeout"},
+		"panic after the timeout": {func(ctx context.Context, _ string) (TickReport, error) {
+			<-ctx.Done()
+			panic("synthetic")
+		}, "panic"},
+	} {
+		store := &ctxStore{fakeRuntimeStore{tenants: []string{"T/P"}}}
+		rt := &Runtime{Store: store, TaskTimeout: 10 * time.Millisecond, Tick: c.tick}
+		_, err := rt.Scheduled(t.Context())
+		if got := Failures(err); !reflect.DeepEqual(got, []string{c.want}) {
+			t.Errorf("%s: classes %v (%v)", name, got, err)
+		}
+		if !reflect.DeepEqual(store.finished, []string{"failed:processing_failed"}) {
+			t.Errorf("%s: finished %v: the cursor must not stay running", name, store.finished)
+		}
+	}
+}
+
+func TestATenantCountsOneFailureEvenWithAJoinedError(t *testing.T) {
+	store := &fakeRuntimeStore{tenants: []string{"T/P"}}
+	rt := &Runtime{Store: store, Tick: func(context.Context, string) (TickReport, error) {
+		// database.WithTenant joins the work's error with the rollback's.
+		return TickReport{}, errors.Join(context.DeadlineExceeded, errors.New("conn closed"))
+	}}
+	_, err := rt.Scheduled(t.Context())
+	if got := Failures(err); !reflect.DeepEqual(got, []string{"timeout"}) {
+		t.Fatalf("classes %v (%v)", got, err)
+	}
+}
