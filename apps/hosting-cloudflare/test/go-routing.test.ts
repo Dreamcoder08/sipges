@@ -72,6 +72,9 @@ describe('Go container', () => {
         SIPGES_GO_DATABASE_URL: 'postgres://synthetic@db.invalid/synthetic',
         SIPGES_ALLOWED_HOSTS: 'sipges.example.org',
         SIPGES_DATA_KEY: 'not-for-go',
+        SIPGES_ADMIN_USERNAME: 'admin',
+        SIPGES_ADMIN_PASSWORD: 'synthetic-password',
+        SIPGES_ADMIN_FULL_NAME: 'Synthetic',
       }),
     ).toEqual({
       SIPGES_HOST: '0.0.0.0',
@@ -79,6 +82,9 @@ describe('Go container', () => {
       SIPGES_TRUST_CF_CONNECTING_IP: '1',
       SIPGES_ALLOWED_HOSTS: 'sipges.example.org',
       SIPGES_DATABASE_URL: 'postgres://synthetic@db.invalid/synthetic',
+      SIPGES_ADMIN_USERNAME: 'admin',
+      SIPGES_ADMIN_PASSWORD: 'synthetic-password',
+      SIPGES_ADMIN_FULL_NAME: 'Synthetic',
     });
     expect(goContainerEnv({})).toEqual({
       SIPGES_HOST: '0.0.0.0',
