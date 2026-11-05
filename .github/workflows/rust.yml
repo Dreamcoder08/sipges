@@ -20,6 +20,7 @@ on:
       - 'apps/api/src/contexts/records/**'
       - 'apps/api/src/contexts/documents/**'
       - 'apps/api/src/contexts/identity/infrastructure/secret-cipher.ts'
+      - 'packages/contracts/src/records.ts'
   push:
     branches: [main]
     paths:
@@ -38,6 +39,7 @@ on:
       - 'apps/api/src/contexts/records/**'
       - 'apps/api/src/contexts/documents/**'
       - 'apps/api/src/contexts/identity/infrastructure/secret-cipher.ts'
+      - 'packages/contracts/src/records.ts'
 
 concurrency:
   group: rust-${{ github.ref }}
@@ -139,7 +141,7 @@ jobs:
           key: cargo-tools-${{ runner.os }}-${{ hashFiles('engines/rust-toolchain.toml', 'engines/Cargo.lock') }}
           restore-keys: cargo-tools-${{ runner.os }}-
       - working-directory: engines
-        run: cargo build --locked -p sipges-review-materialize -p sipges-rotate-data-key
+        run: cargo build --locked -p sipges-review-materialize -p sipges-rotate-data-key -p sipges-base-maestra
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -150,3 +152,4 @@ jobs:
         run: |
           node engines/tools-parity/review-materialize.ts
           node engines/tools-parity/rotate-data-key.ts
+          node engines/tools-parity/base-maestra.ts
