@@ -11,7 +11,7 @@ var modelID = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{1,63}\z`)
 
 // Analyst is the assisted briefing's narrator, read as parseAnalyst of
 // apps/api/src/platform/config.ts: off unless SIPGES_ANALYST_PROVIDER=anthropic. The credential
-// stays in the environment, where the Anthropic SDK reads it; nothing here keeps it.
+// stays in the environment, where the narrator reads it; nothing here keeps it.
 type Analyst struct {
 	Enabled bool
 	// Model is SIPGES_ANALYST_MODEL, or the default when unset or empty.

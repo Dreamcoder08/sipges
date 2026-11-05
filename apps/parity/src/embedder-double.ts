@@ -22,8 +22,8 @@ export const vectorOf = (text: string) => {
   return vector;
 };
 
-/** A briefing holding this makes the double's narrator refuse to cite, for the failure path. */
-export const NARRATOR_DOWN = 'PARITY-NARRATOR-DOWN';
+/** The double's narrator fails on this subject's briefing, so parity covers the failure path. */
+export const NARRATOR_DOWN = 'PARITY-AN-AL1';
 
 type Narration = { readonly messages: readonly { readonly content: string }[] };
 

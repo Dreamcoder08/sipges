@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -8,8 +9,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-
-	"github.com/anthropics/anthropic-sdk-go/v2/option"
+	"time"
 
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
 )
@@ -28,12 +28,21 @@ func double(t *testing.T, handler http.HandlerFunc) *Claude {
 	t.Helper()
 	srv := httptest.NewServer(handler)
 	t.Cleanup(srv.Close)
-	return NewClaude("claude-opus-5-5", option.WithBaseURL(srv.URL), option.WithAPIKey("synthetic-test-value"))
+	return NewClaude("claude-opus-5-5", environment(map[string]string{
+		"ANTHROPIC_BASE_URL": srv.URL, "ANTHROPIC_API_KEY": "synthetic-test-value",
+	}))
+}
+
+func environment(values map[string]string) func(string) (string, bool) {
+	return func(key string) (string, bool) {
+		value, ok := values[key]
+		return value, ok
+	}
 }
 
 func TestNameIsTheOneTypeScriptAnswers(t *testing.T) {
 	t.Parallel()
-	if got := NewClaude("claude-opus-5-5").Name(); got != "claude:claude-opus-5-5" {
+	if got := NewClaude("claude-opus-5-5", environment(nil)).Name(); got != "claude:claude-opus-5-5" {
 		t.Fatalf("name = %q", got)
 	}
 }
@@ -41,12 +50,13 @@ func TestNameIsTheOneTypeScriptAnswers(t *testing.T) {
 func TestNarrateSendsOnlyTheBriefingWithFallbacks(t *testing.T) {
 	t.Parallel()
 	var (
-		path, beta, key, query string
-		body                   map[string]any
-		raw                    []byte
+		path, beta, key, query, version string
+		body                            map[string]any
+		raw                             []byte
 	)
 	claude := double(t, func(w http.ResponseWriter, r *http.Request) {
 		path, query, beta, key = r.URL.Path, r.URL.RawQuery, r.Header.Get("anthropic-beta"), r.Header.Get("Authorization")
+		version = r.Header.Get("anthropic-version")
 		raw, _ = io.ReadAll(r.Body)
 		if err := json.Unmarshal(raw, &body); err != nil {
 			t.Error(err)
@@ -61,7 +71,7 @@ func TestNarrateSendsOnlyTheBriefingWithFallbacks(t *testing.T) {
 	if got != "Párrafo [1]." {
 		t.Fatalf("text = %q", got)
 	}
-	if path != "/v1/messages" || query != "beta=true" || beta != "server-side-fallback-2026-07-01" || key != "Bearer synthetic-test-value" {
+	if path != "/v1/messages" || query != "" || version != "2026-10-21" || beta != "server-side-fallback-2026-07-01" || key != "Bearer synthetic-test-value" {
 		t.Fatalf("%s?%s beta %q key %q", path, query, beta, key)
 	}
 	if body["model"] != "claude-opus-5-5" || body["max_tokens"] != float64(4000) || body["fallbacks"] != "default" {
@@ -114,19 +124,191 @@ func TestNarrateRefusesRefusalsAndTruncatedAnswers(t *testing.T) {
 	}
 }
 
-func TestNarrateRetriesOnce(t *testing.T) {
+func TestNarrateRetriesWhatTypeScriptRetries(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name        string
+		status      int
+		shouldRetry string
+		calls       int32
+	}{
+		{name: "bad request", status: 400, calls: 1},
+		{name: "unauthorised", status: 401, calls: 1},
+		{name: "not found", status: 404, calls: 1},
+		{name: "timeout", status: 408, calls: 2},
+		{name: "conflict", status: 409, calls: 2},
+		{name: "rate limit", status: 429, calls: 2},
+		{name: "server error", status: 500, calls: 2},
+		{name: "unavailable", status: 503, calls: 2},
+		{name: "told not to", status: 503, shouldRetry: "false", calls: 1},
+		{name: "told to", status: 400, shouldRetry: "true", calls: 2},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			var calls atomic.Int32
+			claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+				calls.Add(1)
+				w.Header().Set("Retry-After", "0")
+				if c.shouldRetry != "" {
+					w.Header().Set("X-Should-Retry", c.shouldRetry)
+				}
+				w.WriteHeader(c.status)
+			})
+			if _, err := claude.Narrate(t.Context(), cleared("b")); err == nil {
+				t.Fatal("expected the error")
+			}
+			if calls.Load() != c.calls {
+				t.Fatalf("calls = %d", calls.Load())
+			}
+		})
+	}
+}
+
+func TestNarrateSucceedsOnTheRetry(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		if calls.Add(1) == 1 {
+			w.Header().Set("Retry-After-Ms", "1")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		_, _ = io.WriteString(w, answer("end_turn", `[{"type":"text","text":"x"}]`))
+	})
+	if got, err := claude.Narrate(t.Context(), cleared("b")); err != nil || got != "x" {
+		t.Fatalf("%q %v", got, err)
+	}
+}
+
+func TestNarrateRetriesAConnectionError(t *testing.T) {
 	t.Parallel()
 	var calls atomic.Int32
 	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
 		calls.Add(1)
-		w.Header().Set("Retry-After", "0")
-		w.WriteHeader(http.StatusServiceUnavailable)
+		hijacked, ok := w.(http.Hijacker)
+		if !ok {
+			t.Error("no hijacker")
+			return
+		}
+		conn, _, err := hijacked.Hijack()
+		if err == nil {
+			_ = conn.Close()
+		}
 	})
 	if _, err := claude.Narrate(t.Context(), cleared("b")); err == nil {
 		t.Fatal("expected the error")
 	}
 	if calls.Load() != 2 {
 		t.Fatalf("calls = %d", calls.Load())
+	}
+}
+
+func TestNarrateStopsWithItsContext(t *testing.T) {
+	t.Parallel()
+	release := make(chan struct{})
+	var calls atomic.Int32
+	claude := double(t, func(_ http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		<-release
+	})
+	t.Cleanup(func() { close(release) })
+	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
+	defer cancel()
+	if _, err := claude.Narrate(ctx, cleared("b")); err == nil {
+		t.Fatal("expected the error")
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("a cancelled call was retried: %d", calls.Load())
+	}
+}
+
+func TestRequestTimeoutIsBounded(t *testing.T) {
+	t.Parallel()
+	if requestTimeout <= 0 || requestTimeout > 20*time.Second {
+		t.Fatalf("timeout = %v", requestTimeout)
+	}
+}
+
+func TestCredentials(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name string
+		env  map[string]string
+		want string
+	}{
+		{"key", map[string]string{"ANTHROPIC_API_KEY": "k"}, "Bearer k"},
+		{"token", map[string]string{"ANTHROPIC_AUTH_TOKEN": "t"}, "Bearer t"},
+		{"the key wins", map[string]string{"ANTHROPIC_API_KEY": "k", "ANTHROPIC_AUTH_TOKEN": "t"}, "Bearer k"},
+		{"trimmed", map[string]string{"ANTHROPIC_API_KEY": " k\n"}, "Bearer k"},
+		{"an empty key is none", map[string]string{"ANTHROPIC_API_KEY": "  ", "ANTHROPIC_AUTH_TOKEN": "t"}, "Bearer t"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+			var got string
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				got = r.Header.Get("Authorization")
+				_, _ = io.WriteString(w, answer("end_turn", `[{"type":"text","text":"x"}]`))
+			}))
+			t.Cleanup(srv.Close)
+			env := map[string]string{"ANTHROPIC_BASE_URL": " " + srv.URL + "/\n"}
+			for key, value := range c.env {
+				env[key] = value
+			}
+			if _, err := NewClaude("m", environment(env)).Narrate(t.Context(), cleared("b")); err != nil {
+				t.Fatal(err)
+			}
+			if got != c.want {
+				t.Fatalf("authorization = %q", got)
+			}
+		})
+	}
+}
+
+func TestAnEmptyBaseURLIsTheDefault(t *testing.T) {
+	t.Parallel()
+	claude := NewClaude("m", environment(map[string]string{"ANTHROPIC_BASE_URL": " "}))
+	if claude.endpoint != "https://api.anthropic.com/v1/messages" {
+		t.Fatalf("endpoint = %q", claude.endpoint)
+	}
+}
+
+func TestErrorsHoldNeitherTheKeyNorTheText(t *testing.T) {
+	t.Parallel()
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = io.WriteString(w, `{"error":{"message":"echo texto sintético synthetic-test-value"}}`)
+	})
+	_, err := claude.Narrate(t.Context(), cleared("texto sintético"))
+	if err == nil {
+		t.Fatal("expected the error")
+	}
+	for _, leak := range []string{"synthetic-test-value", "texto", "127.0.0.1"} {
+		if strings.Contains(err.Error(), leak) {
+			t.Fatalf("error leaks %q: %v", leak, err)
+		}
+	}
+}
+
+func TestAnOversizedAnswerIsRefused(t *testing.T) {
+	t.Parallel()
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, answer("end_turn", `[{"type":"text","text":"`+strings.Repeat("x", 2_000_000)+`"}]`))
+	})
+	if _, err := claude.Narrate(t.Context(), cleared("b")); err == nil {
+		t.Fatal("expected the error")
+	}
+}
+
+func TestNarrateTrimsAsJavaScript(t *testing.T) {
+	t.Parallel()
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = io.WriteString(w, answer("end_turn", `[{"type":"text","text":"\u0085 x \ufeff"}]`))
+	})
+	got, err := claude.Narrate(t.Context(), cleared("b"))
+	if err != nil || got != "\u0085 x" {
+		t.Fatalf("%q %v", got, err)
 	}
 }
 

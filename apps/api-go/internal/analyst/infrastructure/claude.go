@@ -2,24 +2,43 @@
 package infrastructure
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"math/rand/v2"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/anthropics/anthropic-sdk-go/v2"
-	"github.com/anthropics/anthropic-sdk-go/v2/option"
+	"time"
 
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
+	js "github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 )
 
 const (
-	maxNarrationTokens = 4000
+	defaultBaseURL     = "https://api.anthropic.com"
+	messagesPath       = "/v1/messages"
+	apiVersion         = "2026-10-21"
 	fallbackBeta       = "server-side-fallback-2026-07-01"
+	userAgent          = "sipges-api-go"
+	maxNarrationTokens = 4000
+	maxAnswerBytes     = 1 << 20
 	stopRefusal        = "refusal"
 	stopMaxTokens      = "max_tokens"
+	textBlock          = "text"
+
+	// maxRetries is the one retry claude-narrator.ts asks of its SDK.
+	maxRetries = 1
+	// requestTimeout bounds a narration, its retry included; narration has this budget in TypeScript.
+	requestTimeout = 20 * time.Second
+
+	retryDelay      = 500 * time.Millisecond
+	maxServerDelay  = 60 * time.Second
+	maxJitterFactor = 0.25
 )
 
 // systemPrompt is SYSTEM of claude-narrator.ts.
@@ -34,17 +53,36 @@ var systemPrompt = strings.Join([]string{
 }, " ")
 
 // Claude rewrites the extractive briefing as prose (docs/adr/0013), the port of claude-narrator.ts.
-// The SDK reads the credential and the base URL from the environment; nothing here stores or logs
-// them. Only that base URL is contacted: redirects fail the call and proxy variables are ignored.
+// It sends what TypeScript's SDK sends. Only the configured base URL is contacted: redirects fail
+// the call and proxy variables are ignored. Its errors are fixed texts, so neither the credential,
+// the URL nor the text reach a log.
 type Claude struct {
-	client anthropic.Client
-	model  string
+	endpoint   string
+	credential string
+	model      string
+	client     *http.Client
 }
 
-// NewClaude builds the narrator; options replace the environment's settings in tests.
-func NewClaude(model string, opts ...option.RequestOption) *Claude {
-	base := []option.RequestOption{option.WithMaxRetries(1), option.WithHTTPClient(narrationClient())}
-	return &Claude{client: anthropic.NewClient(append(base, opts...)...), model: model}
+// NewClaude reads the base URL and the credential from the environment, as the TypeScript SDK does:
+// values are trimmed, an empty one counts as unset, and the API key wins over the auth token.
+func NewClaude(model string, lookup func(string) (string, bool)) *Claude {
+	base := environmentValue(lookup, "ANTHROPIC_BASE_URL")
+	if base == "" {
+		base = defaultBaseURL
+	}
+	credential := environmentValue(lookup, "ANTHROPIC_API_KEY")
+	if credential == "" {
+		credential = environmentValue(lookup, "ANTHROPIC_AUTH_TOKEN")
+	}
+	return &Claude{
+		endpoint: strings.TrimRight(base, "/") + messagesPath, credential: credential, model: model,
+		client: narrationClient(),
+	}
+}
+
+func environmentValue(lookup func(string) (string, bool), name string) string {
+	value, _ := lookup(name)
+	return strings.TrimSpace(value)
 }
 
 func narrationClient() *http.Client {
@@ -64,32 +102,136 @@ func (c *Claude) Name() string { return "claude:" + c.model }
 
 // Narrate returns the model's prose for a cleared briefing; a refusal or a cut answer is an error.
 func (c *Claude) Narrate(ctx context.Context, briefing privacy.Sanitised[string]) (string, error) {
-	response, err := c.client.Beta.Messages.New(ctx, anthropic.BetaMessageNewParams{},
-		option.WithHeader("anthropic-beta", fallbackBeta),
-		option.WithRequestBody("application/json", narrationBody(c.model, briefing.Value())))
+	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	body := narrationBody(c.model, briefing.Value())
+	for attempt := 0; ; attempt++ {
+		answer, wait, err := c.send(ctx, body)
+		if err == nil {
+			return prose(answer)
+		}
+		if wait < 0 || attempt == maxRetries {
+			return "", err
+		}
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return "", errors.New("narrator: cancelled")
+		case <-timer.C:
+		}
+	}
+}
+
+// send makes one attempt. On failure, wait says how long to wait before a retry; negative means
+// the failure is not retried.
+func (c *Claude) send(ctx context.Context, body []byte) ([]byte, time.Duration, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(body))
 	if err != nil {
-		return "", err
+		return nil, -1, errors.New("narrator: unusable request")
 	}
-	if response == nil { // the SDK decodes a JSON null into no message and no error
-		return "", errors.New("narrator: empty answer")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("anthropic-version", apiVersion)
+	req.Header.Set("anthropic-beta", fallbackBeta)
+	req.Header.Set("Authorization", "Bearer "+c.credential)
+	res, err := c.client.Do(req)
+	if err != nil {
+		if ctx.Err() != nil || isRedirectRefusal(err) {
+			return nil, -1, errors.New("narrator: request failed") // the wrapped error holds the URL
+		}
+		return nil, backoff(), errors.New("narrator: connection failed")
 	}
-	switch string(response.StopReason) {
+	defer func() { _ = res.Body.Close() }()
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		// The body is not read: a provider error may quote the request.
+		err := fmt.Errorf("narrator: the model answered %d", res.StatusCode)
+		if retryable(res) {
+			return nil, retryWait(res), err
+		}
+		return nil, -1, err
+	}
+	answer, err := io.ReadAll(io.LimitReader(res.Body, maxAnswerBytes+1))
+	if err != nil {
+		return nil, -1, errors.New("narrator: unreadable answer")
+	}
+	if len(answer) > maxAnswerBytes {
+		return nil, -1, errors.New("narrator: answer too large")
+	}
+	return answer, 0, nil
+}
+
+func isRedirectRefusal(err error) bool {
+	return strings.Contains(err.Error(), "redirect refused")
+}
+
+// retryable is shouldRetry of the TypeScript SDK.
+func retryable(res *http.Response) bool {
+	switch res.Header.Get("X-Should-Retry") {
+	case "true":
+		return true
+	case "false":
+		return false
+	}
+	return res.StatusCode == http.StatusRequestTimeout || res.StatusCode == http.StatusConflict ||
+		res.StatusCode == http.StatusTooManyRequests || res.StatusCode >= http.StatusInternalServerError
+}
+
+// retryWait honours what the server asks for within a minute, and backs off otherwise.
+func retryWait(res *http.Response) time.Duration {
+	if ms, err := strconv.ParseFloat(res.Header.Get("Retry-After-Ms"), 64); err == nil {
+		if wait := time.Duration(ms * float64(time.Millisecond)); wait >= 0 && wait < maxServerDelay {
+			return wait
+		}
+	}
+	after := res.Header.Get("Retry-After")
+	if seconds, err := strconv.ParseFloat(after, 64); err == nil {
+		if wait := time.Duration(seconds * float64(time.Second)); wait >= 0 && wait < maxServerDelay {
+			return wait
+		}
+	} else if at, err := http.ParseTime(after); err == nil {
+		if wait := time.Until(at); wait >= 0 && wait < maxServerDelay {
+			return wait
+		}
+	}
+	return backoff()
+}
+
+// backoff is the first delay of the TypeScript SDK: half a second, less up to a quarter of jitter.
+func backoff() time.Duration {
+	return time.Duration(float64(retryDelay) * (1 - rand.Float64()*maxJitterFactor)) //nolint:gosec // jitter, not a secret
+}
+
+// prose reads the answer: its text blocks, trimmed. Numbers and unknown fields are ignored.
+func prose(raw []byte) (string, error) {
+	var answer *struct {
+		StopReason string `json:"stop_reason"`
+		Content    []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"content"`
+	}
+	if err := json.Unmarshal(raw, &answer); err != nil || answer == nil {
+		return "", errors.New("narrator: unreadable answer")
+	}
+	switch answer.StopReason {
 	case stopRefusal:
 		return "", errors.New("narrator: the model declined the briefing")
 	case stopMaxTokens:
 		return "", errors.New("narrator: the narrative was truncated")
 	}
 	var text strings.Builder
-	for _, block := range response.Content {
-		if block.Type == "text" {
+	for _, block := range answer.Content {
+		if block.Type == textBlock {
 			text.WriteString(block.Text)
 		}
 	}
-	return strings.TrimSpace(text.String()), nil
+	return js.TrimJS(text.String()), nil
 }
 
 // narrationBody is the request as JSON.stringify writes it: half an emoji stays the escape
-// TypeScript sends, which the SDK's encoder would turn into a replacement character.
+// TypeScript sends, which encoding/json would turn into a replacement character.
 func narrationBody(model, briefing string) []byte {
 	content := "<informe>\n" + briefing + "\n</informe>"
 	body := append([]byte(`{"model":`), records.Stringify(model)...)

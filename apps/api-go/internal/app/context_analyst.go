@@ -29,7 +29,7 @@ func assistedBriefing(d Deps) (*analyst.Assisted, error) {
 	if err != nil || !settings.Enabled {
 		return nil, err
 	}
-	assisted := &analyst.Assisted{Narrator: analystsql.NewClaude(settings.Model), Logger: d.Logger}
+	assisted := &analyst.Assisted{Narrator: analystsql.NewClaude(settings.Model, os.LookupEnv), Logger: d.Logger}
 	guard, err := egressGuard(d)
 	switch {
 	case err == nil:
