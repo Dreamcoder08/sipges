@@ -8,14 +8,16 @@ const DIMENSIONS = 16;
 export const EMBEDDER_DOWN = 'PARITY-EMBEDDER-DOWN';
 
 /**
- * Counts each code point in one of 16 buckets: the same text always gets the same vector. The
- * tokens of a `perApi` case are left out, so both APIs' copies of a text rank the same.
+ * Counts each code point in one of 16 buckets, weighted by its position, so the same text always
+ * gets the same vector and a text in another order gets another one. The tokens of a `perApi` case
+ * are left out, so both APIs' copies of a text rank the same.
  */
 export const vectorOf = (text: string) => {
   const vector = new Array<number>(DIMENSIONS).fill(0);
+  let position = 0;
   for (const char of text.replace(/TSAPI|GOAPI/g, '')) {
     const bucket = (char.codePointAt(0) ?? 0) % DIMENSIONS;
-    vector[bucket] = (vector[bucket] ?? 0) + 1;
+    vector[bucket] = (vector[bucket] ?? 0) + 1 + (position++ % 3);
   }
   return vector;
 };
