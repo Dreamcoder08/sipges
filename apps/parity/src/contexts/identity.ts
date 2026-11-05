@@ -27,6 +27,8 @@ INSERT INTO users (username, full_name, password_hash, role, active, totp_enable
 INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled, totp_secret_sealed)
   VALUES ('parity-login-mfa', 'Paridad', '${ARGON2}', 'analista', true, true, 'v1.AAAA');
 INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled, totp_secret_sealed, totp_last_step) VALUES
+  ('parity-link-ts', 'Paridad', 'x', 'analista', true, true, NULL, NULL),
+  ('parity-link-go', 'Paridad', 'x', 'analista', true, true, NULL, NULL),
   ('parity-off-ts', 'Paridad', 'x', 'analista', true, true, NULL, NULL),
   ('parity-off-go', 'Paridad', 'x', 'analista', true, true, NULL, NULL),
   ('parity-reset-ts', 'Paridad', 'x', 'analista', true, true, 'v1.AAAA', 7),
@@ -295,6 +297,67 @@ const apiKeys: readonly ParityCase[] = [
   },
 ];
 
+const linked = { user: { ts: 'parity-link-ts', go: 'parity-link-go' } };
+const emails = { email: { ts: 'parity.ts@example.org', go: 'parity.go@example.org' } };
+const link = (
+  name: string,
+  user: string,
+  body: NonNullable<ParityCase['body']>,
+  extra: Partial<ParityCase> = {},
+) => account(`Google link ${name}`, `${ACCOUNTS}/${user}/google`, { body, ...extra });
+/** The run has no Google client: the sign-in routes are hidden, the links are not. */
+const google: readonly ParityCase[] = [
+  { name: 'identity: Google start without a client', method: 'GET', path: '/auth/google' },
+  {
+    name: 'identity: Google callback without a client',
+    method: 'GET',
+    path: '/auth/google/callback?state=a&code=b',
+  },
+  link(
+    'stored',
+    '{user}',
+    { json: { email: ' {email} ' } },
+    {
+      vary: { ...linked, ...emails },
+      normalize: ['username', 'google_email'],
+    },
+  ),
+  link(
+    'stored again',
+    '{user}',
+    { json: { email: '{email}' } },
+    {
+      vary: { ...linked, ...emails },
+      normalize: ['username', 'google_email'],
+    },
+  ),
+  link(
+    'of an address taken by the other account',
+    '{user}',
+    { json: { email: '{email}' } },
+    {
+      vary: { ...linked, email: { ts: 'parity.go@example.org', go: 'parity.ts@example.org' } },
+    },
+  ),
+  link('with an invalid address', 'parity-login', { json: { email: 'no-es-correo' } }),
+  link('with a NUL address', 'parity-login', { json: { email: 'a\u0000b@example.org' } }),
+  link('of a long address', 'parity-login', { json: { email: `${'a'.repeat(250)}@b.co` } }),
+  link('of a missing user', 'parity-nobody', { json: { email: 'x@example.org' } }),
+  link('of a NUL name', '%00', { json: { email: 'x@example.org' } }),
+  link('without an address', 'parity-login', { json: {} }),
+  link('with invalid JSON', 'parity-login', { raw: '{' }),
+  link('as consulta', 'parity-login', { json: { email: 'x@example.org' } }, { auth: 'consulta' }),
+  link(
+    'removed',
+    '{user}',
+    { json: { email: '   ' } },
+    {
+      vary: linked,
+      normalize: ['username'],
+    },
+  ),
+];
+
 export const cases: readonly ParityCase[] = [
   login('with an argon2id hash', credentials('parity-login')),
   login('with spaces and upper case in the name', credentials('  PARITY-Login\t')),
@@ -345,6 +408,7 @@ export const cases: readonly ParityCase[] = [
   ...totp,
   ...accounts,
   ...apiKeys,
+  ...google,
   { name: 'identity: GET /login', method: 'GET', path: '/login' },
   {
     name: 'identity: POST /login/ without a session',

@@ -37,6 +37,10 @@ type AuthDeps struct {
 	Logger       *slog.Logger
 	// TenantOf is the request's active project: tenancy resolves it, above this context.
 	TenantOf func(r *http.Request) (string, bool)
+	// Google is nil without a configured client: the sign-in routes then answer 404.
+	Google application.GoogleSignIn
+	// Clock is the time ID tokens are checked against.
+	Clock func() time.Time
 }
 
 // scopeCookie is SCOPE_COOKIE of cookies.ts: logout clears the project choice with the session.
@@ -76,6 +80,11 @@ func RegisterAuth(mux *http.ServeMux, deps AuthDeps) {
 	mux.HandleFunc("POST /system/auth/accounts", h.createAccount)
 	mux.HandleFunc("POST /system/auth/accounts/{username}/deactivate", h.deactivateAccount)
 	mux.HandleFunc("POST /system/auth/accounts/{username}/reset-mfa", h.resetMFA)
+	mux.HandleFunc("POST /system/auth/accounts/{username}/google", h.linkGoogle)
+	if deps.Google != nil {
+		mux.HandleFunc("GET "+googleStart, h.googleBegin)
+		mux.HandleFunc("GET "+googleReturn, h.googleCallback)
+	}
 	if deps.Identity.CanEnrol() {
 		mux.HandleFunc("POST /system/auth/totp/setup", h.totpSetup)
 		mux.HandleFunc("POST /system/auth/totp/enable", h.totpEnable)
