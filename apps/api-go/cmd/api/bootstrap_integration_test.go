@@ -309,16 +309,7 @@ func TestStartWaitsForMigrationsThenBootstraps(t *testing.T) {
 	}
 	noCredential(t, api.out.String())
 
-	conn, err := pgx.Connect(t.Context(), dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = conn.Close(context.Background()) }()
-	migrations, err := dbtest.LoadMigrations(os.DirFS(dbtest.MigrationsDir()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := dbtest.Migrate(t.Context(), conn, migrations); err != nil {
+	if err := dbtest.MigrateDatabase(t.Context(), adminURL, dsn); err != nil {
 		t.Fatal(err)
 	}
 	api.eventually(t, "readiness after migrating", func() bool { return api.get(t, "/health/ready") == http.StatusOK })
