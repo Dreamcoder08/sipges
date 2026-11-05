@@ -5,6 +5,7 @@ go 1.27.0
 require (
 	github.com/Dreamcoder08/sipges/engines/go v0.0.0
 	github.com/jackc/pgx/v5 v5.11.0
+	golang.org/x/crypto v0.42.0
 	golang.org/x/text v0.29.0
 )
 

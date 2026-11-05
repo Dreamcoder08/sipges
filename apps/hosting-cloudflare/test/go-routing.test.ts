@@ -76,10 +76,15 @@ describe('Go container', () => {
     ).toEqual({
       SIPGES_HOST: '0.0.0.0',
       SIPGES_PORT: '8080',
+      SIPGES_TRUST_CF_CONNECTING_IP: '1',
       SIPGES_ALLOWED_HOSTS: 'sipges.example.org',
       SIPGES_DATABASE_URL: 'postgres://synthetic@db.invalid/synthetic',
     });
-    expect(goContainerEnv({})).toEqual({ SIPGES_HOST: '0.0.0.0', SIPGES_PORT: '8080' });
+    expect(goContainerEnv({})).toEqual({
+      SIPGES_HOST: '0.0.0.0',
+      SIPGES_PORT: '8080',
+      SIPGES_TRUST_CF_CONNECTING_IP: '1',
+    });
   });
 
   it('sleeps after 10 minutes idle in one named instance', () => {
