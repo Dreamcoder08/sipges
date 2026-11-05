@@ -149,7 +149,7 @@ func TestNarrateRetriesWhatTypeScriptRetries(t *testing.T) {
 			var calls atomic.Int32
 			claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
 				calls.Add(1)
-				w.Header().Set("Retry-After", "0")
+				w.Header().Set("Retry-After-Ms", "1")
 				if c.shouldRetry != "" {
 					w.Header().Set("X-Should-Retry", c.shouldRetry)
 				}
@@ -162,6 +162,68 @@ func TestNarrateRetriesWhatTypeScriptRetries(t *testing.T) {
 				t.Fatalf("calls = %d", calls.Load())
 			}
 		})
+	}
+}
+
+func TestRetryWaitIsWhatTypeScriptWaits(t *testing.T) {
+	t.Parallel()
+	header := func(pairs ...string) http.Header {
+		h := http.Header{}
+		for i := 0; i < len(pairs); i += 2 {
+			h.Set(pairs[i], pairs[i+1])
+		}
+		return h
+	}
+	exact := []struct {
+		name   string
+		header http.Header
+		want   time.Duration
+	}{
+		{"seconds", header("Retry-After", "2"), 2 * time.Second},
+		{"above a minute, no cap", header("Retry-After", "120"), 120 * time.Second},
+		{"exactly a minute", header("Retry-After", "60"), 60 * time.Second},
+		{"milliseconds", header("Retry-After-Ms", "7"), 7 * time.Millisecond},
+		{"milliseconds win", header("Retry-After-Ms", "7", "Retry-After", "2"), 7 * time.Millisecond},
+		{"zero milliseconds fall to seconds", header("Retry-After-Ms", "0", "Retry-After", "1"), time.Second},
+	}
+	for _, c := range exact {
+		if got := retryWait(c.header); got != c.want {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+	backedOff := []struct {
+		name   string
+		header http.Header
+	}{
+		{"no header", header()},
+		{"zero seconds", header("Retry-After", "0")},
+		{"negative", header("Retry-After", "-1")},
+		{"not a number or a date", header("Retry-After", "pronto")},
+		{"a past date", header("Retry-After", "Wed, 21 Oct 2015 07:28:00 GMT")},
+		{"zero everywhere", header("Retry-After-Ms", "0", "Retry-After", "0")},
+	}
+	for _, c := range backedOff {
+		if got := retryWait(c.header); got < 375*time.Millisecond || got > 500*time.Millisecond {
+			t.Errorf("%s: got %v", c.name, got)
+		}
+	}
+}
+
+func TestALongRetryAfterOutlastsTheBudget(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Retry-After", "120")
+		w.WriteHeader(http.StatusTooManyRequests)
+	})
+	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	defer cancel()
+	if _, err := claude.Narrate(ctx, cleared("b")); err == nil {
+		t.Fatal("expected the error")
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("calls = %d", calls.Load())
 	}
 }
 
@@ -241,6 +303,7 @@ func TestCredentials(t *testing.T) {
 		{"token", map[string]string{"ANTHROPIC_AUTH_TOKEN": "t"}, "Bearer t"},
 		{"the key wins", map[string]string{"ANTHROPIC_API_KEY": "k", "ANTHROPIC_AUTH_TOKEN": "t"}, "Bearer k"},
 		{"trimmed", map[string]string{"ANTHROPIC_API_KEY": " k\n"}, "Bearer k"},
+		{"trimmed as JavaScript", map[string]string{"ANTHROPIC_API_KEY": "\ufeffk"}, "Bearer k"},
 		{"an empty key is none", map[string]string{"ANTHROPIC_API_KEY": "  ", "ANTHROPIC_AUTH_TOKEN": "t"}, "Bearer t"},
 	}
 	for _, c := range cases {
@@ -263,6 +326,20 @@ func TestCredentials(t *testing.T) {
 				t.Fatalf("authorization = %q", got)
 			}
 		})
+	}
+}
+
+func TestNoCredentialSendsNothing(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { calls.Add(1) }))
+	t.Cleanup(srv.Close)
+	claude := NewClaude("m", environment(map[string]string{"ANTHROPIC_BASE_URL": srv.URL, "ANTHROPIC_API_KEY": "  "}))
+	if _, err := claude.Narrate(t.Context(), cleared("b")); err == nil {
+		t.Fatal("expected the error")
+	}
+	if calls.Load() != 0 {
+		t.Fatalf("calls = %d", calls.Load())
 	}
 }
 

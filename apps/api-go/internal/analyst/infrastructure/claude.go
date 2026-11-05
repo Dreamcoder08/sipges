@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -37,7 +38,7 @@ const (
 	requestTimeout = 20 * time.Second
 
 	retryDelay      = 500 * time.Millisecond
-	maxServerDelay  = 60 * time.Second
+	maxTimerMillis  = 1<<31 - 1
 	maxJitterFactor = 0.25
 )
 
@@ -82,7 +83,7 @@ func NewClaude(model string, lookup func(string) (string, bool)) *Claude {
 
 func environmentValue(lookup func(string) (string, bool), name string) string {
 	value, _ := lookup(name)
-	return strings.TrimSpace(value)
+	return js.TrimJS(value)
 }
 
 func narrationClient() *http.Client {
@@ -102,6 +103,9 @@ func (c *Claude) Name() string { return "claude:" + c.model }
 
 // Narrate returns the model's prose for a cleared briefing; a refusal or a cut answer is an error.
 func (c *Claude) Narrate(ctx context.Context, briefing privacy.Sanitised[string]) (string, error) {
+	if c.credential == "" {
+		return "", errors.New("narrator: no credential") // TypeScript's SDK sends nothing either
+	}
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 	body := narrationBody(c.model, briefing.Value())
@@ -148,7 +152,7 @@ func (c *Claude) send(ctx context.Context, body []byte) ([]byte, time.Duration, 
 		// The body is not read: a provider error may quote the request.
 		err := fmt.Errorf("narrator: the model answered %d", res.StatusCode)
 		if retryable(res) {
-			return nil, retryWait(res), err
+			return nil, retryWait(res.Header), err
 		}
 		return nil, -1, err
 	}
@@ -178,24 +182,32 @@ func retryable(res *http.Response) bool {
 		res.StatusCode == http.StatusTooManyRequests || res.StatusCode >= http.StatusInternalServerError
 }
 
-// retryWait honours what the server asks for within a minute, and backs off otherwise.
-func retryWait(res *http.Response) time.Duration {
-	if ms, err := strconv.ParseFloat(res.Header.Get("Retry-After-Ms"), 64); err == nil {
-		if wait := time.Duration(ms * float64(time.Millisecond)); wait >= 0 && wait < maxServerDelay {
-			return wait
+// retryWait is retryRequest of the TypeScript SDK: Retry-After-Ms, then Retry-After in seconds or as
+// a date. Whatever is positive and fits a timer is waited for, however long; the context ends the
+// wait. Anything else, zero and past dates included, backs off.
+func retryWait(header http.Header) time.Duration {
+	millis, known := leadingFloat(header.Get("Retry-After-Ms"))
+	if after := header.Get("Retry-After"); after != "" && millis == 0 {
+		if seconds, ok := leadingFloat(after); ok {
+			millis, known = seconds*1000, true
+		} else if at, err := http.ParseTime(after); err == nil {
+			millis, known = float64(time.Until(at).Milliseconds()), true
+		} else {
+			known = false
 		}
 	}
-	after := res.Header.Get("Retry-After")
-	if seconds, err := strconv.ParseFloat(after, 64); err == nil {
-		if wait := time.Duration(seconds * float64(time.Second)); wait >= 0 && wait < maxServerDelay {
-			return wait
-		}
-	} else if at, err := http.ParseTime(after); err == nil {
-		if wait := time.Until(at); wait >= 0 && wait < maxServerDelay {
-			return wait
-		}
+	if !known || millis <= 0 || millis > maxTimerMillis {
+		return backoff()
 	}
-	return backoff()
+	return time.Duration(millis * float64(time.Millisecond))
+}
+
+var floatPrefix = regexp.MustCompile(`^\s*[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)([eE][+-]?[0-9]+)?`)
+
+// leadingFloat is parseFloat: the number a text starts with, if it starts with one.
+func leadingFloat(text string) (float64, bool) {
+	value, err := strconv.ParseFloat(strings.TrimSpace(floatPrefix.FindString(text)), 64)
+	return value, err == nil
 }
 
 // backoff is the first delay of the TypeScript SDK: half a second, less up to a quarter of jitter.
