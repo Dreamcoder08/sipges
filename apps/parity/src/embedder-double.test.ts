@@ -9,6 +9,7 @@ test('the double gives the same vector to the same text and a usable length', ()
   assert.deepEqual(vectorOf('agua'), vectorOf('agua'));
   assert.notDeepEqual(vectorOf('agua'), vectorOf('tierra'));
   assert.equal(vectorOf('').length, 16);
+  assert.deepEqual(vectorOf('agua TSAPI'), vectorOf('agua GOAPI'));
 });
 
 test('the double answers as Ollama does, and fails on request', async () => {

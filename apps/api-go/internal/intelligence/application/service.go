@@ -2,7 +2,7 @@
 // apps/api/src/contexts/intelligence/application/intelligence-service.ts: the scope's territorial
 // alerts, one alert and their summary (Service), and the writes that need no embeddings provider
 // (Writes): the classifier, the text analysis and alert decisions; the embedder's status
-// (EmbedderProbe) and the semantic analysis (Semantic). Creating alerts stays in TypeScript for now.
+// (EmbedderProbe), the semantic analysis (Semantic) and creating alerts (AlertCreation).
 package application
 
 import (
