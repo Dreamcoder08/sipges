@@ -18,6 +18,9 @@ import type { ParityCase } from '../types.ts';
  * write nothing, and the read that follows. The first of two validations of a high-priority
  * alert depends on that order and is covered by apps/api-go's integration test instead. The
  * PARITY-INT-W alerts belong to these cases only.
+ *
+ * Embedder (T51): GET /system/intelligence/embedder. Both APIs point at a closed local port, so
+ * the probe fails the same way; apps/api-go's tests cover a reachable and an external embedder.
  */
 const SECHURA = 'SIPGES/PRJ-SECHURA';
 const OTHER = 'PARITY/OTRO';
@@ -73,6 +76,7 @@ ON CONFLICT DO NOTHING;
 const LIST = '/system/intelligence/territorial-alerts';
 const ONE = `${LIST}/PARITY-INT-A`;
 const SUMMARY = '/system/intelligence/territorial-summary';
+const EMBEDDER = '/system/intelligence/embedder';
 
 /** The cases every read route gets: sessions, roles, project choice and scope refusals. */
 const scoped = (label: string, path: string): ParityCase[] => {
@@ -375,6 +379,7 @@ const writeCases: ParityCase[] = [
 ];
 
 export const cases: readonly ParityCase[] = [
+  ...scoped('embedder', EMBEDDER),
   ...scoped('alerts', LIST),
   ...scoped('alert', ONE),
   ...scoped('summary', SUMMARY),

@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -312,5 +313,85 @@ func TestRefusesRequestsOutsideTheScope(t *testing.T) {
 			code, body = get(t, srv, path, "multi", nil)
 			expect(t, code, body, http.StatusForbidden, choose)
 		})
+	}
+}
+
+// embedderServer is a synthetic embeddings server; no real provider is ever contacted here.
+func embedderServer(t *testing.T, status int, calls *atomic.Int32) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(status)
+		_, _ = io.WriteString(w, `{"embeddings":[[1,0,0,0,0,0,0,0.1]]}`)
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func TestEmbedderReportsAReachableServer(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusOK, &calls).URL)
+	t.Setenv("SIPGES_OLLAMA_EMBED_MODEL", "fake-embed")
+	t.Setenv("SIPGES_SEMANTIC_SEARCH", "1")
+	base := start(t)
+	const want = `{"configured":true,"available":true,"reason":null,"model":"fake-embed","egress":"local","semantic_search":true}`
+	for range 2 {
+		status, body := get(t, base, "/system/intelligence/embedder", "solo", nil)
+		if status != http.StatusOK || strings.TrimSpace(body) != want {
+			t.Fatalf("%d %s", status, body)
+		}
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("probes = %d", calls.Load())
+	}
+}
+
+func TestEmbedderReportsAnUnreachableServer(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusServiceUnavailable, &calls).URL)
+	base := start(t)
+	status, body := get(t, base, "/system/intelligence/embedder", "reader", nil)
+	const want = `{"configured":true,"available":false,"reason":"unreachable","model":"nomic-embed-text","egress":"local","semantic_search":false}`
+	if status != http.StatusOK || strings.TrimSpace(body) != want {
+		t.Fatalf("%d %s", status, body)
+	}
+}
+
+func TestEmbedderKeepsAnExternalServerUncontactedWhileTheSwitchIsOff(t *testing.T) {
+	// A routable address nothing listens on: the point is that no connection is attempted.
+	t.Setenv("SIPGES_OLLAMA_URL", "http://192.0.2.1:11434")
+	base := start(t)
+	status, body := get(t, base, "/system/intelligence/embedder", "solo", nil)
+	const want = `{"configured":true,"available":false,"reason":"external_ai_disabled","model":"nomic-embed-text","egress":"external","semantic_search":false}`
+	if status != http.StatusOK || strings.TrimSpace(body) != want {
+		t.Fatalf("%d %s", status, body)
+	}
+}
+
+func TestEmbedderNeedsASession(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusOK, &calls).URL)
+	base := start(t)
+	if status, _ := get(t, base, "/system/intelligence/embedder", "", nil); status != http.StatusUnauthorized {
+		t.Fatalf("status = %d", status)
+	}
+	if calls.Load() != 0 {
+		t.Fatal("probed for an anonymous request")
+	}
+}
+
+func TestAMalformedEmbedderURLStopsTheStart(t *testing.T) {
+	if scratch == nil {
+		t.Skip(dbtest.EnvAdminURL + " is not set")
+	}
+	t.Setenv("SIPGES_OLLAMA_URL", "ftp://127.0.0.1")
+	pool, err := pgxpool.New(t.Context(), scratch.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	_, err = app.NewHandler(pool, app.Options{Logger: slog.New(slog.DiscardHandler)})
+	if err == nil || !strings.Contains(err.Error(), "SIPGES_OLLAMA_URL must use http or https") {
+		t.Fatalf("error = %v", err)
 	}
 }
