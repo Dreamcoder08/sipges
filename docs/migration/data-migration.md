@@ -209,6 +209,7 @@ tenants, damaged SQLite files and S3 through a local server that checks each req
 | Node's `ExperimentalWarning` for `node:sqlite` on Node 22 | on stderr | absent |
 | A failure TypeScript does not catch | exit 1 with a stack trace, whose message may quote a driver | exit 1 with the error's name and at most an operator's path |
 | Text with a NUL character, on Node 22 | cut at the first NUL by `node:sqlite`, so the row can pass with a shorter value | read whole and refused, as TypeScript does on later Node versions |
+| The integer -9223372036854775808 in any column, on Node 22 | read as a number | `RangeError`, exit 1, as TypeScript does on later Node versions |
 | A timestamp text with no zone that ends like an offset, such as `01-02-2026` | local time of the process | UTC (the same under `TZ=UTC`) |
 | A payload, scores or configuration nested 1,001 to about 2,500 levels | migrated | `RangeError`, exit 1 before any write (TypeScript overflows from about 2,500 levels, at a depth that varies with the stack) |
 | An alert JSON column nested 1,001 to about 2,500 levels | migrated | `alert_row_invalid` |

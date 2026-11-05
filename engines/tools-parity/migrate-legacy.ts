@@ -27,7 +27,7 @@ import type { SqlClient } from '../../apps/api/src/platform/database/sql-client.
 import { buildLegacyFixture } from '../../apps/api/test/support/legacy-fixture.ts';
 import { FAKE_S3_CREDENTIALS, FAKE_S3_REGION } from './fake-s3.ts';
 import { ROOT, type Scenario, type Step, SYNTHETIC_DATA_KEY, runScenarios } from './harness.ts';
-import { buildHostileInstallation, buildPoisoned } from './migrate-legacy-fixture.ts';
+import { CURRENT_SQLITE_READS, buildHostileInstallation, buildPoisoned } from './migrate-legacy-fixture.ts';
 
 const TOOL = { ts: 'apps/api/src/tools/migrate-legacy/cli.ts', rust: 'migrate-legacy' };
 const REPORT = 'engines/tools-parity/.migrate-legacy-report.json';
@@ -343,7 +343,7 @@ const scenarios: Scenario[] = [
     dumps: DUMPS,
     steps: [
       crash(poison('big-integer', (root) => sqlite(join(root, 'data/sipges.db'), 'CREATE TABLE records2(a); DROP TABLE audit; CREATE TABLE audit(id, ts, module, record_id, action, detail, extra); INSERT INTO audit VALUES (1, 1, 2, 3, 4, 5, 9007199254740992)'))),
-      crash(poison('smallest-integer', (root) => sqlite(join(root, 'data/sipges.db'), 'DROP TABLE audit; CREATE TABLE audit(id, ts, module, record_id, action, detail); INSERT INTO audit VALUES (1, -9223372036854775808, 2, 3, 4, 5)'))),
+      ...(CURRENT_SQLITE_READS ? [crash(poison('smallest-integer', (root) => sqlite(join(root, 'data/sipges.db'), 'DROP TABLE audit; CREATE TABLE audit(id, ts, module, record_id, action, detail); INSERT INTO audit VALUES (1, -9223372036854775808, 2, 3, 4, 5)')))] : []),
       crash(poison('garbage-auth', (root) => writeFileSync(join(root, 'data/auth_global.db'), 'no es sqlite, relleno suficiente'.repeat(50)))),
       crash(poison('garbage-tenant', (root) => writeFileSync(join(root, 'data/sipges.db'), 'tampoco es sqlite'.repeat(100)))),
       crash(poison('directory-db', (root) => {
