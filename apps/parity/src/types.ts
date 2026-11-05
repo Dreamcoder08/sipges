@@ -31,6 +31,13 @@ export type ParityCase = {
    */
   readonly normalize?: readonly string[];
   /**
+   * Runs a write that is not idempotent (a creation, a revocation) once on each API: both share
+   * one database, so the same create would answer 200 on one and 409 on the other. `{api}` in
+   * the path, headers and body becomes `TSAPI` or `GOAPI`. In every answer, perApi or not, both
+   * tokens read back as `{api}` before comparing.
+   */
+  readonly perApi?: true;
+  /**
    * Values that differ per API, written `{name}` in `path`, header values and the body. Both
    * APIs receive every case at once, on one database, so a write that succeeds once (creating
    * or deleting a row) names a row of its own on each side, such as `{ w: { ts: 'WT', go: 'WG' } }`.
