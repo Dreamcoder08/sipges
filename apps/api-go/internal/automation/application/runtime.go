@@ -98,7 +98,8 @@ type Runtime struct {
 
 	mu      sync.Mutex
 	running map[string]*entry
-	// tasks counts the event ticks Dispatch started and the schedule, so Drain can wait for them.
+	// tasks counts the event ticks Dispatch started, the ticks routes run and the schedule, so Drain
+	// can wait for them.
 	tasks sync.WaitGroup
 	// stop is the schedule's stop signal, nil without a schedule.
 	stop atomic.Pointer[context.Context]
@@ -272,8 +273,8 @@ func (rt *Runtime) taskContext() (context.Context, context.CancelFunc) {
 	return ctx, func() {}
 }
 
-// Drain waits until the event ticks Dispatch started and a stopped schedule have finished, or
-// ctx ends. A process shutting down calls it after the server stopped and before closing the
+// Drain waits until the event ticks Dispatch started, the ticks routes run and a stopped schedule
+// have finished, or ctx ends. A process shutting down calls it after the server stopped and before closing the
 // pool: a tick cut off between sending and FinishRun would send its message again when the lease
 // expires, and most channels do not deduplicate. In Node, the wakeup awaits its tick inside the
 // request.
@@ -292,9 +293,23 @@ func (rt *Runtime) Drain(ctx context.Context) error {
 }
 
 // Scheduled is scheduled: every due tenant in turn within one budget, the reports summed. A
-// tenant that fails does not stop the others; their errors are joined.
+// tenant that fails does not stop the others; their errors are joined. A caller's tick counts for
+// Drain, and a schedule that stopped ends the visit, like its own ticks.
 func (rt *Runtime) Scheduled(ctx context.Context) (TickReport, error) {
-	return rt.scheduled(ctx, nil)
+	rt.tasks.Add(1)
+	defer rt.tasks.Done()
+	var stop <-chan struct{}
+	if signal := rt.stop.Load(); signal != nil {
+		stop = (*signal).Done()
+	}
+	return rt.scheduled(ctx, stop)
+}
+
+// TickNow is one tick a request asked for: no attempt is recorded, and Drain waits for it.
+func (rt *Runtime) TickNow(ctx context.Context, tenantID string) (TickReport, error) {
+	rt.tasks.Add(1)
+	defer rt.tasks.Done()
+	return rt.Tick(ctx, tenantID)
 }
 
 // scheduled is Scheduled that visits no further tenant once stop closes.

@@ -264,3 +264,50 @@ func TestStoppingDropsTheRescansSoTheTickFitsTheDrain(t *testing.T) {
 		t.Fatalf("attempts %v, want only the tick in flight: the next runner catches up", got)
 	}
 }
+
+func TestDrainWaitsForACronRouteTickAndStoppingEndsItsTenants(t *testing.T) {
+	store := &fakeRuntimeStore{tenants: []string{"T/A", "T/B"}}
+	g := newGate()
+	rt := &Runtime{Store: store, Tick: g.tick}
+	stop, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	rt.StartSchedule(stop, Schedule{Interval: time.Hour})
+	routeDone := make(chan struct{})
+	go func() {
+		defer close(routeDone)
+		_, _ = rt.Scheduled(context.Background()) // POST /system/automations/cron
+	}()
+	received(t, g.entered, "the route's tick")
+
+	cancel()
+	short, done := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer done()
+	if err := rt.Drain(short); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("drain with a route tick in flight: %v", err)
+	}
+	g.release <- struct{}{}
+	if err := rt.Drain(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	received(t, routeDone, "the route")
+	if got := store.sources(); len(got) != 1 {
+		t.Fatalf("attempts %v, want only the tenant in flight", got)
+	}
+}
+
+func TestDrainWaitsForATickNow(t *testing.T) {
+	store := &fakeRuntimeStore{}
+	g := newGate()
+	rt := &Runtime{Store: store, Tick: g.tick}
+	go func() { _, _ = rt.TickNow(context.Background(), "T/P") }() // POST /system/automations/tick
+	received(t, g.entered, "the route's tick")
+	short, done := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer done()
+	if err := rt.Drain(short); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("drain with a route tick in flight: %v", err)
+	}
+	g.release <- struct{}{}
+	if err := rt.Drain(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+}
