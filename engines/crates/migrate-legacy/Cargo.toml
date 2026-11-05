@@ -7,6 +7,10 @@ rust-version.workspace = true
 license.workspace = true
 publish.workspace = true
 
+[[bin]]
+name = "migrate-legacy"
+path = "src/main.rs"
+
 [dependencies]
 postgres.workspace = true
 ring.workspace = true
