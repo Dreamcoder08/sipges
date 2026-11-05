@@ -9,6 +9,7 @@ import (
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/secrets"
 )
 
 // The rest of the identity context (auth-routes.ts), beyond the session gates in app.go.
@@ -28,11 +29,18 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
+		cipher, err := identityCipher(os.LookupEnv)
+		if err != nil {
+			return nil, err
+		}
 		deps := identityhttp.AuthDeps{
 			Identity: application.NewService(application.Deps{
 				Store:  identity.Store{DB: d.Pool},
 				Hasher: identity.Passwords{},
 				Tokens: identity.Tokens{},
+				TOTP:   identity.TOTP{},
+				Cipher: cipher,
+				Logger: d.Logger,
 				Now:    d.Now,
 			}),
 			CookieSecure: secure,
@@ -41,6 +49,16 @@ func init() {
 		}
 		return func(mux *http.ServeMux) { identityhttp.RegisterAuth(mux, deps) }, nil
 	})
+}
+
+// identityCipher seals TOTP secrets under SIPGES_DATA_KEY. Without the key the result is a nil
+// interface, not a nil *Cipher: logins with MFA fail closed. A malformed key stops the start.
+func identityCipher(lookup secrets.Lookup) (application.SecretCipher, error) {
+	key, previous, configured, err := secrets.DataKeys(lookup)
+	if err != nil || !configured {
+		return nil, err
+	}
+	return secrets.NewCipher(key, nonEmpty(previous)...)
 }
 
 // envSwitch is parseSwitch(name, …, false): unset means off, otherwise exactly '0' or '1'.

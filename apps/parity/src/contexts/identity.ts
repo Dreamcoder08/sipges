@@ -19,6 +19,8 @@ INSERT INTO users (username, full_name, password_hash, role, active, totp_enable
   ('parity-login-throttled', 'Paridad', '${ARGON2}', 'analista', true, false),
   ('parity-legacy-ts', 'Paridad', '${LEGACY}', 'analista', true, false),
   ('parity-legacy-go', 'Paridad', '${LEGACY}', 'analista', true, false);
+INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled, totp_secret_sealed)
+  VALUES ('parity-login-mfa', 'Paridad', '${ARGON2}', 'analista', true, true, 'v1.AAAA');
 INSERT INTO login_failures (subject, failed_at)
   SELECT 'user:parity-login-throttled', now() FROM generate_series(1, 5);
 `;
@@ -43,6 +45,51 @@ const login = (name: string, extra: Omit<ParityCase, 'name' | 'method' | 'path'>
 const credentials = (username: string, password = PASSWORD) => ({
   body: { form: { username, password } },
 });
+
+const enable = (name: string, body: ParityCase['body'], auth?: 'admin'): ParityCase => ({
+  name: `identity: TOTP enable ${name}`,
+  method: 'POST',
+  path: '/system/auth/totp/enable',
+  sameOrigin: true,
+  ...(body ? { body } : {}),
+  ...(auth ? { auth } : {}),
+});
+const totp: readonly ParityCase[] = [
+  {
+    // The parity administrator has no second factor: this only leaves a pending secret.
+    name: 'identity: TOTP setup',
+    method: 'POST',
+    path: '/system/auth/totp/setup',
+    sameOrigin: true,
+    auth: 'admin',
+    normalize: ['secret', 'otpauth_uri'],
+  },
+  {
+    name: 'identity: TOTP setup without a session',
+    method: 'POST',
+    path: '/system/auth/totp/setup',
+    sameOrigin: true,
+  },
+  {
+    name: 'identity: TOTP setup without Origin',
+    method: 'POST',
+    path: '/system/auth/totp/setup',
+    auth: 'admin',
+  },
+  {
+    name: 'identity: GET TOTP setup',
+    method: 'GET',
+    path: '/system/auth/totp/setup',
+    auth: 'admin',
+  },
+  enable('without a session', { json: { code: '123456' } }),
+  enable('malformed code', { json: { code: 'abc' } }, 'admin'),
+  enable('code as a number', { json: { code: 123456 } }, 'admin'),
+  enable('no code', { json: {} }, 'admin'),
+  enable('array body', { json: [] }, 'admin'),
+  enable('invalid JSON', { raw: '{' }, 'admin'),
+  enable('no body', undefined, 'admin'),
+];
 
 export const cases: readonly ParityCase[] = [
   login('with an argon2id hash', credentials('parity-login')),
@@ -85,6 +132,13 @@ export const cases: readonly ParityCase[] = [
     path: '/login',
     ...credentials('parity-login'),
   },
+  // A sealed secret that cannot be opened fails the factor. A right code needs a secret sealed
+  // with the run's key: apps/api-go/internal/app/identity_totp_integration_test.go proves it.
+  login('second factor missing', credentials('parity-login-mfa')),
+  login('second factor unreadable', {
+    body: { form: { username: 'parity-login-mfa', password: PASSWORD, otp: '123456' } },
+  }),
+  ...totp,
   { name: 'identity: GET /login', method: 'GET', path: '/login' },
   {
     name: 'identity: POST /login/ without a session',

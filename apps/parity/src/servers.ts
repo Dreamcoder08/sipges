@@ -156,7 +156,11 @@ export const startTypeScriptApi = async (
   );
 
 /** Builds apps/api-go into `dir` (removed by the caller) and runs it against the same database. */
-export const startGoApi = async (databaseUrl: string, dir: string): Promise<Running> => {
+export const startGoApi = async (
+  databaseUrl: string,
+  dir: string,
+  dataKey: string,
+): Promise<Running> => {
   const binary = path.join(dir, 'api-go');
   await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
     cwd: path.join(repoRoot, 'apps/api-go'),
@@ -167,7 +171,12 @@ export const startGoApi = async (databaseUrl: string, dir: string): Promise<Runn
     binary,
     [],
     // Same switch as the TypeScript API above: the parity session has no second factor.
-    { SIPGES_DATABASE_URL: databaseUrl, SIPGES_ACCESS_LOG: '0', SIPGES_REQUIRE_MFA: '0' },
+    {
+      SIPGES_DATABASE_URL: databaseUrl,
+      SIPGES_ACCESS_LOG: '0',
+      SIPGES_REQUIRE_MFA: '0',
+      SIPGES_DATA_KEY: dataKey,
+    },
     await freePort(),
   );
 };

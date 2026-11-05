@@ -298,7 +298,7 @@ func TestLoginReplacesALegacyHashAfterAFullSuccessOnly(t *testing.T) {
 	}
 }
 
-func TestLoginNeverSkipsTheSecondFactor(t *testing.T) {
+func TestLoginNeverSkipsTheSecondFactorWithoutAStoredSecret(t *testing.T) {
 	f := newLoginFixture(t, "login-totp")
 	user := f.account(t, "user", newHash(t), true, true)
 	for _, otp := range []string{"", "000000", "123456"} {

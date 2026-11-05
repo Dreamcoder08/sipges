@@ -5,8 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"sync"
 	"testing"
+	"time"
 )
 
 // passwordRow is one row of testdata/passwords.json: a hash TypeScript wrote or refuses, and what
@@ -66,20 +66,19 @@ func TestHashWritesTheFormatTypeScriptWrites(t *testing.T) {
 }
 
 func TestArgon2RunsAtMostTwoAtOnce(t *testing.T) {
-	if cap(argon2Slots) != 2 {
-		t.Fatalf("slots = %d", cap(argon2Slots))
-	}
-	// Both slots taken: a hash waits, and finishes once one frees.
+	// Both slots taken: a hash, which takes far less than the wait below, must block until one
+	// frees. Slowness can only make this pass by accident, never fail by accident.
 	argon2Slots <- struct{}{}
 	argon2Slots <- struct{}{}
-	var wg sync.WaitGroup
-	wg.Go(func() { _, _ = Passwords{}.Hash("synthetic-password-01") })
 	done := make(chan struct{})
-	go func() { wg.Wait(); close(done) }()
+	go func() {
+		_, _ = Passwords{}.Hash("synthetic-password-01")
+		close(done)
+	}()
 	select {
 	case <-done:
 		t.Fatal("a hash ran with no free slot")
-	default:
+	case <-time.After(500 * time.Millisecond):
 	}
 	<-argon2Slots
 	<-done

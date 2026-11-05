@@ -115,7 +115,7 @@ const main = async () => {
     const ts = await startTypeScriptApi(database.url, secrets);
     running.push(ts);
     await seedDatabase(database.url);
-    const go = await startGoApi(database.url, scratch);
+    const go = await startGoApi(database.url, scratch, secrets.dataKey);
     running.push(go);
     return await runCases({
       tsUrl: ts.url,
