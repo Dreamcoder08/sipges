@@ -8,6 +8,8 @@ use std::collections::BTreeMap;
 pub enum Kind {
     /// `{ type: 'string' }`.
     String,
+    /// `{ type: 'string', multiple: true }`.
+    Strings,
     /// `{ type: 'boolean' }`.
     Boolean,
 }
@@ -17,6 +19,8 @@ pub enum Kind {
 pub enum Value {
     /// A string option's last value.
     String(String),
+    /// Every value of a repeatable string option, in order.
+    Strings(Vec<String>),
     /// A boolean option given at least once.
     Flag,
 }
@@ -76,6 +80,19 @@ pub fn parse(argv: &[String], options: &[(&'static str, Kind)]) -> Result<Values
                 code: "ERR_PARSE_ARGS_UNKNOWN_OPTION",
             });
         };
+        let mut store = |value: String| match kind {
+            Kind::Strings => {
+                if let Value::Strings(list) = values
+                    .entry(name)
+                    .or_insert_with(|| Value::Strings(Vec::new()))
+                {
+                    list.push(value);
+                }
+            }
+            _ => {
+                values.insert(name, Value::String(value));
+            }
+        };
         match (kind, inline) {
             (Kind::Boolean, Some(_)) => {
                 return Err(ParseError {
@@ -85,13 +102,11 @@ pub fn parse(argv: &[String], options: &[(&'static str, Kind)]) -> Result<Values
             (Kind::Boolean, None) => {
                 values.insert(name, Value::Flag);
             }
-            (Kind::String, Some(value)) => {
-                values.insert(name, Value::String(value.to_owned()));
-            }
-            (Kind::String, None) => match argv.get(index) {
+            (Kind::String | Kind::Strings, Some(value)) => store(value.to_owned()),
+            (Kind::String | Kind::Strings, None) => match argv.get(index) {
                 Some(next) if !option_like(next) => {
                     index += 1;
-                    values.insert(name, Value::String(next.clone()));
+                    store(next.clone());
                 }
                 _ => {
                     return Err(ParseError {
@@ -129,6 +144,15 @@ pub fn string<'a>(values: &'a Values, name: &str) -> Option<&'a str> {
     }
 }
 
+/// A repeatable string option's values, empty when it was not given.
+#[must_use]
+pub fn strings<'a>(values: &'a Values, name: &str) -> &'a [String] {
+    match values.get(name) {
+        Some(Value::Strings(list)) => list,
+        _ => &[],
+    }
+}
+
 /// Whether a boolean option was given.
 #[must_use]
 pub fn flag(values: &Values, name: &str) -> bool {
@@ -141,6 +165,7 @@ mod tests {
 
     const OPTIONS: &[(&str, Kind)] = &[
         ("scope", Kind::String),
+        ("only", Kind::Strings),
         ("apply", Kind::Boolean),
         ("help", Kind::Boolean),
     ];
@@ -177,5 +202,16 @@ mod tests {
         );
         let values = run(&["--scope", "-"]).unwrap_or_default();
         assert_eq!(string(&values, "scope"), Some("-"));
+    }
+
+    #[test]
+    fn repeatable_options_keep_every_value_in_order() {
+        let values = run(&["--only", "b/2", "--only=a/1", "--only="]).unwrap_or_default();
+        assert_eq!(strings(&values, "only"), ["b/2", "a/1", ""]);
+        assert_eq!(string(&values, "only"), None);
+        assert!(strings(&run(&[]).unwrap_or_default(), "only").is_empty());
+        let invalid = "ERR_PARSE_ARGS_INVALID_OPTION_VALUE";
+        assert_eq!(run(&["--only"]), Err(invalid));
+        assert_eq!(run(&["--only", "--apply"]), Err(invalid));
     }
 }
