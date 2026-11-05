@@ -1,4 +1,4 @@
-package http
+package httpx
 
 import (
 	"encoding/base64"
@@ -54,7 +54,7 @@ func TestParseFormReadsBodiesLikeHonoOnNode(t *testing.T) {
 			}
 			contentType = string(b)
 		}
-		entries, ok := parseForm(contentType, c.ContentType != nil, body)
+		entries, ok := ParseForm(contentType, c.ContentType != nil, body)
 		if ok != c.Result.OK {
 			t.Errorf("%s: ok = %v, Hono %v", c.Name, ok, c.Result.OK)
 			continue
@@ -65,11 +65,11 @@ func TestParseFormReadsBodiesLikeHonoOnNode(t *testing.T) {
 		got := map[string][]recordedEntry{}
 		for _, e := range entries {
 			e := e
-			if e.file {
-				data := base64.StdEncoding.EncodeToString(e.data)
-				got[e.name] = append(got[e.name], recordedEntry{File: &e.text, Data: &data})
+			if e.File {
+				data := base64.StdEncoding.EncodeToString(e.Data)
+				got[e.Name] = append(got[e.Name], recordedEntry{File: &e.Text, Data: &data})
 			} else {
-				got[e.name] = append(got[e.name], recordedEntry{Text: &e.text})
+				got[e.Name] = append(got[e.Name], recordedEntry{Text: &e.Text})
 			}
 		}
 		if c.Result.Entries == nil {
