@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>Diario sintético</title>
+<item>
+  <title>Corte de &lt;b&gt;agua&lt;/b&gt; en la Costa &amp; zonas altas</title>
+  <link>https://diario.example/notas/1</link>
+  <guid isPermaLink="false">nota-1</guid>
+  <pubDate>Mon, 02 Nov 2026 15:04:05 -0500</pubDate>
+  <description><![CDATA[<p>Vecinos reclaman por la <script>alert(1)</script>contaminación del río.</p><style>p{}</style>]]></description>
+</item>
+<item>
+  <title><![CDATA[Minería: nueva mesa de diálogo]]></title>
+  <link> https://diario.example/notas/2?x=1&amp;y=2 </link>
+  <dc:date>2026-11-01T08:00:00Z</dc:date>
+  <content:encoded>&lt;p&gt;Texto &#233;&#x00E9; &#0; &#1114112; &nbsp;con   espacios&#x1F600;&lt;/p&gt;</content:encoded>
+</item>
+<item>
+  <title>Sin enlace</title>
+  <guid>nota-3</guid>
+</item>
+<item>
+  <title>Enlace no http</title>
+  <link>ftp://diario.example/3</link>
+</item>
+<ITEM>
+  <TITLE>Mayúsculas</TITLE>
+  <LINK>HTTPS://DIARIO.EXAMPLE/Notas/5</LINK>
+  <pubDate>fecha rara</pubDate>
+</ITEM>
+<item><title>Contaminacion sin tilde</title><link>https://diario.example/6</link><description>agua potable</description></item>
+</channel>
+</rss>
