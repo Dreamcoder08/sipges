@@ -8,6 +8,7 @@
  * a real database. Each scenario creates and drops its own `sipges_tooldiff_*` databases there.
  */
 import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { loadMigrations, migrate } from '../../apps/api/src/platform/database/migrator.ts';
@@ -91,14 +92,26 @@ export type Step = {
   readonly env?: Record<string, string>;
   /** Replaces run-dependent text in stdout/stderr before comparing. */
   readonly normalize?: (text: string) => string;
+  /**
+   * Skip stderr: errors the TypeScript CLI does not catch print Node's stack trace (file paths,
+   * line numbers), which a binary cannot reproduce; exit code and stdout are still compared.
+   */
+  readonly uncaught?: boolean;
+  /** Files (relative to the repository root) each tool may write; compared, then deleted. */
+  readonly files?: readonly string[];
+  /** Runs on both databases right before this step. */
+  readonly before?: (sql: SqlClient) => Promise<void>;
 };
 
 export type Scenario = {
   readonly name: string;
   readonly seed: (sql: SqlClient) => Promise<void>;
   readonly steps: readonly Step[];
-  /** Tables to compare after every step, as SQL returning rows in a stable order. */
-  readonly dumps: Readonly<Record<string, string>>;
+  /**
+   * Tables to compare after every step: SQL returning rows in a stable order, or a function for
+   * values that must be computed (for example decrypted) before comparing.
+   */
+  readonly dumps: Readonly<Record<string, string | ((sql: SqlClient) => Promise<unknown>)>>;
   /** Runs on both sides between seeding and the first step (for example a failure trigger). */
   readonly prepare?: (sql: SqlClient) => Promise<void>;
 };
@@ -123,15 +136,31 @@ export const runScenarios = async (tool: Tool, scenarios: readonly Scenario[]): 
           ...step.env,
         });
         const normalize = step.normalize ?? ((text: string) => text);
+        const takeFiles = () =>
+          (step.files ?? []).map((file) => {
+            const path = `${ROOT}${file}`;
+            if (!existsSync(path)) return null;
+            const text = readFileSync(path, 'utf8');
+            rmSync(path);
+            return text;
+          });
+        await step.before?.(ts.sql);
+        await step.before?.(rust.sql);
         const a = runTs(tool, step.args, env(ts));
+        const aFiles = takeFiles();
         const b = runRust(tool, step.args, env(rust));
+        const bFiles = takeFiles();
         const outputs: [string, unknown, unknown][] = [
           ['exit code', a.code, b.code],
           ['stdout', normalize(a.stdout), normalize(b.stdout)],
-          ['stderr', normalize(a.stderr), normalize(b.stderr)],
+          ['files', aFiles, bFiles],
         ];
+        if (!step.uncaught) outputs.push(['stderr', normalize(a.stderr), normalize(b.stderr)]);
+        else if (!a.stderr || !b.stderr) outputs.push(['stderr present', !!a.stderr, !!b.stderr]);
+        const dump = (sql: SqlClient, query: string | ((sql: SqlClient) => Promise<unknown>)) =>
+          typeof query === 'string' ? sql.query(query) : query(sql);
         for (const [table, query] of Object.entries(scenario.dumps))
-          outputs.push([`table ${table}`, await ts.sql.query(query), await rust.sql.query(query)]);
+          outputs.push([`table ${table}`, await dump(ts.sql, query), await dump(rust.sql, query)]);
         for (const [what, left, right] of outputs) {
           compared++;
           if (show(left) === show(right)) continue;

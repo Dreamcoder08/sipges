@@ -47,6 +47,15 @@ pub fn parse(argv: &[String], options: &[(&'static str, Kind)]) -> Result<Values
     let mut index = 0;
     while let Some(arg) = argv.get(index) {
         index += 1;
+        if arg == "--" {
+            // End of options: whatever follows is positional, which strict mode refuses.
+            if argv.len() > index {
+                return Err(ParseError {
+                    code: "ERR_PARSE_ARGS_UNEXPECTED_POSITIONAL",
+                });
+            }
+            break;
+        }
         let Some(long) = arg.strip_prefix("--") else {
             if option_like(arg) {
                 // Short options (`-x`, `-xyz`): none is declared.
@@ -151,6 +160,11 @@ mod tests {
         assert!(flag(&values, "apply"));
         let values = run(&["--scope="]).unwrap_or_default();
         assert_eq!(string(&values, "scope"), Some(""));
+        assert!(run(&["--apply", "--"]).is_ok());
+        assert_eq!(
+            run(&["--apply", "--", "x"]),
+            Err("ERR_PARSE_ARGS_UNEXPECTED_POSITIONAL")
+        );
         let values = run(&["--scope", "-"]).unwrap_or_default();
         assert_eq!(string(&values, "scope"), Some("-"));
     }
