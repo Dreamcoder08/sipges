@@ -63,17 +63,19 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T31 [x] — S2, S6, S7: automation read routes. #241.
 - T32 [x] — S2, S6, S7: integration admin reads. #239.
 - T39 [x] — S2, S6, S7: IRSA write routes (independent verifier approved). #246.
-- T33 [ ] — S2, S6: tenancy administration routes (grants, roles, projects). High risk: independent verifier. Route: delegated, tab go-tenancy.
-- T34 [ ] — S2, S6: privacy context. High risk: independent verifier. Route: delegated, in series after T33.
+- T33 [x] — S2, S6: tenancy administration routes (grants, roles, projects) (#253). Independent verifier approved.
+- T34 [ ] — S2, S6: privacy context. High risk: independent verifier. Route: delegated, tab go-privacy.
 - T35 [ ] — S2, S6: identity in full (login, argon2id and legacy PBKDF2 hashes, TOTP, sealed secrets, sessions, Google sign-in, API keys), byte-compatible with stored data. High risk: independent verifier. Route: delegated, in series after T34.
 - T36 [x] — S2, S6, S7: records writes and import (#247). Independent verifier approved.
 - T37 [ ] — S2, S6, S7: prevention and situations writes. Route: cloud session.
 - T38 [x] — S2, S6, S7: ontology writes and marking (#249). Independent verifier approved.
 - T40 [x] — S2, S6, S7: intelligence writes without embeddings (#248). `PATCH /system/intelligence/territorial-alerts/{id}` must not switch to Go before T42.
 - T41 [x] — S2, S6, S7: evidence upload, download and preview with R2 (#252). Independent verifier approved; see its advisories in the Log before switching.
-- T42 [ ] — S2, S7: queues and agents in Go: automation runtime (rules, runs, settle-window cursor, deliveries, wakeup) and integration runtime (feeds, webhooks, ingest keys), workers woken by cron.
+- T42 [ ] — S2, S7: automation runtime in Go: rules, runs, settle-window cursor, deliveries and the wakeup that unblocks every write route. High risk: independent verifier before merge. Route: cloud session.
 - T43 [ ] — S3: Rust tools `migrate-legacy`, `import:base-maestra`, `rotate-data-key`, `review-materialize`.
 - T44 [ ] — S7: switch routes in production by exact path, measuring before and after with the owner, then retire the TypeScript API.
+- T45 [ ] — S2, S7: integration runtime: feeds, public ingest webhooks and key verification. High risk: independent verifier before merge. Route: cloud session.
+- T46 [ ] — S2, S6, S7: the rest of documents: PDF/DOCX parsing, generation, review writes; closes the evidence preview gap. Route: cloud session.
 
 ## Log
 
@@ -111,3 +113,4 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - L35 — Plan to 100 % (2026-11-03), owner verbatim: «quiero terminar todo al 100%». Remaining work is T33–T38 and T40–T44. Route switching constraints found so far: paths are exact (`/system/uploads` and `/system/uploads/{id}` are in Go, `/download` and `/preview` in TypeScript); `PATCH /system/intelligence/territorial-alerts/{id}` stays in TypeScript until the automation wakeup is in Go (T42), because TypeScript wakes automation after that write and the cron only visits tenants that already have an `automation_cursors` row.
 - L36 — T36 and T38 verified independently (2026-11-04), both approved: cross-project and cross-tenant writes refused with no audit row, marking denied to `consulta`, import rolled back whole when a batch fails, audit failure rolls the write back. Correction to the previous entry: `automationWakeup` runs in TypeScript after every 2xx write under `/api/*`, not only the territorial alert PATCH, so no Go write route may take production traffic before T42.
 - L37 — T41 independent verifier (2026-11-04): approved. To close before these routes take traffic: (1) `internal/evidence/http/form.go:467` panics on a multipart body truncated at `\r` inside the headers when `len==cap` (512, 896 or 1408 bytes), so Go answers 500 where TypeScript answers 422; (2) `s3.go:46` has an `http.Client` without timeout, so a hung R2 holds the request; (3) `goContainerEnv` does not pass `SIPGES_STORAGE` or `SIPGES_S3_*`; (4) PDF and DOCX preview answer 501 in Go and work in TypeScript, so preview stays in TypeScript. Go emits no nosniff or CSP; the Worker adds them in `go-proxy.ts`, so Go must only be reached through it.
+- L38 — PR #253: T33: rutas de administración de tenancy portadas a Go, `8460d0d`, `5b30bf1`, `e06f4c0` y `d930197`, con 100 casos de paridad. El verificador independiente aprobó sin blockers tras 5.023 peticiones comparadas contra TypeScript. Revisión nativa de Gentle AI aprobada (`review-32216fc7244029e1`; lentes de riesgo, resiliencia y fiabilidad) sobre todo el código salvo el commit de fixtures `8460d0d`, que no cabe en su presupuesto.
