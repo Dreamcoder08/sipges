@@ -16,6 +16,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/intelligence/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/intelligence/domain"
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
 
 // The bounds of ollama-embeddings.ts.
@@ -95,19 +96,10 @@ func (o *Ollama) Embed(ctx context.Context, text privacy.Sanitised[string]) ([]f
 	if o.credentials {
 		return nil, errors.New("embeddings: credentials in the service URL")
 	}
-	var payload bytes.Buffer
-	encoder := json.NewEncoder(&payload)
-	encoder.SetEscapeHTML(false)
-	err := encoder.Encode(struct {
-		Model string `json:"model"`
-		Input string `json:"input"`
-	}{o.model, domain.FirstCodePoints(text.Value(), maxInputCodePoints)})
-	if err != nil {
-		return nil, errors.New("embeddings: unencodable request")
-	}
+	payload := requestBody(o.model, domain.FirstCodePoints(text.Value(), maxInputCodePoints))
 	ctx, cancel := context.WithTimeout(ctx, embedTimeout)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, o.endpoint, &payload)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, o.endpoint, payload)
 	if err != nil {
 		return nil, errors.New("embeddings: unusable request")
 	}
@@ -128,6 +120,15 @@ func (o *Ollama) Embed(ctx context.Context, text privacy.Sanitised[string]) ([]f
 		return nil, errors.New("embeddings: response too large")
 	}
 	return parseVector(body)
+}
+
+// requestBody is JSON.stringify of the request: half an emoji stays the escape TypeScript sends,
+// which encoding/json would turn into replacement characters.
+func requestBody(model, input string) *bytes.Reader {
+	body := append([]byte(`{"model":`), records.Stringify(model)...)
+	body = append(body, `,"input":`...)
+	body = append(body, records.Stringify(input)...)
+	return bytes.NewReader(append(body, '}'))
 }
 
 // parseVector reads the first vector. Keys match exactly, as in JavaScript, and an entry that is

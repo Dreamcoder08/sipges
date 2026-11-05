@@ -1,11 +1,12 @@
 // Package application is apps/api/src/contexts/ontology/application/ontology-service.ts: a
 // record's links, its graph and neighbourhood, the lexical search and the timeline, and the
-// writes (writes.go): links, their evidence and record markings. The semantic half of search
-// (embeddings through the egress guard) stays in TypeScript.
+// writes (writes.go): links, their evidence and record markings; the semantic half of search is
+// in semantic.go.
 package application
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/domain"
@@ -132,6 +133,8 @@ type Graph struct {
 type Hit struct {
 	domain.Summary
 	Match *domain.Match
+	// Semantic says it was found (also) by meaning through stored embeddings.
+	Semantic bool
 }
 
 // Timeline is the dated records between two days.
@@ -470,36 +473,101 @@ func typesFor(slugs []string, dated bool) []domain.ObjectType {
 // Search is the lexical half of search (docs/adr/0011 §5): records of slugs (every type when
 // empty) whose id equals the query or that hold every term as a prefix, best first.
 func (s Service) Search(ctx context.Context, raw domain.Units, slugs []string, limit int64) ([]Hit, error) {
-	terms := domain.SearchTerms(raw.String())
-	query := domain.ToPrefixQuery(terms)
-	types := typesFor(slugs, false)
-	exactID := raw.Trim()
-	if len(types) == 0 {
-		return []Hit{}, nil
-	}
-	bounded := clamp(truncOr1(limit), 1, MaxSearchResults)
-	rows := []NodeRow{}
-	if query != nil || isUsableID(exactID) {
-		modules := make([]string, len(types))
-		for i, t := range types {
-			modules[i] = t.Module
-		}
-		var err error
-		if rows, err = s.Store.Search(ctx, query, exactID.String(), modules, int(bounded)); err != nil {
-			return nil, err
-		}
+	found, err := s.Lexical(ctx, raw, slugs, limit)
+	if err != nil {
+		return nil, err
 	}
 	hits := []Hit{}
-	for _, row := range rows[:min(len(rows), int(bounded))] {
+	for _, row := range found.Rows[:min(len(found.Rows), found.Bounded)] {
 		t, ok := domain.ObjectTypeForModule(row.Module)
 		if !ok {
 			continue
 		}
-		preferred := append([]string{t.TitleField}, t.SummaryFields...)
-		hits = append(hits, Hit{
-			Summary: domain.Summarize(t, row.ID, row.Payload, row.Marking, nil),
-			Match:   domain.MatchExcerpt(row.Payload, terms, preferred),
-		})
+		hits = append(hits, hit(t, row, found.Terms, false))
+	}
+	return hits, nil
+}
+
+func hit(t domain.ObjectType, row NodeRow, terms []string, semantic bool) Hit {
+	preferred := append([]string{t.TitleField}, t.SummaryFields...)
+	return Hit{
+		Summary:  domain.Summarize(t, row.ID, row.Payload, row.Marking, nil),
+		Match:    domain.MatchExcerpt(row.Payload, terms, preferred),
+		Semantic: semantic,
+	}
+}
+
+// Lexical is the lexical half of search and what its semantic half needs.
+type Lexical struct {
+	Terms   []string
+	Modules []string
+	Bounded int
+	Rows    []NodeRow
+}
+
+// Lexical runs the ranked full-text query. No Modules means there is nothing to search.
+func (s Service) Lexical(ctx context.Context, raw domain.Units, slugs []string, limit int64) (Lexical, error) {
+	found := Lexical{Terms: domain.SearchTerms(raw.String()), Rows: []NodeRow{}}
+	query := domain.ToPrefixQuery(found.Terms)
+	types := typesFor(slugs, false)
+	exactID := raw.Trim()
+	if len(types) == 0 {
+		return found, nil
+	}
+	found.Bounded = int(clamp(truncOr1(limit), 1, MaxSearchResults))
+	found.Modules = make([]string, len(types))
+	for i, t := range types {
+		found.Modules[i] = t.Module
+	}
+	if query != nil || isUsableID(exactID) {
+		rows, err := s.Store.Search(ctx, query, exactID.String(), found.Modules, found.Bounded)
+		if err != nil {
+			return found, err
+		}
+		found.Rows = rows
+	}
+	return found, nil
+}
+
+func refKey(ref NodeRef) string { return ref.Module + "\x00" + ref.ID }
+
+// Fuse is the end of search with an embedder (docs/adr/0014 §9): records close in meaning, refs,
+// fused with the lexical ranking.
+func (s Service) Fuse(ctx context.Context, found Lexical, refs []NodeRef) ([]Hit, error) {
+	rows := make(map[string]NodeRow, len(found.Rows)+len(refs))
+	lexical := make([]string, len(found.Rows))
+	for i, row := range found.Rows {
+		lexical[i] = refKey(row.NodeRef)
+		rows[lexical[i]] = row
+	}
+	semantic := make([]string, len(refs))
+	missing := []NodeRef{}
+	for i, ref := range refs {
+		semantic[i] = refKey(ref)
+		if _, ok := rows[semantic[i]]; !ok {
+			missing = append(missing, ref)
+		}
+	}
+	if len(missing) > 0 {
+		loaded, err := s.Store.Nodes(ctx, missing)
+		if err != nil {
+			return nil, err
+		}
+		for _, row := range loaded {
+			rows[refKey(row.NodeRef)] = row
+		}
+	}
+	hits := []Hit{}
+	for _, key := range domain.FuseRankings([][]string{lexical, semantic}, found.Bounded) {
+		row, ok := rows[key]
+		if !ok {
+			continue
+		}
+		t, ok := domain.ObjectTypeForModule(row.Module)
+		if !ok {
+			continue
+		}
+		hits = append(hits, hit(t, row, found.Terms, slices.Contains(semantic, key)))
 	}
 	return hits, nil
 }
