@@ -79,12 +79,14 @@ const FOREIGN = `{
     {"ID_Evento": "F1"},
     {"ID_Evento": true, "Proyecto_ID": "PRJ-B"},
     {"ID_Evento": "F18", "Proyecto_ID": "a\\u0000b"},
-    {"ID_Evento": "F19", "Proyecto_ID": "a\u0000b"},
     {"__proto__": {"Proyecto_ID": "PRJ-B"}, "ID_Evento": "F20"},
     {"ID_Evento": "F21", "proyecto_id": "PRJ-B", "Proyecto": "PRJ-B", "project_id": "PRJ-B"}
   ],
   "Hechos_Compartidos": [{"Asunto": "sin id", "Proyecto_ID": "PRJ-B"}]
 }`;
+
+// A seed the parsers reject would make both tools fail alike and the scenario compare nothing.
+JSON.parse(FOREIGN);
 
 const large = () => {
   const rows = Array.from({ length: 1203 }, (_, i) => ({ Asunto: `Hecho sintético ${i}`, n: i }));
