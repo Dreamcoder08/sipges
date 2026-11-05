@@ -18,8 +18,9 @@ owner. Nothing here changes production: the flag is off by default, so TypeScrip
   An environment shared with TypeScript cannot start a second runner.
 - With the flag on, an interval of `0` or out of range stops the start. A cron that was asked for and does
   not run would fail silently.
-- Event ticks are separate: a write the Go API serves wakes a tick whatever the flag says. `GO_ROUTES` is
-  empty, so none does today.
+- The flag covers the cron only. A write the Go API serves wakes an event tick, and
+  `POST /system/automations/tick` runs one for an administrator, whatever the flag says. `GO_ROUTES` is empty, so
+  neither happens today.
 
 ## If both run
 
@@ -37,52 +38,69 @@ Go, or two Go instances, tick the same tenant:
 | Narratives | Id derived from the feed URL and item key | The same item is never imported twice |
 | Attempt record | `last_tick_token` | The cursor shows only the newest attempt of either API |
 
-`TestBothAPIsRunningDeliverEachMessageOnce` proves this against PostgreSQL with two Go schedules and a third
-runner that claims with TypeScript's statement, read from its source file. Removing the row lock from the claim
-makes that test fail with a message sent twice. `TestTwoRunnersPollEachSourceOnce` proves the polling.
+`TestBothAPIsRunningDeliverEachMessageOnce` runs two Go schedules and a third runner that claims with TypeScript's
+statement, read from its source file, on one PostgreSQL database. Its scans, sends and finishes are Go's, and its
+clock is frozen, so leases never expire. Removing the claim's row lock makes it fail with a message sent twice;
+removing the cursor lock does not, because the unique run absorbs the repeat. `TestTwoRunnersPollEachSourceOnce`
+proves the polling between Go runners; the statements TypeScript runs are the same.
 
-**Two limits remain:**
+**Messages can still repeat, with one runner or two, in either API.** Slack, Teams, Discord and Telegram do not
+deduplicate, and a run left pending is sent again after its lease:
 
-- **A hard kill between the send and `FinishRun` repeats that message** once the lease expires. Both APIs do
-  this, with one runner or two; Slack, Teams, Discord and Telegram do not deduplicate.
-- **Clocks.** The settle window and the lease use each runner's clock. Skew between the APIs narrows the window
-  by that amount, so a commit later than 60 s minus the skew could be passed over. It cannot cause a duplicate
-  scan, and it needs skew in the tens of seconds; hosts on NTP are far below that. A runner whose clock is more
-  than 120 s ahead would see leases as expired and could repeat a send.
+- **A hard kill** between the send and `FinishRun`.
+- **A database failure** in `FinishRun` after a successful send.
+- **A timed-out send the channel did accept**, which is retried as a failure.
+- **Clock skew.** The settle window and the lease use each runner's clock. A runner about 110 s ahead (the lease
+  minus the send timeout) can claim a run still being sent. Smaller skew narrows the settle window instead, so a
+  commit later than 60 s minus the skew could be passed over and never queued. Hosts on NTP are far below both.
 
 ## Shutdown
 
-On SIGTERM the schedule stops first, then the process drains for up to 20 s before closing the pool:
+On SIGTERM the schedule stops first, then the process drains for up to 20 s before closing the pool. This covers
+schedule ticks and the ticks of the cron and tick routes:
 
 1. No further tenant starts, and rescans are dropped; the next runner catches up.
-2. Polling is cancelled. It sends nothing, and a cancelled feed waits for its next 30-minute turn.
+2. Polling is cancelled. It sends nothing. A cancelled feed waits 30 minutes and the Defensoría connector 15 for
+   their next turn. The attempt ends `failed` and logs `automation_tick_failed`, so one such line at a shutdown is
+   expected.
 3. The tick in flight keeps its context, because cutting it between the send and `FinishRun` would repeat the
    message. It needs at most 18 s: the 8 s execution budget plus one 10 s send.
 
+A request slower than the 10 s server grace still makes the process exit with an error, after the drain.
+
 ## How the switch happens
 
-Every step needs the owner's go-ahead, and the two decisions below come first.
+Every step needs the owner's go-ahead. **The procedure cannot run on Cloudflare until the two decisions below are
+made:** with `GO_ROUTES` empty no request reaches the container, so it never starts and the flag has no effect.
 
-1. Forward the flag, `SIPGES_DATA_KEY` and `SIPGES_CRON_SECRET` in `goContainerEnv`
+1. Apply decision 1, so that something starts the container and keeps it ticking.
+2. Forward the flag, `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS` and `SIPGES_CRON_SECRET` in `goContainerEnv`
    (`apps/hosting-cloudflare/src/go-routes.ts`). None reaches the container today, so the flag cannot turn on there
    by accident.
-2. Set `SIPGES_GO_AUTOMATION_CRON=1` on the `sipges-go` trial Worker, on a Neon branch.
-3. Check `automation_schedule_started` in the logs, `last_tick_source = 'cron'` on the cursors, and no
-   `automation_tick_failed`.
-4. Compare a day of `automation_runs` and `audit` with TypeScript: `attempts` stays 1, and each `CHANNEL_SEND`
+3. Set `SIPGES_GO_AUTOMATION_CRON=1` on the `sipges-go` trial Worker, on a Neon branch.
+4. Check `automation_schedule_started` in the logs, `last_tick_source = 'cron'` on the cursors, and no
+   `automation_tick_failed` outside a shutdown.
+5. Compare a day of `automation_runs` and `audit` with TypeScript: `attempts` stays 1, and each `CHANNEL_SEND`
    appears once per run.
-5. Only after decision 2: stop the TypeScript tick by removing the Cron Trigger from `wrangler.jsonc`.
+6. Apply decision 2.
 
 **To go back,** unset the flag and restart. Both APIs use the same tables, so there is nothing to migrate.
 
 ## Decisions for the owner
 
-**1. What wakes Go in production.** The container sleeps after 10 minutes without Go-routed requests
-(`GO_SLEEP_AFTER`), and a timer inside a stopped container does not fire. Scheduled ticks would stop with no error.
-Keeping the container awake bills it around the clock; having a Cron Trigger call `/system/automations/cron` on Go
-keeps the sleep, but it adds that route to `GO_ROUTES`, and the Worker's trigger stays.
+**1. What wakes Go in production.** The container starts only when a Go-routed request arrives and sleeps after 10
+minutes without one (`GO_SLEEP_AFTER`). A timer inside a stopped container does not fire, so scheduled ticks would
+stop with no error.
+
+- **Keep the container running:** the timer works as built, but something must start it and it bills around the
+  clock.
+- **Have the Worker's Cron Trigger call Go's cron route:** the container can sleep, but the `scheduled` handler must
+  change, because it runs TypeScript directly, and the route needs a path to Go. The `*/15` trigger is longer than
+  the 10-minute sleep, so each call pays a cold start.
 
 **2. What happens to the work only TypeScript does.** Go leaves `evaluate` steps unclaimed, because they need the
 intelligence context's `createAlert`, and only TypeScript delivers browser pushes, because that needs the VAPID
-keys. If the TypeScript tick stops, those runs and `push_deliveries` wait forever. Until both are ported, either the
-TypeScript tick keeps running beside Go, which the table above shows is safe, or those features stop.
+keys. Removing the Cron Trigger does not stop TypeScript either: `eventAutomation: true` makes every write it serves
+scan, claim and send. Those runs and `push_deliveries` would move only when the next TypeScript write wakes a tick,
+and never once writes move to Go. Until both are ported, either TypeScript keeps ticking beside Go, which the table
+above shows is safe, or those features stop.
