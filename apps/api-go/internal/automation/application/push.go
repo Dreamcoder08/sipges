@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"regexp"
 	"strconv"
@@ -173,12 +174,17 @@ func (s Service) UnsubscribePush(ctx context.Context, username, endpoint string)
 	return s.Subscriptions.Remove(ctx, username, endpoint)
 }
 
+//nolint:staticcheck // ST1005: the TypeScript wording, stored as last_error and shown to administrators
+var errPushResult = errors.New("Servicio de push: resultado no válido")
+
 // PushDelivery is one claimed row of push_deliveries.
 type PushDelivery struct {
 	ID           int64
 	Subscription PushSubscription
 	Payload      PushPayload
 	Attempts     int64
+	// Unreadable is a stored payload that does not decode: it fails alone, without being sent.
+	Unreadable bool
 }
 
 // PushDeliveries is the delivery part of PushStore.
@@ -218,12 +224,16 @@ func (s Service) deliverOne(ctx context.Context, tenantID string, d PushDelivery
 	audit := func(outcome string) {
 		s.auditedAs(ctx, tenantID, "PUSH_SEND", "Envío push · entrega "+strconv.FormatInt(d.ID, 10)+" · "+outcome)
 	}
+	if d.Unreadable {
+		audit("fallido")
+		return s.Deliveries.Finish(ctx, tenantID, d.ID, "failed", "Contenido push no válido", s.now())
+	}
 	result, err := s.PushSender.Send(ctx, d.Subscription, d.Payload, s.now())
-	if err != nil {
+	switch {
+	case err != nil:
 		audit("fallido")
 		return s.retryDelivery(ctx, tenantID, d, err)
-	}
-	if result == PushSent {
+	case result == PushSent:
 		// Audited before any bookkeeping, so a send that happened always leaves its row.
 		audit("aceptado")
 		finish := func() error { return s.Deliveries.Finish(ctx, tenantID, d.ID, "accepted", "", s.now()) }
@@ -232,15 +242,18 @@ func (s Service) deliverOne(ctx context.Context, tenantID string, d PushDelivery
 			return finish()
 		}
 		return nil
+	case result == PushGone:
+		audit("expirado")
+		if err := s.Subscriptions.Forget(ctx, d.Subscription.Endpoint); err != nil {
+			return s.retryDelivery(ctx, tenantID, d, err)
+		}
+		if err := s.Deliveries.Finish(ctx, tenantID, d.ID, "failed", "Suscripción expirada", s.now()); err != nil {
+			return s.retryDelivery(ctx, tenantID, d, err)
+		}
+		return nil
 	}
-	audit("expirado")
-	if err := s.Subscriptions.Forget(ctx, d.Subscription.Endpoint); err != nil {
-		return s.retryDelivery(ctx, tenantID, d, err)
-	}
-	if err := s.Deliveries.Finish(ctx, tenantID, d.ID, "failed", "Suscripción expirada", s.now()); err != nil {
-		return s.retryDelivery(ctx, tenantID, d, err)
-	}
-	return nil
+	audit("fallido")
+	return s.retryDelivery(ctx, tenantID, d, errPushResult)
 }
 
 // retryDelivery settles a delivery that failed: pending at its next delay, failed when its

@@ -246,3 +246,35 @@ func TestPushResultHasNoSuccessfulZeroValue(t *testing.T) {
 		t.Fatal("a failed send returns the zero value")
 	}
 }
+
+func TestUnreadableDeliveryFailsAloneAndIsNeverSent(t *testing.T) {
+	corrupt := queued(7, 1)
+	corrupt.Unreadable = true
+	f := pushService(&fakePushSender{result: PushSent}, corrupt, queued(8, 1))
+	if _, err := f.service.Tick(t.Context(), "T"); err != nil {
+		t.Fatal(err)
+	}
+	if f.sender.sent != 1 {
+		t.Fatalf("%d sends: only the readable delivery goes out", f.sender.sent)
+	}
+	want := []finished{{7, "failed", "Contenido push no válido"}, {8, "accepted", ""}}
+	if !slices.Equal(f.deliveries.finishes, want) {
+		t.Fatalf("finishes %v", f.deliveries.finishes)
+	}
+	if got := (*f.audits)[0]; got != "PUSH_SEND Envío push · entrega 7 · fallido" {
+		t.Fatalf("audit %q", got)
+	}
+}
+
+func TestAResultItCannotReadNeverForgetsTheDevice(t *testing.T) {
+	f := pushService(&fakePushSender{result: PushFailed}, queued(7, 1))
+	if _, err := f.service.Tick(t.Context(), "T"); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.store.forgotten) != 0 {
+		t.Fatalf("forgotten %v", f.store.forgotten)
+	}
+	if want := []finished{{7, "pending", "Servicio de push: resultado no válido"}}; !slices.Equal(f.deliveries.finishes, want) {
+		t.Fatalf("finishes %v", f.deliveries.finishes)
+	}
+}

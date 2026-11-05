@@ -3,7 +3,6 @@ package infrastructure
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -61,9 +60,9 @@ func claimDeliveries(ctx context.Context, db *pgxpool.Pool, sql, tenantID string
 			if err := row.Scan(&d.ID, &d.Subscription.Endpoint, &d.Subscription.P256dh, &d.Subscription.Auth, &payload, &d.Attempts); err != nil {
 				return d, err
 			}
-			if err := json.Unmarshal(payload, &d.Payload); err != nil {
-				return d, errors.New("automation: unreadable push payload") // the decoder may quote it
-			}
+			// Failing here would roll the claim back and return this row on every tick, stopping
+			// the tenant's queue, so the claim stands and the delivery settles alone.
+			d.Unreadable = json.Unmarshal(payload, &d.Payload) != nil
 			return d, nil
 		})
 		return err

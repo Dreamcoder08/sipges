@@ -26,15 +26,15 @@ const lockDedupKey = `SELECT dedup_key FROM digital_signal_dedup_locks WHERE ded
 
 const findDuplicate = `SELECT ` + columns + ` FROM digital_alert_reviews
   WHERE sha256 = $1 AND source_url = $2 AND source_type = $3
-    AND territory IS NOT DISTINCT FROM $4 AND source_record IS NOT DISTINCT FROM NULL::jsonb
-    AND created_at >= $5
+    AND territory IS NOT DISTINCT FROM $4 AND source_record IS NOT DISTINCT FROM $5::jsonb
+    AND created_at >= $6
   ORDER BY created_at DESC, id DESC LIMIT 1`
 
 const insertAlert = `INSERT INTO digital_alert_reviews (tenant_id, id, project_id, created_at, source_url,
     source_type, excerpt, sha256, level, score, method, themes, signals, suggestions,
     semantic_active, status, analyst_note, territory, source_record)
   VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-    $11::jsonb, $12::jsonb, $13::jsonb, $14, 'Pendiente de verificación', $15, $16, NULL)
+    $11::jsonb, $12::jsonb, $13::jsonb, $14, 'Pendiente de verificación', $15, $16, $17::jsonb)
   RETURNING ` + columns
 
 type created struct {
@@ -54,7 +54,8 @@ func (s Alerts) Create(ctx context.Context, tenantID string, a application.NewAl
 		if _, err := q.Exec(ctx, lockDedupKey, key); err != nil {
 			return created{}, err
 		}
-		existing, err := one(ctx, q, findDuplicate, a.SHA256, a.SourceURL, a.SourceType, a.Territory, a.CreatedAt.Add(-duplicateWindow))
+		source := sourceRecordJSON(a.SourceRecord)
+		existing, err := one(ctx, q, findDuplicate, a.SHA256, a.SourceURL, a.SourceType, a.Territory, source, a.CreatedAt.Add(-duplicateWindow))
 		if err != nil {
 			return created{}, err
 		}
@@ -63,7 +64,7 @@ func (s Alerts) Create(ctx context.Context, tenantID string, a application.NewAl
 		}
 		row, err := one(ctx, q, insertAlert, a.ID, a.ProjectID, a.CreatedAt, a.SourceURL, a.SourceType, a.Excerpt,
 			a.SHA256, a.Level, a.Score, a.Method, string(a.Themes), string(a.Signals), string(a.Suggestions),
-			a.SemanticActive, a.AnalystNote, a.Territory)
+			a.SemanticActive, a.AnalystNote, a.Territory, source)
 		if err != nil {
 			return created{}, err
 		}
@@ -78,13 +79,28 @@ func (s Alerts) Create(ctx context.Context, tenantID string, a application.NewAl
 	return out.alert, out.duplicate, err
 }
 
-// dedupKey is the sha-256 of the JSON.stringify of the signal; the last two are the source
-// record's module and id, which these signals do not have.
+// sourceRecordJSON is JSON.stringify(sourceRecord), nil for a signal without one.
+func sourceRecordJSON(source *application.SourceRecord) *string {
+	if source == nil {
+		return nil
+	}
+	o := records.NewObject()
+	o.Set("module", source.Module)
+	o.Set("id", source.ID)
+	text := string(records.Stringify(o))
+	return &text
+}
+
+// dedupKey is the sha-256 of the JSON.stringify of the signal, whose last two items are the
+// source record's module and id.
 func dedupKey(a application.NewAlert) string {
-	var territory any
+	var territory, module, id any
 	if a.Territory != nil {
 		territory = *a.Territory
 	}
-	sum := sha256.Sum256(records.Stringify([]any{a.SHA256, a.SourceURL, a.SourceType, territory, nil, nil}))
+	if a.SourceRecord != nil {
+		module, id = a.SourceRecord.Module, a.SourceRecord.ID
+	}
+	sum := sha256.Sum256(records.Stringify([]any{a.SHA256, a.SourceURL, a.SourceType, territory, module, id}))
 	return hex.EncodeToString(sum[:])
 }

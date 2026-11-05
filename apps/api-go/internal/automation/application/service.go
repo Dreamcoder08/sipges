@@ -116,6 +116,12 @@ type Message struct {
 	Event    *records.Object
 }
 
+const narrativesModule = "Narrativas" //nolint:misspell // the Spanish module name
+
+// NarrativeEvaluator is evaluateNarrative, which belongs to the intelligence context. An
+// ineligible narrative is not an error; an error retries the run.
+type NarrativeEvaluator func(ctx context.Context, tenantID string, event domain.Event, minimumLevel string) error
+
 // Sender is ChannelSender.
 type Sender interface {
 	Send(ctx context.Context, config domain.ChannelConfig, m Message) error
@@ -145,7 +151,10 @@ type Service struct {
 	PushSender PushSender
 	// Deliveries claims and settles the queued pushes; nil delivers none.
 	Deliveries PushDeliveries
-	Sender     Sender
+	// Evaluate turns a narrative into a digital alert; nil leaves `evaluate` runs for the
+	// TypeScript API.
+	Evaluate NarrativeEvaluator
+	Sender   Sender
 	// Sealer seals channel settings; nil means channel runs are left for the TypeScript API
 	// and channel writes fail.
 	Sealer Sealer
@@ -182,13 +191,17 @@ func tx[T any](ctx context.Context, s Service, tenantID string, fn func(context.
 }
 
 // ExecutableKinds are the step kinds this API runs: `evaluate` needs the narrative evaluation
-// of the intelligence context (createAlert), which is not ported, and `channel` needs the data
-// key. Runs of other kinds are never claimed here, so the TypeScript API delivers them.
+// and `channel` the data key. Runs of other kinds are never claimed here, so the TypeScript API
+// delivers them.
 func (s Service) ExecutableKinds() []string {
-	if s.Sealer == nil {
-		return []string{"notify"}
+	kinds := []string{"notify"}
+	if s.Sealer != nil {
+		kinds = append(kinds, "channel")
 	}
-	return []string{"notify", "channel"}
+	if s.Evaluate != nil {
+		kinds = append(kinds, "evaluate")
+	}
+	return kinds
 }
 
 // audited is audited: best effort by design. The send already happened (or failed), so a
@@ -328,6 +341,15 @@ func (s Service) execute(ctx context.Context, tenantID string, run ClaimedRun) e
 	title := domain.RenderTitle(step.Title, e)
 	text := domain.DescribeEvent(e)
 	switch step.Kind {
+	case "evaluate":
+		if s.Evaluate == nil {
+			return errNotExecutable
+		}
+		if e.Module != narrativesModule || (e.Action != "CREATE" && e.Action != "UPDATE") || e.Record == nil ||
+			e.Record.Marking == "restringido" {
+			return nil
+		}
+		return s.Evaluate(ctx, tenantID, e, step.MinimumLevel)
 	case "notify":
 		marking := "interno"
 		if e.Record != nil {

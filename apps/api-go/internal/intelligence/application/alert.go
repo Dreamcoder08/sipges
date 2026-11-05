@@ -18,7 +18,13 @@ const (
 	maxExcerpt       = 500
 )
 
-// NewAlert is NewAlert of ports.ts, for the signals that have no source record.
+// SourceRecord is the record a signal was evaluated from.
+type SourceRecord struct {
+	Module string
+	ID     string
+}
+
+// NewAlert is NewAlert of ports.ts. SourceRecord is nil for a signal typed into the inbox.
 type NewAlert struct {
 	ID             string
 	ProjectID      string
@@ -36,6 +42,7 @@ type NewAlert struct {
 	Suggestions    json.RawMessage
 	SemanticActive bool
 	AnalystNote    string
+	SourceRecord   *SourceRecord
 }
 
 // AlertWriter stores an alert with its CREATE audit row in one tenant transaction, or answers the
@@ -48,6 +55,7 @@ type AlertWriter interface {
 type AlertInput struct {
 	Text, SourceURL, Mode, SourceType, AnalystNote string
 	Territory                                      *string
+	SourceRecord                                   *SourceRecord
 }
 
 // AlertCreated is createAlert's value.
@@ -57,8 +65,9 @@ type AlertCreated struct {
 	Outcome  string
 }
 
-// AlertCreation is createAlert of intelligence-service.ts for the alert inbox's own route: the
-// semantic analysis of the text (behind the egress guard), then the stored signal.
+// AlertCreation is createAlert of intelligence-service.ts, for the alert inbox's own route and
+// for evaluating narratives: the semantic analysis of the text (behind the egress guard), then
+// the stored signal.
 type AlertCreation struct {
 	Semantic  *Semantic
 	Store     AlertWriter
@@ -117,6 +126,7 @@ func (c AlertCreation) Create(ctx context.Context, scope tenancy.Scope, input Al
 		Themes:     report.Themes, Signals: report.Signals, Suggestions: report.Suggestions,
 		SemanticActive: report.Semantic.Active,
 		AnalystNote:    domain.FirstCodePoints(input.AnalystNote, domain.MaxNoteLength),
+		SourceRecord:   input.SourceRecord,
 	})
 	if err != nil {
 		return AlertCreated{}, "", err
