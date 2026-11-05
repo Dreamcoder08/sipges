@@ -84,3 +84,20 @@ func TestISOSecondsIsDateToISOStringWithoutFractions(t *testing.T) {
 		}
 	}
 }
+
+func TestPushOrigin(t *testing.T) {
+	for endpoint, want := range map[string]string{
+		"https://fcm.googleapis.com/fcm/send/x":    "https://fcm.googleapis.com",
+		"HTTPS://FCM.googleapis.com:443/x":         "https://fcm.googleapis.com",
+		"https://w.notify.windows.com:8443/w/?a=b": "https://w.notify.windows.com:8443",
+	} {
+		if got, ok := PushOrigin(endpoint); !ok || got != want {
+			t.Errorf("%s: %q, %v", endpoint, got, ok)
+		}
+	}
+	for _, endpoint := range []string{"http://fcm.googleapis.com/x", "not a url", "https://user@fcm.googleapis.com/x"} {
+		if got, ok := PushOrigin(endpoint); ok {
+			t.Errorf("%s: %q", endpoint, got)
+		}
+	}
+}
