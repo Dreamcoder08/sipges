@@ -29,6 +29,11 @@ type Set struct {
 	Analytics *wasmengine.Engine
 }
 
+// analyticsRetainPages keeps 64 MiB of linear memory in an idle analytics instance. A call over
+// 5,000 records grows an instance to about 33 MiB, above wasmengine's 16 MiB default, so the
+// default discarded it after almost every call and each request paid a new instance.
+const analyticsRetainPages = 1024
+
 var (
 	sharedOnce sync.Once
 	shared     *Set
@@ -50,7 +55,7 @@ func open(ctx context.Context) (*Set, error) {
 	if err != nil {
 		return nil, fmt.Errorf("compile the indicators engine: %w", err)
 	}
-	analytics, err := wasmengine.New(ctx, analyticsWasm, wasmengine.Options{})
+	analytics, err := wasmengine.New(ctx, analyticsWasm, wasmengine.Options{RetainMemoryPages: analyticsRetainPages})
 	if err != nil {
 		_ = indicators.Close(ctx)
 		return nil, fmt.Errorf("compile the analytics engine: %w", err)

@@ -34,7 +34,8 @@
       "image_build_context": "../..",
       // One named instance serves (src/go-routes.ts GO_INSTANCE); the second covers a rollout.
       "max_instances": 2,
-      "instance_type": "lite",
+      // `lite` (256 MiB, 1/16 vCPU) was OOM-killed at 4 clients and takes 8 s to compile the engines.
+      "instance_type": "basic",
       // Next to Neon aws-us-east-1; ENAM placed the spike in Toronto, Miami or Atlanta.
       "constraints": { "regions": ["ENAM"] },
     },

@@ -36,7 +36,7 @@ not get TypeScript's 401. Only routes whose parity cases include the unauthentic
 | `constraints.regions` | `["ENAM"]` | Next to Neon `aws-us-east-1`; the spike landed in Toronto, Miami or Atlanta (26–33 ms warm p50). |
 | `sleepAfter` | `10m` | Cold start after sleep is 0.74–0.88 s and every new database connection 170–230 ms. Only Go-routed requests keep it awake: 10 minutes covers the pauses between screens of a work session and bounds billed idle time after the last one. Once `/system/events` (polled every 10 s by an open screen) moves to Go, any open screen keeps it warm. |
 | Warm pool | `pool_min_conns` default 2 | `apps/api-go` opens two connections in the background at start and pgx's health check replaces dropped ones, so a request does not pay for a new connection. The URL's `pool_min_conns` overrides it; it never exceeds `pool_max_conns`. |
-| `instance_type` / `max_instances` | `lite` / `2` | One named instance serves; the second covers a rollout. |
+| `instance_type` / `max_instances` | `basic` / `2` | One named instance serves; the second covers a rollout. |
 | Database | `SIPGES_GO_DATABASE_URL` secret | Hyperdrive is not documented for containers (ADR 0032 L3): the container connects to Neon over TLS. |
 
 ## Trying it (`sipges-go` Worker)
@@ -54,3 +54,16 @@ workflow deploys it. Before the first deploy:
 5. `wrangler deploy -c wrangler.go.jsonc` (needs Docker with buildx; it builds `apps/api-go/Dockerfile` from the repository root, sending only `apps/api-go` and `engines/go` per `Dockerfile.dockerignore`).
 
 CI builds the same image and smoke-tests `/health` in the `Go image` job of `.github/workflows/go.yml`.
+
+## Memory
+
+Measured locally on 2026-11-05 with 5,000 synthetic records, under cgroup limits. A local machine is not Cloudflare and PostgreSQL had no network latency, so compare the rows; do not read them as production figures.
+
+| Limits | Clients | Cold start | Peak RSS | req/s | p95 | Result |
+| --- | --- | --- | --- | --- | --- | --- |
+| 256 MiB, 1/16 vCPU (`lite`) | 4 | 8.1 s | 255 MiB | 0.13 | 16 s | OOM-killed |
+| `lite`, `GOMEMLIMIT=200MiB` | 4 | 8.1 s | 239 MiB | 0.43 | 17 s | survives, too slow |
+| 1 GiB, 1/4 vCPU (`basic`) | 4 | 1.9 s | 351 MiB | 2.2 | 3.5 s | no errors |
+| `basic` | 8 | 1.9 s | 443 MiB | 2.5 | 5.3 s | no errors |
+
+wazero keeps linear memory on the Go heap, so `GOMEMLIMIT` governs it; compiled code stays outside. The engines compile before the server listens. `GOMEMLIMIT=800MiB` was not measured under load: check it the first time real traffic reaches the container.
