@@ -30,7 +30,9 @@ func (k Keys) Create(ctx context.Context, tenantID string, key domain.NewKey, ac
 			_ = tx.Rollback(context.WithoutCancel(ctx))
 		}
 	}()
-	err = tx.QueryRow(ctx, createKey, tenantID, key.Name, key.Prefix, key.SecretHash, key.Access, key.Clearance, actor, at).Scan(&id)
+	// A lone surrogate reaches PostgreSQL as U+FFFD, as the driver's UTF-8 encoding writes it.
+	name := records.WellFormed(key.Name)
+	err = tx.QueryRow(ctx, createKey, tenantID, name, key.Prefix, key.SecretHash, key.Access, key.Clearance, actor, at).Scan(&id)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return 0, false, nil
 	}
@@ -40,8 +42,8 @@ func (k Keys) Create(ctx context.Context, tenantID string, key domain.NewKey, ac
 	if _, err = tx.Exec(ctx, "SELECT set_config('app.tenant_id', $1, true)", tenantID); err != nil {
 		return 0, false, err
 	}
-	detail := "Clave de API «" + key.Name + "» (" + key.Access + ", " + key.Clearance + ") " + key.Prefix
-	if _, err = tx.Exec(ctx, appendAudit, at, "Integraciones", "clave-"+itoa(id), "CREATE", records.WellFormed(detail)); err != nil {
+	detail := "Clave de API «" + name + "» (" + key.Access + ", " + key.Clearance + ") " + key.Prefix
+	if _, err = tx.Exec(ctx, appendAudit, at, "Integraciones", "clave-"+itoa(id), "CREATE", detail); err != nil {
 		return 0, false, err
 	}
 	if err = tx.Commit(ctx); err != nil {

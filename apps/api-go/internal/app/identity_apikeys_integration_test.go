@@ -143,6 +143,31 @@ func TestIssueAPIKeyValidation(t *testing.T) {
 	}
 }
 
+// A browser's JSON.stringify sends a lone surrogate as an escape: TypeScript accepts it, counts it
+// as one character and stores U+FFFD, as its driver's UTF-8 encoding writes it.
+func TestIssueAPIKeyAcceptsALoneSurrogateInTheName(t *testing.T) {
+	f := newAccountsFixture(t, "keysurrogate")
+	admin := f.session(t, "admin", "admin", true)
+	for body, stored := range map[string]string{
+		`{"name":"x\ud83dy"}`:                              "x\uFFFDy",
+		`{"name":"  \ud83d  "}`:                            "\uFFFD",
+		`{"name":"a\ude00b"}`:                              "a\uFFFDb",
+		`{"name":"` + strings.Repeat("x", 79) + `\ud83d"}`: strings.Repeat("x", 79) + "\uFFFD",
+		`{"name":"` + strings.Repeat(`\ud83d`, 80) + `"}`:  strings.Repeat("\uFFFD", 80),
+	} {
+		key := f.issue(t, admin, body)
+		if n := f.count(t, `SELECT count(*) FROM api_keys WHERE id = $1 AND name = $2`, key.ID, stored); n != 1 {
+			t.Fatalf("%s: the stored name differs", body)
+		}
+		if n := f.count(t, `SELECT count(*) FROM audit WHERE record_id = $1 AND detail LIKE $2`,
+			"clave-"+strconv.Itoa(key.ID), "Clave de API «"+stored+"»%"); n != 1 {
+			t.Fatalf("%s: the audit detail differs", body)
+		}
+	}
+	expect(t, f.send(t, keyPath, admin, `{"name":"`+strings.Repeat(`\ud83d`, 81)+`"}`), http.StatusUnprocessableEntity,
+		`{"detail":[{"type":"too_big","loc":["body","name"],"msg":"Too big: expected string to have <=80 characters"}]}`)
+}
+
 func TestIssueAPIKeyGates(t *testing.T) {
 	f := newAccountsFixture(t, "keygate")
 	reader := f.session(t, "reader", "consulta", true)

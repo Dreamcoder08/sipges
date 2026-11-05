@@ -264,6 +264,14 @@ const apiKeys: readonly ParityCase[] = [
   issue('with an empty name', { json: { name: '   ' } }),
   issue('with a long name', { json: { name: 'x'.repeat(81) } }),
   issue('with NUL in the name', { json: { name: 'a\u0000' } }),
+  issue(
+    'with a lone surrogate at the limit',
+    { raw: `{"name":"{key}${'x'.repeat(66)}\\ud83d"}` },
+    {
+      vary: keyNames,
+      normalize: ['id', 'token'],
+    },
+  ),
   issue('with a number as name', { json: { name: 1 } }),
   issue('with an unknown access', { json: { name: 'x', access: 'all', clearance: 'none' } }),
   issue('with a null access', { json: { name: 'x', access: null } }),

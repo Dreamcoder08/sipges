@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// keyNameMax is ApiKeyIn's bound on a key's name, in UTF-16 units.
+// keyNameMax is ApiKeyIn's bound on a key's name, in code points, as Zod 4 counts.
 const keyNameMax = 80
 
 // KeyInput is ApiKeyIn after parsing.

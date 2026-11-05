@@ -112,7 +112,8 @@ func (p *issues) invalidType(expected string, v any) {
 func lengthOf(v any) (n float64, origin string, ok bool) {
 	switch x := v.(type) {
 	case string:
-		return float64(utf8.RuneCountInString(x)), "string", true
+		// Zod 4 counts code points, a lone surrogate as one: WellFormed makes it one rune.
+		return float64(utf8.RuneCountInString(records.WellFormed(x))), "string", true
 	case []any:
 		return float64(len(x)), "array", true
 	case *records.Object:
