@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"strings"
 	"sync"
 	"testing"
@@ -198,6 +199,54 @@ func TestTheExtractiveBriefingStaysWhenNarrationCannotRun(t *testing.T) {
 		if calls := len(c.narrator.seen) - before; calls != c.calls {
 			t.Errorf("%s: %d calls", c.name, calls)
 		}
+	}
+}
+
+func logged(t *testing.T, n application.Narrator, g application.EgressOpener) string {
+	t.Helper()
+	var out bytes.Buffer
+	assisted := application.Assisted{
+		Narrator: n, Egress: g,
+		Logger: slog.New(slog.NewTextHandler(&out, &slog.HandlerOptions{Level: slog.LevelInfo})),
+	}
+	assisted.Brief(t.Context(), tenant, neighbourhood(), at)
+	return out.String()
+}
+
+func TestFailuresLogAClosedReasonAndNoText(t *testing.T) {
+	t.Parallel()
+	down := &fakeNarrator{reply: func(string) (string, error) {
+		return "", errors.New("narrator: the model answered 401")
+	}}
+	logFails := &guardFakes{enabled: true, logErr: errors.New("connection to synthetic-db refused")}
+	cases := []struct {
+		name  string
+		lines string
+		want  []string
+	}{
+		{"model", logged(t, down, guardOf(&guardFakes{enabled: true})), []string{"level=WARN", "reason=narrator", `"narrator: the model answered 401"`}},
+		{"guard", logged(t, saying("x [1]"), guardOf(logFails)), []string{"level=WARN", "reason=guard"}},
+		{"no guard", logged(t, saying("x [1]"), nil), []string{"level=WARN", "reason=guard"}},
+		{"citation", logged(t, saying("Sin fuentes."), guardOf(&guardFakes{enabled: true})), []string{"level=WARN", "reason=citation"}},
+	}
+	for _, c := range cases {
+		for _, want := range c.want {
+			if !strings.Contains(c.lines, want) {
+				t.Errorf("%s: %q not in %q", c.name, want, c.lines)
+			}
+		}
+		for _, leak := range []string{"synthetic-db", "Comunidad", "Sin fuentes"} {
+			if strings.Contains(c.lines, leak) {
+				t.Errorf("%s: %q leaked in %q", c.name, leak, c.lines)
+			}
+		}
+	}
+}
+
+func TestASwitchedOffProjectLogsNoFailure(t *testing.T) {
+	t.Parallel()
+	if lines := logged(t, saying("x [1]"), guardOf(&guardFakes{})); strings.Contains(lines, "briefing_narration_failed") {
+		t.Fatalf("logged %q", lines)
 	}
 }
 

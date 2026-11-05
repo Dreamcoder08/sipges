@@ -217,13 +217,35 @@ func TestALongRetryAfterOutlastsTheBudget(t *testing.T) {
 		w.Header().Set("Retry-After", "120")
 		w.WriteHeader(http.StatusTooManyRequests)
 	})
-	ctx, cancel := context.WithTimeout(t.Context(), 50*time.Millisecond)
+	ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 	defer cancel()
+	began := time.Now()
 	if _, err := claude.Narrate(ctx, cleared("b")); err == nil {
 		t.Fatal("expected the error")
 	}
 	if calls.Load() != 1 {
 		t.Fatalf("calls = %d", calls.Load())
+	}
+	if took := time.Since(began); took > time.Second {
+		t.Fatalf("a wait that cannot fit held the request for %v", took)
+	}
+}
+
+func TestAWaitThatFitsTheBudgetIsServed(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	claude := double(t, func(w http.ResponseWriter, _ *http.Request) {
+		if calls.Add(1) == 1 {
+			w.Header().Set("Retry-After-Ms", "50")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		_, _ = io.WriteString(w, answer("end_turn", `[{"type":"text","text":"x"}]`))
+	})
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+	defer cancel()
+	if got, err := claude.Narrate(ctx, cleared("b")); err != nil || got != "x" {
+		t.Fatalf("%q %v", got, err)
 	}
 }
 

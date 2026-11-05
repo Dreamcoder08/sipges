@@ -27,8 +27,15 @@ const (
 	narrationWithheld = "El registro está restringido; el resumen asistido no se genera para información restringida."
 )
 
+// Why a narration failed, as logged.
+const (
+	reasonGuard    = "guard"
+	reasonNarrator = "narrator"
+	reasonCitation = "citation"
+)
+
 // Narrator rewrites an extractive briefing as prose (docs/adr/0013). It accepts only a cleared
-// payload, and must cite with the briefing's [n] markers.
+// payload, and must cite with the briefing's [n] markers. Its errors are fixed texts, safe to log.
 type Narrator interface {
 	Name() string
 	Narrate(ctx context.Context, briefing privacy.Sanitised[string]) (string, error)
@@ -69,10 +76,7 @@ func (a Assisted) Brief(ctx context.Context, tenantID string, found Neighbourhoo
 	}
 	text, refs, err := a.narrate(ctx, tenantID, found, full, today)
 	if err != nil {
-		if a.Logger != nil {
-			// Only the event: a provider error may quote the request.
-			a.Logger.LogAttrs(ctx, slog.LevelWarn, "briefing_narration_failed", slog.String("narrator", a.Narrator.Name()))
-		}
+		a.logFailure(ctx, err)
 		notice := narrationFailed
 		out.Notice = &notice
 		return out
@@ -83,33 +87,59 @@ func (a Assisted) Brief(ctx context.Context, tenantID string, found Neighbourhoo
 	return out
 }
 
+// narrationError says why a narration failed. Cause is logged, so it must hold no record text and
+// no connection detail: only the narrator's fixed texts go there.
+type narrationError struct {
+	reason string
+	cause  string
+}
+
+func (e narrationError) Error() string { return "analyst: narration failed: " + e.reason }
+
+// logFailure tells outages apart. A project with its switch off is a choice, not a failure: the
+// guard already logged the refusal.
+func (a Assisted) logFailure(ctx context.Context, err error) {
+	var failure narrationError
+	if a.Logger == nil || !errors.As(err, &failure) {
+		return
+	}
+	attrs := []slog.Attr{slog.String("narrator", a.Narrator.Name()), slog.String("reason", failure.reason)}
+	if failure.cause != "" {
+		attrs = append(attrs, slog.String("cause", failure.cause))
+	}
+	a.Logger.LogAttrs(ctx, slog.LevelWarn, "briefing_narration_failed", attrs...)
+}
+
 func (a Assisted) narrate(ctx context.Context, tenantID string, found Neighbourhood, full domain.Briefing, today string) (string, []int, error) {
 	if a.Egress == nil {
-		return "", nil, privacy.ErrDisabled
+		return "", nil, narrationError{reason: reasonGuard}
 	}
 	session, err := a.Egress.Open(ctx, privacy.Request{
 		TenantID: tenantID, Channel: privacy.ChannelAnalyst, Purpose: narrationPurpose,
 	})
-	if err != nil {
+	if errors.Is(err, privacy.ErrDisabled) {
 		return "", nil, err
+	}
+	if err != nil {
+		return "", nil, narrationError{reason: reasonGuard}
 	}
 	// Restricted neighbours never leave the platform, and the rest only as the guard allows.
 	view, connections := sanitisedView(session, found)
 	shared := domain.BuildBriefing(view, connections, today)
 	cleared, err := privacy.Release(ctx, session, domain.BriefingText(shared))
 	if err != nil {
-		return "", nil, err
+		return "", nil, narrationError{reason: reasonGuard}
 	}
 	ctx, cancel := context.WithTimeout(ctx, narrationTimeout)
 	defer cancel()
 	prose, err := a.Narrator.Narrate(ctx, cleared)
 	if err != nil {
-		return "", nil, err
+		return "", nil, narrationError{reason: reasonNarrator, cause: err.Error()}
 	}
 	prose = domain.TrimNarrative(prose)
 	refs, ok := domain.CitedRefs(prose, shared)
 	if !ok || len(refs) == 0 {
-		return "", nil, errors.New("analyst: the narrative cites no valid source")
+		return "", nil, narrationError{reason: reasonCitation}
 	}
 	text, moved := domain.RenumberCitations(prose, refs, shared, full)
 	return text, moved, nil

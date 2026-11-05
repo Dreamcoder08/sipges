@@ -114,7 +114,7 @@ func (c *Claude) Narrate(ctx context.Context, briefing privacy.Sanitised[string]
 		if err == nil {
 			return prose(answer)
 		}
-		if wait < 0 || attempt == maxRetries {
+		if wait < 0 || attempt == maxRetries || !fits(ctx, wait) {
 			return "", err
 		}
 		timer := time.NewTimer(wait)
@@ -125,6 +125,13 @@ func (c *Claude) Narrate(ctx context.Context, briefing privacy.Sanitised[string]
 		case <-timer.C:
 		}
 	}
+}
+
+// fits says the wait ends before the budget does. TypeScript waits and fails at the deadline; here
+// a retry that cannot run does not hold the request, whose extractive briefing is already built.
+func fits(ctx context.Context, wait time.Duration) bool {
+	deadline, ok := ctx.Deadline()
+	return !ok || time.Now().Add(wait).Before(deadline)
 }
 
 // send makes one attempt. On failure, wait says how long to wait before a retry; negative means
