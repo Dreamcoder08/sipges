@@ -95,8 +95,9 @@ stop with no error.
 - **Keep the container running:** the timer works as built, but something must start it and it bills around the
   clock.
 - **Have the Worker's Cron Trigger call Go's cron route:** the container can sleep, but the `scheduled` handler must
-  change, because it runs TypeScript directly, and the route needs a path to Go. The `*/15` trigger is longer than
-  the 10-minute sleep, so each call pays a cold start.
+  change, because it runs TypeScript directly, and the route needs a path to Go. Only the production Worker has a
+  trigger, so a trial needs one on `sipges-go`, and production needs the container bound. The `*/15` trigger is
+  longer than the 10-minute sleep, so each call pays a cold start.
 
 **2. What happens to the work only TypeScript does.** Go leaves `evaluate` steps unclaimed, because they need the
 intelligence context's `createAlert`, and only TypeScript delivers browser pushes, because that needs the VAPID
