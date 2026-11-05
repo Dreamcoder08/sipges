@@ -3,12 +3,14 @@ package config
 import (
 	"errors"
 	"net/url"
+	"strconv"
 )
 
 // The defaults of apps/api/src/platform/config.ts.
 const (
 	defaultOllamaURL   = "http://127.0.0.1:11434"
 	defaultOllamaModel = "nomic-embed-text"
+	maxPort            = 65535
 )
 
 // Ollama is the embeddings server, read as parseOllama of apps/api/src/platform/config.ts.
@@ -54,6 +56,12 @@ func checkOllamaURL(raw string) error {
 	}
 	if parsed.Hostname() == "" {
 		return notAbsolute
+	}
+	if port := parsed.Port(); port != "" {
+		// url.Parse only checks that the port is numeric.
+		if n, err := strconv.Atoi(port); err != nil || n > maxPort {
+			return notAbsolute
+		}
 	}
 	return nil
 }

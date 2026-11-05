@@ -14,6 +14,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { CASES, validateCases } from './cases.ts';
+import { startEmbedderDouble } from './embedder-double.ts';
 import { type Mismatch, compare } from './diff.ts';
 import { nodeVersionProblem } from './node-version.ts';
 import { seedDatabase } from './fixtures.ts';
@@ -112,10 +113,12 @@ const main = async () => {
   process.once('SIGTERM', interrupted);
   try {
     // TypeScript first: it applies the migrations the Go API expects.
-    const ts = await startTypeScriptApi(database.url, secrets);
+    const embedder = await startEmbedderDouble();
+    running.push(embedder);
+    const ts = await startTypeScriptApi(database.url, secrets, embedder.url);
     running.push(ts);
     await seedDatabase(database.url);
-    const go = await startGoApi(database.url, scratch, secrets.dataKey);
+    const go = await startGoApi(database.url, scratch, secrets.dataKey, embedder.url);
     running.push(go);
     return await runCases({
       tsUrl: ts.url,
