@@ -1,7 +1,7 @@
 // Package domain holds the pure parts of apps/api/src/contexts/automation that the read routes
 // need: the event sources and vocabularies shown on the automation screen, record-module slugs
 // for inbox links, the limit clamps of automation-service.ts and JavaScript's
-// encodeURIComponent. Rule evaluation, the event cursor and deliveries stay in TypeScript.
+// encodeURIComponent. rules.go and channels.go hold rule evaluation and channel validation.
 //
 //nolint:misspell // Spanish module names and labels, verbatim from the TypeScript API.
 package domain
