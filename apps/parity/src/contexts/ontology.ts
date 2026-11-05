@@ -1,8 +1,10 @@
 import type { ParityCase } from '../types.ts';
 
 /**
- * Ontology, read-only (T26): GET /system/ontology, /system/search, /system/timeline,
- * /system/links and /system/graph. The seed adds records and links in the default project and,
+ * Ontology (T26 reads, T38 writes): GET /system/ontology, /system/search, /system/timeline,
+ * /system/links and /system/graph; POST /system/graph/neighbourhood; and the writes POST
+ * /system/links, PUT /system/links/:id/evidence, PUT /system/marking, DELETE /system/links/:id
+ * (see WRITES below). The seed adds records and links in the default project and,
  * with the same ids, in OTHER_TENANT (see ../fixtures.ts), so only row-level security keeps the
  * second set out; its texts carry "AJENA", so a leak is plain in a mismatch report. Every record
  * holds the word "ontoparidad", which no other context's seed uses, so searches read only these
@@ -138,6 +140,103 @@ const links = (tenant: string, tag: string) => [
   ),
 ];
 
+/**
+ * The writes' rows. Both APIs receive every case at the same time on one database, so a write
+ * that succeeds once (a new link, a deletion, a marking change and its audit row) runs on rows of
+ * its own per API: `{w}` is WT for TypeScript and WG for Go, `{del}` and `{ev}` the ids of the
+ * links each one deletes or documents. Their texts are equal, so the answers differ only in those
+ * ids (normalized) and in the instants each API stamps. Ids are fixed (OVERRIDING SYSTEM VALUE)
+ * far above the generated ones. PARITY-ONT-MS is shared: setting the same marking from both APIs
+ * at once is idempotent, so one row is changed and audited, and both answer alike.
+ */
+const WRITE_IDS = { WT: { del: 39101, ev: 39111 }, WG: { del: 39102, ev: 39112 } } as const;
+const OTHER_LINK = 39121;
+
+const writeRecords = (side: 'WT' | 'WG') => [
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-A1`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad uno',
+    Territorio: 'Costa',
+  }),
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-A2`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad dos',
+  }),
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-A3`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad tres',
+  }),
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-A4`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad cuatro',
+  }),
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-A5`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad cinco',
+  }),
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-A6`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad seis',
+  }),
+  record(SECHURA, 'Actores', `PARITY-ONT-${side}-M1`, {
+    'Nombre_Actor/Organizacion': 'Gremio escriparidad marcado',
+  }),
+  record(SECHURA, 'Fuentes', `PARITY-ONT-${side}-F1`, { Archivo_Fuente: 'acta-escriparidad.pdf' }),
+];
+
+const writeLink = (
+  id: number,
+  tenant: string,
+  type: string,
+  source: string,
+  target: string,
+  evidence: string | null,
+) =>
+  `(${id}, ${quote(tenant)}, ${quote(type)}, 'Actores', ${quote(source)}, 'Actores', ${quote(target)}, 'Sembrado',
+    'parity', '2025-03-07T08:09:10.789Z', ${evidence ? quote(evidence) : 'NULL'})`;
+
+const writeSeed = `
+INSERT INTO module_records (tenant_id, module, id, payload, marking, created_at, updated_at) VALUES
+  ${[
+    ...writeRecords('WT'),
+    ...writeRecords('WG'),
+    record(SECHURA, 'Actores', 'PARITY-ONT-MS', {
+      'Nombre_Actor/Organizacion': 'Gremio escriparidad compartido',
+    }),
+    record(OTHER, 'Actores', 'PARITY-ONT-WX', {
+      'Nombre_Actor/Organizacion': 'Gremio escriparidad AJENA',
+    }),
+  ].join(',\n  ')}
+ON CONFLICT DO NOTHING;
+INSERT INTO record_links (id, tenant_id, link_type, source_module, source_id, target_module, target_id,
+  note, created_by, created_at, evidence_source_id) OVERRIDING SYSTEM VALUE VALUES
+  ${(['WT', 'WG'] as const)
+    .flatMap((side) => [
+      writeLink(
+        WRITE_IDS[side].del,
+        SECHURA,
+        'en_conflicto_con',
+        `PARITY-ONT-${side}-A5`,
+        `PARITY-ONT-${side}-A6`,
+        null,
+      ),
+      writeLink(
+        WRITE_IDS[side].ev,
+        SECHURA,
+        'aliado_de',
+        `PARITY-ONT-${side}-A3`,
+        `PARITY-ONT-${side}-A4`,
+        null,
+      ),
+    ])
+    .concat(
+      writeLink(
+        OTHER_LINK,
+        OTHER,
+        'en_conflicto_con',
+        'PARITY-ONT-A1',
+        'PARITY-ONT-A2',
+        'PARITY-ONT-F1',
+      ),
+    )
+    .join(',\n  ')}
+ON CONFLICT DO NOTHING;
+`;
+
 export const seed = `
 INSERT INTO module_records (tenant_id, module, id, payload, marking, created_at, updated_at) VALUES
   ${[...records(SECHURA, ''), ...records(OTHER, ' AJENA')].join(',\n  ')}
@@ -146,7 +245,7 @@ INSERT INTO record_links (tenant_id, link_type, source_module, source_id, target
   note, created_by, created_at, evidence_source_id) VALUES
   ${[...links(SECHURA, ''), ...links(OTHER, ' AJENA')].join(',\n  ')}
 ON CONFLICT DO NOTHING;
-`;
+${writeSeed}`;
 
 const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };
 const FIRST = { 'x-sipges-scope': SECHURA };
@@ -210,6 +309,468 @@ const admin = (name: string, path: string, auth: ParityCase['auth'] = 'admin'): 
 });
 
 const LONG_QUERY = encodeURIComponent(`${'o'.repeat(199)}😀 ontoparidad`);
+
+/** Each API's own rows of the writes (see writeSeed). */
+/** Every character of a number percent-encoded: 39101 → %33%39%31%30%31. */
+const encodeAll = (n: number) =>
+  [...String(n)].map((c) => `%${c.charCodeAt(0).toString(16)}`).join('');
+
+const W = {
+  w: { ts: 'WT', go: 'WG' },
+  del: { ts: String(WRITE_IDS.WT.del), go: String(WRITE_IDS.WG.del) },
+  ev: { ts: String(WRITE_IDS.WT.ev), go: String(WRITE_IDS.WG.ev) },
+  // The same ids percent-encoded: Hono decodes the path parameter before the /^\d{1,9}$/ check.
+  evEncoded: { ts: encodeAll(WRITE_IDS.WT.ev), go: encodeAll(WRITE_IDS.WG.ev) },
+  delEncoded: { ts: encodeAll(WRITE_IDS.WT.del), go: encodeAll(WRITE_IDS.WG.del) },
+} as const;
+const actor = (n: string) => ({ module: 'actores', id: `PARITY-ONT-{w}-${n}` });
+const LINKS_OF = (n: string) => `/system/links?module=actores&id=PARITY-ONT-{w}-${n}`;
+/** The fields of a links answer that hold an API's own ids or instants. */
+const LINKS_NORMALIZED = [
+  'record.id',
+  'links.*.edge.id',
+  'links.*.edge.source.id',
+  'links.*.edge.target.id',
+  'links.*.edge.created_at',
+  'links.*.edge.evidence.id',
+  'links.*.other.id',
+];
+
+type Write = Omit<ParityCase, 'name' | 'auth' | 'sameOrigin'> & {
+  readonly auth?: ParityCase['auth'] | null;
+  readonly sameOrigin?: false;
+};
+/** A write case: the administrator, same origin, with each API's own rows unless it says otherwise. */
+const write = (name: string, c: Write): ParityCase => {
+  const { auth, sameOrigin, ...rest } = c;
+  return {
+    name: `ontology write: ${name}`,
+    vary: W,
+    ...rest,
+    ...(auth === null ? {} : { auth: auth ?? 'admin' }),
+    ...(sameOrigin === false ? {} : { sameOrigin: true as const }),
+  };
+};
+const readOwn = (name: string, path: string, auth: ParityCase['auth'] = 'admin'): ParityCase =>
+  write(name, { method: 'GET', path, auth, normalize: LINKS_NORMALIZED });
+
+const newLink = {
+  link_type: 'aliado_de',
+  source: actor('A1'),
+  target: actor('A2'),
+  note: '  Alianza escrita\u3000 ',
+  evidence: { module: 'fuentes', id: 'PARITY-ONT-{w}-F1' },
+};
+const aLink = (extra: Record<string, unknown>) => ({
+  link_type: 'aliado_de',
+  source: actor('A1'),
+  target: actor('A3'),
+  ...extra,
+});
+const marking = (id: string, value: string) => ({ module: 'actores', id, marking: value });
+const SEEDS_BODY = {
+  seeds: [
+    { module: 'eventos', id: 'PARITY-ONT-E1' },
+    { module: 'eventos', id: 'PARITY-ONT-E1' },
+    { module: 'nada', id: 'PARITY-ONT-E1' },
+    { module: 'alertas', id: 'PARITY-ONT-AL1' },
+    { module: 'actores', id: 'PARITY-ONT-NOPE' },
+  ],
+  hops: [['origina', 'sustenta'], ['atiende']],
+  fields: ['Tipo_Evento', 'Responsable', 'Tipo_Evento'],
+};
+
+const WRITES: ParityCase[] = [
+  // POST /system/links: created, then read back; the same link again (also reversed) is a duplicate.
+  write('create a link', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: newLink },
+    normalize: ['id'],
+  }),
+  readOwn('the new link is read back', LINKS_OF('A1')),
+  readOwn('the new link from its target', LINKS_OF('A2'), 'consulta'),
+  write('create the same link again', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: newLink },
+  }),
+  write('create it reversed (symmetric type)', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: { ...newLink, source: actor('A2'), target: actor('A1') } },
+  }),
+  ...(
+    [
+      ['unknown link type', aLink({ link_type: 'amigo_de' })],
+      ['unknown object type', aLink({ source: { module: 'Actores', id: 'PARITY-ONT-{w}-A1' } })],
+      ['self link', aLink({ target: actor('A1') })],
+      ['type not allowed between those objects', aLink({ link_type: 'participa_en' })],
+      ['missing end', aLink({ target: actor('NOPE') })],
+      [
+        'end only in another project',
+        aLink({ target: { module: 'actores', id: 'PARITY-ONT-WX' } }),
+      ],
+      [
+        'evidence that does not exist',
+        aLink({ evidence: { module: 'fuentes', id: 'PARITY-ONT-NOPE' } }),
+      ],
+      [
+        'evidence of another type',
+        aLink({ evidence: { module: 'actores', id: 'PARITY-ONT-{w}-A2' } }),
+      ],
+      ['empty body', {}],
+      [
+        'nested errors',
+        { link_type: '', source: { module: 'x'.repeat(41), id: 'a\u0000b' }, target: [], note: 5 },
+      ],
+      ['body not an object', [aLink({})]],
+    ] as const
+  ).map(([name, json]) =>
+    write(`create: ${name}`, { method: 'POST', path: '/system/links', body: { json } }),
+  ),
+  write('create: invalid JSON', {
+    method: 'POST',
+    path: '/system/links',
+    body: { raw: '{"link_type":' },
+  }),
+  write('create: byte order mark', {
+    method: 'POST',
+    path: '/system/links',
+    body: {
+      raw: `\ufeff${JSON.stringify(aLink({ link_type: 'en_conflicto_con', target: actor('A4') }))}`,
+    },
+    normalize: ['id'],
+  }),
+  write('create: by the read-only role', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    auth: 'consulta',
+  }),
+  write('create: without a session', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    auth: null,
+  }),
+  write('create: without Origin', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    sameOrigin: false,
+  }),
+  write('create: two projects need a choice', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    auth: 'multi',
+  }),
+  write('create: in the second project the records do not exist', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    auth: 'multi',
+    headers: SECOND,
+  }),
+  write('create: project without a grant', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    headers: SECOND,
+  }),
+  write('create: the ungranted fixture project', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: aLink({}) },
+    auth: 'multi',
+    headers: { 'x-sipges-scope': OTHER },
+  }),
+  write('create: body naming another project', {
+    method: 'POST',
+    path: '/system/links',
+    body: { json: { ...aLink({}), project_id: 'OTRO' } },
+  }),
+  write('create: trailing slash', {
+    method: 'POST',
+    path: '/system/links/',
+    body: { json: aLink({}) },
+  }),
+  readOwn('nothing else was created', LINKS_OF('A3')),
+
+  // PUT /system/links/:id/evidence: documented, read back, withdrawn, repeated.
+  ...[1, 2].map((n) =>
+    write(`document a link (${n})`, {
+      method: 'PUT',
+      path: '/system/links/{ev}/evidence',
+      body: { json: { evidence: { module: 'fuentes', id: 'PARITY-ONT-{w}-F1' } } },
+    }),
+  ),
+  readOwn('the evidence is read back', LINKS_OF('A3')),
+  ...[1, 2].map((n) =>
+    write(`withdraw the evidence (${n})`, {
+      method: 'PUT',
+      path: '/system/links/{ev}/evidence',
+      body: { json: { evidence: null } },
+    }),
+  ),
+  readOwn('the withdrawn evidence is read back', LINKS_OF('A4')),
+  write('evidence: a source that does not exist', {
+    method: 'PUT',
+    path: '/system/links/{ev}/evidence',
+    body: { json: { evidence: { module: 'fuentes', id: 'PARITY-ONT-NOPE' } } },
+  }),
+  write('evidence: a link of another project', {
+    method: 'PUT',
+    path: `/system/links/${OTHER_LINK}/evidence`,
+    body: { json: { evidence: null } },
+  }),
+  ...['abc', '-1', '1234567890', '999999999', '{evEncoded}', '1.0'].map((id) =>
+    write(`evidence: link id ${id}`, {
+      method: 'PUT',
+      path: `/system/links/${id}/evidence`,
+      body: { json: { evidence: null } },
+    }),
+  ),
+  ...(
+    [
+      ['missing evidence', {}],
+      ['evidence of another type', { evidence: { module: 'actores', id: 'x' } }],
+      ['evidence not an object', { evidence: 5 }],
+      ['evidence id empty', { evidence: { module: 'fuentes', id: '' } }],
+    ] as const
+  ).map(([name, json]) =>
+    write(`evidence: ${name}`, {
+      method: 'PUT',
+      path: '/system/links/abc/evidence',
+      body: { json },
+    }),
+  ),
+  write('evidence: by the read-only role', {
+    method: 'PUT',
+    path: '/system/links/{ev}/evidence',
+    body: { json: { evidence: null } },
+    auth: 'consulta',
+  }),
+  write('evidence: without a session', {
+    method: 'PUT',
+    path: '/system/links/{ev}/evidence',
+    body: { json: { evidence: null } },
+    auth: null,
+  }),
+
+  // PUT /system/marking: a restricted record disappears for consulta, and comes back when lowered.
+  write('mark a shared record restricted (both at once)', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-MS', 'restringido') },
+  }),
+  write('the marking change is the newest audit row', {
+    method: 'GET',
+    path: '/system/audit?limit=1',
+    sameOrigin: false,
+  }),
+  write('the read-only role no longer sees the shared record', {
+    method: 'GET',
+    path: '/system/links?module=actores&id=PARITY-ONT-MS',
+    auth: 'consulta',
+  }),
+  write('nor finds it', {
+    method: 'GET',
+    path: '/system/search?q=PARITY-ONT-MS',
+    auth: 'consulta',
+  }),
+  write('the administrator still does', {
+    method: 'GET',
+    path: '/system/links?module=actores&id=PARITY-ONT-MS',
+  }),
+  write('raise its own record', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-{w}-M1', 'restringido') },
+  }),
+  write('raise it again', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-{w}-M1', 'restringido') },
+  }),
+  readOwn('the read-only role stops seeing it', LINKS_OF('M1'), 'consulta'),
+  write('the read-only role may not lower it', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-{w}-M1', 'publico') },
+    auth: 'consulta',
+  }),
+  write('an analyst lowers it', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-{w}-M1', 'publico') },
+    auth: 'multi',
+    headers: FIRST,
+  }),
+  readOwn('the read-only role sees it again', LINKS_OF('M1'), 'consulta'),
+  write('marking: without a session', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-MS', 'publico') },
+    auth: null,
+  }),
+  write('marking: a record of another project', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-WX', 'restringido') },
+  }),
+  write('marking: from the second project', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-{w}-M1', 'restringido') },
+    auth: 'multi',
+    headers: SECOND,
+  }),
+  write('marking: the stored module name', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: { module: 'Actores', id: 'PARITY-ONT-{w}-M1', marking: 'interno' } },
+  }),
+  write('marking: a record that does not exist', {
+    method: 'PUT',
+    path: '/system/marking',
+    body: { json: marking('PARITY-ONT-NOPE', 'interno') },
+  }),
+  ...(
+    [
+      ['unknown marking', marking('PARITY-ONT-MS', 'secreto')],
+      ['empty body', {}],
+      ['id too long', { module: '', id: 'x'.repeat(201), marking: null }],
+    ] as const
+  ).map(([name, json]) =>
+    write(`marking: ${name}`, { method: 'PUT', path: '/system/marking', body: { json } }),
+  ),
+  write('marking: trailing slash', {
+    method: 'PUT',
+    path: '/system/marking/',
+    body: { json: marking('PARITY-ONT-MS', 'publico') },
+  }),
+  write('marking: GET is not a route', {
+    method: 'GET',
+    path: '/system/marking',
+    sameOrigin: false,
+  }),
+
+  // DELETE /system/links/:id: refused outside its project, deleted, then absent.
+  write('delete: by the read-only role', {
+    method: 'DELETE',
+    path: '/system/links/{del}',
+    auth: 'consulta',
+  }),
+  write('delete: from the second project', {
+    method: 'DELETE',
+    path: '/system/links/{del}',
+    auth: 'multi',
+    headers: SECOND,
+  }),
+  write('delete: without a session', { method: 'DELETE', path: '/system/links/{del}', auth: null }),
+  write('delete: without Origin', {
+    method: 'DELETE',
+    path: '/system/links/{del}',
+    sameOrigin: false,
+  }),
+  readOwn('the link to delete is still there', LINKS_OF('A5')),
+  write('delete a link', { method: 'DELETE', path: '/system/links/{del}' }),
+  readOwn('the deleted link is gone', LINKS_OF('A5')),
+  write('delete it again', { method: 'DELETE', path: '/system/links/{del}' }),
+  write('delete: a link of another project', {
+    method: 'DELETE',
+    path: `/system/links/${OTHER_LINK}`,
+  }),
+  ...['abc', '-1', '1234567890', '{delEncoded}'].map((id) =>
+    write(`delete: link id ${id}`, { method: 'DELETE', path: `/system/links/${id}` }),
+  ),
+  write('delete: no id', { method: 'DELETE', path: '/system/links/' }),
+
+  // POST /system/graph/neighbourhood: a read every role may send.
+  write('neighbourhood', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+  }),
+  write('neighbourhood, read-only role', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+    auth: 'consulta',
+  }),
+  write('neighbourhood: second project', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+    auth: 'multi',
+    headers: SECOND,
+  }),
+  write('neighbourhood: one hop of every type', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: {
+      json: {
+        seeds: [{ module: 'actores', id: 'PARITY-ONT-A1' }],
+        hops: [['aliado_de', 'relacionado_con']],
+      },
+    },
+  }),
+  write('neighbourhood: unknown link type', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: { ...SEEDS_BODY, hops: [['origina'], ['amigo_de', 'otro']] } },
+  }),
+  ...(
+    [
+      ['no seeds', { seeds: [], hops: [['origina']] }],
+      ['three hops', { seeds: SEEDS_BODY.seeds, hops: [['a'], ['b'], ['c']] }],
+      [
+        'too many seeds',
+        {
+          seeds: Array.from({ length: 101 }, (_, i) => ({ module: 'actores', id: `S${i}` })),
+          hops: [['origina']],
+        },
+      ],
+      [
+        'bad fields',
+        { seeds: SEEDS_BODY.seeds, hops: [['origina']], fields: ['', 'x'.repeat(61), 5] },
+      ],
+    ] as const
+  ).map(([name, json]) =>
+    write(`neighbourhood: ${name}`, {
+      method: 'POST',
+      path: '/system/graph/neighbourhood',
+      body: { json },
+    }),
+  ),
+  write('neighbourhood: without a session', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+    auth: null,
+  }),
+  write('neighbourhood: without Origin', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+    sameOrigin: false,
+  }),
+  write('neighbourhood: two projects need a choice', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+    auth: 'multi',
+  }),
+  write('neighbourhood: the ungranted fixture project', {
+    method: 'POST',
+    path: '/system/graph/neighbourhood',
+    body: { json: SEEDS_BODY },
+    auth: 'multi',
+    headers: { 'x-sipges-scope': OTHER },
+  }),
+];
 
 export const cases: readonly ParityCase[] = [
   admin('catalog', '/system/ontology'),
@@ -312,4 +873,5 @@ export const cases: readonly ParityCase[] = [
   ),
   admin('graph: missing record', '/system/graph?module=eventos&id=PARITY-ONT-NOPE'),
   admin('graph: unknown module', '/system/graph?module=nada&id=x'),
+  ...WRITES,
 ];

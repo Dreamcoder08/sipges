@@ -144,3 +144,64 @@ test('sameOrigin sends each API its own base URL as Origin', async () => {
     server.close();
   }
 });
+
+test('vary gives each API its own value in the path, headers and body', async () => {
+  const seen: { url: string | undefined; scope: unknown; body: string; type: unknown }[] = [];
+  const server = createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk: Buffer) => (body += chunk.toString()));
+    req.on('end', () => {
+      seen.push({
+        url: req.url,
+        scope: req.headers['x-scope'],
+        body,
+        type: req.headers['content-type'],
+      });
+      res.writeHead(200, { 'content-type': 'application/json' }).end('{}');
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  try {
+    const url = `http://127.0.0.1:${port}`;
+    const c = {
+      name: 'v',
+      method: 'POST',
+      path: '/links/{n}?x={w}',
+      headers: { 'x-scope': 'S/{w}' },
+      body: { json: { id: 'R-{w}', other: '{w}{w}', same: 'x' } },
+      vary: { w: { ts: 'WT', go: 'WG' }, n: { ts: '1', go: '2' } },
+    } as const;
+    await send(url, c, undefined, 1_000, 'ts');
+    await send(url, c, undefined, 1_000, 'go');
+    await send(
+      url,
+      { name: c.name, method: c.method, path: c.path, headers: c.headers, body: c.body },
+      undefined,
+      1_000,
+      'go',
+    );
+    assert.deepEqual(seen, [
+      {
+        url: '/links/1?x=WT',
+        scope: 'S/WT',
+        body: '{"id":"R-WT","other":"WTWT","same":"x"}',
+        type: 'application/json',
+      },
+      {
+        url: '/links/2?x=WG',
+        scope: 'S/WG',
+        body: '{"id":"R-WG","other":"WGWG","same":"x"}',
+        type: 'application/json',
+      },
+      {
+        url: '/links/%7Bn%7D?x={w}',
+        scope: 'S/{w}',
+        body: '{"id":"R-{w}","other":"{w}{w}","same":"x"}',
+        type: 'application/json',
+      },
+    ]);
+  } finally {
+    server.close();
+  }
+});

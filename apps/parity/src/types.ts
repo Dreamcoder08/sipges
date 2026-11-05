@@ -30,4 +30,10 @@ export type ParityCase = {
    * `id` or `items.*.created_at`. Keep the list small: name fields, never whole objects.
    */
   readonly normalize?: readonly string[];
+  /**
+   * Values that differ per API, written `{name}` in `path`, header values and the body. Both
+   * APIs receive every case at once, on one database, so a write that succeeds once (creating
+   * or deleting a row) names a row of its own on each side, such as `{ w: { ts: 'WT', go: 'WG' } }`.
+   */
+  readonly vary?: Readonly<Record<string, { readonly ts: string; readonly go: string }>>;
 };

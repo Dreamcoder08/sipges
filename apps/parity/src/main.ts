@@ -46,8 +46,8 @@ const runCases = async ({ tsUrl, goUrl, credentials }: Targets) => {
   let failed = 0;
   for (const c of CASES) {
     const [ts, go] = await Promise.all([
-      send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS),
-      send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS),
+      send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'ts'),
+      send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'go'),
     ]);
     const mismatches = compare(ts, go, c.normalize);
     if (mismatches.length === 0) {
