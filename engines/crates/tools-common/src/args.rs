@@ -95,10 +95,20 @@ pub fn parse(argv: &[String], options: &[(&'static str, Kind)]) -> Result<Values
     Ok(values)
 }
 
+/// The process arguments after the program name. Bytes that are not UTF-8 become U+FFFD, as
+/// Node decodes `process.argv` (`std::env::args` would panic on them).
+#[must_use]
+pub fn raw_args() -> Vec<String> {
+    std::env::args_os()
+        .skip(1)
+        .map(|arg| arg.to_string_lossy().into_owned())
+        .collect()
+}
+
 /// The CLI's arguments without the `--` separators pnpm forwards (`args.filter((a) => a !== '--')`).
 #[must_use]
 pub fn cli_args() -> Vec<String> {
-    std::env::args().skip(1).filter(|arg| arg != "--").collect()
+    raw_args().into_iter().filter(|arg| arg != "--").collect()
 }
 
 /// A string option's value.

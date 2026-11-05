@@ -30,11 +30,17 @@ The TypeScript tool stays until the owner retires it; both write the same rows.
 
 | Case | TypeScript | Rust |
 | --- | --- | --- |
-| `SIPGES_DATABASE_URL` unset | embedded PGlite at `SIPGES_PGLITE_DIR` | refuses: `…fallida: Error`, exit 1 |
+| `SIPGES_DATABASE_URL` unset | embedded PGlite at `SIPGES_PGLITE_DIR` | refuses: a line saying the URL is required, then `…fallida: Error`, exit 1 |
 | Other API settings invalid (for example `SIPGES_PORT=x`) | `loadConfig` fails: `…fallida: Error`, exit 1 | ignored; only `SIPGES_DATA_KEY` and the URL are checked |
 | TLS to a non-local host | encrypted, certificate not verified (`ssl: 'require'`) | encrypted and verified against the Mozilla roots |
 | Unknown URL query parameters | passed to the server | rejected by rust-postgres (`…fallida: Error`) |
 | Driver error names | the JavaScript class | `PostgresError` for server errors, `Error` otherwise |
+| Server `DateStyle` not ISO (for example `SQL, DMY` or `German`) | postgres.js parses timestamps as text and can misread day and month (`Fecha` 2026-02-01 for 2 January) | reads timestamps in binary: the correct date |
+| Review dates before year 1 or after 9999 under a non-ISO `DateStyle` | `RangeError` | completes |
+| A PostgreSQL notice longer than 10,000 characters | `util.inspect` truncates it | printed whole |
+
+Non-UTF-8 bytes in arguments and environment values become U+FFFD, as in Node. Under the default
+ISO `DateStyle` (Neon, the CI server) both tools read the same dates.
 
 ## Differential test
 
