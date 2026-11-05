@@ -225,6 +225,119 @@ ${settings(OTHER, { windowDays: 30, phase: 'cierre', levelMeanings: { Rojo: 'AJE
 const SECOND = { 'x-sipges-scope': 'PARITY/PRJ-B' };
 const OTHER_SCOPE = { 'x-sipges-scope': OTHER };
 
+/**
+ * PUT /system/v4/settings (T37). The runner sends each case to both APIs at the same time on one
+ * database: both end in the same row, whichever writes first, and each answers it (the second
+ * finds nothing to change). Only the row's time differs. They run last, so the reads above see
+ * the seeded settings.
+ */
+const SETTINGS = '/system/v4/settings';
+const put = (name: string, json: unknown, extra: Partial<ParityCase> = {}): ParityCase => ({
+  name: `settings write: ${name}`,
+  method: 'PUT',
+  path: SETTINGS,
+  auth: 'admin',
+  sameOrigin: true,
+  body: { json },
+  ...extra,
+});
+const saved = { normalize: ['updated_at'] };
+const WEIGHTS = { G: 0.2, A: 0.2, D: 0.2, N: 0.2, E: 0.1, I: 0.1 };
+const MEANINGS = { Verde: ' Uno ', Amarillo: 'Dos', Naranja: 'Tres', Rojo: 'Cuatro' };
+const PLACE = { place: ' Sechura ', extent: [-81, -6, -80, -5] };
+
+const settingsWrites: readonly ParityCase[] = [
+  put(
+    'every field',
+    {
+      level_meanings: MEANINGS,
+      window_days: 120,
+      half_life_days: 20,
+      thresholds: { Amarillo: 1.5, Naranja: 3, Rojo: 6 },
+      recommendations: { verificar: ' Mirar ', contactar: 'Hablar con {actores}' },
+      phase: 'construccion',
+      phase_weights: { cierre: WEIGHTS, exploracion: WEIGHTS },
+      external_ai: { enabled: true },
+      location: PLACE,
+    },
+    saved,
+  ),
+  { name: 'settings write: read back', method: 'GET', path: SETTINGS, auth: 'admin' },
+  put('nothing sent', {}, saved),
+  put('unknown keys dropped', { other: 1 }, saved),
+  put('own project named', { project_id: 'PRJ-SECHURA', window_days: 121 }, saved),
+  put('a phase weight removed', { phase_weights: { cierre: null } }, saved),
+  put('a phase cleared', { phase: null }, saved),
+  put('a location cleared', { location: null }, saved),
+  put('another project named', { project_id: 'PRJ-B', window_days: 30 }),
+  (({ auth: _auth, ...rest }) => rest)(put('no session', { window_days: 30 })),
+  (({ sameOrigin: _origin, ...rest }) => rest)(put('no Origin', { window_days: 30 })),
+  put('an analyst', { window_days: 30 }, { auth: 'multi', headers: SECOND }),
+  put('an ungranted project', { window_days: 30 }, { headers: OTHER_SCOPE }),
+  put('wrong types', {
+    level_meanings: 1,
+    window_days: 'x',
+    half_life_days: true,
+    thresholds: [],
+    recommendations: [],
+    phase: 1,
+    phase_weights: 'x',
+    external_ai: null,
+    location: 1,
+  }),
+  put('blank meaning', { level_meanings: { ...MEANINGS, Verde: ' ' } }),
+  put('NUL meaning', { level_meanings: { ...MEANINGS, Verde: 'a\0b' } }),
+  put('meanings missing', { level_meanings: {} }),
+  put('window bounds', { window_days: 6, half_life_days: 181 }),
+  put('fractional window', { window_days: 7.5 }),
+  put('thresholds not rising', { thresholds: { Amarillo: 3, Naranja: 2, Rojo: 1 } }),
+  put('thresholds too big and not rising', { thresholds: { Amarillo: 2000, Naranja: 2, Rojo: 3 } }),
+  put('unknown recommendations', { recommendations: { otra: 'x', nueva: 'y', verificar: 1 } }),
+  put('unknown phase', { phase: 'otra' }),
+  put('unknown weight phase', { phase_weights: { otra: WEIGHTS } }),
+  put('weights not summing', { phase_weights: { cierre: { ...WEIGHTS, G: 0.5 } } }),
+  put('weights out of range', { phase_weights: { cierre: { ...WEIGHTS, G: 2, A: -1 } } }),
+  put('external ai wrong', { external_ai: { enabled: 1 } }),
+  put('short place', { location: { ...PLACE, place: ' a ' } }),
+  put('extent of three', { location: { ...PLACE, extent: [1, 2, 3] } }),
+  put('extent of five', { location: { ...PLACE, extent: [1, 2, 3, 4, 5] } }),
+  put('extent reversed', { location: { ...PLACE, extent: [-80, -5, -81, -6] } }),
+  put('extent out of range', { location: { ...PLACE, extent: [-181, -91, 181, 91] } }),
+  {
+    name: 'settings write: a lone surrogate',
+    method: 'PUT',
+    path: SETTINGS,
+    auth: 'admin',
+    sameOrigin: true,
+    body: { raw: '{"recommendations":{"verificar":"a\\ud800b"}}' },
+  },
+  {
+    name: 'settings write: body that is not JSON',
+    method: 'PUT',
+    path: SETTINGS,
+    auth: 'admin',
+    sameOrigin: true,
+    body: { raw: '{' },
+  },
+  {
+    name: 'settings with PATCH',
+    method: 'PATCH',
+    path: SETTINGS,
+    auth: 'admin',
+    sameOrigin: true,
+    body: { json: {} },
+  },
+  {
+    name: 'settings with POST',
+    method: 'POST',
+    path: SETTINGS,
+    auth: 'admin',
+    sameOrigin: true,
+    body: { json: {} },
+  },
+  put('a trailing slash', { window_days: 121 }, { ...saved, path: `${SETTINGS}/` }),
+];
+
 export const cases: readonly ParityCase[] = (['settings', 'situations'] as const)
   .flatMap((route): ParityCase[] => {
     const path = `/system/v4/${route}`;
@@ -276,7 +389,6 @@ export const cases: readonly ParityCase[] = (['settings', 'situations'] as const
     ];
   })
   .concat([
-    // The settings write stays in TypeScript; the role gate refuses it for consulta in both APIs.
     {
       name: 'settings: write refused for the read-only role',
       method: 'PUT',
@@ -285,4 +397,5 @@ export const cases: readonly ParityCase[] = (['settings', 'situations'] as const
       sameOrigin: true,
       body: { json: { window_days: 30 } },
     },
+    ...settingsWrites,
   ]);

@@ -1,4 +1,4 @@
-// Package infrastructure reads preventive action plans from PostgreSQL with the queries of
+// Package infrastructure keeps preventive action plans in PostgreSQL with the queries of
 // apps/api/src/contexts/prevention/infrastructure/sql-action-store.ts, inside the tenant
 // transaction (docs/adr/0003).
 package infrastructure
@@ -13,8 +13,10 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/domain"
 )
 
-const listActions = `SELECT id, project_id, alert_id, title, responsible, due_date, description, status,
-  progress, created_at, updated_at, blocked_by, blocked_reason, blocked_since
+const actionColumns = `id, project_id, alert_id, title, responsible, due_date, description, status,
+  progress, created_at, updated_at, blocked_by, blocked_reason, blocked_since`
+
+const listActions = `SELECT ` + actionColumns + `
   FROM preventive_actions WHERE project_id = $1
  ORDER BY due_date ASC, created_at DESC, id`
 
@@ -23,7 +25,7 @@ const listHistory = `SELECT id, action_id, created_at, status, progress, note, e
   FROM preventive_action_log WHERE action_id = ANY($1::text[])
  ORDER BY created_at DESC, id DESC`
 
-// Actions is the read side of the SQL action store.
+// Actions is the SQL action store.
 type Actions struct {
 	DB database.Beginner
 }

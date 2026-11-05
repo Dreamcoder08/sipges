@@ -1,0 +1,845 @@
+{
+  "at": "2026-11-03T12:00:00.123Z",
+  "before": "2026-01-01T00:00:00.5Z",
+  "scenarios": [
+    {
+      "name": "nothing to change",
+      "stored": null,
+      "body": "{}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"window_days\":90,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"\",\"updated_at\":null}",
+      "saved": null
+    },
+    {
+      "name": "the same window on no row",
+      "stored": null,
+      "body": "{\"window_days\":90}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"window_days\":90,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"\",\"updated_at\":null}",
+      "saved": null
+    },
+    {
+      "name": "unknown keys are dropped",
+      "stored": null,
+      "body": "{\"other\":1,\"project_id\":\"PRJ-SINT\"}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"window_days\":90,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"\",\"updated_at\":null}",
+      "saved": null
+    },
+    {
+      "name": "window on no row",
+      "stored": null,
+      "body": "{\"window_days\":30}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"window_days\":30,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":30,\"halfLifeDays\":14,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":{},\"phase\":null,\"phaseWeights\":{},\"externalAi\":{\"enabled\":false},\"location\":null}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: windowDays"
+      }
+    },
+    {
+      "name": "every field",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\" Uno \",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"},\"window_days\":365,\"half_life_days\":180,\"thresholds\":{\"Amarillo\":0.5,\"Naranja\":1e-7,\"Rojo\":1000},\"recommendations\":{\"contactar\":\" Hablar con {actores} \",\"verificar\":\"Mirar\"},\"phase\":\"construccion\",\"phase_weights\":{\"cierre\":{\"G\":0.2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1},\"exploracion\":{\"G\":0.1,\"A\":0.1,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2}},\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\" Sechura \",\"extent\":[-81,-6,-80,-5]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Los umbrales deben ser crecientes: Amarillo < Naranja < Rojo\"}]}",
+      "saved": null
+    },
+    {
+      "name": "phase alone",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase\":\"cierre\"}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"cierre\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"cierre\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Fase Cierre; Campos: phase, phaseWeights"
+      }
+    },
+    {
+      "name": "phase cleared",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase\":null}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":null,\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Fase sin definir; Campos: phase, phaseWeights"
+      }
+    },
+    {
+      "name": "phase kept",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase\":\"operacion\"}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "location cleared",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"location\":null}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":null,\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":null}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights, location"
+      }
+    },
+    {
+      "name": "location kept",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "no change on a row with two phases still names the weights",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "no change on a row with one phase",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"antes\",\"updated_at\":\"2026-01-01T00:00:00.500Z\"}",
+      "saved": null
+    },
+    {
+      "name": "weights kept in their stored key order",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"window_days\":60}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"antes\",\"updated_at\":\"2026-01-01T00:00:00.500Z\"}",
+      "saved": null
+    },
+    {
+      "name": "the same weights in schema order differ from the stored order",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":0.1,\"A\":0.1,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2}}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"G\":0.1,\"A\":0.1,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"cierre\":{\"G\":0.1,\"A\":0.1,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "a phase weight removed",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase_weights\":{\"cierre\":null}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "a phase weight added",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase_weights\":{\"operacion\":{\"G\":0.2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1}}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":{\"G\":0.2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1},\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"operacion\":{\"G\":0.2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "an absent phase removed",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"phase_weights\":{\"operacion\":null}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"antes\",\"updated_at\":\"2026-01-01T00:00:00.500Z\"}",
+      "saved": null
+    },
+    {
+      "name": "recommendations replaced",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"recommendations\":{\"inmediata\":\"Solo esta\"}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Solo esta\",\"custom\":true}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"inmediata\":\"Solo esta\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: recommendations, phaseWeights"
+      }
+    },
+    {
+      "name": "recommendations in another order",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"recommendations\":{\"verificar\":\"Texto V\",\"buzon\":\"Texto B\"}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"verificar\":\"Texto V\",\"buzon\":\"Texto B\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: recommendations, phaseWeights"
+      }
+    },
+    {
+      "name": "recommendations cleared",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"recommendations\":{}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: recommendations, phaseWeights"
+      }
+    },
+    {
+      "name": "meanings over a partial row",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"level_meanings\":{\"Verde\":\" Uno \",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Uno\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Uno\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: levelMeanings, phaseWeights"
+      }
+    },
+    {
+      "name": "external ai off",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"external_ai\":{\"enabled\":false}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":false},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights, externalAi"
+      }
+    },
+    {
+      "name": "external ai same",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"external_ai\":{\"enabled\":true}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":60,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":60,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "minus zero weight",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":-0,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2}}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"window_days\":90,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"G\":0,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":90,\"halfLifeDays\":14,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":{},\"phase\":null,\"phaseWeights\":{\"cierre\":{\"G\":0,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.2,\"I\":0.2}},\"externalAi\":{\"enabled\":false},\"location\":null}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: phaseWeights"
+      }
+    },
+    {
+      "name": "weights near the tolerance",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":0.2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.08}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"phase_weights\",\"cierre\"],\"msg\":\"Los pesos de una fase deben sumar 1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "emoji meaning at the limit",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"},\"window_days\":90,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":90,\"halfLifeDays\":14,\"levelMeanings\":{\"Verde\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"},\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":{},\"phase\":null,\"phaseWeights\":{},\"externalAi\":{\"enabled\":false},\"location\":null}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: levelMeanings"
+      }
+    },
+    {
+      "name": "a stored string column",
+      "stored": "{\"phase\":\"operacion\",\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"version4\":true,\"externalAi\":{\"enabled\":true},\"thresholds\":{\"Rojo\":5,\"Naranja\":2.5,\"Amarillo\":1},\"windowDays\":60,\"halfLifeDays\":10,\"phaseWeights\":{\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2}},\"levelMeanings\":{\"Rojo\":\"Crítico sintético\"},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"}}",
+      "body": "{\"window_days\":20}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"window_days\":20,\"half_life_days\":10,\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Texto V\",\"custom\":true},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Texto B\",\"custom\":true},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":\"operacion\",\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2},\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]},\"updated_by\":\"sint.admin\",\"updated_at\":\"2026-11-03T12:00:00.123Z\"}",
+      "saved": {
+        "settings": "{\"windowDays\":20,\"halfLifeDays\":10,\"levelMeanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Crítico sintético\"},\"thresholds\":{\"Amarillo\":1,\"Naranja\":2.5,\"Rojo\":5},\"recommendations\":{\"buzon\":\"Texto B\",\"verificar\":\"Texto V\"},\"phase\":\"operacion\",\"phaseWeights\":{\"exploracion\":{\"A\":0.2,\"D\":0.2,\"E\":0.1,\"G\":0.2,\"I\":0.1,\"N\":0.2},\"cierre\":{\"A\":0.1,\"D\":0.2,\"E\":0.2,\"G\":0.1,\"I\":0.2,\"N\":0.2}},\"externalAi\":{\"enabled\":true},\"location\":{\"place\":\"Lugar sintético\",\"extent\":[-81.5,-6,-80,-5.25]}}",
+        "updatedBy": "sint.admin",
+        "updatedAt": "2026-11-03T12:00:00.123Z",
+        "detail": "Campos: windowDays, phaseWeights"
+      }
+    },
+    {
+      "name": "empty body",
+      "stored": null,
+      "body": "",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\"],\"msg\":\"JSON decode error\"}]}",
+      "saved": null
+    },
+    {
+      "name": "not JSON",
+      "stored": null,
+      "body": "{",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\"],\"msg\":\"JSON decode error\"}]}",
+      "saved": null
+    },
+    {
+      "name": "an array",
+      "stored": null,
+      "body": "[]",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\"],\"msg\":\"Invalid input: expected object, received array\"}]}",
+      "saved": null
+    },
+    {
+      "name": "null",
+      "stored": null,
+      "body": "null",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\"],\"msg\":\"Invalid input: expected object, received null\"}]}",
+      "saved": null
+    },
+    {
+      "name": "a string",
+      "stored": null,
+      "body": "\"x\"",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\"],\"msg\":\"Invalid input: expected object, received string\"}]}",
+      "saved": null
+    },
+    {
+      "name": "wrong types",
+      "stored": null,
+      "body": "{\"level_meanings\":1,\"window_days\":\"x\",\"half_life_days\":true,\"thresholds\":[],\"recommendations\":[],\"phase\":1,\"phase_weights\":\"x\",\"external_ai\":null,\"location\":1}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\"],\"msg\":\"Invalid input: expected object, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Invalid input: expected number, received string\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"half_life_days\"],\"msg\":\"Invalid input: expected number, received boolean\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Invalid input: expected object, received array\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"recommendations\"],\"msg\":\"Invalid input: expected record, received array\"},{\"type\":\"invalid_value\",\"loc\":[\"body\",\"phase\"],\"msg\":\"Invalid option: expected one of \\\"exploracion\\\"|\\\"construccion\\\"|\\\"operacion\\\"|\\\"cierre\\\"\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\"],\"msg\":\"Invalid input: expected record, received string\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"external_ai\"],\"msg\":\"Invalid input: expected object, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\"],\"msg\":\"Invalid input: expected object, received number\"}]}",
+      "saved": null
+    },
+    {
+      "name": "null optionals",
+      "stored": null,
+      "body": "{\"level_meanings\":null,\"window_days\":null,\"half_life_days\":null,\"thresholds\":null,\"recommendations\":null,\"phase_weights\":null,\"external_ai\":null}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\"],\"msg\":\"Invalid input: expected object, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Invalid input: expected number, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"half_life_days\"],\"msg\":\"Invalid input: expected number, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Invalid input: expected object, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"recommendations\"],\"msg\":\"Invalid input: expected record, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\"],\"msg\":\"Invalid input: expected record, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"external_ai\"],\"msg\":\"Invalid input: expected object, received null\"}]}",
+      "saved": null
+    },
+    {
+      "name": "meanings missing",
+      "stored": null,
+      "body": "{\"level_meanings\":{}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Invalid input: expected string, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Amarillo\"],\"msg\":\"Invalid input: expected string, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Naranja\"],\"msg\":\"Invalid input: expected string, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Rojo\"],\"msg\":\"Invalid input: expected string, received undefined\"}]}",
+      "saved": null
+    },
+    {
+      "name": "meanings of the wrong type",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":1,\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":null}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Rojo\"],\"msg\":\"Invalid input: expected string, received null\"}]}",
+      "saved": null
+    },
+    {
+      "name": "blank meaning",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\"   \",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Too small: expected string to have >=1 characters\"}]}",
+      "saved": null
+    },
+    {
+      "name": "long meaning",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Too big: expected string to have <=120 characters\"}]}",
+      "saved": null
+    },
+    {
+      "name": "NUL meaning",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\"a\\u0000b\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Invalid input\"}]}",
+      "saved": null
+    },
+    {
+      "name": "long NUL meaning",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\\u0000\",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Too big: expected string to have <=120 characters\"},{\"type\":\"custom\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Invalid input\"}]}",
+      "saved": null
+    },
+    {
+      "name": "blank NUL meaning",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":\" \\u0000 \",\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":\"Cuatro\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Invalid input\"}]}",
+      "saved": null
+    },
+    {
+      "name": "meanings as arrays",
+      "stored": null,
+      "body": "{\"level_meanings\":{\"Verde\":[],\"Amarillo\":\"Dos\",\"Naranja\":\"Tres\",\"Rojo\":[\"a\"]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Invalid input: expected string, received array\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"level_meanings\",\"Verde\"],\"msg\":\"Too small: expected array to have >=1 items\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"level_meanings\",\"Rojo\"],\"msg\":\"Invalid input: expected string, received array\"}]}",
+      "saved": null
+    },
+    {
+      "name": "window bounds",
+      "stored": null,
+      "body": "{\"window_days\":6,\"half_life_days\":0}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Too small: expected number to be >=7\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"half_life_days\"],\"msg\":\"Too small: expected number to be >=1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "window bounds high",
+      "stored": null,
+      "body": "{\"window_days\":366,\"half_life_days\":181}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Too big: expected number to be <=365\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"half_life_days\"],\"msg\":\"Too big: expected number to be <=180\"}]}",
+      "saved": null
+    },
+    {
+      "name": "fractional window",
+      "stored": null,
+      "body": "{\"window_days\":7.5}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Invalid input: expected int, received number\"}]}",
+      "saved": null
+    },
+    {
+      "name": "infinite window",
+      "stored": null,
+      "body": "{\"window_days\":1e400}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Invalid input: expected number, received Infinity\"}]}",
+      "saved": null
+    },
+    {
+      "name": "negative infinite window",
+      "stored": null,
+      "body": "{\"window_days\":-1e400}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Invalid input: expected number, received -Infinity\"}]}",
+      "saved": null
+    },
+    {
+      "name": "huge window",
+      "stored": null,
+      "body": "{\"window_days\":1e20}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Too big: expected int to be <=9007199254740991\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"window_days\"],\"msg\":\"Too big: expected number to be <=365\"}]}",
+      "saved": null
+    },
+    {
+      "name": "huge negative half life",
+      "stored": null,
+      "body": "{\"half_life_days\":-1e20}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"half_life_days\"],\"msg\":\"Too small: expected int to be >=-9007199254740991\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"half_life_days\"],\"msg\":\"Too small: expected number to be >=1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds missing",
+      "stored": null,
+      "body": "{\"thresholds\":{}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Amarillo\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Naranja\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Rojo\"],\"msg\":\"Invalid input: expected number, received undefined\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds partly missing",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":1}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Naranja\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Rojo\"],\"msg\":\"Invalid input: expected number, received undefined\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds not positive",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":0,\"Naranja\":-1,\"Rojo\":2}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"thresholds\",\"Amarillo\"],\"msg\":\"Too small: expected number to be >0\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"thresholds\",\"Naranja\"],\"msg\":\"Too small: expected number to be >0\"},{\"type\":\"custom\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Los umbrales deben ser crecientes: Amarillo < Naranja < Rojo\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds too big",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":1,\"Naranja\":2,\"Rojo\":1001}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"thresholds\",\"Rojo\"],\"msg\":\"Too big: expected number to be <=1000\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds not rising",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":3,\"Naranja\":2,\"Rojo\":1}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Los umbrales deben ser crecientes: Amarillo < Naranja < Rojo\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds equal",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":1,\"Naranja\":1,\"Rojo\":2}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Los umbrales deben ser crecientes: Amarillo < Naranja < Rojo\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds too big and not rising",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":2000,\"Naranja\":2,\"Rojo\":3}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"thresholds\",\"Amarillo\"],\"msg\":\"Too big: expected number to be <=1000\"},{\"type\":\"custom\",\"loc\":[\"body\",\"thresholds\"],\"msg\":\"Los umbrales deben ser crecientes: Amarillo < Naranja < Rojo\"}]}",
+      "saved": null
+    },
+    {
+      "name": "thresholds wrong type stops the refinement",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":\"x\",\"Naranja\":2,\"Rojo\":1}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Amarillo\"],\"msg\":\"Invalid input: expected number, received string\"}]}",
+      "saved": null
+    },
+    {
+      "name": "infinite threshold",
+      "stored": null,
+      "body": "{\"thresholds\":{\"Amarillo\":1,\"Naranja\":2,\"Rojo\":1e400}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"thresholds\",\"Rojo\"],\"msg\":\"Invalid input: expected number, received Infinity\"}]}",
+      "saved": null
+    },
+    {
+      "name": "unknown recommendation",
+      "stored": null,
+      "body": "{\"recommendations\":{\"otra\":\"x\",\"verificar\":\"y\",\"nueva\":\"z\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"unrecognized_keys\",\"loc\":[\"body\",\"recommendations\"],\"msg\":\"Unrecognized keys: \\\"otra\\\", \\\"nueva\\\"\"}]}",
+      "saved": null
+    },
+    {
+      "name": "recommendation of the wrong type",
+      "stored": null,
+      "body": "{\"recommendations\":{\"verificar\":1,\"buzon\":null}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"recommendations\",\"verificar\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"recommendations\",\"buzon\"],\"msg\":\"Invalid input: expected string, received null\"}]}",
+      "saved": null
+    },
+    {
+      "name": "blank recommendation",
+      "stored": null,
+      "body": "{\"recommendations\":{\"verificar\":\"  \"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"recommendations\",\"verificar\"],\"msg\":\"Too small: expected string to have >=1 characters\"}]}",
+      "saved": null
+    },
+    {
+      "name": "long recommendation",
+      "stored": null,
+      "body": "{\"recommendations\":{\"verificar\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"recommendations\",\"verificar\"],\"msg\":\"Too big: expected string to have <=300 characters\"}]}",
+      "saved": null
+    },
+    {
+      "name": "NUL recommendation",
+      "stored": null,
+      "body": "{\"recommendations\":{\"verificar\":\"\\u0000\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"recommendations\",\"verificar\"],\"msg\":\"Invalid input\"}]}",
+      "saved": null
+    },
+    {
+      "name": "array index key first",
+      "stored": null,
+      "body": "{\"recommendations\":{\"otra\":\"x\",\"1\":\"y\",\"verificar\":2}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"recommendations\",\"verificar\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"unrecognized_keys\",\"loc\":[\"body\",\"recommendations\"],\"msg\":\"Unrecognized keys: \\\"1\\\", \\\"otra\\\"\"}]}",
+      "saved": null
+    },
+    {
+      "name": "proto key is skipped",
+      "stored": null,
+      "body": "{\"recommendations\":{\"__proto__\":\"x\"}}",
+      "status": 200,
+      "response": "{\"level_meanings\":{\"Verde\":\"Situación estable / riesgo bajo\",\"Amarillo\":\"Requiere atención y seguimiento\",\"Naranja\":\"Requiere intervención preventiva\",\"Rojo\":\"Situación crítica / atención inmediata\"},\"window_days\":90,\"half_life_days\":14,\"thresholds\":{\"Amarillo\":2,\"Naranja\":4,\"Rojo\":7},\"recommendations\":[{\"id\":\"verificar\",\"condition\":\"Siempre\",\"text\":\"Verificar la información con las fuentes y el equipo de campo antes de escalar.\",\"custom\":false},{\"id\":\"seguimiento\",\"condition\":\"Hay demandas o compromisos\",\"text\":\"Hacer seguimiento a la demanda o compromiso relacionado y documentar la respuesta.\",\"custom\":false},{\"id\":\"contactar\",\"condition\":\"Hay actores y el nivel es Amarillo o superior\",\"text\":\"Contactar a {actores} para conocer su posición.\",\"custom\":false},{\"id\":\"reunion\",\"condition\":\"Nivel Naranja o Rojo\",\"text\":\"Coordinar una reunión con los actores involucrados.\",\"custom\":false},{\"id\":\"monitoreo\",\"condition\":\"La situación está en aumento\",\"text\":\"Aumentar la frecuencia de monitoreo de este tema.\",\"custom\":false},{\"id\":\"narrativas\",\"condition\":\"Hay publicaciones o narrativas\",\"text\":\"Contrastar las publicaciones con fuentes independientes antes de responder.\",\"custom\":false},{\"id\":\"buzon\",\"condition\":\"Hay casos del buzón\",\"text\":\"Responder los casos del buzón relacionados dentro del plazo.\",\"custom\":false},{\"id\":\"inmediata\",\"condition\":\"Nivel Rojo\",\"text\":\"Escalar al responsable del proyecto y activar la atención inmediata.\",\"custom\":false}],\"phase\":null,\"phases\":[{\"id\":\"exploracion\",\"label\":\"Exploración\",\"weights\":null,\"suggestion\":{\"G\":0.2,\"A\":0.25,\"D\":0.15,\"N\":0.2,\"E\":0.1,\"I\":0.1}},{\"id\":\"construccion\",\"label\":\"Construcción\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.25,\"N\":0.15,\"E\":0.2,\"I\":0.1}},{\"id\":\"operacion\",\"label\":\"Operación\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.15,\"D\":0.2,\"N\":0.15,\"E\":0.25,\"I\":0.1}},{\"id\":\"cierre\",\"label\":\"Cierre\",\"weights\":null,\"suggestion\":{\"G\":0.15,\"A\":0.1,\"D\":0.25,\"N\":0.1,\"E\":0.25,\"I\":0.15}}],\"external_ai\":{\"enabled\":false},\"location\":null,\"updated_by\":\"\",\"updated_at\":null}",
+      "saved": null
+    },
+    {
+      "name": "unknown phase",
+      "stored": null,
+      "body": "{\"phase\":\"otra\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_value\",\"loc\":[\"body\",\"phase\"],\"msg\":\"Invalid option: expected one of \\\"exploracion\\\"|\\\"construccion\\\"|\\\"operacion\\\"|\\\"cierre\\\"\"}]}",
+      "saved": null
+    },
+    {
+      "name": "empty phase",
+      "stored": null,
+      "body": "{\"phase\":\"\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_value\",\"loc\":[\"body\",\"phase\"],\"msg\":\"Invalid option: expected one of \\\"exploracion\\\"|\\\"construccion\\\"|\\\"operacion\\\"|\\\"cierre\\\"\"}]}",
+      "saved": null
+    },
+    {
+      "name": "unknown weight phase",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"otra\":{\"G\":0.2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1},\"cierre\":null}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"unrecognized_keys\",\"loc\":[\"body\",\"phase_weights\"],\"msg\":\"Unrecognized key: \\\"otra\\\"\"}]}",
+      "saved": null
+    },
+    {
+      "name": "weights missing",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"G\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"A\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"D\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"N\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"E\"],\"msg\":\"Invalid input: expected number, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"I\"],\"msg\":\"Invalid input: expected number, received undefined\"}]}",
+      "saved": null
+    },
+    {
+      "name": "weights of the wrong type",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":1,\"operacion\":[]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\"],\"msg\":\"Invalid input: expected object, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"operacion\"],\"msg\":\"Invalid input: expected object, received array\"}]}",
+      "saved": null
+    },
+    {
+      "name": "weights out of range",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":1.2,\"A\":-0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"G\"],\"msg\":\"Too big: expected number to be <=1\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"A\"],\"msg\":\"Too small: expected number to be >=0\"},{\"type\":\"custom\",\"loc\":[\"body\",\"phase_weights\",\"cierre\"],\"msg\":\"Los pesos de una fase deben sumar 1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "weights not summing",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":0.5,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"phase_weights\",\"cierre\"],\"msg\":\"Los pesos de una fase deben sumar 1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "weights just past the tolerance",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":0.23,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"phase_weights\",\"cierre\"],\"msg\":\"Los pesos de una fase deben sumar 1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "weights out of range and not summing",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":2,\"A\":0.2,\"D\":0.2,\"N\":0.2,\"E\":0.1,\"I\":0.1}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"G\"],\"msg\":\"Too big: expected number to be <=1\"},{\"type\":\"custom\",\"loc\":[\"body\",\"phase_weights\",\"cierre\"],\"msg\":\"Los pesos de una fase deben sumar 1\"}]}",
+      "saved": null
+    },
+    {
+      "name": "infinite weight",
+      "stored": null,
+      "body": "{\"phase_weights\":{\"cierre\":{\"G\":1e400,\"A\":0,\"D\":0,\"N\":0,\"E\":0,\"I\":0}}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"phase_weights\",\"cierre\",\"G\"],\"msg\":\"Invalid input: expected number, received Infinity\"}]}",
+      "saved": null
+    },
+    {
+      "name": "external ai wrong",
+      "stored": null,
+      "body": "{\"external_ai\":{\"enabled\":1}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"external_ai\",\"enabled\"],\"msg\":\"Invalid input: expected boolean, received number\"}]}",
+      "saved": null
+    },
+    {
+      "name": "external ai missing",
+      "stored": null,
+      "body": "{\"external_ai\":{}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"external_ai\",\"enabled\"],\"msg\":\"Invalid input: expected boolean, received undefined\"}]}",
+      "saved": null
+    },
+    {
+      "name": "location empty",
+      "stored": null,
+      "body": "{\"location\":{}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"place\"],\"msg\":\"Invalid input: expected string, received undefined\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"Invalid input: expected tuple, received undefined\"}]}",
+      "saved": null
+    },
+    {
+      "name": "location of the wrong type",
+      "stored": null,
+      "body": "{\"location\":{\"place\":1,\"extent\":\"x\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"place\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"Invalid input: expected tuple, received string\"}]}",
+      "saved": null
+    },
+    {
+      "name": "short place",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" a \",\"extent\":[-81,-6,-80,-5]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"location\",\"place\"],\"msg\":\"Too small: expected string to have >=2 characters\"}]}",
+      "saved": null
+    },
+    {
+      "name": "long place",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"extent\":[-81,-6,-80,-5]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"location\",\"place\"],\"msg\":\"Too big: expected string to have <=80 characters\"}]}",
+      "saved": null
+    },
+    {
+      "name": "NUL place",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\"ab\\u0000\",\"extent\":[-81,-6,-80,-5]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"location\",\"place\"],\"msg\":\"Invalid input\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent too long",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[1,2,3,4,5]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"Too big: expected array to have <=4 items\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent three values",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[-81,-6,-80]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"Too small: expected array to have >=4 items\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent two values",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[-81,-6]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"Too small: expected array to have >=4 items\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent empty",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"Too small: expected array to have >=4 items\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent wrong types",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[\"a\",null,true,{}]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\",0],\"msg\":\"Invalid input: expected number, received string\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\",1],\"msg\":\"Invalid input: expected number, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\",2],\"msg\":\"Invalid input: expected number, received boolean\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\",3],\"msg\":\"Invalid input: expected number, received object\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent out of range",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[-181,-91,181,91]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"location\",\"extent\",0],\"msg\":\"Too small: expected number to be >=-180\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"location\",\"extent\",1],\"msg\":\"Too small: expected number to be >=-90\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"location\",\"extent\",2],\"msg\":\"Too big: expected number to be <=180\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"location\",\"extent\",3],\"msg\":\"Too big: expected number to be <=90\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent reversed",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[-80,-5,-81,-6]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"El área debe ir de oeste a este y de sur a norte\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent out of range and reversed",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[181,2,0,1]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"location\",\"extent\",0],\"msg\":\"Too big: expected number to be <=180\"},{\"type\":\"custom\",\"loc\":[\"body\",\"location\",\"extent\"],\"msg\":\"El área debe ir de oeste a este y de sur a norte\"}]}",
+      "saved": null
+    },
+    {
+      "name": "extent wrong type stops the refinement",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\" Sechura \",\"extent\":[1,2,\"x\",1]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\",2],\"msg\":\"Invalid input: expected number, received string\"}]}",
+      "saved": null
+    },
+    {
+      "name": "infinite extent",
+      "stored": null,
+      "body": "{\"location\":{\"place\":\"Lugar\",\"extent\":[1e400,0,1,1]}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"location\",\"extent\",0],\"msg\":\"Invalid input: expected number, received Infinity\"}]}",
+      "saved": null
+    },
+    {
+      "name": "lone surrogate key",
+      "stored": null,
+      "body": "{\"recommendations\":{\"\\ud800\":\"x\"}}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"unrecognized_keys\",\"loc\":[\"body\",\"recommendations\"],\"msg\":\"Unrecognized key: \\\"\\ud800\\\"\"}]}",
+      "saved": null
+    }
+  ]
+}

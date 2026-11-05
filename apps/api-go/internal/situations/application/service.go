@@ -1,6 +1,6 @@
-// Package application holds the read use cases of apps/api/src/contexts/situations/application:
-// the project settings with their catalogue, and the situations report, in the JSON shape of
-// situations-routes.ts.
+// Package application holds the use cases of apps/api/src/contexts/situations/application: the
+// project settings with their catalogue and their update, and the situations report, in the JSON
+// shape of situations-routes.ts.
 //
 //nolint:misspell // Spanish record fields, modules and messages, verbatim from the TypeScript API.
 package application
@@ -10,14 +10,21 @@ import (
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
 )
 
-// Store reads a tenant's settings row and records inside its tenant transaction (row-level
-// security applies; a read-only account never sees records marked 'restringido').
+// Store reads and saves a tenant's settings row and reads its records inside its tenant
+// transaction (row-level security applies; a read-only account never sees records marked
+// 'restringido').
 type Store interface {
 	// Settings returns the project_settings row, nil when the project has none.
 	Settings(ctx context.Context, q database.Querier, tenantID string) (*domain.Stored, error)
+	// SettingsForUpdate returns the row in its stored key order, locked until the transaction
+	// ends; nil when the project has none.
+	SettingsForUpdate(ctx context.Context, q database.Querier, tenantID string) (*domain.Row, error)
+	// SaveSettings upserts the row and appends the CONFIG_UPDATE audit row.
+	SaveSettings(ctx context.Context, q database.Querier, tenantID string, settings []byte, updatedBy string, at time.Time, detail string) error
 	// Records returns the records of modules, ordered by module, then id.
 	Records(ctx context.Context, q database.Querier, tenantID string, modules []string) ([]domain.SourceRecord, error)
 }
@@ -89,6 +96,38 @@ func Settings(stored *domain.Stored) SettingsJSON {
 		out.UpdatedAt = &at
 	}
 	return out
+}
+
+// UpdateSettings is updateSettings inside the caller's tenant transaction: nothing is saved, and
+// the row answers, when no field changed.
+func UpdateSettings(ctx context.Context, q database.Querier, store Store, tenantID string, patch domain.SettingsPatch, actor string, at time.Time) (SettingsJSON, error) {
+	row, err := store.SettingsForUpdate(ctx, q, tenantID)
+	if err != nil {
+		return SettingsJSON{}, err
+	}
+	before := domain.CurrentSettings(row)
+	after := domain.ApplySettingsPatch(before, patch)
+	fields := domain.ChangedFields(before, after)
+	if len(fields) == 0 {
+		if row == nil {
+			return Settings(nil), nil
+		}
+		return answer(before, row.UpdatedBy, row.UpdatedAt)
+	}
+	text := records.Stringify(after)
+	if err := store.SaveSettings(ctx, q, tenantID, text, actor, at, domain.SettingsAuditDetail(after, fields)); err != nil {
+		return SettingsJSON{}, err
+	}
+	return answer(after, actor, at)
+}
+
+// answer is settingsJson over settings already in memory, as the read route decodes them.
+func answer(settings *records.Object, by string, at time.Time) (SettingsJSON, error) {
+	decoded, err := domain.DecodeObject(records.Stringify(settings))
+	if err != nil {
+		return SettingsJSON{}, err
+	}
+	return Settings(&domain.Stored{Settings: decoded, UpdatedBy: by, UpdatedAt: at}), nil
 }
 
 // SituationsJSON is GET /system/v4/situations.

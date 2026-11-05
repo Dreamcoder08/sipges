@@ -176,6 +176,8 @@ export const startGoApi = async (
       SIPGES_ACCESS_LOG: '0',
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_DATA_KEY: dataKey,
+      // Same as the TypeScript API above: no embedding server.
+      SIPGES_OLLAMA_URL: 'http://127.0.0.1:9',
     },
     await freePort(),
   );

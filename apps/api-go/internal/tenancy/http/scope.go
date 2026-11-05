@@ -110,14 +110,17 @@ func Middleware(grants GrantSource, log *slog.Logger) httpx.Middleware {
 			contentType, _ := httpx.Header(r, "Content-Type")
 			if bodyCheckedMethods[r.Method] && strings.HasPrefix(contentType, "application/json") &&
 				(strings.HasPrefix(path, "/api/") || strings.HasPrefix(path, "/system/")) {
-				body, readErr := io.ReadAll(r.Body)
-				r.Body = io.NopCloser(bytes.NewReader(body)) // the handler reads it again
+				// The handler reads it again. Past the limit only a route that bounds the body
+				// itself gets here, and none of those takes a body with a project from JSON.
+				body, whole, readErr := httpx.PeekBody(r, httpx.MaxRequestBody)
 				if readErr != nil {
 					body = nil // like Hono: a body that cannot be read counts as {}
 				}
-				if supplied, found := projectFromBody(body); found && !isString(supplied, scope.ProjectID) {
-					httpx.WriteError(w, http.StatusForbidden, OtherProjectDetail)
-					return
+				if whole {
+					if supplied, found := projectFromBody(body); found && !isString(supplied, scope.ProjectID) {
+						httpx.WriteError(w, http.StatusForbidden, OtherProjectDetail)
+						return
+					}
 				}
 			}
 
