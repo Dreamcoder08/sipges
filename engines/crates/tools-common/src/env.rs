@@ -83,10 +83,10 @@ pub fn database_url(env: &dyn Fn(&str) -> Option<String>) -> Result<String, Conf
     }
 }
 
-/// Reads the process environment (non-UTF-8 values count as unset).
+/// Reads the process environment; bytes that are not UTF-8 become U+FFFD, as in `process.env`.
 #[must_use]
 pub fn process_env(name: &str) -> Option<String> {
-    std::env::var(name).ok()
+    std::env::var_os(name).map(|value| value.to_string_lossy().into_owned())
 }
 
 #[cfg(test)]
