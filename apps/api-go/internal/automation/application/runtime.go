@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -157,26 +156,37 @@ func newToken() string {
 func (rt *Runtime) attempt(ctx context.Context, tenantID string, source RuntimeSource) (TickReport, error) {
 	token := newToken()
 	if err := rt.Store.Start(ctx, tenantID, token, source, rt.now()); err != nil {
-		return TickReport{}, err
+		return TickReport{}, failure{ErrStore, err}
 	}
 	var preparation error
 	if rt.BeforeTick != nil {
 		preparation = rt.prepare(ctx, tenantID, source)
 	}
-	report, err := rt.Tick(ctx, tenantID)
+	report, err := rt.tick(ctx, tenantID)
 	if err == nil {
 		err = preparation
 	}
 	if err != nil {
 		if finishErr := rt.Store.Finish(ctx, tenantID, token, "failed", nil, "processing_failed", rt.now()); finishErr != nil {
-			return TickReport{}, finishErr
+			return TickReport{}, failure{ErrStore, finishErr}
 		}
 		return TickReport{}, err
 	}
 	if err := rt.Store.Finish(ctx, tenantID, token, "completed", &report, "", rt.now()); err != nil {
-		return TickReport{}, err
+		return TickReport{}, failure{ErrStore, err}
 	}
 	return report, nil
+}
+
+// tick is Tick with a panic as its error: the attempt ends failed, the tick stops counting as
+// live, and the other tenants of a visit still run.
+func (rt *Runtime) tick(ctx context.Context, tenantID string) (report TickReport, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			report, err = TickReport{}, panicked(r)
+		}
+	}()
+	return rt.Tick(ctx, tenantID)
 }
 
 // register makes a new entry the tenant's live tick, unless one is live already, in which case
@@ -245,10 +255,10 @@ func (rt *Runtime) Dispatch(tenantID string) {
 		defer rt.tasks.Done()
 		defer func() {
 			if r := recover(); r != nil && rt.OnError != nil {
-				rt.OnError(fmt.Errorf("event tick panicked: %v", r))
+				rt.OnError(panicked(r))
 			}
 		}()
-		ctx, cancel := rt.taskContext()
+		ctx, cancel := rt.bounded(rt.background())
 		defer cancel()
 		if _, err := rt.loop(ctx, tenantID, SourceEvent, e); err != nil && rt.OnError != nil {
 			rt.OnError(err)
@@ -261,16 +271,38 @@ func (rt *Runtime) Dispatch(tenantID string) {
 	go task()
 }
 
-// taskContext is the context of a tick no request waits for.
-func (rt *Runtime) taskContext() (context.Context, context.CancelFunc) {
-	ctx := context.Background()
+// background is the context of work no request waits for.
+func (rt *Runtime) background() context.Context {
 	if rt.Background != nil {
-		ctx = rt.Background()
+		return rt.Background()
 	}
+	return context.Background()
+}
+
+// bounded applies TaskTimeout to one tenant's tick, or to the listing of the tenants.
+func (rt *Runtime) bounded(ctx context.Context) (context.Context, context.CancelFunc) {
 	if rt.TaskTimeout > 0 {
 		return context.WithTimeout(ctx, rt.TaskTimeout)
 	}
 	return ctx, func() {}
+}
+
+// visit is one tenant's tick of a schedule, on its own bound: a late tenant keeps the whole of it,
+// and is not cut between sending and FinishRun by the time earlier tenants took.
+func (rt *Runtime) visit(ctx context.Context, tenantID string) (TickReport, error) {
+	ctx, cancel := rt.bounded(ctx)
+	defer cancel()
+	return rt.Run(ctx, tenantID, SourceCron)
+}
+
+func (rt *Runtime) dueTenants(ctx context.Context) ([]string, error) {
+	ctx, cancel := rt.bounded(ctx)
+	defer cancel()
+	tenants, err := rt.Store.DueTenants(ctx, 100)
+	if err != nil {
+		return nil, failure{ErrStore, err}
+	}
+	return tenants, nil
 }
 
 // Drain waits until the event ticks Dispatch started, the ticks routes run and a stopped schedule
@@ -316,7 +348,7 @@ func (rt *Runtime) TickNow(ctx context.Context, tenantID string) (TickReport, er
 func (rt *Runtime) scheduled(ctx context.Context, stop <-chan struct{}) (TickReport, error) {
 	deadline := rt.mono() + rt.budget()
 	var total TickReport
-	tenants, err := rt.Store.DueTenants(ctx, 100)
+	tenants, err := rt.dueTenants(ctx)
 	if err != nil {
 		return total, err
 	}
@@ -325,7 +357,7 @@ func (rt *Runtime) scheduled(ctx context.Context, stop <-chan struct{}) (TickRep
 		if rt.mono() >= deadline || closed(stop) {
 			break
 		}
-		report, err := rt.Run(ctx, tenantID, SourceCron)
+		report, err := rt.visit(ctx, tenantID)
 		if err != nil {
 			errs = append(errs, err)
 			continue

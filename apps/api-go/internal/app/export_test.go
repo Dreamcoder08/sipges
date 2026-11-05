@@ -30,3 +30,6 @@ func CronRunner(pool *pgxpool.Pool, interval time.Duration, feeds integration.Fe
 	rt.Tick = tick
 	return rt
 }
+
+// LogTickFailure exposes how the schedule logs a failed visit.
+var LogTickFailure = logTickFailure

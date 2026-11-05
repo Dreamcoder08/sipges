@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 	"time"
 )
 
@@ -53,16 +52,15 @@ func (rt *Runtime) StartSchedule(stop context.Context, s Schedule) {
 	}()
 }
 
-// scheduledTick is one run of the schedule, on a context of its own.
+// scheduledTick is one run of the schedule, on a context of its own. A tick's panic is its tenant's
+// failure; this recover is for the rest of the visit.
 func (rt *Runtime) scheduledTick(stop context.Context, s Schedule) {
 	defer func() {
 		if r := recover(); r != nil {
-			s.failed(fmt.Errorf("scheduled tick panicked: %v", r))
+			s.failed(panicked(r))
 		}
 	}()
-	ctx, cancel := rt.taskContext()
-	defer cancel()
-	if _, err := rt.scheduled(ctx, stop.Done()); err != nil { //nolint:contextcheck // on purpose: the signal must not cut a tick
+	if _, err := rt.scheduled(rt.background(), stop.Done()); err != nil { //nolint:contextcheck // on purpose: the signal must not cut a tick
 		s.failed(err)
 	}
 }
@@ -74,14 +72,22 @@ func (rt *Runtime) stopping() bool {
 	return stop != nil && (*stop).Err() != nil
 }
 
-// prepare runs BeforeTick. A schedule that stopped cuts it short: polling sends nothing, and the
-// tick after it still fits the drain.
-func (rt *Runtime) prepare(ctx context.Context, tenantID string, source RuntimeSource) error {
+// prepare runs BeforeTick, a panic as its failure. A schedule that stopped cuts it short: polling
+// sends nothing, and the tick after it still fits the drain.
+func (rt *Runtime) prepare(ctx context.Context, tenantID string, source RuntimeSource) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = panicked(r)
+		}
+	}()
 	if stop := rt.stop.Load(); stop != nil {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
 		defer cancel()
 		defer context.AfterFunc(*stop, cancel)() //nolint:contextcheck // on purpose: ties the polling to the schedule's stop
 	}
-	return rt.BeforeTick(ctx, tenantID, source)
+	if err := rt.BeforeTick(ctx, tenantID, source); err != nil {
+		return failure{ErrPolling, err}
+	}
+	return nil
 }
