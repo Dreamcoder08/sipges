@@ -1,5 +1,6 @@
 import postgres from 'postgres';
 import { declaredParameterTypes } from './declared-types.ts';
+import { withoutFailingRow } from './failing-row.ts';
 import type { SqlClient } from './sql-client.ts';
 
 type Sql = postgres.Sql | postgres.TransactionSql;
@@ -21,11 +22,20 @@ const withDeclaredTypes = (typed: Typed, text: string, params: readonly unknown[
  * right behind its tenant settings (tenant-transaction.ts).
  */
 const wrap = (sql: Sql, typed: Typed, transaction: SqlClient['transaction']): SqlClient => ({
-  query: async <Row>(text: string, params: readonly unknown[] = []) =>
-    (await sql.unsafe(text, withDeclaredTypes(typed, text, params))) as unknown as Row[],
+  query: async <Row>(text: string, params: readonly unknown[] = []) => {
+    try {
+      return (await sql.unsafe(text, withDeclaredTypes(typed, text, params))) as unknown as Row[];
+    } catch (error) {
+      throw withoutFailingRow(error);
+    }
+  },
   exec: async (text) => {
-    // No parameters: postgres.js uses the simple protocol, which accepts several statements.
-    await sql.unsafe(text);
+    try {
+      // No parameters: postgres.js uses the simple protocol, which accepts several statements.
+      await sql.unsafe(text);
+    } catch (error) {
+      throw withoutFailingRow(error);
+    }
   },
   transaction,
 });
