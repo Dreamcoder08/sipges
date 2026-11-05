@@ -136,6 +136,7 @@ export const startTypeScriptApi = async (
   databaseUrl: string,
   secrets: ReturnType<typeof syntheticSecrets>,
   embedderUrl: string,
+  semanticSearch = false,
 ) =>
   startProcess(
     'TypeScript API',
@@ -152,6 +153,7 @@ export const startTypeScriptApi = async (
       SIPGES_AUTOMATION_INTERVAL: '0',
       // The synthetic embedder both APIs share (embedder-double.ts).
       SIPGES_OLLAMA_URL: embedderUrl,
+      SIPGES_SEMANTIC_SEARCH: semanticSearch ? '1' : '0',
     },
     await freePort(),
   );
@@ -162,6 +164,7 @@ export const startGoApi = async (
   dir: string,
   dataKey: string,
   embedderUrl: string,
+  semanticSearch = false,
 ): Promise<Running> => {
   const binary = path.join(dir, 'api-go');
   await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
@@ -179,6 +182,7 @@ export const startGoApi = async (
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_DATA_KEY: dataKey,
       SIPGES_OLLAMA_URL: embedderUrl,
+      SIPGES_SEMANTIC_SEARCH: semanticSearch ? '1' : '0',
     },
     await freePort(),
   );

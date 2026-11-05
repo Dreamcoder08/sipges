@@ -147,6 +147,26 @@ func TestEmbedCutsTheInputAtTwelveThousandCodePoints(t *testing.T) {
 	}
 }
 
+func TestEmbedWritesTheBodyAsJSONStringifyDoes(t *testing.T) {
+	t.Parallel()
+	var body string
+	client := fakeOllama(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Error(err)
+		}
+		body = string(raw)
+		_, _ = io.WriteString(w, validVector)
+	})
+	// A title cut in the middle of an emoji holds half of it, kept as WTF-8.
+	if _, err := client.Embed(t.Context(), cleared("a\xed\xa0\xbdb <&> \u2028")); err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"model":"fake-embed","input":"a\ud83db <&> ` + "\u2028" + `"}`; body != want {
+		t.Fatalf("got  %s\nwant %s", body, want)
+	}
+}
+
 func TestEmbedRefusesAnythingButAValidVector(t *testing.T) {
 	t.Parallel()
 	bodies := map[string]string{
