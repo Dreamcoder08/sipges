@@ -15,32 +15,13 @@ import (
 
 // Request bodies read as Hono reads them: hono/body-limit, c.req.json() and c.req.parseBody().
 
-const tooLarge = "Cuerpo demasiado grande"
-
-// limited is hono/body-limit with maxSize and the integration routes' 413: a declared length
-// over the limit is refused unread; a body without one is read up to the limit.
+// limited is hono/body-limit with maxSize and the integration routes' 413.
 func limited(w http.ResponseWriter, r *http.Request, max int64) bool {
-	if r.Body == nil || r.Body == http.NoBody {
+	if httpx.WithinBodyLimit(r, max) {
 		return true
 	}
-	if r.ContentLength >= 0 && len(r.TransferEncoding) == 0 {
-		if r.ContentLength > max {
-			httpx.WriteJSONText(w, http.StatusRequestEntityTooLarge, httpx.ErrorBody{Detail: tooLarge})
-			return false
-		}
-		return true
-	}
-	body, err := io.ReadAll(io.LimitReader(r.Body, max+1))
-	if int64(len(body)) > max {
-		httpx.WriteJSONText(w, http.StatusRequestEntityTooLarge, httpx.ErrorBody{Detail: tooLarge})
-		return false
-	}
-	if err != nil {
-		body = nil
-	}
-	r.Body = io.NopCloser(bytes.NewReader(body))
-	r.ContentLength = int64(len(body))
-	return true
+	httpx.WriteJSONText(w, http.StatusRequestEntityTooLarge, httpx.ErrorBody{Detail: httpx.BodyTooLargeDetail})
+	return false
 }
 
 // sourceLimit is sourceRequestLimit's maxSize: 8 KiB on /system/intelligence/sources/* and
