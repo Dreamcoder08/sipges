@@ -473,7 +473,7 @@ const importBatch = {
       accion_sugerida: 'Contrastar',
     },
     { tema: '{i}', fragmento: 'La comunidad pidió empleo local.', ubicacion: 'Página 1' },
-    { tema: '{i}', fragmento: 7, ubicacion: true, accion_sugerida: { a: [1, null] } },
+    { tema: '{i}-tipos', fragmento: 7, ubicacion: true, accion_sugerida: { a: [1, null] } },
     { tema: '{i}', fragmento: 'Sin ubicación' },
   ],
 };
@@ -617,6 +617,11 @@ const WRITE_CASES: readonly ParityCase[] = [
   // Import stores excerpts once; a re-import adds nothing.
   write('import a batch', 'POST', `${PATH}/import`, importBatch, { vary: { i: IMPORTED } }),
   readBack('the imported excerpts', IMPORTED),
+  // Excerpts of one batch share created_at and sort by their random id, so each read holds one.
+  readBack('an imported excerpt of other JSON types', {
+    ts: `${IMPORTED.ts}-tipos`,
+    go: `${IMPORTED.go}-tipos`,
+  }),
   write('import the same batch again', 'POST', `${PATH}/import`, importBatch, {
     vary: { i: IMPORTED },
   }),
