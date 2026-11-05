@@ -1,4 +1,5 @@
 import type { ModuleName, Payload } from '../../contexts/records/application/index.ts';
+import { parseScope } from '../../contexts/tenancy/application/index.ts';
 import { type BaseMaestraPlan, planBaseMaestra } from './plan.ts';
 
 /** The part of the record store the import needs (contexts/records RecordStore). */
@@ -27,7 +28,9 @@ export type BaseMaestraReport = {
 
 /**
  * Dry run by default. With `apply`, inserts only the missing records, one audited transaction
- * per module («IMPORT · Base Maestra»). Any problem in the file blocks the whole apply.
+ * per module («IMPORT · Base Maestra»). Any problem in the file blocks the whole apply, a row
+ * naming a project other than the tenant's included. An id without a project (the CLI refuses
+ * one) compares whole, so it never lets a foreign row through.
  */
 export const importBaseMaestra = async (
   target: BaseMaestraTarget,
@@ -35,7 +38,7 @@ export const importBaseMaestra = async (
   seed: unknown,
   options: { apply: boolean; source: string; now: () => Date },
 ): Promise<BaseMaestraReport> => {
-  const plan: BaseMaestraPlan = planBaseMaestra(seed);
+  const plan: BaseMaestraPlan = planBaseMaestra(seed, parseScope(tenantId)?.projectId ?? tenantId);
   const modules = [];
   const apply = options.apply && plan.problems.length === 0;
   for (const { module, inFile, items } of plan.modules) {

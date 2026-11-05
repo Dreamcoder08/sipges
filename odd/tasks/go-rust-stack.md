@@ -76,6 +76,8 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T44 [ ] — S7: switch routes in production by exact path, measuring before and after with the owner, then retire the TypeScript API.
 - T45 [x] — S2, S7: integration runtime (#264). Independent verifier: one blocker fixed (the 8 KiB source limit is mounted in the real handler).
 - T46 [x] — S2, S6, S7: documents uploads, Word report and review writes (#266). PDF text and OCR stay in TypeScript.
+- T47 [ ] — S3: `import:base-maestra` refuses rows of another project in both versions (high risk). Route: tab `bm-guard`.
+- T48 [ ] — S7: prepare, without performing, the switch of Inicio and Registros reads. Route: tab `go-activate`.
 
 ## Log
 
@@ -122,3 +124,4 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - L44 — T45 (#264), verifier evidence: SHA-256 keys compared in constant time; revoked, forged and foreign keys answer 401; loopback, metadata and IPv6 local addresses refused; redirects to private hosts not followed; 728,000 fuzz runs without panics. Fixed: `RequestLimit` was mounted only in the test harness, so 48 MiB reached the tenancy middleware. Advisories before switching: `fe80::1%eth0` is not seen as private; a retry after a disconnect in the middle of an ingest can duplicate records.
 - L45 — T46 (#266): PDF text and OCR stay in TypeScript, because no maintained Go or Rust library reproduces how pdf.js splits text and the findings depend on it. Retiring the TypeScript API needs a decision on this: a small service or a different extraction result.
 - L46 — CI (#268, 2026-11-05): #265 merged with `Go (vet, test, lint)` red because the ruleset did not require Go, parity or Rust checks. `go.yml` and `rust.yml` now report on every pull request and the `main` ruleset requires 14 checks.
+- L47 — Container memory (2026-11-05, #271): `lite` is killed out of memory at 4 clients; `basic` with `GOMEMLIMIT=800MiB` and a 64 MiB analytics retain ran 2.2–2.5 req/s, p95 3.5–5.3 s, peak 443 MiB, cold start 1.9 s, measured locally with no Neon latency and no RLS. The limit and the retain were not measured under load. Owner, verbatim: «yes haslo tu», for T37 locally (no cloud session had opened a PR), T47 and T48. Activation itself still needs the owner's word.

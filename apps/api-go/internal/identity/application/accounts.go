@@ -55,6 +55,11 @@ type BootstrapAdmin struct {
 // ErrBootstrapPassword stops the start of an empty installation.
 var ErrBootstrapPassword = errors.New("Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)") //nolint:staticcheck // the TypeScript message, byte for byte
 
+// ErrBootstrapUsername also stops the start: the users table can never hold the name. The value
+// is not quoted, so nothing from the environment reaches the output. TypeScript stops here too,
+// with the database's error, which quotes the failing row.
+var ErrBootstrapUsername = errors.New("SIPGES_ADMIN_USERNAME must have between 1 and 120 characters")
+
 // BootstrapAdmin is bootstrapAdmin (app.py init_auth_global): the first administrator, only on
 // an empty installation.
 func (s *Service) BootstrapAdmin(ctx context.Context, admin BootstrapAdmin) error {
@@ -64,6 +69,9 @@ func (s *Service) BootstrapAdmin(ctx context.Context, admin BootstrapAdmin) erro
 	}
 	if domain.ShortAdminPassword(admin.Password) {
 		return ErrBootstrapPassword
+	}
+	if !domain.StorableUsername(admin.Username) {
+		return ErrBootstrapUsername
 	}
 	hash, err := s.deps.Hasher.Hash(admin.Password)
 	if err != nil {

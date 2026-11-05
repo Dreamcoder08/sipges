@@ -54,6 +54,40 @@ const PROBLEMS = `{
   "Hechos_Compartidos": [{"Asunto": "hecho", "Estado": "pendiente"}, {"Estado": "pendiente", "Asunto": "hecho"}]
 }`;
 
+/** Every shape of Proyecto_ID against SIPGES/PRJ-SECHURA; other problems win on the same row. */
+const FOREIGN = `{
+  "Proyectos": [{"Proyecto_ID": "PRJ-AJENO"}],
+  "Eventos": [
+    {"ID_Evento": "F1", "Proyecto_ID": "PRJ-SECHURA"},
+    {"ID_Evento": "F2", "Proyecto_ID": "PRJ-B"},
+    {"ID_Evento": "F3", "Proyecto_ID": ""},
+    {"ID_Evento": "F4", "Proyecto_ID": null},
+    {"ID_Evento": "F5"},
+    {"ID_Evento": "F6", "Proyecto_ID": " "},
+    {"ID_Evento": "F7", "Proyecto_ID": "prj-sechura"},
+    {"ID_Evento": "F8", "Proyecto_ID": " PRJ-SECHURA"},
+    {"ID_Evento": "F9", "Proyecto_ID": 0},
+    {"ID_Evento": "F10", "Proyecto_ID": -0.0},
+    {"ID_Evento": "F11", "Proyecto_ID": 5},
+    {"ID_Evento": "F12", "Proyecto_ID": false},
+    {"ID_Evento": "F13", "Proyecto_ID": true},
+    {"ID_Evento": "F14", "Proyecto_ID": {}},
+    {"ID_Evento": "F15", "Proyecto_ID": []},
+    {"ID_Evento": "F16", "Proyecto_ID": "PRJ-B", "Proyecto_ID": ""},
+    {"ID_Evento": "F17", "Proyecto_ID": "", "Proyecto_ID": "PRJ-B"},
+    {"ID_Evento": "F1", "Proyecto_ID": "PRJ-B"},
+    {"ID_Evento": "F1"},
+    {"ID_Evento": true, "Proyecto_ID": "PRJ-B"},
+    {"ID_Evento": "F18", "Proyecto_ID": "a\\u0000b"},
+    {"__proto__": {"Proyecto_ID": "PRJ-B"}, "ID_Evento": "F20"},
+    {"ID_Evento": "F21", "proyecto_id": "PRJ-B", "Proyecto": "PRJ-B", "project_id": "PRJ-B"}
+  ],
+  "Hechos_Compartidos": [{"Asunto": "sin id", "Proyecto_ID": "PRJ-B"}]
+}`;
+
+// A seed the parsers reject would make both tools fail alike and the scenario compare nothing.
+JSON.parse(FOREIGN);
+
 const large = () => {
   const rows = Array.from({ length: 1203 }, (_, i) => ({ Asunto: `Hecho sintético ${i}`, n: i }));
   return JSON.stringify({ Hechos_Compartidos: rows, Eventos: [{ ID_Evento: 'EV-PREVIO', Titulo: 'nuevo' }] });
@@ -94,6 +128,9 @@ mkdirSync(`${ROOT}${DIR}`, { recursive: true });
 const files = {
   mixed: write('mixed.json', MIXED),
   problems: write('problems.json', PROBLEMS),
+  foreign: write('foreign.json', FOREIGN),
+  // No problem under SIPGES/PRJ-SECHURA; every row names another project under SYN/PRJ-B.
+  own: write('own.json', '{"Eventos":[{"ID_Evento":"P1","Proyecto_ID":"PRJ-SECHURA"},{"ID_Evento":"P2","Proyecto_ID":"","Titulo":"vacío"},{"ID_Evento":"P3"}]}'),
   large: write('large.json', large()),
   notObject: write('array.json', '[1, 2]'),
   scalar: write('scalar.json', '"texto"'),
@@ -138,6 +175,23 @@ const scenarios: Scenario[] = [
       { args: ['--seed', files.deepUnknown, '--apply'] },
       { args: ['--seed', files.protoNul] },
       { args: ['--seed', files.protoNul, '--apply'] },
+    ],
+  },
+  {
+    name: 'foreign project',
+    seed: tenants,
+    dumps: DUMPS,
+    steps: [
+      { args: ['--seed', files.foreign] },
+      { args: ['--seed', files.foreign, '--apply'] },
+      { args: ['--seed', files.foreign, '--scope=SYN/PRJ-B'] },
+      { args: ['--seed', files.foreign, '--scope=SYN/PRJ-B', '--apply'] },
+      { args: ['--seed', files.foreign, '--scope', 'NO/EXISTE'] },
+      { args: ['--seed', files.own, '--scope=SYN/PRJ-B'] },
+      { args: ['--seed', files.own, '--scope=SYN/PRJ-B', '--apply'] },
+      { args: ['--seed', files.own] },
+      { args: ['--seed', files.own, '--apply'] },
+      { args: ['--seed', files.own, '--apply'] },
     ],
   },
   {

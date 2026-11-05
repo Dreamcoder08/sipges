@@ -93,6 +93,7 @@ type SecretCipher interface {
 type Deps struct {
 	Store    Store
 	Accounts AccountStore
+	Google   GoogleStore
 	Hasher   PasswordHasher
 	Tokens   SessionTokens
 	TOTP     TOTPService
@@ -118,6 +119,10 @@ func NewService(deps Deps) *Service {
 	go func() { _, _ = s.dummy() }()
 	return s
 }
+
+// NewBootstrapper is a Service for the bootstrap steps alone: it skips the dummy hash, so a start
+// allocates no Argon2 memory for logins it will never serve.
+func NewBootstrapper(deps Deps) *Service { return &Service{deps: deps} }
 
 // now is clock.now(): JavaScript dates carry milliseconds, so the same instant compares the
 // same way in PostgreSQL.
