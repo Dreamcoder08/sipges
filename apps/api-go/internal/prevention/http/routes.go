@@ -1,6 +1,7 @@
-// Package http serves the read routes of apps/api/src/contexts/prevention/http/prevention-routes.ts
-// with the same JSON: GET /system/prevention/actions, /situation-room and /summary. The scope's
-// project is always used; the session, project scope and role gate ran before (internal/app).
+// Package http serves apps/api/src/contexts/prevention/http/prevention-routes.ts with the same
+// JSON: GET /system/prevention/actions, /situation-room and /summary, and (writes.go) POST
+// /system/prevention/actions and PATCH /system/prevention/actions/{id}. The scope's project is
+// always used; the session, project scope and role gate ran before (internal/app).
 package http
 
 import (

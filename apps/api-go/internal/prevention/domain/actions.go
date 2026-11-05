@@ -1,6 +1,6 @@
 // Package domain holds the preventive action plans of
 // apps/api/src/contexts/prevention/domain/actions.ts (app.py:2133-2216, RC 2.7): plans that
-// follow verified alerts, their summary and the situation room. Only the read side is ported.
+// follow verified alerts, their summary and the situation room; writes.go holds the write rules.
 package domain
 
 import (
