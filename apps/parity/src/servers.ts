@@ -135,6 +135,7 @@ export const startProcess = async (
 export const startTypeScriptApi = async (
   databaseUrl: string,
   secrets: ReturnType<typeof syntheticSecrets>,
+  embedderUrl: string,
 ) =>
   startProcess(
     'TypeScript API',
@@ -149,8 +150,8 @@ export const startTypeScriptApi = async (
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_ACCESS_LOG: '0',
       SIPGES_AUTOMATION_INTERVAL: '0',
-      // No embedding server: features that would call one fall back to rules.
-      SIPGES_OLLAMA_URL: 'http://127.0.0.1:9',
+      // The synthetic embedder both APIs share (embedder-double.ts).
+      SIPGES_OLLAMA_URL: embedderUrl,
     },
     await freePort(),
   );
@@ -160,6 +161,7 @@ export const startGoApi = async (
   databaseUrl: string,
   dir: string,
   dataKey: string,
+  embedderUrl: string,
 ): Promise<Running> => {
   const binary = path.join(dir, 'api-go');
   await promisify(execFile)('go', ['build', '-o', binary, './cmd/api'], {
@@ -176,8 +178,7 @@ export const startGoApi = async (
       SIPGES_ACCESS_LOG: '0',
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_DATA_KEY: dataKey,
-      // Same as the TypeScript API above: no embedding server.
-      SIPGES_OLLAMA_URL: 'http://127.0.0.1:9',
+      SIPGES_OLLAMA_URL: embedderUrl,
     },
     await freePort(),
   );

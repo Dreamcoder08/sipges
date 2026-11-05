@@ -54,6 +54,7 @@ func TestLoadOllamaRefusesWhatTypeScriptRefuses(t *testing.T) {
 		{name: "relative", value: "/api", message: notAbsolute},
 		{name: "no host", value: "http://", message: notAbsolute},
 		{name: "backslash host", value: `http://evil.example\@127.0.0.1/`, message: notAbsolute},
+		{name: "port out of range", value: "http://127.0.0.1:65536", message: notAbsolute},
 		{name: "file scheme", value: "file:///etc/passwd", message: notHTTP},
 		{name: "ftp scheme", value: "ftp://127.0.0.1", message: notHTTP},
 	}
