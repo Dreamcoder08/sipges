@@ -1,6 +1,6 @@
 // Package application is the read side of apps/api/src/contexts/automation: the rows the store
 // returns and their JSON as automation-routes.ts writes it (ruleOut, channelOut, runOut and the
-// inbox items). Saving rules and channels, ticks and deliveries stay in TypeScript.
+// inbox items). service.go and runtime.go hold the write side, the tick and the runtime.
 package application
 
 import (

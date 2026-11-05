@@ -25,6 +25,9 @@ import (
 // shutdownGrace bounds how long in-flight requests may run after SIGTERM.
 const shutdownGrace = 10 * time.Second
 
+// drainGrace bounds how long automation ticks may finish after the server stopped.
+const drainGrace = 20 * time.Second
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -68,8 +71,16 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		return fmt.Errorf("listen: %w", err)
 	}
 	log.Info("listening", slog.String("address", ln.Addr().String()))
-	if err := httpx.Serve(ctx, httpx.NewServer(handler), ln, shutdownGrace); err != nil {
-		return err
+	serveErr := httpx.Serve(ctx, httpx.NewServer(handler), ln, shutdownGrace)
+	// The signal already cancelled ctx: ticks get their own bound, and the deferred pool.Close
+	// waits for this. A tick still running past it is retried after its lease.
+	drainCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), drainGrace)
+	defer cancel()
+	if err := app.DrainBackground(drainCtx, pool); err != nil {
+		log.Error("automation_drain_incomplete", slog.String("error", err.Error()))
+	}
+	if serveErr != nil {
+		return serveErr
 	}
 	log.Info("stopped")
 	return nil

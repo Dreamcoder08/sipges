@@ -35,6 +35,8 @@ edits no test list either.
 
 ## Landing
 
+- The `main` ruleset requires the Go, parity and Rust checks. Their workflows run on every pull request; a job with nothing to do is skipped, which counts as passed. A workflow filtered by `paths` cannot be required: on a pull request outside those paths its check never reports, and the pull request waits forever.
+
 - Land pull requests one at a time: merge the green one first, then merge `main` into the next.
 - GitHub's merge queue would automate this, but it requires an organization-owned repository; this one belongs to a personal account.
 

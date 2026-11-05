@@ -488,3 +488,17 @@ func TestWithRequestTenantRefusesARequestWithoutAScope(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+// The source routes refuse an oversize body before the project scope reads it, as app.ts mounts
+// sourceRequestLimit before tenancyMiddleware. A read-only user would otherwise get the role
+// gate's 403 only after the server had read the whole body.
+func TestRefusesOversizeSourceBodiesBeforeTheScopeReadsThem(t *testing.T) {
+	s := start(t, false)
+	body := `{"name":"` + strings.Repeat("x", 9000) + `"}`
+	for _, path := range []string{"/system/v4/media/feeds", "/system/intelligence/sources"} {
+		got := s.do(t, req{method: "POST", path: path, user: "reader", body: body, sameOrigin: true, headers: map[string]string{"Content-Type": "application/json"}})
+		if got.status != http.StatusRequestEntityTooLarge {
+			t.Fatalf("%s: status %d, want 413 before the role gate: %s", path, got.status, got.body)
+		}
+	}
+}

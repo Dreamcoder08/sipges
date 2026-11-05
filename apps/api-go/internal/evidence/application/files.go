@@ -58,9 +58,9 @@ type TextExtractor interface {
 	DOCX(ctx context.Context, data []byte) ([]string, error)
 }
 
-// ErrNoTextExtractor is returned by Preview for a PDF or DOCX when no TextExtractor is wired:
-// the TypeScript API reads them with pdf.js and its DOCX reader, which the Go API does not
-// port yet.
+// ErrNoTextExtractor is returned by Preview for a PDF or DOCX when no TextExtractor is wired,
+// or when the extractor answers it for a format it cannot read as the TypeScript API does (PDF,
+// read there with pdf.js).
 var ErrNoTextExtractor = errors.New("evidence: no text extractor for this format")
 
 // Files answers uploads, downloads and previews for the request's tenant.
@@ -266,6 +266,9 @@ func (f Files) Preview(ctx context.Context, id string) (Preview, error) {
 			var paragraphs []string
 			paragraphs, err = f.Text.DOCX(ctx, data)
 			pages = []string{strings.Join(paragraphs, "\n")}
+		}
+		if errors.Is(err, ErrNoTextExtractor) {
+			return Preview{}, err
 		}
 		if err != nil {
 			return Preview{Kind: PreviewNoText, Attachment: a}, nil //nolint:nilerr // unreadable bytes are a kind, not a failure

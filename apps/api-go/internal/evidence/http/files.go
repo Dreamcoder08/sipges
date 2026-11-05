@@ -26,9 +26,9 @@ const multipartSlack = 64 * 1024
 const (
 	goneDetail      = "El archivo ya no está disponible en este almacenamiento"
 	extensionDetail = "Tipo de archivo no permitido. Use PDF, Office, CSV, TXT o imágenes JPG/PNG/WEBP."
-	// noExtractor answers a PDF or DOCX preview while their text readers (pdf.js and the
-	// document lab's DOCX reader) are only in the TypeScript API.
-	noExtractorDetail = "La vista previa de PDF y DOCX aún no está disponible en este servidor"
+	// noExtractor answers a PDF preview while its text reader (pdf.js) is only in the
+	// TypeScript API; DOCX is read with the document lab's reader (platform/doctext).
+	noExtractorDetail = "La vista previa de PDF aún no está disponible en este servidor"
 )
 
 func tooLargeDetail(maxBytes int) string {
@@ -70,11 +70,15 @@ func files(r *http.Request, deps Deps) application.Files {
 	if random == nil {
 		random = randomHex
 	}
+	text := deps.Text
+	if text == nil {
+		text = infrastructure.DocText{}
+	}
 	return application.Files{
 		Store:          requestStore{r: r, db: deps.DB},
 		Attacher:       requestFiles{r: r, db: deps.DB},
 		Storage:        deps.Storage,
-		Text:           deps.Text,
+		Text:           text,
 		Now:            deps.Now,
 		RandomHex:      random,
 		MaxUploadBytes: deps.MaxUploadBytes,

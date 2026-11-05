@@ -3,8 +3,9 @@
 // the role gate), GET /system/automations/runs and the inbox, GET /system/notifications (every
 // role, as its own user). The session, project scope and role gate ran before (internal/app).
 //
-// The automation runtime stays in TypeScript: the cron and tick routes, rule and channel writes,
-// marking notifications read and every push route.
+// writes.go adds the rule and channel writes, marking notifications read, the project's tick and
+// the cron; wakeup.go wakes the runtime after business writes. Every push route stays in
+// TypeScript (VAPID keys), as does GET /system/automations/runtime.
 package http
 
 import (

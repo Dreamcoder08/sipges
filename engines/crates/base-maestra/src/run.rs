@@ -21,6 +21,8 @@ pub enum Failure {
     Driver(postgres::Error),
     /// Invalid tenant id.
     Tenant(TenantError),
+    /// A row too deep for TypeScript's recursion (`RangeError`).
+    TooDeep,
 }
 
 impl From<postgres::Error> for Failure {
@@ -44,6 +46,7 @@ impl Failure {
     pub fn js_name(&self) -> &'static str {
         match self {
             Self::Driver(e) if e.as_db_error().is_some() => "PostgresError",
+            Self::TooDeep => "RangeError",
             _ => "Error",
         }
     }
@@ -125,12 +128,12 @@ fn import_insert_only(
     at: SystemTime,
 ) -> Result<usize, Failure> {
     with_tenant(client, tenant, |tx| {
-        let mut folded: Vec<&(String, Object)> = Vec::new();
-        for item in items {
-            if !folded.iter().any(|known| known.0 == item.0) {
-                folded.push(item);
-            }
-        }
+        let mut seen = HashSet::new();
+        let folded: Vec<&(String, Object)> = items
+            .iter()
+            .copied()
+            .filter(|item| seen.insert(item.0.as_str()))
+            .collect();
         let (mut created, mut updated) = (0_usize, 0_usize);
         for chunk in folded.chunks(IMPORT_CHUNK) {
             let rows: Vec<Json> = chunk
@@ -194,7 +197,7 @@ pub fn import(
     source: &str,
     now: &dyn Fn() -> SystemTime,
 ) -> Result<Report, Failure> {
-    let plan = plan(seed);
+    let plan = plan(seed).map_err(|_| Failure::TooDeep)?;
     let apply = apply && plan.problems.is_empty();
     let mut modules = Vec::new();
     for planned in &plan.modules {
