@@ -1,8 +1,8 @@
 // Package application is the Go side of
 // apps/api/src/contexts/intelligence/application/intelligence-service.ts: the scope's territorial
 // alerts, one alert and their summary (Service), and the writes that need no embeddings provider
-// (Writes): the classifier, the text analysis and alert decisions. Creating alerts, the semantic
-// analysis and the embedder stay in TypeScript (embeddings and the egress guard).
+// (Writes): the classifier, the text analysis and alert decisions; the embedder's status
+// (EmbedderProbe), the semantic analysis (Semantic) and creating alerts (AlertCreation).
 package application
 
 import (

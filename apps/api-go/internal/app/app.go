@@ -35,6 +35,8 @@ type Options struct {
 	Now func() time.Time
 	// Engines are the compiled Rust engines; nil means engines.Shared.
 	Engines *engines.Set
+	// AutomationInterval is config.Config's: zero leaves the cron to TypeScript.
+	AutomationInterval time.Duration
 	// ReadyGate holds /health/ready at 503 until it answers nil; nil means no gate.
 	ReadyGate httpx.ReadyFunc
 	// Routes adds routes beyond the ones registered here (tests).
@@ -51,7 +53,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		}
 		opts.Engines = compiled
 	}
-	deps := Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now, Engines: opts.Engines}
+	deps := Deps{Pool: pool, Logger: opts.Logger, Now: opts.Now, Engines: opts.Engines, AutomationInterval: opts.AutomationInterval}
 	routes, err := contextRoutes(deps)
 	if err != nil {
 		return nil, err
@@ -78,6 +80,8 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 			geographyhttp.RequestLimit(),
 			// The source routes' 8 KiB limit runs at the same point, as sourceRequestLimit does.
 			integrationhttp.RequestLimit(),
+			// Every other body is bounded here, before the project scope is the first to read it.
+			httpx.BodyLimit(httpx.MaxRequestBody, ownBodyLimit),
 			tenancyhttp.Middleware(grants, opts.Logger),
 			identityhttp.RoleGate(),
 		}, wrap...),

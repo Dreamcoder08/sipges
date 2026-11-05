@@ -1,7 +1,7 @@
 # Gentle AI y Engram en SIPGES
 
 Fuente: [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) v4.2.0 y
-[Engram](https://github.com/Gentleman-Programming/engram) v3.6.1 (actualizado el 2026-11-03 a pedido del dueño; v4.2.0 de Gentle AI revisado el 2026-10-19). Adoptado a petición
+[Engram](https://github.com/Gentleman-Programming/engram) v3.6.2 (actualizado el 2026-11-05 a pedido del dueño; v4.2.0 de Gentle AI revisado el 2026-10-19). Adoptado a petición
 explícita del dueño del repositorio.
 
 ## Qué queda activo en el repositorio
@@ -66,7 +66,7 @@ Windows (PowerShell, requiere Go 1.25.10+):
 
 ```powershell
 go install github.com/gentleman-programming/gentle-ai/v4/cmd/gentle-ai@v4.2.0
-go install github.com/Gentleman-Programming/engram/v3/cmd/engram@v3.6.1
+go install github.com/Gentleman-Programming/engram/v3/cmd/engram@v3.6.2
 gentle-ai install --agent claude-code,codex --preset ecosystem-only --persona neutral
 ```
 
@@ -78,3 +78,7 @@ Notas:
 - Si ya tienes un servidor `engram` de usuario, el de `.mcp.json` tiene prioridad en este repo y usa el mismo
   binario.
 - Después de clonar o hacer pull, `pnpm engram import` trae las memorias del equipo.
+
+### Project name in Engram
+
+`.git/engram-project-identity.json` fixes the project for a clone and all its worktrees, whatever the remote says. It is local to each clone and must say `sipges`. `mascli` is the legacy name; it stays only as a key alias.

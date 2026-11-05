@@ -107,9 +107,7 @@ func requestRecords(r *http.Request, pool *pgxpool.Pool) application.RecordReade
 
 // RequestLimit is geographyRequestLimit (hono/body-limit with maxSize 100 000) on
 // /system/geography/query, for any method. It runs after the session check and before the
-// project scope reads the body, as in apps/api/src/app.ts. A declared Content-Length is trusted
-// (the server never reads past it); a body without one is counted as it streams and refused as
-// soon as it passes the limit.
+// project scope reads the body, as in apps/api/src/app.ts.
 func RequestLimit() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -117,24 +115,10 @@ func RequestLimit() func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			if r.ContentLength >= 0 && len(r.TransferEncoding) == 0 {
-				if r.ContentLength > maxQueryBytes {
-					writeJSON(w, http.StatusRequestEntityTooLarge, httpx.ErrorBody{Detail: tooLargeQuery})
-					return
-				}
-				next.ServeHTTP(w, r)
-				return
-			}
-			body, err := io.ReadAll(io.LimitReader(r.Body, maxQueryBytes+1))
-			if len(body) > maxQueryBytes {
+			if !httpx.WithinBodyLimit(r, maxQueryBytes) {
 				writeJSON(w, http.StatusRequestEntityTooLarge, httpx.ErrorBody{Detail: tooLargeQuery})
 				return
 			}
-			if err != nil {
-				body = nil // an unreadable body reads as empty downstream: invalid JSON
-			}
-			r.Body = io.NopCloser(bytes.NewReader(body))
-			r.ContentLength = int64(len(body))
 			next.ServeHTTP(w, r)
 		})
 	}

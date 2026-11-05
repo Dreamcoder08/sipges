@@ -6,7 +6,7 @@
   "scripts": {
     "parity": "node src/main.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "node --test src/node-version.test.ts src/discover.test.ts src/diff.test.ts src/cases.test.ts src/servers.test.ts src/request.test.ts"
+    "test": "node --test src/node-version.test.ts src/discover.test.ts src/diff.test.ts src/cases.test.ts src/servers.test.ts src/request.test.ts src/embedder-double.test.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

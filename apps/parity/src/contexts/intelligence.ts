@@ -1,3 +1,4 @@
+import { EMBEDDER_DOWN } from '../embedder-double.ts';
 import type { ParityCase } from '../types.ts';
 
 /**
@@ -18,6 +19,14 @@ import type { ParityCase } from '../types.ts';
  * write nothing, and the read that follows. The first of two validations of a high-priority
  * alert depends on that order and is covered by apps/api-go's integration test instead. The
  * PARITY-INT-W alerts belong to these cases only.
+ *
+ * Embedder and semantic analysis (T51): GET /system/intelligence/embedder and POST
+ * /system/intelligence/semantic-analyze against the synthetic embedder of ../embedder-double.ts.
+ * Its vectors exercise the ranking and its failure the fallback; it is on loopback, so text is
+ * not egress here. An external embedder and the guard are covered by apps/api-go's tests.
+ *
+ * Alert creation (T51): POST /system/intelligence/territorial-alerts. Each creation runs once
+ * per API with a text of its own, and its repeat is the 24 h duplicate; refusals write nothing.
  */
 const SECHURA = 'SIPGES/PRJ-SECHURA';
 const OTHER = 'PARITY/OTRO';
@@ -73,6 +82,7 @@ ON CONFLICT DO NOTHING;
 const LIST = '/system/intelligence/territorial-alerts';
 const ONE = `${LIST}/PARITY-INT-A`;
 const SUMMARY = '/system/intelligence/territorial-summary';
+const EMBEDDER = '/system/intelligence/embedder';
 
 /** The cases every read route gets: sessions, roles, project choice and scope refusals. */
 const scoped = (label: string, path: string): ParityCase[] => {
@@ -214,6 +224,116 @@ const refusals = (label: string, method: 'POST' | 'PATCH', path: string, json: u
 
 const verify = { status: 'Corroborado', reviewer_note: 'Corroborado en campo (sintético)' };
 const discard = { status: 'Descartado', reviewer_note: 'Sin sustento <b>&amp; 😀' };
+
+const SEMANTIC = '/system/intelligence/semantic-analyze';
+const semantic = (name: string, json: unknown) => write(`semantic ${name}`, 'POST', SEMANTIC, json);
+
+const semanticCases: ParityCase[] = [
+  semantic('rules', { text: 'Reunión sintética sobre agua y tierra', mode: 'rules' }),
+  semantic('automatic', { text: 'Reunión sintética sobre agua y tierra', mode: 'automatic' }),
+  semantic('semantic', { text: 'Reunión sintética sobre agua y tierra', mode: 'semantic' }),
+  semantic('without a mode', { text: 'Protesta sintética <b>&amp; 😀 por el empleo local' }),
+  semantic('text with spaces around it', {
+    text: '  \n\u00a0Texto sintético\ufeff  ',
+    mode: 'semantic',
+  }),
+  semantic('source url', { text: 'Texto', source_url: 'https://example.org/n', mode: 'rules' }),
+  semantic('project_id of its project', { text: 'Texto', project_id: 'PRJ-SECHURA' }),
+  semantic('project_id of another project', { text: 'Texto', project_id: 'PRJ-B' }),
+  semantic('embedder down in automatic mode', { text: EMBEDDER_DOWN }),
+  semantic('embedder down in semantic mode', { text: EMBEDDER_DOWN, mode: 'semantic' }),
+  semantic('embedder down in rules mode', { text: EMBEDDER_DOWN, mode: 'rules' }),
+  semantic('unknown mode', { text: 'Texto', mode: 'magic' }),
+  semantic('empty mode', { text: 'Texto', mode: '' }),
+  semantic('private url', { text: 'Texto', source_url: 'ftp://example.org' }),
+  semantic('url without a host', { text: 'Texto', source_url: 'https://' }),
+  semantic('mode before url', { text: 'Texto', source_url: 'ftp://x', mode: 'magic' }),
+  semantic('url before the text', { text: '', source_url: 'ftp://x' }),
+  semantic('empty text', { text: '   ' }),
+  semantic('text at the limit', { text: 'x'.repeat(20_000), mode: 'rules' }),
+  semantic('text over the limit', { text: 'x'.repeat(20_001) }),
+  semantic('missing text', {}),
+  semantic('text not a string', { text: 1 }),
+  semantic('mode null', { text: 'Texto', mode: null }),
+  semantic('mode a number', { text: 'Texto', mode: 1 }),
+  semantic('source_url null', { text: 'Texto', source_url: null }),
+  raw('semantic not JSON', 'POST', SEMANTIC, '{'),
+  raw('semantic a list', 'POST', SEMANTIC, '[]'),
+  ...refusals('semantic', 'POST', SEMANTIC, { text: 'Texto', mode: 'rules' }),
+  write(
+    'semantic of the read-only role',
+    'POST',
+    SEMANTIC,
+    { text: 'Texto', mode: 'semantic' },
+    {
+      auth: 'consulta',
+    },
+  ),
+  write(
+    'semantic of the second project',
+    'POST',
+    SEMANTIC,
+    { text: 'Texto' },
+    {
+      auth: 'multi',
+      headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
+    },
+  ),
+];
+
+/** One creation per API: the alert id and the text's hash are the only values of their own. */
+const creation = (name: string, json: Record<string, unknown>): ParityCase => ({
+  ...write(`alert ${name}`, 'POST', LIST, json),
+  perApi: true,
+  normalize: ['id', 'analysis.evidence.sha256'],
+});
+
+const SIMPLE = { text: 'Señal sintética simple {api}', mode: 'rules' };
+const FULL = {
+  text: '  Reunión sintética sobre agua y tierra <b>&amp; 😀 {api}  ',
+  source_url: 'https://example.org/alerta',
+  source_type: 'Documento',
+  analyst_note: 'Nota sintética',
+  territory: '  Caserío sintético  ',
+};
+
+const alert = (name: string, json: unknown) => write(`alert ${name}`, 'POST', LIST, json);
+
+const alertCases: ParityCase[] = [
+  creation('in rules mode', SIMPLE),
+  creation('repeated is a duplicate', SIMPLE),
+  creation('in rules mode with another territory', { ...SIMPLE, territory: 'Otro territorio' }),
+  creation('with every field', FULL),
+  creation('with every field repeated', FULL),
+  creation('in semantic mode', { text: 'Protesta sintética {api}', mode: 'semantic' }),
+  creation('without a mode', { text: 'Empleo sintético {api}' }),
+  creation('of field reports', { ...SIMPLE, source_type: 'Reporte de campo' }),
+  creation('with a blank territory', { text: 'Territorio en blanco {api}', territory: ' \u00a0 ' }),
+  creation('with a null territory', { text: 'Territorio nulo {api}', territory: null }),
+  creation('with 500 code points of territory', {
+    text: 'Territorio largo {api}',
+    territory: '😀'.repeat(500),
+  }),
+  creation('with the embedder down', { text: `${EMBEDDER_DOWN} {api}` }),
+  alert('with the embedder down in semantic mode', { text: EMBEDDER_DOWN, mode: 'semantic' }),
+  alert('unknown source type', { text: 'Texto', source_type: 'Rumor' }),
+  alert('empty source type', { text: 'Texto', source_type: '' }),
+  alert('source type before mode', { text: 'Texto', source_type: 'Rumor', mode: 'magic' }),
+  alert('unknown mode', { text: 'Texto', mode: 'magic' }),
+  alert('private url', { text: 'Texto', source_url: 'ftp://example.org' }),
+  alert('empty text', { text: '  ' }),
+  alert('text over the limit', { text: 'x'.repeat(20_001) }),
+  alert('missing text', {}),
+  alert('territory over the limit', { text: 'Texto', territory: 'x'.repeat(501) }),
+  alert('territory over the limit in code points', { text: 'Texto', territory: '😀'.repeat(501) }),
+  alert('territory a number', { text: 'Texto', territory: 1 }),
+  alert('source type null', { text: 'Texto', source_type: null }),
+  alert('analyst note a number', { text: 'Texto', analyst_note: 1 }),
+  alert('several invalid fields', { text: 1, mode: 2, territory: 3 }),
+  alert('project_id of another project', { text: 'Texto', project_id: 'PRJ-B' }),
+  raw('alert not JSON', 'POST', LIST, '{'),
+  ...refusals('new alert', 'POST', LIST, { text: 'Texto', mode: 'rules' }),
+];
 
 const writeCases: ParityCase[] = [
   // POST /system/analyze: the classifier engine; computes and stores nothing.
@@ -375,6 +495,7 @@ const writeCases: ParityCase[] = [
 ];
 
 export const cases: readonly ParityCase[] = [
+  ...scoped('embedder', EMBEDDER),
   ...scoped('alerts', LIST),
   ...scoped('alert', ONE),
   ...scoped('summary', SUMMARY),
@@ -413,7 +534,6 @@ export const cases: readonly ParityCase[] = [
     auth: 'consulta',
   },
 
-  // Alert creation stays in TypeScript (embeddings); the role gate answers the same in both.
   {
     name: 'intelligence alert creation by the read-only role',
     method: 'POST',
@@ -423,4 +543,6 @@ export const cases: readonly ParityCase[] = [
     body: { json: { text: 'Texto sintético', mode: 'rules' } },
   },
   ...writeCases,
+  ...semanticCases,
+  ...alertCases,
 ];

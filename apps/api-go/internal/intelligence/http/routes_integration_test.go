@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -312,5 +313,161 @@ func TestRefusesRequestsOutsideTheScope(t *testing.T) {
 			code, body = get(t, srv, path, "multi", nil)
 			expect(t, code, body, http.StatusForbidden, choose)
 		})
+	}
+}
+
+// embedderServer is a synthetic embeddings server; no real provider is ever contacted here.
+func embedderServer(t *testing.T, status int, calls *atomic.Int32) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(status)
+		_, _ = io.WriteString(w, `{"embeddings":[[1,0,0,0,0,0,0,0.1]]}`)
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+func TestEmbedderReportsAReachableServer(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusOK, &calls).URL)
+	t.Setenv("SIPGES_OLLAMA_EMBED_MODEL", "fake-embed")
+	t.Setenv("SIPGES_SEMANTIC_SEARCH", "1")
+	base := start(t)
+	const want = `{"configured":true,"available":true,"reason":null,"model":"fake-embed","egress":"local","semantic_search":true}`
+	for range 2 {
+		status, body := get(t, base, "/system/intelligence/embedder", "solo", nil)
+		if status != http.StatusOK || strings.TrimSpace(body) != want {
+			t.Fatalf("%d %s", status, body)
+		}
+	}
+	if calls.Load() != 1 {
+		t.Fatalf("probes = %d", calls.Load())
+	}
+}
+
+func TestEmbedderReportsAnUnreachableServer(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusServiceUnavailable, &calls).URL)
+	base := start(t)
+	status, body := get(t, base, "/system/intelligence/embedder", "reader", nil)
+	const want = `{"configured":true,"available":false,"reason":"unreachable","model":"nomic-embed-text","egress":"local","semantic_search":false}`
+	if status != http.StatusOK || strings.TrimSpace(body) != want {
+		t.Fatalf("%d %s", status, body)
+	}
+}
+
+func TestEmbedderKeepsAnExternalServerUncontactedWhileTheSwitchIsOff(t *testing.T) {
+	// A routable address nothing listens on: the point is that no connection is attempted.
+	t.Setenv("SIPGES_OLLAMA_URL", "http://192.0.2.1:11434")
+	base := start(t)
+	status, body := get(t, base, "/system/intelligence/embedder", "solo", nil)
+	const want = `{"configured":true,"available":false,"reason":"external_ai_disabled","model":"nomic-embed-text","egress":"external","semantic_search":false}`
+	if status != http.StatusOK || strings.TrimSpace(body) != want {
+		t.Fatalf("%d %s", status, body)
+	}
+}
+
+func TestEmbedderNeedsASession(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusOK, &calls).URL)
+	base := start(t)
+	if status, _ := get(t, base, "/system/intelligence/embedder", "", nil); status != http.StatusUnauthorized {
+		t.Fatalf("status = %d", status)
+	}
+	if calls.Load() != 0 {
+		t.Fatal("probed for an anonymous request")
+	}
+}
+
+func TestAMalformedEmbedderURLStopsTheStart(t *testing.T) {
+	if scratch == nil {
+		t.Skip(dbtest.EnvAdminURL + " is not set")
+	}
+	t.Setenv("SIPGES_OLLAMA_URL", "ftp://127.0.0.1")
+	pool, err := pgxpool.New(t.Context(), scratch.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	_, err = app.NewHandler(pool, app.Options{Logger: slog.New(slog.DiscardHandler)})
+	if err == nil || !strings.Contains(err.Error(), "SIPGES_OLLAMA_URL must use http or https") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestSemanticAnalysisUsesTheEmbedderThroughTheComposedHandler(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusOK, &calls).URL)
+	srv := start(t)
+	code, body := send(t, srv, http.MethodPost, "/system/intelligence/semantic-analyze", "reader",
+		`{"text":"Texto sintético sobre agua","mode":"semantic"}`, nil)
+	if code != http.StatusOK || !strings.Contains(body, `"version":"2.5"`) || !strings.Contains(body, `"active":true`) {
+		t.Fatalf("%d %s", code, body)
+	}
+	if calls.Load() != 8 {
+		t.Fatalf("embeddings = %d", calls.Load())
+	}
+}
+
+func TestSemanticAnalysisDefaultsToAutomatic(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusBadGateway, &calls).URL)
+	srv := start(t)
+	code, body := send(t, srv, http.MethodPost, "/system/intelligence/semantic-analyze", "solo", `{"text":"Texto"}`, nil)
+	if code != http.StatusOK || !strings.Contains(body, "Ollama local no disponible") {
+		t.Fatalf("%d %s", code, body)
+	}
+}
+
+func TestSemanticAnalysisAnswersTheRefusalsOfTypeScript(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusBadGateway, &calls).URL)
+	srv := start(t)
+	long := strings.Repeat("x", 20_001)
+	cases := []struct {
+		name, body string
+		status     int
+		detail     string
+	}{
+		{"empty", `{"text":"  "}`, 422, "Ingrese el texto transcrito de la publicación."}, //nolint:misspell // Spanish, verbatim
+		{"too long", `{"text":"` + long + `"}`, 413, "Máximo 20 000 caracteres."},
+		{"mode", `{"text":"t","mode":"x"}`, 422, "Modo inválido"},
+		{"url", `{"text":"t","source_url":"ftp://x"}`, 422, "URL pública inválida"},
+		{"unavailable", `{"text":"t","mode":"semantic"}`, 503, "Modelo local no disponible. Instale Ollama, descargue el modelo configurado o seleccione análisis por reglas."},
+	}
+	for _, c := range cases {
+		code, body := send(t, srv, http.MethodPost, "/system/intelligence/semantic-analyze", "solo", c.body, nil)
+		want := `{"detail":"` + c.detail + `"}`
+		if code != c.status || strings.TrimSpace(body) != want {
+			t.Errorf("%s: %d %s", c.name, code, body)
+		}
+	}
+}
+
+func TestSemanticAnalysisKeepsTextFromAnExternalServerWhileTheSwitchIsOff(t *testing.T) {
+	// A routable address nothing listens on: the point is that no connection is attempted, which
+	// a timeout of the 12 s embedding call would show as a slow test.
+	t.Setenv("SIPGES_OLLAMA_URL", "http://192.0.2.1:11434")
+	srv := start(t)
+	began := time.Now()
+	code, body := send(t, srv, http.MethodPost, "/system/intelligence/semantic-analyze", "solo", `{"text":"t","mode":"semantic"}`, nil)
+	if code != http.StatusServiceUnavailable {
+		t.Fatalf("%d %s", code, body)
+	}
+	if time.Since(began) > 5*time.Second {
+		t.Fatal("a connection was attempted")
+	}
+}
+
+func TestSemanticAnalysisWritesNothing(t *testing.T) {
+	var calls atomic.Int32
+	t.Setenv("SIPGES_OLLAMA_URL", embedderServer(t, http.StatusOK, &calls).URL)
+	srv := start(t)
+	_, before := get(t, srv, "/system/intelligence/territorial-alerts", "solo", nil)
+	code, _ := send(t, srv, http.MethodPost, "/system/intelligence/semantic-analyze", "solo", `{"text":"Texto"}`, nil)
+	_, after := get(t, srv, "/system/intelligence/territorial-alerts", "solo", nil)
+	if code != http.StatusOK || before != after {
+		t.Fatalf("%d, the inbox changed", code)
 	}
 }
