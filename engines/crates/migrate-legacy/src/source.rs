@@ -14,8 +14,8 @@ use crate::value::{Legacy, Row, js_string};
 
 const DEFAULT_COMPANY: &str = "SIPGES";
 const DEFAULT_PROJECT: &str = "PRJ-SECHURA";
-/// `Number.MAX_SAFE_INTEGER`: `node:sqlite` throws `RangeError` past it.
-const MAX_SAFE_INTEGER: i64 = 9_007_199_254_740_991;
+/// `Number.MAX_SAFE_INTEGER`: `node:sqlite` throws `RangeError` past it, on either side of zero.
+const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 
 /// `path.normalize`'s segment walk (POSIX).
 fn normalize_segments(path: &str, above_root: bool) -> String {
@@ -165,7 +165,7 @@ fn select_all(db: &Connection, table: &str, order_by: &str) -> Result<Vec<Row>, 
         for column in 0..columns {
             values.push(match row.get_ref(column).map_err(error)? {
                 ValueRef::Null => Legacy::Null,
-                ValueRef::Integer(n) if n.abs() > MAX_SAFE_INTEGER => {
+                ValueRef::Integer(n) if n.unsigned_abs() > MAX_SAFE_INTEGER => {
                     return Err(Fatal::named("RangeError"));
                 }
                 ValueRef::Integer(n) => Legacy::Num(as_f64(n)),
@@ -237,8 +237,10 @@ fn read_json_object(path: &str) -> IrsaConfig {
     let Ok(bytes) = fs::read(path) else {
         return IrsaConfig::Invalid;
     };
-    match json::parse(&String::from_utf8_lossy(&bytes)) {
+    let text = String::from_utf8_lossy(&bytes);
+    match json::parse(&text) {
         Err(ParseError::Syntax) => IrsaConfig::Invalid,
+        Err(ParseError::TooDeep) if !json::opens_object(&text) => IrsaConfig::Invalid,
         Err(ParseError::TooDeep) => IrsaConfig::TooDeep,
         Ok(parsed) => match parsed.value {
             object @ Json::Obj(_) if parsed.depth > crate::mapping::MAX_JSON_DEPTH => {
@@ -483,6 +485,26 @@ impl Source {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn refuses_integers_javascript_cannot_hold() {
+        let read = |n: i64| {
+            let db = Connection::open_in_memory().ok()?;
+            db.execute_batch("CREATE TABLE t(a)").ok()?;
+            db.execute("INSERT INTO t VALUES (?)", [n]).ok()?;
+            Some(select_all(&db, "t", "a").map(|rows| rows.len()))
+        };
+        assert_eq!(read(9_007_199_254_740_991), Some(Ok(1)));
+        assert_eq!(read(-9_007_199_254_740_991), Some(Ok(1)));
+        for n in [
+            9_007_199_254_740_992,
+            -9_007_199_254_740_992,
+            i64::MIN,
+            i64::MAX,
+        ] {
+            assert_eq!(read(n), Some(Err(Fatal::named("RangeError"))), "{n}");
+        }
+    }
 
     #[test]
     fn paths_match_node() {

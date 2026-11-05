@@ -170,16 +170,18 @@ fn is_progress(x: f64) -> bool {
     x.fract() == 0.0 && (0.0..=100.0).contains(&x)
 }
 
-/// `parseJsonObject`: `hasNul` runs outside its `try`, so too much depth ends the run.
+/// `parseJsonObject`: only an object reaches `hasNul`, which runs outside its `try`, so an object
+/// nested too deep ends the run while an array of any depth is just not an object.
 fn parse_json_object(value: &Legacy) -> Result<Option<Json>, Fatal> {
     let Some(text) = as_text(value) else {
         return Ok(None);
     };
     match json::parse(&text) {
         Err(ParseError::Syntax) => Ok(None),
+        Err(ParseError::TooDeep) if !json::opens_object(&text) => Ok(None),
         Err(ParseError::TooDeep) => Err(Fatal::named("RangeError")),
-        Ok(parsed) if parsed.depth > MAX_JSON_DEPTH => Err(Fatal::named("RangeError")),
         Ok(parsed) => match parsed.value {
+            Json::Obj(_) if parsed.depth > MAX_JSON_DEPTH => Err(Fatal::named("RangeError")),
             object @ Json::Obj(_) if !json::has_nul(&object) => Ok(Some(object)),
             _ => Ok(None),
         },
@@ -1212,5 +1214,19 @@ mod tests {
             Err(Fatal::named("RangeError"))
         );
         assert_eq!(parse_json_strict(&s(&deep)), None);
+    }
+
+    #[test]
+    fn deep_arrays_are_refused_before_any_walk() {
+        for levels in [1001, 120_000] {
+            let deep = format!("{}{}", "[".repeat(levels), "]".repeat(levels));
+            let input = s(&deep);
+            let outcome = std::thread::Builder::new()
+                .stack_size(256 * 1024 * 1024)
+                .spawn(move || parse_json_object(&input))
+                .ok()
+                .and_then(|handle| handle.join().ok());
+            assert_eq!(outcome, Some(Ok(None)), "{levels}");
+        }
     }
 }

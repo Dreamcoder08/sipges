@@ -341,6 +341,7 @@ const scenarios: Scenario[] = [
     dumps: DUMPS,
     steps: [
       crash(poison('big-integer', (root) => sqlite(join(root, 'data/sipges.db'), 'CREATE TABLE records2(a); DROP TABLE audit; CREATE TABLE audit(id, ts, module, record_id, action, detail, extra); INSERT INTO audit VALUES (1, 1, 2, 3, 4, 5, 9007199254740992)'))),
+      crash(poison('smallest-integer', (root) => sqlite(join(root, 'data/sipges.db'), 'DROP TABLE audit; CREATE TABLE audit(id, ts, module, record_id, action, detail); INSERT INTO audit VALUES (1, -9223372036854775808, 2, 3, 4, 5)'))),
       crash(poison('garbage-auth', (root) => writeFileSync(join(root, 'data/auth_global.db'), 'no es sqlite, relleno suficiente'.repeat(50)))),
       crash(poison('garbage-tenant', (root) => writeFileSync(join(root, 'data/sipges.db'), 'tampoco es sqlite'.repeat(100)))),
       crash(poison('directory-db', (root) => {

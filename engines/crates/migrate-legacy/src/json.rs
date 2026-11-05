@@ -315,6 +315,13 @@ pub fn parse(text: &str) -> Result<Parsed, ParseError> {
     }
 }
 
+/// Whether the text's first value is an object.
+#[must_use]
+pub fn opens_object(text: &str) -> bool {
+    text.trim_start_matches([' ', '\t', '\n', '\r'])
+        .starts_with('{')
+}
+
 /// `hasNul`: a NUL in any string or key.
 #[must_use]
 pub fn has_nul(value: &Json) -> bool {
@@ -510,6 +517,13 @@ mod tests {
         assert_eq!(value(r#"{"a":["\u0000"]}"#).map(|v| has_nul(&v)), Ok(true));
         assert_eq!(value(r#"{"\u0000":1}"#).map(|v| has_nul(&v)), Ok(true));
         assert_eq!(value(r#"{"a":"b"}"#).map(|v| has_nul(&v)), Ok(false));
+    }
+
+    #[test]
+    fn tells_objects_from_other_values() {
+        assert!(opens_object(" \n{"));
+        assert!(!opens_object("["));
+        assert!(!opens_object("\u{a0}{"));
     }
 
     #[test]

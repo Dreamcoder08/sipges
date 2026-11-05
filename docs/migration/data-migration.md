@@ -210,9 +210,9 @@ tenants, damaged SQLite files and S3 through a local server that checks each req
 | A timestamp text with no zone that ends like an offset, such as `01-02-2026` | local time of the process | UTC (the same under `TZ=UTC`) |
 | A payload, scores or configuration nested 1,001 to about 2,500 levels | migrated | `RangeError`, exit 1 before any write (TypeScript overflows from about 2,500 levels, at a depth that varies with the stack) |
 | An alert JSON column nested 1,001 to about 2,500 levels | migrated | `alert_row_invalid` |
-| JSON nested past 100,000 levels with a syntax error | row rejected | `RangeError`, exit 1 |
+| An object in JSON nested past 100,000 levels with a syntax error | row rejected | `RangeError`, exit 1 |
 | A `0x`, `0o` or `0b` number longer than 128 bits | exactly rounded | accumulated in floating point |
-| `SIPGES_S3_ENDPOINT` with credentials, without `//` or with characters outside host syntax | accepted by `new URL` | refused, exit 1 |
+| `SIPGES_S3_ENDPOINT` that is not plainly `http(s)://host[:port][/…]`: credentials, no `//`, surrounding spaces, an empty port, an abbreviated address such as `127.1`, or an underscore in the host | accepted by `new URL` | refused, exit 1 |
 | An S3 redirect | followed | not followed: the reply counts as a failure |
 | TLS to PostgreSQL | encrypts without verifying | verifies against the Mozilla roots |
 | Connection lost mid-run | a new connection, from a pool | a new connection, one at a time |

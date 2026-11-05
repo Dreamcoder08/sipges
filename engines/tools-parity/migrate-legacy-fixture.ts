@@ -218,6 +218,9 @@ const buildDefaultTenant = (data: string) => {
     ['Eventos', 'EV-15', blob('{"x":"\xff"}'), NOW, NOW],
     ['Eventos', 'EV-16', '{}', 'ayer', NOW],
     ['Eventos', 'EV-17', '{}', NOW, null],
+    // TypeScript refuses an array before it walks one, however deep.
+    ['Eventos', 'EV-18', `${'['.repeat(1001)}${']'.repeat(1001)}`, NOW, NOW],
+    ['Eventos', 'EV-19', `${'['.repeat(120_000)}${']'.repeat(120_000)}`, NOW, NOW],
     ['Eventos', 'x'.repeat(200), '{}', NOW, NOW],
     ['Eventos', 'x'.repeat(201), '{}', NOW, NOW],
     ['Eventos', 'é'.repeat(201), '{}', NOW, NOW],
@@ -245,7 +248,7 @@ const buildDefaultTenant = (data: string) => {
   ]);
 
   insert(db, 'irsa_snapshots', [
-    [1, NOW, 42.5, 'A', '{"G":40}', '0.4', 'n'],
+    [1, NOW, 42.5, 'A', '{"a":3,"4294967295":1,"4294967294":2,"G":40}', '0.4', 'n'],
     [2, NOW, '42.5', 'A', '{"z":1,"a":2,"1":3}', null, null],
     [3, NOW, ' 0x10 ', 'A', '{}', null, null],
     [4, NOW, '1e3', 'A', '{}', null, null],
