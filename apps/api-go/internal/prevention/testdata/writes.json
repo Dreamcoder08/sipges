@@ -1,0 +1,976 @@
+{
+  "at": "2026-11-03T12:00:00.123Z",
+  "created": "2026-01-01T00:00:00.000Z",
+  "scenarios": [
+    {
+      "name": "create: valid",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "Plan válido",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: with its project and description",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"project_id\":\"PRJ-SINT\",\"description\":\"Detalle\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"Detalle\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "Plan válido",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "Detalle",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: followed alert",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-SEG\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-SEG\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-SEG",
+            "title": "Plan válido",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: emoji title counts code points",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"😀😀😀😀😀\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"😀😀😀😀😀\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "😀😀😀😀😀",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: lone surrogate title counts one",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"ab\\ud800cd\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"ab�cd\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "ab\ud800cd",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: title of 200 characters",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: unknown keys are dropped",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"extra\":1}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "Plan válido",
+            "responsible": "Equipo",
+            "dueDate": "2027-02-28",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: leap day",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2028-02-29\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-FFFFFFFFFFF1\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2028-02-29\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-11-03T12:00:00Z\",\"updated_at\":\"2026-11-03T12:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "create",
+          "action": {
+            "id": "PREV-FFFFFFFFFFF1",
+            "projectId": "PRJ-SINT",
+            "alertId": "ALERT-OK",
+            "title": "Plan válido",
+            "responsible": "Equipo",
+            "dueDate": "2028-02-29",
+            "description": "",
+            "createdAt": "2026-11-03T12:00:00.123Z"
+          },
+          "logId": "fffffffffffffffffffffffffffffff2"
+        }
+      ]
+    },
+    {
+      "name": "create: alert missing",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-NADA\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 404,
+      "response": "{\"detail\":\"Alerta no pertenece al proyecto indicado\"}",
+      "log": []
+    },
+    {
+      "name": "create: alert unverified",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-NEW\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 409,
+      "response": "{\"detail\":\"La alerta necesita verificación antes de crear un plan\"}",
+      "log": []
+    },
+    {
+      "name": "create: alert id of 80 code points over 80 units",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 404,
+      "response": "{\"detail\":\"Alerta no pertenece al proyecto indicado\"}",
+      "log": []
+    },
+    {
+      "name": "create: empty body",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\"],\"msg\":\"JSON decode error\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: not JSON",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\"],\"msg\":\"JSON decode error\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: an array",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "[]",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\"],\"msg\":\"Invalid input: expected object, received array\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: null",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "null",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\"],\"msg\":\"Invalid input: expected object, received null\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: a string",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "\"x\"",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\"],\"msg\":\"Invalid input: expected object, received string\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: empty object",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Field required\"},{\"type\":\"missing\",\"loc\":[\"body\",\"title\"],\"msg\":\"Field required\"},{\"type\":\"missing\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Field required\"},{\"type\":\"missing\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Field required\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: every field of the wrong type",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"project_id\":1,\"alert_id\":2,\"title\":3,\"responsible\":4,\"due_date\":5,\"description\":6}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"project_id\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"title\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"description\"],\"msg\":\"Invalid input: expected string, received number\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: null fields",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"project_id\":null,\"alert_id\":null,\"title\":null,\"responsible\":null,\"due_date\":null}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"project_id\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"title\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Invalid input: expected string, received null\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: short strings",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"\",\"title\":\"abcd\",\"responsible\":\"a\",\"due_date\":\"2027-02-28\",\"project_id\":\"\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"project_id\"],\"msg\":\"Too small: expected string to have >=1 characters\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Too small: expected string to have >=1 characters\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"title\"],\"msg\":\"Too small: expected string to have >=5 characters\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Too small: expected string to have >=2 characters\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: long strings",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"project_id\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"alert_id\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"title\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"responsible\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"due_date\":\"2027-02-28\",\"description\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"project_id\"],\"msg\":\"Too big: expected string to have <=120 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Too big: expected string to have <=80 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"title\"],\"msg\":\"Too big: expected string to have <=200 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Too big: expected string to have <=150 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"description\"],\"msg\":\"Too big: expected string to have <=2000 characters\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: arrays have a length",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":[],\"responsible\":[1,2,3],\"due_date\":\"2027-02-28\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"title\"],\"msg\":\"Invalid input: expected string, received array\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"title\"],\"msg\":\"Too small: expected array to have >=5 items\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Invalid input: expected string, received array\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: objects have a length",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":{\"length\":0},\"title\":{\"length\":\"abc\"},\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Invalid input: expected string, received object\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Too small: expected unknown to be >=1\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"title\"],\"msg\":\"Invalid input: expected string, received object\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"title\"],\"msg\":\"Too small: expected unknown to be >=5\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"title\"],\"msg\":\"Too big: expected unknown to be <=200\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: object lengths read as numbers",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":{\"length\":null},\"title\":{\"length\":\"0x10\"},\"responsible\":{\"length\":[1]},\"due_date\":\"2027-02-28\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Invalid input: expected string, received object\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"alert_id\"],\"msg\":\"Too small: expected unknown to be >=1\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"title\"],\"msg\":\"Invalid input: expected string, received object\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Invalid input: expected string, received object\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"responsible\"],\"msg\":\"Too small: expected unknown to be >=2\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: impossible date",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-29\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Input should be a valid date\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: month 13",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-13-01\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Input should be a valid date\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: short date",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-2-28\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Input should be a valid date\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: date with time",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28T00:00:00Z\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Input should be a valid date\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: date with a line feed",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\\n\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Input should be a valid date\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: empty date",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"ALERT-OK\",\"title\":\"Plan válido\",\"responsible\":\"Equipo\",\"due_date\":\"\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"custom\",\"loc\":[\"body\",\"due_date\"],\"msg\":\"Input should be a valid date\"}]}",
+      "log": []
+    },
+    {
+      "name": "create: infinite title",
+      "method": "POST",
+      "path": "/system/prevention/actions",
+      "body": "{\"alert_id\":\"A\",\"title\":1e400,\"responsible\":\"Equipo\",\"due_date\":\"2027-02-28\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"title\"],\"msg\":\"Invalid input: expected string, received Infinity\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-OPEN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"En ejecución\",\"progress\":10,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-OPEN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "En ejecución",
+            "progress": 10,
+            "note": "",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": "unchanged"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: pending at zero",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"Pendiente\",\"progress\":0}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-OPEN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-OPEN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Pendiente",
+            "progress": 0,
+            "note": "",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": "unchanged"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: minus zero progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"Pendiente\",\"progress\":-0}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-OPEN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Pendiente\",\"progress\":0,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-OPEN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Pendiente",
+            "progress": 0,
+            "note": "",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": "unchanged"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: blocked by",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"blocked_by\":\" Autoridad \",\"blocked_reason\":\" Espera \"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"En ejecución\",\"progress\":10,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "En ejecución",
+            "progress": 10,
+            "note": "",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": { "by": "Autoridad", "reason": "Espera", "since": "2026-11-03T12:00:00.123Z" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: blocked by without a reason",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"blocked_by\":\"Otro\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"En ejecución\",\"progress\":10,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "En ejecución",
+            "progress": 10,
+            "note": "",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": { "by": "Otro", "reason": "", "since": "2026-11-03T12:00:00.123Z" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: cleared block",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"blocked_by\":\"  \"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"En ejecución\",\"progress\":10,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "En ejecución",
+            "progress": 10,
+            "note": "",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: closing clears the block",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Completada\",\"progress\":100,\"note\":\"Hecho\",\"evidence_attachment_id\":\"EV-1\",\"blocked_by\":\"Otro\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Completada\",\"progress\":100,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Completada",
+            "progress": 100,
+            "note": "Hecho",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": {
+              "attachmentId": "EV-1",
+              "fileName": "acta.pdf",
+              "sha256": "abababababababababababababababababababababababababababababababab"
+            },
+            "block": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: completed with a receipt",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Completada\",\"progress\":100,\"note\":\"Hecho\",\"evidence_attachment_id\":\"EV-1\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Completada\",\"progress\":100,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Completada",
+            "progress": 100,
+            "note": "Hecho",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": {
+              "attachmentId": "EV-1",
+              "fileName": "acta.pdf",
+              "sha256": "abababababababababababababababababababababababababababababababab"
+            },
+            "block": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: cancelled with a note",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Cancelada\",\"progress\":40,\"note\":\"Ya no aplica\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Cancelada\",\"progress\":40,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Cancelada",
+            "progress": 40,
+            "note": "Ya no aplica",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: cancelled stays cancelled",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-CANCEL",
+      "body": "{\"status\":\"Cancelada\",\"progress\":0,\"note\":\"Sigue\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-CANCEL\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Cancelada\",\"progress\":0,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-CANCEL",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Cancelada",
+            "progress": 0,
+            "note": "Sigue",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: evidence url in capitals",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"evidence_url\":\"HTTPS://example.org/a\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-OPEN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"En ejecución\",\"progress\":10,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-OPEN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "En ejecución",
+            "progress": 10,
+            "note": "",
+            "evidenceUrl": "HTTPS://example.org/a",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": "unchanged"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: receipt with spaces",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Completada\",\"progress\":100,\"note\":\"Hecho\",\"evidence_attachment_id\":\" EV-1 \"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"Completada\",\"progress\":100,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "Completada",
+            "progress": 100,
+            "note": "Hecho",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": {
+              "attachmentId": "EV-1",
+              "fileName": "acta.pdf",
+              "sha256": "abababababababababababababababababababababababababababababababab"
+            },
+            "block": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: long note in the audit",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"note\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}",
+      "status": 200,
+      "response": "{\"action\":{\"id\":\"PREV-RUN\",\"project_id\":\"PRJ-SINT\",\"alert_id\":\"ALERT-OK\",\"title\":\"Plan sintético\",\"responsible\":\"Equipo\",\"due_date\":\"2027-01-01\",\"description\":\"\",\"status\":\"En ejecución\",\"progress\":10,\"created_at\":\"2026-01-01T00:00:00Z\",\"updated_at\":\"2026-01-01T00:00:00Z\",\"blocked\":null,\"history\":[]},\"irsa_modified\":false}",
+      "log": [
+        {
+          "op": "update",
+          "id": "PREV-RUN",
+          "change": {
+            "id": "fffffffffffffffffffffffffffffff1",
+            "createdAt": "2026-11-03T12:00:00.123Z",
+            "status": "En ejecución",
+            "progress": 10,
+            "note": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+            "evidenceUrl": "",
+            "decidedBy": "sint.usuario",
+            "receipt": null,
+            "block": "unchanged"
+          }
+        }
+      ]
+    },
+    {
+      "name": "update: unknown status",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"Otro\",\"progress\":0}",
+      "status": 422,
+      "response": "{\"detail\":\"Estado no válido\"}",
+      "log": []
+    },
+    {
+      "name": "update: completed under 100",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"Completada\",\"progress\":99}",
+      "status": 422,
+      "response": "{\"detail\":\"Una acción completada debe indicar 100%\"}",
+      "log": []
+    },
+    {
+      "name": "update: pending with progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"Pendiente\",\"progress\":1}",
+      "status": 422,
+      "response": "{\"detail\":\"Seleccione En ejecución cuando haya avance\"}",
+      "log": []
+    },
+    {
+      "name": "update: bad evidence url",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"evidence_url\":\"ftp://example.org\"}",
+      "status": 422,
+      "response": "{\"detail\":\"Evidencia: use enlace http(s)\"}",
+      "log": []
+    },
+    {
+      "name": "update: evidence url with a long s",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"evidence_url\":\"httpſ://example.org\"}",
+      "status": 422,
+      "response": "{\"detail\":\"Evidencia: use enlace http(s)\"}",
+      "log": []
+    },
+    {
+      "name": "update: id over 80 units",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10}",
+      "status": 404,
+      "response": "{\"detail\":\"Acción no encontrada\"}",
+      "log": []
+    },
+    {
+      "name": "update: bad status beats the long id",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80%F0%9F%98%80",
+      "body": "{\"status\":\"Otro\",\"progress\":0}",
+      "status": 422,
+      "response": "{\"detail\":\"Estado no válido\"}",
+      "log": []
+    },
+    {
+      "name": "update: completed without a receipt",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Completada\",\"progress\":100,\"note\":\"x\"}",
+      "status": 422,
+      "response": "{\"detail\":\"Adjunte la evidencia que respalda el cierre de la acción\"}",
+      "log": []
+    },
+    {
+      "name": "update: blank receipt",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Completada\",\"progress\":100,\"note\":\"Hecho\",\"evidence_attachment_id\":\"   \"}",
+      "status": 422,
+      "response": "{\"detail\":\"Adjunte la evidencia que respalda el cierre de la acción\"}",
+      "log": []
+    },
+    {
+      "name": "update: unknown receipt",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Completada\",\"progress\":100,\"note\":\"Hecho\",\"evidence_attachment_id\":\"EV-2\"}",
+      "status": 404,
+      "response": "{\"detail\":\"Evidencia no encontrada en el proyecto\"}",
+      "log": []
+    },
+    {
+      "name": "update: a receipt on progress is checked too",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"evidence_attachment_id\":\"EV-2\"}",
+      "status": 404,
+      "response": "{\"detail\":\"Evidencia no encontrada en el proyecto\"}",
+      "log": []
+    },
+    {
+      "name": "update: unknown blocker",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"blocked_by\":\"Nadie\"}",
+      "status": 422,
+      "response": "{\"detail\":\"Bloqueo no válido\"}",
+      "log": []
+    },
+    {
+      "name": "update: missing plan",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-NADA",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10}",
+      "status": 404,
+      "response": "{\"detail\":\"Acción no encontrada\"}",
+      "log": []
+    },
+    {
+      "name": "update: reactivating",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-CANCEL",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10}",
+      "status": 409,
+      "response": "{\"detail\":\"No puede reactivar una acción cancelada\"}",
+      "log": []
+    },
+    {
+      "name": "update: closing without a note",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-RUN",
+      "body": "{\"status\":\"Cancelada\",\"progress\":0,\"note\":\"   \"}",
+      "status": 422,
+      "response": "{\"detail\":\"Justifique el cierre o cancelación\"}",
+      "log": []
+    },
+    {
+      "name": "update: empty object",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"status\"],\"msg\":\"Field required\"},{\"type\":\"missing\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Field required\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: not JSON",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\"],\"msg\":\"JSON decode error\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: wrong types",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":1,\"progress\":\"2\",\"note\":3,\"evidence_url\":4,\"evidence_attachment_id\":5,\"blocked_by\":6,\"blocked_reason\":7}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"status\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Invalid input: expected number, received string\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"note\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"evidence_url\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"evidence_attachment_id\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"blocked_by\"],\"msg\":\"Invalid input: expected string, received number\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"blocked_reason\"],\"msg\":\"Invalid input: expected string, received number\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: null optionals",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"note\":null,\"evidence_url\":null,\"blocked_by\":null,\"blocked_reason\":null}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"note\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"evidence_url\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"blocked_by\"],\"msg\":\"Invalid input: expected string, received null\"},{\"type\":\"invalid_type\",\"loc\":[\"body\",\"blocked_reason\"],\"msg\":\"Invalid input: expected string, received null\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: fractional progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"Pendiente\",\"progress\":1.5}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Invalid input: expected int, received number\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: negative progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":-1}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Too small: expected number to be >=0\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: progress over 100",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":101}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Too big: expected number to be <=100\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: huge progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":1e20}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Too big: expected int to be <=9007199254740991\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Too big: expected number to be <=100\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: huge negative progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":-1e20}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_small\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Too small: expected int to be >=-9007199254740991\"},{\"type\":\"too_small\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Too small: expected number to be >=0\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: infinite progress",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":1e400}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"invalid_type\",\"loc\":[\"body\",\"progress\"],\"msg\":\"Invalid input: expected number, received Infinity\"}]}",
+      "log": []
+    },
+    {
+      "name": "update: long strings",
+      "method": "PATCH",
+      "path": "/system/prevention/actions/PREV-OPEN",
+      "body": "{\"status\":\"En ejecución\",\"progress\":10,\"note\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"evidence_url\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"evidence_attachment_id\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"blocked_by\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\",\"blocked_reason\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}",
+      "status": 422,
+      "response": "{\"detail\":[{\"type\":\"too_big\",\"loc\":[\"body\",\"note\"],\"msg\":\"Too big: expected string to have <=2000 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"evidence_url\"],\"msg\":\"Too big: expected string to have <=2000 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"evidence_attachment_id\"],\"msg\":\"Too big: expected string to have <=120 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"blocked_by\"],\"msg\":\"Too big: expected string to have <=40 characters\"},{\"type\":\"too_big\",\"loc\":[\"body\",\"blocked_reason\"],\"msg\":\"Too big: expected string to have <=500 characters\"}]}",
+      "log": []
+    }
+  ]
+}
