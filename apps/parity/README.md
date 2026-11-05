@@ -75,3 +75,7 @@ TypeScript API ([`src/seed.ts`](src/seed.ts)); the administrator keeps one proje
 covered by each API's own tests (`apps/api-go/internal/app`). So are the bodies parity cannot compare: the
 management CSV (it holds the wall-clock second) and the `/system/events` stream. Rows of `PARITY/OTRO` are labelled, so a leak shows as a
 difference.
+
+## Node version
+
+The runner refuses any Node major other than the one in `.node-version`, which is the one CI uses: multipart cases answer differently on Node 26. `SIPGES_PARITY_ANY_NODE=1` runs anyway. Parity runs the TypeScript API on Node, while production runs it on Workers, so a route that depends on the runtime needs its own check before it switches.
