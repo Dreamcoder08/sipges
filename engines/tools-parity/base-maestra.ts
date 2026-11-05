@@ -105,6 +105,10 @@ const files = {
   // an unknown module is never walked; Zod drops a top-level __proto__ before the NUL check.
   deep: write('deep.json', `{"Intereses":[{"x":${'['.repeat(5000)}1${']'.repeat(5000)}}]}`),
   deepUnknown: write('deep-unknown.json', `{"Otro":[${'['.repeat(90000)}${']'.repeat(90000)}],"Eventos":[{"ID_Evento":"E-HONDO"}]}`),
+  nulBeforeDeep: write(
+    'nul-before-deep.json',
+    `{"Eventos":[{"a":"\\u0000","x":${'['.repeat(3000)}1${']'.repeat(3000)}}]}`,
+  ),
   protoNul: write('proto-nul.json', '{"Actores":[{"ID_Actor":"A9"}],"Eventos":[{"__proto__":"a\\u0000b"}]}'),
 };
 
@@ -136,6 +140,7 @@ const scenarios: Scenario[] = [
       { args: ['--seed', files.latin1, '--apply'] },
       { args: ['--seed', files.deep, '--apply'] },
       { args: ['--seed', files.deepUnknown, '--apply'] },
+      { args: ['--seed', files.nulBeforeDeep, '--apply'] },
       { args: ['--seed', files.protoNul] },
       { args: ['--seed', files.protoNul, '--apply'] },
     ],

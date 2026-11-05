@@ -37,7 +37,8 @@ The TypeScript tool stays until the owner retires it.
 | Case | TypeScript | Rust |
 | --- | --- | --- |
 | A lone UTF-16 surrogate escape (`"\ud800"`, or `"\ud83dA"`) anywhere in the file | parsed; `--apply` fails in PostgreSQL only if that row is written (rows of unknown or non-importable modules, or rows not written, never reach it) | `SyntaxError` before connecting, nothing written |
-| A row of an importable module nested 1,001 to about 2,500 levels | imported | `RangeError`, nothing written (Rust refuses above 1,000; TypeScript's recursion overflows from about 2,500 levels, at a depth that varies with the stack, and then also writes nothing) |
+| A row of an importable module nested 1,001 to about 1,700–2,500 levels | imported | `RangeError`, nothing written. TypeScript's recursion (`hasNul`, `canonical`, `JSON.stringify`) overflows somewhere above that, at a depth that varies with the stack (a warmed process failed at 1,718), and then also writes nothing; Rust refuses above 1,000 so it never writes a row TypeScript would refuse. A NUL found before the walk goes that deep is still a «contiene caracteres NUL» problem, as in TypeScript |
+| A row with an id field whose deep part sits only under its top-level `__proto__` | dry run lists it; `--apply` writes it while `JSON.stringify` copes (it fails between 3,000 and 10,000 levels) | `RangeError` above 1,000 levels, nothing written |
 | JSON nested deeper than 100,000 levels | parsed by `JSON.parse` | `SyntaxError` |
 | `SIPGES_DATABASE_URL` unset | embedded PGlite | refuses, exit 1 |
 | Other API settings invalid | `loadConfig` fails, exit 1 | ignored |
@@ -46,9 +47,9 @@ The TypeScript tool stays until the owner retires it.
 ## Differential test
 
 `engines/tools-parity/base-maestra.ts` writes synthetic seed files (never `data/seed.json`) and
-runs 30 steps: flags, missing, invalid, BOM and non-UTF-8 files, a non-object file, unknown,
+runs 31 steps: flags, missing, invalid, BOM and non-UTF-8 files, a non-object file, unknown,
 array-index and non-importable modules, ids `0`, `-0`, `7.0`, `''`, `true`, objects and over 200
 units, NUL in keys and values, duplicates, `1e400`, big integers, repeated keys, `__proto__`,
 emoji and U+FFEF keys, 1,203 rows in one module, a pre-existing record that must survive, and a
 trigger that interrupts the run mid-module before resuming; rows nested 5,000 levels (both
-`RangeError`), 90,000 levels inside an unknown module, and a top-level `__proto__` holding NUL.
+`RangeError`), 90,000 levels inside an unknown module, a NUL before a 3,000-level part, and a top-level `__proto__` holding NUL.

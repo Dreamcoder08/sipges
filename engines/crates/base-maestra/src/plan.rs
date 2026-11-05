@@ -108,12 +108,52 @@ fn present(value: Option<&Json>) -> Option<&Json> {
 }
 
 /// `hasNul` of the records contract (keys and strings, recursively).
-/// `RecordIn.safeParse({ payload })`: Zod 4's `z.record` leaves a top-level `__proto__` key out
-/// of its output, so `hasNul` never sees that key or its value; nested objects are checked whole.
-fn row_has_nul(row: &Object) -> bool {
-    row.iter()
+/// Outcome of `hasNul` over a row.
+#[derive(Debug, PartialEq, Eq)]
+enum Walk {
+    Clean,
+    Nul,
+    TooDeep,
+}
+
+/// `hasNul` in JavaScript order (`Object.entries`, keys before their values), stopping at the
+/// first NUL; containers past [`MAX_ROW_DEPTH`] stop it as Node's stack overflow would.
+fn walk_value(value: &Json, level: usize) -> Walk {
+    let walk_child = |child: &Json| match child {
+        Json::Arr(_) | Json::Obj(_) if level + 1 > MAX_ROW_DEPTH => Walk::TooDeep,
+        _ => walk_value(child, level + 1),
+    };
+    match value {
+        Json::Str(s) if s.contains('\0') => Walk::Nul,
+        Json::Arr(items) => items
+            .iter()
+            .map(walk_child)
+            .find(|w| *w != Walk::Clean)
+            .unwrap_or(Walk::Clean),
+        Json::Obj(object) => json::entries(object)
+            .into_iter()
+            .map(|(k, v)| {
+                if k.contains('\0') {
+                    Walk::Nul
+                } else {
+                    walk_child(v)
+                }
+            })
+            .find(|w| *w != Walk::Clean)
+            .unwrap_or(Walk::Clean),
+        _ => Walk::Clean,
+    }
+}
+
+/// `RecordIn.safeParse({ payload })`: the row at level 1 without its top-level `__proto__` key,
+/// which Zod 4's `z.record` leaves out of its output; nested objects are checked whole.
+fn nul_walk(row: &Object) -> Walk {
+    let kept: Object = row
+        .iter()
         .filter(|(k, _)| k != "__proto__")
-        .any(|(k, v)| k.contains('\0') || has_nul(v))
+        .cloned()
+        .collect();
+    walk_value(&Json::Obj(kept), 1)
 }
 
 /// Nesting depth (arrays and objects), without recursion.
@@ -140,15 +180,6 @@ pub const MAX_ROW_DEPTH: usize = 1000;
 /// A row nested beyond [`MAX_ROW_DEPTH`]: the run stops as TypeScript's `RangeError` does.
 #[derive(Debug, PartialEq, Eq)]
 pub struct TooDeep;
-
-fn has_nul(value: &Json) -> bool {
-    match value {
-        Json::Str(s) => s.contains('\0'),
-        Json::Arr(items) => items.iter().any(has_nul),
-        Json::Obj(object) => object.iter().any(|(k, v)| k.contains('\0') || has_nul(v)),
-        _ => false,
-    }
-}
 
 /// `validatePayload` fails: the id field is neither a string nor a finite number of at most
 /// 200 UTF-16 units (absent, `null` and `''` pass).
@@ -284,18 +315,26 @@ pub fn plan(seed: &Json) -> Result<Plan, TooDeep> {
                 out.problems.push(format!("{position}: no es un objeto"));
                 continue;
             };
-            if depth(row) > MAX_ROW_DEPTH {
-                return Err(TooDeep);
-            }
-            if row_has_nul(payload) {
-                out.problems
-                    .push(format!("{position}: contiene caracteres NUL"));
-                continue;
+            // hasNul walks in JavaScript order and stops at the first NUL, so a NUL found before
+            // the walk goes too deep is a problem, not a RangeError.
+            match nul_walk(payload) {
+                Walk::Nul => {
+                    out.problems
+                        .push(format!("{position}: contiene caracteres NUL"));
+                    continue;
+                }
+                Walk::TooDeep => return Err(TooDeep),
+                Walk::Clean => {}
             }
             if let Some(field) = invalid_id(module, payload) {
                 out.problems
                     .push(format!("{position}: {field} no es un código válido"));
                 continue;
+            }
+            // canonical() and JSON.stringify recurse over the whole row (a top-level __proto__
+            // included); refuse every deep row here rather than risk writing one TypeScript cannot.
+            if depth(row) > MAX_ROW_DEPTH {
+                return Err(TooDeep);
             }
             let id = base_maestra_id(module, payload);
             if let Some(previous) = known_ids.get(&id) {
@@ -337,6 +376,23 @@ mod tests {
         let keyed = parse(r#"{"ID_Evento":12.50}"#);
         let Json::Obj(keyed) = keyed else { return };
         assert_eq!(base_maestra_id("Eventos", &keyed), "12.5");
+    }
+
+    #[test]
+    fn finds_a_nul_before_going_too_deep() {
+        let deep = |n: usize| format!("{}1{}", "[".repeat(n), "]".repeat(n));
+        let nul_first = format!(r#"{{"Eventos":[{{"a":"\u0000","x":{}}}]}}"#, deep(3000));
+        let first = std::thread::Builder::new()
+            .stack_size(64 * 1024 * 1024)
+            .spawn(move || plan(&parse(&nul_first)).map(|p| p.problems))
+            .ok()
+            .and_then(|h| h.join().ok());
+        assert_eq!(
+            first,
+            Some(Ok(vec!["Eventos[0]: contiene caracteres NUL".to_owned()]))
+        );
+        let deep_first = format!(r#"{{"Eventos":[{{"x":{},"a":"\u0000"}}]}}"#, deep(1000));
+        assert_eq!(plan(&parse(&deep_first)).err(), Some(TooDeep));
     }
 
     #[test]
