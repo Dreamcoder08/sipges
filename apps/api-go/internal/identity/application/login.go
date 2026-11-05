@@ -93,6 +93,7 @@ type SecretCipher interface {
 type Deps struct {
 	Store    Store
 	Accounts AccountStore
+	Google   GoogleStore
 	Hasher   PasswordHasher
 	Tokens   SessionTokens
 	TOTP     TOTPService

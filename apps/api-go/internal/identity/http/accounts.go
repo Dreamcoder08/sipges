@@ -163,5 +163,7 @@ func (h authHandlers) resetMFA(w http.ResponseWriter, r *http.Request) {
 	if !h.answerAccount(w, r, outcome, err, "reset mfa failed") {
 		return
 	}
-	httpx.WriteJSON(w, http.StatusOK, accountReset{true, domain.NormalizeUsername(raw)})
+	httpx.WriteJSON(w, http.StatusOK, accountReset{true, normalized(raw)})
 }
+
+func normalized(raw string) string { return domain.NormalizeUsername(raw) }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
@@ -35,10 +37,15 @@ func init() {
 			return nil, err
 		}
 		store := identity.Store{DB: d.Pool}
+		clock := d.Now
+		if clock == nil {
+			clock = time.Now
+		}
 		deps := identityhttp.AuthDeps{
 			Identity: application.NewService(application.Deps{
 				Store:    store,
 				Accounts: store,
+				Google:   store,
 				Hasher:   identity.Passwords{},
 				Tokens:   identity.Tokens{},
 				TOTP:     identity.TOTP{},
@@ -49,6 +56,8 @@ func init() {
 			CookieSecure: secure,
 			ClientIP:     httpx.ClientIPOptions{EdgeHeader: edgeHeader, TrustProxy: trustProxy},
 			Logger:       d.Logger,
+			Google:       googleSignIn(os.LookupEnv, d),
+			Clock:        clock,
 			TenantOf: func(r *http.Request) (string, bool) {
 				scope, ok := tenancyhttp.ScopeFrom(r.Context())
 				return scope.TenantID(), ok
@@ -56,6 +65,21 @@ func init() {
 		}
 		return func(mux *http.ServeMux) { identityhttp.RegisterAuth(mux, deps) }, nil
 	})
+}
+
+// googleTransport reaches Google; nil means the default transport. Tests replace it.
+var googleTransport http.RoundTripper
+
+// googleSignIn is createGoogleSignIn from parseGoogle: config.Load already refused one value
+// without the other. A nil interface hides the sign-in routes.
+func googleSignIn(lookup func(string) (string, bool), d Deps) application.GoogleSignIn {
+	id, _ := lookup("SIPGES_GOOGLE_CLIENT_ID")
+	secret, _ := lookup("SIPGES_GOOGLE_CLIENT_SECRET")
+	id, secret = strings.TrimSpace(id), strings.TrimSpace(secret)
+	if id == "" || secret == "" {
+		return nil
+	}
+	return identity.Google{ClientID: id, ClientSecret: secret, Transport: googleTransport, Logger: d.Logger}
 }
 
 // identityCipher seals TOTP secrets under SIPGES_DATA_KEY. Without the key the result is a nil
