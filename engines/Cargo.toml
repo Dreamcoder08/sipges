@@ -19,6 +19,8 @@ postgres = { version = "=0.19.14", default-features = false, features = ["with-s
 rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
 tokio-postgres-rustls = { version = "=0.14.0", default-features = false }
 webpki-roots = { version = "=1.0.9", default-features = false }
+# AES-256-GCM and the system CSPRNG for rotate-data-key (already rustls's crypto provider).
+ring = { version = "=0.17.14", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
