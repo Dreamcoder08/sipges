@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"unicode/utf16"
 	"unicode/utf8"
 
@@ -189,8 +190,9 @@ func numberOf(n json.Number) float64 {
 }
 
 var (
-	lower    = cases.Lower(language.Und)
-	collator = collate.New(language.Und)
+	lower = cases.Lower(language.Und)
+	// A collator holds buffers, so requests served at once must not share one.
+	collators = sync.Pool{New: func() any { return collate.New(language.Und) }}
 )
 
 // lowerJS is String.prototype.toLowerCase (full Unicode mapping).
@@ -198,7 +200,11 @@ func lowerJS(s string) string { return lower.String(s) }
 
 // localeCompare is a.localeCompare(b) under the root collation Node's ICU applies by default,
 // as -1, 0 or 1.
-func localeCompare(a, b string) int { return collator.CompareString(a, b) }
+func localeCompare(a, b string) int {
+	collator, _ := collators.Get().(*collate.Collator)
+	defer collators.Put(collator)
+	return collator.CompareString(a, b)
+}
 
 // Text is a string that may hold WTF-8 lone surrogates; it marshals them as JSON.stringify
 // writes them ("\ud83d"), where encoding/json would write U+FFFD.
@@ -237,6 +243,9 @@ func appendJSON(out *bytes.Buffer, s string) error {
 	out.Write(part[1 : len(part)-1])
 	return nil
 }
+
+// NumberText is String(number).
+func NumberText(f float64) string { return jsNumber(f) }
 
 // Len16 is s.length (UTF-16 code units).
 func Len16(s string) int { return len16(s) }

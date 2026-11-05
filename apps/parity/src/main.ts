@@ -13,6 +13,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { assistedBriefingCases, setExternalAi, unpairedNarrations } from './assisted-briefing.ts';
 import { CASES, validateCases } from './cases.ts';
 import { startEmbedderDouble } from './embedder-double.ts';
 import { compareIndexes, semanticSearchCases } from './semantic-search.ts';
@@ -157,7 +158,17 @@ const main = async () => {
       semanticSearchCases,
       sessions,
     );
-    return passed && indexes.same && hybrid;
+
+    const urls = { tsUrl: hybridTs.url, goUrl: hybridGo.url };
+    const off = await compareCases(urls, assistedBriefingCases('switch off'), sessions);
+    await setExternalAi(hybridTs.url, sessions.admin, true);
+    const on = await compareCases(urls, assistedBriefingCases('switch on'), sessions);
+    const unpaired = unpairedNarrations(embedder.narrated);
+    const narrated = embedder.narrated.length > 0 && unpaired === 0;
+    console.info(
+      `${narrated ? 'ok  ' : 'FAIL'}  narrated briefings: ${embedder.narrated.length} requests, ${unpaired} unpaired`,
+    );
+    return passed && indexes.same && hybrid && off && on && narrated;
   } finally {
     process.off('SIGINT', interrupted);
     process.off('SIGTERM', interrupted);

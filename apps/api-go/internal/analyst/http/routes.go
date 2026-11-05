@@ -1,13 +1,13 @@
 // Package http serves the deterministic read routes of
 // apps/api/src/contexts/analyst/http/analyst-routes.ts with the same JSON:
 //
-//   - GET /system/briefing: the extractive briefing (engine "extractivo"), which is what TypeScript
-//     answers while no narrator is configured (SIPGES_ANALYST_PROVIDER unset);
+//   - GET /system/briefing: the extractive briefing, with prose from the narrator when
+//     SIPGES_ANALYST_PROVIDER configures one;
 //   - GET /system/briefing/proposals: the record's open proposals.
 //
 // The session, project scope and role gate ran before (internal/app); every read runs in the
-// scope's tenant transaction. The assisted briefing (a language model behind the egress guard)
-// and POST /system/briefing/proposals (writes through other contexts, audited) stay in TypeScript.
+// scope's tenant transaction, which never stays open across a call to the narrator.
+// POST /system/briefing/proposals (writes through other contexts, audited) stays in TypeScript.
 //
 //nolint:misspell // Spanish record fields, modules and messages, verbatim from the TypeScript API.
 package http
@@ -32,6 +32,8 @@ type Options struct {
 	// Now is the clock for "today" and generated_at; nil means time.Now.
 	Now    func() time.Time
 	Logger *slog.Logger
+	// Assisted adds the narrator's prose; nil keeps the briefing extractive.
+	Assisted *application.Assisted
 }
 
 const notFound = "Registro no encontrado"
@@ -212,6 +214,10 @@ func Routes(mux *http.ServeMux, opts Options) {
 	mux.HandleFunc("GET /system/briefing", func(w http.ResponseWriter, r *http.Request) {
 		module, id := subjectOf(r)
 		at := now()
+		if opts.Assisted != nil {
+			assisted(w, r, opts, module, id, at, fail)
+			return
+		}
 		found, err := tenancyhttp.WithRequestTenant(r, opts.DB, func(ctx context.Context, q database.Querier) (result[domain.Briefing], error) {
 			briefing, ok, err := application.Briefing(ctx, infrastructure.Reader{Q: q}, module, id, at)
 			return result[domain.Briefing]{briefing, ok}, err

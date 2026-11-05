@@ -1,8 +1,9 @@
 import type { ParityCase } from '../types.ts';
 
 /**
- * Analyst, deterministic reads (T30): GET /system/briefing (the extractive briefing; the parity
- * run configures no narrator) and GET /system/briefing/proposals. The seed is a small graph in
+ * Analyst, deterministic reads (T30): GET /system/briefing (the extractive briefing; this stage of
+ * the parity run configures no narrator, ../assisted-briefing.ts does) and GET
+ * /system/briefing/proposals. The seed is a small graph in
  * the default project, with explicit and inferred links, a restricted source (hidden from
  * `consulta`), an overdue commitment, open severe alerts (one already decided), a demand answered
  * by a commitment and a narrative naming an actor in its text. OTHER_TENANT (see ../fixtures.ts)
