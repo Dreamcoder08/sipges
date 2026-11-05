@@ -19,8 +19,9 @@ var semanticErrors = map[application.TextError]struct {
 	status int
 	detail string
 }{
-	application.ErrMode: {http.StatusUnprocessableEntity, "Modo inválido"},
-	application.ErrURL:  {http.StatusUnprocessableEntity, "URL pública inválida"},
+	application.ErrMode:       {http.StatusUnprocessableEntity, "Modo inválido"},
+	application.ErrURL:        {http.StatusUnprocessableEntity, "URL pública inválida"},
+	application.ErrSourceType: {http.StatusUnprocessableEntity, "Tipo de fuente inválido"},
 	application.ErrUnavailable: {
 		http.StatusServiceUnavailable,
 		"Modelo local no disponible. Instale Ollama, descargue el modelo configurado o seleccione análisis por reglas.",

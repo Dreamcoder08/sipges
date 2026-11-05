@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/intelligence/application"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/intelligence/domain"
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
 )
 
@@ -100,7 +101,7 @@ func (o *Ollama) Embed(ctx context.Context, text privacy.Sanitised[string]) ([]f
 	err := encoder.Encode(struct {
 		Model string `json:"model"`
 		Input string `json:"input"`
-	}{o.model, firstCodePoints(text.Value(), maxInputCodePoints)})
+	}{o.model, domain.FirstCodePoints(text.Value(), maxInputCodePoints)})
 	if err != nil {
 		return nil, errors.New("embeddings: unencodable request")
 	}
@@ -153,15 +154,4 @@ func parseVector(body []byte) ([]float64, error) {
 		vector[i] = *entry
 	}
 	return vector, nil
-}
-
-func firstCodePoints(text string, limit int) string {
-	count := 0
-	for i := range text {
-		if count == limit {
-			return text[:i]
-		}
-		count++
-	}
-	return text
 }
