@@ -21,6 +21,10 @@ tokio-postgres-rustls = { version = "=0.14.0", default-features = false }
 webpki-roots = { version = "=1.0.9", default-features = false }
 # AES-256-GCM and the system CSPRNG for rotate-data-key (already rustls's crypto provider).
 ring = { version = "=0.17.14", default-features = false, features = ["std"] }
+# migrate-legacy: the legacy SQLite files, read only, with SQLite built in rather than from the
+# host; and the S3 calls of object storage, over the same rustls and ring as PostgreSQL.
+rusqlite = { version = "=0.40.2", default-features = false, features = ["bundled"] }
+ureq = { version = "=3.4.2", default-features = false, features = ["rustls"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
