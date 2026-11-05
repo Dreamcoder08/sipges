@@ -19,6 +19,7 @@ import (
 type embedderDouble struct {
 	mu   sync.Mutex
 	sent []string
+	raw  []string
 	down bool
 }
 
@@ -26,10 +27,12 @@ func (e *embedderDouble) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Input string `json:"input"`
 	}
-	_ = json.NewDecoder(r.Body).Decode(&body)
+	raw, _ := io.ReadAll(r.Body)
+	_ = json.Unmarshal(raw, &body)
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.sent = append(e.sent, body.Input)
+	e.raw = append(e.raw, string(raw))
 	if e.down {
 		w.WriteHeader(http.StatusBadGateway)
 		return
@@ -110,6 +113,18 @@ func TestSemanticSearchFusesLexicalAndSemanticHits(t *testing.T) {
 	hits := search(t, base, "reuni%C3%B3n", "solo")
 	if len(hits) != 1 || hits[0].ID != "E1" || !hits[0].Semantic || string(hits[0].Match) == "null" {
 		t.Fatalf("hits = %+v", hits)
+	}
+}
+
+func TestHalfAnEmojiInTheQueryReachesTheModelAsTypeScriptSendsIt(t *testing.T) {
+	double, base := withEmbedder(t)
+	// The route cuts q at 200 UTF-16 units, here in the middle of the emoji.
+	search(t, base, strings.Repeat("x", 199)+"%F0%9F%98%80b", "solo")
+	double.mu.Lock()
+	defer double.mu.Unlock()
+	last := double.raw[len(double.raw)-1]
+	if !strings.HasSuffix(last, strings.Repeat("x", 199)+`\ud83d"}`) {
+		t.Fatalf("body = %s", last)
 	}
 }
 

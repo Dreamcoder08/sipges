@@ -43,7 +43,8 @@ func (d Deps) semanticRefs(r *http.Request, q domain.Units, found application.Le
 	if !ok || len(found.Terms) == 0 {
 		return nil
 	}
-	refs, err := d.Semantic.Refs(r.Context(), scope.TenantID(), q.String(), found.Modules, found.Bounded, d.inTenant(r))
+	// Text keeps half an emoji where the route cut the query, as WTF-8; String would replace it.
+	refs, err := d.Semantic.Refs(r.Context(), scope.TenantID(), string(q.Text()), found.Modules, found.Bounded, d.inTenant(r))
 	if err != nil {
 		if d.Logger != nil {
 			d.Logger.LogAttrs(r.Context(), slog.LevelWarn, "semantic_search_unavailable",

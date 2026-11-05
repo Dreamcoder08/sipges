@@ -155,6 +155,15 @@ func embeddable(value any) (string, bool) {
 	return "", false
 }
 
+// VectorText is the real[] literal of a vector: `{${vector.join(',')}}`, with JavaScript's numbers.
+func VectorText(vector []float64) string {
+	parts := make([]string, len(vector))
+	for i, value := range vector {
+		parts[i] = js.JSNumber(value)
+	}
+	return "{" + strings.Join(parts, ",") + "}"
+}
+
 // firstCodePoints is Array.from(text).slice(0, limit).join(""). A title cut in the middle of an emoji
 // holds half of it as three bytes of WTF-8, which are one code point to JavaScript.
 func firstCodePoints(text string, limit int) string {

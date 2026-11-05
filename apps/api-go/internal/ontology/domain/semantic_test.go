@@ -123,3 +123,11 @@ func TestEmbeddingTextIsCutAtFourThousandCodePoints(t *testing.T) {
 		t.Fatalf("got %d bytes", len(got))
 	}
 }
+
+func TestVectorTextIsWhatJoinWrites(t *testing.T) {
+	t.Parallel()
+	got := domain.VectorText([]float64{1, 0.5, math.Copysign(0, -1), 1e21, 1.5e-7})
+	if want := "{1,0.5,0,1e+21,1.5e-7}"; got != want {
+		t.Fatalf("got %s, want %s", got, want)
+	}
+}

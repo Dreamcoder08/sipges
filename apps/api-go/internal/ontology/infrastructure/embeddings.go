@@ -65,7 +65,7 @@ func (i EmbeddingIndex) Stale(ctx context.Context, model string, limit int) ([]a
 // Save implements application.EmbeddingIndex.
 func (i EmbeddingIndex) Save(ctx context.Context, rows []application.EmbeddingRow, model string, at time.Time) error {
 	for _, row := range rows {
-		_, err := i.Q.Exec(ctx, saveEmbedding, row.Module, row.ID, model, vectorText(row.Vector), row.Hash, at)
+		_, err := i.Q.Exec(ctx, saveEmbedding, row.Module, row.ID, model, domain.VectorText(row.Vector), row.Hash, at)
 		if err != nil {
 			return err
 		}
@@ -90,14 +90,6 @@ func (i EmbeddingIndex) Vectors(ctx context.Context, modules []string, model str
 		stored.Vector, err = parseVector(text)
 		return stored, err
 	})
-}
-
-func vectorText(vector []float64) string {
-	parts := make([]string, len(vector))
-	for i, value := range vector {
-		parts[i] = strconv.FormatFloat(value, 'g', -1, 64)
-	}
-	return "{" + strings.Join(parts, ",") + "}"
 }
 
 func parseVector(text string) ([]float64, error) {
