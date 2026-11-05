@@ -2,12 +2,16 @@ package app_test
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // maxBody mirrors httpx.MaxRequestBody: TypeScript has no global limit, so this one is SIPGES Go's.
@@ -150,4 +154,130 @@ func TestTheProjectCheckStopsReadingAtTheLimit(t *testing.T) {
 			}
 		})
 	}
+}
+
+// databaseState is the rows of every table but the sessions, read past row-level security, so
+// comparing two states proves no write landed in any tenant.
+func databaseState(ctx context.Context, t *testing.T) map[string]string {
+	t.Helper()
+	conn, err := pgx.Connect(ctx, scratch.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close(ctx) }()
+	rows, err := conn.Query(ctx, `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> 'sessions'`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		t.Fatal(err)
+	}
+	state := make(map[string]string, len(tables))
+	for _, table := range tables {
+		name := pgx.Identifier{"public", table}.Sanitize()
+		var count, digest string
+		query := `SELECT count(*)::text, coalesce(md5(string_agg(row.r, '|' ORDER BY row.r)), '') FROM (SELECT t::text AS r FROM ` + name + ` t) row`
+		if err := conn.QueryRow(ctx, query).Scan(&count, &digest); err != nil {
+			t.Fatal(err)
+		}
+		state[table] = count + ":" + digest
+	}
+	return state
+}
+
+func storedFiles(t *testing.T, dir string) int {
+	t.Helper()
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(entries)
+}
+
+// Past the limit the project check stops reading on routes that bound the body themselves, so a
+// JSON body naming another project is not refused with the project's 403. These bodies must
+// still write nothing, in any tenant; the last subtest proves the same bytes can write.
+func TestAnExemptRouteWritesNothingForAnOversizeBodyNamingAnotherProject(t *testing.T) {
+	uploads := t.TempDir()
+	t.Setenv("SIPGES_MAX_UPLOAD_BYTES", "20971520") // 20 MiB: over the global limit
+	t.Setenv("SIPGES_STORAGE", "local")
+	t.Setenv("SIPGES_UPLOAD_DIR", uploads)
+	s := start(t, false)
+	const scope, own, other = "X-SIPGES-Scope", "SIPGES/PRJ-SECHURA", "NORTE"
+	padding := strings.Repeat("x", maxBody)
+	account := func(project, pad string) string {
+		return `{"username":"intruso","full_name":"Intruso","password":"Clave-Sintetica-2026!","role":"admin","project_id":"` + project + `","x":"` + pad + `"}`
+	}
+	const boundary = "limite"
+	upload := "--" + boundary + "\r\nContent-Disposition: form-data; name=\"linked_module\"\r\n\r\neventos\r\n" +
+		"--" + boundary + "\r\nContent-Disposition: form-data; name=\"linked_record_id\"\r\n\r\nsouth\r\n" +
+		"--" + boundary + "\r\nContent-Disposition: form-data; name=\"project_id\"\r\n\r\nPRJ-SECHURA\r\n" +
+		"--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"intruso.txt\"\r\nContent-Type: text/plain\r\n\r\n" +
+		padding + "\r\n--" + boundary + "--\r\n"
+	before := databaseState(t.Context(), t)
+
+	jsonInvalid := `{"detail":[{"type":"json_invalid","loc":["body"],"msg":"JSON decode error"}]}`
+	missingFile := `{"detail":[{"type":"missing","loc":["body","file"],"msg":"Field required"}]}`
+	missingFileA := `{"detail":[{"type":"missing","loc":["body","file_a"],"msg":"Field required"}]}`
+	for _, c := range []struct {
+		path, contentType, body, want string
+	}{
+		{"/system/uploads", "application/json", account(other, padding), missingFile},
+		{"/system/uploads", "application/json; boundary=" + boundary, upload, missingFile},
+		{"/system/document-lab/analyze", "application/json", account(other, padding), missingFile},
+		{"/system/document-lab/report.docx", "application/json", account(other, padding), missingFile},
+		{"/system/document-lab/compare", "application/json", account(other, padding), missingFileA},
+		{"/system/auth/accounts", "application/json", account(other, padding), jsonInvalid},
+		{"/system/auth/accounts/solo/google", "application/json", `{"email":"intruso@example.com","project_id":"` + other + `","x":"` + padding + `"}`, jsonInvalid},
+	} {
+		for name, chunked := range map[string]bool{"declared": false, "chunked": true} {
+			t.Run(c.path+" "+c.contentType+" "+name, func(t *testing.T) {
+				expect(t, s.sendBody(t, c.path, "multi", c.contentType, c.body, chunked, scope, own), http.StatusUnprocessableEntity, c.want)
+			})
+		}
+	}
+	t.Run("under the limit the project check still refuses it", func(t *testing.T) {
+		expect(t, s.sendBody(t, "/system/auth/accounts", "multi", "application/json", account(other, ""), false, scope, own),
+			http.StatusForbidden, `{"detail":"No se permite escribir en otro proyecto"}`)
+	})
+
+	after := databaseState(t.Context(), t)
+	for table, state := range before {
+		if after[table] != state {
+			t.Errorf("%s changed: %s, then %s", table, state, after[table])
+		}
+	}
+	if len(after) != len(before) {
+		t.Errorf("tables: %d, then %d", len(before), len(after))
+	}
+	if n := storedFiles(t, uploads); n != 0 {
+		t.Errorf("%d objects stored by refused requests", n)
+	}
+
+	t.Run("the same payloads write when sent as the route expects, in the scope's tenant only", func(t *testing.T) {
+		got := s.sendBody(t, "/system/uploads", "multi", "multipart/form-data; boundary="+boundary, upload, false, scope, own)
+		if got.status != http.StatusOK {
+			t.Fatalf("upload: %d %.300s", got.status, got.body)
+		}
+		got = s.sendBody(t, "/system/auth/accounts", "multi", "application/json", account("PRJ-SECHURA", ""), false, scope, own)
+		if got.status != http.StatusOK {
+			t.Fatalf("account: %d %.300s", got.status, got.body)
+		}
+		conn, err := pgx.Connect(t.Context(), scratch.URL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() { _ = conn.Close(context.Background()) }()
+		var tenants string
+		if err := conn.QueryRow(t.Context(), `SELECT string_agg(tenant_id, ',') FROM attachments WHERE original_name = 'intruso.txt'`).Scan(&tenants); err != nil {
+			t.Fatal(err)
+		}
+		if tenants != own {
+			t.Fatalf("attachment tenants: %q", tenants)
+		}
+		if n := storedFiles(t, uploads); n == 0 {
+			t.Fatal("the accepted upload stored no object")
+		}
+	})
 }
