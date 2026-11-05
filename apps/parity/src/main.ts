@@ -13,6 +13,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { assistedBriefingCases, setExternalAi, unpairedNarrations } from './assisted-briefing.ts';
 import { CASES, validateCases } from './cases.ts';
 import { startEmbedderDouble } from './embedder-double.ts';
 import { compareIndexes, semanticSearchCases } from './semantic-search.ts';
@@ -157,7 +158,20 @@ const main = async () => {
       semanticSearchCases,
       sessions,
     );
-    return passed && indexes.same && hybrid;
+
+    const urls = { tsUrl: hybridTs.url, goUrl: hybridGo.url };
+    // Earlier cases may have left the switch on.
+    await setExternalAi(hybridTs.url, sessions.admin, false);
+    const off = await compareCases(urls, assistedBriefingCases('switch off'), sessions);
+    const leaked = embedder.narrated.length;
+    await setExternalAi(hybridTs.url, sessions.admin, true);
+    const on = await compareCases(urls, assistedBriefingCases('switch on'), sessions);
+    const unpaired = unpairedNarrations(embedder.narrated);
+    const narrated = leaked === 0 && embedder.narrated.length > 0 && unpaired === 0;
+    console.info(
+      `${narrated ? 'ok  ' : 'FAIL'}  narrated briefings: ${leaked} with the switch off, ${embedder.narrated.length} with it on, ${unpaired} unpaired`,
+    );
+    return passed && indexes.same && hybrid && off && on && narrated;
   } finally {
     process.off('SIGINT', interrupted);
     process.off('SIGTERM', interrupted);

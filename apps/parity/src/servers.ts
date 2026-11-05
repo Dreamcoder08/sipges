@@ -132,6 +132,19 @@ export const startProcess = async (
 };
 
 /** The real TypeScript composition root; it applies the migrations and seeds the administrator. */
+/** What the second stage of the run turns on: hybrid search and the assisted briefing. */
+const secondStage = (on: boolean, embedderUrl: string) => ({
+  SIPGES_SEMANTIC_SEARCH: on ? '1' : '0',
+  ...(on
+    ? {
+        SIPGES_ANALYST_PROVIDER: 'anthropic',
+        // A synthetic value: the base URL is the local double, never a real provider.
+        ANTHROPIC_API_KEY: 'synthetic-test-value',
+        ANTHROPIC_BASE_URL: embedderUrl,
+      }
+    : {}),
+});
+
 export const startTypeScriptApi = async (
   databaseUrl: string,
   secrets: ReturnType<typeof syntheticSecrets>,
@@ -153,7 +166,7 @@ export const startTypeScriptApi = async (
       SIPGES_AUTOMATION_INTERVAL: '0',
       // The synthetic embedder both APIs share (embedder-double.ts).
       SIPGES_OLLAMA_URL: embedderUrl,
-      SIPGES_SEMANTIC_SEARCH: semanticSearch ? '1' : '0',
+      ...secondStage(semanticSearch, embedderUrl),
     },
     await freePort(),
   );
@@ -182,7 +195,7 @@ export const startGoApi = async (
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_DATA_KEY: dataKey,
       SIPGES_OLLAMA_URL: embedderUrl,
-      SIPGES_SEMANTIC_SEARCH: semanticSearch ? '1' : '0',
+      ...secondStage(semanticSearch, embedderUrl),
     },
     await freePort(),
   );
