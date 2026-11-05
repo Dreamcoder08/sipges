@@ -1,7 +1,7 @@
-// Package application is the read side of
-// apps/api/src/contexts/ontology/application/ontology-service.ts: a record's links, its graph,
-// the lexical search and the timeline. Links, markings and the neighbourhood POST stay in
-// TypeScript; so does the semantic half of search (embeddings through the egress guard).
+// Package application is apps/api/src/contexts/ontology/application/ontology-service.ts: a
+// record's links, its graph and neighbourhood, the lexical search and the timeline, and the
+// writes (writes.go): links, their evidence and record markings. The semantic half of search
+// (embeddings through the egress guard) stays in TypeScript.
 package application
 
 import (

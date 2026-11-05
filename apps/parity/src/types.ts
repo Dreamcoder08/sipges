@@ -37,7 +37,10 @@ export type ParityCase = {
    * tokens read back as `{api}` before comparing.
    */
   readonly perApi?: true;
+  /**
+   * Values that differ per API, written `{name}` in `path`, header values and the body. Both
+   * APIs receive every case at once, on one database, so a write that succeeds once (creating
+   * or deleting a row) names a row of its own on each side, such as `{ w: { ts: 'WT', go: 'WG' } }`.
+   */
+  readonly vary?: Readonly<Record<string, { readonly ts: string; readonly go: string }>>;
 };
-
-/** Which API a request goes to; a perApi case names its own target after it. */
-export type Api = 'ts' | 'go';

@@ -1,7 +1,10 @@
-// Package http serves the read routes of apps/api/src/contexts/ontology/http/ontology-routes.ts
-// with the same JSON: GET /system/ontology, /system/search, /system/timeline, /system/links and
-// /system/graph. The session, project scope and role gate ran before (internal/app); every
-// read runs in the request's tenant transaction (tenancyhttp.WithRequestTenant).
+// Package http serves the routes of apps/api/src/contexts/ontology/http/ontology-routes.ts with
+// the same JSON: GET /system/ontology, /system/search, /system/timeline, /system/links and
+// /system/graph; POST /system/graph/neighbourhood; and the writes (writes.go): POST
+// /system/links, PUT /system/links/:id/evidence, PUT /system/marking and DELETE
+// /system/links/:id. The session, project scope and role gate ran before (internal/app); every
+// route runs in the request's tenant transaction (tenancyhttp.WithRequestTenant). Semantic
+// search (embeddings through the egress guard) stays in TypeScript.
 package http
 
 import (
@@ -33,9 +36,11 @@ const (
 type Deps struct {
 	DB     database.Beginner
 	Logger *slog.Logger
+	// Now is the clock of the writes; nil means time.Now.
+	Now func() time.Time
 }
 
-// Register mounts the ontology read routes on mux.
+// Register mounts the ontology routes on mux.
 func Register(mux *http.ServeMux, d Deps) {
 	mux.HandleFunc("GET /system/ontology", func(w http.ResponseWriter, _ *http.Request) {
 		httpx.WriteJSON(w, http.StatusOK, domain.Catalog())
@@ -44,6 +49,7 @@ func Register(mux *http.ServeMux, d Deps) {
 	mux.HandleFunc("GET /system/timeline", d.timeline)
 	mux.HandleFunc("GET /system/links", d.links)
 	mux.HandleFunc("GET /system/graph", d.graph)
+	registerWrites(mux, d)
 }
 
 // query is c.req.query(name), or the empty string when absent.
@@ -246,7 +252,7 @@ func read[T any](r *http.Request, db database.Beginner, fn func(context.Context,
 // carry connection details.
 func (d Deps) fail(w http.ResponseWriter, r *http.Request) {
 	if d.Logger != nil {
-		d.Logger.LogAttrs(r.Context(), slog.LevelError, "ontology read failed",
+		d.Logger.LogAttrs(r.Context(), slog.LevelError, "ontology request failed",
 			slog.String("request_id", httpx.RequestIDFrom(r.Context())))
 	}
 	httpx.WriteError(w, http.StatusInternalServerError, "Internal Server Error")
