@@ -34,6 +34,7 @@ Go, or two Go instances, tick the same tenant:
 | Settle window | The cursor passes an event only when it is 60 s old | Late commits are read again, and the unique run absorbs the repeat |
 | Claim | `FOR UPDATE … SKIP LOCKED`, sets the attempt and a 120 s lease in one statement | A run goes to one runner; the other takes the next |
 | Send | The lease outlasts the 10 s send timeout | No live send is claimed again |
+| Narrative evaluation | A lock on the signal's key, then a look for the same signal in the last 24 hours | A repeated evaluation creates no second alert |
 | Browser push | `FOR UPDATE OF d SKIP LOCKED`, sets the attempt and a 120 s lease in one statement | A delivery goes to one runner |
 | Polling | `UPDATE … WHERE` due, on the feed and on the connector's settings | Each source is fetched by one runner |
 | Narratives | Id derived from the feed URL and item key | The same item is never imported twice |
@@ -107,9 +108,8 @@ stop with no error.
   trigger, so a trial needs one on `sipges-go`, and production needs the container bound. The `*/15` trigger is
   longer than the 10-minute sleep, so each call pays a cold start.
 
-**2. What happens to the work only TypeScript does.** Go leaves `evaluate` steps unclaimed, because they need the
-intelligence context's `createAlert`. Go delivers browser pushes when it has `SIPGES_VAPID_*`; without those keys
-they wait for TypeScript. Removing the Cron Trigger does not stop TypeScript either: `eventAutomation: true` makes every write it serves
-scan, claim and send. Those runs and `push_deliveries` would move only when the next TypeScript write wakes a tick,
-and never once writes move to Go. Until both are ported, either TypeScript keeps ticking beside Go, which the table
-above shows is safe, or those features stop.
+**2. When TypeScript stops ticking.** Go runs every step kind: `evaluate` always, `channel` with `SIPGES_DATA_KEY`, and
+browser pushes with `SIPGES_VAPID_*`. Without those keys, the runs and `push_deliveries` stay queued for TypeScript.
+Removing the Cron Trigger does not stop TypeScript either: `eventAutomation: true` makes every write it serves scan,
+claim and send. TypeScript can stop ticking once Go holds both keys and runs its schedule. Until then both can tick,
+which the table above shows is safe.

@@ -82,6 +82,7 @@ func automationModule(d Deps) (*automation, error) {
 		ExecutionBudget: application.DefaultExecutionBudget,
 		Logger:          d.Logger,
 	}
+	service.Evaluate = narrativeEvaluator(d)
 	service, err = withPush(service, d.Pool)
 	if err != nil {
 		return nil, err
