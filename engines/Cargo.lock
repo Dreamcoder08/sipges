@@ -685,6 +685,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sipges-base-maestra"
+version = "0.1.0"
+dependencies = [
+ "postgres",
+ "ring",
+ "serde_json",
+ "sipges-indicators",
+ "sipges-tools-common",
+]
+
+[[package]]
 name = "sipges-candidate-links"
 version = "0.1.0"
 dependencies = [
