@@ -17,7 +17,9 @@ The TypeScript tool stays until the owner retires it.
 - Sealed format `v1.<base64url(nonce | ciphertext | tag)>`, AES-256-GCM with a random 12-byte
   nonce (`ring`): values sealed by either tool open with the other and with the API. Opening
   follows Node: only the first two dot-separated parts are read, base64url decoding is lenient
-  (both alphabets, other characters skipped, stops at `=`), invalid UTF-8 plaintext becomes U+FFFD.
+  (the low byte of each UTF-16 unit is read, so `Ł` counts as `A`; both alphabets; other bytes
+  skipped; stops at `=`), invalid UTF-8 plaintext becomes U+FFFD. `--report=` (empty) writes nothing.
+  Equal keys are reported before connecting, as postgres.js connects lazily.
 - Flags (`--dry-run` default, `--apply`, `--report <file>`, `--help`, a leading `--` dropped), the
   usage text, the summary lines, the JSON report, the «Rotation stopped» lines and exit codes
   (0, 1 on problems or a stop, 2 without `SIPGES_DATA_KEY_PREVIOUS`).
@@ -40,9 +42,10 @@ The TypeScript tool stays until the owner retires it.
 
 ## Differential test
 
-`engines/tools-parity/rotate-data-key.ts`: 22 steps on synthetic databases (TOTP secrets and
+`engines/tools-parity/rotate-data-key.ts`: 23 steps on synthetic databases (TOTP secrets and
 channel configs under the old key, the new key, a third key, `v1.`, plain text, invalid UTF-8,
-noisy base64, standard alphabet, a trailing `.part`, empty plaintext; flags, missing and invalid
+noisy base64, standard alphabet, a trailing `.part`, empty plaintext, `Ł` replacing or inserted in
+the payload; flags, missing and invalid
 keys, equal keys, report files, rotating back, and a trigger that fails the last unit then is
 removed to resume). Tables are compared by what each value opens to, since every seal has a fresh
 nonce.

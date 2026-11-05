@@ -8,14 +8,16 @@ const VERSION: &str = "v1";
 const NONCE_BYTES: usize = 12;
 const TAG_BYTES: usize = 16;
 
-/// `Buffer.from(value, 'base64url')`: both alphabets, characters outside them skipped, stops at
-/// the first `=`, a trailing lone sextet dropped.
+/// `Buffer.from(value, 'base64url')`: Node reads the low byte of each UTF-16 code unit (so `Ł`,
+/// U+0141, counts as `A` and a high surrogate's `0x3D` as `=`), accepts both alphabets, skips
+/// other bytes, stops at the first `=` and drops a trailing lone sextet.
 #[must_use]
 pub fn decode_base64_lenient(value: &str) -> Vec<u8> {
     let mut out = Vec::with_capacity(value.len() * 3 / 4);
     let mut buffer: u32 = 0;
     let mut bits = 0;
-    for byte in value.bytes() {
+    for unit in value.encode_utf16() {
+        let byte = u8::try_from(unit & 0xFF).unwrap_or(0);
         let sextet = match byte {
             b'A'..=b'Z' => byte - b'A',
             b'a'..=b'z' => byte - b'a' + 26,
@@ -149,6 +151,11 @@ mod tests {
         assert_eq!(hex("AAEC=AAEC"), "000102");
         assert_eq!(hex("=AAA"), "");
         assert_eq!(hex("ÿAAEC"), "000102");
+        // Low byte of each UTF-16 unit, as observed with Node 22.
+        assert_eq!(hex("ŁAEC"), "000102");
+        assert_eq!(hex("AAšC"), hex("AAaC"));
+        assert_eq!(hex("AAīC"), hex("AA+C"));
+        assert_eq!(hex("AA😀EC"), "00");
         assert_eq!(encode_base64url(&[0, 1, 2, 3]), "AAECAw");
         assert_eq!(encode_base64url(&[0xfb, 0xff]), "-_8");
     }

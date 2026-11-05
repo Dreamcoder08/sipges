@@ -48,7 +48,7 @@ fn stopped(message: &str) -> ExitCode {
 }
 
 fn main() -> ExitCode {
-    let mut argv: Vec<String> = std::env::args().skip(1).collect();
+    let mut argv = args::raw_args();
     // pnpm forwards the `--` of `pnpm … rotate:data-key -- --apply` to the script.
     if argv.first().is_some_and(|a| a == "--") {
         argv.remove(0);
@@ -86,6 +86,10 @@ fn main() -> ExitCode {
             Err(error) => return uncaught("Error", &error.0),
         },
     };
+    // postgres.js connects on the first query, so equal keys are reported before any connection.
+    if old_key == new_key {
+        return stopped("The old and new data keys must differ");
+    }
     let url = match env::database_url(&env::process_env) {
         Ok(url) => url,
         Err(error) => return uncaught("Error", &error.0),
@@ -102,7 +106,8 @@ fn main() -> ExitCode {
         Err(failure) => return stopped(&failure.0),
     };
     println!("{}", report.summarize());
-    if let Some(path) = args::string(&values, "report") {
+    // `if (options.report)`: an empty path writes nothing.
+    if let Some(path) = args::string(&values, "report").filter(|path| !path.is_empty()) {
         let text = match serde_json::to_string_pretty(&report.to_json()) {
             Ok(text) => text,
             Err(error) => return stopped(&error.to_string()),

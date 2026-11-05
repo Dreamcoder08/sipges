@@ -87,6 +87,10 @@ const seedBase = async (sql: SqlClient) => {
   const std = seal(OLD, 'alfabeto-estandar').replaceAll('-', '+').replaceAll('_', '/');
   await user(sql, 'hugo', std);
   await user(sql, 'ines', sealBytes(OLD, Buffer.alloc(0)));
+  // Node reads the low byte of each UTF-16 unit: 'Ł' (U+0141) decodes as 'A'.
+  const plain = seal(OLD, 'reemplazado');
+  const at = plain.indexOf('A', 3);
+  await user(sql, 'juan', at > 0 ? `${plain.slice(0, at)}Ł${plain.slice(at + 1)}` : `${plain}Ł`);
   for (const [i, tenant] of TENANTS.entries()) {
     await tenantInsert(sql, tenant, 'avisos', seal(OLD, JSON.stringify({ url: `https://hooks.test/${i}` })));
     await tenantInsert(sql, tenant, 'ya-nuevo', seal(NEW, '{"url":"https://hooks.test/nuevo"}'));
@@ -97,6 +101,8 @@ const seedBase = async (sql: SqlClient) => {
 const seedUnreadable = async (sql: SqlClient) => {
   await seedBase(sql);
   await user(sql, 'zeta', seal(OTHER, 'otra clave'));
+  const inserted = seal(OLD, 'insertado');
+  await user(sql, 'zeta-l', `${inserted.slice(0, 20)}Ł${inserted.slice(20)}`);
   await tenantInsert(sql, 'ACME/SUR', 'roto', 'v1.');
   await tenantInsert(sql, 'BETA/ESTE', 'raro', 'texto plano');
 };
@@ -153,6 +159,7 @@ const scenarios: Scenario[] = [
       step(['--dry-run', '--report', REPORT], { files: [REPORT] }),
       step(['--report', 'engines/tools-parity/no-existe/r.json'], {}),
       step(['--apply', '--report', REPORT], { files: [REPORT] }),
+      step(['--report=']),
       step(['--apply']),
       step(['--', '--dry-run']),
       // Rotating back: the new key is now the previous one.
