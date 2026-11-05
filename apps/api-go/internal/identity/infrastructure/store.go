@@ -126,6 +126,12 @@ func (s Store) CreateSession(ctx context.Context, tokenHash, username string, ex
 	})
 }
 
+// DeleteSession ends one session.
+func (s Store) DeleteSession(ctx context.Context, tokenHash string) error {
+	_, err := s.DB.Exec(ctx, `DELETE FROM sessions WHERE token_hash = $1`, tokenHash)
+	return err
+}
+
 // PurgeExpiredSessions deletes every session past its expiry.
 func (s Store) PurgeExpiredSessions(ctx context.Context, at time.Time) error {
 	_, err := s.DB.Exec(ctx, `DELETE FROM sessions WHERE expires_at <= $1`, at)

@@ -268,11 +268,14 @@ func TestLoginAnswersLikeTypeScriptOnASecretThatIsNotBase32(t *testing.T) {
 	expect(t, f.loginOTP(t, user, "123456").reply, http.StatusInternalServerError, `{"detail":"Internal Server Error"}`)
 }
 
-func TestLoginWithoutADataKeyFailsTheFactorClosed(t *testing.T) {
-	f := newLoginFixture(t, "totp-nokey")
-	got := totpFixture{f}
-	user := got.protected(t, "user", seal(t, totpKey, "JBSWY3DPEHPK3PXP"))
-	expect(t, got.loginOTP(t, user, got.code(t, "JBSWY3DPEHPK3PXP", f.s.clock.now())).reply, http.StatusUnauthorized, badOTP)
-	tokens[user] = newToken()
-	expect(t, f.s.do(t, req{method: "POST", path: "/system/auth/totp/setup", sameOrigin: true}), http.StatusUnauthorized, signIn)
+func TestWithoutADataKeyTheFactorFailsClosedAndEnrolmentIsNotServed(t *testing.T) {
+	f := totpFixture{newLoginFixture(t, "totp-nokey")}
+	user := f.protected(t, "user", seal(t, totpKey, "JBSWY3DPEHPK3PXP"))
+	expect(t, f.loginOTP(t, user, f.code(t, "JBSWY3DPEHPK3PXP", f.s.clock.now())).reply, http.StatusUnauthorized, badOTP)
+
+	enrolling := f.account(t, "enrolling", newHash(t), true, false)
+	f.session(t, enrolling)
+	got, _ := f.setup(t, enrolling)
+	expect(t, got, http.StatusNotFound, notFound)
+	expect(t, f.enable(t, enrolling, `{"code":"123456"}`), http.StatusNotFound, notFound)
 }
