@@ -62,7 +62,7 @@ func (s Decisions) Decide(ctx context.Context, tenantID string, d application.De
 			if err != nil || updated == nil {
 				return application.DecisionResult{Err: domain.ErrMissing}, err
 			}
-			if err := audit(ctx, q, *updated, domain.FirstValidationDetail(d.Actor), d.At); err != nil {
+			if err := audit(ctx, q, *updated, "REVIEW", domain.FirstValidationDetail(d.Actor), d.At); err != nil {
 				return application.DecisionResult{}, err
 			}
 			return application.DecisionResult{Status: current.Status, PendingSecond: true}, nil
@@ -71,7 +71,7 @@ func (s Decisions) Decide(ctx context.Context, tenantID string, d application.De
 			if err != nil || updated == nil {
 				return application.DecisionResult{Err: domain.ErrMissing}, err
 			}
-			if err := audit(ctx, q, *updated, domain.DecisionDetail(d.Status, updated.FirstValidator), d.At); err != nil {
+			if err := audit(ctx, q, *updated, "REVIEW", domain.DecisionDetail(d.Status, updated.FirstValidator), d.At); err != nil {
 				return application.DecisionResult{}, err
 			}
 			return application.DecisionResult{Status: d.Status}, nil
@@ -109,7 +109,7 @@ type snapshot struct {
 	SHA256       string          `json:"sha256"`
 }
 
-func audit(ctx context.Context, q database.Querier, a domain.Alert, detail string, at time.Time) error {
+func audit(ctx context.Context, q database.Querier, a domain.Alert, action, detail string, at time.Time) error {
 	record := a.SourceRecord
 	if record == nil {
 		record = json.RawMessage("null")
@@ -122,6 +122,6 @@ func audit(ctx context.Context, q database.Querier, a domain.Alert, detail strin
 	if err != nil {
 		return err
 	}
-	_, err = q.Exec(ctx, insertAudit, at, auditModule, a.ID, "REVIEW", detail, string(payload))
+	_, err = q.Exec(ctx, insertAudit, at, auditModule, a.ID, action, detail, string(payload))
 	return err
 }

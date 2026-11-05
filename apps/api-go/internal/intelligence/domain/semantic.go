@@ -41,6 +41,11 @@ var SemanticConcepts = []Concept{
 	{"Seguridad y emergencia", "Accidentes operacionales, riesgos de seguridad física, emergencias y evacuación."},
 }
 
+// IsSourceType says sourceType is one of SOURCE_TYPES.
+func IsSourceType(sourceType string) bool {
+	return sourceType == "Publicación digital" || sourceType == "Documento" || sourceType == "Reporte de campo"
+}
+
 // IsAnalysisMode says mode is one of ANALYSIS_MODES.
 func IsAnalysisMode(mode string) bool {
 	return mode == ModeAutomatic || mode == ModeSemantic || mode == ModeRules
@@ -67,6 +72,18 @@ func isJSSpace(r rune) bool {
 		return true
 	}
 	return unicode.Is(unicode.Zs, r)
+}
+
+// FirstCodePoints is Array.from(text).slice(0, limit).join("").
+func FirstCodePoints(text string, limit int) string {
+	count := 0
+	for i := range text {
+		if count == limit {
+			return text[:i]
+		}
+		count++
+	}
+	return text
 }
 
 // Cosine is cosine of text-analysis.ts; vectors of different length are unrelated.

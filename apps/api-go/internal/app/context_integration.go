@@ -32,7 +32,7 @@ func integrationRuntime(d Deps, feeds integration.FeedGateway, official integrat
 	}
 	clock := integration.Clock(now)
 	store := recordssql.Records{DB: d.Pool}
-	importer := integration.Importer{Store: store, Clock: clock}
+	media, sources := integrationPolling(d, feeds, official)
 	return integrationhttp.Runtime{
 		Keys: integration.Keys{Store: integrationsql.Keys{DB: d.Pool}, Clock: clock, Crypto: integrationsql.KeyCrypto{}},
 		Ingest: integration.Ingest{
@@ -40,12 +40,24 @@ func integrationRuntime(d Deps, feeds integration.FeedGateway, official integrat
 			Receipts: integrationsql.Receipts{DB: d.Pool},
 			Clock:    clock,
 		},
-		Media: integration.Media{
-			Feeds: integrationsql.Feeds{DB: d.Pool}, Gateway: feeds, Importer: importer, Clock: clock,
-		},
-		Sources: integration.Sources{
-			Gateway: official, Settings: integrationsql.Settings{DB: d.Pool}, Importer: importer, Clock: clock,
-		},
-		Log: d.Logger,
+		Media:   media,
+		Sources: sources,
+		Log:     d.Logger,
+	}
+}
+
+// integrationPolling composes the media monitor and the Defensoría connector: the routes use
+// them, and so does the cron tick that polls them.
+func integrationPolling(d Deps, feeds integration.FeedGateway, official integration.OfficialGateway) (integration.Media, integration.Sources) {
+	now := d.Now
+	if now == nil {
+		now = time.Now
+	}
+	clock := integration.Clock(now)
+	importer := integration.Importer{Store: recordssql.Records{DB: d.Pool}, Clock: clock}
+	return integration.Media{
+		Feeds: integrationsql.Feeds{DB: d.Pool}, Gateway: feeds, Importer: importer, Clock: clock,
+	}, integration.Sources{
+		Gateway: official, Settings: integrationsql.Settings{DB: d.Pool}, Importer: importer, Clock: clock,
 	}
 }

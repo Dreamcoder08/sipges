@@ -286,7 +286,7 @@ func WriteRoutes(mux *http.ServeMux, opts WriteOptions) {
 		}
 		ctx, cancel := detached(r.Context())
 		defer cancel()
-		report, err := opts.Service.Tick(ctx, tenant)
+		report, err := opts.Runtime.TickNow(ctx, tenant)
 		if err != nil {
 			fail(w, r, err)
 			return

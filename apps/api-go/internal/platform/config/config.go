@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Lookup reads one environment variable; os.LookupEnv satisfies it.
@@ -32,6 +33,9 @@ type Config struct {
 	// GoogleEnabled is true when the Google OAuth client is configured (SIPGES_GOOGLE_CLIENT_ID
 	// and SIPGES_GOOGLE_CLIENT_SECRET, both or neither). The secret itself is never kept here.
 	GoogleEnabled bool
+	// AutomationInterval is the period of the Go cron; zero, the default, leaves TypeScript as
+	// the only runner (SIPGES_GO_AUTOMATION_CRON, docs/deployment/go-automation-cron.md).
+	AutomationInterval time.Duration
 }
 
 // Load validates the environment and reports every invalid variable at once.
@@ -56,6 +60,8 @@ func Load(lookup Lookup) (Config, error) {
 	cfg.GoogleEnabled, err = parseGoogle(lookup)
 	errs = append(errs, err)
 	cfg.AllowedHosts, err = parseAllowedHosts(lookup)
+	errs = append(errs, err)
+	cfg.AutomationInterval, err = parseAutomationSchedule(lookup)
 	errs = append(errs, err)
 	if err := errors.Join(errs...); err != nil {
 		return Config{}, fmt.Errorf("invalid configuration: %w", err)

@@ -15,6 +15,8 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/application"
 	automationhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/http"
 	automationsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/infrastructure"
+	integration "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/application"
+	integrationsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/secrets"
@@ -41,7 +43,10 @@ func DrainBackground(ctx context.Context, pool *pgxpool.Pool) error {
 type automation struct {
 	service application.Service
 	runtime *application.Runtime
-	cron    string
+	// cron is the secret the cron route accepts: empty, so it refuses every caller, unless
+	// this API is the runner.
+	cron     string
+	interval time.Duration
 }
 
 var (
@@ -81,6 +86,13 @@ func automationModule(d Deps) (*automation, error) {
 	if err != nil {
 		return nil, err
 	}
+	if d.AutomationInterval > 0 && !configured {
+		// Channel runs would wait forever for a TypeScript tick that may no longer come.
+		return nil, errors.New("SIPGES_GO_AUTOMATION_CRON requires SIPGES_DATA_KEY")
+	}
+	if d.AutomationInterval == 0 {
+		cron = ""
+	}
 	if configured {
 		cipher, err := secrets.NewCipher(key, nonEmpty(previous)...)
 		if err != nil {
@@ -88,8 +100,16 @@ func automationModule(d Deps) (*automation, error) {
 		}
 		service.Sealer = cipher
 	}
-	m := &automation{service: service, cron: cron}
-	m.runtime = &application.Runtime{
+	m := &automation{service: service, cron: cron, interval: d.AutomationInterval}
+	m.runtime = automationRuntime(d, service, integrationsql.RSS{}, integrationsql.Official{})
+	automationModules[d.Pool] = m
+	return m, nil
+}
+
+// automationRuntime composes the runtime. Polling is wired only when this API is the runner:
+// without the flag no cron tick reaches it, because the route refuses and no schedule starts.
+func automationRuntime(d Deps, service application.Service, feeds integration.FeedGateway, official integration.OfficialGateway) *application.Runtime {
+	rt := &application.Runtime{
 		Store: automationsql.RuntimeStore{DB: d.Pool},
 		Tick:  service.Tick,
 		Now:   d.Now,
@@ -103,8 +123,17 @@ func automationModule(d Deps) (*automation, error) {
 			}
 		},
 	}
-	automationModules[d.Pool] = m
-	return m, nil
+	if d.AutomationInterval > 0 {
+		media, sources := integrationPolling(d, feeds, official)
+		polling := integration.Runtime{Sources: sources, Media: media}
+		rt.BeforeTick = func(ctx context.Context, tenantID string, source application.RuntimeSource) error {
+			if source != application.SourceCron {
+				return nil
+			}
+			return polling.BeforeTick(ctx, tenantID)
+		}
+	}
+	return rt
 }
 
 func nonEmpty(key []byte) [][]byte {
