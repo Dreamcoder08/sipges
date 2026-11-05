@@ -77,6 +77,10 @@ func automationModule(d Deps) (*automation, error) {
 		ExecutionBudget: application.DefaultExecutionBudget,
 		Logger:          d.Logger,
 	}
+	service, err = withPush(service, d.Pool)
+	if err != nil {
+		return nil, err
+	}
 	if configured {
 		cipher, err := secrets.NewCipher(key, nonEmpty(previous)...)
 		if err != nil {
@@ -135,6 +139,7 @@ func init() {
 		return func(mux *http.ServeMux) {
 			automationhttp.Routes(mux, options)
 			automationhttp.WriteRoutes(mux, writes)
+			automationhttp.PushRoutes(mux, writes)
 		}, nil
 	})
 	registerMiddleware("automation", func(d Deps) (httpx.Middleware, error) {
