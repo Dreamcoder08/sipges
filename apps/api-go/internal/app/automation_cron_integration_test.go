@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 	"strings"
@@ -201,5 +202,17 @@ func TestTheFlagRefusesToStartWithoutTheDataKey(t *testing.T) {
 	_, err := app.NewHandler(pool, app.Options{Logger: slog.New(slog.DiscardHandler), AutomationInterval: time.Minute})
 	if err == nil || !strings.Contains(err.Error(), "SIPGES_GO_AUTOMATION_CRON requires SIPGES_DATA_KEY") {
 		t.Fatalf("handler: %v", err)
+	}
+}
+
+func TestATickFailureIsLoggedByClassWithoutItsText(t *testing.T) {
+	var out strings.Builder
+	secret := errors.New("https://fuente.example.org/secreta")
+	failure := errors.Join(fmt.Errorf("%w: "+secret.Error(), application.ErrPanicked), fmt.Errorf("%w: "+secret.Error(), application.ErrPolling), secret)
+	app.LogTickFailure(slog.New(slog.NewJSONHandler(&out, nil)), failure)
+	line := out.String()
+	if !strings.Contains(line, `"msg":"automation_tick_failed"`) || !strings.Contains(line, `"failures":3`) ||
+		!strings.Contains(line, `"classes":"panic,polling,rules"`) || strings.Contains(line, "secreta") {
+		t.Fatalf("log: %s", line)
 	}
 }

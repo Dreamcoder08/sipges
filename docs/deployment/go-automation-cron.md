@@ -68,12 +68,28 @@ schedule ticks and the ticks of the cron and tick routes:
 
 1. No further tenant starts, and rescans are dropped; the next runner catches up.
 2. Polling is cancelled. It sends nothing. A cancelled feed waits 30 minutes and the Defensoría connector 15 for
-   their next turn. The attempt ends `failed` and logs `automation_tick_failed`, so one such line at a shutdown is
-   expected.
+   their next turn. The attempt ends `failed`, and the schedule logs `automation_tick_failed` with the class
+   `polling_cancelled`, which is expected at a shutdown.
 3. The tick in flight keeps its context, because cutting it between the send and `FinishRun` would repeat the
    message. It needs at most 18 s: the 8 s execution budget plus one 10 s send.
 
 A request slower than the 10 s server grace still makes the process exit with an error, after the drain.
+
+## Reading a failed tick
+
+`automation_tick_failed` carries `failures` and `classes`, never the error's text, which may name a feed or a
+channel. A visit counts one failure per tenant, and a tenant's failure does not stop the others.
+
+| Class | What failed |
+| --- | --- |
+| `panic` | The rules tick panicked. Its attempt ends `failed`, and no later rescan hides it. |
+| `store` | The tenant list or the attempt record on `automation_cursors`. |
+| `polling` | A source failed or panicked. The rules still ran. A feed's failure stays on the feed, in `last_poll_error`. |
+| `polling_cancelled` | A shutdown cut the polling short. |
+| `timeout` | The tick outlasted `TaskTimeout`, 5 minutes per tenant of a schedule. A send cut here repeats after its lease. |
+| `rules` | Any other failure of the rules tick. |
+
+The schedule writes this line. A tick of the cron route answers 500 and logs `automation write failed` instead.
 
 ## How the switch happens
 
@@ -87,7 +103,7 @@ made:** with `GO_ROUTES` empty no request reaches the container, so it never sta
    by accident.
 3. Set `SIPGES_GO_AUTOMATION_CRON=1` on the `sipges-go` trial Worker, on a Neon branch.
 4. Check `automation_schedule_started` in the logs, `last_tick_source = 'cron'` on the cursors, and no
-   `automation_tick_failed` outside a shutdown.
+   `automation_tick_failed` other than `polling_cancelled`.
 5. Compare a day of `automation_runs` and `audit` with TypeScript: `attempts` stays 1, and each `CHANNEL_SEND`
    appears once per run.
 6. Apply decision 2.

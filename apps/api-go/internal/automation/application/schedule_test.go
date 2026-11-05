@@ -189,7 +189,7 @@ func TestAFailedOrPanickingTickIsReportedAndTheScheduleGoesOn(t *testing.T) {
 	rt := &Runtime{Store: store, Tick: func(context.Context, string) (TickReport, error) {
 		switch calls.Add(1) {
 		case 1:
-			panic("synthetic")
+			panic("synthetic") // reported as a failed attempt, not an ended schedule
 		case 2:
 			return TickReport{}, errors.New("synthetic failure")
 		}
