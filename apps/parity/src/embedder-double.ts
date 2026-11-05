@@ -9,7 +9,7 @@ export const EMBEDDER_DOWN = 'PARITY-EMBEDDER-DOWN';
 
 /** Counts each code point in one of 16 buckets: the same text always gets the same vector. */
 export const vectorOf = (text: string) => {
-  const vector = new Array<number>(DIMENSIONS).fill(1);
+  const vector = new Array<number>(DIMENSIONS).fill(0);
   for (const char of text) {
     const bucket = (char.codePointAt(0) ?? 0) % DIMENSIONS;
     vector[bucket] = (vector[bucket] ?? 0) + 1;
