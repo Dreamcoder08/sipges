@@ -193,6 +193,7 @@ func TestTOTPRequestGates(t *testing.T) {
 	} {
 		expect(t, f.enable(t, user, body), http.StatusUnprocessableEntity, want)
 	}
+	expect(t, f.enable(t, user, `{"code":"`+strings.Repeat("1", 1<<20)+`"}`), http.StatusUnprocessableEntity, issue("json_invalid", "JSON decode error"))
 	expect(t, f.s.do(t, req{method: "POST", path: "/system/auth/totp/setup"}), http.StatusUnauthorized, signIn)
 	expect(t, f.s.do(t, req{method: "POST", path: "/system/auth/totp/enable", sameOrigin: true}), http.StatusUnauthorized, signIn)
 	expect(t, f.s.do(t, req{method: "POST", path: "/system/auth/totp/setup", user: user}), http.StatusForbidden, badOrigin)

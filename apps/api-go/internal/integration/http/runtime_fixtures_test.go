@@ -69,6 +69,10 @@ func (fakeKeys) Authenticate(_ context.Context, header string, present bool) (*d
 	return &p, nil
 }
 
+func (fakeKeys) Create(context.Context, string, domain.KeyInput, string) (application.IssuedKey, error) {
+	return application.IssuedKey{}, nil
+}
+
 func (fakeKeys) Revoke(_ context.Context, _ string, id int) (bool, error) { return id == 12, nil }
 
 // fakeIngest is the generator's `ingest`: it echoes what it received.

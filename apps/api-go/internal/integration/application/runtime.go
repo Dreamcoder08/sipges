@@ -38,6 +38,8 @@ type ActiveKey struct {
 type KeyStore interface {
 	Active(ctx context.Context, prefix string) (*ActiveKey, error)
 	Touch(ctx context.Context, id int, at time.Time) error
+	// Create stores the key and audits it; created is false when the tenant already has that name.
+	Create(ctx context.Context, tenantID string, key domain.NewKey, actor string, at time.Time) (id int, created bool, err error)
 	// Revoke marks the tenant's key revoked and audits it; false when it is missing or revoked.
 	Revoke(ctx context.Context, tenantID string, id int, at time.Time) (bool, error)
 }
@@ -45,10 +47,46 @@ type KeyStore interface {
 // touchInterval is TOUCH_INTERVAL_MS: last_used_at is refreshed at most this often.
 const touchInterval = 60 * time.Second
 
-// Keys is the verification side of api-key-service.ts. Issuing keys stays in TypeScript.
+// KeyCrypto is keyCrypto: where the random parts of a new key come from.
+type KeyCrypto interface {
+	Prefix() (string, error)
+	Secret() (string, error)
+}
+
+// Keys is api-key-service.ts.
 type Keys struct {
-	Store KeyStore
-	Clock Clock
+	Store  KeyStore
+	Clock  Clock
+	Crypto KeyCrypto
+}
+
+// IssuedKey is what Create hands the administrator, once; Duplicate means the name is taken.
+type IssuedKey struct {
+	ID        int
+	Token     string
+	Duplicate bool
+}
+
+// Create is `create`: the token is returned once and only the secret's hash is stored.
+func (k Keys) Create(ctx context.Context, tenantID string, input domain.KeyInput, actor string) (IssuedKey, error) {
+	prefix, err := k.Crypto.Prefix()
+	if err != nil {
+		return IssuedKey{}, err
+	}
+	secret, err := k.Crypto.Secret()
+	if err != nil {
+		return IssuedKey{}, err
+	}
+	id, created, err := k.Store.Create(ctx, tenantID, domain.NewKey{
+		KeyInput: input, Prefix: prefix, SecretHash: domain.HashSecret(secret),
+	}, actor, k.Clock.now())
+	if err != nil {
+		return IssuedKey{}, err
+	}
+	if !created {
+		return IssuedKey{Duplicate: true}, nil
+	}
+	return IssuedKey{ID: id, Token: domain.FormatToken(prefix, secret)}, nil
 }
 
 // Authenticate is authenticate(bearerToken(header)): the key of a well-formed, active token
