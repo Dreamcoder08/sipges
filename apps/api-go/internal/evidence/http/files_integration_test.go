@@ -1,6 +1,7 @@
 package http_test
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -568,8 +569,20 @@ func TestPreviewKinds(t *testing.T) {
 		t.Errorf("xlsx: %d %v", status, out)
 	}
 	pdfID := up("informe.pdf", pdf)
-	if status, out := preview(pdfID); status != 501 || out["detail"] != "La vista previa de PDF y DOCX aún no está disponible en este servidor" {
+	if status, out := preview(pdfID); status != 501 || out["detail"] != "La vista previa de PDF aún no está disponible en este servidor" {
 		t.Errorf("pdf: %d %v", status, out)
+	}
+	// DOCX through the document lab's reader: paragraphs, then table rows with tab-joined cells,
+	// one page joined by line feeds (preview of evidence-service.ts).
+	docxID := up("acta.docx", wordPackage(t, `<w:p><w:r><w:t>Uno</w:t></w:r></w:p><w:p/>`+
+		`<w:tbl><w:tr><w:tc><w:p><w:r><w:t>a</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>b</w:t></w:r></w:p></w:tc></w:tr></w:tbl>`))
+	if status, out := preview(docxID); status != 200 || out["kind"] != "text" || out["format"] != "docx" ||
+		fmt.Sprint(out["pages"]) != "[Uno\n\na\tb]" {
+		t.Errorf("docx: %d %v", status, out)
+	}
+	broken := up("roto.docx", []byte("PK\x03\x04 not a package"))
+	if status, out := preview(broken); status != 200 || out["kind"] != "no_text" {
+		t.Errorf("unreadable docx: %d %v", status, out)
 	}
 	// Objects gone from storage: 410 for text formats, while images and unsupported formats
 	// answer without reading the object.
@@ -588,4 +601,22 @@ func TestPreviewKinds(t *testing.T) {
 	if status, out := preview(img); status != 200 || out["kind"] != "image" {
 		t.Errorf("image after removal: %d %v", status, out)
 	}
+}
+
+// wordPackage is a minimal Word package whose body holds the given markup.
+func wordPackage(t *testing.T, body string) []byte {
+	t.Helper()
+	var b bytes.Buffer
+	w := zip.NewWriter(&b)
+	f, err := w.Create("word/document.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.Write([]byte(`<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>` + body + `</w:body></w:document>`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return b.Bytes()
 }
