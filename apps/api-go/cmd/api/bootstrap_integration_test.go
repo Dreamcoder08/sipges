@@ -202,6 +202,68 @@ func TestStartStopsOnAnEmptyInstallationWithoutAUsablePassword(t *testing.T) {
 	}
 }
 
+func TestStartStopsOnAUsernameTheUsersTableCannotHold(t *testing.T) {
+	s := scratchDB(t)
+	exec(t, s.URL, `TRUNCATE users CASCADE`)
+	const refused = "SIPGES_ADMIN_USERNAME must have between 1 and 120 characters"
+	impossible := strings.Repeat("impossible-name-", 8) + "x"
+	for _, username := range []string{"", " \t ", impossible} {
+		var out syncBuffer
+		listen := func(network, _ string) (net.Listener, error) { return net.Listen(network, "127.0.0.1:0") }
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		err := run(ctx, lookup(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": username, "SIPGES_ADMIN_PASSWORD": syntheticAdminPassword}), &out, listen)
+		cancel()
+		if err == nil || err.Error() != refused {
+			t.Fatalf("%q: err = %v", username, err)
+		}
+		noCredential(t, out.String()+err.Error())
+		if strings.Contains(out.String(), "impossible-name") {
+			t.Fatalf("the value was logged: %s", out.String())
+		}
+	}
+	if got := scalar(t, s.URL, `SELECT count(*)::text FROM users`); got != "0" {
+		t.Fatalf("%s users", got)
+	}
+}
+
+func TestStartIgnoresAnImpossibleUsernameOnceUsersExist(t *testing.T) {
+	s := scratchDB(t)
+	exec(t, s.URL, `TRUNCATE users CASCADE`)
+	exec(t, s.URL, `INSERT INTO users (username, full_name, password_hash, role) VALUES ('owner', 'Owner', 'x', 'admin')`)
+	api := startAPI(t, map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": ""})
+	api.eventually(t, "readiness", func() bool { return api.get(t, "/health/ready") == http.StatusOK })
+	if err := api.stopped(t); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStartAcceptsTheLongestUsername(t *testing.T) {
+	s := scratchDB(t)
+	exec(t, s.URL, `TRUNCATE users CASCADE`)
+	username := strings.Repeat("a", 120)
+	api := startAPI(t, map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": username, "SIPGES_ADMIN_PASSWORD": syntheticAdminPassword})
+	api.eventually(t, "readiness", func() bool { return api.get(t, "/health/ready") == http.StatusOK })
+	if got := scalar(t, s.URL, `SELECT username FROM users`); got != username {
+		t.Fatalf("stored %q", got)
+	}
+	if err := api.stopped(t); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStartReportsTheEmptyPasswordBeforeTheUsername(t *testing.T) {
+	s := scratchDB(t)
+	exec(t, s.URL, `TRUNCATE users CASCADE`)
+	var out syncBuffer
+	listen := func(network, _ string) (net.Listener, error) { return net.Listen(network, "127.0.0.1:0") }
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	err := run(ctx, lookup(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": ""}), &out, listen)
+	if err == nil || err.Error() != "Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)" {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestStartStopsOnAnInvalidGoogleAdminAddress(t *testing.T) {
 	s := scratchDB(t)
 	var out syncBuffer

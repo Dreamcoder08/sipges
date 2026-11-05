@@ -60,5 +60,10 @@ func AdminUsername(raw string) (string, bool) {
 	return username, true
 }
 
+// StorableUsername is the CHECK of users.username (migration 0001): char_length, in code points.
+func StorableUsername(username string) bool {
+	return username != "" && utf8.RuneCountInString(username) <= MaxStoredUsername
+}
+
 // ShortAdminPassword is the bootstrap check: PASSWORD_MIN over the JavaScript length.
 func ShortAdminPassword(password string) bool { return units16(password) < PasswordMin }

@@ -166,7 +166,8 @@ func (b *IdentityBootstrap) run(ctx context.Context) {
 			return
 		case ctx.Err() != nil:
 			return
-		case errors.Is(err, application.ErrBootstrapPassword), errors.Is(err, application.ErrBootstrapGoogleEmail):
+		case errors.Is(err, application.ErrBootstrapPassword), errors.Is(err, application.ErrBootstrapUsername),
+			errors.Is(err, application.ErrBootstrapGoogleEmail):
 			b.log.LogAttrs(ctx, slog.LevelError, msgPermanent)
 			b.failed <- err
 			return
