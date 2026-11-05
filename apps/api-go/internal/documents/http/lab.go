@@ -9,7 +9,6 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/domain"
-	evidencehttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/http"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
@@ -133,14 +132,14 @@ func readForm(w http.ResponseWriter, r *http.Request, limit int64, tooLarge stri
 		return nil, "", false
 	}
 	contentType, present := httpx.Header(r, "Content-Type")
-	entries, ok := evidencehttp.ParseForm(contentType, present, body)
+	entries, ok := httpx.ParseForm(contentType, present, body)
 	if !ok {
 		writeIssues(w, invalidForm)
 		return nil, "", false
 	}
 	// convertFormDataToBodyData: the last entry of a name wins; names ending in [] become
 	// lists under that name, which are neither text nor a file.
-	form := map[string]evidencehttp.FormEntry{}
+	form := map[string]httpx.FormEntry{}
 	for _, e := range entries {
 		if !strings.HasSuffix(e.Name, "[]") {
 			form[e.Name] = e
