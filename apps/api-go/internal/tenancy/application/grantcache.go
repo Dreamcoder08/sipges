@@ -47,7 +47,9 @@ func NewGrantCache(load LoadGrants, now func() time.Time) *GrantCache {
 	if now == nil {
 		now = time.Now
 	}
-	return &GrantCache{load: load, now: now, entries: map[string]*list.Element{}, order: list.New()}
+	c := &GrantCache{load: load, now: now, entries: map[string]*list.Element{}, order: list.New()}
+	track(c)
+	return c
 }
 
 // Get returns a copy of the user's grants, so no caller can change the cached ones.

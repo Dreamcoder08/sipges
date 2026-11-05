@@ -1,0 +1,22 @@
+[package]
+name = "sipges-base-maestra"
+version = "0.1.0"
+description = "Rust port of apps/api/src/tools/base-maestra: insert-only load of the prototype's Base Maestra into one tenant."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "import-base-maestra"
+path = "src/main.rs"
+
+[dependencies]
+postgres.workspace = true
+ring.workspace = true
+serde_json.workspace = true
+sipges-indicators = { path = "../indicators" }
+sipges-tools-common = { path = "../tools-common" }
+
+[lints]
+workspace = true

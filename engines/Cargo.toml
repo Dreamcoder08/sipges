@@ -13,6 +13,14 @@ publish = false
 # preserve_order: keep object keys in source order, as JavaScript objects do.
 serde = { version = "=1.0.228", default-features = false, features = ["std"] }
 serde_json = { version = "=1.0.154", default-features = false, features = ["std", "float_roundtrip", "preserve_order"] }
+# Operator tools (T43): synchronous PostgreSQL client; TLS through rustls with the ring provider
+# and the Mozilla roots. Every version was published at least two weeks before it was pinned.
+postgres = { version = "=0.19.14", default-features = false, features = ["with-serde_json-1"] }
+rustls = { version = "=0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+tokio-postgres-rustls = { version = "=0.14.0", default-features = false }
+webpki-roots = { version = "=1.0.9", default-features = false }
+# AES-256-GCM and the system CSPRNG for rotate-data-key (already rustls's crypto provider).
+ring = { version = "=0.17.14", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

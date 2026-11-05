@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { CASES, validateCases } from './cases.ts';
 import { type Mismatch, compare } from './diff.ts';
+import { nodeVersionProblem } from './node-version.ts';
 import { seedDatabase } from './fixtures.ts';
 import { REQUEST_TIMEOUT_MS, send } from './request.ts';
 import { type Sessions, seed } from './seed.ts';
@@ -63,6 +64,8 @@ const runCases = async ({ tsUrl, goUrl, credentials }: Targets) => {
 };
 
 const main = async () => {
+  const problem = nodeVersionProblem(process.version, process.env.SIPGES_PARITY_ANY_NODE === '1');
+  if (problem) throw new Error(problem);
   const errors = validateCases(CASES);
   if (errors.length > 0) throw new Error(`invalid route list:\n${errors.join('\n')}`);
 
