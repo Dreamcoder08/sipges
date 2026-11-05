@@ -76,7 +76,7 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 	// waits for this. A tick still running past it is retried after its lease.
 	drainCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), drainGrace)
 	defer cancel()
-	if err := app.DrainBackground(drainCtx, pool); err != nil { //nolint:contextcheck // see above
+	if err := app.DrainBackground(drainCtx, pool); err != nil {
 		log.Error("automation_drain_incomplete", slog.String("error", err.Error()))
 	}
 	if serveErr != nil {
