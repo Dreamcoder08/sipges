@@ -185,6 +185,38 @@ accounts (one with TOTP), uploads on disk and deliberately broken rows.
 - `test/integration/migration-postgres.test.ts` — the same migration against a real PostgreSQL
   server (opt-in with `SIPGES_TEST_DATABASE_URL`).
 
+## Rust port
+
+`engines/crates/migrate-legacy` is the Rust port of this tool (ADR 0032, T43): same flags, summary,
+JSON report, exit codes, rows and objects. The workflows still call the TypeScript tool, and a
+real run needs the owner's word whichever one is used.
+
+```sh
+cd engines && cargo build --release -p sipges-migrate-legacy
+target/release/migrate-legacy --legacy-root /srv/sipges-legacy --report report.json
+```
+
+`engines/tools-parity/migrate-legacy.ts` runs both tools on synthetic installations (one synthetic
+database and object store each) and compares exit code, stdout, stderr, the report, every table and
+every object. It covers refusals, the whole flow, `--only`, hostile rows, tampered targets, failing
+tenants, damaged SQLite files and S3 through a local server that checks each request's signature.
+`engines/fixtures/legacy-dates.tsv` pins the port of V8's date parser to values recorded from Node.
+
+| Case | TypeScript | Rust |
+| --- | --- | --- |
+| `SIPGES_DATABASE_URL` unset | embedded PGlite | refuses, exit 1 |
+| Other API settings invalid (only the data key, database URL and storage settings are read) | `loadConfig` fails, exit 1 | ignored |
+| A failure TypeScript does not catch | exit 1 with a stack trace, whose message may quote a driver | exit 1 with the error's name and at most an operator's path |
+| A timestamp text with no zone that ends like an offset, such as `01-02-2026` | local time of the process | UTC (the same under `TZ=UTC`) |
+| A payload, scores or configuration nested 1,001 to about 2,500 levels | migrated | `RangeError`, exit 1 before any write (TypeScript overflows from about 2,500 levels, at a depth that varies with the stack) |
+| An alert JSON column nested 1,001 to about 2,500 levels | migrated | `alert_row_invalid` |
+| JSON nested past 100,000 levels with a syntax error | row rejected | `RangeError`, exit 1 |
+| A `0x`, `0o` or `0b` number longer than 128 bits | exactly rounded | accumulated in floating point |
+| `SIPGES_S3_ENDPOINT` with credentials, without `//` or with characters outside host syntax | accepted by `new URL` | refused, exit 1 |
+| An S3 redirect | followed | not followed: the reply counts as a failure |
+| TLS to PostgreSQL | encrypts without verifying | verifies against the Mozilla roots |
+| Connection lost mid-run | a new connection, from a pool | a new connection, one at a time |
+
 ## Driver note (fixed here)
 
 postgres.js learns the server-inferred parameter type after `Parse` and then applies its own JSON
