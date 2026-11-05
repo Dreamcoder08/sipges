@@ -3,8 +3,8 @@
 // /system/graph; POST /system/graph/neighbourhood; and the writes (writes.go): POST
 // /system/links, PUT /system/links/:id/evidence, PUT /system/marking and DELETE
 // /system/links/:id. The session, project scope and role gate ran before (internal/app); every
-// route runs in the request's tenant transaction (tenancyhttp.WithRequestTenant). Semantic
-// search (embeddings through the egress guard) stays in TypeScript.
+// route runs in the request's tenant transaction (tenancyhttp.WithRequestTenant), except semantic
+// search, whose steps each have one so that none stays open across a call to the model.
 package http
 
 import (
@@ -38,6 +38,8 @@ type Deps struct {
 	Logger *slog.Logger
 	// Now is the clock of the writes; nil means time.Now.
 	Now func() time.Time
+	// Semantic makes search hybrid; nil keeps it lexical (SIPGES_SEMANTIC_SEARCH off).
+	Semantic *application.Semantic
 }
 
 // Register mounts the ontology routes on mux.
@@ -139,16 +141,14 @@ func (d Deps) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	slugs := modules(r)
-	hits, err := read(r, d.DB, func(ctx context.Context, s application.Service) ([]application.Hit, error) {
-		return s.Search(ctx, q, slugs, limit)
-	})
+	hits, err := d.hits(r, q, slugs, limit)
 	if err != nil {
 		d.fail(w, r)
 		return
 	}
 	out := searchJSON{Query: q.Text(), Hits: make([]hitJSON, 0, len(hits))}
 	for _, h := range hits {
-		out.Hits = append(out.Hits, hitJSON{Summary: h.Summary, Match: h.Match})
+		out.Hits = append(out.Hits, hitJSON{Summary: h.Summary, Match: h.Match, Semantic: h.Semantic})
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
 }
