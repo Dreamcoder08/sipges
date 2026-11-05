@@ -230,7 +230,10 @@ const semanticCases: ParityCase[] = [
   semantic('automatic', { text: 'Reunión sintética sobre agua y tierra', mode: 'automatic' }),
   semantic('semantic', { text: 'Reunión sintética sobre agua y tierra', mode: 'semantic' }),
   semantic('without a mode', { text: 'Protesta sintética <b>&amp; 😀 por el empleo local' }),
-  semantic('text with spaces around it', { text: '  \n\u00a0Texto sintético\ufeff  ', mode: 'semantic' }),
+  semantic('text with spaces around it', {
+    text: '  \n\u00a0Texto sintético\ufeff  ',
+    mode: 'semantic',
+  }),
   semantic('source url', { text: 'Texto', source_url: 'https://example.org/n', mode: 'rules' }),
   semantic('project_id of its project', { text: 'Texto', project_id: 'PRJ-SECHURA' }),
   semantic('project_id of another project', { text: 'Texto', project_id: 'PRJ-B' }),
@@ -254,13 +257,25 @@ const semanticCases: ParityCase[] = [
   raw('semantic not JSON', 'POST', SEMANTIC, '{'),
   raw('semantic a list', 'POST', SEMANTIC, '[]'),
   ...refusals('semantic', 'POST', SEMANTIC, { text: 'Texto', mode: 'rules' }),
-  write('semantic of the read-only role', 'POST', SEMANTIC, { text: 'Texto', mode: 'semantic' }, {
-    auth: 'consulta',
-  }),
-  write('semantic of the second project', 'POST', SEMANTIC, { text: 'Texto' }, {
-    auth: 'multi',
-    headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
-  }),
+  write(
+    'semantic of the read-only role',
+    'POST',
+    SEMANTIC,
+    { text: 'Texto', mode: 'semantic' },
+    {
+      auth: 'consulta',
+    },
+  ),
+  write(
+    'semantic of the second project',
+    'POST',
+    SEMANTIC,
+    { text: 'Texto' },
+    {
+      auth: 'multi',
+      headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
+    },
+  ),
 ];
 
 const writeCases: ParityCase[] = [
