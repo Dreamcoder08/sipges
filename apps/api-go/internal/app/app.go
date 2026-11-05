@@ -79,7 +79,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 			// The source routes' 8 KiB limit runs at the same point, as sourceRequestLimit does.
 			integrationhttp.RequestLimit(),
 			// Every other body is bounded here, before the project scope is the first to read it.
-			httpx.BodyLimit(maxRequestBody, ownBodyLimit),
+			httpx.BodyLimit(httpx.MaxRequestBody, ownBodyLimit),
 			tenancyhttp.Middleware(grants, opts.Logger),
 			identityhttp.RoleGate(),
 		}, wrap...),

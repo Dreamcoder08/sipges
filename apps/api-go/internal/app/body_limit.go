@@ -2,16 +2,12 @@ package app
 
 import "strings"
 
-// maxRequestBody is the global limit on a request body. The TypeScript API has none: only the
-// routes with their own hono/body-limit are bounded there. This is the Go API's own choice, set
-// by the largest body the contracts accept unbounded: POST /system/import/{module} takes up to
-// 2000 rows of free text (packages/contracts/src/records.ts), and 16 MiB leaves 8 KiB per row.
-const maxRequestBody = 16 << 20
-
 // ownBodyLimit lists the paths that bound the body themselves, each with an answer of its own
 // that the global limit must not replace: evidence and the document lab (their upload limits,
-// up to 200 MiB) and identity (1 MiB, then the 422 of the route). A route with a limit under
-// maxRequestBody needs no entry when both refuse with the same answer or its limit runs first.
+// up to 200 MiB), identity (1 MiB, then the 422 of the route) and the public webhooks (64 and
+// 512 KiB, enforced before their API key is checked, so an anonymous body is never buffered up
+// to the global limit first). The project check stops at httpx.MaxRequestBody on these too. A
+// route with a smaller limit needs no entry when that limit runs before the global one.
 func ownBodyLimit(path string) bool {
 	switch path {
 	case "/system/uploads",
@@ -23,5 +19,6 @@ func ownBodyLimit(path string) bool {
 		"/system/auth/totp/enable":
 		return true
 	}
-	return strings.HasPrefix(path, "/system/auth/accounts/") && strings.HasSuffix(path, "/google")
+	return strings.HasPrefix(path, "/hooks/") ||
+		strings.HasPrefix(path, "/system/auth/accounts/") && strings.HasSuffix(path, "/google")
 }

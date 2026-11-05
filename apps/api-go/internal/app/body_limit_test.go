@@ -12,6 +12,8 @@ func TestOwnBodyLimitNamesOnlyRoutesThatBoundTheBody(t *testing.T) {
 		"/system/auth/accounts":                true,
 		"/system/auth/accounts/ana/google":     true,
 		"/system/auth/totp/enable":             true,
+		"/hooks/ingest/hechos":                 true,
+		"/hooks/signals":                       true,
 		"/system/document-lab/review/import":   false,
 		"/system/auth/accounts/ana/deactivate": false,
 		"/system/import/hechos":                false,

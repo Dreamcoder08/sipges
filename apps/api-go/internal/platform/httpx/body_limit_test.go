@@ -125,3 +125,54 @@ func TestBodyLimit(t *testing.T) {
 		refused(t, serve(httptest.NewRequest(http.MethodPost, "/own/x", strings.NewReader(over)), exempt))
 	})
 }
+
+func TestWithinBodyLimit(t *testing.T) {
+	t.Run("an unreadable stream reads as empty", func(t *testing.T) {
+		r := chunked(http.MethodPost, &streamed{size: 10, err: errors.New("cut")})
+		if !WithinBodyLimit(r, limit) {
+			t.Fatal("refused")
+		}
+		if b, err := io.ReadAll(r.Body); err != nil || len(b) != 0 {
+			t.Fatalf("%q %v", b, err)
+		}
+	})
+	t.Run("an unreadable stream past the limit is refused", func(t *testing.T) {
+		if WithinBodyLimit(chunked(http.MethodPost, &streamed{size: limit + 1, err: errors.New("cut")}), limit) {
+			t.Fatal("accepted")
+		}
+	})
+}
+
+func TestPeekBody(t *testing.T) {
+	t.Run("a body within the limit is returned and stays readable", func(t *testing.T) {
+		r := chunked(http.MethodPost, &streamed{size: limit})
+		body, whole, err := PeekBody(r, limit)
+		if len(body) != limit || !whole || err != nil {
+			t.Fatalf("%d %v %v", len(body), whole, err)
+		}
+		if again, err := io.ReadAll(r.Body); err != nil || len(again) != limit {
+			t.Fatalf("%d %v", len(again), err)
+		}
+	})
+	t.Run("a longer body is left unexamined, whole, and read only past the limit", func(t *testing.T) {
+		stream := &streamed{size: 100 * limit}
+		r := chunked(http.MethodPost, stream)
+		body, whole, err := PeekBody(r, limit)
+		if body != nil || whole || err != nil {
+			t.Fatalf("%d %v %v", len(body), whole, err)
+		}
+		if stream.read > limit+64 {
+			t.Fatalf("read %d bytes for a limit of %d", stream.read, limit)
+		}
+		if again, err := io.ReadAll(r.Body); err != nil || len(again) != 100*limit {
+			t.Fatalf("%d %v", len(again), err)
+		}
+	})
+	t.Run("a read error keeps the bytes read", func(t *testing.T) {
+		cut := errors.New("cut")
+		r := chunked(http.MethodPost, &streamed{size: 10, err: cut})
+		if body, whole, err := PeekBody(r, limit); len(body) != 10 || !whole || !errors.Is(err, cut) {
+			t.Fatalf("%d %v %v", len(body), whole, err)
+		}
+	})
+}
