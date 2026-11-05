@@ -20,6 +20,8 @@ type Deps struct {
 	Now func() time.Time
 	// Engines are the compiled Rust engines (indicators, analytics).
 	Engines *engines.Set
+	// AutomationInterval is config.Config's: zero leaves the cron to TypeScript.
+	AutomationInterval time.Duration
 }
 
 // prepareRoutes builds a context's services and returns the function that mounts its routes.

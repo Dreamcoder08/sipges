@@ -484,7 +484,10 @@ func fromStoredEvent(raw []byte) (domain.Event, error) {
 // ClaimDue is claimDue: due runs locked with SKIP LOCKED, their attempt counted and their
 // lease set in one statement, with the rule step each one executes.
 func (Store) ClaimDue(ctx context.Context, q database.Querier, limit int, at, leaseUntil time.Time, kinds []string) ([]application.ClaimedRun, error) {
-	rows, err := q.Query(ctx, claimDue, at, limit, leaseUntil, kinds)
+	return collectClaimed(q.Query(ctx, claimDue, at, limit, leaseUntil, kinds))
+}
+
+func collectClaimed(rows pgx.Rows, err error) ([]application.ClaimedRun, error) {
 	if err != nil {
 		return nil, err
 	}
