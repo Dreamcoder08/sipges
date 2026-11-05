@@ -45,6 +45,20 @@ const freshWorker = async () => {
 };
 
 describe('Worker initialization through fetch', () => {
+  it('logs only the class of a failed bootstrap, never the row in its detail', async () => {
+    const failure = Object.assign(new Error('violates check constraint "users_username_check"'), {
+      name: 'PostgresError',
+      code: '23514',
+      detail: 'Failing row contains (x, Admin, $argon2id$v=19$synthetic, admin).',
+    });
+    mocks.buildContainer.mockRejectedValueOnce(failure);
+    const response = await (await freshWorker()).fetch(request(), syntheticEnv(), ctx as never);
+    expect(response.status).toBe(503);
+    const logged = vi.mocked(console.error).mock.calls;
+    expect(logged).toEqual([['SIPGES initialization failed', { kind: 'PostgresError' }]]);
+    expect(JSON.stringify(await response.json())).not.toContain('argon2id');
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     // clearAllMocks keeps queued once-implementations: a case must not inherit another's.
