@@ -24,9 +24,9 @@ var loginDetails = map[application.LoginFailure]string{
 // while it waits on a throttle lock.
 const loginTimeout = 30 * time.Second
 
-// maxLoginBody bounds the form held in memory before any check, on a route anyone can reach. A
-// longer body answers 422 instead of the TypeScript API's 401, which sets no limit of its own.
-const maxLoginBody = 1 << 20
+// maxBody bounds the form or JSON held in memory before any check, on routes anyone can reach or
+// any account can send to. A longer body answers 422; the TypeScript API sets no limit of its own.
+const maxBody = 1 << 20
 
 // AuthDeps is what the authentication routes need.
 type AuthDeps struct {
@@ -35,7 +35,12 @@ type AuthDeps struct {
 	CookieSecure bool
 	ClientIP     httpx.ClientIPOptions
 	Logger       *slog.Logger
+	// TenantOf is the request's active project: tenancy resolves it, above this context.
+	TenantOf func(r *http.Request) (string, bool)
 }
+
+// scopeCookie is SCOPE_COOKIE of cookies.ts: logout clears the project choice with the session.
+const scopeCookie = "sipges_scope"
 
 // issue is one FastAPI/pydantic-style validation error item (validation.ts ValidationIssue).
 type issue struct {
@@ -66,6 +71,11 @@ type loginResponse struct {
 func RegisterAuth(mux *http.ServeMux, deps AuthDeps) {
 	h := authHandlers(deps)
 	mux.HandleFunc("POST /login", h.login)
+	mux.HandleFunc("POST /logout", h.logout)
+	mux.HandleFunc("GET /system/auth/accounts", h.listAccounts)
+	mux.HandleFunc("POST /system/auth/accounts", h.createAccount)
+	mux.HandleFunc("POST /system/auth/accounts/{username}/deactivate", h.deactivateAccount)
+	mux.HandleFunc("POST /system/auth/accounts/{username}/reset-mfa", h.resetMFA)
 	if deps.Identity.CanEnrol() {
 		mux.HandleFunc("POST /system/auth/totp/setup", h.totpSetup)
 		mux.HandleFunc("POST /system/auth/totp/enable", h.totpEnable)
@@ -87,7 +97,7 @@ func (h authHandlers) fail(w http.ResponseWriter, r *http.Request, event string)
 // readLoginForm is parseForm(c, LoginForm): the last value of each name wins, a file does not
 // count as a value, and otp defaults to empty. It answers the 422 itself.
 func readLoginForm(w http.ResponseWriter, r *http.Request) (username, password, otp string, ok bool) {
-	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxLoginBody))
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBody))
 	if err != nil {
 		httpx.WriteError(w, http.StatusUnprocessableEntity, formInvalid)
 		return "", "", "", false
@@ -153,10 +163,16 @@ func (h authHandlers) login(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// readJSON is parseJson over a z.object of required strings: 422 for a body JSON.parse refuses
-// or the schema rejects. A field absent from the input is "missing".
-func readJSON(w http.ResponseWriter, r *http.Request, names ...string) ([]string, bool) {
-	body, err := io.ReadAll(r.Body)
+// field is one string of a z.object; defaultValue makes it z.string().default(…).
+type field struct {
+	name         string
+	defaultValue *string
+}
+
+// readJSON is parseJson over a z.object of strings: 422 for a body JSON.parse refuses or the
+// schema rejects. A required field absent from the input is "missing".
+func readJSON(w http.ResponseWriter, r *http.Request, fields ...field) ([]string, bool) {
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBody))
 	if err != nil {
 		httpx.WriteError(w, http.StatusUnprocessableEntity, jsonInvalid)
 		return nil, false
@@ -172,13 +188,15 @@ func readJSON(w http.ResponseWriter, r *http.Request, names ...string) ([]string
 		return nil, false
 	}
 	var issues []issue
-	values := make([]string, len(names))
-	for i, name := range names {
-		switch v, present := parsed.Fields[name]; {
+	values := make([]string, len(fields))
+	for i, f := range fields {
+		switch v, present := parsed.Fields[f.name]; {
+		case !present && f.defaultValue != nil:
+			values[i] = *f.defaultValue
 		case !present:
-			issues = append(issues, issue{Type: "missing", Loc: []any{"body", name}, Msg: "Field required"})
+			issues = append(issues, issue{Type: "missing", Loc: []any{"body", f.name}, Msg: "Field required"})
 		case v.Kind != httpx.JSONString:
-			issues = append(issues, issue{Type: "invalid_type", Loc: []any{"body", name},
+			issues = append(issues, issue{Type: "invalid_type", Loc: []any{"body", f.name},
 				Msg: "Invalid input: expected string, received " + string(v.Kind)})
 		default:
 			values[i] = v.Text
@@ -222,7 +240,7 @@ func (h authHandlers) totpSetup(w http.ResponseWriter, r *http.Request) {
 
 // totpEnable is POST /system/auth/totp/enable.
 func (h authHandlers) totpEnable(w http.ResponseWriter, r *http.Request) {
-	values, ok := readJSON(w, r, "code")
+	values, ok := readJSON(w, r, field{name: "code"})
 	if !ok {
 		return
 	}

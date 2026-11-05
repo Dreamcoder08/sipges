@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { ParityCase } from '../types.ts';
 
 /**
@@ -12,6 +13,10 @@ const ARGON2 =
 const LEGACY =
   'pbkdf2_sha256$1000$0a1b2c3d4e5f60718293a4b5c6d7e8f9$a041f11d5a9a47a32a2ee6eaad0755e28ce8707a08721afd892f7bdb085860e6';
 
+/** Synthetic session tokens, one per API: each logout ends its own session. */
+const LOGOUT_TOKEN = { ts: '1'.repeat(64), go: '2'.repeat(64) };
+const hashed = (token: string) => createHash('sha256').update(token).digest('hex');
+
 export const seed = `
 INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled) VALUES
   ('parity-login', 'Paridad Ñandú', '${ARGON2}', 'analista', true, false),
@@ -21,6 +26,19 @@ INSERT INTO users (username, full_name, password_hash, role, active, totp_enable
   ('parity-legacy-go', 'Paridad', '${LEGACY}', 'analista', true, false);
 INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled, totp_secret_sealed)
   VALUES ('parity-login-mfa', 'Paridad', '${ARGON2}', 'analista', true, true, 'v1.AAAA');
+INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled, totp_secret_sealed, totp_last_step) VALUES
+  ('parity-off-ts', 'Paridad', 'x', 'analista', true, true, NULL, NULL),
+  ('parity-off-go', 'Paridad', 'x', 'analista', true, true, NULL, NULL),
+  ('parity-reset-ts', 'Paridad', 'x', 'analista', true, true, 'v1.AAAA', 7),
+  ('parity-reset-go', 'Paridad', 'x', 'analista', true, true, 'v1.AAAA', 7),
+  ('parity-foreign', 'Paridad', 'x', 'analista', true, true, 'v1.AAAA', 7);
+INSERT INTO grants (username, tenant_id) VALUES
+  ('parity-reset-ts', 'SIPGES/PRJ-SECHURA'),
+  ('parity-reset-go', 'SIPGES/PRJ-SECHURA'),
+  ('parity-foreign', 'PARITY/OTRO');
+INSERT INTO sessions (token_hash, username, expires_at) VALUES
+  ('${hashed(LOGOUT_TOKEN.ts)}', 'parity-login', now() + interval '1 hour'),
+  ('${hashed(LOGOUT_TOKEN.go)}', 'parity-login', now() + interval '1 hour');
 INSERT INTO login_failures (subject, failed_at)
   SELECT 'user:parity-login-throttled', now() FROM generate_series(1, 5);
 `;
@@ -91,6 +109,135 @@ const totp: readonly ParityCase[] = [
   enable('no body', undefined, 'admin'),
 ];
 
+const ACCOUNTS = '/system/auth/accounts';
+const account = (
+  name: string,
+  path: string,
+  extra: Omit<ParityCase, 'name' | 'method' | 'path'>,
+  method: ParityCase['method'] = 'POST',
+): ParityCase => ({
+  name: `identity: ${name}`,
+  method,
+  path,
+  auth: 'admin',
+  ...(method === 'POST' ? { sameOrigin: true as const } : {}),
+  ...extra,
+});
+const off = { user: { ts: 'parity-off-ts', go: 'parity-off-go' } };
+const reset = { user: { ts: 'parity-reset-ts', go: 'parity-reset-go' } };
+const created = { user: { ts: 'parity.new.ts', go: 'parity.new.go' } };
+const logoutCookie = { cookie: 'sipges_session={token}' };
+const logoutToken = { token: LOGOUT_TOKEN };
+const accounts: readonly ParityCase[] = [
+  account('accounts list', ACCOUNTS, {}, 'GET'),
+  account('accounts list as consulta', ACCOUNTS, { auth: 'consulta' }, 'GET'),
+  { name: 'identity: accounts list without a session', method: 'GET', path: ACCOUNTS },
+  account('create account', ACCOUNTS, {
+    vary: created,
+    normalize: ['username'],
+    body: {
+      json: { username: '{user}', full_name: 'Ñandú', password: PASSWORD, role: 'analista' },
+    },
+  }),
+  account('create account again', ACCOUNTS, {
+    vary: created,
+    body: { json: { username: '{user}', full_name: 'Ñandú', password: PASSWORD } },
+  }),
+  account('the created account signs in', '/login', {
+    vary: created,
+    body: { form: { username: '{user}', password: PASSWORD } },
+  }),
+  account('created accounts are listed', ACCOUNTS, {}, 'GET'),
+  account('create with the default role', ACCOUNTS, {
+    vary: { user: { ts: 'parity.def.ts', go: 'parity.def.go' } },
+    normalize: ['username'],
+    body: { json: { username: '{user}', full_name: 'x'.repeat(130), password: PASSWORD } },
+  }),
+  account('create: invalid username', ACCOUNTS, {
+    body: { json: { username: 'Ana', full_name: 'x', password: PASSWORD } },
+  }),
+  account('create: unknown role', ACCOUNTS, {
+    body: { json: { username: 'parity.role', full_name: 'x', password: PASSWORD, role: 'root' } },
+  }),
+  account('create: short password', ACCOUNTS, {
+    body: { json: { username: 'parity.short', full_name: 'x', password: 'short' } },
+  }),
+  account('create: long password', ACCOUNTS, {
+    body: { json: { username: 'parity.long', full_name: 'x', password: 'x'.repeat(257) } },
+  }),
+  account('create: missing fields', ACCOUNTS, { body: { json: { role: null } } }),
+  account('create: invalid JSON', ACCOUNTS, { body: { raw: '{' } }),
+  account('create as consulta', ACCOUNTS, {
+    auth: 'consulta',
+    body: { json: { username: 'parity.denied', full_name: 'x', password: PASSWORD } },
+  }),
+
+  account('deactivate', `${ACCOUNTS}/{user}/deactivate`, { vary: off }),
+  account('deactivate again', `${ACCOUNTS}/{user}/deactivate`, { vary: off }),
+  account('deactivate in upper case', `${ACCOUNTS}/PARITY-LOGIN-INACTIVE/deactivate`, {}),
+  account('deactivate a missing user', `${ACCOUNTS}/parity-nobody/deactivate`, {}),
+  account('deactivate a blank name', `${ACCOUNTS}/%20/deactivate`, {}),
+  account('deactivate a NUL name', `${ACCOUNTS}/%00/deactivate`, {}),
+  account('deactivate as consulta', `${ACCOUNTS}/parity-login/deactivate`, { auth: 'consulta' }),
+  {
+    name: 'identity: deactivate without Origin',
+    method: 'POST',
+    path: `${ACCOUNTS}/parity-login/deactivate`,
+    auth: 'admin',
+  },
+
+  account('reset MFA of oneself', `${ACCOUNTS}/parity-admin/reset-mfa`, {}),
+  account('reset MFA of another project', `${ACCOUNTS}/parity-foreign/reset-mfa`, {}),
+  account('reset MFA of a missing user', `${ACCOUNTS}/parity-nobody/reset-mfa`, {}),
+  account('reset MFA of a NUL name', `${ACCOUNTS}/%00/reset-mfa`, {}),
+  account('reset MFA', `${ACCOUNTS}/{user}/reset-mfa`, {
+    vary: reset,
+    normalize: ['username'],
+  }),
+  account('reset MFA in upper case repeated', `${ACCOUNTS}/PARITY-RESET-TS/reset-mfa`, {}),
+  account('reset MFA with a project in the query', `${ACCOUNTS}/{user}/reset-mfa?project_id=OTRO`, {
+    vary: reset,
+  }),
+  account('audit shows the resets', '/system/audit?limit=50', { normalize: ['*.ts'] }, 'GET'),
+
+  {
+    name: 'identity: logout without a session',
+    method: 'POST',
+    path: '/logout',
+    sameOrigin: true,
+  },
+  { name: 'identity: logout without Origin', method: 'POST', path: '/logout' },
+  {
+    name: 'identity: logout of an unknown session',
+    method: 'POST',
+    path: '/logout',
+    sameOrigin: true,
+    headers: { cookie: `sipges_session=${'3'.repeat(64)}` },
+  },
+  {
+    name: 'identity: the session is open before logout',
+    method: 'GET',
+    path: '/system/auth/me',
+    vary: logoutToken,
+    headers: logoutCookie,
+  },
+  {
+    name: 'identity: logout',
+    method: 'POST',
+    path: '/logout',
+    sameOrigin: true,
+    vary: logoutToken,
+    headers: logoutCookie,
+  },
+  {
+    name: 'identity: the session is closed after logout',
+    method: 'GET',
+    path: '/system/auth/me',
+    vary: logoutToken,
+    headers: logoutCookie,
+  },
+];
+
 export const cases: readonly ParityCase[] = [
   login('with an argon2id hash', credentials('parity-login')),
   login('with spaces and upper case in the name', credentials('  PARITY-Login\t')),
@@ -139,6 +286,7 @@ export const cases: readonly ParityCase[] = [
     body: { form: { username: 'parity-login-mfa', password: PASSWORD, otp: '123456' } },
   }),
   ...totp,
+  ...accounts,
   { name: 'identity: GET /login', method: 'GET', path: '/login' },
   {
     name: 'identity: POST /login/ without a session',

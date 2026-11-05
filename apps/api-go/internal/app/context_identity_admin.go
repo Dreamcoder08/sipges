@@ -10,6 +10,7 @@ import (
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/secrets"
+	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
 
 // The rest of the identity context (auth-routes.ts), beyond the session gates in app.go.
@@ -33,19 +34,25 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
+		store := identity.Store{DB: d.Pool}
 		deps := identityhttp.AuthDeps{
 			Identity: application.NewService(application.Deps{
-				Store:  identity.Store{DB: d.Pool},
-				Hasher: identity.Passwords{},
-				Tokens: identity.Tokens{},
-				TOTP:   identity.TOTP{},
-				Cipher: cipher,
-				Logger: d.Logger,
-				Now:    d.Now,
+				Store:    store,
+				Accounts: store,
+				Hasher:   identity.Passwords{},
+				Tokens:   identity.Tokens{},
+				TOTP:     identity.TOTP{},
+				Cipher:   cipher,
+				Logger:   d.Logger,
+				Now:      d.Now,
 			}),
 			CookieSecure: secure,
 			ClientIP:     httpx.ClientIPOptions{EdgeHeader: edgeHeader, TrustProxy: trustProxy},
 			Logger:       d.Logger,
+			TenantOf: func(r *http.Request) (string, bool) {
+				scope, ok := tenancyhttp.ScopeFrom(r.Context())
+				return scope.TenantID(), ok
+			},
 		}
 		return func(mux *http.ServeMux) { identityhttp.RegisterAuth(mux, deps) }, nil
 	})

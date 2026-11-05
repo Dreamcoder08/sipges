@@ -59,6 +59,7 @@ type Store interface {
 	// CreateSession is false when deactivation won the race.
 	CreateSession(ctx context.Context, tokenHash, username string, expiresAt, at time.Time, viaGoogle bool) (bool, error)
 	PurgeExpiredSessions(ctx context.Context, at time.Time) error
+	DeleteSession(ctx context.Context, tokenHash string) error
 }
 
 // PasswordHasher is PasswordHasher of ports.ts.
@@ -90,10 +91,11 @@ type SecretCipher interface {
 
 // Deps is what the identity service needs.
 type Deps struct {
-	Store  Store
-	Hasher PasswordHasher
-	Tokens SessionTokens
-	TOTP   TOTPService
+	Store    Store
+	Accounts AccountStore
+	Hasher   PasswordHasher
+	Tokens   SessionTokens
+	TOTP     TOTPService
 	// Cipher is nil without SIPGES_DATA_KEY: the second factor then fails closed, and enrolment
 	// is not served.
 	Cipher SecretCipher
