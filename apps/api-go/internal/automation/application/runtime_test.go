@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -238,5 +239,57 @@ func TestACronRunWhileAnEventTickIsLiveIsAPlainConcurrentAttempt(t *testing.T) {
 	wg.Wait()
 	if got := store.sources(); len(got) != 2 {
 		t.Fatalf("attempts %v", got)
+	}
+}
+
+func TestDrainWaitsForAnEventTickInCourse(t *testing.T) {
+	release := make(chan struct{})
+	started := make(chan struct{})
+	finished := make(chan struct{})
+	rt := &Runtime{Store: &fakeRuntimeStore{}, Tick: func(context.Context, string) (TickReport, error) {
+		close(started)
+		<-release
+		close(finished)
+		return TickReport{}, nil
+	}}
+	rt.Dispatch("ACME/NORTE")
+	<-started
+
+	early, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if err := rt.Drain(early); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("Drain while a tick runs = %v, want the deadline", err)
+	}
+	close(release)
+	if err := rt.Drain(context.Background()); err != nil {
+		t.Fatalf("Drain = %v", err)
+	}
+	select {
+	case <-finished:
+	default:
+		t.Fatal("Drain returned before the tick finished")
+	}
+}
+
+func TestAPanicInAnEventTickIsReportedAndDoesNotStopTheProcess(t *testing.T) {
+	reported := make(chan error, 1)
+	rt := &Runtime{
+		Store:   &fakeRuntimeStore{},
+		OnError: func(err error) { reported <- err },
+		Tick: func(context.Context, string) (TickReport, error) {
+			panic("sender exploded")
+		},
+	}
+	rt.Dispatch("ACME/NORTE")
+	if err := rt.Drain(context.Background()); err != nil {
+		t.Fatalf("Drain = %v", err)
+	}
+	select {
+	case err := <-reported:
+		if !strings.Contains(err.Error(), "sender exploded") {
+			t.Fatalf("reported %v", err)
+		}
+	default:
+		t.Fatal("the panic was not reported")
 	}
 }

@@ -24,6 +24,18 @@ import (
 // automationEnv reads the automation settings; tests replace it.
 var automationEnv secrets.Lookup = os.LookupEnv
 
+// DrainBackground waits for the automation ticks running on pool, until ctx ends. The process
+// calls it after the server stopped and before closing the pool.
+func DrainBackground(ctx context.Context, pool *pgxpool.Pool) error {
+	automationMu.Lock()
+	m := automationModules[pool]
+	automationMu.Unlock()
+	if m == nil {
+		return nil
+	}
+	return m.runtime.Drain(ctx)
+}
+
 // automation is the context's composition: its routes and the wakeup middleware share one
 // runtime per pool, so a write's wakeup and the cron see the same running ticks.
 type automation struct {

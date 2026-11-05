@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -96,6 +97,8 @@ type Runtime struct {
 
 	mu      sync.Mutex
 	running map[string]*entry
+	// tasks counts the event ticks Dispatch started, so Drain can wait for them.
+	tasks sync.WaitGroup
 }
 
 // entry is one tick of this process: rescan is set by writes that arrive while it runs.
@@ -233,7 +236,14 @@ func (rt *Runtime) Dispatch(tenantID string) {
 	if !ok {
 		return
 	}
+	rt.tasks.Add(1)
 	task := func() {
+		defer rt.tasks.Done()
+		defer func() {
+			if r := recover(); r != nil && rt.OnError != nil {
+				rt.OnError(fmt.Errorf("event tick panicked: %v", r))
+			}
+		}()
 		ctx := context.Background()
 		if rt.Background != nil {
 			ctx = rt.Background()
@@ -252,6 +262,24 @@ func (rt *Runtime) Dispatch(tenantID string) {
 		return
 	}
 	go task()
+}
+
+// Drain waits until the event ticks Dispatch started have finished, or ctx ends. A process
+// shutting down calls it after the server stopped and before closing the pool: a tick cut off
+// between sending and FinishRun would send its message again when the lease expires, and most
+// channels do not deduplicate. In Node, the wakeup awaits its tick inside the request.
+func (rt *Runtime) Drain(ctx context.Context) error {
+	done := make(chan struct{})
+	go func() {
+		rt.tasks.Wait()
+		close(done)
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Scheduled is scheduled: every due tenant in turn within one budget, the reports summed. A
