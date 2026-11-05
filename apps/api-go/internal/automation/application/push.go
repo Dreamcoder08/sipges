@@ -45,12 +45,13 @@ func (PushPayload) GoString() string { return redacted }
 func (PushPayload) LogValue() slog.Value { return slog.StringValue(redacted) }
 
 // PushResult is what the push service answered: Sent, or Gone when the browser dropped the
-// subscription.
+// subscription. A failed send returns PushFailed, the zero value, with its error.
 type PushResult int
 
 // Push results.
 const (
-	PushSent PushResult = iota
+	PushFailed PushResult = iota
+	PushSent
 	PushGone
 )
 
@@ -170,4 +171,86 @@ func (s Service) SubscribePush(ctx context.Context, username string, subscriptio
 // UnsubscribePush is unsubscribePush: it removes the endpoint only when it is the caller's.
 func (s Service) UnsubscribePush(ctx context.Context, username, endpoint string) error {
 	return s.Subscriptions.Remove(ctx, username, endpoint)
+}
+
+// PushDelivery is one claimed row of push_deliveries.
+type PushDelivery struct {
+	ID           int64
+	Subscription PushSubscription
+	Payload      PushPayload
+	Attempts     int64
+}
+
+// PushDeliveries is the delivery part of PushStore.
+type PushDeliveries interface {
+	// Claim leases the next due delivery of the tenant, if any: a row goes to one runner.
+	Claim(ctx context.Context, tenantID string, at, leaseUntil time.Time) ([]PushDelivery, error)
+	Finish(ctx context.Context, tenantID string, id int64, status, errText string, retryAt time.Time) error
+}
+
+// deliverPush is deliverPush: due deliveries one at a time, within the tick's budget. The check
+// before each claim keeps a tick inside its budget plus one send, which the shutdown drain
+// counts on. Delivery is at least once: the row is settled after the send, so a kill between
+// the two repeats the push when its lease expires, and browsers do not deduplicate.
+func (s Service) deliverPush(ctx context.Context, tenantID string, deadline time.Duration) error {
+	if s.PushSender == nil || s.Deliveries == nil {
+		return nil
+	}
+	for count := 0; count < DeliveryBatch && s.mono() < deadline; count++ {
+		at := s.now()
+		deliveries, err := s.Deliveries.Claim(ctx, tenantID, at, at.Add(LeaseSeconds*time.Second))
+		if err != nil {
+			return err
+		}
+		if len(deliveries) == 0 {
+			return nil
+		}
+		for _, d := range deliveries {
+			if err := s.deliverOne(ctx, tenantID, d); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (s Service) deliverOne(ctx context.Context, tenantID string, d PushDelivery) error {
+	audit := func(outcome string) {
+		s.auditedAs(ctx, tenantID, "PUSH_SEND", "Envío push · entrega "+strconv.FormatInt(d.ID, 10)+" · "+outcome)
+	}
+	result, err := s.PushSender.Send(ctx, d.Subscription, d.Payload, s.now())
+	if err != nil {
+		audit("fallido")
+		return s.retryDelivery(ctx, tenantID, d, err)
+	}
+	if result == PushSent {
+		// Audited before any bookkeeping, so a send that happened always leaves its row.
+		audit("aceptado")
+		finish := func() error { return s.Deliveries.Finish(ctx, tenantID, d.ID, "accepted", "", s.now()) }
+		if finish() != nil {
+			// The push went out: unlike TypeScript's catch, it is not queued to go out again.
+			return finish()
+		}
+		return nil
+	}
+	audit("expirado")
+	if err := s.Subscriptions.Forget(ctx, d.Subscription.Endpoint); err != nil {
+		return s.retryDelivery(ctx, tenantID, d, err)
+	}
+	if err := s.Deliveries.Finish(ctx, tenantID, d.ID, "failed", "Suscripción expirada", s.now()); err != nil {
+		return s.retryDelivery(ctx, tenantID, d, err)
+	}
+	return nil
+}
+
+// retryDelivery settles a delivery that failed: pending at its next delay, failed when its
+// attempts ran out.
+func (s Service) retryDelivery(ctx context.Context, tenantID string, d PushDelivery, cause error) error {
+	delay, retry := domain.RetryDelayMinutes(d.Attempts)
+	status := "failed"
+	if retry {
+		status = "pending"
+	}
+	return s.Deliveries.Finish(ctx, tenantID, d.ID, status, errorText(cause),
+		s.now().Add(time.Duration(delay)*time.Minute))
 }
