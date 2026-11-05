@@ -23,12 +23,12 @@ import (
 // The integration runtime routes, with the answers of apps/api/src/contexts/integration/http:
 // the public webhooks POST /hooks/ingest/{module} (ingest-routes.ts) and POST /hooks/signals
 // (signal-routes.ts), authenticated by an API key; the admin writes of media-routes.ts and
-// source-routes.ts; and DELETE /system/integrations/api-keys/{id} (api-key-routes.ts). Issuing
-// API keys (POST /system/integrations/api-keys) stays in the TypeScript API.
+// source-routes.ts; and POST and DELETE /system/integrations/api-keys (api-key-routes.ts).
 
-// KeyService verifies API keys and revokes them.
+// KeyService verifies, issues and revokes API keys.
 type KeyService interface {
 	Authenticate(ctx context.Context, header string, present bool) (*domain.Principal, error)
+	Create(ctx context.Context, tenantID string, input domain.KeyInput, actor string) (application.IssuedKey, error)
 	Revoke(ctx context.Context, tenantID string, id int) (bool, error)
 }
 
@@ -85,6 +85,7 @@ func RegisterRuntime(mux *http.ServeMux, rt Runtime) {
 	mux.HandleFunc("PUT /system/intelligence/sources/defensoria/config", rt.scoped(rt.configureSource))
 	mux.HandleFunc("POST /system/intelligence/sources/defensoria/import", rt.scoped(rt.importSource))
 	mux.HandleFunc("POST /system/intelligence/sources/defensoria/poll", rt.scoped(rt.pollSource))
+	mux.HandleFunc("POST /system/integrations/api-keys", rt.scoped(rt.issueKey))
 	mux.HandleFunc("DELETE /system/integrations/api-keys/{id}", rt.scoped(rt.revokeKey))
 }
 
@@ -474,6 +475,35 @@ func (rt Runtime) pollSource(q request) error {
 // ---- API keys ----
 
 var keyID = regexp.MustCompile(`^\d{1,9}$`)
+
+type issuedKey struct {
+	OK    bool   `json:"ok"`
+	ID    int    `json:"id"`
+	Token string `json:"token"`
+}
+
+// issueKey is POST /system/integrations/api-keys: administrators only, by the role gate.
+func (rt Runtime) issueKey(q request) error {
+	body, ok := jsonBody(q.w, q.r)
+	if !ok {
+		return nil
+	}
+	input, issues := domain.ParseKeyInput(body)
+	if issues != nil {
+		invalid(q.w, issues)
+		return nil
+	}
+	issued, err := rt.Keys.Create(q.r.Context(), q.tenant, input, q.user)
+	if err != nil {
+		return err
+	}
+	if issued.Duplicate {
+		detail(q.w, http.StatusConflict, "Ya existe una clave con ese nombre")
+		return nil
+	}
+	httpx.WriteJSONText(q.w, http.StatusOK, issuedKey{true, issued.ID, issued.Token})
+	return nil
+}
 
 func (rt Runtime) revokeKey(q request) error {
 	raw := httpx.PathParam(q.r, "id")

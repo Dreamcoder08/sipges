@@ -28,9 +28,9 @@ func TestParseJSONBodyReadsLikeJSONParse(t *testing.T) {
 func TestParseJSONBodyFields(t *testing.T) {
 	cases := map[string]string{
 		`{"code":"1","code":"2"}`:           "2", // the last duplicate wins
-		`{"code":"3"}`:                      "3", // keys are unescaped
-		`{"code":"😀"}`:                      "😀",
-		`{"code":"ñ"}`:                      "ñ",
+		`{"co\u0064e":"3"}`:                 "3", // keys are unescaped
+		`{"code":"\ud83d\ude00"}`:           "😀",
+		`{"code":"\u00f1"}`:                 "ñ",
 		"{\"code\":\"\xff\"}":               "�", // invalid UTF-8 is replaced before parsing
 		`{"code":"\ud83d"}`:                 "�", // a lone surrogate reaches Go as U+FFFD
 		`{"other":{"code":"x"},"code":"4"}`: "4",

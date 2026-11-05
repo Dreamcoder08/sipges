@@ -238,6 +238,55 @@ const accounts: readonly ParityCase[] = [
   },
 ];
 
+const API_KEYS = '/system/integrations/api-keys';
+const issue = (
+  name: string,
+  body: NonNullable<ParityCase['body']>,
+  extra: Partial<ParityCase> = {},
+) => account(`API key ${name}`, API_KEYS, { body, ...extra });
+const keyNames = { key: { ts: 'parity key ts', go: 'parity key go' } };
+const apiKeys: readonly ParityCase[] = [
+  issue(
+    'issued',
+    { json: { name: '  {key}  ', access: 'write', clearance: 'full' } },
+    { vary: keyNames, normalize: ['id', 'token'] },
+  ),
+  issue(
+    'with defaults',
+    { json: { name: '{key} default' } },
+    {
+      vary: keyNames,
+      normalize: ['id', 'token'],
+    },
+  ),
+  issue('with the same name', { json: { name: ' {key} ' } }, { vary: keyNames }),
+  issue('without a name', { json: {} }),
+  issue('with an empty name', { json: { name: '   ' } }),
+  issue('with a long name', { json: { name: 'x'.repeat(81) } }),
+  issue('with NUL in the name', { json: { name: 'a\u0000' } }),
+  issue('with a number as name', { json: { name: 1 } }),
+  issue('with an unknown access', { json: { name: 'x', access: 'all', clearance: 'none' } }),
+  issue('with a null access', { json: { name: 'x', access: null } }),
+  issue('with an array body', { json: [] }),
+  issue('with invalid JSON', { raw: '{' }),
+  issue('as consulta', { json: { name: 'x' } }, { auth: 'consulta' }),
+  issue('in an ungranted project', { json: { name: 'x', project_id: 'OTRO' } }),
+  {
+    name: 'identity: API key without a session',
+    method: 'POST',
+    path: API_KEYS,
+    sameOrigin: true,
+    body: { json: { name: 'x' } },
+  },
+  {
+    name: 'identity: API key without Origin',
+    method: 'POST',
+    path: API_KEYS,
+    auth: 'admin',
+    body: { json: { name: 'x' } },
+  },
+];
+
 export const cases: readonly ParityCase[] = [
   login('with an argon2id hash', credentials('parity-login')),
   login('with spaces and upper case in the name', credentials('  PARITY-Login\t')),
@@ -287,6 +336,7 @@ export const cases: readonly ParityCase[] = [
   }),
   ...totp,
   ...accounts,
+  ...apiKeys,
   { name: 'identity: GET /login', method: 'GET', path: '/login' },
   {
     name: 'identity: POST /login/ without a session',

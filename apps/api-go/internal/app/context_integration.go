@@ -34,7 +34,7 @@ func integrationRuntime(d Deps, feeds integration.FeedGateway, official integrat
 	store := recordssql.Records{DB: d.Pool}
 	importer := integration.Importer{Store: store, Clock: clock}
 	return integrationhttp.Runtime{
-		Keys: integration.Keys{Store: integrationsql.Keys{DB: d.Pool}, Clock: clock},
+		Keys: integration.Keys{Store: integrationsql.Keys{DB: d.Pool}, Clock: clock, Crypto: integrationsql.KeyCrypto{}},
 		Ingest: integration.Ingest{
 			Records:  records.Writes{Store: store, Now: now, RandomHex: randomHexUpper},
 			Receipts: integrationsql.Receipts{DB: d.Pool},
