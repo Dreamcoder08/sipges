@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
@@ -97,8 +98,11 @@ type Runtime struct {
 
 	mu      sync.Mutex
 	running map[string]*entry
-	// tasks counts the event ticks Dispatch started, so Drain can wait for them.
+	// tasks counts the event ticks Dispatch started, the ticks routes run and the schedule, so Drain
+	// can wait for them.
 	tasks sync.WaitGroup
+	// stop is the schedule's stop signal, nil without a schedule.
+	stop atomic.Pointer[context.Context]
 }
 
 // entry is one tick of this process: rescan is set by writes that arrive while it runs.
@@ -157,7 +161,7 @@ func (rt *Runtime) attempt(ctx context.Context, tenantID string, source RuntimeS
 	}
 	var preparation error
 	if rt.BeforeTick != nil {
-		preparation = rt.BeforeTick(ctx, tenantID, source)
+		preparation = rt.prepare(ctx, tenantID, source)
 	}
 	report, err := rt.Tick(ctx, tenantID)
 	if err == nil {
@@ -208,7 +212,7 @@ func (rt *Runtime) loop(ctx context.Context, tenantID string, source RuntimeSour
 		report, err := rt.attempt(ctx, tenantID, next)
 		next = SourceEvent
 		rt.mu.Lock()
-		again := e.rescan && rounds <= MaxRescans
+		again := e.rescan && rounds <= MaxRescans && !rt.stopping()
 		if !again && rt.running[tenantID] == e {
 			// A fresh tick may have replaced a stale entry; only the owner removes its own.
 			delete(rt.running, tenantID)
@@ -244,15 +248,8 @@ func (rt *Runtime) Dispatch(tenantID string) {
 				rt.OnError(fmt.Errorf("event tick panicked: %v", r))
 			}
 		}()
-		ctx := context.Background()
-		if rt.Background != nil {
-			ctx = rt.Background()
-		}
-		if rt.TaskTimeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, rt.TaskTimeout)
-			defer cancel()
-		}
+		ctx, cancel := rt.taskContext()
+		defer cancel()
 		if _, err := rt.loop(ctx, tenantID, SourceEvent, e); err != nil && rt.OnError != nil {
 			rt.OnError(err)
 		}
@@ -264,10 +261,23 @@ func (rt *Runtime) Dispatch(tenantID string) {
 	go task()
 }
 
-// Drain waits until the event ticks Dispatch started have finished, or ctx ends. A process
-// shutting down calls it after the server stopped and before closing the pool: a tick cut off
-// between sending and FinishRun would send its message again when the lease expires, and most
-// channels do not deduplicate. In Node, the wakeup awaits its tick inside the request.
+// taskContext is the context of a tick no request waits for.
+func (rt *Runtime) taskContext() (context.Context, context.CancelFunc) {
+	ctx := context.Background()
+	if rt.Background != nil {
+		ctx = rt.Background()
+	}
+	if rt.TaskTimeout > 0 {
+		return context.WithTimeout(ctx, rt.TaskTimeout)
+	}
+	return ctx, func() {}
+}
+
+// Drain waits until the event ticks Dispatch started, the ticks routes run and a stopped schedule
+// have finished, or ctx ends. A process shutting down calls it after the server stopped and before closing the
+// pool: a tick cut off between sending and FinishRun would send its message again when the lease
+// expires, and most channels do not deduplicate. In Node, the wakeup awaits its tick inside the
+// request.
 func (rt *Runtime) Drain(ctx context.Context) error {
 	done := make(chan struct{})
 	go func() {
@@ -283,8 +293,27 @@ func (rt *Runtime) Drain(ctx context.Context) error {
 }
 
 // Scheduled is scheduled: every due tenant in turn within one budget, the reports summed. A
-// tenant that fails does not stop the others; their errors are joined.
+// tenant that fails does not stop the others; their errors are joined. A caller's tick counts for
+// Drain, and a schedule that stopped ends the visit, like its own ticks.
 func (rt *Runtime) Scheduled(ctx context.Context) (TickReport, error) {
+	rt.tasks.Add(1)
+	defer rt.tasks.Done()
+	var stop <-chan struct{}
+	if signal := rt.stop.Load(); signal != nil {
+		stop = (*signal).Done()
+	}
+	return rt.scheduled(ctx, stop)
+}
+
+// TickNow is one tick a request asked for: no attempt is recorded, and Drain waits for it.
+func (rt *Runtime) TickNow(ctx context.Context, tenantID string) (TickReport, error) {
+	rt.tasks.Add(1)
+	defer rt.tasks.Done()
+	return rt.Tick(ctx, tenantID)
+}
+
+// scheduled is Scheduled that visits no further tenant once stop closes.
+func (rt *Runtime) scheduled(ctx context.Context, stop <-chan struct{}) (TickReport, error) {
 	deadline := rt.mono() + rt.budget()
 	var total TickReport
 	tenants, err := rt.Store.DueTenants(ctx, 100)
@@ -293,7 +322,7 @@ func (rt *Runtime) Scheduled(ctx context.Context) (TickReport, error) {
 	}
 	var errs []error
 	for _, tenantID := range tenants {
-		if rt.mono() >= deadline {
+		if rt.mono() >= deadline || closed(stop) {
 			break
 		}
 		report, err := rt.Run(ctx, tenantID, SourceCron)
@@ -304,6 +333,15 @@ func (rt *Runtime) Scheduled(ctx context.Context) (TickReport, error) {
 		total.add(report)
 	}
 	return total, errors.Join(errs...)
+}
+
+func closed(c <-chan struct{}) bool {
+	select {
+	case <-c:
+		return true
+	default:
+		return false
+	}
 }
 
 // WorkerContext is ctx running as the automation worker: actor 'automation' with full

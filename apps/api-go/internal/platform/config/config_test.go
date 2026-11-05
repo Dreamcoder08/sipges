@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 func env(values map[string]string) Lookup {
@@ -107,5 +108,49 @@ func TestLoadGoogleProvider(t *testing.T) {
 		if err != nil && strings.Contains(err.Error(), "synthetic") {
 			t.Errorf("error echoes the secret: %v", err)
 		}
+	}
+}
+
+func TestTheAutomationScheduleIsOffUnlessItsFlagIsOn(t *testing.T) {
+	t.Parallel()
+	for name, values := range map[string]map[string]string{
+		"unset":                         {},
+		"the TypeScript interval alone": {"SIPGES_AUTOMATION_INTERVAL": "30"},
+		"an invalid interval, unread":   {"SIPGES_AUTOMATION_INTERVAL": "nunca"},
+		"flag 0":                        {"SIPGES_GO_AUTOMATION_CRON": "0", "SIPGES_AUTOMATION_INTERVAL": "30"},
+	} {
+		values["SIPGES_DATABASE_URL"] = synthURL
+		cfg, err := Load(env(values))
+		if err != nil || cfg.AutomationInterval != 0 {
+			t.Errorf("%s: interval %v, err %v", name, cfg.AutomationInterval, err)
+		}
+	}
+}
+
+func TestTheFlagUsesTheTypeScriptInterval(t *testing.T) {
+	t.Parallel()
+	for raw, want := range map[string]time.Duration{"": 30 * time.Second, "5": 5 * time.Second, "3600": time.Hour} {
+		values := map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_GO_AUTOMATION_CRON": "1"}
+		if raw != "" {
+			values["SIPGES_AUTOMATION_INTERVAL"] = raw
+		}
+		cfg, err := Load(env(values))
+		if err != nil || cfg.AutomationInterval != want {
+			t.Errorf("%q: interval %v, err %v", raw, cfg.AutomationInterval, err)
+		}
+	}
+}
+
+func TestTheFlagRefusesAnIntervalThatWouldRunNothing(t *testing.T) {
+	t.Parallel()
+	for _, raw := range []string{"0", "4", "3601", "30s", "", " 30"} {
+		_, err := Load(env(map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_GO_AUTOMATION_CRON": "1", "SIPGES_AUTOMATION_INTERVAL": raw}))
+		if err == nil || !strings.Contains(err.Error(), "SIPGES_AUTOMATION_INTERVAL must be between 5 and 3600 seconds when SIPGES_GO_AUTOMATION_CRON is 1") {
+			t.Errorf("%q: %v", raw, err)
+		}
+	}
+	if _, err := Load(env(map[string]string{"SIPGES_DATABASE_URL": synthURL, "SIPGES_GO_AUTOMATION_CRON": "true"})); err == nil ||
+		!strings.Contains(err.Error(), "SIPGES_GO_AUTOMATION_CRON must be unset or exactly '0' or '1'") {
+		t.Errorf("flag: %v", err)
 	}
 }

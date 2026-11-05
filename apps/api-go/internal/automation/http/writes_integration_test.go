@@ -3,6 +3,7 @@ package http_test
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/hex"
 	"io"
 	"log/slog"
@@ -33,6 +34,11 @@ type writeEnv struct {
 const cronSecret = "cron-sintetico-de-pruebas-0123456789"
 
 func startWrites(t *testing.T) writeEnv {
+	t.Helper()
+	return startWith(t, app.Options{Logger: slog.New(slog.DiscardHandler)})
+}
+
+func startWith(t *testing.T, opts app.Options) writeEnv {
 	t.Helper()
 	if scratch == nil {
 		t.Skip(dbtest.EnvAdminURL + " is not set")
@@ -72,7 +78,7 @@ func startWrites(t *testing.T) writeEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(env.pool.Close)
-	h, err := app.NewHandler(env.pool, app.Options{Logger: slog.New(slog.DiscardHandler)})
+	h, err := app.NewHandler(env.pool, opts)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,6 +86,13 @@ func startWrites(t *testing.T) writeEnv {
 	t.Cleanup(srv.Close)
 	env.base = srv.URL
 	return env
+}
+
+// startCron is startWrites with Go as the runner: the flag is on, so the data key is required.
+func startCron(t *testing.T) writeEnv {
+	t.Helper()
+	t.Setenv("SIPGES_DATA_KEY", base64.StdEncoding.EncodeToString(make([]byte, 32)))
+	return startWith(t, app.Options{Logger: slog.New(slog.DiscardHandler), AutomationInterval: time.Minute})
 }
 
 func (e writeEnv) do(t *testing.T, method, path, user, body string, headers map[string]string) (int, string) {
@@ -229,8 +242,23 @@ func TestNotificationsAreMarkedReadWithinTheReadersClearance(t *testing.T) {
 	expect(t, status, body, 422, `{"detail":[{"type":"too_small","loc":["body","ids",0],"msg":"Too small: expected number to be >0"}]}`)
 }
 
-func TestTheCronNeedsItsBearerSecretAndVisitsEveryCursor(t *testing.T) {
+func TestWithoutTheFlagTheCronRouteRefusesEvenItsOwnSecret(t *testing.T) {
 	e := startWrites(t)
+	if status, _ := e.do(t, "POST", "/system/automations/rules", "boss", ruleBody, nil); status != 200 {
+		t.Fatal(status)
+	}
+	eventually(t, "the cursor", func() bool {
+		return e.count(t, `SELECT count(*) FROM automation_cursors WHERE last_tick_status = 'completed'`) == 1
+	})
+	status, body := e.do(t, "POST", "/system/automations/cron", "", "", map[string]string{"Authorization": "Bearer " + cronSecret})
+	expect(t, status, body, 401, `{"detail":"Credencial de cron no válida"}`)
+	if n := e.count(t, `SELECT count(*) FROM automation_cursors WHERE last_tick_source = 'cron'`); n != 0 {
+		t.Fatalf("%d cron attempts", n)
+	}
+}
+
+func TestTheCronNeedsItsBearerSecretAndVisitsEveryCursor(t *testing.T) {
+	e := startCron(t)
 	status, body := e.do(t, "POST", "/system/automations/cron", "", "", nil)
 	expect(t, status, body, 401, `{"detail":"Credencial de cron no válida"}`)
 	status, body = e.do(t, "GET", "/system/automations/cron", "", "", map[string]string{"Authorization": "Bearer otro-secreto-de-24-caracteres"})
