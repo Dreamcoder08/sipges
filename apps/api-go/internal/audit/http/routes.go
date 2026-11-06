@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -18,9 +19,13 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/audit/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/audit/infrastructure"
+	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
+	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
+	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
 )
 
 // Deps are what the composition root (internal/app) hands this context. Fields added later must
@@ -40,8 +45,33 @@ type Deps struct {
 // Register adds the context's routes to mux.
 func Register(mux *http.ServeMux, deps Deps) {
 	t := sqlTrail{db: deps.Pool}
+	access := sqlAccess{sessions: identity.Sessions{DB: deps.Pool, Now: deps.Now}, grants: tenancy.Grants{DB: deps.Pool}}
 	mux.HandleFunc("GET /system/audit", auditHandler(t, deps.Logger))
-	mux.HandleFunc("GET "+ActivityPath, activityHandler(t, deps.activityOptions(), deps.Logger))
+	mux.HandleFunc("GET "+ActivityPath, activityHandler(t, access, deps.activityOptions(), deps.Logger))
+}
+
+// sqlAccess is the ActivityAccess app.ts composes in TypeScript.
+type sqlAccess struct {
+	sessions identity.Sessions
+	grants   tenancy.Grants
+}
+
+// StillAllowed authenticates the request's cookie again and reads the user's grants.
+func (a sqlAccess) StillAllowed(r *http.Request) (bool, error) {
+	scope, ok := tenancyhttp.ScopeFrom(r.Context())
+	if !ok {
+		return false, nil
+	}
+	token, _ := httpx.Cookie(r, identityhttp.SessionCookie)
+	principal, err := a.sessions.Authenticate(r.Context(), token)
+	if err != nil || principal == nil {
+		return false, err
+	}
+	grants, err := a.grants.List(r.Context(), principal.Username)
+	if err != nil {
+		return false, err
+	}
+	return slices.ContainsFunc(grants, func(g domain.Grant) bool { return g.TenantID() == scope.TenantID() }), nil
 }
 
 // trail reads the audit trail of the request's resolved project.

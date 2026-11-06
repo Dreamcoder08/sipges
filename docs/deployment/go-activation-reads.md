@@ -73,7 +73,7 @@ Also on TypeScript, not proposed here: every write the screens can make, the sea
 
 ### Why `/system/events` stays
 
-It has no parity case, it streams for up to 240 s per connection, and through the container one open tab would hold it awake. It also checks the session only once (L23). Move it on its own.
+It has no parity case, it streams for up to 240 s per connection, and through the container one open tab would hold it awake. Move it on its own.
 
 ### Gap closed by this task
 

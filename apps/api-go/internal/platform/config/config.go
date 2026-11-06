@@ -36,6 +36,10 @@ type Config struct {
 	// AutomationInterval is the period of the Go cron; zero, the default, leaves TypeScript as
 	// the only runner (SIPGES_GO_AUTOMATION_CRON, docs/deployment/go-automation-cron.md).
 	AutomationInterval time.Duration
+	// AllowPrivilegedRole accepts a login role that is a superuser or has BYPASSRLS, which the
+	// API otherwise refuses (SIPGES_ALLOW_PRIVILEGED_DB_ROLE, default off). It exists for test
+	// servers, whose synthetic logins are superusers, and only works on a loopback database.
+	AllowPrivilegedRole bool
 }
 
 // Load validates the environment and reports every invalid variable at once.
@@ -56,6 +60,8 @@ func Load(lookup Lookup) (Config, error) {
 	cfg.AccessLog, err = parseSwitch(lookup, "SIPGES_ACCESS_LOG", true)
 	errs = append(errs, err)
 	cfg.RequireMFA, err = parseSwitch(lookup, "SIPGES_REQUIRE_MFA", true)
+	errs = append(errs, err)
+	cfg.AllowPrivilegedRole, err = parseSwitch(lookup, "SIPGES_ALLOW_PRIVILEGED_DB_ROLE", false)
 	errs = append(errs, err)
 	cfg.GoogleEnabled, err = parseGoogle(lookup)
 	errs = append(errs, err)

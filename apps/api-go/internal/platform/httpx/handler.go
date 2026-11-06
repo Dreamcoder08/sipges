@@ -27,6 +27,8 @@ type Options struct {
 	Auth []Middleware
 	// Routes adds the bounded contexts' routes to the mux.
 	Routes func(mux *http.ServeMux)
+	// Metrics counts every request and serves GET /system/metrics; nil turns off both.
+	Metrics *Metrics
 }
 
 // healthBody is the static liveness body, field for field (and in order) the TypeScript API's
@@ -64,6 +66,9 @@ func NewHandler(opts Options) http.Handler {
 		}
 		WriteJSON(w, http.StatusOK, readyBody{Status: "ready"})
 	})
+	if opts.Metrics != nil {
+		mux.HandleFunc("GET /system/metrics", metricsRoute(opts.Metrics))
+	}
 	if opts.Routes != nil {
 		opts.Routes(mux)
 	}
@@ -81,6 +86,15 @@ func NewHandler(opts Options) http.Handler {
 	})
 	// CanonicalPath first: logs, gates and the router all read the path Hono would.
 	middleware := []Middleware{CanonicalPath(), RequestID()}
+	if opts.Metrics != nil {
+		middleware = append(middleware, ObserveRequests(opts.Metrics, func(r *http.Request) string {
+			if strings.Contains(r.URL.EscapedPath(), "//") {
+				return unmatchedRoute
+			}
+			_, pattern := mux.Handler(r)
+			return routeLabel(pattern)
+		}))
+	}
 	if opts.AccessLog {
 		middleware = append(middleware, AccessLog(opts.Logger))
 	}

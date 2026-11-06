@@ -16,7 +16,8 @@ import (
 // PushOutbox is the outbox of sql-push-store.ts: one push_deliveries row per active, granted
 // subscriber of the tenant (not `consulta` for a restricted record), claimed and settled by the
 // ticks. push_subscriptions, users and grants are global tables, so it runs as the owner with
-// only app.tenant_id set, under the outbox's forced RLS.
+// only app.tenant_id set, under the outbox's forced RLS. Forced RLS does not bind a login that
+// bypasses it, so each statement names the tenant too.
 type PushOutbox struct {
 	DB *pgxpool.Pool
 }
@@ -28,11 +29,11 @@ const enqueuePush = `INSERT INTO push_deliveries(tenant_id,notification_id,endpo
 // and those whose person lost access since it was queued, leased in the same statement.
 const claimPush = `WITH due AS(
  SELECT d.id FROM push_deliveries d JOIN push_subscriptions s ON s.endpoint=d.endpoint AND s.username=d.username JOIN users u ON u.username=d.username AND u.active JOIN grants g ON g.username=d.username AND g.tenant_id=d.tenant_id
- WHERE d.status='pending' AND d.next_attempt_at<=$1 AND(NOT d.restricted OR u.role<>'consulta') ORDER BY d.id LIMIT 1 FOR UPDATE OF d SKIP LOCKED
- ),claimed AS(UPDATE push_deliveries d SET attempts=d.attempts+1,next_attempt_at=$2 FROM due WHERE d.id=due.id RETURNING d.*)
+ WHERE d.tenant_id=$3 AND d.status='pending' AND d.next_attempt_at<=$1 AND(NOT d.restricted OR u.role<>'consulta') ORDER BY d.id LIMIT 1 FOR UPDATE OF d SKIP LOCKED
+ ),claimed AS(UPDATE push_deliveries d SET attempts=d.attempts+1,next_attempt_at=$2 FROM due WHERE d.id=due.id AND d.tenant_id=$3 RETURNING d.*)
  SELECT c.id,s.endpoint,s.p256dh,s.auth,c.payload,c.attempts FROM claimed c JOIN push_subscriptions s ON s.endpoint=c.endpoint AND s.username=c.username`
 
-const finishPush = `UPDATE push_deliveries SET status=$2,last_error=$3,next_attempt_at=$4 WHERE id=$1`
+const finishPush = `UPDATE push_deliveries SET status=$2,last_error=$3,next_attempt_at=$4 WHERE id=$1 AND tenant_id=$5`
 
 var _ application.PushDeliveries = PushOutbox{}
 
@@ -48,7 +49,7 @@ func inPushTenant(ctx context.Context, db *pgxpool.Pool, tenantID string, fn fun
 func claimDeliveries(ctx context.Context, db *pgxpool.Pool, sql, tenantID string, at, leaseUntil time.Time) ([]application.PushDelivery, error) {
 	var out []application.PushDelivery
 	err := inPushTenant(ctx, db, tenantID, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, sql, at, leaseUntil)
+		rows, err := tx.Query(ctx, sql, at, leaseUntil, tenantID)
 		if err != nil {
 			return err
 		}
@@ -78,7 +79,7 @@ func (p PushOutbox) Claim(ctx context.Context, tenantID string, at, leaseUntil t
 // Finish settles a delivery.
 func (p PushOutbox) Finish(ctx context.Context, tenantID string, id int64, status, errText string, retryAt time.Time) error {
 	return inPushTenant(ctx, p.DB, tenantID, func(tx pgx.Tx) error {
-		_, err := tx.Exec(ctx, finishPush, id, status, errText, retryAt)
+		_, err := tx.Exec(ctx, finishPush, id, status, errText, retryAt, tenantID)
 		return err
 	})
 }

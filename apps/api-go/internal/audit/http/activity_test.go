@@ -68,8 +68,17 @@ func entry(id int64, module, action string) application.Record {
 // stream runs the activity handler behind a real server and returns the whole body.
 func stream(t *testing.T, trail *fakeTrail, opts activityOptions, headers map[string]string, configure func(*http.Server)) (int, http.Header, string) {
 	t.Helper()
+	return streamWith(t, trail, accessFunc(func() (bool, error) { return true, nil }), opts, headers, configure)
+}
+
+type accessFunc func() (bool, error)
+
+func (f accessFunc) StillAllowed(*http.Request) (bool, error) { return f() }
+
+func streamWith(t *testing.T, trail *fakeTrail, access streamAccess, opts activityOptions, headers map[string]string, configure func(*http.Server)) (int, http.Header, string) {
+	t.Helper()
 	trail.start = time.Now()
-	srv := httptest.NewUnstartedServer(activityHandler(trail, opts, slog.New(slog.DiscardHandler)))
+	srv := httptest.NewUnstartedServer(activityHandler(trail, access, opts, slog.New(slog.DiscardHandler)))
 	if configure != nil {
 		configure(srv.Config)
 	}
@@ -139,6 +148,30 @@ func TestActivityResumesFromLastEventID(t *testing.T) {
 		if !strings.HasPrefix(body, "event: ready\ndata: {}\nid: ") {
 			t.Errorf("Last-Event-ID %q: body %q", header, body)
 		}
+	}
+}
+
+func TestActivityChecksAccessBeforeEveryPoll(t *testing.T) {
+	polls := 0
+	trail := &fakeTrail{entries: []timedEntry{{0, entry(1, "Riesgos", "CREATE")}}}
+	allowed := accessFunc(func() (bool, error) {
+		polls++
+		return polls == 1, nil // only the first poll may read
+	})
+	_, _, body := streamWith(t, trail, allowed, fast, map[string]string{"Last-Event-ID": "0"}, nil)
+	want := "event: ready\ndata: {}\nid: 0\n\n" +
+		"event: activity\ndata: {\"module\":\"Riesgos\",\"action\":\"CREATE\"}\nid: 1\n\n"
+	if body != want || polls != 2 {
+		t.Fatalf("after %d checks: %q", polls, body)
+	}
+}
+
+func TestActivityEndsTheStreamWhenItsAccessCannotBeRead(t *testing.T) {
+	trail := &fakeTrail{entries: []timedEntry{{0, entry(1, "Riesgos", "CREATE")}}}
+	failing := accessFunc(func() (bool, error) { return false, errors.New("synthetic failure") })
+	_, _, body := streamWith(t, trail, failing, fast, map[string]string{"Last-Event-ID": "0"}, nil)
+	if body != "event: ready\ndata: {}\nid: 0\n\n" {
+		t.Fatalf("got %q", body)
 	}
 }
 
