@@ -153,6 +153,68 @@ test('ODD dry-run preserves bytes and real close allocates the next log number o
     assert.notEqual(spawnSync(process.execPath, args).status, 0);
     assert.equal(readFileSync(file, 'utf8'), closed);
   }));
+test('land-pr reports without merging, and merges only with --merge', () =>
+  fixture((dir) => {
+    const bin = path.join(dir, 'bin');
+    mkdirSync(bin);
+    const log = path.join(dir, 'gh.log');
+    writeFileSync(
+      path.join(bin, 'gh'),
+      `#!/bin/sh
+echo "$*" >> "${log}"
+case "$*" in
+  *mergeable,mergeStateStatus*) echo "$FAKE_MERGE_STATE" ;;
+  "pr checks"*) exit "\${FAKE_CHECKS:-0}" ;;
+  *isDraft*) echo true ;;
+  *state,mergeCommit*) echo abc123 ;;
+  "run list"*) echo 77 ;;
+  "run watch"*) exit "\${FAKE_DEPLOY:-0}" ;;
+esac
+`,
+      { mode: 0o755 },
+    );
+    const land = (args, extra = {}) => {
+      writeFileSync(log, '');
+      const result = spawnSync('bash', [path.join(root, 'scripts/agents/land-pr.sh'), ...args], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${bin}:${process.env.PATH}`,
+          LAND_PR_POLL: '0',
+          FAKE_MERGE_STATE: 'MERGEABLE CLEAN',
+          ...extra,
+        },
+      });
+      return { ...result, calls: readFileSync(log, 'utf8') };
+    };
+
+    const ready = land(['12']);
+    assert.equal(ready.status, 0);
+    assert.equal(ready.stdout, 'READY #12\n');
+    assert.doesNotMatch(ready.calls, /pr merge|pr ready/);
+
+    const dirty = land(['12', '--merge'], { FAKE_MERGE_STATE: 'CONFLICTING DIRTY' });
+    assert.equal(dirty.status, 3);
+    assert.equal(dirty.stdout, 'CONFLICT #12 CONFLICTING DIRTY\n');
+    assert.doesNotMatch(dirty.calls, /pr merge/);
+
+    const red = land(['12', '--merge'], { FAKE_CHECKS: '1' });
+    assert.equal(red.status, 4);
+    assert.equal(red.stdout, 'CHECKS_FAILED #12\n');
+    assert.doesNotMatch(red.calls, /pr merge/);
+
+    const landed = land(['12', '--merge']);
+    assert.equal(landed.status, 0);
+    assert.equal(landed.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
+    assert.match(landed.calls, /pr ready 12\npr merge 12 --merge\n/);
+
+    const failed = land(['12', '--merge'], { FAKE_DEPLOY: '1' });
+    assert.equal(failed.status, 5);
+    assert.equal(failed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77\n');
+
+    assert.equal(land([]).status, 2);
+    assert.equal(land(['12;x']).status, 2);
+  }));
 test('ODD rejects blank evidence and multiline labels without changing the task', () =>
   fixture((dir) => {
     const file = path.join(dir, 'odd.md');
