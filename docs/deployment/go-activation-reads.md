@@ -234,7 +234,7 @@ Reads that stay on TypeScript for now:
 
 | Route | Why |
 | --- | --- |
-| `/system/events` | See [below](#why-systemevents-stays). |
+| `/system/events` | See [above](#why-systemevents-stays). |
 | `/system/uploads/{id}`, `/preview`, `/download` | No S3 settings in the container; PDF and DOCX preview answer 501 (L37). |
 | `/system/search`, `/system/intelligence/embedder` | Their answers depend on `SIPGES_OLLAMA_*` and `SIPGES_SEMANTIC_SEARCH`, which the container does not get. |
 | `/system/intelligence/sources/defensoria/preview` | Calls an outside site; moves with Wave H. |
@@ -246,11 +246,11 @@ Reads that stay on TypeScript for now:
 
 ## Proposed writes, not before the reads
 
-Every write is ported, with parity cases. **None is proposed yet:** this list says what would move and what each wave needs, and it is not a go-ahead. Writes change the rollback: a route can go back, but rows Go wrote stay, so a defect here is not undone by a deploy. Start only after Waves A to D are measured, and after the owner decides. `go-activation-reads.test.ts` holds these blocks to the Worker's check too.
+Every write is ported, but **none is proposed yet**, and 56 of them have no parity case of their own (see the gap below). These lists say what would move and what each wave needs. They are not a go-ahead. Writes change the rollback: a route can go back, but rows Go wrote stay, so a defect here is not undone by a deploy. Start only after Waves A to D are measured, and after the owner decides. `go-activation-reads.test.ts` holds these blocks to the Worker's check too.
 
 | Wave | Needs first |
 | --- | --- |
-| E, records and project data | `SIPGES_DATA_KEY` and `SIPGES_DATA_KEY_PREVIOUS` forwarded: these writes wake automation in Go, and its channels need the key. |
+| E, records and project data | `SIPGES_DATA_KEY` and `SIPGES_DATA_KEY_PREVIOUS` forwarded: these writes wake automation in Go, and its channels need the key. Reread the verifier evidence of L36 and T37 against the build that moves. |
 | F, identity, keys and automations | The same, plus an independent verifier, as identity is a high-risk area. |
 | G, uploads and documents | `SIPGES_STORAGE`, `SIPGES_S3_*` and `SIPGES_MAX_UPLOAD_BYTES` forwarded; a timeout on the `http.Client` in `objectstore/s3.go` (L37), which has none today; the owner's choice on the `basic` PDF limit (ADR 0033). |
 | H, outside services | `SIPGES_OLLAMA_*`, `SIPGES_ANALYST_*`, `ANTHROPIC_*` and `SIPGES_VAPID_*` forwarded, as each is used in production. |
@@ -352,7 +352,7 @@ Ported but not on any list: `/login`, `/logout`, `/select-project`, `/hooks/inge
 
 ## Container environment
 
-`goContainerEnv` passes only what the reads need. That is enough for this list and not for anything after it.
+`goContainerEnv` passes only what the reads need. That is enough for Waves A to D and not for the write waves.
 
 | Variable | Passed | Needed by these reads | Note |
 | --- | --- | --- | --- |
@@ -447,7 +447,7 @@ None blocks the reads. Check them when reading the trial's results.
 1. Clear B5 and B6, and align `SCREENS`, in code PRs that change no route.
 2. Take the production baseline with the owner.
 3. Deploy `sipges-go` (B1) and work through the trial checklist.
-4. Measure Wave A, then A+B, then A+B+C on `sipges-go` (B2, B3).
+4. Measure Wave A, then A+B, then A+B+C, then A to D on `sipges-go` (B2, B3).
 5. Owner decides B7 and the go/no-go.
 6. Add the production container (B4) with `GO_ROUTES` still empty, and confirm production is unchanged.
 7. Switch Wave A alone, measure again, then B, then C, then D.

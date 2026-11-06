@@ -17,17 +17,14 @@ const block = (text: string, info: string) =>
     .flatMap((match) => (match[1] ?? '').split('\n'))
     .filter(Boolean);
 
-const proposed = async (): Promise<GoRoute[]> =>
-  block(await doc(), 'go-routes').map((line) => {
+const routes = async (info: string): Promise<GoRoute[]> =>
+  block(await doc(), info).map((line) => {
     const [method, path] = line.split(' ');
     return { method, path } as GoRoute;
   });
 
-const proposedWrites = async (): Promise<GoRoute[]> =>
-  block(await doc(), 'go-writes').map((line) => {
-    const [method, path] = line.split(' ');
-    return { method, path } as GoRoute;
-  });
+const proposed = () => routes('go-routes');
+const proposedWrites = () => routes('go-writes');
 
 const SCOPE = 'X-SIPGES-Scope';
 
@@ -81,7 +78,15 @@ describe('Proposed Go routes for Inicio and Registros', () => {
 
   it('leaves out the reads that need settings the container does not get', async () => {
     const paths = (await proposed()).map((route) => route.path);
-    for (const path of ['/system/search', '/system/notifications/push', '/system/metrics'])
+    for (const path of [
+      '/system/search',
+      '/system/intelligence/embedder',
+      '/system/intelligence/sources/defensoria/preview',
+      '/system/notifications/push',
+      '/system/notifications/push/state',
+      '/system/uploads/:id',
+      '/system/metrics',
+    ])
       expect(paths).not.toContain(path);
   });
 
