@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/domain"
@@ -12,6 +13,24 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
+
+// searchWriteBudget is how long a hybrid search may take to answer: 16 records and the query at the
+// embedder's 12 s each, plus the database. The server's own WriteTimeout is shorter, and stays as
+// it is for every other route.
+const searchWriteBudget = 4 * time.Minute
+
+// extendWriteDeadline gives a hybrid search its budget. A slow model is not a failure of the
+// search: without this the server cuts the connection and the lexical result never arrives.
+func (d Deps) extendWriteDeadline(w http.ResponseWriter, r *http.Request) {
+	if d.Semantic == nil {
+		return
+	}
+	err := http.NewResponseController(w).SetWriteDeadline(time.Now().Add(searchWriteBudget))
+	if err != nil && d.Logger != nil {
+		d.Logger.LogAttrs(r.Context(), slog.LevelWarn, "search_write_deadline_unavailable",
+			slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+	}
+}
 
 // hits is the search: lexical, or hybrid with an embedder. The lexical query, the semantic refs and
 // the fusion each take their own transactions: a call to the model can take seconds.

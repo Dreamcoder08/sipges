@@ -4,14 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
 )
 
 // embedderDouble gives a synthetic vector: 1 on the first axis for texts about a meeting. No real
@@ -217,4 +223,47 @@ func TestAnExternalModelIsNotContactedWhileTheSwitchIsOff(t *testing.T) {
 	if double.texts() != "" {
 		t.Fatalf("sent %q", double.texts())
 	}
+}
+
+// A slow model must not cut the search: the route outlives the server's write timeout.
+func TestASlowModelDoesNotCutTheSearch(t *testing.T) {
+	var calls atomic.Int32
+	double := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		calls.Add(1)
+		time.Sleep(150 * time.Millisecond)
+		_, _ = io.WriteString(w, `{"embeddings":[[0,1,0,0,0,0,0,0.1]]}`)
+	}))
+	t.Cleanup(double.Close)
+	t.Setenv("SIPGES_OLLAMA_URL", double.URL)
+	t.Setenv("SIPGES_SEMANTIC_SEARCH", "1")
+	t.Cleanup(func() { clearEmbeddings(t) })
+	base := startWithWriteTimeout(t, 200*time.Millisecond)
+	code, body := get(t, base, "/system/search?q=reuni%C3%B3n", "solo", nil)
+	if code != http.StatusOK || !strings.Contains(body, `"hits"`) {
+		t.Fatalf("%d %s", code, body)
+	}
+	if calls.Load() < 2 {
+		t.Fatalf("calls = %d", calls.Load())
+	}
+}
+
+func startWithWriteTimeout(t *testing.T, timeout time.Duration) string {
+	t.Helper()
+	if scratch == nil {
+		t.Skip(dbtest.EnvAdminURL + " is not set")
+	}
+	pool, err := pgxpool.New(t.Context(), scratch.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	h, err := app.NewHandler(pool, app.Options{Logger: slog.New(slog.DiscardHandler), Now: func() time.Time { return t0 }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewUnstartedServer(h)
+	srv.Config.WriteTimeout = timeout
+	srv.Start()
+	t.Cleanup(srv.Close)
+	return srv.URL
 }
