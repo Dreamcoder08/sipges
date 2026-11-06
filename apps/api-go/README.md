@@ -80,9 +80,8 @@ by `-timeout` skips the drop of its scratch database (`sipges_go_test_*`).
 
 Every request passes the gates of the TypeScript API in its order (`apps/api/src/app.ts`):
 host allowlist, session (`auth-middleware.ts`), project scope (`tenancy-middleware.ts`), role
-gate. The Go API only verifies what TypeScript wrote: it reads `sessions`, `users`, `grants` and
-`tenants` and never writes them. Sign-in, MFA enrolment, Google sign-in and API keys stay in
-TypeScript until phase 4.
+gate. Sign-in, MFA enrolment, Google sign-in and API keys are ported, so the Go API writes `sessions`
+and `users` as TypeScript does; no route serves production until it is listed in `GO_ROUTES`.
 
 - Session: cookie `sipges_session`, 64 lower-case hex characters, looked up by its SHA-256 with
   `expires_at > now` (milliseconds, as JavaScript) and an active account. Public paths
@@ -109,7 +108,7 @@ either is upgraded. Where the port reads less than the WHATWG URL parser (an IDN
 settings with their recommendation catalogue, and the situations report (records grouped by topic,
 actor and territory, weighted by recency, with lessons). Both read `project_settings` and
 `module_records` in the scope's tenant transaction, so a read-only account never sees records
-marked `restringido`. `PUT /system/v4/settings` (admin-only, audited) stays in TypeScript.
+marked `restringido`. `PUT /system/v4/settings` is admin-only and audited.
 
 The rules read stored JSON the way JavaScript does (`domain/js.go`): `String()` and number
 formatting, `trim` and `\s`, full Unicode case mapping, UTF-16 ordering and lengths (a title cut

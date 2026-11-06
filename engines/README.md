@@ -88,8 +88,8 @@ differ from an older Node ICU, and no fixture uses one.
 
 Known differences from TypeScript, each answered with an error instead of a different result:
 a JSON request with an unpaired UTF-16 surrogate escape is rejected (`serde_json` cannot hold
-it); `conflict_risk` answers `unsupported_value` when a cut title would end in a lone surrogate
-inside the report and when a record's `module` is an `Object.prototype` name (`constructor`,
+it); `conflict_risk` drops the broken half of a character when a cut title would end in a lone
+surrogate, as TypeScript does, and answers `unsupported_value` when a record's `module` is an `Object.prototype` name (`constructor`,
 `__proto__`, …), where TypeScript throws. Tied scores are ordered by ICU's Spanish collation,
 exact for ASCII, `ñ`, combining accents and `ø đ ħ æ œ ß`; other scripts, emoji and fullwidth
 forms are approximated.
