@@ -44,6 +44,17 @@ describe('Go route smoke test', () => {
     expect(init?.redirect).toBe('manual');
   });
 
+  it('never probes /system/auth routes: some answer without a session', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => unauthorized());
+    const { result } = run(fetcher, [
+      { method: 'GET', path: '/system/auth/me' },
+      { method: 'GET', path: '/api/dashboard' },
+    ]);
+    await expect(result).resolves.toEqual({ outcome: 'passed', path: '/api/dashboard' });
+    const only = run(fetcher, [{ method: 'GET', path: '/system/auth/me' }]);
+    await expect(only.result).resolves.toEqual({ outcome: 'skipped' });
+  });
+
   it('fills a :name segment when every listed route has one', async () => {
     const fetcher = vi.fn<typeof fetch>(async () => unauthorized());
     const { result } = run(fetcher, [{ method: 'GET', path: '/api/eventos/:id/history' }]);

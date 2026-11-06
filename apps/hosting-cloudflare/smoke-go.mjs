@@ -26,5 +26,5 @@ if (result.outcome === 'failed') {
 console.log(
   result.outcome === 'skipped'
     ? 'No Go routes listed; nothing to probe'
-    : `Go route answered the sign-in 401: GET ${result.path}`,
+    : `Listed route answered the sign-in 401: GET ${result.path}`,
 );

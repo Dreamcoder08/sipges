@@ -5,9 +5,14 @@ export type GoSmokeResult =
   | { readonly outcome: 'passed'; readonly path: string }
   | { readonly outcome: 'failed'; readonly path: string; readonly last: string };
 
-/** A listed GET route to call, preferring one with no `:name` segment. */
+/**
+ * A listed GET route to call, preferring one with no `:name` segment. /system/auth routes are left
+ * out: some answer without a session, and that 200 would roll back a healthy deploy.
+ */
 const probePath = (routes: readonly GoRoute[]) => {
-  const reads = routes.filter((route) => route.method === 'GET').map((route) => route.path);
+  const reads = routes
+    .filter((route) => route.method === 'GET' && !route.path.startsWith('/system/auth/'))
+    .map((route) => route.path);
   const path = reads.find((candidate) => !candidate.includes(':')) ?? reads[0];
   return path?.replace(/:[^/]+/g, 'smoke');
 };
