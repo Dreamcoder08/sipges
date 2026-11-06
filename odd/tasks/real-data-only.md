@@ -12,7 +12,7 @@ the territorial directory table readable. Branch `claude/project-thread-xn1t1j` 
 - S5: Keep the existing guarantees: hexagonal boundaries, tenant isolation, CSP, WCAG 2.1 AA, every existing test green.
 
 ## Findings
-- F1: The synthetic academic case (`demo:seed`, dataset mascli-academic-v1, scope MASCLI/PRJ-SECHURA) is stored in the production database next to the real records: records marked `Dato_Sintetico`/`Demo_Dataset`, ten evidence files and an IRSA snapshot noted «DEMO mascli-academic-v1». The app only hid them (PR #46: «Origen» filter, «Demostración» badge, `demostracion` counters, `DemoDataNotice`).
+- F1: The synthetic academic case (`demo:seed`, dataset mascli-academic-v1, scope SIPGES/PRJ-SECHURA) is stored in the production database next to the real records: records marked `Dato_Sintetico`/`Demo_Dataset`, ten evidence files and an IRSA snapshot noted «DEMO mascli-academic-v1». The app only hid them (PR #46: «Origen» filter, «Demostración» badge, `demostracion` counters, `DemoDataNotice`).
 - F2: Narratives have no category field; the image's categories are the SIPGES dimensions E, G, D, A and N.
 - F3: Table cells use `overflow-wrap: anywhere`, so the narrowest column shrinks below a phone number's width.
 

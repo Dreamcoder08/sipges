@@ -1,7 +1,7 @@
-# MASCLI 4.0 only: verification evidence
+# SIPGES 4.0 only: verification evidence
 
 Candidate: branch `feat/mascli-4-only` after `3bd65d5`, the working tree of the `feat!` commit
-that removes the MASCLI 3.0/4.0 switch ([ODD](../../tasks/mascli-4-only.md), ADR 0027).
+that removes the SIPGES 3.0/4.0 switch ([ODD](../../tasks/sipges-4-only.md), ADR 0027).
 Raw `.log`/`.exit` files beside this index are kept locally and ignored by git.
 
 ## Results
@@ -16,7 +16,7 @@ Raw `.log`/`.exit` files beside this index are kept locally and ignored by git.
 | E2E, first run | `pnpm e2e` | 89 passed, 4 failed, 1 skipped (diagnosis below) |
 | E2E, final run | `pnpm lint && pnpm e2e` | exit 0: 93 passed, 1 skipped (optional screenshot), 10.6 min |
 
-API went from 696 to 694 tests: the removed tests asserted only MASCLI 3.0 or the toggle.
+API went from 696 to 694 tests: the removed tests asserted only SIPGES 3.0 or the toggle.
 PostgreSQL-server integration was not run (no authorized synthetic connection); remote CI
 did not start because of a GitHub billing block on the account.
 
@@ -24,7 +24,7 @@ did not start because of a GitHub billing block on the account.
 
 | Spec | Cause | Fix |
 | --- | --- | --- |
-| `13-workflows` desktop and phone | The journey still closed a plan as `Completada` without a file, the MASCLI 3.0 flow that 4.0 refuses | The journey uploads a synthetic receipt through `/system/uploads` (linked to a synthetic event) and selects it; it first asserts that closing without a receipt is blocked |
+| `13-workflows` desktop and phone | The journey still closed a plan as `Completada` without a file, the SIPGES 3.0 flow that 4.0 refuses | The journey uploads a synthetic receipt through `/system/uploads` (linked to a synthetic event) and selects it; it first asserts that closing without a receipt is blocked |
 | `15-record-insights` phone | Real layout bug: level labels now carry their meaning and used `white-space: nowrap`, widening a 390 px page to 475 px | `3bd65d5`: labels wrap |
 | `mobile` viewport | Same overflow covered the bottom bar's «Más» button | Same commit |
 

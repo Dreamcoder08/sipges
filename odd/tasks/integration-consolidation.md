@@ -74,9 +74,9 @@ No se ha demostrado captura duplicada de datos ni una regresión actual de rendi
 
 | Área | Observación | Evidencia local | Qué no demuestra |
 | --- | --- | --- | --- |
-| Activación 4.0 | La configuración es por proyecto, desactivada por defecto; las pantallas dependen del control | [ADR 0020](../../docs/adr/0020-mascli-4-situations.md), [settings](../../apps/api/src/contexts/situations/domain/settings.ts), [AppShell](../../apps/web/src/app/layout/AppShell.tsx) | Qué proyectos tienen el control activo en producción |
+| Activación 4.0 | La configuración es por proyecto, desactivada por defecto; las pantallas dependen del control | [ADR 0020](../../docs/adr/0020-sipges-4-situations.md), [settings](../../apps/api/src/contexts/situations/domain/settings.ts), [AppShell](../../apps/web/src/app/layout/AppShell.tsx) | Qué proyectos tienen el control activo en producción |
 | Experiencia de versiones | La configuración presenta activar 4.0 o volver a 3.0 | [SettingsPage](../../apps/web/src/features/situations/SettingsPage.tsx) | Que el usuario deba elegir entre dos aplicaciones o que eliminar el control sea seguro |
-| Situaciones → Alertas | El diseño reutiliza Alertas y requiere confirmación humana; no escribe alertas automáticamente desde el motor | [ODD 4.0](mascli-4-situations.md), [E2E 19](../../apps/e2e/tests/19-sipges.spec.ts) | Ejecución actual de esa prueba, despliegue o aceptación humana |
+| Situaciones → Alertas | El diseño reutiliza Alertas y requiere confirmación humana; no escribe alertas automáticamente desde el motor | [ODD 4.0](sipges-4-situations.md), [E2E 19](../../apps/e2e/tests/19-sipges.spec.ts) | Ejecución actual de esa prueba, despliegue o aceptación humana |
 | Situaciones frente a operaciones | Agrupar señales por tema/actor/territorio y recorrer enlaces tipados son mecanismos distintos | [motor](../../apps/api/src/contexts/situations/domain/situations.ts), [dossier](../../apps/web/src/features/geography/operations.ts), [ODD operacional](territorial-operations.md) | Redundancia funcional o necesidad de fusionar ambos mecanismos |
 | Entrada y automatización | Existen fuentes, evaluación, reglas y entregas; hay pruebas de recorrido en el repositorio | [ODD territorial](territorial-intelligence-alerts.md), [E2E 18](../../apps/e2e/tests/18-territorial-intelligence.spec.ts), [E2E 10](../../apps/e2e/tests/10-automation-integration.spec.ts) | Disponibilidad actual de proveedores, recepción real o conexión universal entre todos los recorridos |
 | RSS y fase | Implementación registrada; el cierre integrado sigue abierto en su documento | [ODD medios](media-monitoring-project-phase.md), [ADR 0021](../../docs/adr/0021-media-monitoring-and-project-phase.md) | Monitoreo de todas las redes ni consulta cada 30 minutos en el hosting: ser elegible para consulta no equivale a frecuencia del ejecutor |
@@ -94,7 +94,7 @@ No se cierran ni se duplican aquí; la primera propuesta debe reconciliar si sus
 
 | Iniciativa | Pendientes registrados | Tipo de prueba o decisión que falta |
 | --- | --- | --- |
-| [SIPGES](mascli-4-situations.md) | T8 | Separar cierre integrado, revisión, entrega y activación autorizada |
+| [SIPGES](sipges-4-situations.md) | T8 | Separar cierre integrado, revisión, entrega y activación autorizada |
 | [Monitoreo de medios](media-monitoring-project-phase.md) | T5 | Evidencia integrada y estado de entrega; activación sigue separada |
 | [Inteligencia territorial](territorial-intelligence-alerts.md) | T1, T2, T8 | Disponibilidad real GEOCATMIN, recepción en dispositivo y activaciones autorizadas |
 | [Calidad de datos](data-quality-relationships-followup.md) | T6 | Fuentes originales, documentos ausentes y aceptación de una usuaria real |
@@ -204,7 +204,7 @@ import { syntheticRecords, totalRecords } from './bench/synthetic.ts';
 import { measure, table } from './bench/harness.ts';
 import { createSituationsService } from './src/contexts/situations/application/index.ts';
 const rows = [];
-const scope = { companyId: 'MASCLI', projectId: 'PRJ-SECHURA' };
+const scope = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
 for (const scale of [1, 10, 100]) {
   const generated = syntheticRecords(scale);
   const all = Object.entries(generated).flatMap(([module, payloads]) =>
