@@ -77,7 +77,8 @@ jobs:
         env:
           SIPGES_SMOKE_URL: https://sipges.dreamcoder-dev08.workers.dev
       # A failed deploy must not stay live. Rollback restores the previous Worker version only:
-      # migrations are additive and stay applied (docs/deployment/cloudflare-workers.md).
+      # migrations are additive and stay applied. The first deploy of GoBackend cannot be rolled
+      # back (docs/deployment/cloudflare-workers.md).
       - name: Roll back the Worker
         if: failure() && (steps.smoke.outcome == 'failure' || steps.smoke_go.outcome == 'failure')
         working-directory: apps/hosting-cloudflare

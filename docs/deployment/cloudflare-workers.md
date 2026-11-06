@@ -66,7 +66,7 @@ secrets on the GitHub `production` environment:
 | Secret | Value |
 | --- | --- |
 | `SIPGES_MIGRATION_DATABASE_URL` | Direct Neon URL (not Hyperdrive) with `sslmode=require` |
-| `CLOUDFLARE_API_TOKEN` | Token allowed to edit Workers and Hyperdrive |
+| `CLOUDFLARE_API_TOKEN` | Token allowed to edit Workers and Hyperdrive, and to push container images. Confirm that last one before the first deploy of the Go container |
 | `CLOUDFLARE_ACCOUNT_ID` | The Cloudflare account id |
 
 Manual run, with the owner's go-ahead:
@@ -139,4 +139,6 @@ before serving from Node.
 **The Go container limits rollback once.** Cloudflare refuses to roll back past a Durable Object
 class change, and the first deploy of `GoBackend` is one. If that deploy fails its smoke test, the
 automatic rollback fails too and the broken version stays live, so the fix must go forward. Deploy
-that change alone, with nothing else in the same run. Later deploys roll back as usual.
+that change alone, with nothing else in the same run. Later deploys roll back as usual, but never past it.
+
+A failure inside the deploy step, such as a refused image push, skips the smoke test and so the rollback. Wrangler pushes the image after it uploads the Worker. And the image now builds in every deploy, after migrations: a broken Dockerfile stops TypeScript deploys too.

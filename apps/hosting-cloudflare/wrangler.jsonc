@@ -40,6 +40,8 @@
       "constraints": { "regions": ["ENAM"] },
     },
   ],
+  // `wrangler dev` needs no Docker: no local route reaches the container.
+  "dev": { "enable_containers": false },
   "durable_objects": { "bindings": [{ "name": "GO_BACKEND", "class_name": "GoBackend" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GoBackend"] }],
   "limits": { "cpu_ms": 30000 },
