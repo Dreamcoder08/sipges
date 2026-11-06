@@ -13,7 +13,7 @@ Each one stops the switch on its own. The numbers are names, not a sequence: [Or
 | B3 | `basic` may be too small. One named instance takes all traffic, with 1/4 vCPU. | Local table in [go-container.md](go-container.md#memory): 2.2–2.5 req/s, p95 3.5–5.3 s at 4–8 clients (it does not say which routes). Production today: 682 requests in 20 s at 8 screens, about 34 req/s (`backend-latency` L19). A local figure is not a Cloudflare figure, but the gap is more than tenfold. | Measure B2 at 8 screens. If it fails, Fly.io `iad` is the fallback in ADR 0032 §4. |
 | B4 | Production has no route to a container. | `wrangler.jsonc` has no `containers`, `durable_objects` or `SIPGES_GO_ROUTING`, and `go-routing.test.ts` asserts so. `deploy-workers.yml` has no buildx. | One reviewed PR: the config, the Durable Object migration, buildx, and that test changed on purpose. |
 | B5 | Cleared: a container failure is the Worker's JSON 503. | `@cloudflare/containers` 0.3.7 **returns** text responses instead of throwing (`dist/lib/container.js`): 503, 429, and 500 with the internal message. `go-proxy.ts` now maps those and any thrown error; `go-proxy.test.ts` holds each text. **Unverified** on Cloudflare until the trial. | Done. |
-| B6 | The deploy smoke test cannot see a dead container. | It probes `/health/ready`, and only `/api/` and `/system/` routes can go to Go, so it always reaches TypeScript. | Also probe a listed route without a session: it must answer the JSON 401 from Go. |
+| B6 | Cleared: the deploy smoke test can see a dead container. | `deploy-workers.yml` runs `smoke-go.mjs` after `/health/ready`, and a failure rolls the Worker back. It asks a listed route with no session for the JSON 401; the Worker's 503 fails it. It sends nothing while `GO_ROUTES` is empty. A TypeScript 401 also passes, so it proves Go only with `SIPGES_GO_ROUTING=1`. **Unverified** on Cloudflare until the trial. | Done. |
 | B7 | Parity has never seen production-shaped rows. | All evidence is synthetic. L24 and L25 record known differences that only legacy data could show, both harmless so far. | Owner decision: compare both APIs on a Neon branch of production, or accept the risk. Any such run is a real-data run and needs the owner's word. |
 
 ## What is already true
@@ -206,7 +206,7 @@ URLs of a first paint that carry `X-SIPGES-Scope`, copied by hand from `apps/web
 
 Before the trial on `sipges-go`:
 
-- [ ] B5 and B6 fixed on `main`, so the trial exercises the failure path production will have.
+- [x] B5 and B6 fixed on `main`, so the trial exercises the failure path production will have.
 - [ ] `SCREENS` aligned with the real first paint.
 
 During the trial:

@@ -67,10 +67,17 @@ jobs:
           done
           echo "Smoke test failed" >&2
           exit 1
+      # /health/ready always reaches TypeScript. With routes on GO_ROUTES, this asks one of them for
+      # its 401, so a dead container fails the deploy; with none it sends nothing.
+      - name: Smoke test a Go route
+        id: smoke_go
+        run: node apps/hosting-cloudflare/smoke-go.mjs
+        env:
+          SIPGES_SMOKE_URL: https://sipges.dreamcoder-dev08.workers.dev
       # A failed deploy must not stay live. Rollback restores the previous Worker version only:
       # migrations are additive and stay applied (docs/deployment/cloudflare-workers.md).
       - name: Roll back the Worker
-        if: failure() && steps.smoke.outcome == 'failure'
+        if: failure() && (steps.smoke.outcome == 'failure' || steps.smoke_go.outcome == 'failure')
         working-directory: apps/hosting-cloudflare
         env:
           DEPLOYED_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
