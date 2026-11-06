@@ -17,14 +17,14 @@ export type ActivityOptions = {
   readonly heartbeatMs: number;
 };
 
+/** Whether this session token still opens this project: its session and its grant, read fresh. */
+export type ActivityAccess = (token: string | undefined, tenantId: string) => Promise<boolean>;
+
 /**
  * Every poll is a tenant transaction held by each open tab; at 3 s a few tabs kept database
  * connections busy enough to delay the requests that draw a screen. 10 s still refreshes
  * "every few seconds" (ADR 0014) at a third of the load.
  */
-/** Whether this session token still opens this project: its session and its grant, read fresh. */
-export type ActivityAccess = (token: string | undefined, tenantId: string) => Promise<boolean>;
-
 const DEFAULTS: ActivityOptions = { pollMs: 10_000, maxMs: 240_000, heartbeatMs: 25_000 };
 const BATCH = 100;
 
