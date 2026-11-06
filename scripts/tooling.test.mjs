@@ -424,3 +424,62 @@ test('two branches appending to a feature log merge locally without a conflict',
     assert.match(merged, /L3 — from main/);
     assert.doesNotMatch(merged, /<<<<<<<|>>>>>>>/);
   }));
+
+// Runs the install script with stubs for the commands it calls; each stub logs its arguments.
+const runPlaywrightInstall = (runner, failures) => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'sipges-playwright-install-'));
+  const log = path.join(dir, 'calls.log');
+  const counter = path.join(dir, 'attempts');
+  const stub = (name, body) =>
+    writeFileSync(path.join(dir, name), `#!/usr/bin/env bash\n${body}\n`, { mode: 0o755 });
+  stub(
+    'timeout',
+    `echo "timeout $*" >> "${log}"
+n=$(($(cat "${counter}" 2>/dev/null || echo 0) + 1)); echo $n > "${counter}"
+[ "$n" -gt ${failures} ]`,
+  );
+  // pkill answers 1 when nothing matches, which must not stop the loop.
+  stub('sudo', `echo "sudo $*" >> "${log}"\n[ "$1" != pkill ]`);
+  const result = spawnSync('bash', ['scripts/ci-playwright-install.sh', 'chromium'], {
+    cwd: root,
+    env: { PATH: `${dir}:${process.env.PATH}`, SIPGES_CI_RUNNER: runner },
+    encoding: 'utf8',
+  });
+  const calls = readFileSync(log, 'utf8').trim().split('\n');
+  rmSync(dir, { recursive: true, force: true });
+  return { ...result, calls };
+};
+
+test('playwright install frees the dpkg lock between attempts on GitHub-hosted runners', () => {
+  const { status, stderr, calls } = runPlaywrightInstall('github-hosted', 1);
+  assert.equal(status, 0, stderr);
+  assert.match(stderr, /keeps the dpkg lock/);
+  assert.deepEqual(calls, [
+    'timeout 480 pnpm --filter @sipges/e2e exec playwright install --with-deps chromium',
+    'sudo pkill -x apt-get',
+    'sudo timeout 120 dpkg --configure -a',
+    'timeout 480 pnpm --filter @sipges/e2e exec playwright install --with-deps chromium',
+  ]);
+});
+
+test('playwright install on self-hosted runners keeps 5 minutes, no apt and no sudo', () => {
+  const { status, calls } = runPlaywrightInstall('self-hosted', 1);
+  assert.equal(status, 0);
+  assert.deepEqual(calls, [
+    'timeout 300 pnpm --filter @sipges/e2e exec playwright install chromium',
+    'timeout 300 pnpm --filter @sipges/e2e exec playwright install chromium',
+  ]);
+});
+
+test('playwright install fails after three attempts and repairs only between them', () => {
+  const { status, calls } = runPlaywrightInstall('github-hosted', 3);
+  assert.equal(status, 1);
+  assert.equal(calls.filter((call) => call.startsWith('timeout 480')).length, 3);
+  assert.equal(calls.filter((call) => call.includes('dpkg')).length, 2);
+});
+
+test('CI installs Playwright through the script and names the runner', () => {
+  const ci = readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8');
+  assert.match(ci, /run: bash scripts\/ci-playwright-install\.sh \$\{\{ matrix\.browser \}\}/);
+  assert.match(ci, /SIPGES_CI_RUNNER: \$\{\{ runner\.environment \}\}/);
+});
