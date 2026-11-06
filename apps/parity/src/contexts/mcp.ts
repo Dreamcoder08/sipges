@@ -19,6 +19,7 @@ const KEYS = {
   onRead: ['c0ffee330006', secret('f')],
   onWrite: ['c0ffee330007', secret('g')],
   onLimited: ['c0ffee330008', secret('h')],
+  onLimitedWrite: ['c0ffee330009', secret('i')],
 } as const;
 type Key = keyof typeof KEYS;
 const bearer = (key: Key) => ({ authorization: `Bearer mscli_${KEYS[key][0]}_${KEYS[key][1]}` });
@@ -108,6 +109,12 @@ const OPEN_RECORDS = [
     Estado: 'Pendiente',
   }),
   row('MCP-F1', 'Fuentes', { Archivo_Fuente: 'acta-mcpparidad.pdf', Tipo_Fuente: 'Acta' }),
+  // The ends of the links each API creates: both share one database.
+  ...['TS', 'GO'].flatMap((side) => [
+    row(`MCP-L${side}1`, 'Actores', { 'Nombre_Actor/Organizacion': 'Extremo uno' }),
+    row(`MCP-L${side}2`, 'Eventos', { Descripcion_Hecho: 'Extremo dos' }),
+    row(`MCP-L${side}3`, 'Actores', { 'Nombre_Actor/Organizacion': 'Extremo tres' }),
+  ]),
 ];
 
 const link = (id: number, type: string, from: string[], to: string[]) =>
@@ -139,7 +146,8 @@ INSERT INTO api_keys (id, tenant_id, name, prefix, secret_hash, access, clearanc
   ${keyRow(33005, OTHER_TENANT, 'mcp-ajena', 'other', 'write', 'full')},
   ${keyRow(33006, OPEN_TENANT, 'mcp-abierta-lectura', 'onRead', 'read', 'full')},
   ${keyRow(33007, OPEN_TENANT, 'mcp-abierta-escritura', 'onWrite', 'write', 'full')},
-  ${keyRow(33008, OPEN_TENANT, 'mcp-abierta-limitada', 'onLimited', 'read', 'limited')}
+  ${keyRow(33008, OPEN_TENANT, 'mcp-abierta-limitada', 'onLimited', 'read', 'limited')},
+  ${keyRow(33009, OPEN_TENANT, 'mcp-abierta-escribe-limitada', 'onLimitedWrite', 'write', 'limited')}
 ON CONFLICT DO NOTHING;
 `;
 
@@ -195,6 +203,11 @@ const transport: readonly ParityCase[] = [
   ...['"texto"', '0', '1.50', 'null', 'true', '[1,{"a":2}]', '1e400'].map((id) =>
     raw(`id ${id}`, `{"jsonrpc":"2.0","id":${id},"method":"ping"}`),
   ),
+  {
+    ...raw('a body of another media type', '{"jsonrpc":"2.0","id":1,"method":"ping"}'),
+    headers: { ...bearer('read'), 'content-type': 'text/plain' },
+  },
+  raw('a body past the limit', `${' '.repeat(2 * 1024 * 1024)}{}`),
   post('a body naming another project', 'read', {
     ...rpc('ping'),
     params: { project_id: 'OTRO' },
@@ -459,4 +472,182 @@ const reads: readonly ParityCase[] = [
   }),
 ];
 
-export const cases: readonly ParityCase[] = [...transport, ...catalogue, ...refused, ...reads];
+const created = ['result.content.*.text', 'result.structuredContent.id'];
+const create = (name: string, key: Key, module: string, payload: object, more = {}) =>
+  post(`create, ${name}`, key, call('create_record', { module, payload }), more);
+const linkTool = (name: string, key: Key, args: object, more: Partial<ParityCase> = {}) =>
+  post(`link, ${name}`, key, call('link_records', args), more);
+const linkOf = (linkType: string, source: object, target: object, note?: string) => ({
+  link_type: linkType,
+  source,
+  target,
+  ...(note === undefined ? {} : { note }),
+});
+
+const writes: readonly ParityCase[] = [
+  create(
+    'with its own id',
+    'onWrite',
+    'demandas',
+    { ID_Demanda: 'MCP-{api}-1', Descripcion: 'Agua' },
+    {
+      perApi: true,
+      present: ['MCP-{api}-1'],
+    },
+  ),
+  post(
+    'create, reads back',
+    'onWrite',
+    call('get_record', { module: 'demandas', id: 'MCP-{api}-1' }),
+    {
+      perApi: true,
+      normalize: ['result.content.*.text', 'result.structuredContent.updated_at'],
+      absent: SECRETS,
+    },
+  ),
+  create(
+    'with the switch off',
+    'write',
+    'demandas',
+    { ID_Demanda: 'MCP-{api}-2', Descripcion: 'Agua' },
+    {
+      perApi: true,
+      present: ['MCP-{api}-2'],
+    },
+  ),
+  create(
+    'with a generated id',
+    'onWrite',
+    'demandas',
+    { Descripcion: 'Sin id' },
+    {
+      normalize: created,
+      present: ['structuredContent'],
+    },
+  ),
+  create('of a taken id', 'onWrite', 'actores', { ID_Actor: 'MCP-A1' }, { normalize: created }),
+  create(
+    'naming its project',
+    'onWrite',
+    'demandas',
+    { ID_Demanda: 'MCP-{api}-3', Proyecto_ID: 'MCP' },
+    {
+      perApi: true,
+    },
+  ),
+  create(
+    'naming another project',
+    'onWrite',
+    'demandas',
+    { Proyecto_ID: 'OTRO' },
+    {
+      present: ['otro proyecto'],
+    },
+  ),
+  create('project_id of another', 'onWrite', 'demandas', { project_id: 'OTRO' }),
+  create('a numeric project', 'onWrite', 'demandas', { Proyecto_ID: 1 }),
+  create(
+    'a falsy project',
+    'onWrite',
+    'demandas',
+    { ID_Demanda: 'MCP-{api}-4', Proyecto_ID: 0 },
+    {
+      perApi: true,
+    },
+  ),
+  create(
+    'from another project',
+    'other',
+    'demandas',
+    { ID_Demanda: 'MCP-{api}-5' },
+    { perApi: true },
+  ),
+  create('unknown module', 'onWrite', 'otro', {}, { present: ['Módulo no válido'] }),
+  create('module by stored name', 'onWrite', 'Demandas', {}),
+  create('an unusable id', 'onWrite', 'demandas', { ID_Demanda: 'x'.repeat(201) }),
+  {
+    ...raw(
+      'create, __proto__ in the payload',
+      '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_record","arguments":{"module":"demandas","payload":{"ID_Demanda":"MCP-{api}-6","__proto__":{"x":1},"2":"b","1":"a"}}}}',
+    ),
+    headers: bearer('onWrite'),
+    perApi: true,
+  },
+  post(
+    'create, __proto__ reads back',
+    'onWrite',
+    call('get_record', { module: 'demandas', id: 'MCP-{api}-6' }),
+    { perApi: true, normalize: ['result.content.*.text', 'result.structuredContent.updated_at'] },
+  ),
+  linkTool(
+    'created',
+    'onWrite',
+    linkOf(
+      'relacionado_con',
+      ref('actores', 'MCP-L{side}1'),
+      ref('eventos', 'MCP-L{side}2'),
+      '  nota  ',
+    ),
+    { vary: { side: { ts: 'TS', go: 'GO' } }, normalize: created, present: ['structuredContent'] },
+  ),
+  linkTool(
+    'duplicate',
+    'onWrite',
+    linkOf('sustenta', ref('fuentes', 'MCP-F1'), ref('eventos', 'MCP-E1')),
+    { present: ['duplicate'] },
+  ),
+  linkTool(
+    'a symmetric link reversed',
+    'onWrite',
+    linkOf('relacionado_con', ref('actores', 'MCP-A3'), ref('actores', 'MCP-A2')),
+  ),
+  linkTool(
+    'to itself',
+    'onWrite',
+    linkOf('relacionado_con', ref('actores', 'MCP-A1'), ref('actores', 'MCP-A1')),
+  ),
+  linkTool(
+    'unknown type',
+    'onWrite',
+    linkOf('nada', ref('actores', 'MCP-A1'), ref('eventos', 'MCP-E1')),
+  ),
+  linkTool(
+    'not allowed',
+    'onWrite',
+    linkOf('aliado_de', ref('actores', 'MCP-A1'), ref('eventos', 'MCP-E1')),
+  ),
+  linkTool(
+    'unknown module',
+    'onWrite',
+    linkOf('relacionado_con', ref('otro', 'X'), ref('eventos', 'MCP-E1')),
+  ),
+  linkTool(
+    'a missing end',
+    'onWrite',
+    linkOf('relacionado_con', ref('actores', 'NADA'), ref('eventos', 'MCP-E1')),
+  ),
+  linkTool(
+    'a restricted end with limited clearance',
+    'onLimitedWrite',
+    linkOf('relacionado_con', ref('actores', 'MCP-L{side}3'), ref('actores', 'MCP-A2')),
+    { vary: { side: { ts: 'TS', go: 'GO' } } },
+  ),
+  linkTool(
+    'an end of another project',
+    'other',
+    linkOf('relacionado_con', ref('actores', 'MCP-A1'), ref('eventos', 'MCP-E1')),
+  ),
+  linkTool(
+    'with the switch off',
+    'write',
+    linkOf('relacionado_con', ref('actores', 'NADA'), ref('eventos', 'NADA2')),
+  ),
+];
+
+export const cases: readonly ParityCase[] = [
+  ...transport,
+  ...catalogue,
+  ...refused,
+  ...reads,
+  ...writes,
+];

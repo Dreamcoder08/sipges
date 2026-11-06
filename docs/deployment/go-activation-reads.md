@@ -1,6 +1,6 @@
 # Moving the Inicio and Registros reads to Go: go/no-go
 
-**Verdict at `3e6f60ff`: NO-GO for production.** The Go code is ready for these reads; the platform around it is not. Every read matched TypeScript on synthetic data, in parity and in a real browser. Nothing has been measured on Cloudflare, production cannot reach a container yet, and a container failure reaches the browser as plain text. This document prepares T44; it changes no route (`GO_ROUTES` stays empty, S7).
+**Verdict at `3e6f60ff`: NO-GO for production.** The Go code is ready for these reads; the platform around it is not. Every read matched TypeScript on synthetic data, in parity and in a real browser. Nothing has been measured on Cloudflare and production cannot reach a container yet. This document prepares T44; it changes no route (`GO_ROUTES` stays empty, S7).
 
 ## Blockers
 
@@ -12,7 +12,7 @@ Each one stops the switch on its own. The numbers are names, not a sequence: [Or
 | B2 | No before/after measurement exists (S7). | Nothing in the repository measures a Go route through a Worker. | [Measurement](#measurement-with-the-owner) passes. |
 | B3 | `basic` may be too small. One named instance takes all traffic, with 1/4 vCPU. | Local table in [go-container.md](go-container.md#memory): 2.2–2.5 req/s, p95 3.5–5.3 s at 4–8 clients (it does not say which routes). Production today: 682 requests in 20 s at 8 screens, about 34 req/s (`backend-latency` L19). A local figure is not a Cloudflare figure, but the gap is more than tenfold. | Measure B2 at 8 screens. If it fails, Fly.io `iad` is the fallback in ADR 0032 §4. |
 | B4 | Production has no route to a container. | `wrangler.jsonc` has no `containers`, `durable_objects` or `SIPGES_GO_ROUTING`, and `go-routing.test.ts` asserts so. `deploy-workers.yml` has no buildx. | One reviewed PR: the config, the Durable Object migration, buildx, and that test changed on purpose. |
-| B5 | A container failure is not the Worker's JSON 503. | `@cloudflare/containers` 0.3.7 **returns** text responses instead of throwing (`dist/lib/container.js:870-883`): 503, 429, and 500 `Failed to start container: <message>`. `go-proxy.ts` catches only throws, so checked locally all three pass through as `text/plain`, with no `X-Request-Id`. The 500 sends an internal message to the browser. | `go-proxy.ts` maps any non-Go failure to `503 {"detail": "SIPGES no está disponible temporalmente"}`. Until then [go-container.md](go-container.md) step 5 overstates what happens. |
+| B5 | Cleared: a container failure is the Worker's JSON 503. | `@cloudflare/containers` 0.3.7 **returns** text responses instead of throwing (`dist/lib/container.js`): 503, 429, and 500 with the internal message. `go-proxy.ts` now maps those and any thrown error; `go-proxy.test.ts` holds each text. **Unverified** on Cloudflare until the trial. | Done. |
 | B6 | Cleared: the deploy smoke test can see a dead container. | `deploy-workers.yml` runs `smoke-go.mjs` after `/health/ready`, and a failure rolls the Worker back. It asks a listed route with no session for the JSON 401; the Worker's 503 fails it. It sends nothing while `GO_ROUTES` is empty. A TypeScript 401 also passes, so it proves Go only with `SIPGES_GO_ROUTING=1`. **Unverified** on Cloudflare until the trial. | Done. |
 | B7 | Parity has never seen production-shaped rows. | All evidence is synthetic. L24 and L25 record known differences that only legacy data could show, both harmless so far. | Owner decision: compare both APIs on a Neon branch of production, or accept the risk. Any such run is a real-data run and needs the owner's word. |
 
@@ -24,7 +24,7 @@ These no longer block the reads. Measured here on synthetic data unless marked.
 | --- | --- | --- |
 | Does Go accept a session TypeScript issued? | Yes. Same cookie (`sipges_session`), same SHA-256 lookup, no key involved. | Real browser login through TypeScript, then 82 Go responses with that cookie, 0 errors. `Secure` was off locally; **a cookie issued on Workers is unverified** until the trial. |
 | Does the MFA gate match with it on, as production? | Yes, with the default on and a session without TOTP. | 26 of 26 URLs identical (25 `403`, `me` `200`). Parity itself runs with MFA off, so it does not show this. |
-| Are security headers and `no-store` applied? | Yes, by the Worker. Go sets neither, so Go must only be reached through `go-proxy.ts`. | `no-store`, `nosniff`, CSP and HSTS seen on a proxied answer, also on the plain-text failures. |
+| Are security headers and `no-store` applied? | Yes, by the Worker. Go sets neither, so Go must only be reached through `go-proxy.ts`. | `no-store`, `nosniff`, CSP and HSTS seen on a proxied answer. |
 | Does the container env start Go and serve the reads? | Yes, locally. | 1866 of 1888 parity cases with Go on `goContainerEnv` plus `SIPGES_REQUIRE_MFA=0`, which the parity session needs and the container does not get; all 22 differences are `POST` uploads and TOTP, none in `screens.ts`. The MFA-on row above covers the default. |
 | Do writes need Go first? | No. Every write stays on TypeScript, so L36 and T37 do not apply. | Proposed list is `GET` only, enforced by `go-activation-reads.test.ts`. |
 
@@ -298,7 +298,7 @@ Local, 2026-11-05, Node 22.19, synthetic PostgreSQL 18.6. No deployment, no real
 | Parity against Go started with `goContainerEnv` plus `SIPGES_REQUIRE_MFA=0`, from a read-only working directory | 1866/1888; 15 `POST /system/uploads`, 7 TOTP, none in `screens.ts` |
 | Real Chromium through a local stand-in for the route table, all three waves on: 9 screens and one record | 82 answers from Go, 11 from TypeScript, 0 failures, 0 console errors; visible text identical to TypeScript alone on all ten |
 | MFA on, both APIs, session without TOTP | 26/26 identical |
-| `go-proxy.ts` with the library's failure responses | plain text passes through (B5) |
+| `go-proxy.ts` with the library's failure responses | each becomes the JSON 503, with `X-Request-Id` (B5) |
 
 The stand-in is not the Worker: it does not run `go-proxy.ts`, Durable Objects or the container. The browser visited `eventos`, `alertas`, `fuentes`, `demandas`, `buzon` and `lecciones` lists; the other modules are covered by parity only.
 
