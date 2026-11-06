@@ -25,7 +25,12 @@ const full = {
   ],
   Actores: [record('A-1', { Nombre_Actor: 'Comité' })],
   Demandas: [
-    record('D-1', { Tema: 'Agua', Descripcion: 'Línea 1\nLínea 2', Estado: 'Abierta', Fuente_ID: 'F-1' }),
+    record('D-1', {
+      Tema: 'Agua',
+      Descripcion: 'Línea 1\nLínea 2',
+      Estado: 'Abierta',
+      Fuente_ID: 'F-1',
+    }),
     record('D-2', { Tema: 7, Descripcion: null, Estado: 'Pendiente', Fuente_ID: '' }),
     record('D-3', { Estado: 'Cerrada', Tema: 'Oculta' }),
     record('D-4', { Tema: { a: 1, b: [2, 'x'] }, Estado: 'Abierta', Fuente_ID: 0 }),
@@ -33,7 +38,12 @@ const full = {
   Compromisos: [record('C-1', { Estado: 'Vencido', Compromiso: 'Entrega' })],
   Narrativas: [],
   Alertas: [
-    record('AL-1', { Nivel_Preliminar: 'Rojo', Causa: 'Cruce', Estado: 'Activa', Fuente_ID: 'F-2' }),
+    record('AL-1', {
+      Nivel_Preliminar: 'Rojo',
+      Causa: 'Cruce',
+      Estado: 'Activa',
+      Fuente_ID: 'F-2',
+    }),
     record('AL-2', { Causa: null, Estado: 'Activa' }),
     record('AL-3', { Nivel_Preliminar: null, Estado: 'Activa', Causa: true, Fuente_ID: ['F-3'] }),
   ],
@@ -41,16 +51,53 @@ const full = {
   Fuentes: [record('F-1', { Nombre: 'Acta' })],
   Proyectos: [record('PRJ-1', { Nombre: 'Proyecto Sintético', Proyecto_ID: 'PRJ-1' })],
   Intereses: [
-    record('I-1', { Actor: 'Comité', Posicion: 'A favor', Interes: 'Agua potable para Sechura', Preocupacion: 0, Fuente_ID: 'F-1' }),
+    record('I-1', {
+      Actor: 'Comité',
+      Posicion: 'A favor',
+      Interes: 'Agua potable para Sechura',
+      Preocupacion: 0,
+      Fuente_ID: 'F-1',
+    }),
     record('I-2', { Actor: null, Interes: '', Posicion: false }),
   ],
   Dialogos: [
-    record('DI-1', { Proceso: 'Mesa', Participantes: ['Comité', 'Empresa'], Tema: 'Agua potable para Sechura', Estado: 'En curso', Proximo_Paso: 'Acta' }),
+    record('DI-1', {
+      Proceso: 'Mesa',
+      Participantes: ['Comité', 'Empresa'],
+      Tema: 'Agua potable para Sechura',
+      Estado: 'En curso',
+      Proximo_Paso: 'Acta',
+    }),
     ...many('DI-X', 42, { Proceso: 'Mesa', Estado: 'Cerrado' }),
   ],
-  Oportunidades: [record('O-1', { Oportunidad: 'Riego', Beneficiarios: 100.5, Viabilidad: 'Alta', Estado: 'Abierta', Responsable: 'Equipo' })],
-  Hechos_Compartidos: [record('H-1', { Asunto: 'Agua potable para Sechura', Estado: 'En revisión', Versiones: 'Dos', Fuente_ID: 'F-1', Accion_Verificacion: 'Visita' })],
-  Evaluaciones_AARC: [record('AA-1', { Actor_Proceso: 'Mesa', Reconocimiento: 'Bajo', Agencia: 'Baja', Reciprocidad: 'Baja', Claridad: 'Baja', Evidencia: 'Acta' })],
+  Oportunidades: [
+    record('O-1', {
+      Oportunidad: 'Riego',
+      Beneficiarios: 100.5,
+      Viabilidad: 'Alta',
+      Estado: 'Abierta',
+      Responsable: 'Equipo',
+    }),
+  ],
+  Hechos_Compartidos: [
+    record('H-1', {
+      Asunto: 'Agua potable para Sechura',
+      Estado: 'En revisión',
+      Versiones: 'Dos',
+      Fuente_ID: 'F-1',
+      Accion_Verificacion: 'Visita',
+    }),
+  ],
+  Evaluaciones_AARC: [
+    record('AA-1', {
+      Actor_Proceso: 'Mesa',
+      Reconocimiento: 'Bajo',
+      Agencia: 'Baja',
+      Reciprocidad: 'Baja',
+      Claridad: 'Baja',
+      Evidencia: 'Acta',
+    }),
+  ],
 };
 
 const inputs = { full, empty: {} };
