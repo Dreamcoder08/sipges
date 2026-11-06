@@ -53,7 +53,7 @@ const compareCases = async (
       send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'ts'),
       send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'go'),
     ]);
-    const mismatches = compare(ts, go, c.normalize);
+    const mismatches = compare(ts, go, c.normalize, c.compareLines);
     const promises = [
       ...checkText(ts.body, c.present, c.absent).map((m) => `  ts: ${m}`),
       ...checkText(go.body, c.present, c.absent).map((m) => `  go: ${m}`),
