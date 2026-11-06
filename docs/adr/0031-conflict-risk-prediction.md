@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-02
 - Task: `odd/tasks/functional-closure.md` (T21, S12, L10); `odd/tasks/conflict-risk.md`
-- Related: [ADR 0002](0002-hexagonal-architecture-and-bounded-contexts.md) (contexts and ports), [ADR 0012](0012-observability-and-classification.md) (restricted records), [ADR 0020](0020-mascli-4-situations.md) (records as dated signals), [ADR 0030](0030-external-ai-egress-guard.md) (no external AI)
+- Related: [ADR 0002](0002-hexagonal-architecture-and-bounded-contexts.md) (contexts and ports), [ADR 0012](0012-observability-and-classification.md) (restricted records), [ADR 0020](0020-sipges-4-situations.md) (records as dated signals), [ADR 0030](0030-external-ai-egress-guard.md) (no external AI)
 
 ## Context
 

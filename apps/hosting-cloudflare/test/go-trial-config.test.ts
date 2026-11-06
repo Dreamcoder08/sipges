@@ -42,15 +42,16 @@ describe('Go trial config', () => {
       read('wrangler.go.jsonc'),
       read('wrangler.jsonc'),
     ]);
-    const id = /"hyperdrive":\s*\[\{[^}]*"id":\s*"([0-9a-f]{32})"/.exec(productionText)?.[1];
-    expect(() => renderGoConfig(goText, productionText, id)).toThrow(/production/);
-    const rendered = JSON.parse(renderGoConfig(goText, productionText, TRIAL)) as {
-      name: string;
-      hyperdrive: unknown;
-      containers: unknown[];
-    };
-    expect(rendered.name).toBe('sipges-go');
-    expect(rendered.hyperdrive).toEqual([{ binding: 'HYPERDRIVE', id: TRIAL }]);
-    expect(rendered.containers).toHaveLength(1);
+    const parse = (text: string) =>
+      JSON.parse(text.replace(/^\s*\/\/.*$/gm, '').replace(/,(\s*[}\]])/g, '$1')) as {
+        hyperdrive: { id: string }[];
+      };
+    const id = parse(productionText).hyperdrive[0]?.id;
+    expect(id).toMatch(/^[0-9a-f]{32}$/);
+    expect(() => renderGoConfig(goText, productionText, id)).toThrow(/production Hyperdrive/);
+    expect(JSON.parse(renderGoConfig(goText, productionText, TRIAL))).toEqual({
+      ...parse(goText),
+      hyperdrive: [{ binding: 'HYPERDRIVE', id: TRIAL }],
+    });
   });
 });
