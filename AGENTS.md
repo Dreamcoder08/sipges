@@ -55,7 +55,7 @@ it is installed locally; the repo does not require it.
 | `pnpm verify:fast` | Local inner loop: lint, boundaries and typecheck in parallel, then tests of the packages changed since `origin/main` (and tooling tests when `scripts/` or skills change). CI still runs the full suite. |
 | `pnpm parity` | Go/TypeScript parity: same requests to both APIs on one synthetic database, diffs status and JSON ([apps/parity](apps/parity/README.md)). |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
-| `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
+| `pnpm odd:close -- --task T<n> --label … --text … --file odd/tasks/<feature>.md` | Marks the task done and appends the next `L<n>` entry in the document's style; `--log-only` replaces `--task` to append the entry alone. |
 | `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
 | `pnpm --filter @sipges/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @sipges/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
