@@ -18,6 +18,7 @@ production route yet: routes move here one by one, each after a parity test agai
 | `internal/prevention`               | Read routes of preventive plans: `actions`, `situation-room`, `summary`. |
 | `internal/situations`               | `GET /system/v4/settings` and `GET /system/v4/situations` (read-only).   |
 | `internal/reference`                | Project coordinates and canonical entities (embedded `data/*.json`).     |
+| `internal/privacy`                  | Egress guard: only sanitised text reaches an external model |
 | `internal/indicators`               | IRSA and indicators read routes, computed by the Rust engine.            |
 | `internal/platform/config`          | Environment, validated at start (same names as `apps/api`).              |
 | `internal/platform/database`        | pgx pool and the tenant transaction (`WithTenant`, `EnterTenant`).       |
@@ -129,6 +130,8 @@ golangci-lint run ./...                                  # v2.15.0
 
 Parity with the TypeScript API (every route the Go API serves): `pnpm parity` from the repository root,
 see [apps/parity](../parity/README.md).
+
+`/health/ready` also waits for the identity bootstrap, which runs in the background after the server listens.
 
 Without `SIPGES_TEST_DATABASE_URL` the integration tests skip. With it, each run creates
 `sipges_go_test_<random>`, applies every migration and drops the database at the end.
