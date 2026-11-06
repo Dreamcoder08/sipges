@@ -273,6 +273,7 @@ Ley 29733, no una decisión legal.
 | Variable | Para qué | Por defecto |
 | --- | --- | --- |
 | `SIPGES_AUTOMATION_INTERVAL` | Segundos entre revisiones de reglas en un servidor Node (`0` las apaga). | `30` |
+| `SIPGES_GO_AUTOMATION_CRON` | Enciende el ejecutor de Go. Apagado por defecto: TypeScript sigue siendo el único ejecutor ([guía](../deployment/go-automation-cron.md)). |
 | `SIPGES_CRON_SECRET` o `CRON_SECRET` | Secreto del cron de `/system/automations/cron` (24+ caracteres). | sin cron |
 | `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Avisos en el dispositivo (`pnpm --filter @sipges/api vapid:keys`). | apagado |
 | `SIPGES_SEMANTIC_SEARCH` | `1` activa la búsqueda semántica con Ollama. | `0` |
