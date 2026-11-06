@@ -1,6 +1,6 @@
 // Package infrastructure reads the management context's sources from PostgreSQL. They belong to
-// other contexts, which are not ported yet, so only the reads apps/api/src/compose.ts wires into
-// createManagementService are ported here, with the same SQL, order and date formatting:
+// other contexts, so only the reads apps/api/src/compose.ts wires into createManagementService
+// are here, with the same SQL, order and date formatting:
 //   - intelligence.allAlerts: sql-alert-store.ts `list` with limit 100 000;
 //   - prevention.list: sql-action-store.ts `list`;
 //   - the `Compromisos` records of sql-analytics-record-reader.ts.

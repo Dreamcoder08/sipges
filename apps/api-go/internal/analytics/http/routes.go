@@ -2,8 +2,8 @@
 // with the same answers: GET /api/dashboard, /system/situational-analysis,
 // /system/strategic-assessment, /system/consensus-engine and /system/integrated-analysis. The
 // scope's project is always used; the session, project scope (which refuses a `project_id` of
-// another project) and role gate ran before (internal/app). The .docx reports are alongside;
-// /system/conflict-risk stays in TypeScript.
+// another project) and role gate ran before (internal/app). The .docx reports are alongside, and
+// conflict_risk.go adds GET /system/conflict-risk.
 package http
 
 import (

@@ -3,8 +3,8 @@
 // scope's records, then runs an engine. The dashboard counters run in Go (domain); the
 // situational, strategic, consensus and integrated analyses run in the Rust analytics module
 // (engines/README.md, ABI), whose answer is JSON.stringify of the TypeScript result. The DOCX
-// reports are built from those answers (reports.go). The conflict-risk prediction stays in
-// TypeScript for now.
+// reports are built from those answers (reports.go), and the conflict-risk prediction runs the
+// same module (conflict_risk.go).
 package application
 
 import (
