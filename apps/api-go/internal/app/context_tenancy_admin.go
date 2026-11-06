@@ -12,7 +12,7 @@ import (
 )
 
 // The rest of the tenancy context (tenancy-routes.ts): project choice, the user's projects,
-// project creation and grants. A grant change drops the user's copy in this process's grant
+// project creation, grants and the project's export. A grant change drops the user's copy in this process's grant
 // cache at once (ForgetEverywhere); the TypeScript isolates keep theirs for up to 30 s.
 func init() {
 	registerContext("tenancy_admin", func(d Deps) (func(*http.ServeMux), error) {
@@ -26,6 +26,7 @@ func init() {
 				Users:  tenancy.Users{DB: d.Pool}.Exists,
 				Forget: application.ForgetEverywhere,
 				Now:    d.Now,
+				Export: tenancy.ExportData{DB: d.Pool}.Read,
 			},
 			Sessions:     identity.Sessions{DB: d.Pool, Now: d.Now},
 			CookieSecure: secure,

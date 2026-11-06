@@ -10,6 +10,7 @@ import (
 
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
 )
@@ -66,9 +67,9 @@ type scopeCreated struct {
 
 // RegisterAdmin adds the rest of tenancy-routes.ts to mux: the project choice
 // (GET/POST /select-project), the user's projects (GET /system/auth/scopes), project creation
-// (POST /system/auth/scopes) and grants (POST/DELETE /system/auth/grants). The session, Origin
-// and role gates already ran; these paths are scope free, so no project is resolved for them.
-// GET /system/export stays in TypeScript.
+// (POST /system/auth/scopes), grants (POST/DELETE /system/auth/grants) and the project's export
+// (GET /system/export). The session, Origin and role gates already ran; the export is the one
+// path here with a resolved project.
 func RegisterAdmin(mux *http.ServeMux, deps AdminDeps) {
 	h := adminHandlers(deps)
 	mux.HandleFunc("GET /select-project", h.selectPage)
@@ -77,6 +78,7 @@ func RegisterAdmin(mux *http.ServeMux, deps AdminDeps) {
 	mux.HandleFunc("POST /system/auth/scopes", h.createScope)
 	mux.HandleFunc("POST /system/auth/grants", h.grant)
 	mux.HandleFunc("DELETE /system/auth/grants", h.revoke)
+	mux.HandleFunc("GET /system/export", h.export)
 }
 
 type adminHandlers AdminDeps
@@ -117,6 +119,31 @@ func readJSON(w http.ResponseWriter, r *http.Request, s schema) ([]string, bool)
 		return nil, false
 	}
 	return values, true
+}
+
+// export is GET /system/export: the whole answer is built before the status goes out, so a
+// failed read answers 500 and never a partial dump.
+func (h adminHandlers) export(w http.ResponseWriter, r *http.Request) {
+	a, ok := actor(r)
+	scope, hasScope := ScopeFrom(r.Context())
+	if !ok || !hasScope {
+		h.fail(w, r, errNoActor)
+		return
+	}
+	data, code, err := h.Admin.ExportData(r.Context(), a, scope)
+	if err != nil {
+		h.fail(w, r, err)
+		return
+	}
+	if code != "" {
+		httpx.WriteError(w, http.StatusForbidden, "Requiere rol administrador")
+		return
+	}
+	w.Header().Set("Content-Disposition", `attachment; filename="sipges-tenant.json"`)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.Header().Set("Cache-Control", "no-store") // securityHeaders on the TypeScript side
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(records.Stringify(data)) //nolint:gosec // an application/json attachment; the status is already sent
 }
 
 func (h adminHandlers) scopes(w http.ResponseWriter, r *http.Request) {
