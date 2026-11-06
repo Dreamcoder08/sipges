@@ -20,6 +20,24 @@ const DEFAULT_ROWS: readonly Row[] = [
   ['Eventos', 'PAR-EV-2', { Territorio: 'Caleta sintética norte' }],
   ['Eventos', 'PAR-EV-3', { Territorio: 'Zona sintética reservada' }, 'restringido'],
   ['Actores', 'PAR-AC-1', { Nombre: 'Asociación sintética de pescadores' }],
+  [
+    'Intereses',
+    'PAR-IN-R',
+    { Actor: 'Actor reservada', Interes: 'Interés reservada' },
+    'restringido',
+  ],
+  [
+    'Dialogos',
+    'PAR-DI-R',
+    { Proceso: 'Mesa reservada', Tema: 'Tema reservada', Estado: 'Abierto' },
+    'restringido',
+  ],
+  [
+    'Hechos_Compartidos',
+    'PAR-HE-R',
+    { Asunto: 'Asunto reservada', Estado: 'Abierto' },
+    'restringido',
+  ],
   ['Demandas', 'PAR-DE-1', { Tema: 'Agua', Estado: 'Abierta' }],
   ['Demandas', 'PAR-DE-2', { Tema: 'Empleo', Estado: ' CERRADA ' }],
   ['Alertas', 'PAR-AL-1', { Nivel_Preliminar: 'Alto', Estado: 'Activa' }],
@@ -91,39 +109,93 @@ const ROUTES: readonly (readonly [name: string, path: string, normalize?: readon
   ['integrated analysis', '/system/integrated-analysis', ['generated_at']],
 ];
 
-export const cases: readonly ParityCase[] = ROUTES.flatMap(
-  ([route, path, normalize]): ParityCase[] => {
-    const success = normalize ? { normalize } : {};
-    return [
-      { name: `analytics ${route}`, method: 'GET', path, auth: 'admin', ...success },
-      { name: `analytics ${route} without a session`, method: 'GET', path },
-      {
-        name: `analytics ${route} read-only role`,
-        method: 'GET',
-        path,
-        auth: 'consulta',
-        ...success,
-      },
-      {
-        name: `analytics ${route} of a project without a grant`,
-        method: 'GET',
-        path,
-        auth: 'admin',
-        headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
-      },
-      {
-        name: `analytics ${route} of the ungranted fixture project`,
-        method: 'GET',
-        path,
-        auth: 'multi',
-        headers: { 'x-sipges-scope': 'PARITY/OTRO' },
-      },
-      {
-        name: `analytics ${route} with project_id of another project`,
-        method: 'GET',
-        path: `${path}?project_id=PRJ-B`,
-        auth: 'admin',
-      },
-    ];
+const jsonCases = ROUTES.flatMap(([route, path, normalize]): ParityCase[] => {
+  const success = normalize ? { normalize } : {};
+  return [
+    { name: `analytics ${route}`, method: 'GET', path, auth: 'admin', ...success },
+    { name: `analytics ${route} without a session`, method: 'GET', path },
+    {
+      name: `analytics ${route} read-only role`,
+      method: 'GET',
+      path,
+      auth: 'consulta',
+      ...success,
+    },
+    {
+      name: `analytics ${route} of a project without a grant`,
+      method: 'GET',
+      path,
+      auth: 'admin',
+      headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
+    },
+    {
+      name: `analytics ${route} of the ungranted fixture project`,
+      method: 'GET',
+      path,
+      auth: 'multi',
+      headers: { 'x-sipges-scope': 'PARITY/OTRO' },
+    },
+    {
+      name: `analytics ${route} with project_id of another project`,
+      method: 'GET',
+      path: `${path}?project_id=PRJ-B`,
+      auth: 'admin',
+    },
+  ];
+});
+
+/** The Word reports: the parity runner compares their word/document.xml (../docx.ts). */
+const REPORTS: readonly (readonly [name: string, path: string])[] = [
+  ['situational report', '/system/situational-report.docx'],
+  ['strategic report', '/system/strategic-report.docx'],
+  ['integrated report', '/system/integrated-analysis.docx'],
+  ['consensus report', '/system/consensus-engine.docx'],
+];
+
+const reportCases = REPORTS.flatMap(([route, path]): ParityCase[] => [
+  {
+    name: `analytics ${route}`,
+    method: 'GET',
+    path,
+    auth: 'admin',
+    present: ['reservada'],
+    absent: ['AJENA'],
   },
-);
+  { name: `analytics ${route} without a session`, method: 'GET', path },
+  {
+    name: `analytics ${route} read-only role`,
+    method: 'GET',
+    path,
+    auth: 'consulta',
+    absent: ['AJENA', 'reservada'],
+  },
+  {
+    name: `analytics ${route} of a project without a grant`,
+    method: 'GET',
+    path,
+    auth: 'admin',
+    headers: { 'x-sipges-scope': 'PARITY/PRJ-B' },
+  },
+  {
+    name: `analytics ${route} of the ungranted fixture project`,
+    method: 'GET',
+    path,
+    auth: 'multi',
+    headers: { 'x-sipges-scope': 'PARITY/OTRO' },
+  },
+  {
+    name: `analytics ${route} with project_id of another project`,
+    method: 'GET',
+    path: `${path}?project_id=PRJ-B`,
+    auth: 'admin',
+  },
+  { name: `analytics ${route} HEAD`, method: 'HEAD', path, auth: 'admin' },
+  {
+    name: `analytics ${route} with a trailing slash`,
+    method: 'GET',
+    path: `${path}/`,
+    auth: 'admin',
+  },
+]);
+
+export const cases: readonly ParityCase[] = [...jsonCases, ...reportCases];

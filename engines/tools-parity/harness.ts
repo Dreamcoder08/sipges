@@ -17,7 +17,7 @@ import type { SqlClient } from '../../apps/api/src/platform/database/sql-client.
 
 export const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const SERVER = process.env.SIPGES_TOOLS_DATABASE_URL ?? '';
-const RUST_DIR = process.env.SIPGES_RUST_TOOLS_DIR ?? `${ROOT}engines/target/debug`;
+export const RUST_DIR = process.env.SIPGES_RUST_TOOLS_DIR ?? `${ROOT}engines/target/debug`;
 /** A fixed synthetic key: the tools only check it is present and well formed. */
 export const SYNTHETIC_DATA_KEY = Buffer.alloc(32, 7).toString('base64');
 

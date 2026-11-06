@@ -10,6 +10,7 @@
 import { type ChildProcess, spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -17,16 +18,17 @@ import {
   readdirSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { createSecretCipher } from '../../apps/api/src/contexts/identity/infrastructure/secret-cipher.ts';
 import type { SqlClient } from '../../apps/api/src/platform/database/sql-client.ts';
 import { buildLegacyFixture } from '../../apps/api/test/support/legacy-fixture.ts';
 import { FAKE_S3_CREDENTIALS, FAKE_S3_REGION } from './fake-s3.ts';
-import { ROOT, type Scenario, type Step, SYNTHETIC_DATA_KEY, runScenarios } from './harness.ts';
+import { ROOT, RUST_DIR, type Scenario, type Step, SYNTHETIC_DATA_KEY, runScenarios } from './harness.ts';
 import { CURRENT_SQLITE_READS, buildHostileInstallation, buildPoisoned } from './migrate-legacy-fixture.ts';
 
 const TOOL = { ts: 'apps/api/src/tools/migrate-legacy/cli.ts', rust: 'migrate-legacy' };
@@ -65,8 +67,11 @@ const hideTimes = (text: string) => {
     .replace(/^\(node:\d+\) ExperimentalWarning: .*\n\(Use `node --trace-warnings.*\n/gm, '');
 };
 
-/** Local storage under each tool's own directory; the time zone TypeScript reads local dates in. */
-const baseEnv = (tool: 'ts' | 'rs') => ({ SIPGES_UPLOAD_DIR: objectsOf(tool), TZ: 'UTC' });
+/** A zone away from UTC, so a timestamp read in the process's local time shows up as a difference. */
+const ZONE = 'America/Lima';
+
+/** Local storage under each tool's own directory. */
+const baseEnv = (tool: 'ts' | 'rs') => ({ SIPGES_UPLOAD_DIR: objectsOf(tool), TZ: ZONE });
 
 const step = (args: readonly string[], extra: Partial<Step> = {}): Step => ({
   args,
@@ -184,7 +189,7 @@ const s3 = await startFakeS3();
 const s3Env =
   (bucket: string) =>
   (tool: 'ts' | 'rs'): Record<string, string> => ({
-    TZ: 'UTC',
+    TZ: ZONE,
     SIPGES_STORAGE: 's3',
     SIPGES_S3_ENDPOINT: `http://127.0.0.1:${s3.port}/ignored/path`,
     SIPGES_S3_REGION: FAKE_S3_REGION,
@@ -192,6 +197,20 @@ const s3Env =
     SIPGES_S3_ACCESS_KEY_ID: FAKE_S3_CREDENTIALS.accessKeyId,
     SIPGES_S3_SECRET_ACCESS_KEY: FAKE_S3_CREDENTIALS.secretAccessKey,
   });
+
+/** Empties the target; `tenants` alone would keep the tenant tables without a foreign key. */
+const emptyTarget = (sql: SqlClient) =>
+  sql.exec(`TRUNCATE tenants, users, ${Object.keys(TENANT_TABLES).join(', ')} CASCADE`);
+
+/** Clears a tool's S3 bucket and its database, so the next run stores its objects again. */
+const startOver = async (sql: SqlClient, tool: 'ts' | 'rs') => {
+  rmSync(join(scratch, 's3', `synthetic bucket ${tool}`), { recursive: true, force: true });
+  await emptyTarget(sql);
+};
+
+const firstObject = (root: string) => join(root, Object.keys(listTree(root))[0] ?? 'none');
+
+const spaced = poison('ruta con espacios', () => {});
 
 const refusals: Step[] = [
   step(['--help']),
@@ -206,6 +225,11 @@ const refusals: Step[] = [
   crash(['posicional']),
   step(['--', ...legacy]),
   crash(['--', 'posicional', ...legacy]),
+  step([...legacy, '--', '--report', REPORT], { files: [REPORT] }),
+  step(['--legacy-root', '--', fixture.root]),
+  step([...legacy, '--']),
+  crash([...legacy, '--', 'posicional']),
+  crash(['--legacy-root=--']),
   crash(['--apply=1', ...legacy]),
   crash(['--apply', '--verify', ...legacy]),
   crash(['--dry-run', '--apply', ...legacy], { stderrIncludes: 'Choose either --dry-run or --apply' }),
@@ -232,7 +256,7 @@ const scenarios: Scenario[] = [
     steps: [
       step(legacy),
       step([...legacy, '--dry-run', '--report', REPORT], { files: [REPORT] }),
-      step([...legacy, '--verify']),
+      step([...legacy, '--verify', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--apply', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--apply', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--apply', '--allow-non-empty', '--report', REPORT], { files: [REPORT] }),
@@ -280,6 +304,25 @@ const scenarios: Scenario[] = [
           ),
       }),
       step([...legacy, '--report', REPORT], { files: [REPORT] }),
+    ],
+  },
+  {
+    // A read would show the rows the first step wrote: the summary must still say target 0.
+    name: 'pending schema migrations over a target with data',
+    seed: async () => {},
+    dumps: {
+      ...DUMPS,
+      schema_migrations: 'SELECT version FROM schema_migrations ORDER BY 1',
+    },
+    steps: [
+      step([...legacy, '--apply']),
+      step([...legacy, '--report', REPORT], {
+        files: [REPORT],
+        before: (sql) =>
+          sql.exec(
+            'DELETE FROM schema_migrations WHERE version = (SELECT max(version) FROM schema_migrations)',
+          ),
+      }),
     ],
   },
   {
@@ -402,6 +445,40 @@ const scenarios: Scenario[] = [
     ],
   },
   {
+    name: 'objects already stored',
+    seed: async () => {},
+    dumps: DUMPS,
+    steps: [
+      step([...legacy, '--apply']),
+      // Same bytes: nothing is rewritten and the rows still arrive.
+      step([...legacy, '--apply', '--report', REPORT], {
+        files: [REPORT],
+        before: emptyTarget,
+      }),
+      // Other bytes under one key: that tenant is refused and the object is left as it was.
+      step([...legacy, '--apply', '--report', REPORT], {
+        files: [REPORT],
+        before: async (sql, tool) => {
+          await emptyTarget(sql);
+          writeFileSync(firstObject(objectsOf(tool)), 'bytes ajenos');
+        },
+      }),
+      step([...legacy, '--verify', '--report', REPORT], { files: [REPORT] }),
+      // With the foreign object gone the refused tenant resumes.
+      step([...legacy, '--apply', '--allow-non-empty', '--report', REPORT], {
+        files: [REPORT],
+        before: async (_sql, tool) => rmSync(firstObject(objectsOf(tool))),
+      }),
+      step([...legacy, '--verify', '--report', REPORT], { files: [REPORT] }),
+    ],
+  },
+  {
+    name: 'paths with spaces',
+    seed: async () => {},
+    dumps: DUMPS,
+    steps: [step([...spaced, '--apply']), step([...spaced, '--verify'])],
+  },
+  {
     name: 'S3 storage',
     seed: async () => {},
     dumps: {
@@ -415,6 +492,38 @@ const scenarios: Scenario[] = [
     ],
   },
   {
+    name: 'S3 objects already stored',
+    seed: async () => {},
+    dumps: {
+      ...DUMPS,
+      objects: async (_sql, tool) => listTree(join(scratch, 's3', `synthetic bucket ${tool}`)),
+    },
+    steps: [
+      step([...legacy, '--apply'], { env: s3Env('side'), before: startOver }),
+      step([...legacy, '--apply', '--report', REPORT], {
+        env: s3Env('side'),
+        files: [REPORT],
+        before: emptyTarget,
+      }),
+      step([...legacy, '--apply', '--report', REPORT], {
+        env: s3Env('side'),
+        files: [REPORT],
+        before: async (sql, tool) => {
+          await emptyTarget(sql);
+          const bucket = join(scratch, 's3', `synthetic bucket ${tool}`);
+          const key = Object.keys(listTree(bucket)).find((name) => !name.endsWith('.content-type'));
+          writeFileSync(join(bucket, key ?? 'none'), 'bytes ajenos');
+        },
+      }),
+    ],
+  },
+  {
+    name: 'S3 refuses reads',
+    seed: async () => {},
+    dumps: DUMPS,
+    steps: [step([...legacy, '--apply', '--report', REPORT], { env: s3Env('deny-get'), files: [REPORT] })],
+  },
+  {
     // fetch refuses a value past Latin-1 or with a line break; other bytes go out and sign alike.
     name: 'S3 content types',
     seed: async () => {},
@@ -422,7 +531,7 @@ const scenarios: Scenario[] = [
       ...DUMPS,
       objects: async (_sql, tool) => listTree(join(scratch, 's3', `synthetic bucket ${tool}`)),
     },
-    steps: ['text/plain; charset=é', '  a   b  ', 'tipo😀', 'a\nb'].map((type, i) =>
+    steps: ['tipo😀', 'a\nb', 'text/plain; charset=é', '  a   b  '].map((type, i) =>
       step(
         [
           ...poison(`content-type-${i}`, (root) => {
@@ -439,8 +548,7 @@ const scenarios: Scenario[] = [
         {
           env: s3Env('side'),
           files: [REPORT],
-          before: (sql) =>
-            sql.exec(`TRUNCATE tenants, users CASCADE`),
+          before: startOver,
         },
       ),
     ),
@@ -453,8 +561,41 @@ const scenarios: Scenario[] = [
   },
 ];
 
+/** Both tools started from a copy under a path with a space: the guard TypeScript runs behind. */
+const programScenario = (): { tool: typeof TOOL; scenario: Scenario } => {
+  const directory = join(scratch, 'programa con espacio');
+  cpSync(`${ROOT}apps/api/src`, join(directory, 'src'), { recursive: true });
+  cpSync(`${ROOT}apps/api/package.json`, join(directory, 'package.json'));
+  symlinkSync(`${ROOT}apps/api/node_modules`, join(directory, 'node_modules'));
+  cpSync(`${RUST_DIR}/${TOOL.rust}`, join(directory, TOOL.rust));
+  return {
+    tool: {
+      ts: relative(ROOT, join(directory, TOOL.ts.replace('apps/api/', ''))),
+      rust: relative(RUST_DIR, join(directory, TOOL.rust)),
+    },
+    scenario: {
+      name: 'program under a path with spaces',
+      seed: async () => {},
+      dumps: DUMPS,
+      steps: [step(['--help']), step([...legacy, '--apply'])],
+    },
+  };
+};
+
+/** Every scenario starts with empty object stores, so it copies its own objects. */
+const withEmptyObjects = (scenario: Scenario): Scenario => ({
+  ...scenario,
+  prepare: async (sql) => {
+    rmSync(join(scratch, 'objects'), { recursive: true, force: true });
+    await scenario.prepare?.(sql);
+  },
+});
+
 try {
-  const differences = await runScenarios(TOOL, scenarios);
+  const program = programScenario();
+  const differences =
+    (await runScenarios(TOOL, scenarios.map(withEmptyObjects))) +
+    (await runScenarios(program.tool, [withEmptyObjects(program.scenario)]));
   if (leaks.size > 0) console.error(`LEAK in tool output: ${leaks.size} marker(s)`);
   const unseen = declaredCodes.filter((code) => !seenCodes.has(code));
   if (unseen.length > 0) console.error(`NOT EXERCISED: ${unseen.join(', ')}`);

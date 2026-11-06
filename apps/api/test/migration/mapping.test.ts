@@ -218,6 +218,26 @@ describe('legacy mapping', () => {
     expect(!label.ok && label.error).toBe('tenant_row_invalid');
   });
 
+  it('refuses tenant ids the tenants CHECK would refuse', () => {
+    const tenant = (companyId: string, projectId: string) =>
+      mapTenant({ companyId, projectId, label: '' });
+    expect(tenant('AC', 'P'.repeat(64)).ok).toBe(true);
+    expect(tenant('a_b-C9', 'PRJ-1').ok).toBe(true);
+    for (const [company, project] of [
+      ['A', 'PRJ-1'],
+      ['ACME', 'P'],
+      ['ACME', 'P'.repeat(65)],
+      ['ACME', 'PRJ 1'],
+      ['ACME', 'PRJ/1'],
+      ['ÑANDU', 'PRJ-1'],
+      ['ACME\n', 'PRJ-1'],
+      ['', 'PRJ-1'],
+    ] as const) {
+      const mapped = tenant(company, project);
+      expect(!mapped.ok && mapped.error, `${company}/${project}`).toBe('tenant_row_invalid');
+    }
+  });
+
   it('rejects alerts whose JSON columns or review date app.py could not read', () => {
     const alert = {
       id: 'DIG-1',
@@ -233,11 +253,24 @@ describe('legacy mapping', () => {
     expect(mapped.ok && mapped.value.themes).toEqual([{ tema: 'agua' }]);
     expect(mapped.ok && mapped.value.reviewedAt?.toISOString()).toBe('2026-10-02T09:00:00.000Z');
     expect(mapAlert({ ...alert, reviewed_at: null }).ok).toBe(true);
+    const epoch = mapAlert({ ...alert, reviewed_at: 1_790_000_000 });
+    expect(epoch.ok && epoch.value.reviewedAt?.toISOString()).toBe('2026-09-21T14:13:20.000Z');
+    const edge = mapAlert({ ...alert, reviewed_at: 253_402_300_799 });
+    expect(edge.ok && edge.value.reviewedAt?.toISOString()).toBe('9999-12-31T23:59:59.000Z');
+    const first = mapAlert({ ...alert, reviewed_at: -62_135_596_800 });
+    expect(first.ok && first.value.reviewedAt?.toISOString()).toBe('0001-01-01T00:00:00.000Z');
+    const zero = mapAlert({ ...alert, reviewed_at: 0 });
+    expect(zero.ok && zero.value.reviewedAt?.toISOString()).toBe('1970-01-01T00:00:00.000Z');
     for (const broken of [
       { themes_json: '{not json' },
       { signals_json: null },
       { suggestions_json: JSON.stringify(['con\u0000nul']) },
       { reviewed_at: 'ayer' },
+      { reviewed_at: '1790000000' },
+      { reviewed_at: 9e300 },
+      { reviewed_at: 253_402_300_800 },
+      { reviewed_at: -62_135_596_801 },
+      { reviewed_at: 1_000_000_000_000 },
     ]) {
       const result = mapAlert({ ...alert, ...broken });
       expect(!result.ok && result.error, Object.keys(broken)[0]).toBe('alert_row_invalid');

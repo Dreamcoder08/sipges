@@ -1,0 +1,1412 @@
+{
+  "full": {
+    "records": {
+      "Eventos": [
+        {
+          "id": "EV-1",
+          "payload": { "Territorio": "Sechura", "Descripcion": "Bloqueo <vía> & \"paso\"" }
+        },
+        { "id": "EV-2", "payload": { "Territorio": "Sechura", "Estado": "Abierto" } },
+        { "id": "EV-3", "payload": { "Territorio": 12 } }
+      ],
+      "Actores": [{ "id": "A-1", "payload": { "Nombre_Actor": "Comité" } }],
+      "Demandas": [
+        {
+          "id": "D-1",
+          "payload": {
+            "Tema": "Agua",
+            "Descripcion": "Línea 1\nLínea 2",
+            "Estado": "Abierta",
+            "Fuente_ID": "F-1"
+          }
+        },
+        {
+          "id": "D-2",
+          "payload": { "Tema": 7, "Descripcion": null, "Estado": "Pendiente", "Fuente_ID": "" }
+        },
+        { "id": "D-3", "payload": { "Estado": "Cerrada", "Tema": "Oculta" } },
+        {
+          "id": "D-4",
+          "payload": { "Tema": { "a": 1, "b": [2, "x"] }, "Estado": "Abierta", "Fuente_ID": 0 }
+        }
+      ],
+      "Compromisos": [{ "id": "C-1", "payload": { "Estado": "Vencido", "Compromiso": "Entrega" } }],
+      "Narrativas": [],
+      "Alertas": [
+        {
+          "id": "AL-1",
+          "payload": {
+            "Nivel_Preliminar": "Rojo",
+            "Causa": "Cruce",
+            "Estado": "Activa",
+            "Fuente_ID": "F-2"
+          }
+        },
+        { "id": "AL-2", "payload": { "Causa": null, "Estado": "Activa" } },
+        {
+          "id": "AL-3",
+          "payload": {
+            "Nivel_Preliminar": null,
+            "Estado": "Activa",
+            "Causa": true,
+            "Fuente_ID": ["F-3"]
+          }
+        }
+      ],
+      "Acciones": [],
+      "Fuentes": [{ "id": "F-1", "payload": { "Nombre": "Acta" } }],
+      "Proyectos": [
+        { "id": "PRJ-1", "payload": { "Nombre": "Proyecto Sintético", "Proyecto_ID": "PRJ-1" } }
+      ],
+      "Intereses": [
+        {
+          "id": "I-1",
+          "payload": {
+            "Actor": "Comité",
+            "Posicion": "A favor",
+            "Interes": "Agua potable para Sechura",
+            "Preocupacion": 0,
+            "Fuente_ID": "F-1"
+          }
+        },
+        { "id": "I-2", "payload": { "Actor": null, "Interes": "", "Posicion": false } }
+      ],
+      "Dialogos": [
+        {
+          "id": "DI-1",
+          "payload": {
+            "Proceso": "Mesa",
+            "Participantes": ["Comité", "Empresa"],
+            "Tema": "Agua potable para Sechura",
+            "Estado": "En curso",
+            "Proximo_Paso": "Acta"
+          }
+        },
+        { "id": "DI-X-0", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 0 } },
+        { "id": "DI-X-1", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 1 } },
+        { "id": "DI-X-2", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 2 } },
+        { "id": "DI-X-3", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 3 } },
+        { "id": "DI-X-4", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 4 } },
+        { "id": "DI-X-5", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 5 } },
+        { "id": "DI-X-6", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 6 } },
+        { "id": "DI-X-7", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 7 } },
+        { "id": "DI-X-8", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 8 } },
+        { "id": "DI-X-9", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 9 } },
+        { "id": "DI-X-10", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 10 } },
+        { "id": "DI-X-11", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 11 } },
+        { "id": "DI-X-12", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 12 } },
+        { "id": "DI-X-13", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 13 } },
+        { "id": "DI-X-14", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 14 } },
+        { "id": "DI-X-15", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 15 } },
+        { "id": "DI-X-16", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 16 } },
+        { "id": "DI-X-17", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 17 } },
+        { "id": "DI-X-18", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 18 } },
+        { "id": "DI-X-19", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 19 } },
+        { "id": "DI-X-20", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 20 } },
+        { "id": "DI-X-21", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 21 } },
+        { "id": "DI-X-22", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 22 } },
+        { "id": "DI-X-23", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 23 } },
+        { "id": "DI-X-24", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 24 } },
+        { "id": "DI-X-25", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 25 } },
+        { "id": "DI-X-26", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 26 } },
+        { "id": "DI-X-27", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 27 } },
+        { "id": "DI-X-28", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 28 } },
+        { "id": "DI-X-29", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 29 } },
+        { "id": "DI-X-30", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 30 } },
+        { "id": "DI-X-31", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 31 } },
+        { "id": "DI-X-32", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 32 } },
+        { "id": "DI-X-33", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 33 } },
+        { "id": "DI-X-34", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 34 } },
+        { "id": "DI-X-35", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 35 } },
+        { "id": "DI-X-36", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 36 } },
+        { "id": "DI-X-37", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 37 } },
+        { "id": "DI-X-38", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 38 } },
+        { "id": "DI-X-39", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 39 } },
+        { "id": "DI-X-40", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 40 } },
+        { "id": "DI-X-41", "payload": { "Proceso": "Mesa", "Estado": "Cerrado", "Nota": 41 } }
+      ],
+      "Oportunidades": [
+        {
+          "id": "O-1",
+          "payload": {
+            "Oportunidad": "Riego",
+            "Beneficiarios": 100.5,
+            "Viabilidad": "Alta",
+            "Estado": "Abierta",
+            "Responsable": "Equipo"
+          }
+        }
+      ],
+      "Hechos_Compartidos": [
+        {
+          "id": "H-1",
+          "payload": {
+            "Asunto": "Agua potable para Sechura",
+            "Estado": "En revisión",
+            "Versiones": "Dos",
+            "Fuente_ID": "F-1",
+            "Accion_Verificacion": "Visita"
+          }
+        }
+      ],
+      "Evaluaciones_AARC": [
+        {
+          "id": "AA-1",
+          "payload": {
+            "Actor_Proceso": "Mesa",
+            "Reconocimiento": "Bajo",
+            "Agencia": "Baja",
+            "Reciprocidad": "Baja",
+            "Claridad": "Baja",
+            "Evidencia": "Acta"
+          }
+        }
+      ]
+    },
+    "situational": {
+      "project_id": "PRJ-1",
+      "project_name": "Proyecto Sintético",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "method": "Síntesis descriptiva basada en registros; no predicción ni evaluación pericial.",
+      "counts": {
+        "eventos": 3,
+        "actores": 1,
+        "demandas": 4,
+        "compromisos": 1,
+        "narrativas": 0,
+        "alertas": 3,
+        "acciones": 0,
+        "fuentes": 1
+      },
+      "alertas_activas": 3,
+      "demandas_pendientes": 3,
+      "territorios": [
+        ["Sechura", 2],
+        ["12", 1]
+      ],
+      "temas_demanda": [
+        ["Agua", 1],
+        ["7", 1],
+        ["{\"a\":1,\"b\":[2,\"x\"]}", 1]
+      ],
+      "niveles_alerta": [
+        ["Sin nivel", 2],
+        ["Rojo", 1]
+      ],
+      "eventos_recientes": [
+        {
+          "Fecha": "",
+          "Territorio": "Sechura",
+          "Descripcion_Hecho": "",
+          "Nivel_Verificacion": "",
+          "Fuente_ID": "",
+          "id": "EV-1"
+        },
+        {
+          "Fecha": "",
+          "Territorio": "Sechura",
+          "Descripcion_Hecho": "",
+          "Nivel_Verificacion": "",
+          "Fuente_ID": "",
+          "id": "EV-2"
+        },
+        {
+          "Fecha": "",
+          "Territorio": 12,
+          "Descripcion_Hecho": "",
+          "Nivel_Verificacion": "",
+          "Fuente_ID": "",
+          "id": "EV-3"
+        }
+      ],
+      "alertas_prioritarias": [
+        {
+          "Fecha": "",
+          "Nivel_Preliminar": "Rojo",
+          "Causa": "Cruce",
+          "Accion_Sugerida": "",
+          "Fuente_ID": "F-2",
+          "id": "AL-1"
+        },
+        {
+          "Fecha": "",
+          "Nivel_Preliminar": "",
+          "Causa": null,
+          "Accion_Sugerida": "",
+          "Fuente_ID": "",
+          "id": "AL-2"
+        },
+        {
+          "Fecha": "",
+          "Nivel_Preliminar": null,
+          "Causa": true,
+          "Accion_Sugerida": "",
+          "Fuente_ID": ["F-3"],
+          "id": "AL-3"
+        }
+      ],
+      "demandas_abiertas": [
+        {
+          "Fecha_Registro": "",
+          "Tema": "Agua",
+          "Descripcion": "Línea 1\nLínea 2",
+          "Estado": "Abierta",
+          "Fuente_ID": "F-1",
+          "id": "D-1"
+        },
+        {
+          "Fecha_Registro": "",
+          "Tema": 7,
+          "Descripcion": null,
+          "Estado": "Pendiente",
+          "Fuente_ID": "",
+          "id": "D-2"
+        },
+        {
+          "Fecha_Registro": "",
+          "Tema": { "a": 1, "b": [2, "x"] },
+          "Descripcion": "",
+          "Estado": "Abierta",
+          "Fuente_ID": 0,
+          "id": "D-4"
+        }
+      ],
+      "actores": [
+        {
+          "Nombre_Actor/Organizacion": "",
+          "Posicion_Proyecto": "",
+          "Influencia": "",
+          "Fuente_Principal": "",
+          "id": "A-1"
+        }
+      ],
+      "observaciones": [
+        "Constan 3 alertas con estado no cerrado; requieren verificación de vigencia, gravedad y responsable.",
+        "Se registran 3 demandas no cerradas; revisar competencia y respuesta institucional."
+      ],
+      "escenarios": [
+        {
+          "nombre": "Favorable",
+          "supuesto": "Se atienden y verifican oportunamente las demandas y alertas pendientes."
+        },
+        {
+          "nombre": "Intermedio",
+          "supuesto": "Persisten demandas y señales sin escalamiento confirmado."
+        },
+        {
+          "nombre": "Crítico",
+          "supuesto": "Convergen eventos corroborados, alertas graves y falta de respuesta oportuna."
+        }
+      ],
+      "recomendaciones": [
+        "Revisar alertas abiertas, contrastar evidencias y asignar responsables y plazos.",
+        "Actualizar la trazabilidad de demandas, respuesta institucional y compromisos asociados.",
+        "Validar el diagnóstico con el equipo territorial y registrar fecha, fuentes y analista responsable.",
+        "Aplicar seguimiento periódico y documentar cambios frente al corte anterior."
+      ],
+      "limitations": [
+        "Los registros pueden estar desactualizados, incompletos o pendientes de verificación.",
+        "Los escenarios son condicionales, no pronósticos.",
+        "IRSA requiere validación de pesos y umbrales; no se interpreta aquí como medición científica definitiva.",
+        "El reporte requiere revisión y aprobación de un analista antes de circularse como documento institucional."
+      ]
+    },
+    "strategic": {
+      "project_id": "PRJ-1",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "counts": { "intereses": 2, "dialogos": 43, "oportunidades": 1, "hechos": 1, "aarc": 1 },
+      "facts_pending": 1,
+      "opportunities_open": 1,
+      "dialogues_open": 1,
+      "aarc_complete": 1,
+      "attention": [
+        "Existen hechos o datos pendientes de contraste documental y validación conjunta.",
+        "Existen procesos de diálogo registrados que requieren seguimiento.",
+        "Existen oportunidades registradas cuya viabilidad y responsables deben revisarse."
+      ],
+      "limitations": [
+        "Métricas descriptivas sobre registros: no representan un índice de consenso ni una estimación predictiva.",
+        "Las calificaciones AARC, cuando existan, son observaciones cualitativas; no se incorporan al IRSA.",
+        "Registrar fuentes, fecha y validación antes de tomar decisiones o comunicar resultados."
+      ]
+    },
+    "integrated": {
+      "project_id": "PRJ-1",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "version": "1.9",
+      "summary": { "cruces_candidatos": 2, "acciones_sugeridas": 9, "registros_estrategicos": 48 },
+      "candidate_links": [
+        {
+          "origen": "hechos/H-1",
+          "destino": "dialogos/DI-1",
+          "criterio": "coincidencia léxica (no implica relación probada)",
+          "terminos_compartidos": ["agua", "potable", "sechura"],
+          "estado": "Hipótesis de vínculo; verificar con fuentes y participantes",
+          "uso_sugerido": "Revisar pertinencia del vínculo, intereses expresados y posibles restricciones antes de diseñar opciones"
+        },
+        {
+          "origen": "intereses/I-1",
+          "destino": "dialogos/DI-1",
+          "criterio": "coincidencia léxica (no implica relación probada)",
+          "terminos_compartidos": ["agua", "potable", "sechura"],
+          "estado": "Hipótesis de vínculo; verificar con fuentes y participantes",
+          "uso_sugerido": "Revisar pertinencia del vínculo, intereses expresados y posibles restricciones antes de diseñar opciones"
+        }
+      ],
+      "action_plan": [
+        {
+          "numero": 1,
+          "accion": "Acordar preguntas, fuentes, metodología, responsables y criterios de validación con los actores participantes.",
+          "objetivo": "Preparar verificación conjunta de información",
+          "fundamento": "El asunto consta como no validado; no se debe resolver una controversia a partir de una sola versión.",
+          "registros": ["H-1"],
+          "prioridad_orientativa": "Alta",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 2,
+          "accion": "Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad.",
+          "objetivo": "Verificar mandato antes de acuerdos formales",
+          "fundamento": "La ficha de Comité no registra sustento documental de mandato.",
+          "registros": ["I-1"],
+          "prioridad_orientativa": "Alta",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 3,
+          "accion": "Programar escucha consultiva y registrar los intereses declarados con evidencia y consentimiento.",
+          "objetivo": "Explorar intereses expresados, sin inferirlos",
+          "fundamento": "El actor None tiene una ficha sin interés documentado.",
+          "registros": ["I-2"],
+          "prioridad_orientativa": "Media",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 4,
+          "accion": "Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad.",
+          "objetivo": "Verificar mandato antes de acuerdos formales",
+          "fundamento": "La ficha de None no registra sustento documental de mandato.",
+          "registros": ["I-2"],
+          "prioridad_orientativa": "Alta",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 5,
+          "accion": "Acordar responsable, plazo, mecanismo de rendición de cuentas y forma de gestionar desacuerdos.",
+          "objetivo": "Definir seguimiento del diálogo",
+          "fundamento": "El proceso abierto no tiene responsable o siguiente paso completo.",
+          "registros": ["DI-1"],
+          "prioridad_orientativa": "Alta",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 6,
+          "accion": "Adjuntar acta, registro consentido o evidencia verificable.",
+          "objetivo": "Vincular acta o evidencia del proceso",
+          "fundamento": "El proceso de diálogo no presenta una fuente identificada.",
+          "registros": ["DI-1"],
+          "prioridad_orientativa": "Media",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 7,
+          "accion": "Contrastar beneficios para cada actor, restricciones, financiamiento y opciones alternativas; no presentarla como promesa.",
+          "objetivo": "Examinar viabilidad de oportunidad",
+          "fundamento": "La oportunidad registrada necesita evaluación técnica, legal o presupuestal.",
+          "registros": ["O-1"],
+          "prioridad_orientativa": "Media",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 8,
+          "accion": "Revisar conjuntamente la correspondencia y documentar coincidencias, desacuerdos y restricciones antes de generar opciones.",
+          "objetivo": "Contrastar intereses con cartera de oportunidades",
+          "fundamento": "Existen fichas de intereses y oportunidades para el mismo proyecto; no se presume coincidencia ni apoyo.",
+          "registros": ["I-1", "I-2", "O-1"],
+          "prioridad_orientativa": "Media",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        },
+        {
+          "numero": 9,
+          "accion": "Preguntar a los participantes qué hechos necesitan verificar juntos y acordar un procedimiento transparente.",
+          "objetivo": "Incluir controversias verificables en la agenda de diálogo",
+          "fundamento": "El proyecto registra tanto procesos de diálogo como asuntos sujetos a verificación.",
+          "registros": ["H-1", "DI-1"],
+          "prioridad_orientativa": "Media",
+          "responsable": "Por asignar tras revisión",
+          "plazo": "Por acordar",
+          "estado": "Borrador automático — no aprobado"
+        }
+      ],
+      "scenarios": [
+        {
+          "tipo": "Escenario de mejora",
+          "supuesto": "Los actores revisan discrepancias, se verifican fuentes y se acuerdan pasos con responsables.",
+          "indicadores_a_observar": [
+            "Hechos contrastados",
+            "Cumplimiento de compromisos",
+            "Participación efectiva"
+          ]
+        },
+        {
+          "tipo": "Escenario de continuidad",
+          "supuesto": "Permanecen asuntos abiertos y no se actualizan datos ni acuerdos.",
+          "indicadores_a_observar": [
+            "Antigüedad de temas abiertos",
+            "Calidad de evidencia",
+            "Siguientes pasos vencidos"
+          ]
+        },
+        {
+          "tipo": "Escenario de deterioro",
+          "supuesto": "Persisten discrepancias y se acumulan compromisos incumplidos corroborados.",
+          "indicadores_a_observar": [
+            "Alertas comprobadas",
+            "Demandas pendientes",
+            "Cambios documentados en el relacionamiento"
+          ]
+        }
+      ],
+      "limitations": [
+        "Las asociaciones textuales son candidatas, no relaciones verificadas. No se hacen inferencias personales sobre los actores.",
+        "Los escenarios son condicionales, no pronósticos ni probabilidades. No se modifica el IRSA.",
+        "No se crea ningún compromiso, se asignan presupuestos ni se califica legitimidad sin revisión.",
+        "Los resultados proceden solo de registros del proyecto y requieren auditoría de fuentes y control de acceso."
+      ]
+    },
+    "consensus": {
+      "project_id": "PRJ-1",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "method": "reglas trazables v1.8 (sin inferencia predictiva ni IA generativa)",
+      "counts": { "intereses": 2, "dialogos": 43, "oportunidades": 1, "hechos": 1, "aarc": 1 },
+      "recommendations": [
+        {
+          "tipo": "Hechos compartidos",
+          "titulo": "Preparar verificación conjunta de información",
+          "motivo": "El asunto consta como no validado; no se debe resolver una controversia a partir de una sola versión.",
+          "accion_sugerida": "Acordar preguntas, fuentes, metodología, responsables y criterios de validación con los actores participantes.",
+          "origen": "hechos/H-1",
+          "registros_relacionados": ["H-1"],
+          "prioridad_orientativa": "Alta",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Representatividad",
+          "titulo": "Verificar mandato antes de acuerdos formales",
+          "motivo": "La ficha de Comité no registra sustento documental de mandato.",
+          "accion_sugerida": "Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad.",
+          "origen": "intereses/I-1",
+          "registros_relacionados": ["I-1"],
+          "prioridad_orientativa": "Alta",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Negociación por intereses",
+          "titulo": "Explorar intereses expresados, sin inferirlos",
+          "motivo": "El actor None tiene una ficha sin interés documentado.",
+          "accion_sugerida": "Programar escucha consultiva y registrar los intereses declarados con evidencia y consentimiento.",
+          "origen": "intereses/I-2",
+          "registros_relacionados": ["I-2"],
+          "prioridad_orientativa": "Media",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Representatividad",
+          "titulo": "Verificar mandato antes de acuerdos formales",
+          "motivo": "La ficha de None no registra sustento documental de mandato.",
+          "accion_sugerida": "Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad.",
+          "origen": "intereses/I-2",
+          "registros_relacionados": ["I-2"],
+          "prioridad_orientativa": "Alta",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Arquitectura de consenso",
+          "titulo": "Definir seguimiento del diálogo",
+          "motivo": "El proceso abierto no tiene responsable o siguiente paso completo.",
+          "accion_sugerida": "Acordar responsable, plazo, mecanismo de rendición de cuentas y forma de gestionar desacuerdos.",
+          "origen": "dialogos/DI-1",
+          "registros_relacionados": ["DI-1"],
+          "prioridad_orientativa": "Alta",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Trazabilidad",
+          "titulo": "Vincular acta o evidencia del proceso",
+          "motivo": "El proceso de diálogo no presenta una fuente identificada.",
+          "accion_sugerida": "Adjuntar acta, registro consentido o evidencia verificable.",
+          "origen": "dialogos/DI-1",
+          "registros_relacionados": ["DI-1"],
+          "prioridad_orientativa": "Media",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Mutual Gains / valor compartido",
+          "titulo": "Examinar viabilidad de oportunidad",
+          "motivo": "La oportunidad registrada necesita evaluación técnica, legal o presupuestal.",
+          "accion_sugerida": "Contrastar beneficios para cada actor, restricciones, financiamiento y opciones alternativas; no presentarla como promesa.",
+          "origen": "oportunidades/O-1",
+          "registros_relacionados": ["O-1"],
+          "prioridad_orientativa": "Media",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Integración intereses-valor",
+          "titulo": "Contrastar intereses con cartera de oportunidades",
+          "motivo": "Existen fichas de intereses y oportunidades para el mismo proyecto; no se presume coincidencia ni apoyo.",
+          "accion_sugerida": "Revisar conjuntamente la correspondencia y documentar coincidencias, desacuerdos y restricciones antes de generar opciones.",
+          "origen": "intereses+oportunidades",
+          "registros_relacionados": ["I-1", "I-2", "O-1"],
+          "prioridad_orientativa": "Media",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        },
+        {
+          "tipo": "Integración hechos-diálogo",
+          "titulo": "Incluir controversias verificables en la agenda de diálogo",
+          "motivo": "El proyecto registra tanto procesos de diálogo como asuntos sujetos a verificación.",
+          "accion_sugerida": "Preguntar a los participantes qué hechos necesitan verificar juntos y acordar un procedimiento transparente.",
+          "origen": "hechos+dialogos",
+          "registros_relacionados": ["H-1", "DI-1"],
+          "prioridad_orientativa": "Media",
+          "estado": "Propuesta automática; pendiente de revisión",
+          "autorizacion": "No constituye acuerdo ni compromiso"
+        }
+      ],
+      "summary": { "total": 9, "alta": 4 },
+      "limitations": [
+        "Los disparadores indican faltantes de registros, no defectos reales de personas ni instituciones.",
+        "El módulo no modifica IRSA, no aprueba acuerdos, no compromete presupuesto y no produce diagnósticos de legitimidad.",
+        "Los registros deben tener fuentes, controles de acceso y revisión profesional antes del uso institucional."
+      ]
+    },
+    "reports": {
+      "situational": [
+        { "kind": "title", "text": "INFORME DE ANÁLISIS SITUACIONAL" },
+        { "kind": "paragraph", "text": "Proyecto Sintético | Corte: 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "Documento generado automáticamente por SIPGES (Sistema Inteligente de Predicción y GEStión Social). BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN."
+        },
+        { "kind": "heading", "level": 1, "text": "1. Resumen ejecutivo" },
+        {
+          "kind": "paragraph",
+          "text": "Se integraron 3 eventos, 1 actores, 3 demandas pendientes y 3 alertas activas en la Base Maestra del proyecto. Las cifras indican registros, no hechos necesariamente corroborados."
+        },
+        { "kind": "heading", "level": 1, "text": "2. Diagnóstico de la situación" },
+        {
+          "kind": "bullet",
+          "text": "Constan 3 alertas con estado no cerrado; requieren verificación de vigencia, gravedad y responsable."
+        },
+        {
+          "kind": "bullet",
+          "text": "Se registran 3 demandas no cerradas; revisar competencia y respuesta institucional."
+        },
+        { "kind": "heading", "level": 1, "text": "3. Territorios con eventos registrados" },
+        { "kind": "bullet", "text": "Sechura: 2 registros" },
+        { "kind": "bullet", "text": "12: 1 registros" },
+        { "kind": "heading", "level": 1, "text": "4. Demandas y asuntos relevantes" },
+        { "kind": "bullet", "text": "[D-1] Agua — Línea 1\nLínea 2 (Fuente: F-1)" },
+        { "kind": "bullet", "text": "[D-2] 7 — None (Fuente: no consignada)" },
+        { "kind": "bullet", "text": "[D-4] {\"a\":1,\"b\":[2,\"x\"]} —  (Fuente: no consignada)" },
+        { "kind": "heading", "level": 1, "text": "5. Alertas prioritarias" },
+        { "kind": "bullet", "text": "[AL-1] Rojo: Cruce (Fuente: F-2)" },
+        { "kind": "bullet", "text": "[AL-2] : None (Fuente: no consignada)" },
+        { "kind": "bullet", "text": "[AL-3] None: True (Fuente: [\"F-3\"])" },
+        { "kind": "heading", "level": 1, "text": "6. Escenarios condicionales" },
+        {
+          "kind": "bullet",
+          "text": "Favorable: Se atienden y verifican oportunamente las demandas y alertas pendientes."
+        },
+        {
+          "kind": "bullet",
+          "text": "Intermedio: Persisten demandas y señales sin escalamiento confirmado."
+        },
+        {
+          "kind": "bullet",
+          "text": "Crítico: Convergen eventos corroborados, alertas graves y falta de respuesta oportuna."
+        },
+        { "kind": "heading", "level": 1, "text": "7. Recomendaciones" },
+        {
+          "kind": "bullet",
+          "text": "Revisar alertas abiertas, contrastar evidencias y asignar responsables y plazos."
+        },
+        {
+          "kind": "bullet",
+          "text": "Actualizar la trazabilidad de demandas, respuesta institucional y compromisos asociados."
+        },
+        {
+          "kind": "bullet",
+          "text": "Validar el diagnóstico con el equipo territorial y registrar fecha, fuentes y analista responsable."
+        },
+        {
+          "kind": "bullet",
+          "text": "Aplicar seguimiento periódico y documentar cambios frente al corte anterior."
+        },
+        { "kind": "heading", "level": 1, "text": "8. Alcances y limitaciones" },
+        {
+          "kind": "bullet",
+          "text": "Los registros pueden estar desactualizados, incompletos o pendientes de verificación."
+        },
+        { "kind": "bullet", "text": "Los escenarios son condicionales, no pronósticos." },
+        {
+          "kind": "bullet",
+          "text": "IRSA requiere validación de pesos y umbrales; no se interpreta aquí como medición científica definitiva."
+        },
+        {
+          "kind": "bullet",
+          "text": "El reporte requiere revisión y aprobación de un analista antes de circularse como documento institucional."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Preparado por: Sistema SIPGES | Revisión técnica: __________________ | Fecha de validación: ______________"
+        }
+      ],
+      "strategic": [
+        { "kind": "title", "text": "SIPGES | Informe estratégico territorial" },
+        { "kind": "paragraph", "text": "Proyecto Sintético | Corte: 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "BORRADOR AUTOMATIZADO — REQUIERE REVISIÓN Y APROBACIÓN. No sustituye decisiones institucionales."
+        },
+        { "kind": "heading", "level": 1, "text": "1. Situación social documentada" },
+        {
+          "kind": "bullet",
+          "text": "Constan 3 alertas con estado no cerrado; requieren verificación de vigencia, gravedad y responsable."
+        },
+        {
+          "kind": "bullet",
+          "text": "Se registran 3 demandas no cerradas; revisar competencia y respuesta institucional."
+        },
+        { "kind": "heading", "level": 1, "text": "2. Mapeo de intereses" },
+        {
+          "kind": "bullet",
+          "text": "[I-1] Actor: Comité | Posicion: A favor | Interes: Agua potable para Sechura | Fuente_ID: F-1"
+        },
+        { "kind": "bullet", "text": "[I-2] " },
+        { "kind": "heading", "level": 1, "text": "3. Procesos de diálogo y acuerdos" },
+        {
+          "kind": "bullet",
+          "text": "[DI-1] Proceso: Mesa | Participantes: [\"Comité\",\"Empresa\"] | Tema: Agua potable para Sechura | Estado: En curso | Proximo_Paso: Acta"
+        },
+        { "kind": "bullet", "text": "[DI-X-0] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-1] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-2] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-3] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-4] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-5] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-6] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-7] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-8] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-9] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-10] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-11] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-12] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-13] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-14] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-15] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-16] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-17] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-18] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-19] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-20] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-21] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-22] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-23] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-24] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-25] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-26] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-27] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-28] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-29] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-30] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-31] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-32] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-33] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-34] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-35] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-36] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-37] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "bullet", "text": "[DI-X-38] Proceso: Mesa | Estado: Cerrado" },
+        { "kind": "heading", "level": 1, "text": "4. Valor compartido" },
+        {
+          "kind": "bullet",
+          "text": "[O-1] Oportunidad: Riego | Beneficiarios: 100.5 | Viabilidad: Alta | Estado: Abierta | Responsable: Equipo"
+        },
+        { "kind": "heading", "level": 1, "text": "5. Hechos compartidos y controversias" },
+        {
+          "kind": "bullet",
+          "text": "[H-1] Asunto: Agua potable para Sechura | Estado: En revisión | Versiones: Dos | Fuente_ID: F-1 | Accion_Verificacion: Visita"
+        },
+        { "kind": "heading", "level": 1, "text": "6. Evaluaciones AARC" },
+        {
+          "kind": "bullet",
+          "text": "[AA-1] Actor_Proceso: Mesa | Reconocimiento: Bajo | Agencia: Baja | Reciprocidad: Baja | Claridad: Baja | Evidencia: Acta"
+        },
+        { "kind": "heading", "level": 1, "text": "7. Alertas metodológicas" },
+        {
+          "kind": "bullet",
+          "text": "Métricas descriptivas sobre registros: no representan un índice de consenso ni una estimación predictiva."
+        },
+        {
+          "kind": "bullet",
+          "text": "Las calificaciones AARC, cuando existan, son observaciones cualitativas; no se incorporan al IRSA."
+        },
+        {
+          "kind": "bullet",
+          "text": "Registrar fuentes, fecha y validación antes de tomar decisiones o comunicar resultados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Validado por: _________________________    Fecha: __________________"
+        }
+      ],
+      "integrated": [
+        { "kind": "title", "text": "SIPGES | Análisis integrado RC 1.9" },
+        { "kind": "paragraph", "text": "Proyecto PRJ-1 · Corte 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "DOCUMENTO AUTOMÁTICO EN BORRADOR. Los vínculos no están confirmados; requiere revisión profesional y contrastación de fuentes."
+        },
+        { "kind": "heading", "level": 1, "text": "1. Cruces candidatos entre módulos" },
+        {
+          "kind": "bullet",
+          "text": "hechos/H-1 ↔ dialogos/DI-1 | coincidencia léxica (no implica relación probada) | términos: agua, potable, sechura"
+        },
+        {
+          "kind": "bullet",
+          "text": "intereses/I-1 ↔ dialogos/DI-1 | coincidencia léxica (no implica relación probada) | términos: agua, potable, sechura"
+        },
+        { "kind": "heading", "level": 1, "text": "2. Plan de acción propuesto" },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "1. Preparar verificación conjunta de información"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Acordar preguntas, fuentes, metodología, responsables y criterios de validación con los actores participantes.\nFundamento: El asunto consta como no validado; no se debe resolver una controversia a partir de una sola versión.\nRegistros: H-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "2. Verificar mandato antes de acuerdos formales"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad.\nFundamento: La ficha de Comité no registra sustento documental de mandato.\nRegistros: I-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "3. Explorar intereses expresados, sin inferirlos"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Programar escucha consultiva y registrar los intereses declarados con evidencia y consentimiento.\nFundamento: El actor None tiene una ficha sin interés documentado.\nRegistros: I-2\nResponsable: por asignar | Estado: no aprobado"
+        },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "4. Verificar mandato antes de acuerdos formales"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad.\nFundamento: La ficha de None no registra sustento documental de mandato.\nRegistros: I-2\nResponsable: por asignar | Estado: no aprobado"
+        },
+        { "kind": "heading", "level": 2, "text": "5. Definir seguimiento del diálogo" },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Acordar responsable, plazo, mecanismo de rendición de cuentas y forma de gestionar desacuerdos.\nFundamento: El proceso abierto no tiene responsable o siguiente paso completo.\nRegistros: DI-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        { "kind": "heading", "level": 2, "text": "6. Vincular acta o evidencia del proceso" },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Adjuntar acta, registro consentido o evidencia verificable.\nFundamento: El proceso de diálogo no presenta una fuente identificada.\nRegistros: DI-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        { "kind": "heading", "level": 2, "text": "7. Examinar viabilidad de oportunidad" },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Contrastar beneficios para cada actor, restricciones, financiamiento y opciones alternativas; no presentarla como promesa.\nFundamento: La oportunidad registrada necesita evaluación técnica, legal o presupuestal.\nRegistros: O-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "8. Contrastar intereses con cartera de oportunidades"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Revisar conjuntamente la correspondencia y documentar coincidencias, desacuerdos y restricciones antes de generar opciones.\nFundamento: Existen fichas de intereses y oportunidades para el mismo proyecto; no se presume coincidencia ni apoyo.\nRegistros: I-1, I-2, O-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "9. Incluir controversias verificables en la agenda de diálogo"
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción: Preguntar a los participantes qué hechos necesitan verificar juntos y acordar un procedimiento transparente.\nFundamento: El proyecto registra tanto procesos de diálogo como asuntos sujetos a verificación.\nRegistros: H-1, DI-1\nResponsable: por asignar | Estado: no aprobado"
+        },
+        { "kind": "heading", "level": 1, "text": "3. Escenarios condicionales (no predicciones)" },
+        { "kind": "heading", "level": 2, "text": "Escenario de mejora" },
+        {
+          "kind": "paragraph",
+          "text": "Los actores revisan discrepancias, se verifican fuentes y se acuerdan pasos con responsables."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Indicadores: Hechos contrastados, Cumplimiento de compromisos, Participación efectiva"
+        },
+        { "kind": "heading", "level": 2, "text": "Escenario de continuidad" },
+        {
+          "kind": "paragraph",
+          "text": "Permanecen asuntos abiertos y no se actualizan datos ni acuerdos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Indicadores: Antigüedad de temas abiertos, Calidad de evidencia, Siguientes pasos vencidos"
+        },
+        { "kind": "heading", "level": 2, "text": "Escenario de deterioro" },
+        {
+          "kind": "paragraph",
+          "text": "Persisten discrepancias y se acumulan compromisos incumplidos corroborados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Indicadores: Alertas comprobadas, Demandas pendientes, Cambios documentados en el relacionamiento"
+        },
+        { "kind": "heading", "level": 1, "text": "4. Alcances y salvaguardas" },
+        {
+          "kind": "bullet",
+          "text": "Las asociaciones textuales son candidatas, no relaciones verificadas. No se hacen inferencias personales sobre los actores."
+        },
+        {
+          "kind": "bullet",
+          "text": "Los escenarios son condicionales, no pronósticos ni probabilidades. No se modifica el IRSA."
+        },
+        {
+          "kind": "bullet",
+          "text": "No se crea ningún compromiso, se asignan presupuestos ni se califica legitimidad sin revisión."
+        },
+        {
+          "kind": "bullet",
+          "text": "Los resultados proceden solo de registros del proyecto y requieren auditoría de fuentes y control de acceso."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Revisado por: __________________  Fecha: _________________"
+        }
+      ],
+      "consensus": [
+        { "kind": "title", "text": "SIPGES | Motor de valor y consenso" },
+        { "kind": "paragraph", "text": "Proyecto: PRJ-1 · Corte: 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "BORRADOR AUTOMATIZADO: recomendaciones basadas en registros y reglas. REVISIÓN OBLIGATORIA."
+        },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "1. Preparar verificación conjunta de información"
+        },
+        { "kind": "paragraph", "text": "Enfoque: Hechos compartidos" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: El asunto consta como no validado; no se debe resolver una controversia a partir de una sola versión."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Acordar preguntas, fuentes, metodología, responsables y criterios de validación con los actores participantes."
+        },
+        { "kind": "paragraph", "text": "Procedencia: hechos/H-1" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Alta" },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "2. Verificar mandato antes de acuerdos formales"
+        },
+        { "kind": "paragraph", "text": "Enfoque: Representatividad" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: La ficha de Comité no registra sustento documental de mandato."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad."
+        },
+        { "kind": "paragraph", "text": "Procedencia: intereses/I-1" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Alta" },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "3. Explorar intereses expresados, sin inferirlos"
+        },
+        { "kind": "paragraph", "text": "Enfoque: Negociación por intereses" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: El actor None tiene una ficha sin interés documentado."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Programar escucha consultiva y registrar los intereses declarados con evidencia y consentimiento."
+        },
+        { "kind": "paragraph", "text": "Procedencia: intereses/I-2" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Media" },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "4. Verificar mandato antes de acuerdos formales"
+        },
+        { "kind": "paragraph", "text": "Enfoque: Representatividad" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: La ficha de None no registra sustento documental de mandato."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Solicitar documentación de representación y registrar su vigencia; no asumir falta de legitimidad."
+        },
+        { "kind": "paragraph", "text": "Procedencia: intereses/I-2" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Alta" },
+        { "kind": "heading", "level": 2, "text": "5. Definir seguimiento del diálogo" },
+        { "kind": "paragraph", "text": "Enfoque: Arquitectura de consenso" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: El proceso abierto no tiene responsable o siguiente paso completo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Acordar responsable, plazo, mecanismo de rendición de cuentas y forma de gestionar desacuerdos."
+        },
+        { "kind": "paragraph", "text": "Procedencia: dialogos/DI-1" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Alta" },
+        { "kind": "heading", "level": 2, "text": "6. Vincular acta o evidencia del proceso" },
+        { "kind": "paragraph", "text": "Enfoque: Trazabilidad" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: El proceso de diálogo no presenta una fuente identificada."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Adjuntar acta, registro consentido o evidencia verificable."
+        },
+        { "kind": "paragraph", "text": "Procedencia: dialogos/DI-1" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Media" },
+        { "kind": "heading", "level": 2, "text": "7. Examinar viabilidad de oportunidad" },
+        { "kind": "paragraph", "text": "Enfoque: Mutual Gains / valor compartido" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: La oportunidad registrada necesita evaluación técnica, legal o presupuestal."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Contrastar beneficios para cada actor, restricciones, financiamiento y opciones alternativas; no presentarla como promesa."
+        },
+        { "kind": "paragraph", "text": "Procedencia: oportunidades/O-1" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Media" },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "8. Contrastar intereses con cartera de oportunidades"
+        },
+        { "kind": "paragraph", "text": "Enfoque: Integración intereses-valor" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: Existen fichas de intereses y oportunidades para el mismo proyecto; no se presume coincidencia ni apoyo."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Revisar conjuntamente la correspondencia y documentar coincidencias, desacuerdos y restricciones antes de generar opciones."
+        },
+        { "kind": "paragraph", "text": "Procedencia: intereses+oportunidades" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Media" },
+        {
+          "kind": "heading",
+          "level": 2,
+          "text": "9. Incluir controversias verificables en la agenda de diálogo"
+        },
+        { "kind": "paragraph", "text": "Enfoque: Integración hechos-diálogo" },
+        {
+          "kind": "paragraph",
+          "text": "Hallazgo de registro: El proyecto registra tanto procesos de diálogo como asuntos sujetos a verificación."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Acción sugerida: Preguntar a los participantes qué hechos necesitan verificar juntos y acordar un procedimiento transparente."
+        },
+        { "kind": "paragraph", "text": "Procedencia: hechos+dialogos" },
+        { "kind": "paragraph", "text": "Nivel orientativo: Media" },
+        { "kind": "heading", "level": 1, "text": "Limitaciones" },
+        {
+          "kind": "bullet",
+          "text": "Los disparadores indican faltantes de registros, no defectos reales de personas ni instituciones."
+        },
+        {
+          "kind": "bullet",
+          "text": "El módulo no modifica IRSA, no aprueba acuerdos, no compromete presupuesto y no produce diagnósticos de legitimidad."
+        },
+        {
+          "kind": "bullet",
+          "text": "Los registros deben tener fuentes, controles de acceso y revisión profesional antes del uso institucional."
+        },
+        { "kind": "paragraph", "text": "Revisó: ______________________ Fecha: __________" }
+      ]
+    }
+  },
+  "empty": {
+    "records": {},
+    "situational": {
+      "project_id": "PRJ-1",
+      "project_name": "Etiqueta",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "method": "Síntesis descriptiva basada en registros; no predicción ni evaluación pericial.",
+      "counts": {
+        "eventos": 0,
+        "actores": 0,
+        "demandas": 0,
+        "compromisos": 0,
+        "narrativas": 0,
+        "alertas": 0,
+        "acciones": 0,
+        "fuentes": 0
+      },
+      "alertas_activas": 0,
+      "demandas_pendientes": 0,
+      "territorios": [],
+      "temas_demanda": [],
+      "niveles_alerta": [],
+      "eventos_recientes": [],
+      "alertas_prioritarias": [],
+      "demandas_abiertas": [],
+      "actores": [],
+      "observaciones": [
+        "No hay señales suficientes para emitir conclusiones sustantivas con esta base de datos."
+      ],
+      "escenarios": [
+        {
+          "nombre": "Favorable",
+          "supuesto": "Se atienden y verifican oportunamente las demandas y alertas pendientes."
+        },
+        {
+          "nombre": "Intermedio",
+          "supuesto": "Persisten demandas y señales sin escalamiento confirmado."
+        },
+        {
+          "nombre": "Crítico",
+          "supuesto": "Convergen eventos corroborados, alertas graves y falta de respuesta oportuna."
+        }
+      ],
+      "recomendaciones": [
+        "Validar el diagnóstico con el equipo territorial y registrar fecha, fuentes y analista responsable.",
+        "Aplicar seguimiento periódico y documentar cambios frente al corte anterior."
+      ],
+      "limitations": [
+        "Los registros pueden estar desactualizados, incompletos o pendientes de verificación.",
+        "Los escenarios son condicionales, no pronósticos.",
+        "IRSA requiere validación de pesos y umbrales; no se interpreta aquí como medición científica definitiva.",
+        "El reporte requiere revisión y aprobación de un analista antes de circularse como documento institucional."
+      ]
+    },
+    "strategic": {
+      "project_id": "PRJ-1",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "counts": { "intereses": 0, "dialogos": 0, "oportunidades": 0, "hechos": 0, "aarc": 0 },
+      "facts_pending": 0,
+      "opportunities_open": 0,
+      "dialogues_open": 0,
+      "aarc_complete": 0,
+      "attention": [],
+      "limitations": [
+        "Métricas descriptivas sobre registros: no representan un índice de consenso ni una estimación predictiva.",
+        "Las calificaciones AARC, cuando existan, son observaciones cualitativas; no se incorporan al IRSA.",
+        "Registrar fuentes, fecha y validación antes de tomar decisiones o comunicar resultados."
+      ]
+    },
+    "integrated": {
+      "project_id": "PRJ-1",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "version": "1.9",
+      "summary": { "cruces_candidatos": 0, "acciones_sugeridas": 0, "registros_estrategicos": 0 },
+      "candidate_links": [],
+      "action_plan": [],
+      "scenarios": [
+        {
+          "tipo": "Escenario de mejora",
+          "supuesto": "Los actores revisan discrepancias, se verifican fuentes y se acuerdan pasos con responsables.",
+          "indicadores_a_observar": [
+            "Hechos contrastados",
+            "Cumplimiento de compromisos",
+            "Participación efectiva"
+          ]
+        },
+        {
+          "tipo": "Escenario de continuidad",
+          "supuesto": "Permanecen asuntos abiertos y no se actualizan datos ni acuerdos.",
+          "indicadores_a_observar": [
+            "Antigüedad de temas abiertos",
+            "Calidad de evidencia",
+            "Siguientes pasos vencidos"
+          ]
+        },
+        {
+          "tipo": "Escenario de deterioro",
+          "supuesto": "Persisten discrepancias y se acumulan compromisos incumplidos corroborados.",
+          "indicadores_a_observar": [
+            "Alertas comprobadas",
+            "Demandas pendientes",
+            "Cambios documentados en el relacionamiento"
+          ]
+        }
+      ],
+      "limitations": [
+        "Las asociaciones textuales son candidatas, no relaciones verificadas. No se hacen inferencias personales sobre los actores.",
+        "Los escenarios son condicionales, no pronósticos ni probabilidades. No se modifica el IRSA.",
+        "No se crea ningún compromiso, se asignan presupuestos ni se califica legitimidad sin revisión.",
+        "Los resultados proceden solo de registros del proyecto y requieren auditoría de fuentes y control de acceso."
+      ]
+    },
+    "consensus": {
+      "project_id": "PRJ-1",
+      "generated_at": "2026-10-06T10:00:00Z",
+      "method": "reglas trazables v1.8 (sin inferencia predictiva ni IA generativa)",
+      "counts": { "intereses": 0, "dialogos": 0, "oportunidades": 0, "hechos": 0, "aarc": 0 },
+      "recommendations": [],
+      "summary": { "total": 0, "alta": 0 },
+      "limitations": [
+        "Los disparadores indican faltantes de registros, no defectos reales de personas ni instituciones.",
+        "El módulo no modifica IRSA, no aprueba acuerdos, no compromete presupuesto y no produce diagnósticos de legitimidad.",
+        "Los registros deben tener fuentes, controles de acceso y revisión profesional antes del uso institucional."
+      ]
+    },
+    "reports": {
+      "situational": [
+        { "kind": "title", "text": "INFORME DE ANÁLISIS SITUACIONAL" },
+        { "kind": "paragraph", "text": "Etiqueta | Corte: 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "Documento generado automáticamente por SIPGES (Sistema Inteligente de Predicción y GEStión Social). BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN."
+        },
+        { "kind": "heading", "level": 1, "text": "1. Resumen ejecutivo" },
+        {
+          "kind": "paragraph",
+          "text": "Se integraron 0 eventos, 0 actores, 0 demandas pendientes y 0 alertas activas en la Base Maestra del proyecto. Las cifras indican registros, no hechos necesariamente corroborados."
+        },
+        { "kind": "heading", "level": 1, "text": "2. Diagnóstico de la situación" },
+        {
+          "kind": "bullet",
+          "text": "No hay señales suficientes para emitir conclusiones sustantivas con esta base de datos."
+        },
+        { "kind": "heading", "level": 1, "text": "3. Territorios con eventos registrados" },
+        { "kind": "heading", "level": 1, "text": "4. Demandas y asuntos relevantes" },
+        { "kind": "heading", "level": 1, "text": "5. Alertas prioritarias" },
+        { "kind": "heading", "level": 1, "text": "6. Escenarios condicionales" },
+        {
+          "kind": "bullet",
+          "text": "Favorable: Se atienden y verifican oportunamente las demandas y alertas pendientes."
+        },
+        {
+          "kind": "bullet",
+          "text": "Intermedio: Persisten demandas y señales sin escalamiento confirmado."
+        },
+        {
+          "kind": "bullet",
+          "text": "Crítico: Convergen eventos corroborados, alertas graves y falta de respuesta oportuna."
+        },
+        { "kind": "heading", "level": 1, "text": "7. Recomendaciones" },
+        {
+          "kind": "bullet",
+          "text": "Validar el diagnóstico con el equipo territorial y registrar fecha, fuentes y analista responsable."
+        },
+        {
+          "kind": "bullet",
+          "text": "Aplicar seguimiento periódico y documentar cambios frente al corte anterior."
+        },
+        { "kind": "heading", "level": 1, "text": "8. Alcances y limitaciones" },
+        {
+          "kind": "bullet",
+          "text": "Los registros pueden estar desactualizados, incompletos o pendientes de verificación."
+        },
+        { "kind": "bullet", "text": "Los escenarios son condicionales, no pronósticos." },
+        {
+          "kind": "bullet",
+          "text": "IRSA requiere validación de pesos y umbrales; no se interpreta aquí como medición científica definitiva."
+        },
+        {
+          "kind": "bullet",
+          "text": "El reporte requiere revisión y aprobación de un analista antes de circularse como documento institucional."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Preparado por: Sistema SIPGES | Revisión técnica: __________________ | Fecha de validación: ______________"
+        }
+      ],
+      "strategic": [
+        { "kind": "title", "text": "SIPGES | Informe estratégico territorial" },
+        { "kind": "paragraph", "text": "Etiqueta | Corte: 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "BORRADOR AUTOMATIZADO — REQUIERE REVISIÓN Y APROBACIÓN. No sustituye decisiones institucionales."
+        },
+        { "kind": "heading", "level": 1, "text": "1. Situación social documentada" },
+        {
+          "kind": "bullet",
+          "text": "No hay señales suficientes para emitir conclusiones sustantivas con esta base de datos."
+        },
+        { "kind": "heading", "level": 1, "text": "2. Mapeo de intereses" },
+        {
+          "kind": "paragraph",
+          "text": "Sin registros. No es posible emitir conclusiones sobre este componente."
+        },
+        { "kind": "heading", "level": 1, "text": "3. Procesos de diálogo y acuerdos" },
+        {
+          "kind": "paragraph",
+          "text": "Sin registros. No es posible emitir conclusiones sobre este componente."
+        },
+        { "kind": "heading", "level": 1, "text": "4. Valor compartido" },
+        {
+          "kind": "paragraph",
+          "text": "Sin registros. No es posible emitir conclusiones sobre este componente."
+        },
+        { "kind": "heading", "level": 1, "text": "5. Hechos compartidos y controversias" },
+        {
+          "kind": "paragraph",
+          "text": "Sin registros. No es posible emitir conclusiones sobre este componente."
+        },
+        { "kind": "heading", "level": 1, "text": "6. Evaluaciones AARC" },
+        {
+          "kind": "paragraph",
+          "text": "Sin registros. No es posible emitir conclusiones sobre este componente."
+        },
+        { "kind": "heading", "level": 1, "text": "7. Alertas metodológicas" },
+        {
+          "kind": "bullet",
+          "text": "Métricas descriptivas sobre registros: no representan un índice de consenso ni una estimación predictiva."
+        },
+        {
+          "kind": "bullet",
+          "text": "Las calificaciones AARC, cuando existan, son observaciones cualitativas; no se incorporan al IRSA."
+        },
+        {
+          "kind": "bullet",
+          "text": "Registrar fuentes, fecha y validación antes de tomar decisiones o comunicar resultados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Validado por: _________________________    Fecha: __________________"
+        }
+      ],
+      "integrated": [
+        { "kind": "title", "text": "SIPGES | Análisis integrado RC 1.9" },
+        { "kind": "paragraph", "text": "Proyecto PRJ-1 · Corte 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "DOCUMENTO AUTOMÁTICO EN BORRADOR. Los vínculos no están confirmados; requiere revisión profesional y contrastación de fuentes."
+        },
+        { "kind": "heading", "level": 1, "text": "1. Cruces candidatos entre módulos" },
+        {
+          "kind": "paragraph",
+          "text": "Sin coincidencias verificables suficientes en los registros disponibles."
+        },
+        { "kind": "heading", "level": 1, "text": "2. Plan de acción propuesto" },
+        {
+          "kind": "paragraph",
+          "text": "Sin acciones generadas; la ausencia de registros no demuestra ausencia de riesgo."
+        },
+        { "kind": "heading", "level": 1, "text": "3. Escenarios condicionales (no predicciones)" },
+        { "kind": "heading", "level": 2, "text": "Escenario de mejora" },
+        {
+          "kind": "paragraph",
+          "text": "Los actores revisan discrepancias, se verifican fuentes y se acuerdan pasos con responsables."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Indicadores: Hechos contrastados, Cumplimiento de compromisos, Participación efectiva"
+        },
+        { "kind": "heading", "level": 2, "text": "Escenario de continuidad" },
+        {
+          "kind": "paragraph",
+          "text": "Permanecen asuntos abiertos y no se actualizan datos ni acuerdos."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Indicadores: Antigüedad de temas abiertos, Calidad de evidencia, Siguientes pasos vencidos"
+        },
+        { "kind": "heading", "level": 2, "text": "Escenario de deterioro" },
+        {
+          "kind": "paragraph",
+          "text": "Persisten discrepancias y se acumulan compromisos incumplidos corroborados."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Indicadores: Alertas comprobadas, Demandas pendientes, Cambios documentados en el relacionamiento"
+        },
+        { "kind": "heading", "level": 1, "text": "4. Alcances y salvaguardas" },
+        {
+          "kind": "bullet",
+          "text": "Las asociaciones textuales son candidatas, no relaciones verificadas. No se hacen inferencias personales sobre los actores."
+        },
+        {
+          "kind": "bullet",
+          "text": "Los escenarios son condicionales, no pronósticos ni probabilidades. No se modifica el IRSA."
+        },
+        {
+          "kind": "bullet",
+          "text": "No se crea ningún compromiso, se asignan presupuestos ni se califica legitimidad sin revisión."
+        },
+        {
+          "kind": "bullet",
+          "text": "Los resultados proceden solo de registros del proyecto y requieren auditoría de fuentes y control de acceso."
+        },
+        {
+          "kind": "paragraph",
+          "text": "Revisado por: __________________  Fecha: _________________"
+        }
+      ],
+      "consensus": [
+        { "kind": "title", "text": "SIPGES | Motor de valor y consenso" },
+        { "kind": "paragraph", "text": "Proyecto: PRJ-1 · Corte: 2026-10-06T10:00:00Z" },
+        {
+          "kind": "paragraph",
+          "text": "BORRADOR AUTOMATIZADO: recomendaciones basadas en registros y reglas. REVISIÓN OBLIGATORIA."
+        },
+        { "kind": "heading", "level": 1, "text": "Limitaciones" },
+        {
+          "kind": "bullet",
+          "text": "Los disparadores indican faltantes de registros, no defectos reales de personas ni instituciones."
+        },
+        {
+          "kind": "bullet",
+          "text": "El módulo no modifica IRSA, no aprueba acuerdos, no compromete presupuesto y no produce diagnósticos de legitimidad."
+        },
+        {
+          "kind": "bullet",
+          "text": "Los registros deben tener fuentes, controles de acceso y revisión profesional antes del uso institucional."
+        },
+        { "kind": "paragraph", "text": "Revisó: ______________________ Fecha: __________" }
+      ]
+    }
+  }
+}
