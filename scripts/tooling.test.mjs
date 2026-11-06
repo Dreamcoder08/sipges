@@ -167,7 +167,7 @@ case "$*" in
   "pr checks"*) exit "\${FAKE_CHECKS:-0}" ;;
   *isDraft*) echo true ;;
   *state,mergeCommit*) echo abc123 ;;
-  "run list"*) echo "\$FAKE_RUN" ;;
+  "run list"*) echo "$FAKE_RUN" ;;
   "run view"*) echo "\${FAKE_DEPLOY:-success}" ;;
 esac
 `,
