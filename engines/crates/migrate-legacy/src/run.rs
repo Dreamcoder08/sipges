@@ -79,7 +79,10 @@ pub struct Problem {
 fn severity(code: Code) -> &'static str {
     match code {
         "attachment_name_sanitized" | "tenant_db_missing" | "verify_row_unexpected" => "warning",
-        "irsa_config_inherited" | "sessions_not_migrated" | "target_migrations_pending" => "info",
+        "attachment_object_reused"
+        | "irsa_config_inherited"
+        | "sessions_not_migrated"
+        | "target_migrations_pending" => "info",
         _ => "error",
     }
 }
@@ -693,6 +696,40 @@ fn read_back(
     })
 }
 
+/// `objectsToWrite`: indexes of the attachments still to write, or `None` when a key already
+/// holds other bytes, so the tenant is refused before anything is written. An object with the
+/// same bytes is left in place, which is what lets a failed attempt resume.
+fn objects_to_write(
+    storage: &Storage,
+    entry: &mut Prepared,
+    tenant: &str,
+) -> Result<Option<Vec<usize>>, ()> {
+    let mut pending = Vec::new();
+    let mut conflict = false;
+    for (index, attachment) in entry.batch.attachments.iter().enumerate() {
+        let Some(data) = entry.bytes.get(&attachment.id) else {
+            continue;
+        };
+        let at = |code| {
+            Problem::new(code)
+                .tenant(tenant)
+                .table("attachments")
+                .id(attachment.id.clone())
+        };
+        match storage.get(&attachment.storage_key).map_err(|_| ())? {
+            None => pending.push(index),
+            Some(stored) if stored == *data => {
+                entry.problems.push(at("attachment_object_reused"));
+            }
+            Some(_) => {
+                entry.problems.push(at("attachment_object_conflict"));
+                conflict = true;
+            }
+        }
+    }
+    Ok((!conflict).then_some(pending))
+}
+
 /// Writes each tenant; a failing tenant is reported and the others still run.
 fn apply_tenants(
     store: &mut Store,
@@ -717,7 +754,13 @@ fn apply_tenants(
         let outcome = (|| -> Result<(), ()> {
             // Objects go before the metadata transaction; keys are deterministic, so a retried
             // run reuses the same key instead of leaving a second copy behind.
-            for attachment in &entry.batch.attachments {
+            let Some(pending) = objects_to_write(storage, entry, &tenant)? else {
+                return Ok(());
+            };
+            for attachment in pending
+                .iter()
+                .filter_map(|i| entry.batch.attachments.get(*i))
+            {
                 let Some(data) = entry.bytes.get(&attachment.id) else {
                     continue;
                 };

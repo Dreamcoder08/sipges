@@ -141,6 +141,7 @@ export type MigrationDeps = {
 
 const SEVERITY: Partial<Record<ProblemCode, Severity>> = {
   attachment_name_sanitized: 'warning',
+  attachment_object_reused: 'info',
   irsa_config_inherited: 'info',
   target_migrations_pending: 'info',
   sessions_not_migrated: 'info',
@@ -212,6 +213,33 @@ const checksumsOf = (rows: Readonly<Record<TenantTable, readonly string[]>>): Ta
   Object.fromEntries(
     TENANT_TABLES.map((table) => [table, setChecksum(rows[table])]),
   ) as TableChecksums;
+
+/**
+ * The attachments whose objects must still be written, or `null` when a key already holds other
+ * bytes: such a tenant is refused before anything is written. An object with the same bytes is
+ * left in place, which is what lets a failed attempt resume.
+ */
+const objectsToWrite = async (
+  storage: ObjectStorage,
+  entry: Prepared,
+): Promise<TargetAttachment[] | null> => {
+  const pending: TargetAttachment[] = [];
+  let conflict = false;
+  for (const attachment of entry.batch.attachments) {
+    const data = entry.bytes.get(attachment.id);
+    if (!data) continue;
+    const stored = await storage.get(attachment.storageKey);
+    const at = { tenantId: entry.tenantId, table: 'attachments', id: attachment.id };
+    if (stored === null) pending.push(attachment);
+    else if (Buffer.compare(stored, data) === 0)
+      entry.problems.push(problem('attachment_object_reused', at));
+    else {
+      entry.problems.push(problem('attachment_object_conflict', at));
+      conflict = true;
+    }
+  }
+  return conflict ? null : pending;
+};
 
 const prepareTenant = async (
   deps: MigrationDeps,
@@ -516,7 +544,9 @@ export const runMigration = async (
         continue;
       }
       try {
-        for (const attachment of entry.batch.attachments) {
+        const pending = await objectsToWrite(deps.storage, entry);
+        if (pending === null) continue;
+        for (const attachment of pending) {
           const data = entry.bytes.get(attachment.id);
           if (!data) continue;
           // Objects are written before the metadata transaction. Keys are deterministic, so a
