@@ -17,7 +17,7 @@ import { assistedBriefingCases, setExternalAi, unpairedNarrations } from './assi
 import { CASES, validateCases } from './cases.ts';
 import { startEmbedderDouble } from './embedder-double.ts';
 import { compareIndexes, semanticSearchCases } from './semantic-search.ts';
-import { type Mismatch, compare } from './diff.ts';
+import { type Mismatch, checkText, compare } from './diff.ts';
 import { nodeVersionProblem } from './node-version.ts';
 import { seedDatabase } from './fixtures.ts';
 import { REQUEST_TIMEOUT_MS, send } from './request.ts';
@@ -54,13 +54,18 @@ const compareCases = async (
       send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'go'),
     ]);
     const mismatches = compare(ts, go, c.normalize);
-    if (mismatches.length === 0) {
+    const promises = [
+      ...checkText(ts.body, c.present, c.absent).map((m) => `  ts: ${m}`),
+      ...checkText(go.body, c.present, c.absent).map((m) => `  go: ${m}`),
+    ];
+    if (mismatches.length === 0 && promises.length === 0) {
       console.info(`ok    ${c.method} ${c.path} — ${c.name} (${ts.status})`);
       continue;
     }
     failed++;
     console.info(`FAIL  ${c.method} ${c.path} — ${c.name}`);
     for (const m of mismatches) console.info(describe(m));
+    for (const m of promises) console.info(m);
   }
   console.info(`\n${cases.length - failed}/${cases.length} cases match`);
   return failed === 0;
