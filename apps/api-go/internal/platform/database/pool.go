@@ -24,11 +24,23 @@ var minConnsParam = regexp.MustCompile(`(^|[?&\s])pool_min_conns=`)
 // the background, so a database outage shows in readiness instead of stopping the process. Pool
 // size and other pgx settings come from the URL (pool_max_conns, pool_min_conns, …).
 func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
+	cfg, err := parseConfig(url)
+	if err != nil {
+		return nil, err
+	}
+	return open(ctx, url, cfg)
+}
+
+func parseConfig(url string) (*pgxpool.Config, error) {
 	cfg, err := pgxpool.ParseConfig(url)
 	if err != nil {
 		// The parse error may quote the URL: never echo it.
 		return nil, errors.New("SIPGES_DATABASE_URL is not a valid PostgreSQL connection string")
 	}
+	return cfg, nil
+}
+
+func open(ctx context.Context, url string, cfg *pgxpool.Config) (*pgxpool.Pool, error) {
 	// Tenant settings are inlined as escaped literals, which is safe only with an ASCII-safe
 	// client encoding: force UTF8 whatever the URL says.
 	cfg.ConnConfig.RuntimeParams["client_encoding"] = "UTF8"

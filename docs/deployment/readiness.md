@@ -161,7 +161,10 @@ CREATE DATABASE sipges OWNER sipges_app;
 
 - The application must **not** be a superuser or have `BYPASSRLS`. Either one would bypass the
   forced row-level security that isolates tenants (ADR 0003). Tenant queries run as
-  `sipges_tenant` through `SET LOCAL ROLE` inside `withTenant`.
+  `sipges_tenant` through `SET LOCAL ROLE` inside `withTenant`. The Go API refuses such a role:
+  it exits at start, and refuses every new connection when the server only answers later.
+  `SIPGES_ALLOW_PRIVILEGED_DB_ROLE=1` exists for synthetic test servers and works on loopback
+  only.
 - Creating `sipges_tenant` up front means the application role never needs `CREATEROLE`.
   Verified on PostgreSQL 16: a non-superuser role provisioned this way ran every migration and
   served `/health`.

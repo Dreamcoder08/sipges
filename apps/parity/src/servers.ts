@@ -191,6 +191,8 @@ export const startGoApi = async (
     // Same switch as the TypeScript API above: the parity session has no second factor.
     {
       SIPGES_DATABASE_URL: databaseUrl,
+      // The synthetic server's login is a superuser; the override only works on loopback.
+      SIPGES_ALLOW_PRIVILEGED_DB_ROLE: '1',
       SIPGES_ACCESS_LOG: '0',
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_DATA_KEY: dataKey,
