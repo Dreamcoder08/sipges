@@ -1,4 +1,4 @@
-# MASCLI RC 1.7 — Inteligencia estratégica territorial
+# SIPGES RC 1.7 — Inteligencia estratégica territorial
 
 Actualización incremental de RC 1.6. No elimina funcionalidades anteriores.
 
@@ -12,7 +12,7 @@ Actualización incremental de RC 1.6. No elimina funcionalidades anteriores.
 - Informe ejecutivo estratégico Word editable
 
 ## Ejecución
-Windows: descomprimir y ejecutar `INICIAR_MASCLI_FINAL.bat` (o `start_mascli.bat`). Si faltan paquetes instalar `pip install -r requirements.txt`. Se recomienda Python 3.11+.
+Windows: descomprimir y ejecutar `INICIAR_SIPGES_FINAL.bat` (o `start_sipges.bat`). Si faltan paquetes instalar `pip install -r requirements.txt`. Se recomienda Python 3.11+.
 Iniciar la app y entrar a «Inteligencia estratégica» en el menú.
 
 ## Precauciones

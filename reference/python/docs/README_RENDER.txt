@@ -1,11 +1,11 @@
-MASCLI – PROYECTO SECHURA
+SIPGES – PROYECTO SECHURA
 PREPARACIÓN PARA RENDER — NO LISTO PARA PRODUCCIÓN
 
 No publique datos reales ni suba todos los archivos indiscriminadamente.
 Mantenga el repositorio privado; excluya semillas operativas, registros personales y credenciales. No hay URL desplegada ni persistencia verificada por esta preparación.
 
 COOKIES Y HTTPS:
-- En el servicio HTTPS deje MASCLI_COOKIE_SECURE sin definir o configure exactamente 1.
+- En el servicio HTTPS deje SIPGES_COOKIE_SECURE sin definir o configure exactamente 1.
 - Las cookies de sesión y selección de proyecto son Secure por defecto.
 - Solo el valor exacto 0 desactiva Secure: reservado para pruebas HTTP locales en loopback, nunca para el servicio público.
 - Vacío, espacios y cualquier otro valor provocan error al importar, antes de inicializar recursos.
@@ -17,7 +17,7 @@ CONFIGURACIÓN DE DESPLIEGUE A VALIDAR (NO EJECUTAR CON DATOS REALES):
 El repositorio incluye configuración Render/FastAPI/Uvicorn y health check /health. Tras resolver los bloqueos, conecte únicamente el repositorio privado autorizado al proveedor, revise render.yaml y configure HTTPS y secretos fuera del código. Una respuesta /health no prueba seguridad ni durabilidad.
 
 BLOQUEOS DE DATOS:
-Render Free no proporciona disco persistente; SQLite local, bases de autenticación/proyectos, configuración mutable y archivos subidos pueden perderse al reiniciar, recrear o redesplegar. Una ruta /tmp/mascli.db no es persistencia durable. Recargar data/seed.json tampoco preserva los cambios. La adaptación a PostgreSQL/almacenamiento privado sigue pendiente: DATABASE_URL por sí sola no migra esta aplicación. No se autoriza migración real en esta unidad.
+Render Free no proporciona disco persistente; SQLite local, bases de autenticación/proyectos, configuración mutable y archivos subidos pueden perderse al reiniciar, recrear o redesplegar. Una ruta /tmp/sipges.db no es persistencia durable. Recargar data/seed.json tampoco preserva los cambios. La adaptación a PostgreSQL/almacenamiento privado sigue pendiente: DATABASE_URL por sí sola no migra esta aplicación. No se autoriza migración real en esta unidad.
 
 BLOQUEOS DE SEGURIDAD Y VALIDACIÓN:
 Siguen pendientes política/recuperación MFA, límites de intentos de login, endurecimiento CSRF/host/solicitudes, permisos privados de almacenamiento y pruebas de autorización, aislamiento y persistencia tras reinicio en HTTPS real. Cookies Secure no resuelven estos bloqueos. Cuentas de proveedor y despliegue siguen sin verificar.

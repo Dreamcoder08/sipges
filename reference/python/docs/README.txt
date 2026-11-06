@@ -1,10 +1,10 @@
-MASCLI V0.5.1 CALIBRACIÓN TÉCNICA
+SIPGES V0.5.1 CALIBRACIÓN TÉCNICA
 Proyecto Sechura
 
 ESTADO
 Esta versión SÍ puede construirse antes de recibir el juicio de expertos, pero
 NO debe denominarse todavía “V0.5 validada”. Su nombre correcto es:
-MASCLI V0.5.1 CALIBRACIÓN TÉCNICA / CANDIDATA A VALIDACIÓN.
+SIPGES V0.5.1 CALIBRACIÓN TÉCNICA / CANDIDATA A VALIDACIÓN.
 
 NOMENCLATURA CANÓNICA
 La comunidad se registra como:

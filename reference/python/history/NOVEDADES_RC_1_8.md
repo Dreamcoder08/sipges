@@ -1,4 +1,4 @@
-# MASCLI RC 1.8 - Automatización de las propuestas del artículo
+# SIPGES RC 1.8 - Automatización de las propuestas del artículo
 
 Se incorpora el motor de valor y consenso bajo reglas explicables, integrado a las fichas ya existentes.
 

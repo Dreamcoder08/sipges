@@ -1,4 +1,4 @@
-MASCLI V0.5.1 – CALIBRACIÓN TÉCNICA
+SIPGES V0.5.1 – CALIBRACIÓN TÉCNICA
 
 Cambios principales:
 - Clasificador por reglas ponderadas y contextuales.

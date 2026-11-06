@@ -1,4 +1,4 @@
-# MASCLI RC 2.4 — Inteligencia documental y digital (motor local)
+# SIPGES RC 2.4 — Inteligencia documental y digital (motor local)
 
 Desarrollado a partir de RC 2.3, sin eliminar sus módulos. Se agregó un formulario en «Inteligencia de redes sociales» para copiar texto de publicaciones de LinkedIn, Facebook, Instagram, TikTok, YouTube y X, o fragmentos documentales.
 

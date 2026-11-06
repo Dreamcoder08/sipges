@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const pages=$$('.page');
-const TITLES={dashboard:'Dashboard ejecutivo',gerencia:'Centro de control gerencial',eventos:'Eventos',actores:'Mapa y gestión de actores',directorio:'Directorio territorial',demandas:'Demandas y compromisos',narrativas:'Narrativas y señales digitales','inteligencia-redes':'Inteligencia de redes sociales',alertas:'Centro de alertas',mapa:'Mapa territorial MASCLI',situacion:'Análisis situacional',estrategia:'Inteligencia estratégica territorial',irsa:'IRSA-MASCLI',validacion:'Validación',fuentes:'Fuentes y evidencias',metodologia:'Metodología MASCLI',administracion:'Administración del sistema',audit:'Auditoría'};
+const TITLES={dashboard:'Dashboard ejecutivo',gerencia:'Centro de control gerencial',eventos:'Eventos',actores:'Mapa y gestión de actores',directorio:'Directorio territorial',demandas:'Demandas y compromisos',narrativas:'Narrativas y señales digitales','inteligencia-redes':'Inteligencia de redes sociales',alertas:'Centro de alertas',mapa:'Mapa territorial SIPGES',situacion:'Análisis situacional',estrategia:'Inteligencia estratégica territorial',irsa:'IRSA-SIPGES',validacion:'Validación',fuentes:'Fuentes y evidencias',metodologia:'Metodología SIPGES',administracion:'Administración del sistema',audit:'Auditoría'};
 
 function closeMenu(){document.body.classList.remove('menu-open')}
 function toast(title,message='',type='success'){
@@ -14,7 +14,7 @@ function setConnection(ok){const el=$('#connectionStatus');if(!el)return;el.clas
 function goTo(page){
   $$('.nav-item').forEach(x=>x.classList.toggle('active',x.dataset.page===page));
   pages.forEach(p=>p.classList.toggle('active',p.id===page));
-  if($('#pageTitle')) $('#pageTitle').textContent=TITLES[page]||'MASCLI';
+  if($('#pageTitle')) $('#pageTitle').textContent=TITLES[page]||'SIPGES';
   refresh(page); closeMenu(); window.scrollTo({top:0,behavior:'smooth'});
 }
 $$('.nav-item').forEach(a=>a.addEventListener('click',()=>goTo(a.dataset.page)));
@@ -37,13 +37,13 @@ function levelClass(level){return 'level-'+String(level||'').replace(/\s+/g,'')}
 function nowLabel(){return new Intl.DateTimeFormat('es-PE',{dateStyle:'medium',timeStyle:'short'}).format(new Date())}
 function today(){return new Date().toISOString().slice(0,10)}
 let DEFAULT_PROJECT_ID='PRJ-SECHURA';
-let projectData=[],projectCoordinateData=null,activeProjectId=localStorage.getItem('mascli.activeProject')||DEFAULT_PROJECT_ID;
+let projectData=[],projectCoordinateData=null,activeProjectId=localStorage.getItem('sipges.activeProject')||DEFAULT_PROJECT_ID;
 function activeProject(){return projectData.find(p=>p._id===activeProjectId)||projectData.find(p=>p._id===DEFAULT_PROJECT_ID)||{_id:DEFAULT_PROJECT_ID,Nombre:'Proyecto Sechura',Territorio:'Sechura, Piura',Estado:'Activo'}}
 function projectMeta(){const p=activeProject();return {Proyecto_ID:p._id,Proyecto:p.Nombre||'Proyecto Sechura'}}
 function recordProjectId(r){if(r?.Proyecto_ID)return String(r.Proyecto_ID);if(r?.Proyecto){const p=projectData.find(x=>normText(x.Nombre)===normText(r.Proyecto));return p?String(p._id):DEFAULT_PROJECT_ID}return DEFAULT_PROJECT_ID}
 function forActiveProject(rows){return (rows||[]).filter(r=>recordProjectId(r)===activeProjectId)}
 async function loadProjects(){const result=await Promise.all([api('/api/proyectos?limit=200'),api('/system/project-coordinates?project_id='+encodeURIComponent(DEFAULT_PROJECT_ID)).catch(()=>null)]);projectData=result[0];projectCoordinateData=result[1];if(!projectData.some(p=>p._id===activeProjectId&&p.Estado!=='Inactivo'))activeProjectId=DEFAULT_PROJECT_ID;const active=projectData.filter(p=>p.Estado!=='Inactivo'||p._id===activeProjectId);['projectSelector','mobileProjectSelector'].forEach(id=>{const select=$('#'+id);if(select){select.innerHTML=active.map(p=>{const geo=p._id===DEFAULT_PROJECT_ID&&projectCoordinateData?` · ${projectCoordinateData.summary.concession_count} concesiones`:'';return `<option value="${esc(p._id)}">${esc(p.Nombre+geo)}</option>`}).join('')+'<option value="__ADD__">＋ Agregar proyecto</option>';select.value=activeProjectId}});updateProjectContext()}
-function updateProjectContext(){const p=activeProject();localStorage.setItem('mascli.activeProject',p._id);activeProjectId=p._id;if($('#sidebarProject'))$('#sidebarProject').textContent=(p.Nombre||'Proyecto').toUpperCase();if($('#activeProjectLabel'))$('#activeProjectLabel').textContent=p.Nombre||'Proyecto activo';if($('#srcProyecto'))$('#srcProyecto').value=p.Nombre||'';['projectSelector','mobileProjectSelector'].forEach(id=>{if($('#'+id))$('#'+id).value=p._id});document.title=`MASCLI | ${p.Nombre||'Proyecto'}`}
+function updateProjectContext(){const p=activeProject();localStorage.setItem('sipges.activeProject',p._id);activeProjectId=p._id;if($('#sidebarProject'))$('#sidebarProject').textContent=(p.Nombre||'Proyecto').toUpperCase();if($('#activeProjectLabel'))$('#activeProjectLabel').textContent=p.Nombre||'Proyecto activo';if($('#srcProyecto'))$('#srcProyecto').value=p.Nombre||'';['projectSelector','mobileProjectSelector'].forEach(id=>{if($('#'+id))$('#'+id).value=p._id});document.title=`SIPGES | ${p.Nombre||'Proyecto'}`}
 async function changeActiveProject(id){if(id==='__ADD__'){goTo('administracion');toggleProjectForm(true);if($('#projectSelector'))$('#projectSelector').value=activeProjectId;return}activeProjectId=id;updateProjectContext();toast('Proyecto activo',activeProject().Nombre);await refresh($('.page.active')?.id||'dashboard')}
 function formatBytes(n){if(!Number.isFinite(Number(n)))return '—';if(n<1024)return `${n} B`;if(n<1048576)return `${(n/1024).toFixed(1)} KB`;return `${(n/1048576).toFixed(1)} MB`}
 function previewFiles(inputId,targetId){const files=[...($('#'+inputId)?.files||[])],target=$('#'+targetId);if(!target)return;target.innerHTML=files.length?files.map(f=>`<span><b>▰</b>${esc(f.name)} <small>${formatBytes(f.size)}</small></span>`).join(''):'<span class="muted">Sin archivos seleccionados</span>'}
@@ -105,7 +105,7 @@ async function analyzeEvent(){
 async function saveEvent(){
   if(!$('#evDesc').value.trim()){toast('Falta la descripción','Ingrese el hecho territorial antes de guardar.','error');$('#evDesc').focus();return}
   if(!window.lastAnalysis)await analyzeEvent();
-  const p={...projectMeta(),Fecha:$('#evFecha').value,Territorio:$('#evTerritorio').value,Actor_Principal:$('#evActor').value,Tipo_Evento:$('#evTipo').value,Descripcion_Hecho:$('#evDesc').value,Dimension_Principal:`${lastAnalysis.dimension} - ${lastAnalysis.dimension_label}`,Dimension_Secundaria:'',Nivel_Verificacion:$('#evVer').value,Fuente_ID:'','Evidencia/Resultado':'',Relevancia_Preliminar:$('#evRel').value,Estado_Validacion:'Preliminar',Analista:'Crystell Granda',Observaciones:'Registrado desde MASCLI Web Final RC 1.4'};
+  const p={...projectMeta(),Fecha:$('#evFecha').value,Territorio:$('#evTerritorio').value,Actor_Principal:$('#evActor').value,Tipo_Evento:$('#evTipo').value,Descripcion_Hecho:$('#evDesc').value,Dimension_Principal:`${lastAnalysis.dimension} - ${lastAnalysis.dimension_label}`,Dimension_Secundaria:'',Nivel_Verificacion:$('#evVer').value,Fuente_ID:'','Evidencia/Resultado':'',Relevancia_Preliminar:$('#evRel').value,Estado_Validacion:'Preliminar',Analista:'Crystell Granda',Observaciones:'Registrado desde SIPGES Web Final RC 1.4'};
   const r=await api('/api/eventos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload:p})});
   const files=[...($('#evFiles')?.files||[])];
   let uploaded=0;
@@ -259,7 +259,7 @@ function actorId(a,i=0){return pick(a,['ID_Actor','_id'])||`ACT-${i}`}
 function actorName(a){return displayText(pick(a,['Nombre_Actor/Organizacion']))||'Actor sin nombre'}
 function actorTokens(a){const stop=new Set(['comunidad','campesina','sechura','martin','organizacion','organizaciones','provincial','local','actor']);return normText(actorName(a)).split(/[^a-z0-9]+/).filter(x=>x.length>4&&!stop.has(x)).slice(0,4)}
 function recordSetFor(a){const toks=actorTokens(a);const rows=[...actorNetworkData.events.map((r,i)=>['E'+i,[r.Actor_Principal,r.Descripcion_Hecho,r.Observaciones].join(' ')]),...actorNetworkData.demands.map((r,i)=>['D'+i,[r['Actor/Grupo'],r.Tema,r.Descripcion].join(' ')])];return new Set(rows.filter(([,text])=>toks.some(t=>normText(text).includes(t))).map(([id])=>id))}
-function relationBetween(a,b){const sa=recordSetFor(a),sb=recordSetFor(b);const common=[...sa].filter(x=>sb.has(x));if(common.length)return {type:'direct',label:'Coincidencia en registros',strength:3,count:common.length};const ta=normText(a.Territorio),tb=normText(b.Territorio);if(ta&&tb&&(ta.includes(tb)||tb.includes(ta)||ta.split('/').some(x=>x.length>4&&tb.includes(x))))return {type:'territory',label:'Ámbito compartido',strength:2,count:0};if(typeKey(a.Tipo_Actor)===typeKey(b.Tipo_Actor))return {type:'agenda',label:'Agenda afín',strength:1,count:0};return {type:'agenda',label:'Contexto territorial MASCLI',strength:.5,count:0}}
+function relationBetween(a,b){const sa=recordSetFor(a),sb=recordSetFor(b);const common=[...sa].filter(x=>sb.has(x));if(common.length)return {type:'direct',label:'Coincidencia en registros',strength:3,count:common.length};const ta=normText(a.Territorio),tb=normText(b.Territorio);if(ta&&tb&&(ta.includes(tb)||tb.includes(ta)||ta.split('/').some(x=>x.length>4&&tb.includes(x))))return {type:'territory',label:'Ámbito compartido',strength:2,count:0};if(typeKey(a.Tipo_Actor)===typeKey(b.Tipo_Actor))return {type:'agenda',label:'Agenda afín',strength:1,count:0};return {type:'agenda',label:'Contexto territorial SIPGES',strength:.5,count:0}}
 function influenceRank(v){const n=normText(v);return n.includes('alta')?3:n.includes('media')?2:1}
 async function loadActorNetwork(){
   let [actors,events,demands]=await Promise.all([api('/api/actores'),api('/api/eventos'),api('/api/demandas')]);actors=forActiveProject(actors);events=forActiveProject(events);demands=forActiveProject(demands);actorNetworkData={actors,events,demands};
@@ -285,7 +285,7 @@ function resetActorNetwork(){const first=actorNetworkData.actors[0];selectedActo
 // --- Directorio territorial de autoridades y líderes ---
 let directoryData=[],selectedDirectory=null;
 function fieldLike(row,...needles){for(const [key,value] of Object.entries(row||{})){const nk=normText(key).replace(/[^a-z0-9]+/g,' ');if(needles.every(n=>nk.includes(normText(n))))return displayText(value)}return ''}
-function dirValue(r,key){const map={name:['nombre','actualizado'],position:['cargo'],institution:['institucion'],territory:['lugar'],section:['secci'],type:['tipo','actor'],priority:['prioridad'],status:['estado','verific'],source:['fuente'],notes:['observaciones'],phone:['telefono']};if(key==='name')return displayText(r.Nombre||r['Nombre actualizado 2026']||fieldLike(r,...map.name));if(key==='position')return displayText(r.Cargo||fieldLike(r,...map.position));if(key==='institution')return displayText(r.Institucion||r['Institución / Organización']||fieldLike(r,...map.institution));if(key==='territory')return displayText(r.Territorio||r['Lugar / ámbito']||fieldLike(r,...map.territory)||fieldLike(r,...map.section));if(key==='type')return displayText(r.Tipo_Actor||r['Tipo de actor MASCLI']||fieldLike(r,...map.type));if(key==='priority')return displayText(r.Prioridad||r['Prioridad MASCLI propuesta']||fieldLike(r,...map.priority));if(key==='status')return displayText(r.Estado_Verificacion||r['Estado de verificación']||fieldLike(r,...map.status));if(key==='phone')return displayText(r.Telefono||r.Celular||r['Número de contacto']||r['Número de celular']||r['Telefono / celular']||fieldLike(r,'telefono')||fieldLike(r,'celular'));if(key==='source')return displayText(r.Fuente_ID||fieldLike(r,...map.source));return displayText(r.Observaciones||fieldLike(r,...map.notes))}
+function dirValue(r,key){const map={name:['nombre','actualizado'],position:['cargo'],institution:['institucion'],territory:['lugar'],section:['secci'],type:['tipo','actor'],priority:['prioridad'],status:['estado','verific'],source:['fuente'],notes:['observaciones'],phone:['telefono']};if(key==='name')return displayText(r.Nombre||r['Nombre actualizado 2026']||fieldLike(r,...map.name));if(key==='position')return displayText(r.Cargo||fieldLike(r,...map.position));if(key==='institution')return displayText(r.Institucion||r['Institución / Organización']||fieldLike(r,...map.institution));if(key==='territory')return displayText(r.Territorio||r['Lugar / ámbito']||fieldLike(r,...map.territory)||fieldLike(r,...map.section));if(key==='type')return displayText(r.Tipo_Actor||r['Tipo de actor SIPGES']||fieldLike(r,...map.type));if(key==='priority')return displayText(r.Prioridad||r['Prioridad SIPGES propuesta']||fieldLike(r,...map.priority));if(key==='status')return displayText(r.Estado_Verificacion||r['Estado de verificación']||fieldLike(r,...map.status));if(key==='phone')return displayText(r.Telefono||r.Celular||r['Número de contacto']||r['Número de celular']||r['Telefono / celular']||fieldLike(r,'telefono')||fieldLike(r,'celular'));if(key==='source')return displayText(r.Fuente_ID||fieldLike(r,...map.source));return displayText(r.Observaciones||fieldLike(r,...map.notes))}
 async function loadDirectory(){directoryData=forActiveProject(await api('/api/directorio?limit=300'));const territories=[...new Set(directoryData.map(r=>dirValue(r,'territory')).filter(Boolean))].sort(),types=[...new Set(directoryData.map(r=>dirValue(r,'type')).filter(Boolean))].sort();$('#dirTerritoryFilter').innerHTML='<option value="ALL">Todos los territorios</option>'+territories.map(x=>`<option>${esc(x)}</option>`).join('');$('#dirTypeFilter').innerHTML='<option value="ALL">Todos los tipos</option>'+types.map(x=>`<option>${esc(x)}</option>`).join('');renderDirectory()}
 function renderDirectory(){if(!$('#directoryTable'))return;const q=normText($('#dirSearch')?.value),territory=$('#dirTerritoryFilter')?.value||'ALL',type=$('#dirTypeFilter')?.value||'ALL',priority=$('#dirPriorityFilter')?.value||'ALL';const rows=directoryData.filter(r=>(!q||normText(JSON.stringify(r)).includes(q))&&(territory==='ALL'||dirValue(r,'territory')===territory)&&(type==='ALL'||dirValue(r,'type')===type)&&(priority==='ALL'||dirValue(r,'priority')===priority));const authorities=directoryData.filter(r=>/autoridad|institucional|gobernador|municipal/i.test(dirValue(r,'type')+' '+dirValue(r,'position'))).length,verified=directoryData.filter(r=>!normText(dirValue(r,'status')).includes('por verificar')).length;$('#directoryStats').innerHTML=[['Contactos',directoryData.length],['Autoridades / institucionales',authorities],['Fichas con referencia',directoryData.filter(r=>dirValue(r,'source')).length],['Revisión registrada',verified]].map(x=>`<div class="territorial-kpi"><i>⌖</i><div><b>${x[1]}</b><span>${x[0]}</span></div></div>`).join('');$('#directoryTable').innerHTML=rows.length?'<table><thead><tr><th>Nombre</th><th>Cargo</th><th>Institución</th><th>Territorio</th><th>Teléfono</th><th>Prioridad</th><th></th></tr></thead><tbody>'+rows.map(r=>`<tr class="click-row" onclick="selectDirectory('${esc(r._id)}')"><td><b>${esc(dirValue(r,'name')||'Por confirmar')}</b></td><td>${esc(dirValue(r,'position'))}</td><td>${esc(dirValue(r,'institution'))}</td><td>${esc(dirValue(r,'territory'))}</td><td>${esc(dirValue(r,'phone')||'Sin registrar')}</td><td><span class="tag">${esc(dirValue(r,'priority')||'Por evaluar')}</span></td><td><button class="row-action" onclick="event.stopPropagation();editDirectory('${esc(r._id)}')" aria-label="Editar ficha">✎</button></td></tr>`).join('')+'</tbody></table>':'<div class="empty-state"><div><b>Sin coincidencias</b><span>Ajuste los filtros del directorio.</span></div></div>';if(!selectedDirectory||!rows.some(r=>r._id===selectedDirectory._id))selectedDirectory=rows[0]||null;renderDirectoryDetail()}
 function selectDirectory(id){selectedDirectory=directoryData.find(r=>r._id===id)||null;renderDirectoryDetail()}
@@ -357,7 +357,7 @@ async function refresh(p){
     if(p==='fuentes')await loadSources();
     if(p==='administracion')await loadAdministration();
     if(p==='audit')await loadAudit();
-  }catch(err){console.error(err);toast('No se pudo actualizar la vista','Verifique que el servidor MASCLI esté activo.','error')}
+  }catch(err){console.error(err);toast('No se pudo actualizar la vista','Verifique que el servidor SIPGES esté activo.','error')}
 }
 
 (async()=>{try{const scope=await api('/system/auth/current-scope');DEFAULT_PROJECT_ID=scope.project_id;activeProjectId=DEFAULT_PROJECT_ID;}catch(e){}await loadProjects();await loadDashboard();await loadIRSA();await loadModelStatus();})();
@@ -375,7 +375,7 @@ async function loadSituational(){
  <h3>Escenarios condicionales</h3>${list(d.escenarios,x=>'<b>'+kv(x,'nombre')+'</b>: '+kv(x,'supuesto'))}
  <h3>Recomendaciones de gestión</h3>${list(d.recomendaciones,x=>esc(x))}
  <h3>Limitaciones metodológicas</h3>${list(d.limitations,x=>esc(x))}
- <p class="method-note">Elaboración automática MASCLI · Validación del analista pendiente.</p>`;
+ <p class="method-note">Elaboración automática SIPGES · Validación del analista pendiente.</p>`;
 }
 async function loadIntegratedAnalysis(){
  const el=$('#integratedAnalysis');if(!el)return;
@@ -443,15 +443,15 @@ async function loadConsensusEngine(){
 }
 
 
-// MASCLI RC 2.0: laboratorio de lectura documental en modo sólo análisis.
-async function analyzeMascliDocument(ev){
+// SIPGES RC 2.0: laboratorio de lectura documental en modo sólo análisis.
+async function analyzeSipgesDocument(ev){
  ev.preventDefault();const f=$('#docLabFile')?.files?.[0];if(!f)return;
  const area=$('#docLabResults');area.textContent='Analizando documento...';
  const fd=new FormData();fd.append('file',f);fd.append('project_id',activeProjectId);
  try{
   const response=await fetch('/system/document-lab/analyze',{method:'POST',body:fd});
   const data=await response.json();if(!response.ok)throw Error(data.detail||response.statusText);
-  window.mascliDocumentResult=data;
+  window.sipgesDocumentResult=data;
   let h=`<div class="strategy-head"><div><h3>${esc(data.filename)}</h3><p>${data.text_sections} secciones · ${data.items.length} fragmentos candidatos · SHA256: ${esc(data.sha256.slice(0,16))}…</p></div></div>`;
   h+=`<p class="method-note">${esc(data.method)}</p>`;
   h+=`<div class="strategy-kpis">${Object.entries(data.themes).map(([k,v])=>`<div class="kpi"><span>${esc(k)}</span><b>${v}</b></div>`).join('')}</div>`;
@@ -460,33 +460,33 @@ async function analyzeMascliDocument(ev){
   h+='</tbody></table></div><p class="method-note">'+data.limitations.map(esc).join(' ')+'</p>';area.innerHTML=h;
  }catch(err){area.textContent='No se pudo analizar: '+String(err.message||err)}
 }
-async function exportMascliDocument(){
+async function exportSipgesDocument(){
  const f=$('#docLabFile')?.files?.[0];if(!f){toast('Selecciona primero un archivo','','error');return}
  const fd=new FormData();fd.append('file',f);fd.append('project_id',activeProjectId);
  try{const res=await fetch('/system/document-lab/report.docx',{method:'POST',body:fd});if(!res.ok){const e=await res.json();throw Error(e.detail||'Error')}
- const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='MASCLI_RC20_Lectura_Documental.docx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+ const blob=await res.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='SIPGES_RC20_Lectura_Documental.docx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
  }catch(err){toast('Error en exportación',String(err.message||err),'error')}
 }
 
 
 // RC 2.1: flujos de comparación, revisión y decisiones verificables.
-async function importMascliFindings(){
- const d=window.mascliDocumentResult;if(!d){toast('Analiza un archivo primero','','error');return}
- try{const r=await fetch('/system/document-lab/review/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:activeProjectId,filename:d.filename,sha256:d.sha256,items:d.items})});const x=await r.json();if(!r.ok)throw Error(x.detail||'Error');toast('Bandeja actualizada',`${x.new_items} hallazgos nuevos`);await loadMascliReviews()}catch(e){toast('Error',String(e.message),'error')}
+async function importSipgesFindings(){
+ const d=window.sipgesDocumentResult;if(!d){toast('Analiza un archivo primero','','error');return}
+ try{const r=await fetch('/system/document-lab/review/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:activeProjectId,filename:d.filename,sha256:d.sha256,items:d.items})});const x=await r.json();if(!r.ok)throw Error(x.detail||'Error');toast('Bandeja actualizada',`${x.new_items} hallazgos nuevos`);await loadSipgesReviews()}catch(e){toast('Error',String(e.message),'error')}
 }
-async function loadMascliReviews(){
+async function loadSipgesReviews(){
  const el=$('#docReviewResults');if(!el)return;el.textContent='Cargando...';
  try{const r=await fetch('/system/document-lab/review?project_id='+encodeURIComponent(activeProjectId));const d=await r.json();if(!r.ok)throw Error(d.detail||'Error');
- el.innerHTML=d.items.length?d.items.map(x=>`<div class="card" style="padding:12px;margin-bottom:9px"><b>${esc(x.theme)} · ${esc(x.source_file)}</b><p class="muted">${esc(x.location)} · ${esc(x.status)}</p><p>${esc(x.excerpt)}</p><div class="actions"><button class="secondary" onclick="decideMascliReview('${esc(x.id)}','aceptado_para_revision')">Para revisión</button><button class="secondary" onclick="decideMascliReview('${esc(x.id)}','descartado')">Descartar</button><button onclick="decideMascliReview('${esc(x.id)}','corroborado_documentalmente')">Corroborar con evidencia</button></div><small>${esc(x.note||'Sin nota')}</small></div>`).join(''):'<p class="muted">Sin hallazgos guardados para este proyecto.</p>';
+ el.innerHTML=d.items.length?d.items.map(x=>`<div class="card" style="padding:12px;margin-bottom:9px"><b>${esc(x.theme)} · ${esc(x.source_file)}</b><p class="muted">${esc(x.location)} · ${esc(x.status)}</p><p>${esc(x.excerpt)}</p><div class="actions"><button class="secondary" onclick="decideSipgesReview('${esc(x.id)}','aceptado_para_revision')">Para revisión</button><button class="secondary" onclick="decideSipgesReview('${esc(x.id)}','descartado')">Descartar</button><button onclick="decideSipgesReview('${esc(x.id)}','corroborado_documentalmente')">Corroborar con evidencia</button></div><small>${esc(x.note||'Sin nota')}</small></div>`).join(''):'<p class="muted">Sin hallazgos guardados para este proyecto.</p>';
  }catch(e){el.textContent='Error: '+String(e.message)}
 }
-async function decideMascliReview(id,status){
+async function decideSipgesReview(id,status){
  const note=prompt(status==='corroborado_documentalmente'?'Describa la evidencia contrastada (obligatoria):':'Nota de revisión (opcional):');if(note===null)return;
  if(status==='corroborado_documentalmente'&&!note.trim()){toast('Requiere evidencia','Indique la fuente contrastada.','error');return}
  const reviewer=prompt('Nombre de quien revisa:','Crystell Granda');if(reviewer===null)return;
- try{const r=await fetch('/system/document-lab/review/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,note,reviewer})});const d=await r.json();if(!r.ok)throw Error(d.detail||'Error');await loadMascliReviews()}catch(e){toast('Error',String(e.message),'error')}
+ try{const r=await fetch('/system/document-lab/review/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status,note,reviewer})});const d=await r.json();if(!r.ok)throw Error(d.detail||'Error');await loadSipgesReviews()}catch(e){toast('Error',String(e.message),'error')}
 }
-async function compareMascliDocs(ev){
+async function compareSipgesDocs(ev){
  ev.preventDefault();const el=$('#docCompareResults');el.textContent='Comparando...';const fd=new FormData();fd.append('file_a',$('#docCompareA').files[0]);fd.append('file_b',$('#docCompareB').files[0]);fd.append('project_id',activeProjectId);
  try{const r=await fetch('/system/document-lab/compare',{method:'POST',body:fd});const d=await r.json();if(!r.ok)throw Error(d.detail||'Error');
  let h=`<p class="method-note">${esc(d.method)} · ${d.total_candidatos} coincidencias candidatas. No constituyen contradicciones confirmadas.</p>`;
@@ -504,7 +504,7 @@ function socialFiltered(){const platform=$('#socialPlatform')?.value||'ALL',from
 function socialBars(id,pairs){const el=$('#'+id);if(!el)return;const max=Math.max(1,...pairs.map(x=>x[1]));el.innerHTML=pairs.length?pairs.map(([name,n])=>`<div class="social-bar-row"><span title="${esc(name)}">${esc(name)}</span><div class="social-track"><i style="width:${Math.round(n/max*100)}%"></i></div><b>${n}</b></div>`).join(''):'<p class="muted">Sin registros para estos filtros.</p>'}
 function groupSocial(rows,getKey){const counts={};rows.forEach(r=>{const key=getKey(r)||'Sin identificar';counts[key]=(counts[key]||0)+1});return Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
 function renderSocialIntelligence(){if(!$('#socialKpis'))return;const rows=socialFiltered(),high=rows.filter(r=>narrativeAlertScore(r)>=70),withLink=rows.filter(r=>!!cleanSocialLink(r.URL_Publicacion)),unverified=rows.filter(r=>/no verificada|opini[oó]n/i.test(String(r.Nivel_Verificacion||'')));$('#socialKpis').innerHTML=[['Registros',rows.length],['Alertas altas orientativas',high.length],['Con enlace',withLink.length],['No verificadas / opiniones',unverified.length]].map(([label,v])=>`<div class="territorial-kpi"><i>◌</i><div><b>${v}</b><span>${esc(label)}</span></div></div>`).join('');socialBars('socialTimeline',groupSocial(rows.filter(r=>/^\d{4}-\d{2}/.test(socialDate(r))),r=>socialDate(r).slice(0,7)).sort((a,b)=>a[0].localeCompare(b[0])));socialBars('socialPlatformChart',groupSocial(rows,r=>narrativePlatform(r.URL_Publicacion)||displayText(r['Plataforma/Fuente'])));socialBars('socialThemes',groupSocial(rows,r=>displayText(r.Tema)).slice(0,10));socialBars('socialLevels',['Alta','Media','Baja'].map(l=>[l,rows.filter(r=>narrativeAlertLevel(narrativeAlertScore(r))===l).length]));const sorted=[...rows].sort((a,b)=>narrativeAlertScore(b)-narrativeAlertScore(a)||socialDate(b).localeCompare(socialDate(a)));$('#socialAlertsTable').innerHTML=sorted.length?`<table><thead><tr><th>Fecha observada</th><th>Plataforma</th><th>Tema</th><th>Prioridad</th><th>Interacciones</th><th>Verificación</th><th>Fuente</th></tr></thead><tbody>${sorted.map(r=>{const link=cleanSocialLink(r.URL_Publicacion),score=narrativeAlertScore(r);return `<tr><td>${esc(socialDate(r)||'Sin fecha')}</td><td>${esc(narrativePlatform(link)||displayText(r['Plataforma/Fuente']))}</td><td>${esc(displayText(r.Tema))}</td><td><span class="tag">${narrativeAlertLevel(score)} · ${score}/100</span></td><td>${esc(String(r.Interacciones_Observadas??'Sin dato'))}</td><td>${esc(displayText(r.Nivel_Verificacion))}</td><td>${link?`<a href="${esc(link)}" target="_blank" rel="noopener noreferrer">Ver publicación ↗</a>`:'Sin enlace'}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty-state">No hay publicaciones para estos filtros.</div>'}
-function exportSocialCSV(){const rows=socialFiltered(),headers=['Proyecto','Fecha observada','Plataforma','Tema','Tono','Intensidad','Interacciones','Prioridad','Puntaje','Verificación','URL'];const vals=rows.map(r=>[activeProject().Nombre,socialDate(r),narrativePlatform(r.URL_Publicacion)||displayText(r['Plataforma/Fuente']),displayText(r.Tema),displayText(r.Tono),displayText(r.Intensidad),r.Interacciones_Observadas??'',narrativeAlertLevel(narrativeAlertScore(r)),narrativeAlertScore(r),displayText(r.Nivel_Verificacion),cleanSocialLink(r.URL_Publicacion)]);const quote=x=>'"'+String(x??'').replace(/"/g,'""')+'"';const csv='\ufeff'+[headers,...vals].map(row=>row.map(quote).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='MASCLI_RC_2_3_redes_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function exportSocialCSV(){const rows=socialFiltered(),headers=['Proyecto','Fecha observada','Plataforma','Tema','Tono','Intensidad','Interacciones','Prioridad','Puntaje','Verificación','URL'];const vals=rows.map(r=>[activeProject().Nombre,socialDate(r),narrativePlatform(r.URL_Publicacion)||displayText(r['Plataforma/Fuente']),displayText(r.Tema),displayText(r.Tono),displayText(r.Intensidad),r.Interacciones_Observadas??'',narrativeAlertLevel(narrativeAlertScore(r)),narrativeAlertScore(r),displayText(r.Nivel_Verificacion),cleanSocialLink(r.URL_Publicacion)]);const quote=x=>'"'+String(x??'').replace(/"/g,'""')+'"';const csv='\ufeff'+[headers,...vals].map(row=>row.map(quote).join(';')).join('\r\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='SIPGES_RC_2_3_redes_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
 
 // RC 2.4 — lectura textual asistida y trazable. API no guarda el texto.
 async function analyzeRC24(){

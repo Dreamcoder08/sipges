@@ -9,7 +9,7 @@ from conftest import DEFAULT, PASSWORD, login
 
 SETUP = "/system/auth/totp/setup"
 ENABLE = "/system/auth/totp/enable"
-SCOPE_HEADERS = {"X-MASCLI-Scope": DEFAULT}
+SCOPE_HEADERS = {"X-SIPGES-Scope": DEFAULT}
 
 
 def enrollment_state(module, username="synthetic-admin"):
@@ -66,7 +66,7 @@ def test_unenrolled_setup_can_be_retried(isolated_app):
         uri = urlsplit(payload["otpauth_uri"])
         assert uri.scheme == "otpauth" and uri.netloc == "totp"
         assert parse_qs(uri.query) == {
-            "secret": [secret], "issuer": ["MASCLI"], "algorithm": ["SHA1"],
+            "secret": [secret], "issuer": ["SIPGES"], "algorithm": ["SHA1"],
             "digits": ["6"], "period": ["30"],
         }
         assert payload["instruction"]

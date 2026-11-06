@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#17365D">
-  <meta name="description" content="MASCLI: sistema inteligente de alerta temprana para la gestión del riesgo socioambiental en Sechura.">
-  <title>MASCLI | Proyecto Sechura</title>
+  <meta name="description" content="SIPGES: sistema inteligente de alerta temprana para la gestión del riesgo socioambiental en Sechura.">
+  <title>SIPGES | Proyecto Sechura</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23123450'/%3E%3Cpath d='M15 44V20h8l9 13 9-13h8v24h-8V32l-9 12-9-12v12z' fill='white'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -13,14 +13,14 @@
 <a class="skip-link" href="#mainContent">Saltar al contenido principal</a>
 <div class="mobile-topbar">
   <button id="menuBtn" class="icon-btn" aria-label="Abrir menú">☰</button>
-  <div class="mobile-brand"><b>MASCLI</b><select id="mobileProjectSelector" aria-label="Proyecto activo" onchange="changeActiveProject(this.value)"><option value="PRJ-SECHURA">Proyecto Sechura</option></select></div>
+  <div class="mobile-brand"><b>SIPGES</b><select id="mobileProjectSelector" aria-label="Proyecto activo" onchange="changeActiveProject(this.value)"><option value="PRJ-SECHURA">Proyecto Sechura</option></select></div>
   <span class="status-dot" title="Sistema activo"></span>
 </div>
 <div class="app-shell">
   <aside id="sidebar">
     <div class="brand-block">
       <div class="brand-mark">M</div>
-      <div><div class="brand-name">MASCLI</div><div class="brand-sub">Gestión socioambiental</div></div>
+      <div><div class="brand-name">SIPGES</div><div class="brand-sub">Gestión socioambiental</div></div>
     </div>
     <div id="sidebarProject" class="project-chip">PROYECTO SECHURA</div>
     <nav>
@@ -36,7 +36,7 @@
       <button class="nav-item" data-page="mapa"><span>⌖</span>Mapa territorial</button>
       <button class="nav-item" data-page="situacion"><span>▧</span>Análisis situacional</button>
       <button class="nav-item" data-page="estrategia"><span>✦</span>Inteligencia estratégica</button>
-      <button class="nav-item" data-page="irsa"><span>◎</span>IRSA-MASCLI</button>
+      <button class="nav-item" data-page="irsa"><span>◎</span>IRSA-SIPGES</button>
       <button class="nav-item" data-page="validacion"><span>✓</span>Validación</button>
       <button class="nav-item" data-page="fuentes"><span>▰</span>Fuentes</button>
       <button class="nav-item" data-page="administracion"><span>⚙</span>Administración</button>
@@ -70,7 +70,7 @@
           <div>
             <span class="hero-kicker">MONITOREO PREVENTIVO · G-A-D-N-E-I</span>
             <h2>Riesgo socioambiental con evidencia, trazabilidad y validación humana.</h2>
-            <p>MASCLI integra información territorial, actores, demandas, narrativas, ambiente e institucionalidad para priorizar señales y orientar acciones preventivas.</p>
+            <p>SIPGES integra información territorial, actores, demandas, narrativas, ambiente e institucionalidad para priorizar señales y orientar acciones preventivas.</p>
             <div class="hero-actions"><button onclick="goTo('eventos')">Registrar evento</button><button class="ghost" onclick="goTo('irsa')">Ver IRSA</button></div>
           </div>
           <div class="hero-status">
@@ -83,7 +83,7 @@
         <div class="kpis" id="kpis"></div>
         <div class="dashboard-charts">
           <div class="card"><div class="card-topline"><div><div class="card-label">ALERTAS POR NIVEL</div><h3>Distribución del proyecto activo</h3></div><span class="scope-chip">Proyecto activo</span></div><div id="alertsLevelChart" class="bar-chart"></div></div>
-          <div class="card"><div class="card-topline"><div><div class="card-label">EVENTOS POR DIMENSIÓN MASCLI</div><h3>G · A · D · N · E · I</h3></div><span class="scope-chip">Proyecto activo</span></div><div id="eventsDimensionChart" class="bar-chart dimensions-chart"></div></div>
+          <div class="card"><div class="card-topline"><div><div class="card-label">EVENTOS POR DIMENSIÓN SIPGES</div><h3>G · A · D · N · E · I</h3></div><span class="scope-chip">Proyecto activo</span></div><div id="eventsDimensionChart" class="bar-chart dimensions-chart"></div></div>
         </div>
 
         <div class="grid-2 top-gap">
@@ -131,7 +131,7 @@
             <label class="span2 upload-field"><span>Reporte o evidencia <small>PDF, Office, CSV, TXT o imagen · máximo 10 MB por archivo</small></span><input id="evFiles" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.webp" onchange="previewFiles('evFiles','eventFileList')"><span class="upload-button"><b>⇧</b> Seleccionar reportes o evidencias</span><div id="eventFileList" class="file-list"></div></label>
           </div>
           <div id="analysis" class="analysis"></div>
-          <div class="actions"><button class="secondary" onclick="analyzeEvent()">Analizar MASCLI</button><button onclick="saveEvent()">Guardar evento</button></div>
+          <div class="actions"><button class="secondary" onclick="analyzeEvent()">Analizar SIPGES</button><button onclick="saveEvent()">Guardar evento</button></div>
         </div>
         <div class="card"><input class="search" placeholder="Buscar por fecha, actor, territorio o descripción…" oninput="loadTable('eventos','eventTable',this.value)"><div class="table-wrap" id="eventTable"></div></div>
       </section>
@@ -239,7 +239,7 @@
         <div id="narrativeStats" class="territorial-kpis"></div>
         <div class="card filter-card"><input id="narSearch" class="search" placeholder="Buscar tema, actor o fuente…" oninput="renderNarratives()"><select id="narToneFilter" onchange="renderNarratives()"><option value="ALL">Todos los tonos</option><option>Negativo</option><option>Neutral</option><option>Positivo</option><option>Mixto</option></select><select id="narStateFilter" onchange="renderNarratives()"><option value="ALL">Todos los estados</option><option>En análisis</option><option>En seguimiento</option><option>Validada</option><option>Descartada</option></select></div>
         <div class="grid-2 narratives-grid"><div class="card"><div class="card-label">PUBLICACIONES Y NARRATIVAS</div><div id="narrativeTable" class="table-wrap"></div></div><aside id="narrativeDetail" class="card visual-detail"></aside></div>
-        <div class="data-caveat">Los enlaces (incluido LinkedIn) se guardan y pueden abrirse en su fuente original. No se realiza extracción automática ni monitoreo en tiempo real; las métricas deben registrarse manualmente y ser verificadas. MASCLI no monitorea redes sociales en tiempo real. Esta vista organiza registros incorporados por personas usuarias y exige validación humana antes de escalar una alerta.</div>
+        <div class="data-caveat">Los enlaces (incluido LinkedIn) se guardan y pueden abrirse en su fuente original. No se realiza extracción automática ni monitoreo en tiempo real; las métricas deben registrarse manualmente y ser verificadas. SIPGES no monitorea redes sociales en tiempo real. Esta vista organiza registros incorporados por personas usuarias y exige validación humana antes de escalar una alerta.</div>
       </section>
 
 
@@ -257,7 +257,7 @@
         <div class="scope-notice">Los indicadores de compromisos dependen de los registros y sus estados explícitos. No existe verificación automatizada de incumplimiento.</div>
       </section>
       <section id="inteligencia-redes" class="page">
-        <div class="page-head"><div><span>MASCLI RC 2.7 · INTELIGENCIA TERRITORIAL</span><h2>Inteligencia de redes sociales</h2><p>Alertas orientativas, evolución y comparación de narrativas registradas en Facebook, LinkedIn, Instagram, TikTok, YouTube, X y otros medios.</p></div><button onclick="goTo('narrativas');toggleNarrativeForm(true)">+ Registrar publicación</button></div>
+        <div class="page-head"><div><span>SIPGES RC 2.7 · INTELIGENCIA TERRITORIAL</span><h2>Inteligencia de redes sociales</h2><p>Alertas orientativas, evolución y comparación de narrativas registradas en Facebook, LinkedIn, Instagram, TikTok, YouTube, X y otros medios.</p></div><button onclick="goTo('narrativas');toggleNarrativeForm(true)">+ Registrar publicación</button></div>
         <div class="card filter-card"><label>Plataforma <select id="socialPlatform" onchange="renderSocialIntelligence()"><option value="ALL">Todas</option><option>LinkedIn</option><option>Facebook</option><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>X</option><option>Otro medio público</option></select></label><label>Desde <input type="date" id="socialFrom" onchange="renderSocialIntelligence()"></label><label>Hasta <input type="date" id="socialTo" onchange="renderSocialIntelligence()"></label><label>Prioridad <select id="socialPriority" onchange="renderSocialIntelligence()"><option value="ALL">Todas</option><option>Alta</option><option>Media</option><option>Baja</option></select></label><button class="secondary" onclick="exportSocialCSV()">Exportar CSV</button></div>
         <div class="card" id="rc24Panel"><div class="card-label">RC 2.4 · ANÁLISIS DE TEXTO CON EVIDENCIA</div>
           <p>Copie el texto público de la publicación (LinkedIn, Facebook, Instagram, TikTok, YouTube, X) o un fragmento documental. El enlace es opcional y no se descarga automáticamente.</p>
@@ -272,7 +272,7 @@
         <div class="card" id="rc26Panel">
           <div class="card-label">RC 2.6 · INTEGRACIÓN DE SEÑALES CON REVISIÓN HUMANA</div>
           <h3>Bandeja de alertas digitales por proyecto</h3>
-          <p>Guarde el análisis de texto que aparece arriba en una bandeja auditable. La señal no modifica el índice IRSA-MASCLI.</p>
+          <p>Guarde el análisis de texto que aparece arriba en una bandeja auditable. La señal no modifica el índice IRSA-SIPGES.</p>
           <label>Tipo de evidencia <select id="rc26SourceType"><option>Publicación digital</option><option>Documento</option><option>Reporte de campo</option></select></label>
           <label>Nota del analista <textarea id="rc26AnalystNote" rows="2" maxlength="2000" placeholder="Contexto y limitaciones de la fuente"></textarea></label>
           <button onclick="saveRC26Review()">Analizar y guardar señal para verificación</button>
@@ -320,7 +320,7 @@
         <div id="territorialKpis" class="territorial-kpis"></div>
         <div class="territorial-layout">
           <div class="card map-legend-card">
-            <div class="card-label">LEYENDA</div><h3>Dimensiones MASCLI</h3>
+            <div class="card-label">LEYENDA</div><h3>Dimensiones SIPGES</h3>
             <div class="map-dim-legend"><span><i class="dim G">G</i>Gobernanza</span><span><i class="dim A">A</i>Actores</span><span><i class="dim D">D</i>Demandas</span><span><i class="dim N">N</i>Narrativas</span><span><i class="dim E">E</i>Ambiental</span><span><i class="dim I">I</i>Institucional</span></div>
             <div class="separator"></div><div class="card-label">NIVEL OPERATIVO</div>
             <div class="map-level-legend"><span><i class="map-level rojo"></i>Crítico</span><span><i class="map-level naranja"></i>Alto</span><span><i class="map-level amarillo"></i>Medio</span><span><i class="map-level verde"></i>Seguimiento</span></div>
@@ -352,7 +352,7 @@
       </section>
 
       <section id="estrategia" class="page">
-        <div class="page-head"><div><span>EVOLUCIÓN MASCLI · DE-RISKING + VALUE CREATION + CONSENSUS BUILDING</span><h2>Inteligencia estratégica territorial</h2><p>Relaciones, hechos compartidos, intereses, diálogo y oportunidades; capa adicional al IRSA.</p></div></div>
+        <div class="page-head"><div><span>EVOLUCIÓN SIPGES · DE-RISKING + VALUE CREATION + CONSENSUS BUILDING</span><h2>Inteligencia estratégica territorial</h2><p>Relaciones, hechos compartidos, intereses, diálogo y oportunidades; capa adicional al IRSA.</p></div></div>
         <div class="prototype-banner"><b>Prototipo metodológico</b><span>Los datos de esta sección son registros de trabajo, sujetos a contrastación. No son predicciones ni acuerdos oficiales.</span></div>
         <div class="strategy-kpis" id="strategyKpis"></div>
         <div class="card strategy-overview">
@@ -363,18 +363,18 @@
           <div class="card-label">NUEVO RC 2.1 · COMPARACIÓN Y VALIDACIÓN DOCUMENTAL</div>
           <h3>Laboratorio de documentos y evidencias</h3>
           <p>Analiza PDF con texto, DOCX o TXT para ubicar fragmentos sobre actores, demandas, compromisos, controversias, diálogo y valor compartido. No guarda el documento ni convierte coincidencias en hechos.</p>
-          <form id="docLabForm" onsubmit="analyzeMascliDocument(event)">
-            <div class="actions"><input id="docLabFile" type="file" accept=".pdf,.docx,.txt,.md" required><button type="submit">Analizar documento</button><button type="button" class="secondary" onclick="exportMascliDocument()">Informe Word</button></div>
+          <form id="docLabForm" onsubmit="analyzeSipgesDocument(event)">
+            <div class="actions"><input id="docLabFile" type="file" accept=".pdf,.docx,.txt,.md" required><button type="submit">Analizar documento</button><button type="button" class="secondary" onclick="exportSipgesDocument()">Informe Word</button></div>
           </form>
           <p class="method-note">Lectura local basada en reglas · sin OCR · requiere revisión humana · no enviar información sensible a una instancia pública.</p>
-          <div class="actions"><button type="button" onclick="importMascliFindings()">Enviar hallazgos a revisión</button><button type="button" class="secondary" onclick="loadMascliReviews()">Ver bandeja de revisión</button></div>
+          <div class="actions"><button type="button" onclick="importSipgesFindings()">Enviar hallazgos a revisión</button><button type="button" class="secondary" onclick="loadSipgesReviews()">Ver bandeja de revisión</button></div>
           <div id="docLabResults" aria-live="polite">Selecciona un documento y pulsa Analizar.</div>
         </div>
         <div class="card"><div class="card-label">RC 2.1 · COMPARACIÓN DOCUMENTAL</div><h3>Comparar dos fuentes</h3>
           <p>Localiza pasajes con coincidencias temáticas para contrastación humana. No identifica contradicciones de forma concluyente.</p>
-          <form onsubmit="compareMascliDocs(event)"><div class="actions"><input type="file" id="docCompareA" accept=".pdf,.docx,.txt,.md" required><input type="file" id="docCompareB" accept=".pdf,.docx,.txt,.md" required><button>Comparar</button></div></form>
+          <form onsubmit="compareSipgesDocs(event)"><div class="actions"><input type="file" id="docCompareA" accept=".pdf,.docx,.txt,.md" required><input type="file" id="docCompareB" accept=".pdf,.docx,.txt,.md" required><button>Comparar</button></div></form>
           <div id="docCompareResults" aria-live="polite"></div></div>
-        <div class="card"><div class="section-head"><div><div class="card-label">RC 2.1 · CONTROL HUMANO</div><h3>Bandeja de hallazgos</h3></div><button onclick="loadMascliReviews()">Actualizar bandeja</button></div>
+        <div class="card"><div class="section-head"><div><div class="card-label">RC 2.1 · CONTROL HUMANO</div><h3>Bandeja de hallazgos</h3></div><button onclick="loadSipgesReviews()">Actualizar bandeja</button></div>
           <p class="method-note">La aprobación para revisión no convierte el hallazgo en hecho comprobado ni crea compromisos automáticamente.</p><div id="docReviewResults"></div></div>
         <div class="card" id="consensusEngine">El motor de recomendaciones se actualiza con los registros del proyecto.</div>
         <div class="card">
@@ -387,7 +387,7 @@
         <div class="card"><div class="card-label">CRITERIOS DE INTERPRETACIÓN</div><h3>Rigor metodológico y derechos</h3><p>La matriz de intereses evita asumir que una posición pública representa todas las necesidades de una persona o colectivo. El análisis AARC es descriptivo y no asigna automáticamente legitimidad o consentimiento. Los hechos controvertidos deben conservar versiones distintas y evidencia verificable.</p><p>Modelo MASCLI (2026): Dick Castillo Inca y Crystell Lizett Granda Agurto. Automatización orientada a tesis: iniciativa de Crystell Lizett Granda Agurto. Esta extensión no modifica los pesos ni el cálculo del IRSA.</p></div>
       </section>
       <section id="irsa" class="page">
-        <div class="page-head"><div><span>ÍNDICE COMPUESTO</span><h2>IRSA-MASCLI</h2><p>Lectura integrada de las seis dimensiones del riesgo socioambiental.</p></div><button onclick="saveSnapshot()">Guardar corte IRSA</button></div>
+        <div class="page-head"><div><span>ÍNDICE COMPUESTO</span><h2>IRSA-SIPGES</h2><p>Lectura integrada de las seis dimensiones del riesgo socioambiental.</p></div><button onclick="saveSnapshot()">Guardar corte IRSA</button></div>
         <div class="grid-2">
           <div class="card irsa-main"><div class="card-label">IRSA ACTUAL</div><div id="irsaValue" class="irsa-value">—</div><div id="irsaLevel" class="level-pill">—</div><p class="method-note">Escala 0–100 · configuración provisional pendiente de validación.</p></div>
           <div class="card"><div class="card-label">SEMÁFORO</div><div class="risk-scale"><div class="green"><b>0–24</b><span>Verde</span></div><div class="yellow"><b>25–49</b><span>Amarillo</span></div><div class="orange"><b>50–74</b><span>Naranja</span></div><div class="red"><b>75–100</b><span>Rojo</span></div></div></div>
@@ -437,7 +437,7 @@
       </section>
 
       <section id="metodologia" class="page">
-        <div class="page-head"><div><span>ARQUITECTURA METODOLÓGICA</span><h2>Cómo funciona MASCLI</h2><p>Flujo reproducible, explicable y con revisión humana.</p></div></div>
+        <div class="page-head"><div><span>ARQUITECTURA METODOLÓGICA</span><h2>Cómo funciona SIPGES</h2><p>Flujo reproducible, explicable y con revisión humana.</p></div></div>
         <div class="flow">
           <div class="flow-step"><b>1</b><span>Fuentes</span><small>Informes, campo, evidencia digital y registros.</small></div><div class="flow-arrow">→</div>
           <div class="flow-step"><b>2</b><span>Control de evidencia</span><small>Niveles A–E de verificación.</small></div><div class="flow-arrow">→</div>
@@ -490,9 +490,9 @@
   </main>
 </div>
 <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-<div id="sessionBadge" style="position:fixed;right:16px;top:10px;z-index:10000;background:#172a45;color:white;padding:7px 12px;border-radius:10px;font:13px system-ui;box-shadow:0 3px 14px #0003"><span id="sessionName">MASCLI</span> <button id="mascliLogout" type="button" style="background:#ddd;border:none;border-radius:5px;cursor:pointer;padding:5px 8px;margin-left:8px">Cerrar sesión</button></div>
+<div id="sessionBadge" style="position:fixed;right:16px;top:10px;z-index:10000;background:#172a45;color:white;padding:7px 12px;border-radius:10px;font:13px system-ui;box-shadow:0 3px 14px #0003"><span id="sessionName">SIPGES</span> <button id="sipgesLogout" type="button" style="background:#ddd;border:none;border-radius:5px;cursor:pointer;padding:5px 8px;margin-left:8px">Cerrar sesión</button></div>
 <script src="/static/app.js"></script><script>
 fetch('/system/auth/me').then(r=>r.json()).then(u=>{if(u){document.getElementById('sessionName').textContent=u.full_name+' · '+u.role}});
-document.getElementById('mascliLogout').onclick=async()=>{await fetch('/logout',{method:'POST'});location.href='/login'};
+document.getElementById('sipgesLogout').onclick=async()=>{await fetch('/logout',{method:'POST'});location.href='/login'};
 </script>
 </body></html>

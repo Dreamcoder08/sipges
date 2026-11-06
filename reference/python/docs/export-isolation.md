@@ -10,7 +10,7 @@ scope raises HTTP 403 rather than falling back to the global database.
 
 The existing middleware still owns authentication, grant checks, administrator
 access, and the HTTP 503 response for an uninitialized tenant database. The
-attachment filename remains `mascli.db` and its media type remains
+attachment filename remains `sipges.db` and its media type remains
 `application/octet-stream`. No authentication or frontend behavior is changed.
 
 ## Safe test setup

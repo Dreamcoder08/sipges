@@ -1,10 +1,10 @@
-# MASCLI RC 3.0 — Aislamiento por empresa/proyecto y MFA TOTP
+# SIPGES RC 3.0 — Aislamiento por empresa/proyecto y MFA TOTP
 
 ## Alcance
-Esta versión continúa sobre RC 2.9. Incorpora un directorio central de cuentas y permisos (auth_global.db), y una base SQLite independiente para cada nuevo par empresa/proyecto (`data/tenants/<hash>.db`). El proyecto histórico `MASCLI/PRJ-SECHURA` conserva la base anterior (`data/mascli.db`). Los archivos adjuntos nuevos se segregan por proyecto y el motor IRSA usa configuración separada por proyecto.
+Esta versión continúa sobre RC 2.9. Incorpora un directorio central de cuentas y permisos (auth_global.db), y una base SQLite independiente para cada nuevo par empresa/proyecto (`data/tenants/<hash>.db`). El proyecto histórico `SIPGES/PRJ-SECHURA` conserva la base anterior (`data/sipges.db`). Los archivos adjuntos nuevos se segregan por proyecto y el motor IRSA usa configuración separada por proyecto.
 
 ## Primer inicio
-Configure MASCLI_ADMIN_USERNAME y MASCLI_ADMIN_PASSWORD (mínimo 12 caracteres) antes de arrancar. Por defecto use `python -m uvicorn app:app --host 127.0.0.1 --port 8000` en la carpeta del código. En despliegue HTTPS configure `MASCLI_COOKIE_SECURE=1` y certificados TLS en el proxy.
+Configure SIPGES_ADMIN_USERNAME y SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres) antes de arrancar. Por defecto use `python -m uvicorn app:app --host 127.0.0.1 --port 8000` en la carpeta del código. En despliegue HTTPS configure `SIPGES_COOKIE_SECURE=1` y certificados TLS en el proxy.
 
 ## Empresas y proyectos
 Inicie sesión como administrador. Para crear un usuario: `POST /system/auth/accounts` (username, full_name, password, role). Para crear un proyecto separado: `POST /system/auth/scopes` (company_id, project_id, label, username). Para dar acceso a un usuario existente: `POST /system/auth/grants` (username, company_id, project_id). Cada usuario solo puede seleccionar proyectos autorizados desde `/select-project`. El servidor elige la base correspondiente; rechaza scopes ajenos. API: `GET /system/auth/scopes`, `GET /system/auth/current-scope`. Los proyectos nuevos empiezan con registros operativos vacíos y una ficha de proyecto; no copian los registros semilla de Sechura.

@@ -1,4 +1,4 @@
-MASCLI RC 2.7 — Pruebas automatizadas con SQLite temporal (2026-10-11)
+SIPGES RC 2.7 — Pruebas automatizadas con SQLite temporal (2026-10-11)
 - Inicio API: 200
 - Registro de señal de ejemplo: 200
 - Bloqueo de plan para alerta sin verificar: 409

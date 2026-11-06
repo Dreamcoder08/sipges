@@ -30,19 +30,19 @@ def assert_cookie(response, name, secure):
 def test_both_cookies_and_authenticated_scope_followup(isolated_app, secure, monkeypatch):
     _, client = isolated_app
     # Configuration is startup-static, not re-read during cookie issuance.
-    monkeypatch.setenv("MASCLI_COOKIE_SECURE", "0" if secure else "1")
+    monkeypatch.setenv("SIPGES_COOKIE_SECURE", "0" if secure else "1")
     response = client.post("/login", data={
         "username": "synthetic-admin", "password": PASSWORD,
     })
     assert response.status_code == 200
-    assert_cookie(response, "mascli_session", secure)
+    assert_cookie(response, "sipges_session", secure)
     assert client.get("/system/auth/me").json()["username"] == "synthetic-admin"
     for scope in (TENANT_A, TENANT_B):
         response = client.post("/select-project", data={"scope": scope}, follow_redirects=False)
         assert response.status_code == 303
         assert response.headers["location"] == "/"
-        assert_cookie(response, "mascli_scope", secure)
-        # No X-MASCLI-Scope header: middleware must use the transported cookie.
+        assert_cookie(response, "sipges_scope", secure)
+        # No X-SIPGES-Scope header: middleware must use the transported cookie.
         response = client.get("/system/auth/current-scope")
         assert response.status_code == 200
         assert response.json()["scope"] == scope
@@ -81,7 +81,7 @@ def test_unauthorized_selection_never_sets_cookie(isolated_app):
                            follow_redirects=False)
     assert response.status_code == 403
     assert "set-cookie" not in response.headers
-    assert "mascli_scope" not in client.cookies
+    assert "sipges_scope" not in client.cookies
 
 
 @pytest.mark.parametrize("value", ["", " ", "\t", "\n", "true", "false", "yes", "01", "2", " 1", "0 "])
@@ -93,6 +93,6 @@ def test_invalid_config_fails_before_resource_initialization(
 
     monkeypatch.setattr("fastapi.FastAPI", forbidden)
     monkeypatch.setattr("storage_sqlite.connect_sqlite", forbidden)
-    with pytest.raises(ValueError, match="MASCLI_COOKIE_SECURE must be unset or exactly '0' or '1'"):
+    with pytest.raises(ValueError, match="SIPGES_COOKIE_SECURE must be unset or exactly '0' or '1'"):
         isolated_import(value)
     assert list(tmp_path.iterdir()) == []
