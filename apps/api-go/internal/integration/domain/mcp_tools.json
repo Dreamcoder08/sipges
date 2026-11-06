@@ -1,0 +1,245 @@
+[
+  {
+    "write": false,
+    "descriptor": {
+      "name": "list_object_types",
+      "title": "Catálogo de la ontología",
+      "description": "Tipos de objeto (módulos) y tipos de vínculo del proyecto. Úsalo primero para saber qué módulos y vínculos existen.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": false,
+    "descriptor": {
+      "name": "search_records",
+      "title": "Buscar registros",
+      "description": "Búsqueda de texto completo en todos los registros del proyecto (actores, eventos, demandas, compromisos, alertas, fuentes…), ordenada por relevancia y, si la búsqueda semántica está activa, también por significado.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Palabras o identificador a buscar"
+          },
+          "modules": {
+            "description": "Limitar a estos tipos de objeto",
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 40,
+              "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+            }
+          },
+          "limit": { "default": 10, "type": "integer", "minimum": 1, "maximum": 50 }
+        },
+        "required": ["query"]
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": false,
+    "descriptor": {
+      "name": "get_record",
+      "title": "Leer un registro",
+      "description": "Los campos permitidos de un registro y su clasificación.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Identificador del registro, p. ej. A-12 o EV-3"
+          }
+        },
+        "required": ["module", "id"]
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": false,
+    "descriptor": {
+      "name": "get_links",
+      "title": "Vínculos de un registro",
+      "description": "Vista 360°: registros conectados (explícitos e inferidos) con el tipo de relación y su dirección.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Identificador del registro, p. ej. A-12 o EV-3"
+          }
+        },
+        "required": ["module", "id"]
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": false,
+    "descriptor": {
+      "name": "get_timeline",
+      "title": "Cronología",
+      "description": "Registros fechados entre dos fechas, del más reciente al más antiguo.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "from": {
+            "default": "",
+            "description": "AAAA, AAAA-MM o AAAA-MM-DD; vacío = sin límite",
+            "type": "string",
+            "maxLength": 10
+          },
+          "to": { "default": "", "type": "string", "maxLength": 10 },
+          "modules": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 40,
+              "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+            }
+          },
+          "limit": { "default": 50, "type": "integer", "minimum": 1, "maximum": 200 }
+        }
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": false,
+    "descriptor": {
+      "name": "get_briefing",
+      "title": "Informe con citas",
+      "description": "Informe extractivo de un registro y su entorno con citas numeradas a los registros fuente y señales de atención.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Identificador del registro, p. ej. A-12 o EV-3"
+          }
+        },
+        "required": ["module", "id"]
+      },
+      "annotations": { "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": true,
+    "descriptor": {
+      "name": "create_record",
+      "title": "Crear registro",
+      "description": "Crea un registro en un módulo. Requiere una clave de escritura. Devuelve el id asignado.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "module": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+          },
+          "payload": {
+            "type": "object",
+            "propertyNames": { "type": "string" },
+            "additionalProperties": {},
+            "description": "Campos del registro"
+          }
+        },
+        "required": ["module", "payload"]
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false }
+    }
+  },
+  {
+    "write": true,
+    "descriptor": {
+      "name": "link_records",
+      "title": "Vincular registros",
+      "description": "Crea un vínculo tipado entre dos registros. Requiere una clave de escritura.",
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "link_type": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Id de un tipo de vínculo de list_object_types"
+          },
+          "source": {
+            "type": "object",
+            "properties": {
+              "module": {
+                "type": "string",
+                "maxLength": 40,
+                "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "Identificador del registro, p. ej. A-12 o EV-3"
+              }
+            },
+            "required": ["module", "id"]
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "module": {
+                "type": "string",
+                "maxLength": 40,
+                "description": "Tipo de objeto: actores, eventos, demandas, compromisos, narrativas, fuentes, alertas, acciones, directorio, intereses, dialogos, oportunidades, hechos, aarc, buzon, lecciones"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200,
+                "description": "Identificador del registro, p. ej. A-12 o EV-3"
+              }
+            },
+            "required": ["module", "id"]
+          },
+          "note": { "default": "", "type": "string", "maxLength": 500 }
+        },
+        "required": ["link_type", "source", "target"]
+      },
+      "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false }
+    }
+  }
+]
