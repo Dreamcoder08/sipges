@@ -7,8 +7,8 @@ import { lstat, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { LegacyRow, LegacyScope } from '../domain/legacy.ts';
-import { legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
+import type { LegacyRow, LegacyScope, LegacyValue } from '../domain/legacy.ts';
+import { asText, hasNulText, legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
 import type { LegacyGrantRow, LegacySource, LegacyTenantReader } from '../application/ports.ts';
 
 /** Default scope of a legacy installation (app.py:61, :444). */
@@ -46,11 +46,48 @@ const tableExists = (db: DatabaseSync, table: string): boolean =>
   db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table) !==
   undefined;
 
-/** Lazily created tables (document_review, RC 2.6/2.7) are simply absent in older installs. */
-const selectAll = (db: DatabaseSync, table: string, orderBy = 'rowid'): readonly LegacyRow[] =>
-  tableExists(db, table)
-    ? (db.prepare(`SELECT * FROM ${table} ORDER BY ${orderBy}`).all() as unknown as LegacyRow[])
-    : [];
+/**
+ * Lazily created tables (document_review, RC 2.6/2.7) are simply absent in older installs.
+ *
+ * Text comes through as bytes: Node 22's node:sqlite cuts a string at its first NUL, which would
+ * let a value pass as a shorter one. Read whole, the mapping refuses it. `typeof` tells such a
+ * cell from a real blob. The bytes are in the file's encoding, and decoding replaces invalid
+ * sequences as node:sqlite does. `pragma_table_xinfo` lists what `SELECT *` returns, generated
+ * columns included; hidden = 1 marks the hidden columns of a virtual table.
+ */
+const selectAll = (db: DatabaseSync, table: string, orderBy = 'rowid'): readonly LegacyRow[] => {
+  if (!tableExists(db, table)) return [];
+  const names = (
+    db
+      .prepare('SELECT name FROM pragma_table_xinfo(?) WHERE hidden <> 1')
+      .all(table) as unknown as { name: string }[]
+  ).map((column) => column.name);
+  const { encoding } = db.prepare('PRAGMA encoding').get() as unknown as { encoding: string };
+  const decoder = new TextDecoder(encoding.toLowerCase(), { ignoreBOM: true });
+  const cells = names.flatMap((name, index) => {
+    const column = `"${name.replaceAll('"', '""')}"`;
+    return [
+      `CASE typeof(${column}) WHEN 'text' THEN CAST(${column} AS BLOB) ELSE ${column} END AS v${index}`,
+      `typeof(${column}) AS t${index}`,
+    ];
+  });
+  const rows = db
+    .prepare(`SELECT ${cells.join(', ')} FROM ${table} ORDER BY ${orderBy}`)
+    .all() as unknown as Readonly<Record<string, LegacyValue>>[];
+  return rows.map((row) =>
+    Object.fromEntries(
+      names.map((name, index) => {
+        const value = row[`v${index}`];
+        const text = row[`t${index}`] === 'text' && value instanceof Uint8Array;
+        return [name, text ? decoder.decode(value) : value];
+      }),
+    ),
+  );
+};
+
+/** `String(value)`, except that a blob holding NUL stays text, so the mapping refuses it. */
+const scopeText = (value: unknown): string =>
+  hasNulText(value) ? (asText(value) ?? '') : String(value ?? '');
 
 const isDefaultScope = (scope: LegacyScope) =>
   scope.companyId === DEFAULT_SCOPE.companyId && scope.projectId === DEFAULT_SCOPE.projectId;
@@ -136,9 +173,9 @@ export const createSqliteLegacySource = (layout: LegacyLayout): ClosableLegacySo
     scopes: () =>
       Promise.resolve(
         authRows('tenant_projects', 'company_id, project_id').map((row): LegacyScope => ({
-          companyId: String(row['company_id'] ?? ''),
-          projectId: String(row['project_id'] ?? ''),
-          label: String(row['label'] ?? ''),
+          companyId: scopeText(row['company_id']),
+          projectId: scopeText(row['project_id']),
+          label: scopeText(row['label']),
         })),
       ),
 
@@ -148,10 +185,10 @@ export const createSqliteLegacySource = (layout: LegacyLayout): ClosableLegacySo
       Promise.resolve(
         authRows('access_grants', 'username, company_id, project_id').map(
           (row): LegacyGrantRow => ({
-            username: String(row['username'] ?? ''),
+            username: scopeText(row['username']),
             scope: {
-              companyId: String(row['company_id'] ?? ''),
-              projectId: String(row['project_id'] ?? ''),
+              companyId: scopeText(row['company_id']),
+              projectId: scopeText(row['project_id']),
               label: '',
             },
           }),

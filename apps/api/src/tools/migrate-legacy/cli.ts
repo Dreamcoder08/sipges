@@ -13,7 +13,7 @@ import { moduleForSlug } from '../../contexts/records/application/index.ts';
 import { createObjectStorage } from '../../contexts/evidence/infrastructure/index.ts';
 import { createSecretCipher } from '../../contexts/identity/infrastructure/secret-cipher.ts';
 import { loadConfig } from '../../platform/config.ts';
-import { loadMigrations, migrate } from '../../platform/database/migrator.ts';
+import { loadMigrations, migrate, pendingMigrations } from '../../platform/database/migrator.ts';
 import { pgliteClient } from '../../platform/database/pglite.ts';
 import { postgresClient } from '../../platform/database/postgres.ts';
 import type { SqlClient } from '../../platform/database/sql-client.ts';
@@ -24,7 +24,7 @@ import { createSqliteLegacySource, legacyLayout } from './infrastructure/sqlite-
 const USAGE = `Usage: node src/tools/migrate-legacy/cli.ts --legacy-root <dir> [options]
 
 Modes (default: dry-run)
-  --dry-run                Read and report only; nothing is written.
+  --dry-run                Read and report only; nothing is written, schema migrations included.
   --apply                  Write into PostgreSQL (one transaction per tenant).
   --verify                 Compare source and target counts, checksums and attachment bytes.
 
@@ -63,7 +63,8 @@ const Options = z
 
 export const parseCliArgs = (argv: readonly string[]) => {
   const { values } = parseArgs({
-    args: [...argv],
+    // pnpm forwards the `--` of `pnpm --filter … migrate:legacy -- <flags>`.
+    args: argv.filter((arg) => arg !== '--'),
     options: {
       'legacy-root': { type: 'string' },
       'auth-db': { type: 'string' },
@@ -84,6 +85,8 @@ export const parseCliArgs = (argv: readonly string[]) => {
   });
   const parsed = Options.parse(values);
   if (parsed.apply && parsed.verify) throw new Error('Choose either --apply or --verify');
+  if (parsed.apply && parsed['dry-run']) throw new Error('Choose either --dry-run or --apply');
+  if (parsed.verify && parsed['dry-run']) throw new Error('Choose either --dry-run or --verify');
   const mode: MigrationMode = parsed.apply ? 'apply' : parsed.verify ? 'verify' : 'dry-run';
   return { ...parsed, mode };
 };
@@ -120,7 +123,13 @@ export const main = async (argv: readonly string[]): Promise<number> => {
   const source = createSqliteLegacySource(layout);
   const database = await openDatabase(config.databaseUrl, config.pgliteDir);
   try {
-    await migrate(database.sql, await loadMigrations());
+    const migrations = await loadMigrations();
+    // A dry run writes nothing, so it leaves pending migrations for --apply and reports them.
+    const dryRun = options.mode === 'dry-run';
+    const targetMigrationsPending = dryRun
+      ? (await pendingMigrations(database.sql, migrations)).length
+      : 0;
+    if (!dryRun) await migrate(database.sql, migrations);
     const report = await runMigration(
       {
         source,
@@ -133,6 +142,7 @@ export const main = async (argv: readonly string[]): Promise<number> => {
         mode: options.mode,
         allowNonEmptyTarget: options['allow-non-empty'],
         only: options.only,
+        targetMigrationsPending,
       },
     );
     console.info(summarize(report));

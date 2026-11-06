@@ -43,12 +43,14 @@ ODD forbids doing so without an explicit user decision.
 - **Legacy `auth_users` rows that may sit inside a tenant database** (behavior contract §8.7).
   Accounts come from `auth_global.db` only.
 - **Rows the new schema refuses**: unknown role, malformed password hash, payload that is not a
-  JSON object, NUL characters in any migrated text or JSON value (PostgreSQL text/jsonb cannot
-  store them), alerts whose `themes_json`/`signals_json`/`suggestions_json` app.py could not
+  JSON object, NUL characters in any migrated value (PostgreSQL text/jsonb cannot store them, and
+  in a timestamp, number, flag or digest they would otherwise pass as a shorter value or a default;
+  a TOTP secret with one is refused rather than sealed), alerts whose `themes_json`/`signals_json`/`suggestions_json` app.py could not
   `json.loads` or whose `reviewed_at` is not a timestamp (`alert_row_invalid`), status values
   outside the documented state machines, attachments whose file is missing or whose sha256 does not match
   the bytes, preventive actions without their alert. Each one is reported with its code, table and
-  identifier, and nothing else about it.
+  identifier, and nothing else about it. An identifier that holds NUL is itself withheld: the row
+  is reported by its position, `#<index>`.
 
 Timestamps are naive local strings in SQLite (`datetime.now().isoformat`). They are read as
 **UTC**. If the legacy server ran in another timezone, the operator must decide whether to shift
@@ -71,8 +73,8 @@ has already started, restore the empty backup (or drop and re-create the databas
 
 The tool uses the API configuration: `SIPGES_DATABASE_URL` (or `SIPGES_PGLITE_DIR` for a local
 trial), `SIPGES_DATA_KEY` (the same key the API runs with — it seals migrated TOTP secrets) and
-the object storage settings (`SIPGES_STORAGE`, `SIPGES_UPLOAD_DIR` or the S3 variables). Pending
-schema migrations are applied before anything is read.
+the object storage settings (`SIPGES_STORAGE`, `SIPGES_UPLOAD_DIR` or the S3 variables). `--apply`
+and `--verify` apply pending schema migrations before anything is read.
 
 ### 3. Dry run
 
@@ -80,9 +82,14 @@ schema migrations are applied before anything is read.
 pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy
 ```
 
-Nothing is written. The summary gives per tenant `source / mapped / written / target` row counts
-and the copied/verified object counts, followed by the problem codes. Resolve or accept every
-problem before applying; the process exits non-zero while any error-level problem remains.
+Nothing is written, schema migrations included. If any are pending, the target is not read: its
+counts stay at zero, the report carries `target_migrations_pending` (info), and the summary ends
+with `target not read, pending schema migrations: <n>`. The source side is reported in full. A
+local trial with `SIPGES_PGLITE_DIR` still creates that directory.
+
+The summary gives per tenant `source / mapped / written / target` row counts and the
+copied/verified object counts, followed by the problem codes. Resolve or accept every problem
+before applying; the process exits non-zero while any error-level problem remains.
 
 Useful flags: `--only SIPGES/PRJ-SECHURA` (repeatable), `--report report.json`, and the path
 overrides `--auth-db`, `--default-db`, `--tenant-dir`, `--upload-dir`, `--config-dir` for
@@ -208,7 +215,6 @@ tenants, damaged SQLite files and S3 through a local server that checks each req
 | Other API settings invalid (only the data key, database URL and storage settings are read) | `loadConfig` fails, exit 1 | ignored |
 | Node's `ExperimentalWarning` for `node:sqlite` on Node 22 | on stderr | absent |
 | A failure TypeScript does not catch | exit 1 with a stack trace, whose message may quote a driver | exit 1 with the error's name and at most an operator's path |
-| Text with a NUL character, on Node 22 | cut at the first NUL by `node:sqlite`, so the row can pass with a shorter value | read whole and refused, as TypeScript does on later Node versions |
 | The integer -9223372036854775808 in any column, on Node 22 | read as a number | `RangeError`, exit 1, as TypeScript does on later Node versions |
 | A timestamp text with no zone that ends like an offset, such as `01-02-2026` | local time of the process | UTC (the same under `TZ=UTC`) |
 | A payload, scores or configuration nested 1,001 to about 2,500 levels | migrated | `RangeError`, exit 1 before any write (TypeScript overflows from about 2,500 levels, at a depth that varies with the stack) |

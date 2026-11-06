@@ -37,6 +37,32 @@ impl std::fmt::Display for MigrationError {
 
 impl std::error::Error for MigrationError {}
 
+/// `pendingMigrations`: how many embedded migrations are not recorded yet, without a lock or DDL.
+/// A database never migrated has every migration pending.
+///
+/// # Errors
+/// The driver's error.
+pub fn pending(client: &mut Client) -> Result<usize, postgres::Error> {
+    let present: bool = client
+        .query_one(
+            "SELECT to_regclass('schema_migrations') IS NOT NULL AS present",
+            &[],
+        )?
+        .try_get("present")?;
+    if !present {
+        return Ok(MIGRATIONS.len());
+    }
+    let done: Vec<String> = client
+        .query("SELECT version FROM schema_migrations", &[])?
+        .iter()
+        .map(|row| row.try_get(0))
+        .collect::<Result<_, _>>()?;
+    Ok(MIGRATIONS
+        .iter()
+        .filter(|migration| !done.iter().any(|version| version == migration.version))
+        .count())
+}
+
 /// Applies the pending embedded migrations; returns the applied versions.
 ///
 /// # Errors

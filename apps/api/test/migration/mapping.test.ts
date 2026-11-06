@@ -264,3 +264,79 @@ describe('legacy mapping', () => {
     expect(!escaped.ok && escaped.error).toBe('attachment_stored_name_unsafe');
   });
 });
+
+describe('NUL in a field that would otherwise change silently', () => {
+  const NOW = '2026-10-01T09:00:00';
+  const SHA = 'a'.repeat(64);
+  const HASH = `pbkdf2_sha256$310000$${'a'.repeat(32)}$${'b'.repeat(64)}`;
+  const user = {
+    username: 'ana',
+    full_name: 'Ana',
+    password_hash: HASH,
+    role: 'admin',
+    created_at: NOW,
+  };
+  const attachment = {
+    id: 'ADJ',
+    stored_name: 'a.txt',
+    size_bytes: 1,
+    linked_module: 'eventos',
+    linked_record_id: 'EV-1',
+    created_at: NOW,
+  };
+  const alert = {
+    id: 'AL',
+    created_at: NOW,
+    status: 'Corroborado',
+    sha256: SHA,
+    themes_json: '[]',
+    signals_json: '[]',
+    suggestions_json: '[]',
+  };
+  const action = {
+    id: 'ACC',
+    alert_id: 'AL',
+    due_date: '2026-11-15',
+    status: 'Pendiente',
+    created_at: NOW,
+    updated_at: NOW,
+  };
+  const log = { id: 'L', action_id: 'ACC', created_at: NOW, status: 'x' };
+  const blob = (text: string) => new TextEncoder().encode(text);
+  const failure = (result: { ok: boolean; error?: unknown }) => (result.ok ? null : result.error);
+
+  it.each([
+    ['totp_secret', 'user_totp_secret_invalid'],
+    ['active', 'user_flag_invalid'],
+    ['totp_enabled', 'user_flag_invalid'],
+  ])('refuses %s in an account', (column, code) => {
+    expect(failure(mapUser({ ...user, [column]: '1\u0000' }))).toBe(code);
+    expect(failure(mapUser({ ...user, [column]: blob('1\u0000') }))).toBe(code);
+  });
+
+  it('refuses the rest instead of falling back to a default', () => {
+    const deps = { tenantId: 'A/B', moduleForSlug: () => 'Eventos' };
+    expect(failure(mapAttachment({ ...attachment, sha256: `${SHA}\u0000` }, deps))).toBe(
+      'attachment_row_invalid',
+    );
+    expect(failure(mapAlert({ ...alert, score: '45\u0000' }))).toBe('alert_row_invalid');
+    expect(failure(mapAlert({ ...alert, semantic_active: '1\u0000' }))).toBe('alert_row_invalid');
+    expect(failure(mapAction({ ...action, progress: '4\u0000' }))).toBe('action_row_invalid');
+    expect(failure(mapActionLog({ ...log, progress: blob('4\u0000') }))).toBe(
+      'action_log_row_invalid',
+    );
+  });
+
+  it('keeps the defaults when the field is merely absent or unreadable without NUL', () => {
+    expect(mapUser({ ...user, active: 'no' })).toMatchObject({ ok: true });
+    expect(mapAlert({ ...alert, score: 'x' })).toMatchObject({ ok: true });
+    expect(mapAction({ ...action, progress: blob('4') })).toMatchObject({ ok: true });
+  });
+});
+
+describe('parseLegacyTimestamp with NUL', () => {
+  it('refuses the value instead of reading its prefix', () => {
+    expect(parseLegacyTimestamp('2026-01-02T03:04:05\u0000zzz')).toBeNull();
+    expect(parseLegacyTimestamp(new TextEncoder().encode('2026-01-02\u0000zzz'))).toBeNull();
+  });
+});

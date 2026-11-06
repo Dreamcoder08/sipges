@@ -1,4 +1,5 @@
-//! `application/migrate.ts`: the use case. A dry run reads everything and writes nothing; apply
+//! `application/migrate.ts`: the use case. A dry run reads everything and writes nothing, and
+//! with schema migrations pending it leaves the target unread and says so; apply
 //! writes one transaction per tenant and refuses a non-empty target unless told otherwise; verify
 //! compares source and target counts, row checksums, attachment bytes and the identity tables.
 //!
@@ -18,8 +19,10 @@ use crate::mapping::{
 };
 use crate::source::{IrsaConfig, Source};
 use crate::storage::Storage;
-use crate::store::{Counts, GlobalBatch, Grant, Skipped, Store, TENANT_TABLES, TenantBatch, table};
-use crate::value::{Row, js_string};
+use crate::store::{
+    Counts, GlobalBatch, GlobalCounts, Grant, Skipped, Store, TENANT_TABLES, TenantBatch, table,
+};
+use crate::value::{Row, has_nul_text, js_string};
 
 /// `MigrationMode`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -53,6 +56,8 @@ pub struct Options<'a> {
     pub allow_non_empty: bool,
     /// Restricts the run to these `company/project` ids.
     pub only: &'a [String],
+    /// Schema migrations a dry run left unapplied; above zero the target is not read at all.
+    pub target_migrations_pending: usize,
 }
 
 /// `Problem`: codes and identifiers only.
@@ -74,7 +79,7 @@ pub struct Problem {
 fn severity(code: Code) -> &'static str {
     match code {
         "attachment_name_sanitized" | "tenant_db_missing" | "verify_row_unexpected" => "warning",
-        "irsa_config_inherited" | "sessions_not_migrated" => "info",
+        "irsa_config_inherited" | "sessions_not_migrated" | "target_migrations_pending" => "info",
         _ => "error",
     }
 }
@@ -224,10 +229,13 @@ fn collect<T>(
     Ok(out)
 }
 
-/// `String(row[key] ?? '#index')`.
+/// `reportedId`: a row's identifier for a report, or its position when the identifier is absent
+/// or holds NUL.
 fn id_at(rows: &[Row], key: &str, index: usize) -> String {
     rows.get(index)
-        .and_then(|row| js_string(row.get(key)))
+        .map(|row| row.get(key))
+        .filter(|value| !has_nul_text(value))
+        .and_then(js_string)
         .unwrap_or_else(|| format!("#{index}"))
 }
 
@@ -619,9 +627,14 @@ fn read_back(
     entry: &mut Prepared,
     verify: bool,
     written: Counts,
+    readable: bool,
 ) -> Result<TenantReport, Fatal> {
     let tenant = entry.tenant_id.clone();
-    let target = store.tenant_counts(&tenant)?;
+    let target = if readable {
+        store.tenant_counts(&tenant)?
+    } else {
+        [0; 9]
+    };
     let mut target_checksums = None;
     if verify {
         let checksums = checksums_of(&store.row_fingerprints(&tenant)?);
@@ -791,12 +804,16 @@ pub fn run_migration(deps: Deps<'_>, options: Options<'_>) -> Result<Report, Fat
     let tenant_ids: HashSet<String> = tenants.iter().map(Scope::tenant_id).collect();
     let grant_rows = source.grants()?;
     let mut grants = Vec::new();
-    for row in &grant_rows {
+    for (index, row) in grant_rows.iter().enumerate() {
         let at = |code| {
-            Problem::new(code)
-                .table("grants")
-                .id(row.username.clone())
-                .tenant(&row.tenant_id)
+            if row.username.contains('\0') || row.tenant_id.contains('\0') {
+                Problem::new(code).table("grants").id(format!("#{index}"))
+            } else {
+                Problem::new(code)
+                    .table("grants")
+                    .id(row.username.clone())
+                    .tenant(&row.tenant_id)
+            }
         };
         if !usernames.contains(row.username.as_str()) {
             global.push(at("grant_user_unknown"));
@@ -821,10 +838,24 @@ pub fn run_migration(deps: Deps<'_>, options: Options<'_>) -> Result<Report, Fat
     }
 
     // Emptiness guard.
-    let before = store.global_counts()?;
+    let readable = options.target_migrations_pending == 0;
+    if !readable {
+        global.push(
+            Problem::new("target_migrations_pending").count(options.target_migrations_pending),
+        );
+    }
+    let before = if readable {
+        store.global_counts()?
+    } else {
+        GlobalCounts::default()
+    };
     let mut existing: Vec<(String, Counts)> = Vec::new();
     for entry in &prepared {
-        let counts = store.tenant_counts(&entry.tenant_id)?;
+        let counts = if readable {
+            store.tenant_counts(&entry.tenant_id)?
+        } else {
+            [0; 9]
+        };
         map_set(&mut existing, &entry.tenant_id, counts);
     }
     let occupied = existing.iter().filter(|(_, counts)| total(counts) > 0);
@@ -898,6 +929,7 @@ pub fn run_migration(deps: Deps<'_>, options: Options<'_>) -> Result<Report, Fat
             entry,
             options.mode == Mode::Verify,
             counts,
+            readable,
         )?);
     }
 
@@ -1066,6 +1098,11 @@ impl Report {
         }
         for (code, count) in codes {
             let _ = write!(out, "\nerror {code} x{count}");
+        }
+        for problem in &self.problems {
+            if let ("target_migrations_pending", Some(count)) = (problem.code, problem.count) {
+                let _ = write!(out, "\ntarget not read, pending schema migrations: {count}");
+            }
         }
         out
     }
