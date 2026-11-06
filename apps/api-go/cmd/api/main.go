@@ -45,7 +45,7 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		return err
 	}
 	log := logging.New(stdout, slog.LevelInfo)
-	pool, err := database.Open(ctx, cfg.DatabaseURL)
+	pool, err := database.OpenForServing(ctx, cfg.DatabaseURL, cfg.AllowPrivilegedRole)
 	if err != nil {
 		return err
 	}

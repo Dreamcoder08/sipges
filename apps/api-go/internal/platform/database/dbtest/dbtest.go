@@ -39,10 +39,13 @@ type Migration struct {
 
 // Scratch is a database created for one test run.
 type Scratch struct {
-	// URL connects to the scratch database as the admin user.
-	URL   string
-	Name  string
-	admin string
+	// URL connects to the scratch database: as the admin user, or as the owner of NewOwnedScratch.
+	URL string
+	// AdminURL connects as the admin user, for fixtures of NewOwnedScratch.
+	AdminURL string
+	Name     string
+	admin    string
+	owner    string
 }
 
 // MigrationsDir is apps/api/src/platform/database/migrations, resolved from this file so it
@@ -150,10 +153,68 @@ func NewScratch(ctx context.Context, adminURL string) (*Scratch, error) {
 	return scratch, nil
 }
 
+// NewOwnedScratch is NewScratch on a database owned, and migrated, by a login of its own with no
+// attribute that bypasses row-level security: the production role of docs/deployment/readiness.md.
+// A superuser never reaches forced RLS, so only this login proves a table's FORCE works. URL is
+// that login; the fixtures of a test go through URLAs or AdminExec. Drop removes the login too.
+func NewOwnedScratch(ctx context.Context, adminURL string) (*Scratch, error) {
+	suffix := make([]byte, 6)
+	if _, err := rand.Read(suffix); err != nil {
+		return nil, fmt.Errorf("random database name: %w", err)
+	}
+	password := make([]byte, 24)
+	if _, err := rand.Read(password); err != nil {
+		return nil, fmt.Errorf("random password: %w", err)
+	}
+	name := "sipges_go_test_" + hex.EncodeToString(suffix)
+	owner := name + "_owner"
+	scratch := &Scratch{Name: name, admin: adminURL, owner: owner}
+	parsed, err := url.Parse(adminURL)
+	if err != nil {
+		return nil, errors.New("parse admin URL")
+	}
+	parsed.Path = "/" + name
+	scratch.AdminURL = parsed.String()
+	parsed.User = url.UserPassword(owner, hex.EncodeToString(password))
+	scratch.URL = parsed.String()
+
+	provision := func() error {
+		for _, statement := range []string{
+			"CREATE ROLE " + owner + " LOGIN PASSWORD '" + hex.EncodeToString(password) + "' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS",
+			// Migration 0003 still names mascli_tenant, and this owner cannot create roles.
+			`DO $$ BEGIN
+		   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mascli_tenant') THEN
+		     CREATE ROLE mascli_tenant NOLOGIN NOINHERIT;
+		   END IF;
+		   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sipges_tenant') THEN
+		     CREATE ROLE sipges_tenant NOLOGIN NOINHERIT;
+		   END IF;
+		 END $$`,
+			"GRANT mascli_tenant, sipges_tenant TO " + owner + " WITH ADMIN OPTION",
+			"CREATE DATABASE " + name + " OWNER " + owner,
+		} {
+			if err := adminExec(ctx, adminURL, statement); err != nil {
+				return fmt.Errorf("provision owned scratch: %w", err)
+			}
+		}
+		return nil
+	}
+	if err := migrateLocked(ctx, adminURL, scratch.URL, provision); err != nil {
+		return nil, errors.Join(err, scratch.Drop(ctx))
+	}
+	return scratch, nil
+}
+
 // MigrateDatabase applies every migration to the database at url. Migrations create and rename
 // roles, which are cluster-wide: test packages running in parallel (go test ./...) migrate one at
 // a time, under a lock on the shared admin database. Every test migrates through here.
 func MigrateDatabase(ctx context.Context, adminURL, url string) error {
+	return migrateLocked(ctx, adminURL, url, nil)
+}
+
+// migrateLocked runs first, when set, under the lock: it provisions roles that a migration of
+// another package, with the right to drop roles, would otherwise remove.
+func migrateLocked(ctx context.Context, adminURL, url string, first func() error) error {
 	migrations, err := LoadMigrations(os.DirFS(MigrationsDir()))
 	if err != nil {
 		return err
@@ -168,6 +229,11 @@ func MigrateDatabase(ctx context.Context, adminURL, url string) error {
 	defer func() { _ = lock.Close(context.WithoutCancel(ctx)) }() // closing releases the lock
 	if _, err := lock.Exec(ctx, "SELECT pg_advisory_lock($1)", scratchLockKey); err != nil {
 		return fmt.Errorf("lock migrations: %w", err)
+	}
+	if first != nil {
+		if err := first(); err != nil {
+			return err
+		}
 	}
 	conn, err := pgx.Connect(ctx, url)
 	if err != nil {
@@ -196,7 +262,13 @@ func (s *Scratch) AdminExec(ctx context.Context, sql string) error {
 
 // Drop removes the scratch database, closing any connection still open to it.
 func (s *Scratch) Drop(ctx context.Context) error {
-	return adminExec(ctx, s.admin, "DROP DATABASE IF EXISTS "+s.Name+" WITH (FORCE)")
+	if err := adminExec(ctx, s.admin, "DROP DATABASE IF EXISTS "+s.Name+" WITH (FORCE)"); err != nil {
+		return err
+	}
+	if s.owner == "" {
+		return nil
+	}
+	return adminExec(ctx, s.admin, "DROP ROLE IF EXISTS "+s.owner)
 }
 
 func adminExec(ctx context.Context, adminURL, sql string) error {

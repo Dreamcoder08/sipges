@@ -155,14 +155,18 @@ PostgreSQL 16 or later. CI uses 17, and local verification used 16. Run this as 
 CREATE ROLE sipges_app LOGIN PASSWORD '<from secret store>'
   NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 CREATE ROLE sipges_tenant NOLOGIN NOINHERIT;      -- the migrations expect this name
-GRANT sipges_tenant TO sipges_app WITH ADMIN OPTION;
+CREATE ROLE mascli_tenant NOLOGIN NOINHERIT;      -- migration 0003 still names it; 0030 empties it
+GRANT sipges_tenant, mascli_tenant TO sipges_app WITH ADMIN OPTION;
 CREATE DATABASE sipges OWNER sipges_app;
 ```
 
 - The application must **not** be a superuser or have `BYPASSRLS`. Either one would bypass the
   forced row-level security that isolates tenants (ADR 0003). Tenant queries run as
-  `sipges_tenant` through `SET LOCAL ROLE` inside `withTenant`.
-- Creating `sipges_tenant` up front means the application role never needs `CREATEROLE`.
+  `sipges_tenant` through `SET LOCAL ROLE` inside `withTenant`. The Go API refuses such a role:
+  it exits at start, and refuses every new connection when the server only answers later.
+  `SIPGES_ALLOW_PRIVILEGED_DB_ROLE=1` exists for synthetic test servers and works on loopback
+  only.
+- Creating both roles up front means the application role never needs `CREATEROLE`.
   Verified on PostgreSQL 16: a non-superuser role provisioned this way ran every migration and
   served `/health`.
 - Require TLS to a managed or remote server. The adapter sets `ssl: 'require'` for non-loopback
