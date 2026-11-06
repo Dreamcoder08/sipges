@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/application"
@@ -22,6 +23,10 @@ type RuntimeInfo struct {
 	// Latest reads a tenant's latest attempt; nil when none was recorded.
 	Latest func(ctx context.Context, tenantID string) (*application.Attempt, error)
 }
+
+// errNoScope is unreachable behind the project scope; the route refuses rather than read nobody's
+// attempt.
+var errNoScope = errors.New("automation: the request has no project scope")
 
 type runtimeJSON struct {
 	EventProcessing bool         `json:"event_processing"`
@@ -45,7 +50,11 @@ type attemptJSON struct {
 // points pass eventAutomation.
 func RuntimeRoutes(mux *http.ServeMux, opts WriteOptions, info RuntimeInfo) {
 	mux.HandleFunc("GET /system/automations/runtime", func(w http.ResponseWriter, r *http.Request) {
-		scope, _ := tenancyhttp.ScopeFrom(r.Context())
+		scope, ok := tenancyhttp.ScopeFrom(r.Context())
+		if !ok {
+			respond(w, r, opts.Logger, nil, errNoScope)
+			return
+		}
 		attempt, err := info.Latest(r.Context(), scope.TenantID())
 		var view *attemptJSON
 		if err == nil && attempt != nil {
