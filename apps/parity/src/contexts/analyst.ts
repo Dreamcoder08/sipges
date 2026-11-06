@@ -10,6 +10,9 @@ import type { ParityCase } from '../types.ts';
  * reuses every id with "AJENA" in the text and leaves its alert undecided, so a cross-tenant read
  * shows as a difference. Ids are prefixed PARITY-AN- and inserts skip rows that already exist, so
  * the seed does not depend on any other context's.
+ *
+ * Decisions (T51): POST /system/briefing/proposals. Both APIs share one database, so each runs on
+ * subjects of its own, PARITY-AN-DEC-*-TSAPI and -GOAPI, and a repeat finds the proposal decided.
  */
 
 const SECHURA = 'SIPGES/PRJ-SECHURA';
@@ -176,7 +179,35 @@ INSERT INTO record_links (tenant_id, link_type, source_module, source_id, target
   ON CONFLICT DO NOTHING;`;
 };
 
+/** The subjects of one API's decisions: two severe alerts, and an actor a narrative names. */
+const decisionRows = (api: string) => {
+  const row = (module: string, id: string, payload: Readonly<Record<string, string>>) =>
+    `(${quoted(SECHURA)}, ${quoted(module)}, ${quoted(id)}, ${quoted(JSON.stringify(payload))}::jsonb, ` +
+    `'interno', '2026-01-01T00:00:00Z', '2026-02-06T00:00:00Z')`;
+  const alert = (id: string) =>
+    row('Alertas', id, {
+      Causa: `Amenaza sintética ${id}`,
+      Nivel_Preliminar: 'Crítica',
+      Estado: 'Abierta',
+      Fecha: '2026-03-03',
+    });
+  return [
+    alert(`PARITY-AN-DEC-OK-${api}`),
+    alert(`PARITY-AN-DEC-NO-${api}`),
+    row('Actores', `PARITY-AN-DEC-A-${api}`, {
+      'Nombre_Actor/Organizacion': `Colectivo Sintetico ${api}`,
+    }),
+    row('Narrativas', `PARITY-AN-DEC-N-${api}`, {
+      Descripcion: `Radio local: el Colectivo Sintetico ${api} rechaza el proyecto`,
+      Fecha_Observacion: '2026-02-02',
+    }),
+  ];
+};
+
 export const seed = `
+INSERT INTO module_records (tenant_id, module, id, payload, marking, created_at, updated_at) VALUES
+  ${[...decisionRows('TSAPI'), ...decisionRows('GOAPI')].join(',\n  ')}
+  ON CONFLICT DO NOTHING;
 ${graph(SECHURA, 'Bahía')}
 ${graph(OTHER, 'AJENA')}
 INSERT INTO proposal_decisions (tenant_id, fingerprint, subject_module, subject_id, kind, decision,
@@ -317,6 +348,132 @@ const routeCases = ROUTES.flatMap(({ name, path, normalize }): ParityCase[] => {
   ];
 });
 
+const PROPOSALS = '/system/briefing/proposals';
+
+const decision = (name: string, json: unknown, options: Partial<ParityCase> = {}): ParityCase => ({
+  name: `analyst decision ${name}`,
+  method: 'POST',
+  path: PROPOSALS,
+  auth: 'admin',
+  sameOrigin: true,
+  body: { json },
+  ...options,
+});
+
+/** One decision per API, on its own subject: only the new record's id may differ. */
+const perApi = (name: string, json: unknown) =>
+  decision(name, json, { perApi: true, normalize: ['result'] });
+
+const alertDecision = (kind: 'OK' | 'NO', verdict: string) => ({
+  module: 'alertas',
+  id: `PARITY-AN-DEC-${kind}-{api}`,
+  fingerprint: `record:acciones:alertas/PARITY-AN-DEC-${kind}-{api}`,
+  decision: verdict,
+});
+
+const LINK = 'link:difunde:actores/PARITY-AN-DEC-A-{api}:narrativas/PARITY-AN-DEC-N-{api}';
+const linkDecision = {
+  module: 'narrativas',
+  id: 'PARITY-AN-DEC-N-{api}',
+  fingerprint: LINK,
+  decision: 'approve',
+};
+
+const decisionCases: ParityCase[] = [
+  perApi('approving a follow-up', alertDecision('OK', 'approve')),
+  perApi('approving it again', alertDecision('OK', 'approve')),
+  perApi('rejecting a follow-up', alertDecision('NO', 'reject')),
+  perApi('rejecting it again', alertDecision('NO', 'reject')),
+  perApi('approving a link read from text', linkDecision),
+  perApi('approving that link again', linkDecision),
+  {
+    name: 'analyst decision: proposals of the decided alert',
+    method: 'GET',
+    path: `${PROPOSALS}?module=alertas&id=PARITY-AN-DEC-OK-{api}`,
+    auth: 'admin',
+    perApi: true,
+  },
+  decision('of an unknown fingerprint', {
+    module: 'alertas',
+    id: 'PARITY-AN-AL1',
+    fingerprint: 'record:otra',
+    decision: 'approve',
+  }),
+  decision('of an unknown record', {
+    module: 'alertas',
+    id: 'PARITY-AN-NADA',
+    fingerprint: 'record:otra',
+    decision: 'reject',
+  }),
+  decision('of an unknown module', {
+    module: 'nada',
+    id: 'PARITY-AN-AL1',
+    fingerprint: 'record:otra',
+    decision: 'reject',
+  }),
+  decision('already decided by the seed', {
+    module: 'demandas',
+    id: 'PARITY-AN-D2',
+    fingerprint: 'record:compromisos:demandas/PARITY-AN-D2',
+    decision: 'approve',
+  }),
+  decision(
+    "another tenant's subject stays out of reach",
+    {
+      module: 'alertas',
+      id: 'PARITY-AN-AL3',
+      fingerprint: 'record:acciones:alertas/PARITY-AN-AL3',
+      decision: 'reject',
+    },
+    { auth: 'multi', headers: { 'x-sipges-scope': 'PARITY/PRJ-B' } },
+  ),
+  decision('invalid decision', { module: 'a', id: 'b', fingerprint: 'c', decision: 'quizá' }),
+  decision('missing fields', {}),
+  decision('empty module', { module: '', id: 'b', fingerprint: 'c', decision: 'reject' }),
+  decision('module too long', {
+    module: 'm'.repeat(41),
+    id: 'b',
+    fingerprint: 'c',
+    decision: 'reject',
+  }),
+  decision('id too long', {
+    module: 'a',
+    id: 'i'.repeat(201),
+    fingerprint: 'c',
+    decision: 'reject',
+  }),
+  decision('fingerprint too long', {
+    module: 'a',
+    id: 'b',
+    fingerprint: 'f'.repeat(501),
+    decision: 'reject',
+  }),
+  decision('numbers', { module: 1, id: 2, fingerprint: 3, decision: 4 }),
+  decision('a list', []),
+  {
+    name: 'analyst decision without a session',
+    method: 'POST',
+    path: PROPOSALS,
+    sameOrigin: true,
+    body: { json: { module: 'a', id: 'b', fingerprint: 'c', decision: 'reject' } },
+  },
+  {
+    name: 'analyst decision without a same-origin header',
+    method: 'POST',
+    path: PROPOSALS,
+    auth: 'admin',
+    body: { json: { module: 'a', id: 'b', fingerprint: 'c', decision: 'reject' } },
+  },
+  {
+    name: 'analyst decision not JSON',
+    method: 'POST',
+    path: PROPOSALS,
+    auth: 'admin',
+    sameOrigin: true,
+    body: { raw: '{' },
+  },
+];
+
 export const cases: readonly ParityCase[] = [
   ...routeCases,
   {
@@ -335,4 +492,5 @@ export const cases: readonly ParityCase[] = [
       },
     },
   },
+  ...decisionCases,
 ];

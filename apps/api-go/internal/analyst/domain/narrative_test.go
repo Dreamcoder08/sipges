@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
@@ -51,5 +52,29 @@ func TestRenumberMovesCitationsRecordByRecord(t *testing.T) {
 	text, refs := domain.RenumberCitations("uno [1], dos [2], otro [9]", []int{1, 2}, shared, full)
 	if text != "uno [1], dos [3], otro [0]" || !slices.Equal(refs, []int{1, 3}) {
 		t.Fatalf("%q %v", text, refs)
+	}
+}
+
+func TestDecisionDetailIsTheAuditText(t *testing.T) {
+	t.Parallel()
+	result := "acciones/ACC-1"
+	cases := []struct {
+		approved bool
+		title    string
+		result   *string
+		want     string
+	}{
+		{true, "Crear", &result, "Aprobada: Crear → acciones/ACC-1"},
+		{true, "Vincular", nil, "Aprobada: Vincular"},
+		{false, "Crear", nil, "Descartada: Crear"},
+	}
+	for _, c := range cases {
+		if got := domain.DecisionDetail(c.approved, c.title, c.result); got != c.want {
+			t.Errorf("got %q, want %q", got, c.want)
+		}
+	}
+	long := domain.DecisionDetail(false, strings.Repeat("😀", 300), nil)
+	if domain.Len16(long) != 500 {
+		t.Fatalf("units = %d", domain.Len16(long))
 	}
 }

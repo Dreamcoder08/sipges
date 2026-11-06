@@ -7,7 +7,7 @@
 //
 // The session, project scope and role gate ran before (internal/app); every read runs in the
 // scope's tenant transaction, which never stays open across a call to the narrator.
-// POST /system/briefing/proposals (writes through other contexts, audited) stays in TypeScript.
+// POST /system/briefing/proposals (decide.go) writes through other contexts, which audit.
 //
 //nolint:misspell // Spanish record fields, modules and messages, verbatim from the TypeScript API.
 package http
@@ -34,6 +34,8 @@ type Options struct {
 	Logger *slog.Logger
 	// Assisted adds the narrator's prose; nil keeps the briefing extractive.
 	Assisted *application.Assisted
+	// Deciding applies proposal decisions.
+	Deciding application.Deciding
 }
 
 const notFound = "Registro no encontrado"
@@ -188,6 +190,10 @@ func Routes(mux *http.ServeMux, opts Options) {
 		}
 		httpx.WriteError(w, http.StatusInternalServerError, "Internal Server Error")
 	}
+
+	mux.HandleFunc("POST /system/briefing/proposals", func(w http.ResponseWriter, r *http.Request) {
+		decide(w, r, opts, now, fail)
+	})
 
 	mux.HandleFunc("GET /system/briefing/proposals", func(w http.ResponseWriter, r *http.Request) {
 		module, id := subjectOf(r)
