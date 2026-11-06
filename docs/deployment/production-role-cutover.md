@@ -1,6 +1,6 @@
 # Production role cutover: `mascli_workers` to `sipges_app`
 
-Moves production from a login with `BYPASSRLS` to one without it, so row-level security holds for the login itself and Go can start. **Nothing here has been run on production.** Each step runs with the owner, in order, in one sitting of about five minutes.
+Moves production from a login with `BYPASSRLS` to one without it, so row-level security holds for the login itself and Go can start. **Nothing here has been run on production.** Each step runs with the owner, in order, in one sitting of about ten minutes, plus 15 for the first cron tick.
 
 The order was rehearsed on 2026-11-06 on a full copy of production, with the real TypeScript Worker serving through its own Hyperdrive: about 5,100 requests at 3.3 per second across all passes, plus 82 page visits in a real browser. Steps 1 to 7 in this order failed no request. The results are [below](#rehearsal-results).
 
@@ -32,7 +32,8 @@ That order was considered and not run, because the evidence removed its reason a
 
 - The owner's word for this sitting, and a quiet hour, just after a `:15` cron tick.
 - `psql` 15 or later, the Neon CLI, `gh`, and `wrangler` from `apps/hosting-cloudflare`.
-- `NEON_PROJECT_ID`, a `NEON_API_KEY`, and `DIR`, a private directory outside the repository.
+- A fresh clone of `main` with `pnpm install` and Node 22.18 or later: `migrate` applies whatever migrations are on disk.
+- `NEON_PROJECT_ID`, a `NEON_API_KEY`, and `DIR`, a private directory outside the repository. `neon branches list --project-id "$NEON_PROJECT_ID"` gives `<production branch id>`.
 
 **Do not read these files aloud or `cat` them.** Everything below passes them by redirection.
 
@@ -42,6 +43,7 @@ A deploy can land mid-cutover: during the rehearsal, `Deploy Workers` for #335 r
 
 ```bash
 gh workflow disable deploy-workers.yml
+gh run list --workflow deploy-workers.yml --status in_progress   # must print nothing; wait if it does
 umask 077
 mkdir -p "$DIR"
 
@@ -65,7 +67,7 @@ Confirm you are on production, as the old role:
 psql "$(cat "$DIR/old.url")" -X -At -c "SELECT current_user, current_database()"
 ```
 
-The password never reaches the screen, the shell history or the SQL text. `psql` reads it from the environment with `\getenv`. Neon refuses SCRAM verifiers, so the plain value does reach the server, encrypted in transit. Do not use the Neon console's SQL editor: it keeps the statement in its history, which happened on the trial branch. `wrangler hyperdrive update` takes the URL as an argument, visible in the process list for about 3 s, so run it on a machine only you use. A search of wrangler's logs found neither rehearsal password.
+The password never reaches the screen, the shell history or the SQL text. `psql` reads it from the environment with `\getenv`. Neon refuses SCRAM verifiers, so the plain value does reach the server, encrypted in transit. Do not use the Neon console's SQL editor: it keeps the statement in its history, which happened on the trial branch. Every `psql` and `wrangler` below takes the URL as an argument and `curl` takes the API key, so all are visible in the process list while they run: use a machine only you have access to. A search of wrangler's logs found neither rehearsal password.
 
 **Rollback:** `gh workflow enable deploy-workers.yml`. Delete the branch only if you stop here.
 
@@ -136,7 +138,8 @@ FROM pg_proc p
 WHERE p.pronamespace = 'public'::regnamespace
   AND pg_get_userbyid(p.proowner) = 'mascli_workers' \gexec
 SELECT count(*) AS must_be_0 FROM pg_shdepend d JOIN pg_roles r ON r.oid = d.refobjid
-WHERE r.rolname = 'mascli_workers' AND d.deptype = 'o';
+WHERE r.rolname = 'mascli_workers' AND d.deptype = 'o'
+  AND d.dbid = (SELECT oid FROM pg_database WHERE datname = current_database());
 SQL
 ```
 
@@ -167,7 +170,7 @@ Wait until the only `mascli_workers` line is this query. Idle sessions took abou
 
 ## Step 5: the migration secret
 
-After step 7 the old URL fails, so this comes first. The deploy job would stop at `migrate`, before `wrangler deploy`: safe, but blocked.
+After step 7 the old URL fails, so this comes first. The deploy job would stop at `migrate`, before `wrangler deploy`: safe, but blocked. `ops-review-materialize.yml` reads the same secret; it scopes by tenant and keeps working.
 
 ```bash
 gh secret set SIPGES_MIGRATION_DATABASE_URL --env production < "$DIR/new.url"
@@ -243,7 +246,7 @@ psql "$(cat "$DIR/new.url")" -X -At -c \
   "SELECT tenant_id, last_tick_finished_at, last_tick_source, last_tick_status FROM automation_cursors"
 ```
 
-Do not force a compute restart to test the owner. The rehearsal's restart cost a stall of 1 to 2 s and four `500`s in the browser, and the next idle suspend proves the same thing. After it, the check in step 2 must still say `sipges_app`.
+Do not force a compute restart to test the owner. The rehearsal's restart stalled probes by up to 2 s and gave one browser visit four `500`s, and the next idle suspend proves the same thing. After it, the check in step 2 must still say `sipges_app`.
 
 ## Step 9: retire the old login
 
@@ -262,7 +265,7 @@ Discard the response and delete `$DIR`. Nobody then holds the old password, whic
 
 ## Rollback
 
-Run backwards from the step you reached.
+Run backwards from the step you reached. If you already lifted the freeze, repeat step 0's `gh workflow disable` first, and enable it again when you finish.
 
 | Step | Do this | Rehearsed | Failed requests |
 | --- | --- | --- | --- |
@@ -273,11 +276,11 @@ Run backwards from the step you reached.
 | R2 | The step 2 `PATCH` with `"owner_name":"mascli_workers"` | 1 s | 0 |
 | R1 | `REVOKE sipges_tenant FROM sipges_app; REVOKE sipges_app FROM mascli_workers; DROP ROLE sipges_app;` | 1 s | 0 |
 
-R3 order is not cosmetic: tables first left the history trigger running as a role with no rights on `record_versions`, and one write answered `500`. Functions first failed none. If `DROP ROLE` reports dependent objects, R3 did not finish; go back to it.
+R3 order is not cosmetic: tables first left the history trigger running as a role with no rights on `record_versions`, and one write answered `500`. Functions first failed none. If `DROP ROLE` reports dependent objects, R3 or R2 did not finish; go back to it.
 
 ### Last resort: Neon restore
 
-Use it only if data is damaged, because **everything written after the restore point is lost**, sessions included: users must sign in again.
+Use it only if data is damaged, because **everything written after the restore point is lost**, sessions included: users must sign in again. `sipges_app` does not exist at the restore point, so after step 4 run R4 and R5 first.
 
 ```bash
 neon branches restore main pre-role-cutover --project-id "$NEON_PROJECT_ID" \
@@ -324,14 +327,14 @@ A Neon branch of `main` with an expiry, 0.25 CU like production, and a throwaway
 
 | Result | Evidence |
 | --- | --- |
-| Final order, forward | 0 failed probes across the run. Steps took 29 s |
+| Final order, forward | 0 failed probes through steps 1 to 7. 29 s end to end, pauses included. The forced restart that followed is listed below |
 | Browser walk over the same run | 82 visits to six screens: 12 flags were the page's own INGEMMET notice, one was real, the forced restart |
 | Hyperdrive, either way, in place | 2.8 to 3.2 s, 0 failed |
 | Old role serving after losing ownership | 0 failed, including writes and sign-ins |
 | Reads, old role against new | 57 GET routes on both projects, 114 requests: same status on all, identical bodies on 104. Nine carry timestamps or counters and vary on their own; one `/system/audit` differed in content at the same size, after probe writes |
 | History trigger after the handover | Kept writing `record_versions` |
 | Real cron under `sipges_app` | Both projects `completed`. The rehearsal database had no rules, channels or keys, so nothing was sent |
-| Compute restart | 5 s, and 4 `500`s in the browser |
+| Compute restart | Active again in 5 s; probes stalled up to 2 s, 0 failed; one browser visit got four `500`s |
 
 **Failures, and what changed:**
 
