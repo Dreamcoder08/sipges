@@ -15,6 +15,9 @@ export default tseslint.config(
       'reference/python/static/**',
       '**/test-results/**',
       '**/playwright-report/**',
+      // Vendored pdf.js and its host for QuickJS, and a spike's throwaway scripts.
+      'engines/crates/pdf-text-wasm/js/**',
+      'spikes/**',
     ],
   },
   js.configs.recommended,
