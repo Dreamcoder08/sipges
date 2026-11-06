@@ -96,7 +96,8 @@ for _ in $(seq 1 30); do
   sleep 2
 done
 [[ ${ran:-0} != 0 ]] || { echo 'no automation tick was recorded'; exit 1; }
-sipges logs api 2>/dev/null | grep -q automation_schedule_started
+# Read to the end: grep -q would close the pipe on the logs, and pipefail would call that a failure.
+sipges logs api 2>/dev/null | grep automation_schedule_started >/dev/null
 echo "ok - automation ticked for $ran project(s)"
 
 step 'the nightly backup is on the clock'
@@ -241,7 +242,7 @@ fi
 echo 'ok - the new backup stays, and keeping none is refused'
 
 step 'an explicit address replaces the one in use'
-sipges install 127.0.0.1
+SIPGES_SKIP_BUILD=1 sipges install 127.0.0.1
 grep -q '^SIPGES_SITE_HOST=127.0.0.1$' "$SIPGES_ENV_FILE" || { echo 'the address was ignored'; exit 1; }
 code=$(curl -sk -o /dev/null -w '%{http_code}' "https://127.0.0.1:$https_port/health")
 [[ $code == 200 ]] || { echo "the new address answered $code"; exit 1; }
