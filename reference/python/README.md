@@ -5,16 +5,16 @@ Estos archivos conservan el comportamiento y el esquema SQLite empleados para co
 Desde la raíz del repositorio:
 
 ```bash
-python -m venv /tmp/mascli-reference-venv
-/tmp/mascli-reference-venv/bin/pip install -r reference/python/requirements-test.txt
-PYTHONPATH=reference/python /tmp/mascli-reference-venv/bin/python -m pytest -q reference/python/tests
+python -m venv /tmp/sipges-reference-venv
+/tmp/sipges-reference-venv/bin/pip install -r reference/python/requirements-test.txt
+PYTHONPATH=reference/python /tmp/sipges-reference-venv/bin/python -m pytest -q reference/python/tests
 ```
 
 Las pruebas redirigen los recursos a directorios temporales. No arranques esta referencia sobre datos reales ni copies `data/seed.json` o bases de datos operativas.
 
 ## Lanzadores locales
 
-Los lanzadores `start_mascli.sh`, `start_mascli.bat`, `iniciar_mascli_final.sh` e `INICIAR_MASCLI_FINAL.bat` arrancan `app:app` con uvicorn en `127.0.0.1:8000`; se ejecutan desde este directorio y asignan `MASCLI_COOKIE_SECURE=0` solo si la variable está ausente ([cookies seguras](../../docs/secure-cookies.md)).
+Los lanzadores `start_sipges.sh`, `start_sipges.bat`, `iniciar_sipges_final.sh` e `INICIAR_SIPGES_FINAL.bat` arrancan `app:app` con uvicorn en `127.0.0.1:8000`; se ejecutan desde este directorio y asignan `SIPGES_COOKIE_SECURE=0` solo si la variable está ausente ([cookies seguras](../../docs/secure-cookies.md)).
 
 ## Historial del prototipo
 

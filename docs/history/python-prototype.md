@@ -34,6 +34,6 @@ Before the TypeScript rewrite (v1.0.0, see the [CHANGELOG](../../CHANGELOG.md)),
 
 - Technical specs: [IRSA specification](../../reference/python/docs/IRSA_ESPECIFICACION_TECNICA.txt) and [situational analysis module](../../reference/python/docs/NUEVO_MODULO_ANALISIS_SITUACIONAL.txt). The executable IRSA reference is [docs/escenarios/irsa.md](../escenarios/irsa.md).
 - Prototype fixes: [export isolation](../../reference/python/docs/export-isolation.md), [storage backend](../../reference/python/docs/storage-backend.md), [MFA enrollment](../../reference/python/docs/mfa-enrollment.md); superseded by the ADRs.
-- Local launchers (`start_mascli.*`, `INICIAR_MASCLI_FINAL.bat`, `iniciar_mascli_final.sh`) are in [`reference/python`](../../reference/python/README.md); cookie behavior in [secure cookies](../secure-cookies.md).
+- Local launchers (`start_sipges.*`, `INICIAR_SIPGES_FINAL.bat`, `iniciar_sipges_final.sh`) are in [`reference/python`](../../reference/python/README.md); cookie behavior in [secure cookies](../secure-cookies.md).
 
 The prototype figures are provisional: the IRSA was never presented as a validated model, and external scientific validation remains a separate process.

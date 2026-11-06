@@ -21,6 +21,9 @@ owner. Nothing here changes production: the flag is off by default, so TypeScrip
 - The flag covers the cron only. A write the Go API serves wakes an event tick, and
   `POST /system/automations/tick` runs one for an administrator, whatever the flag says. `GO_ROUTES` is empty, so
   neither happens today.
+- `SIPGES_DATA_KEY` and `SIPGES_VAPID_*` reach the container, and the Worker always has the data key. So those
+  ticks can send `channel` steps and push from Go as soon as a write route or the tick route moves, flag off.
+  On the trial, a write route on a copy of production would send through that copy's real channels.
 
 ## If both run
 
@@ -98,10 +101,10 @@ Every step needs the owner's go-ahead. **The procedure cannot run on Cloudflare 
 made:** with `GO_ROUTES` empty no request reaches the container, so it never starts and the flag has no effect.
 
 1. Apply decision 1, so that something starts the container and keeps it ticking.
-2. Forward the flag, `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS` and `SIPGES_VAPID_*` in `goContainerEnv`
-   (`apps/hosting-cloudflare/src/go-routes.ts`). None reaches the container today, so the flag cannot turn on there
-   by accident. `SIPGES_CRON_SECRET`, `CRON_SECRET` and `SIPGES_CRON_SCHEDULE` already pass when they are set; with
-   the flag off Go still refuses every cron call and only `/system/automations/runtime` reads them. Set
+2. Forward the flag in `goContainerEnv` (`apps/hosting-cloudflare/src/go-routes.ts`). It does not reach the
+   container today, so it cannot turn on there by accident. `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS`,
+   `SIPGES_VAPID_*`, `SIPGES_CRON_SECRET`, `CRON_SECRET` and `SIPGES_CRON_SCHEDULE` already pass when they are set;
+   with the flag off Go still refuses every cron call and only `/system/automations/runtime` reads the last three. Set
    `SIPGES_CRON_SCHEDULE` on the Worker: unset, TypeScript reports `*/15 * * * *` and Go reports `null`.
 3. Set `SIPGES_GO_AUTOMATION_CRON=1` on the `sipges-go` trial Worker, on a Neon branch.
 4. Check `automation_schedule_started` in the logs, `last_tick_source = 'cron'` on the cursors, and no

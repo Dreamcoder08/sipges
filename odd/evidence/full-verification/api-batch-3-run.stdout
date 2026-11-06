@@ -1,5 +1,5 @@
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api[39m
 
  [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mreports every module in dry-run and writes nothing[33m 3283[2mms[22m[39m
  [32m✓[39m test/migration/migrate-legacy.test.ts[2m > [22mlegacy SQLite → PostgreSQL migration[2m > [22mapplies the migration, then verifies counts, checksums and attachment bytes[33m 2904[2mms[22m[39m
@@ -68,13 +68,13 @@
  [32m✓[39m test/ontology/search.test.ts[2m > [22mGET /system/search[2m > [22mnever returns another tenant’s records[33m 925[2mms[22m[39m
  [32m✓[39m test/ontology/classification.test.ts[2m > [22mclassification markings[2m > [22mhides restricted records, their history, links and search hits from read-only roles[33m 4526[2mms[22m[39m
  [32m✓[39m test/ontology/classification.test.ts[2m > [22mclassification markings[2m > [22mvalidates, audits and restricts who may classify[33m 994[2mms[22m[39m
- [32m✓[39m test/intelligence/four-eyes-http.test.ts[2m > [22mFour eyes on high-priority alerts (MASCLI 4.0)[2m > [22mneeds a second, different person to corroborate a high-priority alert[33m 4521[2mms[22m[39m
- [32m✓[39m test/intelligence/four-eyes-http.test.ts[2m > [22mFour eyes on high-priority alerts (MASCLI 4.0)[2m > [22mleaves medium alerts and discarding to one person[33m 1116[2mms[22m[39m
+ [32m✓[39m test/intelligence/four-eyes-http.test.ts[2m > [22mFour eyes on high-priority alerts (SIPGES 4.0)[2m > [22mneeds a second, different person to corroborate a high-priority alert[33m 4521[2mms[22m[39m
+ [32m✓[39m test/intelligence/four-eyes-http.test.ts[2m > [22mFour eyes on high-priority alerts (SIPGES 4.0)[2m > [22mleaves medium alerts and discarding to one person[33m 1116[2mms[22m[39m
  [32m✓[39m test/ontology/timeline.test.ts[2m > [22mGET /system/timeline[2m > [22mlists dated records of every type newest first, within the range[33m 4215[2mms[22m[39m
  [32m✓[39m test/ontology/timeline.test.ts[2m > [22mGET /system/timeline[2m > [22mhides restricted records from read-only roles[33m 1041[2mms[22m[39m
  [32m✓[39m test/ontology/timeline.test.ts[2m > [22mGET /system/timeline[2m > [22mexpands partial bounds[32m 1[2mms[22m[39m
- [32m✓[39m test/intelligence/situation-room-http.test.ts[2m > [22mSituation room (MASCLI 4.0)[2m > [22mshows what is blocked and by whom, what is overdue and what is moving[33m 4291[2mms[22m[39m
- [32m✓[39m test/intelligence/decision-receipts-http.test.ts[2m > [22mDecision receipts on preventive actions (MASCLI 4.0)[2m > [22mrequires an attached file to complete a plan and binds the decision to its sha256[33m 4336[2mms[22m[39m
+ [32m✓[39m test/intelligence/situation-room-http.test.ts[2m > [22mSituation room (SIPGES 4.0)[2m > [22mshows what is blocked and by whom, what is overdue and what is moving[33m 4291[2mms[22m[39m
+ [32m✓[39m test/intelligence/decision-receipts-http.test.ts[2m > [22mDecision receipts on preventive actions (SIPGES 4.0)[2m > [22mrequires an attached file to complete a plan and binds the decision to its sha256[33m 4336[2mms[22m[39m
  [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mreads naive legacy timestamps as UTC and accepts explicit offsets[32m 4[2mms[22m[39m
  [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22maccepts legacy PBKDF2 hashes and rejects anything else[32m 241[2mms[22m[39m
  [32m✓[39m test/migration/mapping.test.ts[2m > [22mlegacy mapping[2m > [22mkeeps unknown payload fields and refuses payloads PostgreSQL cannot store[32m 2[2mms[22m[39m
@@ -135,7 +135,7 @@
   severity_local: [32m'NOTICE'[39m,
   severity: [32m'NOTICE'[39m,
   code: [32m'00000'[39m,
-  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  message: [32m'role "sipges_verify" has already been granted membership in role "mascli_tenant" by role "sipges_verify"'[39m,
   file: [32m'user.c'[39m,
   line: [32m'1889'[39m,
   routine: [32m'AddRoleMems'[39m
@@ -158,7 +158,7 @@
   severity_local: [32m'NOTICE'[39m,
   severity: [32m'NOTICE'[39m,
   code: [32m'00000'[39m,
-  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  message: [32m'role "sipges_verify" has already been granted membership in role "mascli_tenant" by role "sipges_verify"'[39m,
   file: [32m'user.c'[39m,
   line: [32m'1889'[39m,
   routine: [32m'AddRoleMems'[39m
@@ -171,7 +171,7 @@
   severity_local: [32m'NOTICE'[39m,
   severity: [32m'NOTICE'[39m,
   code: [32m'00000'[39m,
-  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  message: [32m'role "sipges_verify" has already been granted membership in role "mascli_tenant" by role "sipges_verify"'[39m,
   file: [32m'user.c'[39m,
   line: [32m'1889'[39m,
   routine: [32m'AddRoleMems'[39m
@@ -186,7 +186,7 @@
   severity_local: [32m'NOTICE'[39m,
   severity: [32m'NOTICE'[39m,
   code: [32m'00000'[39m,
-  message: [32m'role "mascli_verify" has already been granted membership in role "mascli_tenant" by role "mascli_verify"'[39m,
+  message: [32m'role "sipges_verify" has already been granted membership in role "mascli_tenant" by role "sipges_verify"'[39m,
   file: [32m'user.c'[39m,
   line: [32m'1889'[39m,
   routine: [32m'AddRoleMems'[39m
@@ -200,4 +200,4 @@
 [2m   Start at [22m 17:46:37
 [2m   Duration [22m 150.36s[2m (tests 93%, import 6%, transform 1%)[22m
 
-JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-3-result.json
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/odd/evidence/full-verification/api-batch-3-result.json

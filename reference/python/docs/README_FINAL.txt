@@ -1,9 +1,9 @@
-MASCLI – PÁGINA WEB FINAL DE TESIS
+SIPGES – PÁGINA WEB FINAL DE TESIS
 Proyecto Sechura · Piura · 2026
 
 VERSIÓN
 - Interfaz: Web Final RC 1.5
-- Motor analítico: MASCLI V0.5.1 – Calibración Técnica
+- Motor analítico: SIPGES V0.5.1 – Calibración Técnica
 - Estado científico: validación externa pendiente
 
 QUÉ INCLUYE
@@ -12,7 +12,7 @@ QUÉ INCLUYE
 - Actores
 - Demandas y compromisos
 - Centro de alertas
-- IRSA-MASCLI
+- IRSA-SIPGES
 - 32 indicadores G1–I6
 - Validación experta
 - Fuentes y evidencias
@@ -29,18 +29,18 @@ QUÉ INCLUYE
 
 INICIO EN WINDOWS
 1. Tener Python instalado.
-2. Ejecutar: reference/python/INICIAR_MASCLI_FINAL.bat
+2. Ejecutar: reference/python/INICIAR_SIPGES_FINAL.bat
 3. Abrir en el navegador: http://127.0.0.1:8000
 
 INICIO EN LINUX / MAC
-1. Ejecutar: ./reference/python/iniciar_mascli_final.sh
+1. Ejecutar: ./reference/python/iniciar_sipges_final.sh
 2. Abrir: http://127.0.0.1:8000
 
 IMPORTANTE
 La web está finalizada como prototipo de tesis. No debe rotularse como “modelo validado” hasta cerrar juicio de expertos, Gold Standard y métricas de validación funcional.
 
 ALMACENAMIENTO DE ARCHIVOS
-- Los adjuntos se guardan en data/uploads o en la ruta indicada por MASCLI_UPLOAD_DIR.
+- Los adjuntos se guardan en data/uploads o en la ruta indicada por SIPGES_UPLOAD_DIR.
 - En el plan gratuito de Render el disco local es efímero: los archivos pueden perderse al reiniciar o redesplegar. Para uso real configure almacenamiento persistente externo y autenticación/autorización.
 - La gestión de usuarios y roles incluida es un prototipo CRUD; no crea sesiones ni aplica permisos reales.
 - Los listados operativos se filtran por proyecto activo. Dashboard agregado, IRSA y auditoría conservan métricas globales y se identifican como tales en la interfaz.
@@ -49,4 +49,4 @@ ALMACENAMIENTO DE ARCHIVOS
 - Las áreas nominales se conservan separadas de las áreas GIS: la presentación proporcionada aporta nombres, códigos y hectáreas, pero no coordenadas numéricas.
 
 
-IMPORTANTE RC 2.9: leer reference/python/history/NOVEDADES_RC_2_9.md antes de iniciar. Es obligatorio configurar MASCLI_ADMIN_PASSWORD en el primer arranque.
+IMPORTANTE RC 2.9: leer reference/python/history/NOVEDADES_RC_2_9.md antes de iniciar. Es obligatorio configurar SIPGES_ADMIN_PASSWORD en el primer arranque.

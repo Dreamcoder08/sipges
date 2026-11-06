@@ -1,4 +1,4 @@
-# MASCLI RC 2.8 — Centro de control gerencial
+# SIPGES RC 2.8 — Centro de control gerencial
 
 Evolución directa de RC 2.7. Nuevo menú **Centro gerencial** con KPIs por proyecto, distribución de alertas, acciones por estado, pendientes de verificación, acciones vencidas, responsables y tabla de alertas recientes. Descarga CSV desde el tablero.
 

@@ -1,80 +1,80 @@
 [
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration/automation-postgres.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration/automation-postgres.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration/migration-postgres.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration/migration-postgres.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration/postgres.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration/postgres.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration/tenancy-postgres.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration/tenancy-postgres.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration-context/ingest-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration-context/ingest-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration-context/mcp-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration-context/mcp-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration-context/media-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration-context/media-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/integration-context/rss-feed-gateway.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/integration-context/rss-feed-gateway.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/migration/mapping.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/migration/mapping.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/migration/migrate-legacy.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/migration/migrate-legacy.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/migration/migrated-app-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/migration/migrated-app-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/decision-receipts-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/decision-receipts-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/digital-signal-postgres.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/digital-signal-postgres.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/four-eyes-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/four-eyes-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/intelligence-domain.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/intelligence-domain.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/narrative-evaluation.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/narrative-evaluation.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/operations-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/operations-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/intelligence/situation-room-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/intelligence/situation-room-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/catalog.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/ontology/catalog.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/classification.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/ontology/classification.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/links-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/ontology/links-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/search.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/ontology/search.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/semantic-search.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/ontology/semantic-search.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/ontology/timeline.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/ontology/timeline.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/client-ip.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/platform/client-ip.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/platform/migrator.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/platform/migrator.test.ts"
   }
 ]

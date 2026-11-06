@@ -1,4 +1,4 @@
-MASCLI WEB FINAL RC 1.3 — RESULTADO DE PRUEBAS
+SIPGES WEB FINAL RC 1.3 — RESULTADO DE PRUEBAS
 Fecha: 2026-10-10
 
 Pruebas automatizadas con base de datos y carpeta de uploads aisladas:

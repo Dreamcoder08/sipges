@@ -1,4 +1,4 @@
-# MASCLI RC 2.0 — Laboratorio documental
+# SIPGES RC 2.0 — Laboratorio documental
 
 - Conserva las funcionalidades RC 1.9.
 - Añade lectura de PDF con texto, DOCX, TXT y MD (máximo configurable de 10 MB y 100 páginas PDF).

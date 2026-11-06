@@ -61,5 +61,5 @@ Warning: Indexing all PDF objects
 Error: [31mERR_PNPM_RECURSIVE_RUN_FIRST_FAIL[0m
 
   [31m×[0m "pnpm recursive run" failed in /home/dreamcoder08/Documents/PROYECTOS/
-  [31m│[0m mascli/.worktrees/github-main/apps/api
+  [31m│[0m sipges/.worktrees/github-main/apps/api
 

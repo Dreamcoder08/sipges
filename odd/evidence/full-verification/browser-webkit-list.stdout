@@ -2,19 +2,19 @@
   "config": {
     "argv": [
       "/home/dreamcoder08/.hermes/node/bin/node",
-      "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
+      "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
       "test",
       "--config",
       "playwright.webkit.config.ts",
       "--list",
       "--reporter=json"
     ],
-    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/playwright.webkit.config.ts",
-    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/playwright.webkit.config.ts",
+    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
-    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/global-setup.ts",
+    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/global-setup.ts",
     "globalTeardown": null,
     "globalTimeout": 0,
     "grep": {},
@@ -24,13 +24,13 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit",
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {},
         "id": "webkit",
         "name": "webkit",
-        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
         "testIgnore": [],
         "testMatch": [
           "/(?:11-functional-audit|15-record-insights|17-quality-followup|18-territorial-intelligence)\\.spec\\.ts/"

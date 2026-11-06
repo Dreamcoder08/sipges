@@ -1,4 +1,4 @@
-$ pnpm --filter @mascli/web build && pnpm --filter @mascli/e2e run e2e
+$ pnpm --filter @sipges/web build && pnpm --filter @sipges/e2e run e2e
 $ vite build
 [33m[plugin builtin:vite-reporter] [33;1m
 (!) Some chunks are larger than 500 kB after minification. Consider:
@@ -9,5 +9,5 @@ $ playwright test
 Error: [31mERR_PNPM_RECURSIVE_RUN_FIRST_FAIL[0m
 
   [31m×[0m "pnpm recursive run" failed in /home/dreamcoder08/Documents/PROYECTOS/
-  [31m│[0m mascli/.worktrees/github-main/apps/e2e
+  [31m│[0m sipges/.worktrees/github-main/apps/e2e
 

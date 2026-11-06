@@ -1,8 +1,8 @@
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api[39m
 
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mopens a session with the bootstrap admin and sets the hardened cookie[33m 4166[2mms[22m[39m
- [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22momits Secure only when MASCLI_COOKIE_SECURE=0[33m 880[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22momits Secure only when SIPGES_COOKIE_SECURE=0[33m 880[2mms[22m[39m
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mnormalizes the username like Python (trim + lower case)[33m 909[2mms[22m[39m
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mrejects wrong password with the uniform 401[33m 865[2mms[22m[39m
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login[2m > [22mrejects unknown user with the uniform 401[33m 862[2mms[22m[39m
@@ -30,9 +30,9 @@
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mTOTP enrollment and login[2m > [22menrolls, encrypts the secret at rest, enables MFA and keeps only the current session[33m 1118[2mms[22m[39m
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mTOTP enrollment and login[2m > [22mlets the read-only role enroll MFA (self-service, ADR 0009)[33m 946[2mms[22m[39m
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mbootstrap admin[2m > [22mrefuses to start an empty installation without a strong admin password[33m 758[2mms[22m[39m
- [32m✓[39m test/identity/auth-http.test.ts[2m > [22mbootstrap admin[2m > [22muses MASCLI_ADMIN_FULL_NAME instead of a hard-coded personal name (ADR 0008 #13)[33m 937[2mms[22m[39m
+ [32m✓[39m test/identity/auth-http.test.ts[2m > [22mbootstrap admin[2m > [22muses SIPGES_ADMIN_FULL_NAME instead of a hard-coded personal name (ADR 0008 #13)[33m 937[2mms[22m[39m
  [32m✓[39m test/identity/auth-http.test.ts[2m > [22mPOST /login with the WebAssembly hasher (Cloudflare Workers)[2m > [22msigns in through the injected hasher and refuses a wrong password[33m 1058[2mms[22m[39m
- [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mconfiguration[2m > [22mrequires MFA unless MASCLI_REQUIRE_MFA is exactly "0"[32m 4[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mconfiguration[2m > [22mrequires MFA unless SIPGES_REQUIRE_MFA is exactly "0"[32m 4[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mconfiguration[2m > [22mparses the host allowlist and rejects malformed names[32m 1[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22msecurity headers[2m > [22msends a CSP that forbids scripts and framing on every response[33m 4107[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mhost allowlist[2m > [22mrejects unexpected Host headers when configured[33m 913[2mms[22m[39m
@@ -45,7 +45,7 @@
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mblocks every business route until the session enrolls TOTP[33m 926[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mlets read-only roles without any project grant enroll[33m 1041[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mkeeps /system/auth/me available to drive the enrollment screen[33m 876[2mms[22m[39m
- [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mis off when MASCLI_REQUIRE_MFA=0[33m 887[2mms[22m[39m
+ [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mmandatory MFA[2m > [22mis off when SIPGES_REQUIRE_MFA=0[33m 887[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22mclears the factor, ends the sessions and forces a new enrollment[33m 1095[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22mrefuses to reset the administrator’s own MFA[33m 1021[2mms[22m[39m
  [32m✓[39m test/identity/deployment-hardening.test.ts[2m > [22mPOST /system/auth/accounts/:username/reset-mfa[2m > [22mis restricted to administrators[33m 1024[2mms[22m[39m
@@ -64,7 +64,7 @@
  [32m✓[39m test/identity/hardening.test.ts[2m > [22mpassword length counts code points like Python len()[2m > [22mrejects 6 astral characters (12 UTF-16 units) as too short[32m 1[2mms[22m[39m
  [32m✓[39m test/identity/hardening.test.ts[2m > [22mrejected account commands leave identity state unchanged[2m > [22mkeeps users and sessions byte-identical[33m 912[2mms[22m[39m
  [32m✓[39m test/identity/hardening.test.ts[2m > [22mHSTS (ADR 0004)[2m > [22mis sent when cookies are Secure[33m 841[2mms[22m[39m
- [32m✓[39m test/identity/hardening.test.ts[2m > [22mHSTS (ADR 0004)[2m > [22mis omitted for intentional local HTTP (MASCLI_COOKIE_SECURE=0)[33m 859[2mms[22m[39m
+ [32m✓[39m test/identity/hardening.test.ts[2m > [22mHSTS (ADR 0004)[2m > [22mis omitted for intentional local HTTP (SIPGES_COOKIE_SECURE=0)[33m 859[2mms[22m[39m
  [32m✓[39m test/identity/hardening.test.ts[2m > [22musernames that can never exist (re-verification advisories)[2m > [22manswers the uniform 401, not 500, for a NUL byte and still counts the attempt[33m 886[2mms[22m[39m
  [32m✓[39m test/identity/hardening.test.ts[2m > [22musernames that can never exist (re-verification advisories)[2m > [22manswers the uniform 401, not 500, for more than 120 characters and still counts the attempt[33m 920[2mms[22m[39m
  [32m✓[39m test/identity/hardening.test.ts[2m > [22mwrong second factor under concurrency[2m > [22mcounts each wrong OTP against the throttle when the password is right[33m 1057[2mms[22m[39m
@@ -77,7 +77,7 @@
  [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle sign-in flow[2m > [22madmits only linked, active accounts[33m 986[2mms[22m[39m
  [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mare managed by administrators only, with one account per address[33m 1052[2mms[22m[39m
  [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mend Google sessions when the address changes or is removed[33m 999[2mms[22m[39m
- [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mlinks the bootstrap administrator from MASCLI_GOOGLE_ADMIN_EMAIL without overriding[33m 867[2mms[22m[39m
+ [32m✓[39m test/identity/google-sign-in.test.ts[2m > [22mGoogle account links[2m > [22mlinks the bootstrap administrator from SIPGES_GOOGLE_ADMIN_EMAIL without overriding[33m 867[2mms[22m[39m
  [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/analyze[2m > [22mreads TXT, PDF and DOCX into located candidate findings[33m 4583[2mms[22m[39m
  [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/analyze[2m > [22mmaps every rejection to app.py status codes[33m 998[2mms[22m[39m
  [32m✓[39m test/documents/document-lab-http.test.ts[2m > [22mPOST /system/document-lab/analyze[2m > [22mrefuses another project and is open to read-only roles[33m 1011[2mms[22m[39m
@@ -296,4 +296,4 @@
 [2m   Start at [22m 17:44:17
 [2m   Duration [22m 138.82s[2m (tests 95%, import 4%, transform 1%)[22m
 
-JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-2-result.json
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/odd/evidence/full-verification/api-batch-2-result.json

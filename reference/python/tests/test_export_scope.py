@@ -9,7 +9,7 @@ from conftest import DEFAULT, MARKERS, MISSING, TENANT_A, TENANT_B, login, tenan
 def assert_download(response, scope):
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/octet-stream"
-    assert 'filename="mascli.db"' in response.headers["content-disposition"]
+    assert 'filename="sipges.db"' in response.headers["content-disposition"]
     assert response.content.startswith(b"SQLite format 3\x00")
     assert MARKERS[scope] in response.content
     for other_scope, marker in MARKERS.items():
@@ -27,14 +27,14 @@ def test_default_scope_export(isolated_app):
 def test_tenant_export_contains_only_authorized_marker(isolated_app, scope):
     _, client = isolated_app
     login(client)
-    assert_download(client.get("/system/export", headers={"X-MASCLI-Scope": scope}), scope)
+    assert_download(client.get("/system/export", headers={"X-SIPGES-Scope": scope}), scope)
 
 
 def test_sequential_scope_switching(isolated_app):
     _, client = isolated_app
     login(client)
     for scope in (TENANT_A, TENANT_B, DEFAULT, TENANT_A):
-        assert_download(client.get("/system/export", headers={"X-MASCLI-Scope": scope}), scope)
+        assert_download(client.get("/system/export", headers={"X-SIPGES-Scope": scope}), scope)
 
 
 @pytest.mark.parametrize("user,scope,status", [
@@ -48,7 +48,7 @@ def test_export_denied(isolated_app, user, scope, status):
     module, client = isolated_app
     if user:
         login(client, user)
-    headers = {"X-MASCLI-Scope": scope} if scope else {}
+    headers = {"X-SIPGES-Scope": scope} if scope else {}
     response = client.get("/system/export", headers=headers)
     assert response.status_code == status
     assert all(marker not in response.content for marker in MARKERS.values())

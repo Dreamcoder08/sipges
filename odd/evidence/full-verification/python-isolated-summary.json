@@ -1,6 +1,6 @@
 {
   "interpreter": "3.12.8",
-  "environment": "node_modules/.cache/mascli-python-reference",
+  "environment": "node_modules/.cache/sipges-python-reference",
   "results": [
     {
       "step": "python-interpreter-install",

@@ -1,4 +1,4 @@
-# MASCLI RC 1.9 — análisis intermodular
+# SIPGES RC 1.9 — análisis intermodular
 
 - Endpoint `/system/integrated-analysis`: vínculos candidatos entre intereses, oportunidades, diálogos y hechos.
 - Prioriza coincidencias con IDs comunes o referencias cruzadas; como segunda alternativa utiliza dos o más palabras temáticas compartidas.
