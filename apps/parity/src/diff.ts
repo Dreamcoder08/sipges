@@ -93,3 +93,16 @@ export const compare = (
   }
   return out;
 };
+
+/** What a case promises about one answer's text: every `present` in it, no `absent` in it. */
+export const checkText = (
+  body: Body,
+  present: readonly string[] = [],
+  absent: readonly string[] = [],
+): string[] => {
+  const text = body.kind === 'json' ? JSON.stringify(body.value) : body.value;
+  return [
+    ...present.filter((t) => !text.includes(t)).map((t) => `missing ${JSON.stringify(t)}`),
+    ...absent.filter((t) => text.includes(t)).map((t) => `unexpected ${JSON.stringify(t)}`),
+  ];
+};

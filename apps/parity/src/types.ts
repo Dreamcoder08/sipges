@@ -43,4 +43,8 @@ export type ParityCase = {
    * or deleting a row) names a row of its own on each side, such as `{ w: { ts: 'WT', go: 'WG' } }`.
    */
   readonly vary?: Readonly<Record<string, { readonly ts: string; readonly go: string }>>;
+  /** Text both answers must hold, for a promise that two equal answers alone would not prove. */
+  readonly present?: readonly string[];
+  /** Text neither answer may hold: another project's rows, for example. */
+  readonly absent?: readonly string[];
 };

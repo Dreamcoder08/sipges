@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { NORMALIZED, compare, normalize, type Observed } from './diff.ts';
+import { NORMALIZED, checkText, compare, normalize, type Observed } from './diff.ts';
 
 const json = (status: number, body: unknown): Observed => ({
   status,
@@ -91,4 +91,17 @@ test('normalized fields compare equal when present on both sides', () => {
     compare(json(200, { id: 1, ok: true }), json(200, { id: 2, ok: true }), ['id']),
     [],
   );
+});
+
+test('checkText reports text an answer lacks or must not hold', () => {
+  const body = { kind: 'json', value: { a: ['propio'] } } as const;
+  assert.deepEqual(checkText(body, ['propio'], ['ajeno']), []);
+  assert.deepEqual(checkText(body), []);
+  assert.deepEqual(checkText(body, ['ajeno'], ['propio']), [
+    'missing "ajeno"',
+    'unexpected "propio"',
+  ]);
+  assert.deepEqual(checkText({ kind: 'text', value: 'ajeno' }, [], ['ajeno']), [
+    'unexpected "ajeno"',
+  ]);
 });
