@@ -1,1 +1,1 @@
-timeout 300s pnpm --filter @mascli/web build
+timeout 300s pnpm --filter @sipges/web build

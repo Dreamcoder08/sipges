@@ -23,6 +23,6 @@ The exact exceptions are token definitions and the existing `Geography.module.cs
 
 Import-boundary enforcement already existed. The bounded read-only review did not prove a domain impurity requiring refactoring; it was not an exhaustive ambient-effect audit. Atomic Design is mapped to the responsibilities of real existing components, not enforced by a speculative folder migration.
 
-No global-suite retry: earlier full MASCLI checks timed out and remain failed/incomplete as recorded in `../mature-ui/README.md`. No full web suite, build, browser test, frozen install or new PostgreSQL check was run for this test/documentation-only unit. No CLI parser/shared production helper changed, so a command differential check is not applicable.
+No global-suite retry: earlier full SIPGES checks timed out and remain failed/incomplete as recorded in `../mature-ui/README.md`. No full web suite, build, browser test, frozen install or new PostgreSQL check was run for this test/documentation-only unit. No CLI parser/shared production helper changed, so a command differential check is not applicable.
 
 Native ASSESS was unavailable because of unrelated untracked scope. Its plan retained writer self-verification, required no independent verifier, and supplied no reviewDue continuation. No native review or approval is claimed. Cloudflare modifications remain excluded from this unit.

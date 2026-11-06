@@ -1,5 +1,5 @@
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api[39m
 
  [32m✓[39m test/automation/automation-http.test.ts[2m > [22mautomations[2m > [22mturns a matching write into an in-app notification and a signed webhook[33m 4570[2mms[22m[39m
  [32m✓[39m test/automation/automation-http.test.ts[2m > [22mautomations[2m > [22mannounces restricted records by reference only[33m 1143[2mms[22m[39m
@@ -133,10 +133,10 @@
  [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics HTTP routes[2m > [22mGET /system/consensus-engine[32m 5[2mms[22m[39m
  [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics HTTP routes[2m > [22mGET /system/integrated-analysis composes links and plan[32m 5[2mms[22m[39m
  [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics HTTP routes[2m > [22ma non-default tenant drops records whose Proyecto_ID falls back to PRJ-SECHURA[32m 1[2mms[22m[39m
- [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/situational-report.docx downloads MASCLI_Analisis_Situacional.docx[32m 58[2mms[22m[39m
- [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/strategic-report.docx downloads MASCLI_Informe_Estrategico.docx[32m 22[2mms[22m[39m
- [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/integrated-analysis.docx downloads MASCLI_RC19_Analisis_Integrado.docx[32m 21[2mms[22m[39m
- [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/consensus-engine.docx downloads MASCLI_Motor_Valor_Consenso.docx[32m 16[2mms[22m[39m
+ [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/situational-report.docx downloads SIPGES_Analisis_Situacional.docx[32m 58[2mms[22m[39m
+ [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/strategic-report.docx downloads SIPGES_Informe_Estrategico.docx[32m 22[2mms[22m[39m
+ [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/integrated-analysis.docx downloads SIPGES_RC19_Analisis_Integrado.docx[32m 21[2mms[22m[39m
+ [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22m/system/consensus-engine.docx downloads SIPGES_Motor_Valor_Consenso.docx[32m 16[2mms[22m[39m
  [32m✓[39m test/analytics/analytics-http.test.ts[2m > [22manalytics DOCX reports[2m > [22mfills the situational and strategic reports from the scope records[32m 44[2mms[22m[39m
  [32m✓[39m src/contexts/integration/infrastructure/official-source.test.ts[2m > [22mfixed official source[2m > [22muses fixed HTTPS API, refuses redirects and returns plain metadata[32m 41[2mms[22m[39m
  [32m✓[39m src/contexts/integration/infrastructure/official-source.test.ts[2m > [22mfixed official source[2m > [22mfails visibly on off-host links and oversized bodies[32m 5[2mms[22m[39m
@@ -144,7 +144,7 @@
  [32m✓[39m src/contexts/integration/http/signal-routes.test.ts[2m > [22mmaps authenticated references without fetching and deduplicates body retries[32m 41[2mms[22m[39m
  [32m✓[39m src/contexts/integration/http/signal-routes.test.ts[2m > [22mrejects read-only keys before ingestion[32m 2[2mms[22m[39m
  [32m✓[39m src/contexts/integration/http/signal-routes.test.ts[2m > [22mrejects invalid timestamps, credential URLs and oversized text[32m 3[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mcookie Secure policy (parity with app.py:10-18, docs/secure-cookies.md)[2m > [22mdefaults to Secure when MASCLI_COOKIE_SECURE is unset[32m 3[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mcookie Secure policy (parity with app.py:10-18, docs/secure-cookies.md)[2m > [22mdefaults to Secure when SIPGES_COOKIE_SECURE is unset[32m 3[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mcookie Secure policy (parity with app.py:10-18, docs/secure-cookies.md)[2m > [22mis Secure for exactly "1"[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mcookie Secure policy (parity with app.py:10-18, docs/secure-cookies.md)[2m > [22mdisables Secure only for exactly "0"[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mcookie Secure policy (parity with app.py:10-18, docs/secure-cookies.md)[2m > [22mrejects "" with the Python error message[32m 1[2mms[22m[39m
@@ -163,22 +163,22 @@
  [32m✓[39m test/config.test.ts[2m > [22mlisten address[2m > [22mrejects port "80.5"[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mlisten address[2m > [22mrejects port ""[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mlisten address[2m > [22mrejects port "-1"[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_DATA_KEY (ADR 0004)[2m > [22mis required[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_DATA_KEY (ADR 0004)[2m > [22mrejects ""[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_DATA_KEY (ADR 0004)[2m > [22mrejects "not-base64!"[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_DATA_KEY (ADR 0004)[2m > [22mrejects "AAAAAAAAAAAAAAAAAAAAAA=="[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_DATA_KEY (ADR 0004)[2m > [22mdecodes a 32-byte base64 key[32m 1[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_DATA_KEY (ADR 0004)[2m > [22mis required[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_DATA_KEY (ADR 0004)[2m > [22mrejects ""[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_DATA_KEY (ADR 0004)[2m > [22mrejects "not-base64!"[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_DATA_KEY (ADR 0004)[2m > [22mrejects "AAAAAAAAAAAAAAAAAAAAAA=="[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_DATA_KEY (ADR 0004)[2m > [22mdecodes a 32-byte base64 key[32m 1[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mbootstrap admin settings[2m > [22mdefaults like Python with the neutral display name of ADR 0008 #13[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mbootstrap admin settings[2m > [22mnormalizes the admin username[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mproduction database guard (verifier finding S1)[2m > [22mrefuses embedded PGlite when NODE_ENV=production[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mproduction database guard (verifier finding S1)[2m > [22maccepts production with a database URL[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_TRUST_PROXY[2m > [22mdefaults to not trusting forwarded headers[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_TRUST_PROXY[2m > [22maccepts exactly 0 or 1[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_TRUST_PROXY[2m > [22mdefaults to not trusting forwarded headers[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_TRUST_PROXY[2m > [22maccepts exactly 0 or 1[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mOllama embeddings settings (RC 2.5)[2m > [22mdefaults to a local server and nomic-embed-text like app.py[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mOllama embeddings settings (RC 2.5)[2m > [22maccepts an http(s) URL and a model name[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mOllama embeddings settings (RC 2.5)[2m > [22mrejects "not a url"[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mOllama embeddings settings (RC 2.5)[2m > [22mrejects "file:///tmp/x"[32m 0[2mms[22m[39m
- [32m✓[39m test/config.test.ts[2m > [22mMASCLI_WEB_DIR[2m > [22mis optional and passed through[32m 0[2mms[22m[39m
+ [32m✓[39m test/config.test.ts[2m > [22mSIPGES_WEB_DIR[2m > [22mis optional and passed through[32m 0[2mms[22m[39m
  [32m✓[39m test/config.test.ts[2m > [22mOCR for scanned PDFs[2m > [22mis off by default and accepts ocrmypdf with Tesseract language codes[32m 1[2mms[22m[39m
  [32m✓[39m src/contexts/management/application/management-service.test.ts[2m > [22muses the Lima business day before UTC midnight to avoid premature overdue actions[32m 21[2mms[22m[39m
  [32m✓[39m src/contexts/integration/application/authorized-sources.test.ts[2m > [22mauthorized source ingress[2m > [22mimports verified metadata with deterministic provenance and no invented territory[32m 13[2mms[22m[39m
@@ -241,4 +241,4 @@
 [2m   Start at [22m 17:42:48
 [2m   Duration [22m 88.37s[2m (tests 92%, import 7%, transform 1%)[22m
 
-JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-1-result.json
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/odd/evidence/full-verification/api-batch-1-result.json

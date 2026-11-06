@@ -1,80 +1,80 @@
 [
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/config.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/config.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analyst/briefing-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analyst/briefing-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analyst/briefing.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analyst/briefing.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analyst/claude-narrator.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analyst/claude-narrator.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analyst/proposals-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analyst/proposals-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/analytics-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/analytics-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/benchmark-session.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/benchmark-session.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/candidate-links-equivalence.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/candidate-links-equivalence.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/consensus.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/consensus.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/dashboard-app.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/dashboard-app.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/dashboard-levels.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/dashboard-levels.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/dashboard-projection.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/dashboard-projection.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/integrated.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/integrated.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/situational.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/situational.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/analytics/sql-record-reader.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/analytics/sql-record-reader.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/automation/automation-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/automation/automation-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/automation/automation-service.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/automation/automation-service.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/automation/push-http.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/automation/push-http.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/automation/rules.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/automation/rules.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/automation/web-push.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/automation/web-push.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/test/base-maestra/base-maestra.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/test/base-maestra/base-maestra.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/integration/http/signal-routes.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/src/contexts/integration/http/signal-routes.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/integration/infrastructure/official-source.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/src/contexts/integration/infrastructure/official-source.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/integration/infrastructure/sql-source-settings.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/src/contexts/integration/infrastructure/sql-source-settings.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/management/domain/overview.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/src/contexts/management/domain/overview.test.ts"
   },
   {
-    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api/src/contexts/management/application/management-service.test.ts"
+    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api/src/contexts/management/application/management-service.test.ts"
   }
 ]

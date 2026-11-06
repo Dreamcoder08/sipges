@@ -6,7 +6,7 @@ The default text search configuration will be set to "english".
 
 Data page checksums are enabled.
 
-creating directory /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.cache/mascli-full-verification-pg-8nn3oei2/data ... ok
+creating directory /home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/.cache/sipges-full-verification-pg-8nn3oei2/data ... ok
 creating subdirectories ... ok
 selecting dynamic shared memory implementation ... posix
 selecting default "max_connections" ... 100
@@ -19,5 +19,5 @@ syncing data to disk ... ok
 
 Success. You can now start the database server using:
 
-    pg_ctl -D /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.cache/mascli-full-verification-pg-8nn3oei2/data -l logfile start
+    pg_ctl -D /home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/.cache/sipges-full-verification-pg-8nn3oei2/data -l logfile start
 

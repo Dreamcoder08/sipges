@@ -1,6 +1,6 @@
 [32m✔ API app-local Vitest registers shared cleanup hooks in the active runner [90m(2511.905821ms)[39m[39m
 [32m✔ web app-local Vitest registers setup hooks in the active runner [90m(1361.412263ms)[39m[39m
-[32m✔ Codex discovers four recurring MASCLI skills and the explicitly requested Neon skills [90m(6.33326ms)[39m[39m
+[32m✔ Codex discovers four recurring SIPGES skills and the explicitly requested Neon skills [90m(6.33326ms)[39m[39m
 [32m✔ verification never starts a service or guesses a database connection and propagates failures [90m(15.938508ms)[39m[39m
 [32m✔ ODD dry-run preserves bytes and real close allocates the next log number once [90m(221.488444ms)[39m[39m
 [32m✔ ODD rejects blank evidence and multiline labels without changing the task [90m(129.168005ms)[39m[39m

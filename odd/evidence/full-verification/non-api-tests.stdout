@@ -18,7 +18,7 @@ Scope: 6 of 8 workspace projects
 [34mℹ todo 0[39m
 [34mℹ duration_ms 243.575899[39m
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/packages/kernel[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/packages/kernel[39m
 
 
 [2m Test Files [22m [1m[32m2 passed[39m[22m[90m (2)[39m
@@ -27,7 +27,7 @@ Scope: 6 of 8 workspace projects
 [2m   Duration [22m 222ms[2m (tests 34%, import 30%, transform 22%, worker 14%)[22m
 
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/hosting-cloudflare[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/hosting-cloudflare[39m
 
 
 [2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
@@ -36,7 +36,7 @@ Scope: 6 of 8 workspace projects
 [2m   Duration [22m 363ms[2m (transform 60%, import 20%, tests 15%, worker 5%)[22m
 
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/web[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/web[39m
 
 
 [2m Test Files [22m [1m[32m65 passed[39m[22m[90m (65)[39m
@@ -49,7 +49,7 @@ Scope: 6 of 8 workspace projects
 [2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
 
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/hosting[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/hosting[39m
 
 
 [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m

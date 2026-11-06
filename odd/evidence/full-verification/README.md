@@ -50,14 +50,14 @@ A later command put the optional `--json` flag before the file filters. Vitest t
 
 The first attempt used system Python 3.14.8, pytest 9.2 and a newer Starlette. It failed before collection because that Starlette requires `httpx2`. This was an environment mismatch, not an application regression.
 
-With consent, an isolated environment was built under `node_modules/.cache/mascli-python-reference` with uv, Python 3.12.8 and only `requirements-test.txt`. The freeze confirms pytest 8.3.5 and httpx 0.28.1; all 40 tests pass.
+With consent, an isolated environment was built under `node_modules/.cache/sipges-python-reference` with uv, Python 3.12.8 and only `requirements-test.txt`. The freeze confirms pytest 8.3.5 and httpx 0.28.1; all 40 tests pass.
 
 **Follow-up, not fixed:** `requirements.txt` sets only lower bounds. The resolved Starlette 1.3.1 already deprecates `httpx`, so the frozen reference suite will break when that support is removed. The frozen reference was not modified.
 
 ## Browser suites
 
 - Web build passed. The default config ran all 94 discovered tests in one worker, with a 60-second per-test limit and no retries.
-- The single skip is `screenshots.mobile.spec.ts` "capture the mobile shell". It is an opt-in capture gated on `MASCLI_E2E_SCREENSHOT_DIR`, not a behaviour check.
+- The single skip is `screenshots.mobile.spec.ts` "capture the mobile shell". It is an opt-in capture gated on `SIPGES_E2E_SCREENSHOT_DIR`, not a behaviour check.
 - All 644 source, configuration and lock inputs are unchanged (`browser-source-after.json`).
 - Pinned WebKit installed without `--with-deps` or `sudo`. All nine tests then failed at `browserType.launch`: "Host system is missing dependencies to run browsers" (`libicu74`, `libxml2`, `libflite1`). No page was opened, so this says nothing about the application on WebKit.
 - The Docker daemon, which could provide the official Playwright image, is not running, and starting it requires `sudo`. System packages were deliberately not installed.
