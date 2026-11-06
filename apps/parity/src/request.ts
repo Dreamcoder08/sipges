@@ -1,3 +1,4 @@
+import { documentText } from './docx.ts';
 import { request as httpRequest } from 'node:http';
 import type { ParityCase } from './cases.ts';
 import type { Body, Observed } from './diff.ts';
@@ -47,6 +48,8 @@ const readBack = (observed: Observed): Observed => {
       : { kind: 'text', value: swap(observed.body.value) };
   return { ...observed, body };
 };
+
+const DOCX_MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 /** A case whose answer takes longer than this fails instead of hanging the run (and CI). */
 export const REQUEST_TIMEOUT_MS = 15_000;
@@ -126,6 +129,11 @@ const sendOne = async (
       signal,
     });
     const contentType = response.headers.get('content-type') ?? undefined;
+    if (contentType?.startsWith(DOCX_MEDIA_TYPE)) {
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const value = c.method === 'HEAD' ? '' : documentText(bytes);
+      return { status: response.status, contentType, body: { kind: 'text', value } };
+    }
     const text = await response.text();
     let parsed: Body = { kind: 'text', value: text };
     if (contentType?.toLowerCase().includes('json')) {
