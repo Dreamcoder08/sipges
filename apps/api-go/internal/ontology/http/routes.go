@@ -141,6 +141,7 @@ func (d Deps) search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	slugs := modules(r)
+	d.extendWriteDeadline(w, r)
 	hits, err := d.hits(r, q, slugs, limit)
 	if err != nil {
 		d.fail(w, r)
