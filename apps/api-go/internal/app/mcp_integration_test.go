@@ -33,6 +33,7 @@ var (
 	mcpLimited = mcpKey("c0ffee44a002", "b")
 	mcpOtro    = mcpKey("c0ffee44b001", "c")
 	mcpOff     = mcpKey("c0ffee44c001", "d")
+	mcpWrite   = mcpKey("c0ffee44a003", "e")
 )
 
 func mcpSeed(t *testing.T) {
@@ -241,6 +242,87 @@ func TestMCPReadToolsAreRefusedWithoutADataKey(t *testing.T) {
 	for _, read := range mcpReads {
 		if text, isError := tool(t, s, mcpFull, read[0], read[1]); !isError || text != disabled {
 			t.Errorf("%s: %v %s", read[0], isError, text)
+		}
+	}
+}
+
+func mcpCount(t *testing.T, query string) int {
+	t.Helper()
+	conn, err := pgx.Connect(t.Context(), scratch.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close(context.Background()) }()
+	var n int
+	if err := conn.QueryRow(t.Context(), query).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+func TestMCPCreateRecordWritesInTheKeysProjectAsTheKey(t *testing.T) {
+	mcpSeed(t)
+	s := start(t, false) // no SIPGES_DATA_KEY: a write takes nothing out, so it needs no guard
+	text, isError := tool(t, s, mcpWrite, "create_record",
+		`{"module":"demandas","payload":{"ID_Demanda":"D-77","Descripcion":"Agua sintética","__proto__":"x"}}`)
+	if isError || text != `{"module":"demandas","id":"D-77"}` {
+		t.Fatalf("%v %s", isError, text)
+	}
+	if n := mcpCount(t, `SELECT count(*) FROM module_records WHERE tenant_id = 'MCP/UNO' AND module = 'Demandas' AND id = 'D-77'
+	      AND payload->>'Descripcion' = 'Agua sintética' AND payload->>'Proyecto_ID' = 'UNO' AND NOT payload ? '__proto__'`); n != 1 {
+		t.Error("the stored record differs")
+	}
+	if n := mcpCount(t, `SELECT count(*) FROM record_versions WHERE tenant_id = 'MCP/UNO' AND record_id = 'D-77' AND actor = 'api:escritura'`); n != 1 {
+		t.Error("the history does not name the key")
+	}
+	if n := mcpCount(t, `SELECT count(*) FROM audit WHERE tenant_id = 'MCP/UNO' AND record_id = 'D-77' AND action = 'CREATE'`); n != 1 {
+		t.Error("no audit entry")
+	}
+}
+
+func TestMCPCreateRecordRefusals(t *testing.T) {
+	mcpSeed(t)
+	s := start(t, false)
+	for args, want := range map[string]string{
+		`{"module":"otro","payload":{}}`:                         "Módulo no válido",
+		`{"module":"demandas","payload":{"Proyecto_ID":"OTRO"}}`: "No se permite escribir en otro proyecto",
+		`{"module":"demandas","payload":{"project_id":"OTRO"}}`:  "No se permite escribir en otro proyecto",
+	} {
+		if text, isError := tool(t, s, mcpWrite, "create_record", args); !isError || text != want {
+			t.Errorf("%s: %v %s", args, isError, text)
+		}
+	}
+	if n := mcpCount(t, `SELECT count(*) FROM module_records WHERE tenant_id = 'MCP/UNO' AND module = 'Demandas' AND id <> 'D-77'`); n != 0 {
+		t.Errorf("%d records from refused calls", n)
+	}
+	// A read key does not see the tool.
+	got := s.do(t, req{method: http.MethodPost, path: "/mcp", headers: map[string]string{"Authorization": "Bearer " + mcpFull},
+		body: `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"create_record","arguments":{}}}`})
+	if !strings.Contains(got.body, `"code":-32602`) {
+		t.Errorf("a read key: %s", got.body)
+	}
+}
+
+func TestMCPLinkRecordsWritesAsTheKey(t *testing.T) {
+	mcpSeed(t)
+	s := start(t, false)
+	args := `{"link_type":"relacionado_con","source":{"module":"actores","id":"A-1"},"target":{"module":"eventos","id":"E-1"},"note":"  con nota  "}`
+	text, isError := tool(t, s, mcpWrite, "link_records", args)
+	if isError || !strings.HasPrefix(text, `{"id":`) {
+		t.Fatalf("%v %s", isError, text)
+	}
+	if n := mcpCount(t, `SELECT count(*) FROM record_links WHERE tenant_id = 'MCP/UNO' AND link_type = 'relacionado_con'
+	      AND target_id = 'E-1' AND note = 'con nota' AND created_by = 'api:escritura'`); n != 1 {
+		t.Error("the stored link differs")
+	}
+	for name, want := range map[string]string{
+		args: "Vínculo rechazado: duplicate",
+		`{"link_type":"relacionado_con","source":{"module":"actores","id":"A-1"},"target":{"module":"actores","id":"A-1"}}`: "Vínculo rechazado: self_link",
+		`{"link_type":"nada","source":{"module":"actores","id":"A-1"},"target":{"module":"eventos","id":"E-1"}}`:            "Vínculo rechazado: unknown_type",
+		`{"link_type":"relacionado_con","source":{"module":"actores","id":"A-1"},"target":{"module":"eventos","id":"E-9"}}`: "Vínculo rechazado: missing",
+	} {
+		if text, isError := tool(t, s, mcpWrite, "link_records", name); !isError || text != want {
+			t.Errorf("%s: %v %s", name, isError, text)
 		}
 	}
 }

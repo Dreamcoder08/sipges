@@ -47,6 +47,7 @@ func mcpTools(d Deps) (integration.MCP, ontologyhttp.Deps, error) {
 	tools := integration.MCP{
 		Ontology: mcpOntology{d, search},
 		Records:  records.Service{Store: recordssql.Records{DB: d.Pool}},
+		Creator:  records.Writes{Store: recordssql.Records{DB: d.Pool}, Now: mcpClock(d), RandomHex: randomHexUpper},
 		Analyst:  mcpBriefings{d, assisted},
 	}
 	guard, err := egressGuard(d)
@@ -57,6 +58,13 @@ func mcpTools(d Deps) (integration.MCP, ontologyhttp.Deps, error) {
 		return integration.MCP{}, ontologyhttp.Deps{}, err
 	}
 	return tools, search, nil
+}
+
+func mcpClock(d Deps) func() time.Time {
+	if d.Now != nil {
+		return d.Now
+	}
+	return time.Now
 }
 
 // inProject runs one read in the project's tenant transaction, as the key the request carries.
@@ -88,6 +96,19 @@ func (m mcpOntology) Timeline(ctx context.Context, tenantID, from, to string, sl
 	})
 }
 
+func (m mcpOntology) Link(ctx context.Context, tenantID string, in ontology.LinkInput, actor string) (int64, string, error) {
+	type created struct {
+		id      int64
+		problem string
+	}
+	at := mcpClock(m.d)().Truncate(time.Millisecond)
+	got, err := database.WithTenant(ctx, m.d.Pool, tenantID, func(ctx context.Context, q database.Querier) (created, error) {
+		id, problem, err := ontology.Writes{Store: ontologysql.Store{Q: q}, Now: at}.Link(ctx, in, actor)
+		return created{id, problem}, err
+	})
+	return got.id, got.problem, err
+}
+
 // mcpBriefings implements integration.MCPBriefings. The records are read in one tenant transaction;
 // the guard and the narrator work after it ends.
 type mcpBriefings struct {
@@ -107,10 +128,6 @@ func (m mcpBriefings) Briefing(ctx context.Context, tenantID, slug, id string, s
 	if err != nil || !got.ok {
 		return nil, err
 	}
-	now := m.d.Now
-	if now == nil {
-		now = time.Now
-	}
-	brief := analyst.OutsideBriefing(ctx, m.assisted, session, tenantID, got.found, now())
+	brief := analyst.OutsideBriefing(ctx, m.assisted, session, tenantID, got.found, mcpClock(m.d)())
 	return &brief, nil
 }

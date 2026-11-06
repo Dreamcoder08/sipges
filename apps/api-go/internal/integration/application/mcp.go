@@ -29,11 +29,18 @@ type MCPOntology interface {
 	Search(ctx context.Context, tenantID string, query ontology.Units, slugs []string, limit int64, visible ontologyapp.VisibleField) ([]ontologyapp.Hit, error)
 	Neighbours(ctx context.Context, tenantID, slug, id string) (*ontologyapp.Links, error)
 	Timeline(ctx context.Context, tenantID, from, to string, slugs []string, limit int64) (*ontologyapp.Timeline, error)
+	// Link answers the new link's id, or the refusal: a link problem, "missing" or "duplicate".
+	Link(ctx context.Context, tenantID string, in ontologyapp.LinkInput, actor string) (int64, string, error)
 }
 
 // MCPRecords is the record a tool reads.
 type MCPRecords interface {
 	Get(ctx context.Context, tenantID, module, id string) (*recordsapp.StoredRecord, error)
+}
+
+// MCPCreator creates a record: its id, the field refused, or recordsapp.ErrExhausted.
+type MCPCreator interface {
+	Create(ctx context.Context, tenantID, module string, given *records.Object) (string, *records.Problem, error)
 }
 
 // MCPBriefings gives a record's briefing as session's reader may see it; nil when it is missing.
@@ -51,16 +58,18 @@ type Egress interface {
 type MCP struct {
 	Ontology MCPOntology
 	Records  MCPRecords
+	Creator  MCPCreator
 	Analyst  MCPBriefings
 	Guard    Egress
 }
 
-// ErrToolUnavailable is a tool this server does not run yet; the route answers as a tool failure.
+// ErrToolUnavailable is a tool without a handler; the route answers as a tool failure.
 var ErrToolUnavailable = errors.New("integration: tool not available")
 
 // Run is runTool, for a tool whose input ParseArguments already checked. A read tool is refused
 // while the project keeps external AI off; otherwise its data is sanitised and the release is
-// logged before it can be returned. The catalogue carries no tenant data out.
+// logged before it can be returned. The catalogue and the write tools carry no tenant data out: the
+// catalogue is static and a write answers with the id it assigned.
 func (m MCP) Run(ctx context.Context, tool domain.Tool, principal domain.Principal, input *records.Object) (ToolResult, error) {
 	switch tool.Kind {
 	case domain.ToolCatalogue:
@@ -68,7 +77,7 @@ func (m MCP) Run(ctx context.Context, tool domain.Tool, principal domain.Princip
 	case domain.ToolRead:
 		return m.runRead(ctx, tool, principal, input)
 	}
-	return ToolResult{}, ErrToolUnavailable
+	return m.runWrite(ctx, tool, principal, input)
 }
 
 func (m MCP) runRead(ctx context.Context, tool domain.Tool, principal domain.Principal, input *records.Object) (ToolResult, error) {
