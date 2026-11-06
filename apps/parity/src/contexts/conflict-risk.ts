@@ -11,7 +11,21 @@ const OTHER = 'PARITY/OTRO';
 
 type Row = readonly [module: string, id: string, payload: object, at: string, marking?: string];
 
+/** An emoji across the 117-unit title cut: both APIs drop its broken half. */
+const SPLIT_TITLE = `${'a'.repeat(116)}😀${'b'.repeat(20)}`;
+
 const ROWS: readonly Row[] = [
+  [
+    'Demandas',
+    'CR-D-2',
+    {
+      Territorio: 'Caleta Riesgo',
+      Tema: SPLIT_TITLE,
+      Estado: 'Abierta',
+      Fecha_Registro: '2026-10-03',
+    },
+    '2026-10-03 12:00:00+00',
+  ],
   [
     'Demandas',
     'CR-D-1',
@@ -142,7 +156,7 @@ export const cases: readonly ParityCase[] = [
     method: 'GET',
     path,
     auth: 'admin',
-    present: ['Caleta Riesgo', 'Zona Riesgo Reservada'],
+    present: ['Caleta Riesgo', 'Zona Riesgo Reservada', `${'a'.repeat(116)}…`],
     absent: ['AJENA'],
   },
   {
