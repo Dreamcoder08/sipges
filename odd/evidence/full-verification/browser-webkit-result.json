@@ -2,18 +2,18 @@
   "config": {
     "argv": [
       "/home/dreamcoder08/.hermes/node/bin/node",
-      "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
+      "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
       "test",
       "--config",
       "playwright.webkit.config.ts",
       "--reporter=list,json"
     ],
-    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/playwright.webkit.config.ts",
-    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/playwright.webkit.config.ts",
+    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
-    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/global-setup.ts",
+    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/global-setup.ts",
     "globalTeardown": null,
     "globalTimeout": 0,
     "grep": {},
@@ -25,7 +25,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit",
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -33,7 +33,7 @@
         },
         "id": "webkit",
         "name": "webkit",
-        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
         "testIgnore": [],
         "testMatch": [
           "/(?:11-functional-audit|15-record-insights|17-quality-followup|18-territorial-intelligence)\\.spec\\.ts/"
@@ -104,12 +104,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-counte-bbbe5--edits-and-shows-its-report-webkit/trace.zip"
                     }
                   ]
                 }
@@ -157,12 +157,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-the-ge-02c8d-he-directory-lists-contacts-webkit/trace.zip"
                     }
                   ]
                 }
@@ -210,12 +210,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/11-functional-audit-narrat-723eb--trend-per-day-and-category-webkit/trace.zip"
                     }
                   ]
                 }
@@ -271,12 +271,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--9ebd8--open-stored-files-desktop--webkit/trace.zip"
                     }
                   ]
                 }
@@ -324,12 +324,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/15-record-insights-record--0ab82-on-open-stored-files-phone--webkit/trace.zip"
                     }
                   ]
                 }
@@ -385,12 +385,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-05b87-t-through-real-API-desktop--webkit/trace.zip"
                     }
                   ]
                 }
@@ -438,12 +438,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/17-quality-followup-review-727dd-ist-through-real-API-phone--webkit/trace.zip"
                     }
                   ]
                 }
@@ -499,12 +499,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-598bb-hout-a-manual-tick-desktop--webkit/trace.zip"
                     }
                   ]
                 }
@@ -552,12 +552,12 @@
                     {
                       "name": "error-context",
                       "contentType": "text/markdown",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/error-context.md"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/error-context.md"
                     },
                     {
                       "name": "trace",
                       "contentType": "application/zip",
-                      "path": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/trace.zip"
+                      "path": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results/webkit/18-territorial-intelligenc-78309-ithout-a-manual-tick-phone--webkit/trace.zip"
                     }
                   ]
                 }

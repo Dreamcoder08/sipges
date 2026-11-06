@@ -12,10 +12,10 @@ Playwright Host validation warning:
 ║                                                      ║
 ║ <3 Playwright Team                                   ║
 ╚══════════════════════════════════════════════════════╝
-    at validateDependenciesLinux (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:32259:9)
+    at validateDependenciesLinux (/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:32259:9)
 [90m    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)[39m
-    at async Registry._validateHostRequirements (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:33519:18)
-    at async Registry._validateHostRequirementsForExecutableIfNeeded (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:33641:11)
-    at async Registry.validateHostRequirementsForExecutablesIfNeeded (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:33630:11)
-    at async installBrowsers (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:70097:5)
-    at async _Command.<anonymous> (/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:73670:7)
+    at async Registry._validateHostRequirements (/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:33519:18)
+    at async Registry._validateHostRequirementsForExecutableIfNeeded (/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:33641:11)
+    at async Registry.validateHostRequirementsForExecutablesIfNeeded (/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:33630:11)
+    at async installBrowsers (/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:70097:5)
+    at async _Command.<anonymous> (/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/[4m.pnpm[24m/playwright-core@1.63.0/node_modules/[4mplaywright-core[24m/lib/coreBundle.js:73670:7)

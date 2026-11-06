@@ -1,5 +1,5 @@
 
-[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/api[39m
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.4 [39m[90m/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/api[39m
 
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mbootstrap[2m > [22mcreates the legacy default project and grants it to admins[33m 4181[2mms[22m[39m
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mbootstrap[2m > [22mrequires a session to list scopes (ADR 0008 #4)[33m 839[2mms[22m[39m
@@ -16,7 +16,7 @@
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mPOST /system/auth/grants[2m > [22mis restricted to admins with the FastAPI default body[33m 1013[2mms[22m[39m
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22muses the sole grant when no scope was requested[33m 911[2mms[22m[39m
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22masks to choose when several grants exist and lists them[33m 901[2mms[22m[39m
- [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mhonours X-MASCLI-Scope and rejects scopes that are not granted[33m 912[2mms[22m[39m
+ [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mhonours X-SIPGES-Scope and rejects scopes that are not granted[33m 912[2mms[22m[39m
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mdenies every scoped route to a user without grants[33m 936[2mms[22m[39m
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mrejects a query project_id outside the active scope[33m 911[2mms[22m[39m
  [32m✓[39m test/tenancy/tenancy-http.test.ts[2m > [22mscope resolution middleware (app.py enforce_auth steps 4-7)[2m > [22mrejects a JSON body that targets another project ({"project_id":"NORTE"}) before the handler runs[33m 913[2mms[22m[39m
@@ -59,14 +59,14 @@
  [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mserves nothing extra when no web build is configured[33m 869[2mms[22m[39m
  [32m✓[39m test/platform/spa.test.ts[2m > [22msingle-page app delivery[2m > [22mreads a Vite build directory[32m 5[2mms[22m[39m
  [32m✓[39m test/platform/spa.test.ts[2m > [22mwebAssetsFrom[2m > [22mmaps valid names to build paths and never passes an unsafe name to the source[32m 1[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mstarts with the preliminary colour meanings and no version switch[33m 4097[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22msaves a change for one project only and audits it[33m 855[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mignores a stored version4 = false key from earlier releases and does not echo it[33m 844[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mignores a stored version4 = true key from earlier releases and does not echo it[33m 847[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mkeeps the project wording of a recommendation and uses it in situations[33m 862[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mwrites nothing when nothing changes[33m 831[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mrejects empty meanings and thresholds out of order[33m 816[2mms[22m[39m
- [32m✓[39m test/situations/settings-http.test.ts[2m > [22mMASCLI 4.0 project settings[2m > [22mlets every role read the settings but only an administrator change them[32m 1[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mstarts with the preliminary colour meanings and no version switch[33m 4097[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22msaves a change for one project only and audits it[33m 855[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mignores a stored version4 = false key from earlier releases and does not echo it[33m 844[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mignores a stored version4 = true key from earlier releases and does not echo it[33m 847[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mkeeps the project wording of a recommendation and uses it in situations[33m 862[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mwrites nothing when nothing changes[33m 831[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mrejects empty meanings and thresholds out of order[33m 816[2mms[22m[39m
+ [32m✓[39m test/situations/settings-http.test.ts[2m > [22mSIPGES 4.0 project settings[2m > [22mlets every role read the settings but only an administrator change them[32m 1[2mms[22m[39m
  [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/grants username without public state changes[33m 4206[2mms[22m[39m
  [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/grants company_id without public state changes[33m 976[2mms[22m[39m
  [32m✓[39m test/tenancy/independent-inputs.test.ts[2m > [22mrejects NUL in /system/auth/grants project_id without public state changes[33m 972[2mms[22m[39m
@@ -130,7 +130,7 @@
  [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mrelates recent records on one topic and explains an orange alert[32m 9[2mms[22m[39m
  [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mgives old facts less weight than recent ones[32m 3[2mms[22m[39m
  [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mnever infers a territory from text, only from the recorded field[32m 2[2mms[22m[39m
- [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mcounts undated records apart and ignores alerts MASCLI 4.0 suggested[32m 1[2mms[22m[39m
+ [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mcounts undated records apart and ignores alerts SIPGES 4.0 suggested[32m 1[2mms[22m[39m
  [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mreports a change of narrative tone[32m 2[2mms[22m[39m
  [32m✓[39m test/situations/situations-domain.test.ts[2m > [22msituations engine[2m > [22mreads dd/mm/yyyy dates and rejects impossible ones[32m 0[2mms[22m[39m
  [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mcoalesces a project without suppressing another project[32m 4[2mms[22m[39m
@@ -141,11 +141,11 @@
  [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mcollects configured sources before scanning committed source events[32m 0[2mms[22m[39m
  [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22msource outages cannot block pending delivery and remain failed attempts[32m 1[2mms[22m[39m
  [32m✓[39m test/system/automation-runtime.test.ts[2m > [22mautomation runtime[2m > [22mkeeps committed work alive if a deferred adapter is unavailable[32m 0[2mms[22m[39m
- [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (MASCLI 4.0)[2m > [22mis a records module with its own prefix[32m 2[2mms[22m[39m
- [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (MASCLI 4.0)[2m > [22mattaches past lessons to the situation of the same territory, topic or actor[32m 6[2mms[22m[39m
+ [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (SIPGES 4.0)[2m > [22mis a records module with its own prefix[32m 2[2mms[22m[39m
+ [32m✓[39m test/situations/lessons-domain.test.ts[2m > [22mTerritorial lessons (SIPGES 4.0)[2m > [22mattaches past lessons to the situation of the same territory, topic or actor[32m 6[2mms[22m[39m
  [32m✓[39m test/tenancy/scope.test.ts[2m > [22mscope text[2m > [22mformats and parses company/project, splitting at the first slash like Python[32m 3[2mms[22m[39m
  [32m✓[39m test/tenancy/scope.test.ts[2m > [22mscope text[2m > [22mkeeps the legacy default scope[32m 0[2mms[22m[39m
- [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mprefers the X-MASCLI-Scope header over the cookie[32m 0[2mms[22m[39m
+ [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mprefers the X-SIPGES-Scope header over the cookie[32m 0[2mms[22m[39m
  [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mfalls back to the scope cookie[32m 0[2mms[22m[39m
  [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mselects the only grant when nothing was requested[32m 0[2mms[22m[39m
  [32m✓[39m test/tenancy/scope.test.ts[2m > [22mresolveScope (app.py enforce_auth step 4)[2m > [22mrefuses when nothing was requested and the user has several grants[32m 0[2mms[22m[39m
@@ -167,4 +167,4 @@
 [2m   Start at [22m 17:49:08
 [2m   Duration [22m 177.50s[2m (tests 94%, import 5%)[22m
 
-JSON report written to /home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/odd/evidence/full-verification/api-batch-4-result.json
+JSON report written to /home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/odd/evidence/full-verification/api-batch-4-result.json

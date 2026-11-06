@@ -1,1 +1,1 @@
-timeout 30s pnpm --filter @mascli/api exec vitest list --filesOnly --json
+timeout 30s pnpm --filter @sipges/api exec vitest list --filesOnly --json

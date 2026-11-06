@@ -2,16 +2,16 @@
   "config": {
     "argv": [
       "/home/dreamcoder08/.hermes/node/bin/node",
-      "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
+      "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/node_modules/.pnpm/@playwright+test@1.63.0/node_modules/@playwright/test/cli.js",
       "test",
       "--reporter=list,json"
     ],
-    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/playwright.config.ts",
-    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+    "configFile": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/playwright.config.ts",
+    "rootDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
     "failOnFlakyTests": false,
     "forbidOnly": false,
     "fullyParallel": false,
-    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/global-setup.ts",
+    "globalSetup": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/global-setup.ts",
     "globalTeardown": null,
     "globalTimeout": 0,
     "grep": {},
@@ -23,7 +23,7 @@
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results",
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -31,7 +31,7 @@
         },
         "id": "chromium",
         "name": "chromium",
-        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
         "testIgnore": [
           "/mobile\\.spec\\.ts/"
         ],
@@ -41,7 +41,7 @@
         "timeout": 60000
       },
       {
-        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/test-results",
+        "outputDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
@@ -49,7 +49,7 @@
         },
         "id": "mobile-chromium",
         "name": "mobile-chromium",
-        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests",
+        "testDir": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests",
         "testIgnore": [],
         "testMatch": [
           "/mobile\\.spec\\.ts/"
@@ -318,7 +318,7 @@
           "column": 6,
           "specs": [
             {
-              "title": "MASCLI_COOKIE_SECURE=(unset) marks cookies Secure, so plain HTTP keeps no session",
+              "title": "SIPGES_COOKIE_SECURE=(unset) marks cookies Secure, so plain HTTP keeps no session",
               "ok": true,
               "tags": [],
               "tests": [
@@ -358,7 +358,7 @@
               "column": 5
             },
             {
-              "title": "MASCLI_COOKIE_SECURE=1 marks cookies Secure, so plain HTTP keeps no session",
+              "title": "SIPGES_COOKIE_SECURE=1 marks cookies Secure, so plain HTTP keeps no session",
               "ok": true,
               "tags": [],
               "tests": [
@@ -398,7 +398,7 @@
               "column": 5
             },
             {
-              "title": "MASCLI_COOKIE_SECURE=0 drops Secure for intentional local HTTP only",
+              "title": "SIPGES_COOKIE_SECURE=0 drops Secure for intentional local HTTP only",
               "ok": true,
               "tags": [],
               "tests": [
@@ -438,7 +438,7 @@
               "column": 3
             },
             {
-              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"\"",
+              "title": "refuses to start with SIPGES_COOKIE_SECURE=\"\"",
               "ok": true,
               "tags": [],
               "tests": [
@@ -478,7 +478,7 @@
               "column": 5
             },
             {
-              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"true\"",
+              "title": "refuses to start with SIPGES_COOKIE_SECURE=\"true\"",
               "ok": true,
               "tags": [],
               "tests": [
@@ -518,7 +518,7 @@
               "column": 5
             },
             {
-              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"yes\"",
+              "title": "refuses to start with SIPGES_COOKIE_SECURE=\"yes\"",
               "ok": true,
               "tags": [],
               "tests": [
@@ -558,7 +558,7 @@
               "column": 5
             },
             {
-              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"01\"",
+              "title": "refuses to start with SIPGES_COOKIE_SECURE=\"01\"",
               "ok": true,
               "tags": [],
               "tests": [
@@ -598,7 +598,7 @@
               "column": 5
             },
             {
-              "title": "refuses to start with MASCLI_COOKIE_SECURE=\" 1\"",
+              "title": "refuses to start with SIPGES_COOKIE_SECURE=\" 1\"",
               "ok": true,
               "tags": [],
               "tests": [
@@ -638,7 +638,7 @@
               "column": 5
             },
             {
-              "title": "refuses to start with MASCLI_COOKIE_SECURE=\"2\"",
+              "title": "refuses to start with SIPGES_COOKIE_SECURE=\"2\"",
               "ok": true,
               "tags": [],
               "tests": [
@@ -740,7 +740,7 @@
                 {
                   "type": "serial",
                   "location": {
-                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                     "line": 0,
                     "column": 0
                   }
@@ -764,7 +764,7 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                        "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                         "line": 0,
                         "column": 0
                       }
@@ -798,7 +798,7 @@
                 {
                   "type": "serial",
                   "location": {
-                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                     "line": 0,
                     "column": 0
                   }
@@ -822,7 +822,7 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                        "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                         "line": 0,
                         "column": 0
                       }
@@ -856,7 +856,7 @@
                 {
                   "type": "serial",
                   "location": {
-                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                     "line": 0,
                     "column": 0
                   }
@@ -880,7 +880,7 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                        "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                         "line": 0,
                         "column": 0
                       }
@@ -904,7 +904,7 @@
           "column": 1
         },
         {
-          "title": "the export downloads mascli-tenant.json with the active project only",
+          "title": "the export downloads sipges-tenant.json with the active project only",
           "ok": true,
           "tags": [],
           "tests": [
@@ -914,7 +914,7 @@
                 {
                   "type": "serial",
                   "location": {
-                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                     "line": 0,
                     "column": 0
                   }
@@ -938,7 +938,7 @@
                     {
                       "type": "serial",
                       "location": {
-                        "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
+                        "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/03-tenancy.spec.ts",
                         "line": 0,
                         "column": 0
                       }
@@ -3044,13 +3044,13 @@
       ]
     },
     {
-      "title": "19-mascli-4.spec.ts",
-      "file": "19-mascli-4.spec.ts",
+      "title": "19-sipges-4.spec.ts",
+      "file": "19-sipges-4.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [
         {
-          "title": "MASCLI 4.0 relates recent records, explains the colour and lets a person raise the alert",
+          "title": "SIPGES 4.0 relates recent records, explains the colour and lets a person raise the alert",
           "ok": true,
           "tags": [],
           "tests": [
@@ -3085,7 +3085,7 @@
             }
           ],
           "id": "f7a96b71b34be71369ef-109e5da5ca7e6b353e3a",
-          "file": "19-mascli-4.spec.ts",
+          "file": "19-sipges-4.spec.ts",
           "line": 5,
           "column": 1
         }
@@ -4107,9 +4107,9 @@
               "annotations": [
                 {
                   "type": "skip",
-                  "description": "MASCLI_E2E_SCREENSHOT_DIR is not set",
+                  "description": "SIPGES_E2E_SCREENSHOT_DIR is not set",
                   "location": {
-                    "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/screenshots.mobile.spec.ts",
+                    "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/screenshots.mobile.spec.ts",
                     "line": 10,
                     "column": 6
                   }
@@ -4132,9 +4132,9 @@
                   "annotations": [
                     {
                       "type": "skip",
-                      "description": "MASCLI_E2E_SCREENSHOT_DIR is not set",
+                      "description": "SIPGES_E2E_SCREENSHOT_DIR is not set",
                       "location": {
-                        "file": "/home/dreamcoder08/Documents/PROYECTOS/mascli/.worktrees/github-main/apps/e2e/tests/screenshots.mobile.spec.ts",
+                        "file": "/home/dreamcoder08/Documents/PROYECTOS/sipges/.worktrees/github-main/apps/e2e/tests/screenshots.mobile.spec.ts",
                         "line": 10,
                         "column": 6
                       }
