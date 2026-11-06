@@ -255,6 +255,10 @@ describe('legacy mapping', () => {
     expect(mapAlert({ ...alert, reviewed_at: null }).ok).toBe(true);
     const epoch = mapAlert({ ...alert, reviewed_at: 1_790_000_000 });
     expect(epoch.ok && epoch.value.reviewedAt?.toISOString()).toBe('2026-09-21T14:13:20.000Z');
+    const edge = mapAlert({ ...alert, reviewed_at: 253_402_300_799 });
+    expect(edge.ok && edge.value.reviewedAt?.toISOString()).toBe('9999-12-31T23:59:59.000Z');
+    const first = mapAlert({ ...alert, reviewed_at: -62_135_596_800 });
+    expect(first.ok && first.value.reviewedAt?.toISOString()).toBe('0001-01-01T00:00:00.000Z');
     const zero = mapAlert({ ...alert, reviewed_at: 0 });
     expect(zero.ok && zero.value.reviewedAt?.toISOString()).toBe('1970-01-01T00:00:00.000Z');
     for (const broken of [
@@ -264,6 +268,9 @@ describe('legacy mapping', () => {
       { reviewed_at: 'ayer' },
       { reviewed_at: '1790000000' },
       { reviewed_at: 9e300 },
+      { reviewed_at: 253_402_300_800 },
+      { reviewed_at: -62_135_596_801 },
+      { reviewed_at: 1_000_000_000_000 },
     ]) {
       const result = mapAlert({ ...alert, ...broken });
       expect(!result.ok && result.error, Object.keys(broken)[0]).toBe('alert_row_invalid');

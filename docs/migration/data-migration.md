@@ -59,7 +59,9 @@ and left out; the other tenants and the identity tables are still written.
 Timestamps are naive local strings in SQLite (`datetime.now().isoformat`). They are read as
 **UTC**, whatever zone the operator's machine is in: the tool runs in UTC, so a shape with no zone
 such as `01-02-2026` gives the same instant everywhere. A number is read as epoch seconds in every
-timestamp column, `reviewed_at` included. If the legacy server ran in another timezone, the operator must decide whether to shift
+timestamp column, `reviewed_at` included, but only a column with no declared type holds one: the
+`TEXT` columns `app.py` creates turn it into text, which is refused as `1790000000`. A numeric
+`reviewed_at` outside years 1 to 9999 is `alert_row_invalid`. If the legacy server ran in another timezone, the operator must decide whether to shift
 them before the cut-over.
 
 ## Runbook
@@ -111,13 +113,15 @@ Global rows (tenants, users, grants) are written in one transaction; each tenant
 tables are written in one `withTenant` transaction under forced RLS, so a tenant is migrated
 completely or not at all. Attachment bytes are copied before the tenant transaction under a
 deterministic object key, and an existing object is never replaced. Before writing a tenant the
-tool reads each of its keys:
+tool reads each of its keys, so the storage credentials need read access as well as write access,
+and a dry run does not look at the object store:
 
 - key free: the object is written and counted as copied;
 - same bytes: the object is left in place and reported as `attachment_object_reused` (info);
-- other bytes: `attachment_object_conflict` (error) with the attachment id. Nothing of that tenant
-  is written, neither objects nor rows, and the other tenants still run. Find out what that object
-  is before deleting it, then run again as in the resume steps below.
+- other bytes: `attachment_object_conflict` (error) with the attachment id. None of that tenant's
+  objects or business rows are written, and the other tenants still run; its `tenants` row and
+  grants were already committed with the global rows. Find out what that object is before
+  deleting it, then run again as in the resume steps below.
 
 The run **refuses a non-empty target**: if the users table already holds accounts or any tenant
 already holds rows, it reports `target_not_empty` and writes nothing. Do not use
@@ -128,8 +132,9 @@ records `tenant_write_failed` with the tenant id only (no driver message, which 
 data), the remaining tenants are still applied, the report is still written and the process
 exits 1. Objects already copied for the failed tenant stay under their deterministic keys and
 are reused by the next attempt, because the same source gives the same bytes. If a legacy file
-changed between attempts, its key holds the old bytes and the tenant is refused with
-`attachment_object_conflict` until that object is deleted: stop writes to the legacy installation
+changed between attempts, a row with a `sha256` is dropped as `attachment_sha256_mismatch`; a row
+without one meets the old bytes under its key, and the tenant is refused with
+`attachment_object_conflict` until that object is deleted. Stop writes to the legacy installation
 before step 4.
 
 `--allow-non-empty` is the explicit override for **resuming** such a run. With it:

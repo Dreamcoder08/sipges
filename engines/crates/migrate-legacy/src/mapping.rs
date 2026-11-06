@@ -157,6 +157,9 @@ fn is_legacy_hash(text: &str) -> bool {
         && parts.next().is_none()
 }
 
+/// Years 1 to 9999: PostgreSQL refuses a date's ISO text outside them.
+const STORED_MS: std::ops::RangeInclusive<i64> = -62_135_596_800_000..=253_402_300_799_999;
+
 /// `TENANT_PART`: `^[A-Za-z0-9_-]{2,64}$`, the CHECK on the `tenants` ids.
 fn valid_tenant_part(part: &str) -> bool {
     (2..=64).contains(&part.len())
@@ -760,6 +763,10 @@ pub fn map_alert(row: &Row) -> Mapped<Alert> {
         let Some(at) = parse_timestamp(row.get("reviewed_at")) else {
             return reject(invalid);
         };
+        // An epoch past those years is a bad value in one row, not a failure of the whole tenant.
+        if matches!(row.get("reviewed_at"), Legacy::Num(_)) && !STORED_MS.contains(&at) {
+            return reject(invalid);
+        }
         Some(at)
     };
     let alert = Alert {
@@ -1458,6 +1465,16 @@ mod tests {
             &[("reviewed_at", Legacy::Num(1_790_000_000.0))],
         );
         assert!(map_alert(&number).is_ok_and(|a| a.reviewed_at == Some(1_790_000_000_000)));
+        let last = with(
+            &alert_row(),
+            &[("reviewed_at", Legacy::Num(253_402_300_799.0))],
+        );
+        assert!(map_alert(&last).is_ok_and(|a| a.reviewed_at == Some(253_402_300_799_000)));
+        let first = with(
+            &alert_row(),
+            &[("reviewed_at", Legacy::Num(-62_135_596_800.0))],
+        );
+        assert!(map_alert(&first).is_ok_and(|a| a.reviewed_at == Some(-62_135_596_800_000)));
         let zero = with(&alert_row(), &[("reviewed_at", Legacy::Num(0.0))]);
         assert!(map_alert(&zero).is_ok_and(|a| a.reviewed_at == Some(0)));
         for (column, value) in [
@@ -1471,6 +1488,9 @@ mod tests {
             ("reviewed_at", s("ayer")),
             ("reviewed_at", s("1790000000")),
             ("reviewed_at", Legacy::Num(9e300)),
+            ("reviewed_at", Legacy::Num(253_402_300_800.0)),
+            ("reviewed_at", Legacy::Num(-62_135_596_801.0)),
+            ("reviewed_at", Legacy::Num(1e12)),
             ("reviewer_note", s("r\0")),
         ] {
             let row = with(&alert_row(), &[(column, value)]);

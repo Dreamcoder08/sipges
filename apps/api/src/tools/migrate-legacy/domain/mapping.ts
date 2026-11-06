@@ -91,6 +91,9 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_OBJECT_NAME = /^[A-Za-z0-9._-]+$/;
 /** The CHECK on tenants.company_id and tenants.project_id (migration 0003). */
 const TENANT_PART = /^[A-Za-z0-9_-]{2,64}$/;
+/** Years 1 to 9999: PostgreSQL refuses a date's ISO text outside them. */
+const FIRST_STORED_MS = -62_135_596_800_000;
+const LAST_STORED_MS = 253_402_300_799_999;
 
 // ---------------------------------------------------------------- coercion
 
@@ -579,6 +582,11 @@ export const mapAlert = (row: LegacyAlertRow): Result<TargetAlert, ProblemCode> 
   const reviewedText = asText(row['reviewed_at'])?.trim() ?? '';
   const reviewedAt = reviewedText ? parseLegacyTimestamp(row['reviewed_at']) : null;
   if (reviewedText && !reviewedAt) return err('alert_row_invalid');
+  // An epoch past those years is a bad value in one row, not a failure of the whole tenant.
+  const numeric = typeof row['reviewed_at'] === 'number' || typeof row['reviewed_at'] === 'bigint';
+  const reviewedMs = reviewedAt?.getTime() ?? 0;
+  if (numeric && (reviewedMs < FIRST_STORED_MS || reviewedMs > LAST_STORED_MS))
+    return err('alert_row_invalid');
   const alert = {
     id,
     projectId: textOr(row['project_id'], 'PRJ-SECHURA'),
