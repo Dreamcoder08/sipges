@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
 // syncBuffer is a bytes.Buffer safe for the server goroutine and the test.
@@ -93,5 +96,22 @@ func TestRunServesHealthAndStopsOnCancel(t *testing.T) {
 		if !strings.Contains(logs, want) {
 			t.Fatalf("logs lack %s: %s", want, logs)
 		}
+	}
+}
+
+func TestRunRefusesAPrivilegedLoginBeforeListening(t *testing.T) {
+	s := scratchDB(t)
+	listened := false
+	listen := func(network, address string) (net.Listener, error) {
+		listened = true
+		return net.Listen(network, address)
+	}
+	var out syncBuffer
+	err := run(context.Background(), lookup(map[string]string{"SIPGES_DATABASE_URL": s.URL}), &out, listen)
+	if !errors.Is(err, database.ErrPrivilegedRole) {
+		t.Fatalf("got %v", err)
+	}
+	if listened {
+		t.Fatal("the API listened on a login that bypasses row-level security")
 	}
 }

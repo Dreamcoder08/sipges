@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"maps"
 	"net"
 	"net/http"
 	"net/url"
@@ -27,6 +28,13 @@ type started struct {
 	stop context.CancelFunc
 }
 
+// onSyntheticServer adds the override a synthetic server needs: its login is a superuser.
+func onSyntheticServer(env map[string]string) func(string) (string, bool) {
+	withOverride := maps.Clone(env)
+	withOverride["SIPGES_ALLOW_PRIVILEGED_DB_ROLE"] = "1"
+	return lookup(withOverride)
+}
+
 func startAPI(t *testing.T, env map[string]string) *started {
 	t.Helper()
 	addrs := make(chan string, 1)
@@ -39,7 +47,7 @@ func startAPI(t *testing.T, env map[string]string) *started {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &started{out: &syncBuffer{}, done: make(chan error, 1), stop: cancel}
-	go func() { s.done <- run(ctx, lookup(env), s.out, listen) }()
+	go func() { s.done <- run(ctx, onSyntheticServer(env), s.out, listen) }()
 	t.Cleanup(cancel)
 	select {
 	case s.addr = <-addrs:
@@ -188,7 +196,7 @@ func TestStartStopsOnAnEmptyInstallationWithoutAUsablePassword(t *testing.T) {
 		var out syncBuffer
 		listen := func(network, _ string) (net.Listener, error) { return net.Listen(network, "127.0.0.1:0") }
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		err := run(ctx, lookup(env), &out, listen)
+		err := run(ctx, onSyntheticServer(env), &out, listen)
 		cancel()
 		if err == nil || err.Error() != "Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)" {
 			t.Fatalf("err = %v", err)
@@ -211,7 +219,7 @@ func TestStartStopsOnAUsernameTheUsersTableCannotHold(t *testing.T) {
 		var out syncBuffer
 		listen := func(network, _ string) (net.Listener, error) { return net.Listen(network, "127.0.0.1:0") }
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		err := run(ctx, lookup(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": username, "SIPGES_ADMIN_PASSWORD": syntheticAdminPassword}), &out, listen)
+		err := run(ctx, onSyntheticServer(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": username, "SIPGES_ADMIN_PASSWORD": syntheticAdminPassword}), &out, listen)
 		cancel()
 		if err == nil || err.Error() != refused {
 			t.Fatalf("%q: err = %v", username, err)
@@ -258,7 +266,7 @@ func TestStartReportsTheEmptyPasswordBeforeTheUsername(t *testing.T) {
 	listen := func(network, _ string) (net.Listener, error) { return net.Listen(network, "127.0.0.1:0") }
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := run(ctx, lookup(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": ""}), &out, listen)
+	err := run(ctx, onSyntheticServer(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_USERNAME": ""}), &out, listen)
 	if err == nil || err.Error() != "Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)" {
 		t.Fatalf("err = %v", err)
 	}
@@ -270,7 +278,7 @@ func TestStartStopsOnAnInvalidGoogleAdminAddress(t *testing.T) {
 	listen := func(network, _ string) (net.Listener, error) { return net.Listen(network, "127.0.0.1:0") }
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	err := run(ctx, lookup(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_PASSWORD": syntheticAdminPassword,
+	err := run(ctx, onSyntheticServer(map[string]string{"SIPGES_DATABASE_URL": s.URL, "SIPGES_ADMIN_PASSWORD": syntheticAdminPassword,
 		"SIPGES_GOOGLE_CLIENT_ID": "client", "SIPGES_GOOGLE_CLIENT_SECRET": "synthetic-secret", "SIPGES_GOOGLE_ADMIN_EMAIL": "no-es-correo"}), &out, listen)
 	if err == nil || err.Error() != "SIPGES_GOOGLE_ADMIN_EMAIL is not a valid address" {
 		t.Fatalf("err = %v", err)

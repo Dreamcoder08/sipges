@@ -47,23 +47,66 @@ const baseEnv = () =>
     ].flatMap((key) => (process.env[key] ? [[key, process.env[key] ?? '']] : [])),
   );
 
-/** A throwaway database on the server named by `serverUrl`; `drop` removes it with its sessions. */
+/** scratchLockKey of apps/api-go/internal/platform/database/dbtest/dbtest.go. */
+const SCRATCH_LOCK_KEY = '6001416245483864065';
+
+/**
+ * A throwaway database on the server named by `serverUrl`, owned by a login of its own with no
+ * attribute that bypasses row-level security, the production role of docs/deployment/readiness.md,
+ * so both APIs run under forced RLS. `url` is that login, which migrates the database; `adminUrl`
+ * is the server's own, for what must see every project (the fixtures); `drop` removes it all.
+ * Roles are cluster-wide and a superuser's migration 0030 drops mascli_tenant, so the lock of
+ * dbtest's migrations is held until `migrated` says the TypeScript API finished them.
+ */
 export const scratchDatabase = async (serverUrl: string) => {
+  const lock = postgres(serverUrl, { max: 1, onnotice: () => undefined });
+  const lockSession = await lock.reserve();
+  await lockSession.unsafe(`SELECT pg_advisory_lock(${SCRATCH_LOCK_KEY})`);
+  let unlocked: Promise<void> | undefined;
+  const migrated = () => {
+    unlocked ??= (lockSession.release(), lock.end());
+    return unlocked;
+  };
   const name = `sipges_parity_${randomBytes(6).toString('hex')}`;
+  const owner = `${name}_owner`;
+  const password = randomBytes(24).toString('hex');
   const admin = postgres(serverUrl, { max: 1, onnotice: () => undefined });
+  const dropAll = async () => {
+    await admin.unsafe(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    await admin.unsafe(`DROP ROLE IF EXISTS ${owner}`);
+  };
   try {
-    await admin.unsafe(`CREATE DATABASE ${name}`);
+    await admin.unsafe(
+      `CREATE ROLE ${owner} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`,
+    );
+    // Migration 0003 still names mascli_tenant, and an owner without CREATEROLE cannot create it.
+    await admin.unsafe(`DO $$ BEGIN
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mascli_tenant') THEN
+        CREATE ROLE mascli_tenant NOLOGIN NOINHERIT;
+      END IF;
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sipges_tenant') THEN
+        CREATE ROLE sipges_tenant NOLOGIN NOINHERIT;
+      END IF;
+    END $$`);
+    await admin.unsafe(`GRANT mascli_tenant, sipges_tenant TO ${owner} WITH ADMIN OPTION`);
+    await admin.unsafe(`CREATE DATABASE ${name} OWNER ${owner}`);
   } catch (error) {
-    await admin.end();
+    await dropAll().finally(() => Promise.all([admin.end(), migrated()]));
     throw error;
   }
-  const url = new URL(serverUrl);
-  url.pathname = `/${name}`;
+  const adminUrl = new URL(serverUrl);
+  adminUrl.pathname = `/${name}`;
+  const url = new URL(adminUrl);
+  url.username = owner;
+  url.password = password;
   return {
     url: url.toString(),
+    adminUrl: adminUrl.toString(),
+    migrated,
     drop: async () => {
       try {
-        await admin.unsafe(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+        await migrated();
+        await dropAll();
       } finally {
         await admin.end();
       }

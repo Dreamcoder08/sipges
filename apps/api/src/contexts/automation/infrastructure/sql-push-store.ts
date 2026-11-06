@@ -1,7 +1,8 @@
 import type { SqlClient } from '../../../platform/database/sql-client.ts';
 import type { PushPayload, PushStore } from '../application/ports.ts';
 
-// Owner-scoped transaction: identity tables are global, outbox retains forced tenant RLS.
+// Owner-scoped transaction: identity tables are global, outbox retains forced tenant RLS. Forced
+// RLS does not bind a login that bypasses it, so each statement names the tenant too.
 const withTenant = <T>(sql: SqlClient, tenantId: string, fn: (tx: SqlClient) => Promise<T>) =>
   sql.transaction(async (tx) => {
     await tx.query("SELECT set_config('app.tenant_id',$1,true)", [tenantId]);
@@ -59,10 +60,10 @@ export const createSqlPushStore = (sql: SqlClient): PushStore => ({
       }>(
         `WITH due AS(
  SELECT d.id FROM push_deliveries d JOIN push_subscriptions s ON s.endpoint=d.endpoint AND s.username=d.username JOIN users u ON u.username=d.username AND u.active JOIN grants g ON g.username=d.username AND g.tenant_id=d.tenant_id
- WHERE d.status='pending' AND d.next_attempt_at<=$1 AND(NOT d.restricted OR u.role<>'consulta') ORDER BY d.id LIMIT 1 FOR UPDATE OF d SKIP LOCKED
- ),claimed AS(UPDATE push_deliveries d SET attempts=d.attempts+1,next_attempt_at=$2 FROM due WHERE d.id=due.id RETURNING d.*)
+ WHERE d.tenant_id=$3 AND d.status='pending' AND d.next_attempt_at<=$1 AND(NOT d.restricted OR u.role<>'consulta') ORDER BY d.id LIMIT 1 FOR UPDATE OF d SKIP LOCKED
+ ),claimed AS(UPDATE push_deliveries d SET attempts=d.attempts+1,next_attempt_at=$2 FROM due WHERE d.id=due.id AND d.tenant_id=$3 RETURNING d.*)
  SELECT c.id,s.endpoint,s.p256dh,s.auth,c.payload,c.attempts FROM claimed c JOIN push_subscriptions s ON s.endpoint=c.endpoint AND s.username=c.username`,
-        [at, leaseUntil],
+        [at, leaseUntil, tenantId],
       );
       return rows.map((r) => ({
         id: Number(r.id),
@@ -74,8 +75,8 @@ export const createSqlPushStore = (sql: SqlClient): PushStore => ({
   finish: (tenantId, id, status, error, retryAt) =>
     withTenant(sql, tenantId, async (tx) => {
       await tx.query(
-        'UPDATE push_deliveries SET status=$2,last_error=$3,next_attempt_at=$4 WHERE id=$1',
-        [id, status, error, retryAt],
+        'UPDATE push_deliveries SET status=$2,last_error=$3,next_attempt_at=$4 WHERE id=$1 AND tenant_id=$5',
+        [id, status, error, retryAt, tenantId],
       );
     }),
   forget: async (endpoint) => {

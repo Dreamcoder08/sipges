@@ -135,7 +135,8 @@ const main = async () => {
     running.push(embedder);
     const ts = await startTypeScriptApi(database.url, secrets, embedder.url);
     running.push(ts);
-    await seedDatabase(database.url);
+    await database.migrated();
+    await seedDatabase(database.adminUrl);
     const go = await startGoApi(database.url, scratch, secrets.dataKey, embedder.url);
     running.push(go);
     const { passed, sessions } = await runCases({
@@ -151,7 +152,7 @@ const main = async () => {
     running.push(hybridTs);
     const hybridGo = await startGoApi(database.url, scratch, secrets.dataKey, embedder.url, true);
     running.push(hybridGo);
-    const indexes = await compareIndexes(database.url, sessions.admin, {
+    const indexes = await compareIndexes(database.adminUrl, sessions.admin, {
       ts: hybridTs.url,
       go: hybridGo.url,
     });
