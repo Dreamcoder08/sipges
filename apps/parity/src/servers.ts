@@ -47,13 +47,26 @@ const baseEnv = () =>
     ].flatMap((key) => (process.env[key] ? [[key, process.env[key] ?? '']] : [])),
   );
 
+/** scratchLockKey of apps/api-go/internal/platform/database/dbtest/dbtest.go. */
+const SCRATCH_LOCK_KEY = '6001416245483864065';
+
 /**
  * A throwaway database on the server named by `serverUrl`, owned by a login of its own with no
  * attribute that bypasses row-level security, the production role of docs/deployment/readiness.md,
  * so both APIs run under forced RLS. `url` is that login, which migrates the database; `adminUrl`
  * is the server's own, for what must see every project (the fixtures); `drop` removes it all.
+ * Roles are cluster-wide and a superuser's migration 0030 drops mascli_tenant, so the lock of
+ * dbtest's migrations is held until `migrated` says the TypeScript API finished them.
  */
 export const scratchDatabase = async (serverUrl: string) => {
+  const lock = postgres(serverUrl, { max: 1, onnotice: () => undefined });
+  const lockSession = await lock.reserve();
+  await lockSession.unsafe(`SELECT pg_advisory_lock(${SCRATCH_LOCK_KEY})`);
+  let unlocked: Promise<void> | undefined;
+  const migrated = () => {
+    unlocked ??= (lockSession.release(), lock.end());
+    return unlocked;
+  };
   const name = `sipges_parity_${randomBytes(6).toString('hex')}`;
   const owner = `${name}_owner`;
   const password = randomBytes(24).toString('hex');
@@ -78,7 +91,7 @@ export const scratchDatabase = async (serverUrl: string) => {
     await admin.unsafe(`GRANT mascli_tenant, sipges_tenant TO ${owner} WITH ADMIN OPTION`);
     await admin.unsafe(`CREATE DATABASE ${name} OWNER ${owner}`);
   } catch (error) {
-    await dropAll().finally(() => admin.end());
+    await dropAll().finally(() => Promise.all([admin.end(), migrated()]));
     throw error;
   }
   const adminUrl = new URL(serverUrl);
@@ -89,8 +102,10 @@ export const scratchDatabase = async (serverUrl: string) => {
   return {
     url: url.toString(),
     adminUrl: adminUrl.toString(),
+    migrated,
     drop: async () => {
       try {
+        await migrated();
         await dropAll();
       } finally {
         await admin.end();

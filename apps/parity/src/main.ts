@@ -135,6 +135,7 @@ const main = async () => {
     running.push(embedder);
     const ts = await startTypeScriptApi(database.url, secrets, embedder.url);
     running.push(ts);
+    await database.migrated();
     await seedDatabase(database.adminUrl);
     const go = await startGoApi(database.url, scratch, secrets.dataKey, embedder.url);
     running.push(go);
