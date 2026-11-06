@@ -1,7 +1,7 @@
 # 0009 — Internet exposure hardening
 
 ## Context
-The secure-deployment plan (`odd/archive/secure-mascli-public-deployment.md`) publishes SIPGES on the internet behind Cloudflare Tunnel + Access. Several gaps from the Python review were still open in the TypeScript API: an absent `Origin` header skipped the CSRF check, no CSP was sent, any `Host` was accepted, MFA was optional, and a lost authenticator could not be recovered because setup returns 409 once MFA is enabled (ADR 0004).
+The secure-deployment plan (`odd/archive/secure-sipges-public-deployment.md`) publishes SIPGES on the internet behind Cloudflare Tunnel + Access. Several gaps from the Python review were still open in the TypeScript API: an absent `Origin` header skipped the CSRF check, no CSP was sent, any `Host` was accepted, MFA was optional, and a lost authenticator could not be recovered because setup returns 409 once MFA is enabled (ADR 0004).
 
 ## Decision
 1. **Origin rule.** Every state-changing request must name this host in `Origin`, or in `Referer` when a browser omits `Origin`. A request with neither, or with `Origin: null`, gets 403. Non-browser clients send `Origin: https://<host>`.

@@ -28,7 +28,7 @@ Close the gap between SIPGES and state-of-the-art analysis platforms (Palantir-s
 - L5 (T4 búsqueda): Índice GIN de expresión con configuración simple sin acentos, coincidencia por prefijo e id exacto, paleta Ctrl+K (de65280).
 - L6 (T5 grafo): GET /system/graph acotado a 2 saltos y 150 nodos; grafo de fuerzas determinista en la vista 360° (ede8ff6).
 - L7 (T6 observabilidad): X-Request-Id, logs JSON, Server-Timing y /system/metrics Prometheus solo para administración (ebc7293, f7f3bcf).
-- L8 (T7 clasificación): Marcas público/interno/restringido; mascli_can_see() en RLS oculta restringidos, su historial, vínculos y búsqueda al rol consulta (a5ce9c6).
+- L8 (T7 clasificación): Marcas público/interno/restringido; sipges_can_see() en RLS oculta restringidos, su historial, vínculos y búsqueda al rol consulta (a5ce9c6).
 - L9 (T8 importación): Importación CSV con mapeo de columnas, vista previa y fusión todo-o-nada auditada; hasta 2000 filas (99d96a6, 9496089).
 - L10 (T9 analista): Informe extractivo con citas numeradas y Narrator opcional con Claude; nunca envía restringidos, valida citas y cae al extractivo ante fallos. ADR 0013 (e5edf22).
 - L11 (T10 cronología): GET /system/timeline, pantalla Cronología con histograma mensual y filtro Desde/Hasta en el mapa territorial (097b0b2).

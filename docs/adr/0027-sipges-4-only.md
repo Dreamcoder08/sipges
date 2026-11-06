@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-26
-- Task: `odd/tasks/mascli-4-only.md`
+- Task: `odd/tasks/sipges-4-only.md`
 - Supersedes: ADR 0020 §1 (per-project switch) and the "3.0 stays intact" rule of ADR 0021
 
 ## Context

@@ -30,7 +30,7 @@ Root keeps README.md, CHANGELOG.md, CONTRIBUTING.md, AGENTS.md, CLAUDE.md and to
 | From | To | Why |
 | --- | --- | --- |
 | NOVEDADES_RC_*.md, RELEASE_NOTES_*.txt, RESULTADO_PRUEBA_*.txt, PRUEBAS_RC_2_7.txt, PILOTO_RETEST_V0_5_1.json | reference/python/history/ (git mv) + one summary page docs/history/python-prototype.md | History of the Python prototype, not of the TypeScript app |
-| start_mascli.*, INICIAR_MASCLI_FINAL.bat, iniciar_mascli_final.sh | reference/python/ | They start `app:app`, which only resolves there |
+| start_sipges.*, INICIAR_SIPGES_FINAL.bat, iniciar_sipges_final.sh | reference/python/ | They start `app:app`, which only resolves there |
 | IRSA_ESPECIFICACION_TECNICA.txt, NUEVO_MODULO_ANALISIS_SITUACIONAL.txt | reference/python/docs/ | Prototype specs; the executable IRSA reference is docs/escenarios/irsa.md |
 | docs/export-isolation.md, storage-backend.md, mfa-enrollment.md | reference/python/docs/ | Prototype fixes, superseded by ADRs |
 | docs/VERIFICACION.md, agents/verification.md, migration/t11*/t14-verification/main-consolidation/merged-branches.json, qa/*, deployment/public-demo-verification.md | docs/history/ | Evidence logs, not guides |
