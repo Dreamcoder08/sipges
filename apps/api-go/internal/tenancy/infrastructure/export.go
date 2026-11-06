@@ -96,10 +96,12 @@ func secured(ctx context.Context, q database.Querier, table string) (bool, error
 }
 
 func readTable(ctx context.Context, q database.Querier, table, order, tenantID string) ([]any, error) {
-	// Text results, the format postgres.js parses: a column keeps PostgreSQL's own spelling.
+	// Text results, the format postgres.js parses: a column keeps PostgreSQL's own spelling. Each
+	// statement is described afresh: a cached `SELECT *` would fail after a migration adds or
+	// drops a column of the table.
 	// Both names come from exportTables.
 	rows, err := q.Query(ctx, `SELECT * FROM public.`+table+` WHERE tenant_id = $1 ORDER BY `+order,
-		pgx.QueryResultFormats{pgx.TextFormatCode}, tenantID)
+		pgx.QueryExecModeDescribeExec, pgx.QueryResultFormats{pgx.TextFormatCode}, tenantID)
 	if err != nil {
 		return nil, err
 	}

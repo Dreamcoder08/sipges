@@ -68,6 +68,26 @@ func TestExportSkipsATableOfAnOlderSchema(t *testing.T) {
 	}
 }
 
+func TestExportSurvivesAMigrationOfAnExportedTable(t *testing.T) {
+	pool := exportDatabase(t)
+	reader := infrastructure.ExportData{DB: pool}
+	if _, err := reader.Read(t.Context(), exportScope); err != nil {
+		t.Fatal(err)
+	}
+	// A running API meets migrations: the same connection must read the new columns at once.
+	for _, change := range []string{
+		`ALTER TABLE module_records ADD COLUMN probe text NOT NULL DEFAULT 'nueva'`,
+		`ALTER TABLE module_records DROP COLUMN probe`,
+	} {
+		if _, err := pool.Exec(t.Context(), change); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := reader.Read(t.Context(), exportScope); err != nil {
+			t.Fatalf("after %s: %v", change, err)
+		}
+	}
+}
+
 func TestExportIsOneReadOnlySnapshot(t *testing.T) {
 	pool := exportDatabase(t)
 	tx, err := infrastructure.ExportTransaction{DB: pool}.Begin(t.Context())
