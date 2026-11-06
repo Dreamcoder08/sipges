@@ -124,6 +124,9 @@ const OBJECTS = [
   '{"length":[]}',
   '{"length":{}}',
 ];
+// Out of POOL so its order, and so the seeded cases, stay put. A nested `length` reads as
+// Array#toString, which must cost its size and not its depth.
+const NESTED_LENGTHS = ['{"length":["",["",[5]]]}', '{"length":[[[[7]]]]}', '{"length":["1",[2]]}'];
 const POOL = [...SCALARS, ...STRINGS, ...ARRAYS, ...OBJECTS];
 
 const ID = '"A-1"';
@@ -161,6 +164,15 @@ const argumentTexts = (tool) => {
       return [[name, roll < 0.4 ? valid : pick(POOL)]];
     });
     texts.push(object(chosen));
+  }
+  if (tool === 'get_record') {
+    for (const value of NESTED_LENGTHS)
+      texts.push(
+        object([
+          ['module', value],
+          ['id', ID],
+        ]),
+      );
   }
   return [...new Set(texts)];
 };
@@ -277,7 +289,7 @@ const cases = [
   post('empty body', ''),
   post('invalid JSON', '{'),
   post('trailing text', '{} x'),
-  post('a BOM', `﻿${rpc('ping')}`),
+  post('a BOM', `\ufeff${rpc('ping')}`),
   { label: 'invalid UTF-8', method: 'POST', key: READ, hex: '7b22ff227d' },
   post('null', 'null'),
   post('a list', '[]'),
