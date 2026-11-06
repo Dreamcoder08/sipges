@@ -3,7 +3,8 @@
 // scope's records, then runs an engine. The dashboard counters run in Go (domain); the
 // situational, strategic, consensus and integrated analyses run in the Rust analytics module
 // (engines/README.md, ABI), whose answer is JSON.stringify of the TypeScript result. The DOCX
-// reports and the conflict-risk prediction stay in TypeScript for now.
+// reports are built from those answers (reports.go). The conflict-risk prediction stays in
+// TypeScript for now.
 package application
 
 import (
@@ -42,17 +43,22 @@ type Service struct {
 	Records RecordReader
 	Labels  LabelSource
 	Engine  Engine
+	// Renderer writes the Word reports.
+	Renderer ReportRenderer
 	// Now is the clock of generated_at; nil means time.Now.
 	Now func() time.Time
 }
 
+func (s Service) now() time.Time {
+	if s.Now != nil {
+		return s.Now()
+	}
+	return time.Now()
+}
+
 // generatedAt is `${clock.now().toISOString().slice(0, 19)}Z`: UTC to the second, truncated.
 func (s Service) generatedAt() string {
-	now := time.Now
-	if s.Now != nil {
-		now = s.Now
-	}
-	return now().UTC().Format("2006-01-02T15:04:05") + "Z"
+	return s.now().UTC().Format("2006-01-02T15:04:05") + "Z"
 }
 
 // request is one analytics engine request (engines/README.md, "Requests").
