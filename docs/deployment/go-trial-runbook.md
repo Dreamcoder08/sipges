@@ -240,7 +240,7 @@ Outside the Worker:
 | `SIPGES_SMOKE_URL` | Shell, `deploy-workers.yml` | `smoke-go.mjs` |
 | `SIPGES_LOAD_BASE_URL`, `SIPGES_LOAD_USER`, `SIPGES_LOAD_PASSWORD`, `SIPGES_LOAD_TOTP`, `SIPGES_LOAD_SCOPE` | `~/.config/sipges-carga.env` | The benchmark |
 
-Production also needs B4: its own container, Durable Object migration and buildx in `deploy-workers.yml`.
+Production also needs B4: its own container, Durable Object migration and buildx in `deploy-workers.yml`. Before deploying it, read [the rollback limit](cloudflare-workers.md#rolling-back).
 
 ## Sources
 

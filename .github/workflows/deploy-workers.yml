@@ -25,9 +25,10 @@ jobs:
         && github.event.workflow_run.conclusion == 'success'
         && github.event.workflow_run.event == 'push')
       || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
-    # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
-    runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
-    timeout-minutes: 20
+    # GitHub-hosted on purpose: `wrangler deploy` builds the Go image, which needs Docker with
+    # buildx, and the self-hosted runner lacks it (go.yml, Go image).
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: production
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -44,6 +45,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @sipges/hosting-cloudflare build
+      - uses: docker/setup-buildx-action@v4
       # Before the new code goes live: migrations are additive, so the running version keeps working.
       - name: Apply database migrations
         run: pnpm --filter @sipges/hosting-cloudflare migrate
@@ -75,7 +77,8 @@ jobs:
         env:
           SIPGES_SMOKE_URL: https://sipges.dreamcoder-dev08.workers.dev
       # A failed deploy must not stay live. Rollback restores the previous Worker version only:
-      # migrations are additive and stay applied (docs/deployment/cloudflare-workers.md).
+      # migrations are additive and stay applied. The first deploy of GoBackend cannot be rolled
+      # back (docs/deployment/cloudflare-workers.md).
       - name: Roll back the Worker
         if: failure() && (steps.smoke.outcome == 'failure' || steps.smoke_go.outcome == 'failure')
         working-directory: apps/hosting-cloudflare

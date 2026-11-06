@@ -21,6 +21,17 @@ describe('Workers deploy script', () => {
   });
 });
 
+/** Only `deploy:worker` builds the Go image; a local bundle or `wrangler dev` needs no Docker. */
+describe('Go container locally', () => {
+  it('leaves containers out of `wrangler dev` and the dry-run bundle', async () => {
+    expect(await read('../wrangler.jsonc')).toMatch(/"dev":\s*\{\s*"enable_containers":\s*false/);
+    const { scripts } = JSON.parse(await read('../package.json')) as {
+      scripts: Record<string, string>;
+    };
+    expect(scripts.bundle).toContain('--containers-rollout=none');
+  });
+});
+
 /** A failed deploy must not stay live: the smoke test proves the database answers. */
 describe('Deploy Workers workflow', () => {
   const workflow = () => read('../../../.github/workflows/deploy-workers.yml');
@@ -31,6 +42,15 @@ describe('Deploy Workers workflow', () => {
     const next = text.indexOf('\n      - ', start + 1);
     return text.slice(start, next === -1 ? undefined : next);
   };
+
+  it('builds the Go image on a GitHub-hosted runner, with buildx set up before the deploy', async () => {
+    const text = await workflow();
+    expect(text).toContain('runs-on: ubuntu-latest');
+    expect(text).not.toContain('SIPGES_RUNS_ON');
+    const buildx = text.indexOf('uses: docker/setup-buildx-action@');
+    expect(buildx).toBeGreaterThanOrEqual(0);
+    expect(buildx).toBeLessThan(text.indexOf('- name: Deploy the Worker'));
+  });
 
   it('smoke-tests /health/ready, which runs SELECT 1, after deploying', async () => {
     const smoke = step(await workflow(), 'Smoke test /health/ready');

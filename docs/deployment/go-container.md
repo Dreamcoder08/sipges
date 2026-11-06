@@ -1,8 +1,9 @@
 # Go container routing (no-traffic Worker)
 
 How the Worker sends a route to the Go backend in Cloudflare Containers (ADR 0032 §4, §6). Nothing here
-changes production: the production Worker (`wrangler.jsonc`, deployed by `deploy-workers.yml`) declares no
-container, no `GO_BACKEND` binding and no `SIPGES_GO_ROUTING`, so every request stays on TypeScript.
+changes production's traffic: the production Worker (`wrangler.jsonc`, deployed by `deploy-workers.yml`) declares
+the container and the `GO_BACKEND` binding but no `SIPGES_GO_ROUTING`, and `GO_ROUTES` is empty, so every request
+stays on TypeScript.
 Every step below needs the owner's Cloudflare account and explicit go-ahead.
 
 ## How a request is routed

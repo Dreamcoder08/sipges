@@ -2,8 +2,8 @@
  * Strangler routing (docs/adr/0032 §4, §6): the routes the Worker sends to the Go container
  * instead of the TypeScript backend. The list is data; a route joins it only after its parity
  * cases pass (apps/parity) and an owner-visible measurement, and leaves it to switch back.
- * Routing is off unless SIPGES_GO_ROUTING is '1' and the GO_BACKEND binding exists, which
- * only the `go` wrangler environment declares: production keeps every route on TypeScript.
+ * Routing is off unless SIPGES_GO_ROUTING is '1' and the GO_BACKEND binding exists. Production
+ * has the binding but not the switch, so it keeps every route on TypeScript.
  */
 import type { GoBackendNamespace } from './bindings.ts';
 
