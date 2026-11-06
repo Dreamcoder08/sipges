@@ -7,7 +7,7 @@ import { lstat, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import type { LegacyRow, LegacyScope } from '../domain/legacy.ts';
+import type { LegacyRow, LegacyScope, LegacyValue } from '../domain/legacy.ts';
 import { legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
 import type { LegacyGrantRow, LegacySource, LegacyTenantReader } from '../application/ports.ts';
 
@@ -46,11 +46,40 @@ const tableExists = (db: DatabaseSync, table: string): boolean =>
   db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table) !==
   undefined;
 
-/** Lazily created tables (document_review, RC 2.6/2.7) are simply absent in older installs. */
-const selectAll = (db: DatabaseSync, table: string, orderBy = 'rowid'): readonly LegacyRow[] =>
-  tableExists(db, table)
-    ? (db.prepare(`SELECT * FROM ${table} ORDER BY ${orderBy}`).all() as unknown as LegacyRow[])
-    : [];
+/**
+ * Lazily created tables (document_review, RC 2.6/2.7) are simply absent in older installs.
+ *
+ * Text comes through as bytes: Node 22's node:sqlite cuts a string at its first NUL, which would
+ * let a value pass as a shorter one. Read whole, the mapping refuses it. `typeof` tells such a
+ * cell from a real blob, and decoding replaces invalid UTF-8 as node:sqlite does.
+ */
+const selectAll = (db: DatabaseSync, table: string, orderBy = 'rowid'): readonly LegacyRow[] => {
+  if (!tableExists(db, table)) return [];
+  const names = (
+    db.prepare('SELECT name FROM pragma_table_info(?)').all(table) as unknown as {
+      name: string;
+    }[]
+  ).map((column) => column.name);
+  const cells = names.flatMap((name, index) => {
+    const column = `"${name.replaceAll('"', '""')}"`;
+    return [
+      `CASE typeof(${column}) WHEN 'text' THEN CAST(${column} AS BLOB) ELSE ${column} END AS v${index}`,
+      `typeof(${column}) AS t${index}`,
+    ];
+  });
+  const rows = db
+    .prepare(`SELECT ${cells.join(', ')} FROM ${table} ORDER BY ${orderBy}`)
+    .all() as unknown as Readonly<Record<string, LegacyValue>>[];
+  return rows.map((row) =>
+    Object.fromEntries(
+      names.map((name, index) => {
+        const value = row[`v${index}`];
+        const text = row[`t${index}`] === 'text' && value instanceof Uint8Array;
+        return [name, text ? Buffer.from(value).toString('utf8') : value];
+      }),
+    ),
+  );
+};
 
 const isDefaultScope = (scope: LegacyScope) =>
   scope.companyId === DEFAULT_SCOPE.companyId && scope.projectId === DEFAULT_SCOPE.projectId;

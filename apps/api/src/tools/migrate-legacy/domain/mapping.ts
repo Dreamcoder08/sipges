@@ -55,6 +55,7 @@ export type ProblemCode =
   | 'irsa_config_inherited'
   | 'sessions_not_migrated'
   | 'target_not_empty'
+  | 'target_migrations_pending'
   | 'verify_count_mismatch'
   | 'verify_checksum_mismatch'
   | 'verify_attachment_missing'

@@ -4,7 +4,8 @@
  * the `TargetStore` and `ObjectStorage` ports.
  *
  * Modes:
- * - `dry-run`: reads everything, writes nothing, reports counts and problems;
+ * - `dry-run`: reads everything, writes nothing, reports counts and problems; with schema
+ *   migrations pending it leaves the target unread and says so;
  * - `apply`: one transaction per tenant, refuses a non-empty target unless told otherwise; a
  *   tenant that fails is reported and the others still run, and every keyed row that already
  *   existed in the target is reported as an error (`row_already_present`);
@@ -124,6 +125,8 @@ export type MigrationOptions = {
   readonly allowNonEmptyTarget?: boolean;
   /** Restricts the run to these `company/project` ids. */
   readonly only?: readonly string[];
+  /** Schema migrations a dry run left unapplied; above zero the target is not read at all. */
+  readonly targetMigrationsPending?: number;
 };
 
 export type MigrationDeps = {
@@ -138,6 +141,7 @@ export type MigrationDeps = {
 const SEVERITY: Partial<Record<ProblemCode, Severity>> = {
   attachment_name_sanitized: 'warning',
   irsa_config_inherited: 'info',
+  target_migrations_pending: 'info',
   sessions_not_migrated: 'info',
   tenant_db_missing: 'warning',
   verify_row_unexpected: 'warning',
@@ -429,10 +433,19 @@ export const runMigration = async (
   for (const scope of selected) prepared.push(await prepareTenant(deps, scope));
 
   // ---- emptiness guard ----------------------------------------------------
-  const before = await deps.target.globalCounts();
+  const pending = options.targetMigrationsPending ?? 0;
+  const targetReadable = pending === 0;
+  if (!targetReadable)
+    globalProblems.push(problem('target_migrations_pending', { count: pending }));
+  const before = targetReadable
+    ? await deps.target.globalCounts()
+    : { users: 0, tenants: 0, grants: 0 };
   const existing = new Map<string, TableCounts>();
   for (const entry of prepared)
-    existing.set(entry.tenantId, await deps.target.tenantCounts(entry.tenantId));
+    existing.set(
+      entry.tenantId,
+      targetReadable ? await deps.target.tenantCounts(entry.tenantId) : emptyCounts(),
+    );
   const occupied = [...existing.entries()].filter(([, counts]) => totalRows(counts) > 0);
   const identityOccupied = before.users > 0 || before.grants > 0;
   const refuse =
@@ -516,7 +529,7 @@ export const runMigration = async (
   // ---- read back and verify ----------------------------------------------
   const tenantReports: TenantReport[] = [];
   for (const entry of prepared) {
-    const target = await deps.target.tenantCounts(entry.tenantId);
+    const target = targetReadable ? await deps.target.tenantCounts(entry.tenantId) : emptyCounts();
     let targetChecksums: TableChecksums | null = null;
     if (options.mode === 'verify') {
       targetChecksums = checksumsOf(await deps.target.rowFingerprints(entry.tenantId));
@@ -648,6 +661,9 @@ export const summarize = (report: MigrationReport): string => {
         ` / objects ${t.objects.copied}+${t.objects.verified} of ${t.objects.expected}`,
     ),
     ...[...codes].map(([code, count]) => `error ${code} x${count}`),
+    ...report.problems
+      .filter((p) => p.code === 'target_migrations_pending')
+      .map((p) => `target not read: ${p.count} schema migrations pending`),
   ].join('\n');
 };
 

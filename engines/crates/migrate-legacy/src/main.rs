@@ -16,7 +16,7 @@ use sipges_tools_common::{db, env, migrate, time};
 const USAGE: &str = "Usage: node src/tools/migrate-legacy/cli.ts --legacy-root <dir> [options]
 
 Modes (default: dry-run)
-  --dry-run                Read and report only; nothing is written.
+  --dry-run                Read and report only; nothing is written, schema migrations included.
   --apply                  Write into PostgreSQL (one transaction per tenant).
   --verify                 Compare source and target counts, checksums and attachment bytes.
 
@@ -103,12 +103,24 @@ fn run(values: &args::Values, legacy_root: &str, mode: Mode) -> Result<ExitCode,
     .map_err(|fatal| fail(&fatal))?;
     let source = Source::open(layout).map_err(|fatal| fail(&fatal))?;
     let mut client = db::connect(&url).map_err(|e| named(db::error_name(&e)))?;
-    migrate::migrate(&mut client).map_err(|e| {
-        named(match e.version {
-            None if e.cause.as_db_error().is_some() => "PostgresError",
-            _ => "Error",
-        })
-    })?;
+    // A dry run writes nothing, so it leaves pending migrations for --apply and reports them.
+    let target_migrations_pending = if mode == Mode::DryRun {
+        migrate::pending(&mut client).map_err(|e| {
+            named(if e.as_db_error().is_some() {
+                "PostgresError"
+            } else {
+                "Error"
+            })
+        })?
+    } else {
+        migrate::migrate(&mut client).map_err(|e| {
+            named(match e.version {
+                None if e.cause.as_db_error().is_some() => "PostgresError",
+                _ => "Error",
+            })
+        })?;
+        0
+    };
     let cipher = Cipher::new(&data_key).map_err(|_| named("Error"))?;
     let mut store = Store::new(client, url, cipher);
     let report = run_migration(
@@ -122,6 +134,7 @@ fn run(values: &args::Values, legacy_root: &str, mode: Mode) -> Result<ExitCode,
             mode,
             allow_non_empty: args::flag(values, "allow-non-empty"),
             only: args::strings(values, "only"),
+            target_migrations_pending,
         },
     )
     .map_err(|fatal| fail(&fatal))?;
@@ -133,7 +146,7 @@ fn run(values: &args::Values, legacy_root: &str, mode: Mode) -> Result<ExitCode,
 }
 
 fn run_cli() -> ExitCode {
-    let Ok(values) = args::parse(&args::raw_args(), &OPTIONS) else {
+    let Ok(values) = args::parse(&args::cli_args(), &OPTIONS) else {
         return named("TypeError");
     };
     if !options_valid(&values) {
@@ -144,6 +157,12 @@ fn run_cli() -> ExitCode {
         return fail(&Fatal {
             name: "Error",
             message: Some("Choose either --apply or --verify".to_owned()),
+        });
+    }
+    if apply && args::flag(&values, "dry-run") {
+        return fail(&Fatal {
+            name: "Error",
+            message: Some("Choose either --dry-run or --apply".to_owned()),
         });
     }
     let help = args::flag(&values, "help");

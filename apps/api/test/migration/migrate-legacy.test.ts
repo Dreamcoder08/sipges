@@ -1,7 +1,9 @@
-import { rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { PGlite } from '@electric-sql/pglite';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createSecretCipher } from '../../src/contexts/identity/infrastructure/secret-cipher.ts';
 import { moduleForSlug } from '../../src/contexts/records/application/index.ts';
 import { loadMigrations, migrate } from '../../src/platform/database/migrator.ts';
@@ -15,6 +17,7 @@ import {
   summarize,
 } from '../../src/tools/migrate-legacy/application/migrate.ts';
 import type { TargetStore } from '../../src/tools/migrate-legacy/application/ports.ts';
+import { main, parseCliArgs } from '../../src/tools/migrate-legacy/cli.ts';
 import { emptyCounts, totalRows } from '../../src/tools/migrate-legacy/domain/legacy.ts';
 import { createSqlTargetStore } from '../../src/tools/migrate-legacy/infrastructure/sql-target-store.ts';
 import {
@@ -381,6 +384,110 @@ describe('legacy SQLite → PostgreSQL migration', () => {
         expect(await reader.readObject(`../uploads/${otherFolder}/ajeno.txt`)).toBeNull();
         // A symlink is never followed.
         expect(await reader.readObject('enlace.txt')).toBeNull();
+      } finally {
+        await reader.close();
+        source.close();
+      }
+    } finally {
+      await own.cleanup();
+    }
+  });
+
+  it('refuses --dry-run together with --apply', () => {
+    expect(() => parseCliArgs(['--dry-run', '--apply', '--legacy-root', '/x'])).toThrow(
+      'Choose either --dry-run or --apply',
+    );
+    expect(parseCliArgs(['--dry-run', '--verify']).mode).toBe('verify');
+    expect(parseCliArgs(['--dry-run']).mode).toBe('dry-run');
+  });
+
+  it('accepts the -- that pnpm forwards from the runbook command', () => {
+    expect(parseCliArgs(['--', '--legacy-root', '/x', '--apply'])).toMatchObject({
+      'legacy-root': '/x',
+      mode: 'apply',
+    });
+    expect(() => parseCliArgs(['--', 'posicional'])).toThrow();
+  });
+
+  it('does not read a target with pending schema migrations in a dry run', async () => {
+    const untouched = new Proxy({} as TargetStore, {
+      get: (_target, name) => () => {
+        throw new Error(`target read: ${String(name)}`);
+      },
+    });
+    const source = createSqliteLegacySource(legacyLayout(fixture.root));
+    try {
+      const report = await runMigration(
+        {
+          source,
+          target: untouched,
+          storage: memoryStorage().storage,
+          moduleForSlug,
+          now: () => new Date('2026-10-13T00:00:00Z'),
+        },
+        { mode: 'dry-run', targetMigrationsPending: 3 },
+      );
+      expect(report.problems).toContainEqual({
+        code: 'target_migrations_pending',
+        severity: 'info',
+        count: 3,
+      });
+      expect(report.tenants.every((t) => totalRows(t.target) === 0)).toBe(true);
+      expect(summarize(report)).toContain('target not read: 3 schema migrations pending');
+    } finally {
+      source.close();
+    }
+  });
+
+  it('leaves the target schema alone in a dry run of the CLI', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-dry-run-'));
+    vi.stubEnv('SIPGES_DATABASE_URL', '');
+    vi.stubEnv('SIPGES_PGLITE_DIR', dir);
+    vi.stubEnv('SIPGES_DATA_KEY', TEST_DATA_KEY);
+    vi.stubEnv('SIPGES_UPLOAD_DIR', join(dir, 'objects'));
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    try {
+      await main(['--legacy-root', fixture.root]);
+      expect(info.mock.calls.flat().join('\n')).toContain('target not read:');
+      const db = trackTestDatabase(new PGlite(dir));
+      const { rows } = await db.query<{ name: string | null }>(
+        "SELECT to_regclass('schema_migrations')::text AS name",
+      );
+      expect(rows).toEqual([{ name: null }]);
+    } finally {
+      info.mockRestore();
+      vi.unstubAllEnvs();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reads text with NUL whole, so it is refused and never cut short', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/sipges.db'));
+      db.exec(`
+        DROP TABLE records;
+        CREATE TABLE records (module, record_id, payload, created_at, updated_at);
+        INSERT INTO records VALUES ('Eventos', CAST(x'4556002d31' AS TEXT), '{}', '2026-01-01', '2026-01-01');
+        INSERT INTO records VALUES ('Eventos', 'EV-2', '{}', 1790000000, 1790000000.5);
+        INSERT INTO records VALUES ('Eventos', 'EV-3', x'7b7d', '2026-01-01', '2026-01-01');
+        INSERT INTO records VALUES ('Eventos', 'EV-4', CAST(x'7b7dff' AS TEXT), '2026-01-01', NULL);`);
+      db.close();
+      const source = createSqliteLegacySource(legacyLayout(own.root));
+      const reader = await source.openTenant({
+        companyId: 'SIPGES',
+        projectId: 'PRJ-SECHURA',
+        label: '',
+      });
+      try {
+        const rows = await reader.records();
+        const byId = new Map(rows.map((row) => [row['record_id'], row]));
+        expect(byId.has('EV\u0000-1')).toBe(true);
+        expect(byId.get('EV-2')?.['created_at']).toBe(1790000000);
+        expect(byId.get('EV-2')?.['updated_at']).toBe(1790000000.5);
+        expect(byId.get('EV-3')?.['payload']).toEqual(new Uint8Array([0x7b, 0x7d]));
+        expect(byId.get('EV-4')?.['payload']).toBe('{}\ufffd');
+        expect(byId.get('EV-4')?.['updated_at']).toBeNull();
       } finally {
         await reader.close();
         source.close();

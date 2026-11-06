@@ -100,6 +100,8 @@ export type Step = {
    * line numbers), which a binary cannot reproduce; exit code and stdout are still compared.
    */
   readonly uncaught?: boolean;
+  /** Text both tools must print on stderr, for steps whose stderr is not compared. */
+  readonly stderrIncludes?: string;
   /** Files (relative to the repository root) each tool may write; compared, then deleted. */
   readonly files?: readonly string[];
   /** Runs on both databases right before this step. */
@@ -162,6 +164,12 @@ export const runScenarios = async (tool: Tool, scenarios: readonly Scenario[]): 
         ];
         if (!step.uncaught) outputs.push(['stderr', normalize(a.stderr), normalize(b.stderr)]);
         else if (!a.stderr || !normalize(b.stderr)) outputs.push(['stderr present', !!a.stderr, !!b.stderr]);
+        if (step.stderrIncludes !== undefined)
+          outputs.push([
+            `stderr names "${step.stderrIncludes}"`,
+            a.stderr.includes(step.stderrIncludes),
+            b.stderr.includes(step.stderrIncludes) ? a.stderr.includes(step.stderrIncludes) : 'missing',
+          ]);
         const dump = (
           sql: SqlClient,
           query: string | ((sql: SqlClient, tool: 'ts' | 'rs') => Promise<unknown>),

@@ -204,9 +204,12 @@ const refusals: Step[] = [
   crash(['--report=', ...legacy]),
   crash(['--nope', ...legacy]),
   crash(['posicional']),
-  crash(['--', ...legacy]),
+  step(['--', ...legacy]),
+  crash(['--', 'posicional', ...legacy]),
   crash(['--apply=1', ...legacy]),
   crash(['--apply', '--verify', ...legacy]),
+  crash(['--dry-run', '--apply', ...legacy], { stderrIncludes: 'Choose either --dry-run or --apply' }),
+  crash(['--apply', '--dry-run', '--help'], { stderrIncludes: 'Choose either --dry-run or --apply' }),
   crash(['--apply', '--verify', '--help']),
   crash(['--only', 'sin-barra', ...legacy]),
   crash(['--only=a/b/c', ...legacy]),
@@ -235,7 +238,7 @@ const scenarios: Scenario[] = [
       step([...legacy, '--apply', '--allow-non-empty', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--verify', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--verify', '--only', 'ACME/PRJ-NORTE']),
-      step([...legacy, '--dry-run', '--apply', '--only=SIPGES/PRJ-SECHURA']),
+      step([...legacy, '--dry-run', '--verify', '--only=SIPGES/PRJ-SECHURA']),
     ],
   },
   {
@@ -258,6 +261,37 @@ const scenarios: Scenario[] = [
       step([...rough, '--report', REPORT], { files: [REPORT] }),
       step([...rough, '--apply', '--report', REPORT], { files: [REPORT] }),
       step([...rough, '--verify', '--report', REPORT], { files: [REPORT] }),
+    ],
+  },
+  {
+    name: 'pending schema migrations',
+    seed: async () => {},
+    dumps: {
+      ...DUMPS,
+      schema_migrations: 'SELECT version FROM schema_migrations ORDER BY 1',
+    },
+    steps: [
+      step(rough, {
+        before: (sql) =>
+          sql.exec(
+            'DELETE FROM schema_migrations WHERE version = (SELECT max(version) FROM schema_migrations)',
+          ),
+      }),
+      step([...legacy, '--report', REPORT], { files: [REPORT] }),
+    ],
+  },
+  {
+    name: 'never migrated target',
+    seed: async () => {},
+    dumps: {
+      schema_migrations: `SELECT to_regclass('schema_migrations')::text AS name`,
+      users: 'SELECT count(*)::int AS n FROM users',
+    },
+    steps: [
+      step([...legacy, '--report', REPORT], {
+        files: [REPORT],
+        before: (sql) => sql.exec('DROP TABLE schema_migrations'),
+      }),
     ],
   },
   {

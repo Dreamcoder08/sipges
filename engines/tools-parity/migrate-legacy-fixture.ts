@@ -45,21 +45,21 @@ const open = (path: string, tables: readonly Table[]) => {
   return db;
 };
 
-/**
- * Node 22's node:sqlite cuts text at the first NUL and reads the smallest 64-bit integer as a
- * number; later versions read the whole value and throw `RangeError`, which is what Rust does.
- */
+/** Node 22's node:sqlite reads the smallest 64-bit integer as a number; later versions throw. */
 export const CURRENT_SQLITE_READS = (() => {
   const db = new DatabaseSync(':memory:');
-  const row = db.prepare(`SELECT CAST(x'610062' AS TEXT) AS value`).get();
-  db.close();
-  return row?.['value'] === 'a\0b';
+  try {
+    db.prepare('SELECT -9223372036854775807 - 1').get();
+    return false;
+  } catch {
+    return true;
+  } finally {
+    db.close();
+  }
 })();
 
 const insert = (db: DatabaseSync, table: Table, rows: readonly (readonly Cell[])[]) => {
   for (const row of rows) {
-    // Rust matches the versions that read the whole value (docs/migration/data-migration.md).
-    if (!CURRENT_SQLITE_READS && row.some((cell) => typeof cell === 'string' && cell.includes('\0'))) continue;
     const marks = row.map(() => '?').join(',');
     db.prepare(`INSERT INTO ${table} VALUES (${marks})`).run(...row);
   }

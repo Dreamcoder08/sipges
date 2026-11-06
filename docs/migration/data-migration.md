@@ -71,8 +71,8 @@ has already started, restore the empty backup (or drop and re-create the databas
 
 The tool uses the API configuration: `SIPGES_DATABASE_URL` (or `SIPGES_PGLITE_DIR` for a local
 trial), `SIPGES_DATA_KEY` (the same key the API runs with — it seals migrated TOTP secrets) and
-the object storage settings (`SIPGES_STORAGE`, `SIPGES_UPLOAD_DIR` or the S3 variables). Pending
-schema migrations are applied before anything is read.
+the object storage settings (`SIPGES_STORAGE`, `SIPGES_UPLOAD_DIR` or the S3 variables). `--apply`
+and `--verify` apply pending schema migrations before anything is read.
 
 ### 3. Dry run
 
@@ -80,7 +80,10 @@ schema migrations are applied before anything is read.
 pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy
 ```
 
-Nothing is written. The summary gives per tenant `source / mapped / written / target` row counts
+Nothing is written, schema migrations included. If any are pending, the target is not read: its
+counts stay at zero, and the report carries `target_migrations_pending` (info) and the summary
+ends with `target not read: <n> schema migrations pending`. The source side is reported in full.
+A local trial with `SIPGES_PGLITE_DIR` still creates that directory. The summary gives per tenant `source / mapped / written / target` row counts
 and the copied/verified object counts, followed by the problem codes. Resolve or accept every
 problem before applying; the process exits non-zero while any error-level problem remains.
 
@@ -208,7 +211,6 @@ tenants, damaged SQLite files and S3 through a local server that checks each req
 | Other API settings invalid (only the data key, database URL and storage settings are read) | `loadConfig` fails, exit 1 | ignored |
 | Node's `ExperimentalWarning` for `node:sqlite` on Node 22 | on stderr | absent |
 | A failure TypeScript does not catch | exit 1 with a stack trace, whose message may quote a driver | exit 1 with the error's name and at most an operator's path |
-| Text with a NUL character, on Node 22 | cut at the first NUL by `node:sqlite`, so the row can pass with a shorter value | read whole and refused, as TypeScript does on later Node versions |
 | The integer -9223372036854775808 in any column, on Node 22 | read as a number | `RangeError`, exit 1, as TypeScript does on later Node versions |
 | A timestamp text with no zone that ends like an offset, such as `01-02-2026` | local time of the process | UTC (the same under `TZ=UTC`) |
 | A payload, scores or configuration nested 1,001 to about 2,500 levels | migrated | `RangeError`, exit 1 before any write (TypeScript overflows from about 2,500 levels, at a depth that varies with the stack) |
