@@ -325,6 +325,8 @@ test('the tab watcher reports blocked tabs, text consent prompts, finished tabs 
     });
     assert.equal(until.status, 0, until.stderr);
     assert.match(until.stdout, /^DONE t4 s \/ d$/m);
+    const mixed = spawnSync('bash', [script, '--once', '--until', 'DONE'], { env });
+    assert.equal(mixed.status, 2);
     const again = spawnSync('bash', [script, '--once'], { env, encoding: 'utf8' });
     assert.doesNotMatch(again.stdout, /MERGED/);
     const help = spawnSync('bash', [script, '--help'], { encoding: 'utf8' });

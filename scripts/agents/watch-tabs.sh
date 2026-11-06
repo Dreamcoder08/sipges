@@ -49,6 +49,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+if [ "$once" -eq 1 ] && [ -n "$until_event" ]; then
+  usage >&2
+  exit 2
+fi
+
 if [ "$show_status" -eq 1 ]; then
   hc ls --json | jq -r '.terminals[]
     | select(.state == "live" and (.agent // "") != "")
