@@ -32,7 +32,7 @@ updates:
       # Node types follow the Node major the runtime uses, not the newest one.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
-      # jsdom 30 stalls the NotificationBell test; upgrade it on its own with the fix.
+      # jsdom 30 stalled the NotificationBell test, since removed; recheck before lifting this.
       - dependency-name: jsdom
         update-types: ['version-update:semver-major']
       # WebKit in Playwright 1.64 reports CSP violations for any native <select>; 1.63 does not.
@@ -43,3 +43,21 @@ updates:
     target-branch: main
     schedule:
       interval: monthly
+  - package-ecosystem: gomod
+    directories:
+      - /apps/api-go
+      - /engines/go
+    target-branch: main
+    schedule:
+      interval: monthly
+    groups:
+      go:
+        patterns: ['*']
+  - package-ecosystem: cargo
+    directory: /engines
+    target-branch: main
+    schedule:
+      interval: monthly
+    groups:
+      rust:
+        patterns: ['*']
