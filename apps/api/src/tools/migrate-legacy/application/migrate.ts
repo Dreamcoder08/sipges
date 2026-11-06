@@ -29,6 +29,7 @@ import {
   type TargetTenant,
   canonicalJson,
   formatTenantId,
+  hasNulText,
   mapTenant,
   mapAction,
   mapActionLog,
@@ -153,6 +154,10 @@ const problem = (code: ProblemCode, extra: Omit<Problem, 'code' | 'severity'> = 
   ...extra,
 });
 
+/** A row's identifier for a report: its position when the identifier itself holds NUL. */
+const reportedId = (value: unknown, index: number): string =>
+  hasNulText(value) ? `#${index}` : String(value ?? `#${index}`);
+
 type MapResult<T> = { ok: true; value: T } | { ok: false; error: ProblemCode };
 
 /** Applies a mapper to every row, reporting rejections instead of throwing. */
@@ -225,7 +230,7 @@ const prepareTenant = async (
       problems.push(problem(code, { tenantId, table, id: idOf(index) }));
     };
   const idAt = (rows: readonly Record<string, unknown>[], key: string) => (index: number) =>
-    String(rows[index]?.[key] ?? `#${index}`);
+    reportedId(rows[index]?.[key], index);
 
   try {
     if (!reader.present) problems.push(problem('tenant_db_missing', { tenantId }));
@@ -409,16 +414,19 @@ export const runMigration = async (
   const userRows = await deps.source.users();
   const users = collect(userRows, mapUser, (code, index) => {
     globalProblems.push(
-      problem(code, { table: 'users', id: String(userRows[index]?.['username'] ?? `#${index}`) }),
+      problem(code, { table: 'users', id: reportedId(userRows[index]?.['username'], index) }),
     );
   });
   const usernames = new Set(users.map((u) => u.username));
   const tenantIds = new Set(tenants.map((t) => formatTenantId(t.companyId, t.projectId)));
   const grantRows = await deps.source.grants();
   const grants: TargetGrant[] = [];
-  for (const row of grantRows) {
+  for (const [index, row] of grantRows.entries()) {
     const tenantId = formatTenantId(row.scope.companyId, row.scope.projectId);
-    const at = { table: 'grants', id: row.username, tenantId };
+    const at =
+      hasNulText(row.username) || hasNulText(tenantId)
+        ? { table: 'grants', id: `#${index}` }
+        : { table: 'grants', id: row.username, tenantId };
     if (!usernames.has(row.username)) globalProblems.push(problem('grant_user_unknown', at));
     else if (!tenantIds.has(tenantId)) globalProblems.push(problem('grant_tenant_unknown', at));
     else grants.push({ username: row.username, tenantId });

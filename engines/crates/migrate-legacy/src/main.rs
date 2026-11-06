@@ -165,6 +165,12 @@ fn run_cli() -> ExitCode {
             message: Some("Choose either --dry-run or --apply".to_owned()),
         });
     }
+    if verify && args::flag(&values, "dry-run") {
+        return fail(&Fatal {
+            name: "Error",
+            message: Some("Choose either --dry-run or --verify".to_owned()),
+        });
+    }
     let help = args::flag(&values, "help");
     let root = args::string(&values, "legacy-root");
     let Some(root) = root.filter(|_| !help) else {

@@ -10,7 +10,7 @@ use rusqlite::{Connection, OpenFlags};
 
 use crate::json::{self, Json, ParseError};
 use crate::mapping::{Fatal, Scope, scope_digest, stored_name_safe};
-use crate::value::{Legacy, Row, js_string};
+use crate::value::{Legacy, Row, as_text, has_nul_text, js_string};
 
 const DEFAULT_COMPANY: &str = "SIPGES";
 const DEFAULT_PROJECT: &str = "PRJ-SECHURA";
@@ -272,8 +272,15 @@ pub struct LegacyGrant {
     pub tenant_id: String,
 }
 
+/// `scopeText`: `String(value)`, except that a blob holding NUL stays text, so the mapping
+/// refuses it.
 fn string_or_empty(value: &Legacy) -> String {
-    js_string(value).unwrap_or_default()
+    let text = if has_nul_text(value) {
+        as_text(value)
+    } else {
+        js_string(value)
+    };
+    text.unwrap_or_default()
 }
 
 /// One legacy tenant.

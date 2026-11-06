@@ -22,7 +22,7 @@ use crate::storage::Storage;
 use crate::store::{
     Counts, GlobalBatch, GlobalCounts, Grant, Skipped, Store, TENANT_TABLES, TenantBatch, table,
 };
-use crate::value::{Row, js_string};
+use crate::value::{Row, has_nul_text, js_string};
 
 /// `MigrationMode`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -229,10 +229,13 @@ fn collect<T>(
     Ok(out)
 }
 
-/// `String(row[key] ?? '#index')`.
+/// `reportedId`: a row's identifier for a report, or its position when the identifier is absent
+/// or holds NUL.
 fn id_at(rows: &[Row], key: &str, index: usize) -> String {
     rows.get(index)
-        .and_then(|row| js_string(row.get(key)))
+        .map(|row| row.get(key))
+        .filter(|value| !has_nul_text(value))
+        .and_then(js_string)
         .unwrap_or_else(|| format!("#{index}"))
 }
 
@@ -801,12 +804,16 @@ pub fn run_migration(deps: Deps<'_>, options: Options<'_>) -> Result<Report, Fat
     let tenant_ids: HashSet<String> = tenants.iter().map(Scope::tenant_id).collect();
     let grant_rows = source.grants()?;
     let mut grants = Vec::new();
-    for row in &grant_rows {
+    for (index, row) in grant_rows.iter().enumerate() {
         let at = |code| {
-            Problem::new(code)
-                .table("grants")
-                .id(row.username.clone())
-                .tenant(&row.tenant_id)
+            if row.username.contains('\0') || row.tenant_id.contains('\0') {
+                Problem::new(code).table("grants").id(format!("#{index}"))
+            } else {
+                Problem::new(code)
+                    .table("grants")
+                    .id(row.username.clone())
+                    .tenant(&row.tenant_id)
+            }
         };
         if !usernames.contains(row.username.as_str()) {
             global.push(at("grant_user_unknown"));

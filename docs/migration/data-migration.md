@@ -43,12 +43,14 @@ ODD forbids doing so without an explicit user decision.
 - **Legacy `auth_users` rows that may sit inside a tenant database** (behavior contract §8.7).
   Accounts come from `auth_global.db` only.
 - **Rows the new schema refuses**: unknown role, malformed password hash, payload that is not a
-  JSON object, NUL characters in any migrated text or JSON value (PostgreSQL text/jsonb cannot
-  store them), alerts whose `themes_json`/`signals_json`/`suggestions_json` app.py could not
+  JSON object, NUL characters in any migrated value (PostgreSQL text/jsonb cannot store them, and
+  in a timestamp, number, flag or digest they would otherwise pass as a shorter value or a default;
+  a TOTP secret with one is refused rather than sealed), alerts whose `themes_json`/`signals_json`/`suggestions_json` app.py could not
   `json.loads` or whose `reviewed_at` is not a timestamp (`alert_row_invalid`), status values
   outside the documented state machines, attachments whose file is missing or whose sha256 does not match
   the bytes, preventive actions without their alert. Each one is reported with its code, table and
-  identifier, and nothing else about it.
+  identifier, and nothing else about it. An identifier that holds NUL is itself withheld: the row
+  is reported by its position, `#<index>`.
 
 Timestamps are naive local strings in SQLite (`datetime.now().isoformat`). They are read as
 **UTC**. If the legacy server ran in another timezone, the operator must decide whether to shift

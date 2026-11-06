@@ -397,7 +397,9 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     expect(() => parseCliArgs(['--dry-run', '--apply', '--legacy-root', '/x'])).toThrow(
       'Choose either --dry-run or --apply',
     );
-    expect(parseCliArgs(['--dry-run', '--verify']).mode).toBe('verify');
+    expect(() => parseCliArgs(['--dry-run', '--verify'])).toThrow(
+      'Choose either --dry-run or --verify',
+    );
     expect(parseCliArgs(['--dry-run']).mode).toBe('dry-run');
   });
 
@@ -485,6 +487,48 @@ describe('legacy SQLite → PostgreSQL migration', () => {
       }
     } finally {
       await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports a row refused for NUL by position, never by the value', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const auth = new DatabaseSync(join(own.root, 'data/auth_global.db'));
+      auth.exec(`
+        INSERT INTO auth_users (username, full_name, password_hash, role, active, created_at, totp_enabled)
+          VALUES (CAST(x'6d6172636100636f6e74656e69646f' AS TEXT), 'n', 'h', 'admin', 1, '2026-01-01', 0);
+        INSERT INTO access_grants VALUES (CAST(x'6d6172636100636f6e74656e69646f' AS TEXT), 'SIPGES', 'PRJ-SECHURA');`);
+      auth.close();
+      const db = new DatabaseSync(join(own.root, 'data/sipges.db'));
+      db.exec(`
+        DROP TABLE records;
+        CREATE TABLE records (module, record_id, payload, created_at, updated_at);
+        INSERT INTO records VALUES ('Eventos', CAST(x'6d6172636100636f6e74656e69646f' AS TEXT), '{}', 'x', 'x');
+        INSERT INTO records VALUES ('Eventos', x'6d6172636100636f6e74656e69646f', '{}', 'x', 'x');`);
+      db.close();
+      const source = createSqliteLegacySource(legacyLayout(own.root));
+      try {
+        const report = await runMigration(
+          {
+            source,
+            target: createSqlTargetStore(await target(), cipher()),
+            storage: memoryStorage().storage,
+            moduleForSlug,
+            now: () => new Date('2026-10-13T00:00:00Z'),
+          },
+          { mode: 'dry-run' },
+        );
+        const json = reportJson(report);
+        expect(json).not.toContain('contenido');
+        expect(json).not.toContain('marca');
+        expect(json).not.toContain('109,97,114');
+        const refused = report.tenants.flatMap((t) => t.problems);
+        expect(refused.map((p) => p.id)).toEqual(expect.arrayContaining(['#0', '#1']));
+      } finally {
+        source.close();
+      }
+    } finally {
+      await own.cleanup();
     }
   });
 

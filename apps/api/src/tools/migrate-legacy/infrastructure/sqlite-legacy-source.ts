@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import type { LegacyRow, LegacyScope, LegacyValue } from '../domain/legacy.ts';
-import { legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
+import { asText, hasNulText, legacyStoredNameSafe, scopeDigest } from '../domain/mapping.ts';
 import type { LegacyGrantRow, LegacySource, LegacyTenantReader } from '../application/ports.ts';
 
 /** Default scope of a legacy installation (app.py:61, :444). */
@@ -84,6 +84,10 @@ const selectAll = (db: DatabaseSync, table: string, orderBy = 'rowid'): readonly
     ),
   );
 };
+
+/** `String(value)`, except that a blob holding NUL stays text, so the mapping refuses it. */
+const scopeText = (value: unknown): string =>
+  hasNulText(value) ? (asText(value) ?? '') : String(value ?? '');
 
 const isDefaultScope = (scope: LegacyScope) =>
   scope.companyId === DEFAULT_SCOPE.companyId && scope.projectId === DEFAULT_SCOPE.projectId;
@@ -169,9 +173,9 @@ export const createSqliteLegacySource = (layout: LegacyLayout): ClosableLegacySo
     scopes: () =>
       Promise.resolve(
         authRows('tenant_projects', 'company_id, project_id').map((row): LegacyScope => ({
-          companyId: String(row['company_id'] ?? ''),
-          projectId: String(row['project_id'] ?? ''),
-          label: String(row['label'] ?? ''),
+          companyId: scopeText(row['company_id']),
+          projectId: scopeText(row['project_id']),
+          label: scopeText(row['label']),
         })),
       ),
 
@@ -181,10 +185,10 @@ export const createSqliteLegacySource = (layout: LegacyLayout): ClosableLegacySo
       Promise.resolve(
         authRows('access_grants', 'username, company_id, project_id').map(
           (row): LegacyGrantRow => ({
-            username: String(row['username'] ?? ''),
+            username: scopeText(row['username']),
             scope: {
-              companyId: String(row['company_id'] ?? ''),
-              projectId: String(row['project_id'] ?? ''),
+              companyId: scopeText(row['company_id']),
+              projectId: scopeText(row['project_id']),
               label: '',
             },
           }),

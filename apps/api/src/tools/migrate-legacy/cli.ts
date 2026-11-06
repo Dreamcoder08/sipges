@@ -86,6 +86,7 @@ export const parseCliArgs = (argv: readonly string[]) => {
   const parsed = Options.parse(values);
   if (parsed.apply && parsed.verify) throw new Error('Choose either --apply or --verify');
   if (parsed.apply && parsed['dry-run']) throw new Error('Choose either --dry-run or --apply');
+  if (parsed.verify && parsed['dry-run']) throw new Error('Choose either --dry-run or --verify');
   const mode: MigrationMode = parsed.apply ? 'apply' : parsed.verify ? 'verify' : 'dry-run';
   return { ...parsed, mode };
 };

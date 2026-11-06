@@ -238,7 +238,9 @@ const scenarios: Scenario[] = [
       step([...legacy, '--apply', '--allow-non-empty', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--verify', '--report', REPORT], { files: [REPORT] }),
       step([...legacy, '--verify', '--only', 'ACME/PRJ-NORTE']),
-      step([...legacy, '--dry-run', '--verify', '--only=SIPGES/PRJ-SECHURA']),
+      crash([...legacy, '--dry-run', '--verify'], {
+        stderrIncludes: 'Choose either --dry-run or --verify',
+      }),
     ],
   },
   {

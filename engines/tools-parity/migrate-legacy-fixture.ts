@@ -141,6 +141,9 @@ const buildAuth = (data: string, tenants: readonly (readonly Cell[])[]) => {
     ['gina', 'NUL\0nombre', HASH, 'admin', 1, NOW, null, 0],
     ['hugo', null, HASH, 'admin', 1, NOW, null, 0],
     ['ines', 'Hash', 'md5$1$a$b', 'admin', 1, NOW, null, 0],
+    ['nul.totp', 'NUL', HASH, 'admin', 1, NOW, 'secreto\0sellado', 0],
+    ['nul.active', 'NUL', HASH, 'admin', '1\0', NOW, null, 0],
+    ['nul.enabled', 'NUL', HASH, 'admin', 1, NOW, 'S', blob('1\0')],
     ['juan', 'Hash', `${HASH}\n`, 'admin', 1, NOW, null, 0],
     ['kira', 'Rol', HASH, 'root', 1, NOW, null, 0],
     ['luis', 'Fecha', HASH, 'admin', 1, 'ayer', null, 0],
@@ -318,6 +321,7 @@ const buildDefaultTenant = (data: string) => {
     attachment('ADJ-22', 'abc_a.txt', { at: '2026-01-22', size: 'x' }),
     attachment('ADJ-23', 'abc_a.txt', { at: 'ayer' }),
     attachment('ADJ-24', 'abc_a.txt', { at: '2026-01-24', type: 'tipo\0' }),
+    attachment('ADJ-32', 'abc_a.txt', { at: '2026-02-01', sha: `${SHA_A}\0` }),
     attachment('ADJ-25', 'abc_a.txt', { at: '2026-01-25', record: 'EV-1', module: 'actores' }),
     attachment(null, 'abc_a.txt', { at: '2026-01-26' }),
     attachment('', 'abc_a.txt', { at: '2026-01-27' }),
@@ -371,6 +375,8 @@ const buildDefaultTenant = (data: string) => {
     alert('AL-10', { at: '2026-01-10', status: 'Otro' }),
     alert('AL-11', { at: '2026-01-11', sha: 'x' }),
     alert('AL-12', { at: '2026-01-12', note: 'r\0' }),
+    alert('AL-16', { at: '2026-01-16', score: '45\0' }),
+    alert('AL-17', { at: '2026-01-17', semantic: '1\0' }),
     alert('AL-13', { at: 'ayer' }),
     alert('', { at: '2026-01-14' }),
     alert('AL-15', { at: '2026-01-15', themes: `[${'['.repeat(5000)}${']'.repeat(5000)}]` }),
@@ -393,6 +399,7 @@ const buildDefaultTenant = (data: string) => {
     action('', 'AL-1', '2026-11-15', 'Pendiente', 1, '2026-01-11'),
     action('ACC-12', null, '2026-11-15', 'Pendiente', null, '2026-01-12'),
     action('ACC-13', 'AL-1', '2026-11-15\n', 'Pendiente', null, '2026-01-13'),
+    action('ACC-14', 'AL-1', '2026-11-15', 'Pendiente', '4\0', '2026-01-14'),
   ]);
 
   insert(db, 'preventive_action_log', [
@@ -403,6 +410,7 @@ const buildDefaultTenant = (data: string) => {
     ['LOG-5', 'ACC-1', '2026-01-05', 'x', 101, null, null],
     ['LOG-6', 'ACC-1', '2026-01-06', 'x', 1, 'n\0', null],
     ['LOG-7', 'ACC-1', 'ayer', 'x', 1, null, null],
+    ['LOG-8', 'ACC-1', '2026-01-08', 'x', blob('4\0'), null, null],
   ]);
   db.close();
   writeFileSync(join(data, 'irsa_config.json'), '{"version":"0.4","pesos":{"G":1.50,"A":1e400},"z":"\\ud800","2":1,"1":2}');

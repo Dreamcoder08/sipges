@@ -58,6 +58,13 @@ pub fn as_text(value: &Legacy) -> Option<String> {
     }
 }
 
+/// `hasNulText`: a cell holding NUL as text or inside a blob. Fields read as numbers, flags or
+/// fixed formats would turn such a value into a default, so they test this first.
+#[must_use]
+pub fn has_nul_text(value: &Legacy) -> bool {
+    as_text(value).is_some_and(|text| text.contains('\0'))
+}
+
 /// `textOr`.
 #[must_use]
 pub fn text_or(value: &Legacy, fallback: &str) -> String {
