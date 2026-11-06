@@ -363,7 +363,7 @@ Ported but not on any list: `/login`, `/logout`, `/select-project`, `/hooks/inge
 | `SIPGES_CRON_SECRET`, `CRON_SECRET`, `SIPGES_CRON_SCHEDULE` | yes, when set | no | For `/system/automations/runtime`. Inert while `SIPGES_GO_AUTOMATION_CRON` stays out, as it does. |
 | `SIPGES_REQUIRE_MFA` | yes, when set | yes | Go defaults to on, as production should. **Unverified:** that production does not override it. Secrets need the owner to read. |
 | `SIPGES_DATA_KEY` | yes, when set | no | A working Worker always has it, because TypeScript requires it. Without it Go still starts, but TOTP answers 404 or 500. |
-| `SIPGES_STORAGE`, `SIPGES_S3_*` | yes, when set | no | Unset, uploads answer 500 (L37). Required before any upload route moves. |
+| `SIPGES_STORAGE`, `SIPGES_S3_*` | yes, when set | no | Unset, Go stores on the container's disk, whose working directory the image's user can write, so a file is lost at the next restart. The 500 of L37 came from a read-only directory in the parity run. Required before any upload route moves. |
 | `SIPGES_COOKIE_SECURE` | yes, when set | no | Reads set no cookie; unset means `Secure`. |
 | `SIPGES_GOOGLE_*` | yes, when set | no | Unset, the sign-in stays hidden. This is why `/system/auth/providers` is not proposed yet. |
 
