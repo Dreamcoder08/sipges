@@ -4,7 +4,7 @@ The steps for the Cloudflare trial of the Go container: B1 in [the go/no-go](go-
 
 The SQL was run on a synthetic PostgreSQL 18.6 with an owner shaped like Neon's (`NOSUPERUSER CREATEDB CREATEROLE BYPASSRLS`). There, row-level security and the record history kept working after the reassignment, Go started as `sipges_app`, and Go refused the owner role. **Unverified on Neon itself.** Commands that mention Neon and Hyperdrive were read from their reference pages, not executed.
 
-Before starting: `main` holds B5, B6 and the real `SCREENS`, and Docker with buildx is running. Work in a fresh clone with `pnpm install` and **no `data/` directory**. Wrangler feeds Docker the Dockerfile on standard input, so `Dockerfile.dockerignore` does not apply and the whole clone goes to the local build context. The image still takes only what the Dockerfile copies.
+Before starting: `main` holds B5, B6 and the real `SCREENS`, and Docker with buildx is running. Work in a fresh clone with `pnpm install` and **no `data/` directory**; step 5 moves it to the `trial/go-routes` branch before the deploy. Wrangler feeds Docker the Dockerfile on standard input, so `Dockerfile.dockerignore` does not apply and the whole clone, `node_modules` included, goes to the local build context. The image still takes only what the Dockerfile copies.
 
 ## Stop here first: which data
 
