@@ -25,8 +25,8 @@ swapping=0
 finish() {
   local status=$?
   rm -rf -- "$GNUPGHOME" "$incoming"
-  if ((status != 0 && swapping)); then
-    exit 3
+  if ((status != 0)); then
+    exit $((swapping ? 3 : 1))
   fi
 }
 trap finish EXIT
