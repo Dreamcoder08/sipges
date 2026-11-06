@@ -34,7 +34,9 @@ pg_dump --format=custom --no-password | seal >"$partial/db.dump.gpg"
 archive_uploads | seal >"$partial/uploads.tar.gpg"
 (cd "$partial" && sha256sum db.dump.gpg uploads.tar.gpg >SHA256SUMS)
 
-open_sealed "$partial/db.dump.gpg" | pg_restore --list >/dev/null
+# Reads every data block: --list stops at the table of contents, which closes the pipe on gpg
+# as soon as the dump outgrows it, and proves nothing about the data.
+open_sealed "$partial/db.dump.gpg" | pg_restore --file=/dev/null
 open_sealed "$partial/uploads.tar.gpg" | tar -tf - >/dev/null
 
 chown -R "$SIPGES_HOST_OWNER" "$partial"

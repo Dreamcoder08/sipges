@@ -106,6 +106,11 @@ wait_seconds=$(docker compose --env-file "$SIPGES_ENV_FILE" -p "$SIPGES_PROJECT"
 echo "ok - next nightly backup in $wait_seconds seconds"
 
 step 'backup, encrypted, with retention'
+# Bigger than a pipe: checking a backup once stopped reading early, which only a real size shows.
+compose_exec_psql "INSERT INTO module_records (tenant_id, module, id, payload, created_at, updated_at)
+  SELECT 'SIPGES/PRJ-SECHURA', 'Compromisos', 'DRILL-LARGE',
+         jsonb_build_object('Texto', string_agg(md5(random()::text), '')), now(), now()
+  FROM generate_series(1, 200000)"
 sipges backup
 sleep 1
 sipges backup
@@ -155,6 +160,13 @@ fi
 sipges start
 echo 'ok - nothing partial, and the older backups stay'
 
+step 'a mistyped command fails'
+if sipges bakup >/dev/null 2>&1; then
+  echo 'a mistyped command reported success'
+  exit 1
+fi
+echo 'ok - refused'
+
 step 'wipe'
 sipges wipe --yes
 [[ -z $(docker volume ls -q --filter "name=${SIPGES_PROJECT}_") ]] || { echo 'volumes remain'; exit 1; }
@@ -172,6 +184,8 @@ expected_files=$(in_compose exec -T backup find /data/uploads -type f -not -path
 
 step 'everything is back'
 env "${node_env[@]}" node "$here/drill-client.mjs" check "$work/state.json"
+large=$(compose_exec_psql "SELECT count(*) FROM module_records WHERE id = 'DRILL-LARGE'")
+[[ $large == 1 ]] || { echo "the large record came back $large times"; exit 1; }
 owner=$(compose_exec_psql "SELECT DISTINCT tableowner FROM pg_tables WHERE schemaname = 'public'")
 [[ $owner == sipges_app && $(forced_tables) == "$forced" ]] || { echo "after restore: owner $owner"; exit 1; }
 echo "ok - the restored tables keep their owner and $forced forced policies"
