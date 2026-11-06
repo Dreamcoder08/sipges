@@ -25,11 +25,20 @@ type readCall struct {
 	input   *records.Object
 }
 
-func (c readCall) text(field string) string {
-	value, _ := c.input.Get(field)
+// textOf reads a field ParseArguments already checked; so does objectOf.
+func textOf(input *records.Object, field string) string {
+	value, _ := input.Get(field)
 	text, _ := value.(string)
 	return text
 }
+
+func objectOf(input *records.Object, field string) *records.Object {
+	value, _ := input.Get(field)
+	object, _ := value.(*records.Object)
+	return object
+}
+
+func (c readCall) text(field string) string { return textOf(c.input, field) }
 
 // slugs is `input.modules ?? null`; parsed strings only.
 func (c readCall) slugs() []string {
