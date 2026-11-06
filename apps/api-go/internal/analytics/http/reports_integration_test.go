@@ -42,8 +42,8 @@ func download(t *testing.T, base, path, user string, headers map[string]string) 
 	if res.StatusCode != http.StatusOK {
 		return res.StatusCode, "", strings.TrimSpace(string(body))
 	}
-	if ct := res.Header.Get("Content-Type"); ct != docxType {
-		t.Fatalf("content-type %q", ct)
+	if ct, cache := res.Header.Get("Content-Type"), res.Header.Get("Cache-Control"); ct != docxType || cache != "no-store" {
+		t.Fatalf("content-type %q, cache-control %q", ct, cache)
 	}
 	archive, err := zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	if err != nil {

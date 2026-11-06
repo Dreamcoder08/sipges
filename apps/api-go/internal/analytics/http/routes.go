@@ -67,6 +67,9 @@ func Routes(mux *http.ServeMux, service application.Service, log *slog.Logger) {
 			return analysis(ctx, scope)
 		}))
 	}
+	if service.Renderer == nil {
+		return // Deps' fields work at their zero value: without a renderer there are no reports.
+	}
 	for path, kind := range map[string]domain.ReportKind{
 		"/system/situational-report.docx":  domain.ReportSituational,
 		"/system/strategic-report.docx":    domain.ReportStrategic,
@@ -98,6 +101,7 @@ func report(log *slog.Logger, service application.Service, kind domain.ReportKin
 		}
 		w.Header().Set("Content-Type", out.ContentType)
 		w.Header().Set("Content-Disposition", `attachment; filename="`+out.FileName+`"`)
+		w.Header().Set("Cache-Control", "no-store") // securityHeaders on the TypeScript side
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(out.Bytes)
 	}
