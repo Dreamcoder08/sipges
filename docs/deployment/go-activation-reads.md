@@ -1,6 +1,6 @@
 # Moving the Inicio and Registros reads to Go: go/no-go
 
-**Verdict at `3e6f60ff`: NO-GO for production.** The Go code is ready for these reads; the platform around it is not. Every read matched TypeScript on synthetic data, in parity and in a real browser. Nothing has been measured on Cloudflare and production cannot reach a container yet. This document prepares T44; it changes no route (`GO_ROUTES` stays empty, S7).
+**Verdict at `3e6f60ff`: NO-GO for production.** The Go code is ready for these reads; the platform around it is not. Every read matched TypeScript on synthetic data, in parity and in a real browser. Nothing has been measured on Cloudflare and production cannot reach a container yet. This document prepares T44; it changes no route (`GO_ROUTES` stays empty, S7). The trial has since run: see [its results](go-trial-results.md).
 
 ## Blockers
 
