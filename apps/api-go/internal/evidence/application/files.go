@@ -58,9 +58,7 @@ type TextExtractor interface {
 	DOCX(ctx context.Context, data []byte) ([]string, error)
 }
 
-// ErrNoTextExtractor is returned by Preview for a PDF or DOCX when no TextExtractor is wired,
-// or when the extractor answers it for a format it cannot read as the TypeScript API does (PDF,
-// read there with pdf.js).
+// ErrNoTextExtractor is returned by Preview for a PDF or DOCX when no TextExtractor is wired.
 var ErrNoTextExtractor = errors.New("evidence: no text extractor for this format")
 
 // Files answers uploads, downloads and previews for the request's tenant.
