@@ -55,6 +55,12 @@ workflow deploys it. Before the first deploy:
 
 CI builds the same image and smoke-tests `/health` in the `Go image` job of `.github/workflows/go.yml`.
 
+## PDF and OCR
+
+PDF text runs in the process, with a fresh wasm instance per document ([ADR 0033](../adr/0033-pdf-text-in-wasm.md)). On `basic`, the 30 s limit reads about 58 dense pages.
+
+OCR stays off: the image has no `ocrmypdf`, so `SIPGES_OCR=ocrmypdf` does nothing here. Adding it costs 289 MiB and a Debian base.
+
 ## Memory
 
 Measured locally on 2026-11-05 with 5,000 synthetic records, under cgroup limits. A local machine is not Cloudflare and PostgreSQL had no network latency, so compare the rows; do not read them as production figures.

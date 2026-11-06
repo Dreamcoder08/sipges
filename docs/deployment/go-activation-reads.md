@@ -64,7 +64,7 @@ Registros (`/registros` and the lists of the sixteen modules):
 | `GET /api/{module}/{id}/history`, on opening a record | yes (T25) | 2+ per module | Wave B |
 | `GET /system/links?module=…&id=…`, on opening a record | yes (T26) | 32 | Wave B |
 | `GET /system/ontology`, on opening a record | yes (T26) | 10 | Wave B |
-| `GET /system/uploads/{id}/preview` | partly: PDF and DOCX answer 501 (L37) | n/a | **Stays on TypeScript** |
+| `GET /system/uploads/{id}/preview` | yes (T57, [ADR 0033](../adr/0033-pdf-text-in-wasm.md)), but no S3 env | n/a | **Stays on TypeScript** |
 | `GET /system/uploads/{id}/download` | yes, but no S3 env | n/a | **Stays on TypeScript** |
 
 Modules: `eventos`, `actores`, `directorio`, `demandas`, `compromisos`, `narrativas`, `fuentes`, `alertas`, `acciones`, `intereses`, `dialogos`, `oportunidades`, `hechos`, `aarc`, `buzon`, `lecciones`.

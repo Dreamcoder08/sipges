@@ -13,7 +13,7 @@ const forApi = (c: ParityCase, side: Side): ParityCase => {
   if (body && 'json' in body)
     body = { json: JSON.parse(swap(JSON.stringify(body.json))) as unknown };
   else if (body && 'raw' in body) body = { raw: swap(body.raw) };
-  else if (body)
+  else if (body && 'form' in body)
     body = {
       form: Object.fromEntries(Object.entries(body.form).map(([k, v]) => [swap(k), swap(v)])),
     };
@@ -68,6 +68,7 @@ const forSide = (c: ParityCase, side: Side): ParityCase => {
     ? { headers: Object.fromEntries(Object.entries(c.headers).map(([k, v]) => [k, fill(v)])) }
     : {};
   if (!c.body) return { ...filled, ...headers };
+  if ('base64' in c.body) return { ...filled, ...headers, body: c.body };
   const body =
     'json' in c.body
       ? { raw: fill(JSON.stringify(c.body.json)) }
@@ -107,13 +108,16 @@ const sendOne = async (
     headers.set('cookie', own ? `${own}; ${cookie}` : cookie);
   }
   if (c.sameOrigin) headers.set('origin', baseUrl);
-  let body: string | null = null;
+  let body: string | Uint8Array<ArrayBuffer> | null = null;
   if (c.body && 'json' in c.body) {
     headers.set('content-type', 'application/json');
     body = JSON.stringify(c.body.json);
   } else if (c.body && 'raw' in c.body) {
     if (!headers.has('content-type')) headers.set('content-type', 'application/json');
     body = c.body.raw;
+  } else if (c.body && 'base64' in c.body) {
+    if (!headers.has('content-type')) headers.set('content-type', 'application/octet-stream');
+    body = new Uint8Array(Buffer.from(c.body.base64, 'base64'));
   } else if (c.body) {
     headers.set('content-type', 'application/x-www-form-urlencoded');
     body = new URLSearchParams(c.body.form).toString();
@@ -159,7 +163,7 @@ const sendRawTarget = (
   baseUrl: string,
   c: ParityCase,
   headers: Headers,
-  body: string | null,
+  body: string | Uint8Array | null,
   timeoutMs: number,
 ): Promise<Observed> =>
   new Promise((resolve, reject) => {

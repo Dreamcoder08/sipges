@@ -14,7 +14,9 @@ export type ParityCase = {
     | { readonly json: unknown }
     | { readonly form: Readonly<Record<string, string>> }
     /** Sent byte for byte (application/json unless headers say otherwise). */
-    | { readonly raw: string };
+    | { readonly raw: string }
+    /** Binary, sent decoded: `raw` is text and would not keep bytes above 0x7F. */
+    | { readonly base64: string };
   /** Send `path` exactly as written (dot segments, backslashes), through node:http. */
   readonly rawTarget?: boolean;
   /**

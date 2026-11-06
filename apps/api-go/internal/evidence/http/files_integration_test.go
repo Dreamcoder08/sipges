@@ -568,8 +568,17 @@ func TestPreviewKinds(t *testing.T) {
 	if status, out := preview(xlsx); status != 200 || out["kind"] != "unsupported" {
 		t.Errorf("xlsx: %d %v", status, out)
 	}
+	// Bytes that only start like a PDF are unreadable, which the viewer shows as no text.
 	pdfID := up("informe.pdf", pdf)
-	if status, out := preview(pdfID); status != 501 || out["detail"] != "La vista previa de PDF aún no está disponible en este servidor" {
+	if status, out := preview(pdfID); status != 200 || out["kind"] != "no_text" {
+		t.Errorf("broken pdf: %d %v", status, out)
+	}
+	real, err := os.ReadFile("../../platform/doctext/testdata/pdf/12-accents-winansi.pdf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if status, out := preview(up("real.pdf", real)); status != 200 || out["kind"] != "text" || out["format"] != "pdf" ||
+		!strings.Contains(fmt.Sprint(out["pages"]), "Señora Muñoz") {
 		t.Errorf("pdf: %d %v", status, out)
 	}
 	// DOCX through the document lab's reader: paragraphs, then table rows with tab-joined cells,

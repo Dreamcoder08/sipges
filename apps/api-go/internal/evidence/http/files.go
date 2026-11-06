@@ -14,6 +14,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 )
@@ -26,8 +27,7 @@ const multipartSlack = 64 * 1024
 const (
 	goneDetail      = "El archivo ya no está disponible en este almacenamiento"
 	extensionDetail = "Tipo de archivo no permitido. Use PDF, Office, CSV, TXT o imágenes JPG/PNG/WEBP."
-	// noExtractor answers a PDF preview while its text reader (pdf.js) is only in the
-	// TypeScript API; DOCX is read with the document lab's reader (platform/doctext).
+	// noExtractor answers a preview when no text reader is wired, which only tests do.
 	noExtractorDetail = "La vista previa de PDF aún no está disponible en este servidor"
 )
 
@@ -264,6 +264,7 @@ type previewTextJSON struct {
 
 func previewHandler(deps Deps) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		httpx.ExtendWriteDeadline(w, doctext.LongestRead)
 		p, err := files(r, deps).Preview(r.Context(), httpx.PathParam(r, "id"))
 		switch {
 		case errors.Is(err, application.ErrNoTextExtractor):
