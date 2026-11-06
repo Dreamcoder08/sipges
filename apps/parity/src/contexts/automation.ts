@@ -71,7 +71,19 @@ VALUES ('${tenant}', ${notification(tenant, `Nueva Alertas${tag}`)}, 'parity-con
        ('${tenant}', ${notification(tenant, `Alerta digital${tag}`)}, 'parity-multi', '2026-10-05T00:00:00Z')
 ON CONFLICT DO NOTHING;`;
 
-export const seed = tenantRows(SECHURA, '') + tenantRows(OTHER, ' AJENA');
+/** The latest attempt GET /system/automations/runtime shows; PARITY/PRJ-B has none. */
+const attemptRows = (tenant: string, tag: string) => `
+INSERT INTO automation_cursors (tenant_id, last_tick_started_at, last_tick_finished_at, last_tick_source,
+  last_tick_status, last_tick_report, last_tick_error)
+VALUES ('${tenant}', '2026-10-06T10:00:00.5Z', '2026-10-06T10:00:02Z', 'cron', 'completed',
+        '{"tenants":1,"scanned":4,"queued":2,"executed":2,"failed":0}', 'Aviso${tag}')
+ON CONFLICT (tenant_id) DO NOTHING;`;
+
+export const seed =
+  tenantRows(SECHURA, '') +
+  tenantRows(OTHER, ' AJENA') +
+  attemptRows(SECHURA, '') +
+  attemptRows(OTHER, ' AJENA');
 
 const scopeCases = (route: string, path: string): ParityCase[] => [
   { name: `${route}`, method: 'GET', path, auth: 'admin' },
@@ -371,6 +383,7 @@ const writeCases: ParityCase[] = [
 
 export const cases: readonly ParityCase[] = [
   ...scopeCases('automation overview', '/system/automations'),
+  ...scopeCases('automation runtime', '/system/automations/runtime'),
   ...scopeCases('automation runs', '/system/automations/runs'),
   ...limitCases('automation runs', '/system/automations/runs', 'admin'),
   {

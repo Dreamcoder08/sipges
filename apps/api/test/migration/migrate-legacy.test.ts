@@ -1,7 +1,9 @@
-import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { cp, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createSecretCipher } from '../../src/contexts/identity/infrastructure/secret-cipher.ts';
@@ -57,10 +59,14 @@ describe('legacy SQLite → PostgreSQL migration', () => {
   const run = async (
     sql: SqlClient,
     mode: MigrationMode,
-    options: { allowNonEmptyTarget?: boolean; storage?: ReturnType<typeof memoryStorage> } = {},
+    options: {
+      allowNonEmptyTarget?: boolean;
+      storage?: ReturnType<typeof memoryStorage>;
+      root?: string;
+    } = {},
   ) => {
     const store = options.storage ?? memoryStorage();
-    const source = createSqliteLegacySource(legacyLayout(fixture.root));
+    const source = createSqliteLegacySource(legacyLayout(options.root ?? fixture.root));
     try {
       const report = await runMigration(
         {
@@ -301,6 +307,9 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     expect(again?.target).toEqual(again?.mapped);
     const other = resumed.tenants.find((t) => t.tenantId === fixture.otherTenant);
     expect(other?.written).toEqual(other?.mapped);
+    // The objects of the failed attempt hold the same bytes, so resuming reuses them.
+    expect(other?.objects.copied).toBe(0);
+    expect(other?.problems.map((p) => p.code)).toContain('attachment_object_reused');
 
     const verified = (await run(sql, 'verify', { storage })).report;
     expect(codesOf(verified).filter((code) => code.startsWith('verify_'))).toEqual([]);
@@ -409,6 +418,63 @@ describe('legacy SQLite → PostgreSQL migration', () => {
       mode: 'apply',
     });
     expect(() => parseCliArgs(['--', 'posicional'])).toThrow();
+  });
+
+  it('drops a -- anywhere in the arguments, never a value that merely contains it', () => {
+    expect(parseCliArgs(['--legacy-root', '/x', '--', '--apply'])).toMatchObject({
+      'legacy-root': '/x',
+      mode: 'apply',
+    });
+    expect(parseCliArgs(['--legacy-root', '--', '/x'])).toMatchObject({ 'legacy-root': '/x' });
+    expect(parseCliArgs(['--legacy-root', '/x', '--apply', '--'])).toMatchObject({ mode: 'apply' });
+    expect(parseCliArgs(['--legacy-root=--', '--report=a--b'])).toMatchObject({
+      'legacy-root': '--',
+      report: 'a--b',
+    });
+    expect(() => parseCliArgs(['--legacy-root', '/x', '--', 'posicional'])).toThrow();
+  });
+
+  it('stays importable when the first argument names no file', () => {
+    const cli = new URL('../../src/tools/migrate-legacy/cli.ts', import.meta.url).href;
+    const run = spawnSync(
+      process.execPath,
+      ['--input-type=module', '-e', `await import(${JSON.stringify(cli)})`, 'no-existe'],
+      { encoding: 'utf8', timeout: 60_000 },
+    );
+    expect(run.stderr).not.toContain('ENOENT');
+    expect(run.status).toBe(0);
+  });
+
+  it('runs as a program from a path with spaces and through a symbolic link', async () => {
+    const api = fileURLToPath(new URL('../..', import.meta.url));
+    const dir = await mkdtemp(join(tmpdir(), 'sipges cli copy '));
+    const help = (cli: string) =>
+      spawnSync(process.execPath, [cli, '--help'], { encoding: 'utf8', timeout: 60_000 });
+    try {
+      await cp(join(api, 'src'), join(dir, 'src'), { recursive: true });
+      await cp(join(api, 'package.json'), join(dir, 'package.json'));
+      await symlink(join(api, 'node_modules'), join(dir, 'node_modules'));
+      const cli = join(dir, 'src/tools/migrate-legacy/cli.ts');
+      const spaced = help(cli);
+      expect(spaced.status).toBe(0);
+      expect(spaced.stdout).toContain('Usage:');
+
+      await symlink(cli, join(dir, 'enlace.ts'));
+      const linked = help(join(dir, 'enlace.ts'));
+      expect(linked.status).toBe(0);
+      expect(linked.stdout).toContain('Usage:');
+
+      await symlink(join(dir, 'src'), join(dir, 'vinculo'));
+      const kept = spawnSync(
+        process.execPath,
+        ['--preserve-symlinks-main', join(dir, 'vinculo/tools/migrate-legacy/cli.ts'), '--help'],
+        { encoding: 'utf8', timeout: 60_000 },
+      );
+      expect(kept.status).toBe(0);
+      expect(kept.stdout).toContain('Usage:');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it('does not read a target with pending schema migrations in a dry run', async () => {
@@ -566,5 +632,165 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     } finally {
       await own.cleanup();
     }
+  });
+
+  it('reads every timestamp the same whatever zone the process starts in', async () => {
+    const own = await buildLegacyFixture();
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-time-zone-'));
+    const cli = fileURLToPath(new URL('../../src/tools/migrate-legacy/cli.ts', import.meta.url));
+    const sourceChecksums = async (zone: string) => {
+      const reportPath = join(dir, `${zone.replace('/', '-')}.json`);
+      const run = spawnSync(
+        process.execPath,
+        [cli, '--legacy-root', own.root, '--report', reportPath],
+        {
+          encoding: 'utf8',
+          timeout: 60_000,
+          env: {
+            PATH: process.env['PATH'] ?? '',
+            TZ: zone,
+            SIPGES_PGLITE_DIR: join(dir, zone.replace('/', '-')),
+            SIPGES_DATA_KEY: TEST_DATA_KEY,
+            SIPGES_UPLOAD_DIR: join(dir, 'objects'),
+          },
+        },
+      );
+      expect(run.status, run.stderr).toBe(1);
+      const report = JSON.parse(await readFile(reportPath, 'utf8')) as MigrationReport;
+      return report.tenants.map((t) => t.checksums.source);
+    };
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/sipges.db'));
+      db.exec(`
+        INSERT INTO records (module, record_id, payload, created_at, updated_at)
+          VALUES ('Eventos', 'EV-ZONA-1', '{}', '01-02-2026', '2798Sept');`);
+      db.close();
+      expect(await sourceChecksums('Pacific/Kiritimati')).toEqual(await sourceChecksums('UTC'));
+    } finally {
+      await own.cleanup();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports a tenant id the tenants CHECK refuses by position and still writes the identity', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/auth_global.db'));
+      db.exec(`
+        INSERT INTO tenant_projects (company_id, project_id, label) VALUES ('A', 'PRJ-CORTO', 'x');
+        INSERT INTO tenant_projects (company_id, project_id, label) VALUES ('ACME', 'PRJ CON ESPACIO', 'x');`);
+      db.close();
+      const sql = await target();
+      const { report } = await run(sql, 'apply', { root: own.root });
+
+      expect(codesOf(report)).not.toContain('identity_write_failed');
+      expect(report.problems.filter((p) => p.code === 'tenant_row_invalid')).toEqual([
+        { code: 'tenant_row_invalid', severity: 'error', table: 'tenants', id: '#0' },
+        { code: 'tenant_row_invalid', severity: 'error', table: 'tenants', id: '#1' },
+      ]);
+      expect(report.identity.tenants.written).toBe(2);
+      expect(report.identity.users.written).toBe(2);
+      expect(report.ok).toBe(false);
+      expect(reportJson(report)).not.toContain('PRJ CON ESPACIO');
+    } finally {
+      await own.cleanup();
+    }
+  });
+
+  it('refuses a NUL in tenant_projects by position, as text and as a blob', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/auth_global.db'));
+      db.exec(`
+        INSERT INTO tenant_projects (company_id, project_id, label)
+          VALUES (CAST(x'4143004d45' AS TEXT), 'PRJ-TEXTO', 'x');
+        INSERT INTO tenant_projects (company_id, project_id, label)
+          VALUES (x'4143004d45', 'PRJ-BLOB', 'x');
+        INSERT INTO tenant_projects (company_id, project_id, label)
+          VALUES ('ACME', 'PRJ-ETIQUETA', CAST(x'610062' AS TEXT));`);
+      db.close();
+      const sql = await target();
+      const { report } = await run(sql, 'dry-run', { root: own.root });
+
+      // Positions in company, project order: blobs sort after text.
+      const refused = report.problems.filter((p) => p.code === 'tenant_row_invalid');
+      expect(refused.map((p) => p.id).sort()).toEqual(['#0', '#1', '#4']);
+      // Never cut at the NUL: `AC` must not appear as a tenant of its own.
+      expect(report.tenants.map((t) => t.tenantId).sort()).toEqual([
+        fixture.otherTenant,
+        fixture.defaultTenant,
+      ]);
+      expect(reportJson(report)).not.toContain('PRJ-TEXTO');
+    } finally {
+      await own.cleanup();
+    }
+  });
+
+  it('refuses a tenant whose object key holds other bytes and leaves those bytes alone', async () => {
+    const filled = memoryStorage();
+    await run(await target(), 'apply', { storage: filled });
+    const storage = memoryStorage();
+    for (const [key, bytes] of filled.objects) storage.objects.set(key, bytes);
+    const [conflicting] = [...filled.objects.keys()].sort();
+    const foreign = new TextEncoder().encode('otros bytes');
+    storage.objects.set(conflicting ?? '', foreign);
+    const puts = vi.spyOn(storage.storage, 'put');
+
+    const sql = await target();
+    const { report } = await run(sql, 'apply', { storage });
+
+    const conflicts = report.tenants.flatMap((t) =>
+      t.problems.filter((p) => p.code === 'attachment_object_conflict'),
+    );
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0]).toMatchObject({ severity: 'error', table: 'attachments' });
+    expect(conflicts[0]?.id).toBeTruthy();
+    expect(storage.objects.get(conflicting ?? '')).toBe(foreign);
+    expect(puts).not.toHaveBeenCalled();
+    expect(report.ok).toBe(false);
+
+    const refused = report.tenants.find((t) => t.tenantId === conflicts[0]?.tenantId);
+    expect(totalRows(refused?.written ?? emptyCounts())).toBe(0);
+    expect(totalRows(refused?.target ?? emptyCounts())).toBe(0);
+    const other = report.tenants.find((t) => t.tenantId !== conflicts[0]?.tenantId);
+    expect(other?.written).toEqual(other?.mapped);
+  });
+
+  it('writes a stored file shared by two attachment rows without calling it a conflict', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/sipges.db'));
+      db.exec(`
+        INSERT INTO attachments SELECT 'ADJ-SEGUNDO', stored_name, original_name, content_type,
+          size_bytes, sha256, linked_module, linked_record_id, document_type, author, verification,
+          notes, project_id, project_name, created_at FROM attachments LIMIT 1;`);
+      db.close();
+      const { report } = await run(await target(), 'apply', { root: own.root });
+      expect(codesOf(report)).not.toContain('attachment_object_conflict');
+      const main = report.tenants.find((t) => t.tenantId === fixture.defaultTenant);
+      expect(main?.objects.copied).toBe(2);
+    } finally {
+      await own.cleanup();
+    }
+  });
+
+  it('leaves an identical object in place and migrates its metadata', async () => {
+    const filled = memoryStorage();
+    await run(await target(), 'apply', { storage: filled });
+    const storage = memoryStorage();
+    for (const [key, bytes] of filled.objects) storage.objects.set(key, bytes);
+    const puts = vi.spyOn(storage.storage, 'put');
+
+    const { report } = await run(await target(), 'apply', { storage });
+
+    expect(codesOf(report)).not.toContain('attachment_object_conflict');
+    expect(puts).not.toHaveBeenCalled();
+    const main = report.tenants.find((t) => t.tenantId === fixture.defaultTenant);
+    expect(main?.objects.copied).toBe(0);
+    expect(main?.written).toEqual(main?.mapped);
+    expect(main?.problems.find((p) => p.code === 'attachment_object_reused')).toMatchObject({
+      severity: 'info',
+      table: 'attachments',
+    });
   });
 });

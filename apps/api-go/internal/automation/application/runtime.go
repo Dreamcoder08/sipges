@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -58,6 +59,8 @@ type Attempt struct {
 	Source     RuntimeSource
 	Status     string
 	Report     *TickReport
+	// ReportJSON is the stored report as the column holds it, for the route that shows it.
+	ReportJSON json.RawMessage
 	Error      string
 }
 

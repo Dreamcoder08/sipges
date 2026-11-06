@@ -125,25 +125,33 @@ func numberOf(v any) float64 {
 	return NumberJS("[object Object]")
 }
 
-// arrayText is Array#toString, the primitive `<=` reads from an array.
+// arrayText is Array#toString, the primitive `<=` reads from an array. One builder serves every
+// level: a client chooses the nesting, and joining at each level would cost size × depth.
 func arrayText(items []any) string {
-	parts := make([]string, len(items))
+	var b strings.Builder
+	writeArrayText(&b, items)
+	return b.String()
+}
+
+func writeArrayText(b *strings.Builder, items []any) {
 	for i, item := range items {
+		if i > 0 {
+			b.WriteByte(',')
+		}
 		switch x := item.(type) {
 		case nil:
 		case bool:
-			parts[i] = strconv.FormatBool(x)
+			b.WriteString(strconv.FormatBool(x))
 		case float64:
-			parts[i] = records.NumberString(x)
+			b.WriteString(records.NumberString(x))
 		case string:
-			parts[i] = x
+			b.WriteString(x)
 		case []any:
-			parts[i] = arrayText(x)
+			writeArrayText(b, x)
 		default:
-			parts[i] = "[object Object]"
+			b.WriteString("[object Object]")
 		}
 	}
-	return strings.Join(parts, ",")
 }
 
 func tooBig(origin string, limit int) string {

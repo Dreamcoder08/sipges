@@ -52,8 +52,16 @@ ODD forbids doing so without an explicit user decision.
   identifier, and nothing else about it. An identifier that holds NUL is itself withheld: the row
   is reported by its position, `#<index>`.
 
+A `tenant_projects` row whose company or project id fails the `tenants` CHECK
+(`^[A-Za-z0-9_-]{2,64}$` on each part) is reported as `tenant_row_invalid` by position, `#<index>`,
+and left out; the other tenants and the identity tables are still written.
+
 Timestamps are naive local strings in SQLite (`datetime.now().isoformat`). They are read as
-**UTC**. If the legacy server ran in another timezone, the operator must decide whether to shift
+**UTC**, whatever zone the operator's machine is in: the tool runs in UTC, so a shape with no zone
+such as `01-02-2026` gives the same instant everywhere. A number is read as epoch seconds in every
+timestamp column, `reviewed_at` included, but only a column with no declared type holds one: the
+`TEXT` columns `app.py` creates turn it into text, which is refused as `1790000000`. A numeric
+`reviewed_at` outside years 1 to 9999 is `alert_row_invalid`. If the legacy server ran in another timezone, the operator must decide whether to shift
 them before the cut-over.
 
 ## Runbook
@@ -104,7 +112,16 @@ pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy --a
 Global rows (tenants, users, grants) are written in one transaction; each tenant's business
 tables are written in one `withTenant` transaction under forced RLS, so a tenant is migrated
 completely or not at all. Attachment bytes are copied before the tenant transaction under a
-deterministic object key.
+deterministic object key, and an existing object is never replaced. Before writing a tenant the
+tool reads each of its keys, so the storage credentials need read access as well as write access,
+and a dry run does not look at the object store:
+
+- key free: the object is written and counted as copied;
+- same bytes: the object is left in place and reported as `attachment_object_reused` (info);
+- other bytes: `attachment_object_conflict` (error) with the attachment id. None of that tenant's
+  objects or business rows are written, and the other tenants still run; its `tenants` row and
+  grants were already committed with the global rows. Find out what that object is before
+  deleting it, then run again as in the resume steps below.
 
 The run **refuses a non-empty target**: if the users table already holds accounts or any tenant
 already holds rows, it reports `target_not_empty` and writes nothing. Do not use
@@ -114,7 +131,11 @@ If one tenant fails (constraint, connection, storage), its transaction rolls bac
 records `tenant_write_failed` with the tenant id only (no driver message, which could quote
 data), the remaining tenants are still applied, the report is still written and the process
 exits 1. Objects already copied for the failed tenant stay under their deterministic keys and
-are reused by the next attempt.
+are reused by the next attempt, because the same source gives the same bytes. If a legacy file
+changed between attempts, a row with a `sha256` is dropped as `attachment_sha256_mismatch`; a row
+without one meets the old bytes under its key, and the tenant is refused with
+`attachment_object_conflict` until that object is deleted. Stop writes to the legacy installation
+before step 4.
 
 `--allow-non-empty` is the explicit override for **resuming** such a run. With it:
 
@@ -184,8 +205,10 @@ accounts (one with TOTP), uploads on disk and deliberately broken rows.
 - `test/migration/migrate-legacy.test.ts` — dry-run writes nothing, apply/verify, re-run refusal,
   `--allow-non-empty` (whole-tenant skip, `row_already_present` for a bootstrapped account and
   `verify_user_mismatch`), per-table verify checksums against edited target rows, a failing
-  tenant reported and resumed without duplicates, inherited IRSA configuration, upload reads that
-  refuse other tenants' folders and symlinks, redaction of the summary and report.
+  tenant reported and resumed without duplicates, objects that are reused or refused, tenant ids
+  the `tenants` CHECK refuses, timestamps independent of the process's zone, the CLI started from a
+  path with spaces, inherited IRSA configuration, upload reads that refuse other tenants' folders
+  and symlinks, redaction of the summary and report.
 - `test/migration/migrated-app-http.test.ts` — through the real HTTP app: login with a legacy
   PBKDF2 hash (and the migrated TOTP enrolment), scoped record lists, tenant isolation 403/404
   (S7), attachment download byte-for-byte, IRSA config/history and `GET /system/export`.
@@ -205,8 +228,9 @@ target/release/migrate-legacy --legacy-root /srv/sipges-legacy --report report.j
 
 `engines/tools-parity/migrate-legacy.ts` runs both tools on synthetic installations (one synthetic
 database and object store each) and compares exit code, stdout, stderr, the report, every table and
-every object. It covers refusals, the whole flow, `--only`, hostile rows, tampered targets, failing
-tenants, damaged SQLite files and S3 through a local server that checks each request's signature.
+every object, with TypeScript started in a zone away from UTC. It covers refusals, the whole flow,
+`--only`, hostile rows, tampered targets, failing tenants, objects already stored, paths with
+spaces, damaged SQLite files and S3 through a local server that checks each request's signature.
 `engines/fixtures/legacy-dates.tsv` pins the port of V8's date parser to values recorded from Node.
 
 | Case | TypeScript | Rust |
@@ -216,7 +240,6 @@ tenants, damaged SQLite files and S3 through a local server that checks each req
 | Node's `ExperimentalWarning` for `node:sqlite` on Node 22 | on stderr | absent |
 | A failure TypeScript does not catch | exit 1 with a stack trace, whose message may quote a driver | exit 1 with the error's name and at most an operator's path |
 | The integer -9223372036854775808 in any column, on Node 22 | read as a number | `RangeError`, exit 1, as TypeScript does on later Node versions |
-| A timestamp text with no zone that ends like an offset, such as `01-02-2026` | local time of the process | UTC (the same under `TZ=UTC`) |
 | A payload, scores or configuration nested 1,001 to about 2,500 levels | migrated | `RangeError`, exit 1 before any write (TypeScript overflows from about 2,500 levels, at a depth that varies with the stack) |
 | An alert JSON column nested 1,001 to about 2,500 levels | migrated | `alert_row_invalid` |
 | An object in JSON nested past 100,000 levels with a syntax error | row rejected | `RangeError`, exit 1 |
