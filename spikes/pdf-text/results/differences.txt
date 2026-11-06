@@ -1,0 +1,107 @@
+poppler-raw.json: findings 42/51 (identical text 41) 3248 ms
+  04-inline-styles.pdf: findings 24 vs 24; first diff #0
+  14-letter-spaced.pdf: findings 0 vs 9; first diff #-1
+  17-form-and-link.pdf: findings 1 vs 2; first diff #-1
+  24-chrome-rtl-mix.pdf: findings 3 vs 3; first diff #1
+  40-gs-rewrite-chrome.pdf: findings 56 vs 55; first diff #1
+  42-cairo-rewrite-chrome.pdf: findings 56 vs 56; first diff #1
+  65-bad-corrupt-stream.pdf: class unreadable vs no_text
+  67-bad-page-tree-loop.pdf: class unreadable vs no_text
+  68-bad-count-lie.pdf: class no_text vs unreadable
+pdfium.json: findings 43/51 (identical text 42) 1659 ms
+  04-inline-styles.pdf: findings 24 vs 24; first diff #0
+  08-hyphen-breaks.pdf: findings 0 vs 2; first diff #-1
+  14-letter-spaced.pdf: findings 0 vs 10; first diff #-1
+  15-word-spaced.pdf: findings 10 vs 10; first diff #0
+  22-chrome-table.pdf: findings 30 vs 29; first diff #29
+  25-page-rotate-90.pdf: findings 31 vs 31; first diff #0
+  65-bad-corrupt-stream.pdf: class unreadable vs no_text
+  68-bad-count-lie.pdf: class no_text vs too_many
+pdf-extract.json: findings 35/51 (identical text 9) 415 ms
+  14-letter-spaced.pdf: findings 0 vs 10; first diff #-1
+  15-word-spaced.pdf: findings 10 vs 10; first diff #0
+  18-text-rotated-90.pdf: findings 10 vs 8; first diff #0
+  20-chrome-tagged.pdf: findings 56 vs 56; first diff #1
+  21-chrome-columns.pdf: findings 54 vs 54; first diff #5
+  22-chrome-table.pdf: findings 30 vs 30; first diff #1
+  23-chrome-sans-ligatures.pdf: findings 26 vs 26; first diff #0
+  24-chrome-rtl-mix.pdf: findings 3 vs 3; first diff #1
+  40-gs-rewrite-chrome.pdf: findings 56 vs 56; first diff #1
+  41-gs-rewrite-pdfa.pdf: findings 31 vs 2; first diff #2
+  42-cairo-rewrite-chrome.pdf: findings 56 vs 56; first diff #1
+  45-linearized.pdf: findings 56 vs 56; first diff #1
+  53-encrypted-owner-only-aes128.pdf: findings 56 vs 56; first diff #1
+  64-bad-no-xref.pdf: class text vs unreadable
+  65-bad-corrupt-stream.pdf: class unreadable vs no_text
+  68-bad-count-lie.pdf: class no_text vs unreadable
+oxide.json: findings 34/51 (identical text 14) 792 ms
+  07-table-grid.pdf: findings 34 vs 34; first diff #1
+  08-hyphen-breaks.pdf: findings 0 vs 2; first diff #-1
+  10-out-of-order.pdf: findings 10 vs 10; first diff #0
+  13-word-by-word.pdf: findings 10 vs 10; first diff #9
+  14-letter-spaced.pdf: findings 0 vs 10; first diff #-1
+  15-word-spaced.pdf: findings 10 vs 10; first diff #0
+  17-form-and-link.pdf: findings 1 vs 2; first diff #-1
+  21-chrome-columns.pdf: findings 54 vs 54; first diff #49
+  24-chrome-rtl-mix.pdf: findings 3 vs 3; first diff #1
+  26-page-rotate-180.pdf: findings 31 vs 31; first diff #0
+  42-cairo-rewrite-chrome.pdf: findings 56 vs 56; first diff #1
+  50-encrypted-user-password.pdf: class unreadable vs no_text
+  52-encrypted-owner-only-rc4.pdf: class text vs no_text
+  53-encrypted-owner-only-aes128.pdf: class text vs no_text
+  62-bad-truncated-half.pdf: class unreadable vs no_text
+  63-bad-truncated-tail.pdf: class unreadable vs text
+  65-bad-corrupt-stream.pdf: class unreadable vs no_text
+lopdf.json: findings 17/51 (identical text 7) 188 ms
+  01-plain-helvetica.pdf: findings 31 vs 31; first diff #2
+  02-embedded-ttf-noto.pdf: findings 34 vs 31; first diff #2
+  03-justified.pdf: findings 35 vs 32; first diff #3
+  04-inline-styles.pdf: findings 24 vs 24; first diff #0
+  05-two-columns.pdf: findings 64 vs 48; first diff #0
+  06-three-columns.pdf: findings 74 vs 48; first diff #0
+  07-table-grid.pdf: findings 34 vs 15; first diff #0
+  11-type3-font.pdf: findings 3 vs 2; first diff #0
+  13-word-by-word.pdf: findings 10 vs 0; first diff #0
+  14-letter-spaced.pdf: findings 0 vs 8; first diff #-1
+  15-word-spaced.pdf: findings 10 vs 8; first diff #0
+  16-invisible-render-mode.pdf: findings 10 vs 8; first diff #0
+  20-chrome-tagged.pdf: findings 56 vs 56; first diff #1
+  21-chrome-columns.pdf: findings 54 vs 54; first diff #5
+  22-chrome-table.pdf: findings 30 vs 29; first diff #0
+  23-chrome-sans-ligatures.pdf: findings 26 vs 26; first diff #0
+  24-chrome-rtl-mix.pdf: findings 3 vs 3; first diff #1
+  25-page-rotate-90.pdf: findings 31 vs 31; first diff #2
+  26-page-rotate-180.pdf: findings 31 vs 31; first diff #2
+  27-page-rotate-270.pdf: findings 31 vs 31; first diff #2
+  32-scan-with-text-layer.pdf: class text vs no_text
+  40-gs-rewrite-chrome.pdf: findings 56 vs 47; first diff #0
+  41-gs-rewrite-pdfa.pdf: findings 31 vs 2; first diff #2
+  42-cairo-rewrite-chrome.pdf: findings 56 vs 42; first diff #0
+  43-cairo-rewrite-columns.pdf: findings 64 vs 46; first diff #0
+  44-object-streams.pdf: findings 31 vs 31; first diff #2
+  45-linearized.pdf: findings 56 vs 56; first diff #1
+  50-encrypted-user-password.pdf: class unreadable vs no_text
+  51-encrypted-owner-only-aes256.pdf: findings 31 vs 31; first diff #2
+  52-encrypted-owner-only-rc4.pdf: findings 31 vs 31; first diff #2
+  53-encrypted-owner-only-aes128.pdf: findings 56 vs 56; first diff #1
+  64-bad-no-xref.pdf: class text vs unreadable
+  65-bad-corrupt-stream.pdf: class unreadable vs no_text
+  68-bad-count-lie.pdf: class no_text vs unreadable
+poppler-layout.json: findings 35/51 (identical text 8) 2631 ms
+  07-table-grid.pdf: findings 34 vs 25; first diff #0
+  08-hyphen-breaks.pdf: findings 0 vs 2; first diff #-1
+  10-out-of-order.pdf: findings 10 vs 10; first diff #0
+  14-letter-spaced.pdf: findings 0 vs 9; first diff #-1
+  17-form-and-link.pdf: findings 1 vs 2; first diff #-1
+  18-text-rotated-90.pdf: findings 10 vs 10; first diff #0
+  19-text-tilted-17.pdf: findings 10 vs 0; first diff #0
+  21-chrome-columns.pdf: findings 54 vs 50; first diff #8
+  22-chrome-table.pdf: findings 30 vs 29; first diff #0
+  24-chrome-rtl-mix.pdf: findings 3 vs 3; first diff #1
+  27-page-rotate-270.pdf: findings 31 vs 31; first diff #0
+  40-gs-rewrite-chrome.pdf: findings 56 vs 55; first diff #1
+  42-cairo-rewrite-chrome.pdf: findings 56 vs 56; first diff #1
+  65-bad-corrupt-stream.pdf: class unreadable vs no_text
+  67-bad-page-tree-loop.pdf: class unreadable vs no_text
+  68-bad-count-lie.pdf: class no_text vs unreadable
+own.json: findings 51/51 (identical text 51) 49968 ms

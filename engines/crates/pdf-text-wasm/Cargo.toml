@@ -1,0 +1,28 @@
+[package]
+name = "sipges-pdf-text-wasm"
+version = "0.1.0"
+description = "pdf.js text extraction inside QuickJS, compiled to WebAssembly: page texts of untrusted PDFs, the same strings pdf.js gives on Node."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+rquickjs-sys = { version = "=0.14.0", default-features = false }
+
+[lints.rust]
+# The QuickJS FFI and the ABI shim are the only places that touch raw pointers.
+unsafe_code = "allow"
+unsafe_op_in_unsafe_fn = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+undocumented_unsafe_blocks = "deny"

@@ -2,7 +2,7 @@
 // JSON: GET /system/integrations/api-keys (api-key-routes.ts), GET /system/v4/media
 // (media-routes.ts) and GET /system/intelligence/sources (source-routes.ts). The scope's project
 // is always used; the session, project scope and role gate ran before (internal/app). Writes,
-// previews, polls, ingest webhooks and key verification stay in the TypeScript API.
+// previews, polls, ingest webhooks and key verification are in runtime.go.
 package http
 
 import (
