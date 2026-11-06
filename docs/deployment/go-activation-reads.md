@@ -207,7 +207,7 @@ URLs of a first paint that carry `X-SIPGES-Scope`, copied by hand from `apps/web
 Before the trial on `sipges-go`:
 
 - [x] B5 and B6 fixed on `main`, so the trial exercises the failure path production will have.
-- [ ] `SCREENS` aligned with the real first paint.
+- [x] `SCREENS` aligned with the real first paint.
 
 During the trial:
 
@@ -250,7 +250,7 @@ Per-route figures are in the `--out` JSON under each step's `path`; the console 
 
 | What | How | Pass |
 | --- | --- | --- |
-| Screen p50/p95, 8 screens | `screen` in the JSON | Proposed: no worse than today, Inicio 1017/1341 ms and Registros 668/1053 ms (L19). Owner to confirm. |
+| Screen p50/p95, 8 screens | `screen` in the JSON | Proposed: no worse than the baseline of step 2 on each screen. Owner to confirm. |
 | p50/p95 per route | `path` in the JSON, off against on | Proposed: no listed route slower with Go. |
 | Query to Neon from the container | Inside the container, as in T2 | Warm p50 ≤ 35 ms, p95 ≤ 45 ms (S8). Otherwise Fly.io `iad`. |
 | Cold start | First request after more than 10 min idle, five samples | ≤ 3 s (S8). |
@@ -259,7 +259,7 @@ Per-route figures are in the `--out` JSON under each step's `path`; the console 
 
 Three things to read carefully:
 
-- **Fix the script first.** `SCREENS` in `apps/api/bench/prod-screens.ts` is not the real first paint: it sends `/api/alertas` without the query, omits `/api/eventos` and `/system/auth/scopes`, and Registros has no list. Align it before the baseline, or both runs measure something else.
+- **The baseline is new.** `SCREENS` in `apps/api/bench/prod-screens.ts` now sends the real first paint: the shell on every screen, exact URLs, `X-SIPGES-Scope` on data calls, and a `Registros lista` screen. So the figures from L19 no longer compare with a run of this script: take the production baseline again before the first run on `sipges-go`, and read the pass column against that baseline.
 - **Go may lose on single-query routes.** Today each query crosses Lima ↔ us-east-1 (about 121 ms, ADR 0032). With Go the whole request crosses once and queries cost 26–33 ms, so routes with several round trips should win and a route with one may not. Measure, do not assume.
 - **Billing changes.** `/system/notifications` polls every 60 s, so with Wave A an open visible tab keeps the container awake past `sleepAfter`. Compare the usage estimate after the trial.
 
