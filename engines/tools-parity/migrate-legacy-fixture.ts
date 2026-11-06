@@ -111,6 +111,8 @@ export const HOSTILE_TIMESTAMPS: readonly Cell[] = [
   null,
   blob('2026-10-01T09:00:00'),
   blob('\xff'),
+  '2026-10-01T09:00:00\0zzz',
+  blob('2026-10-01\0zzz'),
 ];
 
 const SHA_A = sha('a');

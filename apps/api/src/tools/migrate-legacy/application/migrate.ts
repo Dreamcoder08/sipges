@@ -663,7 +663,7 @@ export const summarize = (report: MigrationReport): string => {
     ...[...codes].map(([code, count]) => `error ${code} x${count}`),
     ...report.problems
       .filter((p) => p.code === 'target_migrations_pending')
-      .map((p) => `target not read: ${p.count} schema migrations pending`),
+      .map((p) => `target not read, pending schema migrations: ${p.count}`),
   ].join('\n');
 };
 

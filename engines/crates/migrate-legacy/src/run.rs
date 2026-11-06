@@ -1094,7 +1094,7 @@ impl Report {
         }
         for problem in &self.problems {
             if let ("target_migrations_pending", Some(count)) = (problem.code, problem.count) {
-                let _ = write!(out, "\ntarget not read: {count} schema migrations pending");
+                let _ = write!(out, "\ntarget not read, pending schema migrations: {count}");
             }
         }
         out

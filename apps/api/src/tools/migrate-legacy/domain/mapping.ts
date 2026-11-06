@@ -130,7 +130,8 @@ export const parseLegacyTimestamp = (value: LegacyValue): Date | null => {
     return Number.isNaN(fromEpoch.getTime()) ? null : fromEpoch;
   }
   const text = asText(value)?.trim();
-  if (!text) return null;
+  // new Date stops reading at a NUL, so the value would pass as its prefix.
+  if (!text || text.includes('\u0000')) return null;
   const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/.test(text)
     ? text.replace(' ', 'T')
     : `${text.replace(' ', 'T')}Z`;

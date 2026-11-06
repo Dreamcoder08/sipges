@@ -264,3 +264,10 @@ describe('legacy mapping', () => {
     expect(!escaped.ok && escaped.error).toBe('attachment_stored_name_unsafe');
   });
 });
+
+describe('parseLegacyTimestamp with NUL', () => {
+  it('refuses the value instead of reading its prefix', () => {
+    expect(parseLegacyTimestamp('2026-01-02T03:04:05\u0000zzz')).toBeNull();
+    expect(parseLegacyTimestamp(new TextEncoder().encode('2026-01-02\u0000zzz'))).toBeNull();
+  });
+});

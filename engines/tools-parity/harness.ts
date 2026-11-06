@@ -167,8 +167,8 @@ export const runScenarios = async (tool: Tool, scenarios: readonly Scenario[]): 
         if (step.stderrIncludes !== undefined)
           outputs.push([
             `stderr names "${step.stderrIncludes}"`,
-            a.stderr.includes(step.stderrIncludes),
-            b.stderr.includes(step.stderrIncludes) ? a.stderr.includes(step.stderrIncludes) : 'missing',
+            [true, true],
+            [a.stderr.includes(step.stderrIncludes), b.stderr.includes(step.stderrIncludes)],
           ]);
         const dump = (
           sql: SqlClient,

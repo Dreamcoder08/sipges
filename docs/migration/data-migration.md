@@ -81,11 +81,13 @@ pnpm --filter @sipges/api migrate:legacy -- --legacy-root /srv/sipges-legacy
 ```
 
 Nothing is written, schema migrations included. If any are pending, the target is not read: its
-counts stay at zero, and the report carries `target_migrations_pending` (info) and the summary
-ends with `target not read: <n> schema migrations pending`. The source side is reported in full.
-A local trial with `SIPGES_PGLITE_DIR` still creates that directory. The summary gives per tenant `source / mapped / written / target` row counts
-and the copied/verified object counts, followed by the problem codes. Resolve or accept every
-problem before applying; the process exits non-zero while any error-level problem remains.
+counts stay at zero, the report carries `target_migrations_pending` (info), and the summary ends
+with `target not read, pending schema migrations: <n>`. The source side is reported in full. A
+local trial with `SIPGES_PGLITE_DIR` still creates that directory.
+
+The summary gives per tenant `source / mapped / written / target` row counts and the
+copied/verified object counts, followed by the problem codes. Resolve or accept every problem
+before applying; the process exits non-zero while any error-level problem remains.
 
 Useful flags: `--only SIPGES/PRJ-SECHURA` (repeatable), `--report report.json`, and the path
 overrides `--auth-db`, `--default-db`, `--tenant-dir`, `--upload-dir`, `--config-dir` for

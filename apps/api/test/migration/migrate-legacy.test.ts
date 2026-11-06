@@ -433,7 +433,7 @@ describe('legacy SQLite → PostgreSQL migration', () => {
         count: 3,
       });
       expect(report.tenants.every((t) => totalRows(t.target) === 0)).toBe(true);
-      expect(summarize(report)).toContain('target not read: 3 schema migrations pending');
+      expect(summarize(report)).toContain('target not read, pending schema migrations: 3');
     } finally {
       source.close();
     }
@@ -448,7 +448,7 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
     try {
       await main(['--legacy-root', fixture.root]);
-      expect(info.mock.calls.flat().join('\n')).toContain('target not read:');
+      expect(info.mock.calls.flat().join('\n')).toContain('target not read,');
       const db = trackTestDatabase(new PGlite(dir));
       const { rows } = await db.query<{ name: string | null }>(
         "SELECT to_regclass('schema_migrations')::text AS name",
@@ -457,6 +457,33 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     } finally {
       info.mockRestore();
       vi.unstubAllEnvs();
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('reads text in the encoding of the legacy file and keeps generated columns', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-utf16-'));
+    try {
+      const db = new DatabaseSync(join(dir, 'auth.db'));
+      db.exec(`
+        PRAGMA encoding = 'UTF-16le';
+        CREATE TABLE auth_users (username, doble GENERATED ALWAYS AS (username || username) VIRTUAL);
+        CREATE TABLE tenant_projects (company_id, project_id, label);
+        INSERT INTO auth_users VALUES ('ñandú😀');`);
+      db.close();
+      const source = createSqliteLegacySource({
+        authDb: join(dir, 'auth.db'),
+        defaultDb: join(dir, 'no.db'),
+        tenantDir: dir,
+        uploadDir: dir,
+        configDir: dir,
+      });
+      try {
+        expect(await source.users()).toEqual([{ username: 'ñandú😀', doble: 'ñandú😀ñandú😀' }]);
+      } finally {
+        source.close();
+      }
+    } finally {
       await rm(dir, { recursive: true, force: true });
     }
   });
