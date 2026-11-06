@@ -13,7 +13,7 @@ Every step below needs the owner's Cloudflare account and explicit go-ahead.
 | 2 | `src/go-routes.ts` | Only when `SIPGES_GO_ROUTING` is exactly `1`, `GO_BACKEND` is bound and `method path` is on `GO_ROUTES` (empty today). |
 | 3 | `src/go-proxy.ts` | Same request context, security headers (CSP, `no-store`, HSTS) and host allowlist as the TypeScript API; no Hyperdrive connection opens. |
 | 4 | `GoBackend` | One named instance (`go-enam`, location hint `enam`) of `apps/api-go/Dockerfile`, constrained to `regions = ["ENAM"]`. |
-| 5 | Failure | A container that cannot start or answer gives the Worker's `503 {"detail": "SIPGES no está disponible temporalmente"}`. |
+| 5 | Failure | `src/go-proxy.ts` turns a thrown error, and any 429 or 5xx that is not JSON, into the Worker's `503 {"detail": "SIPGES no está disponible temporalmente"}`. `@cloudflare/containers` 0.3.7 returns those as plain text when the container cannot start, is rate limited or drops the connection; none of that text reaches the browser or the log. Go answers its own failures as JSON, and they pass unchanged. |
 
 Everything else goes to the TypeScript backend unchanged. Switching a route back is removing its entry, or
 unsetting `SIPGES_GO_ROUTING` for all of them.

@@ -55,4 +55,53 @@ describe('Go proxy', () => {
     expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain('secret');
   });
+
+  // @cloudflare/containers 0.3.7 (dist/lib/container.js) returns these instead of throwing.
+  it.each([
+    [503, 'There is no Container instance available at this time.'],
+    [429, 'rate limited postgres://secret@db'],
+    [500, 'Failed to start container: postgres://secret@db'],
+    [500, 'Container suddenly disconnected, try again'],
+    [500, 'Error proxying request to container: postgres://secret@db'],
+  ])('turns the library failure %i "%s" into the 503 JSON of the Worker', async (status, text) => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    log.mockClear();
+    const response = await proxy(async () => new Response(text, { status })).fetch(
+      new Request('http://localhost/system/x', { headers: { host: 'localhost' } }),
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    expect(await response.text()).toBe('{"detail":"SIPGES no está disponible temporalmente"}');
+    expect(response.headers.get('X-Request-Id')).toBeTruthy();
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'none'");
+    expect(log).toHaveBeenCalledOnce();
+    expect(JSON.stringify(log.mock.calls)).not.toContain('secret');
+  });
+
+  it.each([429, 500, 503])('keeps the JSON failure %i that Go itself answers', async (status) => {
+    const body = '{"detail":"from go"}';
+    const response = await proxy(
+      async () =>
+        new Response(body, {
+          status,
+          headers: { 'content-type': 'application/json; charset=utf-8' },
+        }),
+    ).fetch(new Request('http://localhost/system/x', { headers: { host: 'localhost' } }));
+    expect(response.status).toBe(status);
+    expect(await response.text()).toBe(body);
+  });
+
+  it('keeps answers from Go that are not JSON and are not failures', async () => {
+    const send = (response: Response) =>
+      proxy(async () => response).fetch(
+        new Request('http://localhost/system/x', { headers: { host: 'localhost' } }),
+      );
+    const csv = await send(new Response('a,b', { headers: { 'content-type': 'text/csv' } }));
+    expect(csv.status).toBe(200);
+    expect(await csv.text()).toBe('a,b');
+    const bad = await send(new Response('Bad Request', { status: 400 }));
+    expect(bad.status).toBe(400);
+    expect(await bad.text()).toBe('Bad Request');
+  });
 });
