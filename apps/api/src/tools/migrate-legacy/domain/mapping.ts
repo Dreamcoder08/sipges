@@ -28,6 +28,8 @@ export type ProblemCode =
   | 'row_already_present'
   | 'user_username_invalid'
   | 'user_full_name_invalid'
+  | 'user_totp_secret_invalid'
+  | 'user_flag_invalid'
   | 'user_password_hash_invalid'
   | 'user_role_invalid'
   | 'user_created_at_invalid'
@@ -55,6 +57,7 @@ export type ProblemCode =
   | 'irsa_config_inherited'
   | 'sessions_not_migrated'
   | 'target_not_empty'
+  | 'target_migrations_pending'
   | 'verify_count_mismatch'
   | 'verify_checksum_mismatch'
   | 'verify_attachment_missing'
@@ -114,6 +117,13 @@ export const asBoolean = (value: LegacyValue): boolean => {
   return text === 'true' || text === '1';
 };
 
+/**
+ * A cell holding NUL as text or inside a blob. Fields read through asNumber, asBoolean or a
+ * format check would turn such a value into a default, so they test this first.
+ */
+export const hasNulText = (value: LegacyValue): boolean =>
+  asText(value)?.includes('\u0000') ?? false;
+
 /** Trims and replaces a missing value with `fallback` (legacy columns are often NULL). */
 export const textOr = (value: LegacyValue, fallback: string): string => asText(value) ?? fallback;
 
@@ -129,7 +139,8 @@ export const parseLegacyTimestamp = (value: LegacyValue): Date | null => {
     return Number.isNaN(fromEpoch.getTime()) ? null : fromEpoch;
   }
   const text = asText(value)?.trim();
-  if (!text) return null;
+  // new Date stops reading at a NUL, so the value would pass as its prefix.
+  if (!text || text.includes('\u0000')) return null;
   const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/.test(text)
     ? text.replace(' ', 'T')
     : `${text.replace(' ', 'T')}Z`;
@@ -382,6 +393,8 @@ export const mapUser = (row: LegacyUserRow): Result<TargetUser, ProblemCode> => 
   if (!oneOf(ROLES, role)) return err('user_role_invalid');
   const createdAt = parseLegacyTimestamp(row['created_at']);
   if (!createdAt) return err('user_created_at_invalid');
+  if (hasNulText(row['totp_secret'])) return err('user_totp_secret_invalid');
+  if (hasNulText(row['active']) || hasNulText(row['totp_enabled'])) return err('user_flag_invalid');
   const secret = asText(row['totp_secret']);
   return ok({
     username,
@@ -489,7 +502,9 @@ export const mapAttachment = (
     attachment.projectId,
     attachment.projectName,
   ];
-  return allStorable(texts) ? ok(attachment) : err('attachment_row_invalid');
+  return allStorable(texts) && !hasNulText(row['sha256'])
+    ? ok(attachment)
+    : err('attachment_row_invalid');
 };
 
 export const mapDocumentReview = (
@@ -586,7 +601,9 @@ export const mapAlert = (row: LegacyAlertRow): Result<TargetAlert, ProblemCode> 
     alert.analystNote,
     alert.reviewerNote,
   ];
-  return allStorable(texts) ? ok(alert) : err('alert_row_invalid');
+  return allStorable(texts) && !hasNulText(row['score']) && !hasNulText(row['semantic_active'])
+    ? ok(alert)
+    : err('alert_row_invalid');
 };
 
 export const mapAction = (row: LegacyActionRow): Result<TargetAction, ProblemCode> => {
@@ -622,7 +639,9 @@ export const mapAction = (row: LegacyActionRow): Result<TargetAction, ProblemCod
     action.responsible,
     action.description,
   ];
-  return allStorable(texts) ? ok(action) : err('action_row_invalid');
+  return allStorable(texts) && !hasNulText(row['progress'])
+    ? ok(action)
+    : err('action_row_invalid');
 };
 
 export const mapActionLog = (row: LegacyActionLogRow): Result<TargetActionLog, ProblemCode> => {
@@ -636,7 +655,8 @@ export const mapActionLog = (row: LegacyActionLogRow): Result<TargetActionLog, P
     return err('action_log_row_invalid');
   const note = textOr(row['note'], '');
   const evidenceUrl = asText(row['evidence_url']);
-  if (!allStorable([id, actionId, status, note, evidenceUrl])) return err('action_log_row_invalid');
+  if (!allStorable([id, actionId, status, note, evidenceUrl]) || hasNulText(row['progress']))
+    return err('action_log_row_invalid');
   return ok({ id, actionId, createdAt, status, progress, note, evidenceUrl });
 };
 
