@@ -1,8 +1,8 @@
 // The Go routing Worker (docs/adr/0032 §4, T6): the same Worker code as wrangler.jsonc plus the
 // Go container. It is a separate Worker (`sipges-go`) for no-traffic trials, deployed by hand with
-// `wrangler deploy -c wrangler.go.deploy.jsonc`; no workflow deploys it, and production
-// (wrangler.jsonc) declares no container, no GO_BACKEND binding and no SIPGES_GO_ROUTING, so every route stays on
-// TypeScript there. It has no Hyperdrive on purpose: go-trial-config.mjs adds the id of the trial's
+// `wrangler deploy -c wrangler.go.deploy.jsonc`; no workflow deploys it. Production (wrangler.jsonc)
+// declares the same container but no SIPGES_GO_ROUTING, so every route stays on TypeScript there.
+// This Worker has no Hyperdrive on purpose: go-trial-config.mjs adds the id of the trial's
 // Neon branch at deploy, and refuses production's. Deploy wrangler.go.deploy.jsonc, the file it
 // writes, by following docs/deployment/go-trial-runbook.md.
 {

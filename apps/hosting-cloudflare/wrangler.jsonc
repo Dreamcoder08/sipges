@@ -23,6 +23,25 @@
   "triggers": { "crons": ["*/15 * * * *"] },
   // Not secret: the public host. Secrets go through `wrangler secret put` (deployment guide).
   "vars": { "SIPGES_ALLOWED_HOSTS": "sipges.dreamcoder-dev08.workers.dev" },
+  // The Go container (docs/adr/0032 §4), the same as wrangler.go.jsonc. Nothing reaches it: routing
+  // needs SIPGES_GO_ROUTING, which only the change adding the first routes sets, and GO_ROUTES is
+  // empty. The first deploy of this class cannot be rolled back with `wrangler rollback`:
+  // docs/deployment/cloudflare-workers.md.
+  "containers": [
+    {
+      "class_name": "GoBackend",
+      "image": "../api-go/Dockerfile",
+      "image_build_context": "../..",
+      // One named instance serves (src/go-routes.ts GO_INSTANCE); the second covers a rollout.
+      "max_instances": 2,
+      // `lite` (256 MiB, 1/16 vCPU) was OOM-killed at 4 clients and takes 8 s to compile the engines.
+      "instance_type": "basic",
+      // Next to Neon aws-us-east-1; ENAM placed the spike in Toronto, Miami or Atlanta.
+      "constraints": { "regions": ["ENAM"] },
+    },
+  ],
+  "durable_objects": { "bindings": [{ "name": "GO_BACKEND", "class_name": "GoBackend" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GoBackend"] }],
   "limits": { "cpu_ms": 30000 },
   "observability": { "enabled": true },
 }

@@ -244,5 +244,5 @@ export default {
     }),
 };
 
-// The Durable Object class the `go` environment binds as GO_BACKEND; unused in production.
+// The Durable Object class bound as GO_BACKEND; idle in production until routes move to Go.
 export { GoBackend } from './go-container.ts';

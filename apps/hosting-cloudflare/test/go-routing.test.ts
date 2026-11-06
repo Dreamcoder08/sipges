@@ -199,6 +199,7 @@ type WranglerConfig = {
   triggers?: { crons: string[] };
   containers?: unknown;
   durable_objects?: unknown;
+  migrations?: unknown;
 };
 
 const wrangler = async (file: string) => {
@@ -224,11 +225,19 @@ describe('Go image', () => {
 });
 
 describe('Wrangler configuration', () => {
-  it('keeps production on TypeScript: no switch, no container, no Go binding (S7)', async () => {
+  it('keeps production on TypeScript: a container is declared, nothing routes to it (S7)', async () => {
     const production = await wrangler('wrangler.jsonc');
     expect(production.vars.SIPGES_GO_ROUTING).toBeUndefined();
-    expect(production.containers).toBeUndefined();
-    expect(production.durable_objects).toBeUndefined();
+    expect(GO_ROUTES).toEqual([]);
+    expect(goRoutingEnabled({ ...production.vars, GO_BACKEND: backend })).toBe(false);
+  });
+
+  it('declares the same Go container for production as for the trial', async () => {
+    const production = await wrangler('wrangler.jsonc');
+    const trial = await wrangler('wrangler.go.jsonc');
+    expect(production.containers).toEqual(trial.containers);
+    expect(production.durable_objects).toEqual(trial.durable_objects);
+    expect(production.migrations).toEqual([{ tag: 'v1', new_sqlite_classes: ['GoBackend'] }]);
   });
 
   it('declares the Go container in a separate Worker, constrained to ENAM', async () => {

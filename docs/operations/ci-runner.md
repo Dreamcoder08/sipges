@@ -2,11 +2,11 @@
 
 The repository is private on GitHub Free, so GitHub-hosted Actions minutes are limited (2,000 a month). When they
 run out, GitHub refuses jobs with «recent account payments have failed or your spending limit needs to be
-increased». CI and deploys can then run on a runner on the owner's machine instead.
+increased». CI can then run on a runner on the owner's machine instead. Deploys cannot: they stay GitHub-hosted.
 
 ## How the switch works
 
-Every job reads `runs-on` from the repository variable `SIPGES_RUNS_ON`:
+Every CI job reads `runs-on` from the repository variable `SIPGES_RUNS_ON`:
 
 | `SIPGES_RUNS_ON` | Jobs run on |
 | --- | --- |
@@ -57,6 +57,7 @@ unchanged (the workflow checks `runner.environment`).
 - Each runner runs one job at a time. Service containers publish a random host port, so several runners can share the
   machine; two is the sensible maximum with 7 GB of RAM.
 - The machine has 7 GB of RAM: avoid running full suites locally while CI runs.
-- The deploy job also runs here, so the Cloudflare deploy secrets reach this machine during a deploy. Only use a
-  self-hosted runner on a private repository; never on a public one, where a fork's pull request could run code here.
+- The deploy job does not run here: `wrangler deploy` builds the Go image, which needs Docker with buildx, and this
+  runner lacks it. With no hosted minutes left, deploys wait or run by hand. Only use a self-hosted runner on a
+  private repository; never on a public one, where a fork's pull request could run code here.
 - The machine must stay on for CI to run.

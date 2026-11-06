@@ -32,6 +32,15 @@ describe('Deploy Workers workflow', () => {
     return text.slice(start, next === -1 ? undefined : next);
   };
 
+  it('builds the Go image on a GitHub-hosted runner, with buildx set up before the deploy', async () => {
+    const text = await workflow();
+    expect(text).toContain('runs-on: ubuntu-latest');
+    expect(text).not.toContain('SIPGES_RUNS_ON');
+    const buildx = text.indexOf('uses: docker/setup-buildx-action@');
+    expect(buildx).toBeGreaterThanOrEqual(0);
+    expect(buildx).toBeLessThan(text.indexOf('- name: Deploy the Worker'));
+  });
+
   it('smoke-tests /health/ready, which runs SELECT 1, after deploying', async () => {
     const smoke = step(await workflow(), 'Smoke test /health/ready');
     expect(smoke).toContain('id: smoke');

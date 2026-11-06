@@ -135,3 +135,8 @@ binding or secret that no longer exists. By hand, roll back with
 (`pnpm --filter @sipges/api start`) against the same database; migrations must stay compatible
 with the version being restored. Evidence uploaded to R2 must be copied to the Node storage
 before serving from Node.
+
+**The Go container limits rollback once.** Cloudflare refuses to roll back past a Durable Object
+class change, and the first deploy of `GoBackend` is one. If that deploy fails its smoke test, the
+automatic rollback fails too and the broken version stays live, so the fix must go forward. Deploy
+that change alone, with nothing else in the same run. Later deploys roll back as usual.
