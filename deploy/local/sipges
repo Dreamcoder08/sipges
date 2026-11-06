@@ -122,6 +122,102 @@ cmd_install() {
   fi
 }
 
+# First install for a client who brings data: everything but the API, because migrate-legacy needs
+# a database the API has never touched. `./sipges start` finishes the install after the import.
+cmd_prepare() {
+  need_docker
+  use_host "${1:-}"
+  build
+  mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
+  compose up -d db backup
+  say 'Ready for ./sipges import. Start SIPGES afterwards with ./sipges start.'
+}
+
+import_image() {
+  docker image inspect sipges-import:current >/dev/null 2>&1 ||
+    docker build -f Dockerfile.import -t sipges-import:current "$REPO_ROOT"
+}
+
+# Everything that can be refused before a backup or a container. A path inside the repository is
+# refused: the repository's data/ folder is not client input, and client files must never land
+# here. The tools run as the API's user, so a file only its owner may read would look missing.
+check_source() {
+  local folder=$1 file=${2:-} real repo blocked
+  real=$(readlink -f "$folder" || true)
+  repo=$(readlink -f "$REPO_ROOT")
+  [[ -n $real && -d $real ]] || die "no folder $folder"
+  [[ $real != "$repo" && $real != "$repo"/* ]] || die 'use a folder outside the SIPGES folder'
+  [[ $real != *:* ]] || die 'the folder path may not contain a colon'
+  if [[ -n $file ]]; then
+    blocked=$(find "$real" -maxdepth 0 ! -perm -o=rx; find "$real/$file" ! -perm -o=r)
+  else
+    blocked=$(find "$real" \( -type d ! -perm -o=rx -o -type f ! -perm -o=r \) -print -quit)
+  fi
+  [[ -z $blocked ]] ||
+    die "SIPGES cannot read $blocked. Copy the folder to this computer and run chmod -R a+rX on the copy, then import the copy."
+}
+
+# Runs one import tool with the folder mounted read-only.
+run_import() {
+  local tool=$2 real reports
+  real=$(readlink -f "$1")
+  shift 2
+  reports=$(import_reports)
+  mkdir -p "$reports"
+  # The tool runs as the API's user, which owns the evidence files, not as this user; it needs to
+  # write here only while it runs, and the reports hold counts, codes and ids.
+  chmod 777 "$reports"
+  compose up -d db
+  local status=0
+  SIPGES_IMPORT_FOLDER=$real SIPGES_IMPORT_REPORTS=$reports \
+    compose run --rm --entrypoint "$tool" import "$@" || status=$?
+  chmod 700 "$reports"
+  return "$status"
+}
+
+import_reports() { readlink -m "${SIPGES_IMPORT_REPORTS:-imports}"; }
+
+backup_before_import() {
+  compose up -d backup
+  compose exec -T backup bash /ops/backup.sh
+}
+
+cmd_import() {
+  need_env
+  need_docker
+  local kind=${1:-} target=${2:-}
+  [[ -n $kind && -n $target ]] ||
+    die 'usage: ./sipges import legacy <folder> [--apply|--verify] | import base-maestra <file.json> [--apply]'
+  shift 2
+  local apply=0 arg
+  for arg in "$@"; do
+    [[ $arg == --apply ]] && apply=1
+  done
+  import_image
+  case $kind in
+  legacy)
+    local report failed=0
+    report="report-$(date -u +%Y%m%dT%H%M%SZ).json"
+    check_source "$target"
+    ((apply == 0)) || backup_before_import
+    run_import "$target" migrate-legacy --legacy-root /import --report "/reports/$report" "$@" || failed=1
+    # A tool that stops before it starts, on a refused option for one, writes no report.
+    [[ -f "$(import_reports)/$report" ]] || die 'the import did not run; the line above says why'
+    docker run --rm -i --network none --entrypoint /api sipges-local:current import-report \
+      <"$(import_reports)/$report"
+    say "Full report: $(import_reports)/$report"
+    ((failed == 0)) || die 'the import reported problems; the report names them'
+    ;;
+  base-maestra)
+    [[ -f $target ]] || die "no file $target"
+    check_source "$(dirname "$target")" "$(basename "$target")"
+    ((apply == 0)) || backup_before_import
+    run_import "$(dirname "$target")" import-base-maestra --seed "/import/$(basename "$target")" "$@"
+    ;;
+  *) die 'import what? legacy or base-maestra' ;;
+  esac
+}
+
 cmd_status() {
   need_env
   compose ps
@@ -208,6 +304,8 @@ cmd_wipe() {
 
 case ${1:-help} in
 install) shift; cmd_install "$@" ;;
+prepare) shift; cmd_prepare "$@" ;;
+import) shift; cmd_import "$@" ;;
 build) need_docker; build ;;
 start) need_env; start ;;
 stop) need_env; compose stop ;;
@@ -222,6 +320,8 @@ wipe) shift; cmd_wipe "$@" ;;
 help | *)
   cat <<HELP
 ./sipges install [host]    First install, or rebuild and start. Host defaults to localhost.
+./sipges prepare [host]    First install for a client with data: no application yet.
+./sipges import ...        Read client files. Only tries, unless given --apply.
 ./sipges start | stop      Start or stop everything.
 ./sipges status            What is running, the latest backup, any backup failure.
 ./sipges logs [service]    Recent logs: api, db, caddy, backup.

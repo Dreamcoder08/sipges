@@ -169,4 +169,22 @@ const expectAbsent = async () => {
   expect('the record is gone after the wipe', record.status === 404, `status ${record.status}`);
 };
 
-await { seed, check, absent: expectAbsent }[mode]();
+// After migrate-legacy: the old password still opens the account, and what came with it is there.
+const imported = async () => {
+  const signedIn = await login('');
+  expect('the migrated person signs in with the old password', signedIn.status === 200, `status ${signedIn.status}`);
+  const setup = await call('/system/auth/totp/setup', { method: 'POST' });
+  const { secret } = await setup.json();
+  await call('/system/auth/totp/enable', json({ code: totp(secret) }));
+  cookie = '';
+  await login(totp(secret, stepNow() + 1));
+  const record = await call('/api/compromisos/LEG-1');
+  expect('the migrated record is there', record.status === 200, `status ${record.status}`);
+  const uploads = await (await call('/system/uploads')).json();
+  const attachment = (uploads.items ?? uploads.attachments ?? uploads)[0];
+  expect('the migrated attachment is listed', Boolean(attachment?.id));
+  const file = await call(`/system/uploads/${attachment.id}/download`);
+  expect('the migrated file downloads', file.status === 200 && (await file.text()) === 'synthetic legacy evidence\n');
+};
+
+await { seed, check, absent: expectAbsent, imported }[mode]();

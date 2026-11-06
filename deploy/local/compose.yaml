@@ -153,6 +153,26 @@ services:
       - ${SIPGES_BACKUP_DIR:-./backups}:/backups:ro
     networks: [backend]
 
+  # Only ever started by `./sipges import`: the client's folder is mounted read-only.
+  import:
+    profiles: [ops]
+    image: sipges-import:current
+    restart: 'no'
+    environment:
+      # The Rust tools demand TLS unless the database is on loopback, so this job shares the
+      # database's network: its traffic never leaves that container.
+      SIPGES_DATABASE_URL: postgres://sipges_app:${SIPGES_DB_PASSWORD:?}@127.0.0.1:5432/sipges
+      SIPGES_DATA_KEY: ${SIPGES_DATA_KEY:?}
+    volumes:
+      - uploads:/data/uploads
+      - ${SIPGES_IMPORT_FOLDER:-./no-import-folder}:/import:ro
+      - ${SIPGES_IMPORT_REPORTS:-./imports}:/reports
+    network_mode: service:db
+    depends_on: [db]
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    read_only: true
+
 volumes:
   db:
   uploads:

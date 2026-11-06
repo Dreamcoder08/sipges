@@ -32,3 +32,4 @@ odd/evidence/t6-benchmark/current-quick.json
 deploy/local/.env
 deploy/local/backups/
 deploy/local/sipges-root-ca.crt
+deploy/local/imports/
