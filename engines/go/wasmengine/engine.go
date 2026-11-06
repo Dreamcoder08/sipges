@@ -45,6 +45,9 @@ type Options struct {
 	// the pool (default DefaultRetainMemoryPages). Linear memory never shrinks, so an instance
 	// that served a large request is discarded instead of holding its peak memory while idle.
 	RetainMemoryPages uint32
+	// Clock gives the module the monotonic clock, for a guest that enforces its own time budget.
+	// Without it, wazero's fake clock keeps guests deterministic.
+	Clock bool
 }
 
 // Stats reports the pool: Live instances exist (idle or busy), Idle ones wait in the pool.
@@ -76,6 +79,7 @@ type Engine struct {
 	shut      chan struct{}      // closed once Close has finished
 	shutErr   error              // runtime.Close's error, read after shut is closed
 	stoppable bool               // Options.Interruptible: Close stops calls in flight
+	clock     bool               // Options.Clock
 }
 
 type instance struct {
@@ -119,6 +123,7 @@ func New(ctx context.Context, wasm []byte, opts Options) (*Engine, error) {
 		halt:      halt,
 		shut:      make(chan struct{}),
 		stoppable: opts.Interruptible,
+		clock:     opts.Clock,
 		retain:    uint64(opts.RetainMemoryPages) * pageSize,
 		runtime:   runtime,
 		compiled:  compiled,
@@ -277,6 +282,9 @@ func (e *Engine) instantiate(ctx context.Context) (*instance, error) {
 	// Anonymous instances so one compiled module can be instantiated many times. A reactor module
 	// exposes _initialize (when present) instead of _start.
 	config := wazero.NewModuleConfig().WithName("").WithStartFunctions("_initialize")
+	if e.clock {
+		config = config.WithSysNanotime()
+	}
 	module, err := e.runtime.InstantiateModule(ctx, e.compiled, config)
 	if err != nil {
 		return nil, fmt.Errorf("wasmengine: instantiate module: %w", err)
