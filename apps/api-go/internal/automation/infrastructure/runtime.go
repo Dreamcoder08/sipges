@@ -94,6 +94,7 @@ func (s RuntimeStore) State(ctx context.Context, tenantID string) (*application.
 			a.Status = *status
 		}
 		if report != nil {
+			a.ReportJSON = report
 			a.Report = &application.TickReport{}
 			if err := json.Unmarshal(report, a.Report); err != nil {
 				return nil, err
