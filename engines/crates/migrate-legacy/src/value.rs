@@ -58,6 +58,13 @@ pub fn as_text(value: &Legacy) -> Option<String> {
     }
 }
 
+/// `hasNulText`: a cell holding NUL as text or inside a blob. Fields read as numbers, flags or
+/// fixed formats would turn such a value into a default, so they test this first.
+#[must_use]
+pub fn has_nul_text(value: &Legacy) -> bool {
+    as_text(value).is_some_and(|text| text.contains('\0'))
+}
+
 /// `textOr`.
 #[must_use]
 pub fn text_or(value: &Legacy, fallback: &str) -> String {
@@ -213,7 +220,8 @@ pub fn parse_timestamp(value: &Legacy) -> Option<i64> {
 #[must_use]
 pub fn parse_timestamp_text(text: &str) -> Option<i64> {
     let text = js::trim(text);
-    if text.is_empty() {
+    // Date parsing stops at a NUL, so the value would pass as its prefix.
+    if text.is_empty() || text.contains('\0') {
         return None;
     }
     let spaced = text.replacen(' ', "T", 1);
@@ -314,6 +322,10 @@ mod tests {
         assert_eq!(parse_timestamp(&text("   ")), None);
         assert_eq!(parse_timestamp(&Legacy::Null), None);
         assert_eq!(parse_timestamp(&text("ayer")), None);
+        // new Date stops at a NUL; the value must not pass as its prefix.
+        assert_eq!(parse_timestamp(&text("2026-01-02T03:04:05\0zzz")), None);
+        let blob = Legacy::Blob(b"2026-01-02\0zzz".to_vec());
+        assert_eq!(parse_timestamp(&blob), None);
     }
 
     #[test]

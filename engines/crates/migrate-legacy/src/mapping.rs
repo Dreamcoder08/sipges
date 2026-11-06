@@ -9,7 +9,8 @@ use sipges_tools_common::{js, time};
 
 use crate::json::{self, Json, ParseError};
 use crate::value::{
-    Legacy, Row, as_number, as_text, boolean_or, parse_timestamp, parse_timestamp_text, text_or,
+    Legacy, Row, as_number, as_text, boolean_or, has_nul_text, parse_timestamp,
+    parse_timestamp_text, text_or,
 };
 
 /// A problem code (`ProblemCode`).
@@ -334,6 +335,12 @@ pub fn map_user(row: &Row) -> Mapped<User> {
     let Some(created_at) = parse_timestamp(row.get("created_at")) else {
         return reject("user_created_at_invalid");
     };
+    if has_nul_text(row.get("totp_secret")) {
+        return reject("user_totp_secret_invalid");
+    }
+    if has_nul_text(row.get("active")) || has_nul_text(row.get("totp_enabled")) {
+        return reject("user_flag_invalid");
+    }
     Ok(User {
         username,
         full_name,
@@ -585,7 +592,7 @@ pub fn map_attachment(row: &Row, tenant: &str) -> Mapped<Attachment> {
         &attachment.project_id,
         &attachment.project_name,
     ];
-    if texts.iter().all(|text| storable(text)) {
+    if texts.iter().all(|text| storable(text)) && !has_nul_text(row.get("sha256")) {
         Ok(attachment)
     } else {
         reject("attachment_row_invalid")
@@ -779,7 +786,9 @@ pub fn map_alert(row: &Row) -> Mapped<Alert> {
         Some(&alert.method),
         Some(&alert.analyst_note),
         alert.reviewer_note.as_deref(),
-    ]) {
+    ]) && !has_nul_text(row.get("score"))
+        && !has_nul_text(row.get("semantic_active"))
+    {
         Ok(alert)
     } else {
         reject(invalid)
@@ -859,7 +868,7 @@ pub fn map_action(row: &Row) -> Mapped<Action> {
         &action.responsible,
         &action.description,
     ];
-    if texts.iter().all(|text| storable(text)) {
+    if texts.iter().all(|text| storable(text)) && !has_nul_text(row.get("progress")) {
         Ok(action)
     } else {
         reject(invalid)
@@ -910,7 +919,8 @@ pub fn map_action_log(row: &Row) -> Mapped<ActionLog> {
         Some(&status),
         Some(&note),
         evidence_url.as_deref(),
-    ]) {
+    ]) || has_nul_text(row.get("progress"))
+    {
         return reject(invalid);
     }
     Ok(ActionLog {
@@ -1224,6 +1234,40 @@ mod tests {
             ("status", s("x")),
             ("progress", Legacy::Num(1.0)),
         ]
+    }
+
+    #[test]
+    fn refuses_nul_where_a_default_would_hide_it() {
+        let nul = || s("1\0");
+        for (column, expected) in [
+            ("totp_secret", "user_totp_secret_invalid"),
+            ("active", "user_flag_invalid"),
+            ("totp_enabled", "user_flag_invalid"),
+        ] {
+            assert_eq!(code(map_user(&user(&[(column, nul())]))), Some(expected));
+            let blob = Legacy::Blob(b"1\0".to_vec());
+            assert_eq!(code(map_user(&user(&[(column, blob)]))), Some(expected));
+        }
+        let sha = with(&attachment_row(), &[("sha256", s(&format!("{}\0", sha())))]);
+        assert_eq!(
+            code(map_attachment(&sha, "A/B")),
+            Some("attachment_row_invalid")
+        );
+        for column in ["score", "semantic_active"] {
+            let row = with(&alert_row(), &[(column, nul())]);
+            assert_eq!(code(map_alert(&row)), Some("alert_row_invalid"));
+        }
+        let row = with(&action_row(), &[("progress", nul())]);
+        assert_eq!(code(map_action(&row)), Some("action_row_invalid"));
+        let row = with(&log_row(), &[("progress", Legacy::Blob(b"4\0".to_vec()))]);
+        assert_eq!(code(map_action_log(&row)), Some("action_log_row_invalid"));
+    }
+
+    #[test]
+    fn keeps_defaults_for_values_without_nul() {
+        assert!(map_user(&user(&[("active", s("no"))])).is_ok_and(|u| !u.active));
+        let row = with(&alert_row(), &[("score", s("x"))]);
+        assert!(map_alert(&row).is_ok_and(|a| a.score == 0.0));
     }
 
     #[test]

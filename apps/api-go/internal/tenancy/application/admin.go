@@ -50,6 +50,8 @@ type Admin struct {
 	Forget func(username string)
 	// Now is the clock; nil means time.Now.
 	Now func() time.Time
+	// Export reads the project's business tables for ExportData.
+	Export ExportReader
 }
 
 // now is clock.now() as a JavaScript Date holds it: whole milliseconds.
