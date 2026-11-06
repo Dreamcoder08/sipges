@@ -102,7 +102,7 @@ describe('Go container', () => {
 type WranglerConfig = {
   name: string;
   vars: Record<string, string>;
-  hyperdrive: { id: string }[];
+  hyperdrive?: { id: string }[];
   triggers?: { crons: string[] };
   containers?: unknown;
   durable_objects?: unknown;
@@ -115,6 +115,20 @@ const wrangler = async (file: string) => {
     text.replace(/^\s*\/\/.*$/gm, '').replace(/,(\s*[}\]])/g, '$1'),
   ) as WranglerConfig;
 };
+
+describe('Go image', () => {
+  const repo = (path: string) => readFile(new URL(`../../../${path}`, import.meta.url), 'utf8');
+
+  it('sends the embedded PDF engine to the build', async () => {
+    const source = await repo('apps/api-go/internal/platform/engines/pdftext.go');
+    const embedded = [...source.matchAll(/^\/\/go:embed (\S+)$/gm)].map((match) => match[1]);
+    expect(embedded).toEqual(expect.arrayContaining(['wasm/pdf-text.wasm']));
+    const ignore = (await repo('apps/api-go/Dockerfile.dockerignore')).split('\n');
+    expect(ignore).toContain('!apps/api-go/internal');
+    expect(ignore.filter((line) => line.includes('wasm') || line.includes('qbc'))).toEqual([]);
+    expect(await repo('apps/api-go/Dockerfile')).toContain('COPY apps/api-go/internal ./internal');
+  });
+});
 
 describe('Wrangler configuration', () => {
   it('keeps production on TypeScript: no switch, no container, no Go binding (S7)', async () => {
@@ -132,6 +146,7 @@ describe('Wrangler configuration', () => {
       expect.objectContaining({
         class_name: 'GoBackend',
         image: '../api-go/Dockerfile',
+        instance_type: 'basic',
         constraints: { regions: ['ENAM'] },
       }),
     ]);
@@ -145,7 +160,9 @@ describe('Wrangler configuration', () => {
       wrangler('wrangler.jsonc'),
       wrangler('wrangler.go.jsonc'),
     ]);
-    expect(go.hyperdrive[0]?.id).not.toBe(production.hyperdrive[0]?.id);
+    expect(production.hyperdrive?.[0]?.id).toMatch(/^[0-9a-f]{32}$/);
+    // The id is set at deploy, by go-trial-config.mjs, which refuses production's.
+    expect(go.hyperdrive).toBeUndefined();
     expect(go.triggers).toBeUndefined();
     expect(go.vars.SIPGES_ALLOWED_HOSTS).not.toBe(production.vars.SIPGES_ALLOWED_HOSTS);
   });
