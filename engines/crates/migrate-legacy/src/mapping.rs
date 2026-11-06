@@ -9,8 +9,7 @@ use sipges_tools_common::{js, time};
 
 use crate::json::{self, Json, ParseError};
 use crate::value::{
-    Legacy, Row, as_number, as_text, boolean_or, has_nul_text, parse_timestamp,
-    parse_timestamp_text, text_or,
+    Legacy, Row, as_number, as_text, boolean_or, has_nul_text, parse_timestamp, text_or,
 };
 
 /// A problem code (`ProblemCode`).
@@ -158,6 +157,14 @@ fn is_legacy_hash(text: &str) -> bool {
         && parts.next().is_none()
 }
 
+/// `TENANT_PART`: `^[A-Za-z0-9_-]{2,64}$`, the CHECK on the `tenants` ids.
+fn valid_tenant_part(part: &str) -> bool {
+    (2..=64).contains(&part.len())
+        && part
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-'))
+}
+
 fn storable(text: &str) -> bool {
     !text.contains('\0')
 }
@@ -272,13 +279,11 @@ pub struct Scope {
 }
 
 impl Scope {
-    /// `mapTenant`'s test: ids present, everything storable.
+    /// `mapTenant`'s test: ids the tenants CHECK accepts, a storable label.
     #[must_use]
     pub fn is_valid(&self) -> bool {
-        !self.company.is_empty()
-            && !self.project.is_empty()
-            && storable(&self.company)
-            && storable(&self.project)
+        valid_tenant_part(&self.company)
+            && valid_tenant_part(&self.project)
             && storable(&self.label)
     }
 
@@ -748,10 +753,11 @@ pub fn map_alert(row: &Row) -> Mapped<Alert> {
     let reviewed = as_text(row.get("reviewed_at"))
         .map(|text| js::trim(&text).to_owned())
         .unwrap_or_default();
+    // Blank means not reviewed; the raw value goes on, so a number reads as epoch seconds.
     let reviewed_at = if reviewed.is_empty() {
         None
     } else {
-        let Some(at) = parse_timestamp_text(&reviewed) else {
+        let Some(at) = parse_timestamp(row.get("reviewed_at")) else {
             return reject(invalid);
         };
         Some(at)
@@ -1446,12 +1452,14 @@ mod tests {
         assert!(map_alert(&negative).is_ok_and(|a| a.score == 0.0));
         let blank = with(&alert_row(), &[("reviewed_at", s("  "))]);
         assert!(map_alert(&blank).is_ok_and(|a| a.reviewed_at.is_none()));
-        // A number goes through the text path, unlike every other timestamp column.
+        // A number is epoch seconds, as in every other timestamp column.
         let number = with(
             &alert_row(),
             &[("reviewed_at", Legacy::Num(1_790_000_000.0))],
         );
-        assert_eq!(code(map_alert(&number)), Some("alert_row_invalid"));
+        assert!(map_alert(&number).is_ok_and(|a| a.reviewed_at == Some(1_790_000_000_000)));
+        let zero = with(&alert_row(), &[("reviewed_at", Legacy::Num(0.0))]);
+        assert!(map_alert(&zero).is_ok_and(|a| a.reviewed_at == Some(0)));
         for (column, value) in [
             ("id", s("")),
             ("created_at", s("ayer")),
@@ -1461,6 +1469,8 @@ mod tests {
             ("signals_json", Legacy::Null),
             ("suggestions_json", s("[\"a\\u0000\"]")),
             ("reviewed_at", s("ayer")),
+            ("reviewed_at", s("1790000000")),
+            ("reviewed_at", Legacy::Num(9e300)),
             ("reviewer_note", s("r\0")),
         ] {
             let row = with(&alert_row(), &[(column, value)]);

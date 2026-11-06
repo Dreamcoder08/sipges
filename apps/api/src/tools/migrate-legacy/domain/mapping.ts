@@ -87,6 +87,8 @@ export const ACTION_STATUSES = ['Pendiente', 'En ejecución', 'Completada', 'Can
 const SHA256 = /^[0-9a-f]{64}$/;
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
 const SAFE_OBJECT_NAME = /^[A-Za-z0-9._-]+$/;
+/** The CHECK on tenants.company_id and tenants.project_id (migration 0003). */
+const TENANT_PART = /^[A-Za-z0-9_-]{2,64}$/;
 
 // ---------------------------------------------------------------- coercion
 
@@ -130,7 +132,9 @@ export const textOr = (value: LegacyValue, fallback: string): string => asText(v
 /**
  * app.py writes `datetime.now().isoformat(timespec='seconds')`: a naive local timestamp.
  * The TypeScript schema stores `timestamptz`, so naive values are read as UTC
- * (documented in docs/migration/data-migration.md).
+ * (documented in docs/migration/data-migration.md). An appended `Z` does not reach every shape:
+ * `01-02-2026` looks zoned and `2026Sept` swallows it, so V8 falls back to the process's local
+ * time. The CLI therefore runs in UTC.
  */
 export const parseLegacyTimestamp = (value: LegacyValue): Date | null => {
   const number = typeof value === 'number' || typeof value === 'bigint' ? Number(value) : null;
@@ -375,7 +379,9 @@ export const mapTenant = (scope: {
   readonly projectId: string;
   readonly label: string;
 }): Result<TargetTenant, ProblemCode> =>
-  scope.companyId && scope.projectId && allStorable([scope.companyId, scope.projectId, scope.label])
+  TENANT_PART.test(scope.companyId) &&
+  TENANT_PART.test(scope.projectId) &&
+  storableText(scope.label)
     ? ok({ companyId: scope.companyId, projectId: scope.projectId, label: scope.label })
     : err('tenant_row_invalid');
 
@@ -567,8 +573,9 @@ export const mapAlert = (row: LegacyAlertRow): Result<TargetAlert, ProblemCode> 
   const suggestions = parseJsonStrict(row['suggestions_json']);
   if (themes === undefined || signals === undefined || suggestions === undefined)
     return err('alert_row_invalid');
+  // Blank means not reviewed; the raw value goes on, so a number reads as epoch seconds.
   const reviewedText = asText(row['reviewed_at'])?.trim() ?? '';
-  const reviewedAt = reviewedText ? parseLegacyTimestamp(reviewedText) : null;
+  const reviewedAt = reviewedText ? parseLegacyTimestamp(row['reviewed_at']) : null;
   if (reviewedText && !reviewedAt) return err('alert_row_invalid');
   const alert = {
     id,

@@ -648,4 +648,58 @@ describe('legacy SQLite → PostgreSQL migration', () => {
       await rm(dir, { recursive: true, force: true });
     }
   });
+
+  it('reports a tenant id the tenants CHECK refuses by position and still writes the identity', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/auth_global.db'));
+      db.exec(`
+        INSERT INTO tenant_projects (company_id, project_id, label) VALUES ('A', 'PRJ-CORTO', 'x');
+        INSERT INTO tenant_projects (company_id, project_id, label) VALUES ('ACME', 'PRJ CON ESPACIO', 'x');`);
+      db.close();
+      const sql = await target();
+      const { report } = await run(sql, 'apply', { root: own.root });
+
+      expect(codesOf(report)).not.toContain('identity_write_failed');
+      expect(report.problems.filter((p) => p.code === 'tenant_row_invalid')).toEqual([
+        { code: 'tenant_row_invalid', severity: 'error', table: 'tenants', id: '#0' },
+        { code: 'tenant_row_invalid', severity: 'error', table: 'tenants', id: '#1' },
+      ]);
+      expect(report.identity.tenants.written).toBe(2);
+      expect(report.identity.users.written).toBe(2);
+      expect(report.ok).toBe(false);
+      expect(reportJson(report)).not.toContain('PRJ CON ESPACIO');
+    } finally {
+      await own.cleanup();
+    }
+  });
+
+  it('refuses a NUL in tenant_projects by position, as text and as a blob', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/auth_global.db'));
+      db.exec(`
+        INSERT INTO tenant_projects (company_id, project_id, label)
+          VALUES (CAST(x'4143004d45' AS TEXT), 'PRJ-TEXTO', 'x');
+        INSERT INTO tenant_projects (company_id, project_id, label)
+          VALUES (x'4143004d45', 'PRJ-BLOB', 'x');
+        INSERT INTO tenant_projects (company_id, project_id, label)
+          VALUES ('ACME', 'PRJ-ETIQUETA', CAST(x'610062' AS TEXT));`);
+      db.close();
+      const sql = await target();
+      const { report } = await run(sql, 'dry-run', { root: own.root });
+
+      // Positions in company, project order: blobs sort after text.
+      const refused = report.problems.filter((p) => p.code === 'tenant_row_invalid');
+      expect(refused.map((p) => p.id).sort()).toEqual(['#0', '#1', '#4']);
+      // Never cut at the NUL: `AC` must not appear as a tenant of its own.
+      expect(report.tenants.map((t) => t.tenantId).sort()).toEqual([
+        fixture.otherTenant,
+        fixture.defaultTenant,
+      ]);
+      expect(reportJson(report)).not.toContain('PRJ-TEXTO');
+    } finally {
+      await own.cleanup();
+    }
+  });
 });
