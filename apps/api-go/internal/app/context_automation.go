@@ -47,6 +47,8 @@ type automation struct {
 	// this API is the runner.
 	cron     string
 	interval time.Duration
+	// cronConfigured says a cron secret exists, even while cron stays empty above.
+	cronConfigured bool
 }
 
 var (
@@ -91,6 +93,7 @@ func automationModule(d Deps) (*automation, error) {
 		// Channel runs would wait forever for a TypeScript tick that may no longer come.
 		return nil, errors.New("SIPGES_GO_AUTOMATION_CRON requires SIPGES_DATA_KEY")
 	}
+	cronConfigured := cron != ""
 	if d.AutomationInterval == 0 {
 		cron = ""
 	}
@@ -101,7 +104,7 @@ func automationModule(d Deps) (*automation, error) {
 		}
 		service.Sealer = cipher
 	}
-	m := &automation{service: service, cron: cron, interval: d.AutomationInterval}
+	m := &automation{service: service, cron: cron, interval: d.AutomationInterval, cronConfigured: cronConfigured}
 	m.runtime = automationRuntime(d, service, integrationsql.RSS{}, integrationsql.Official{})
 	automationModules[d.Pool] = m
 	return m, nil
@@ -158,6 +161,14 @@ func cronSecret(lookup secrets.Lookup) (string, error) {
 	return value, nil
 }
 
+// cronSchedule is the expression a Worker's Cron Trigger fires on; nil on any other server.
+func cronSchedule(lookup secrets.Lookup) *string {
+	if value, ok := lookup("SIPGES_CRON_SCHEDULE"); ok && value != "" {
+		return &value
+	}
+	return nil
+}
+
 func init() {
 	registerContext("automation", func(d Deps) (func(*http.ServeMux), error) {
 		m, err := automationModule(d)
@@ -170,6 +181,12 @@ func init() {
 			automationhttp.Routes(mux, options)
 			automationhttp.WriteRoutes(mux, writes)
 			automationhttp.PushRoutes(mux, writes)
+			automationhttp.RuntimeRoutes(mux, writes, automationhttp.RuntimeInfo{
+				CronConfigured: m.cronConfigured,
+				CronSchedule:   cronSchedule(automationEnv),
+				IntervalMS:     m.interval.Milliseconds(),
+				Latest:         automationsql.RuntimeStore{DB: d.Pool}.State,
+			})
 		}, nil
 	})
 	registerMiddleware("automation", func(d Deps) (httpx.Middleware, error) {
