@@ -14,6 +14,8 @@ SIPGES_PARITY_TS_URL=http://127.0.0.1:8000 SIPGES_PARITY_GO_URL=http://127.0.0.1
 SIPGES_PARITY_ADMIN_USERNAME=… SIPGES_PARITY_ADMIN_PASSWORD=… pnpm parity
 ```
 
+The runner applies migrations as a non-superuser owner, because a superuser never exercises `FORCE ROW LEVEL SECURITY`.
+
 With a database server, the runner creates `sipges_parity_<random>`, starts `apps/api/src/main.ts` (which
 applies the migrations and seeds a synthetic administrator with a password generated for the run), builds
 and starts `apps/api-go`, signs in through the TypeScript API and sends every case to both. It exits 1 on
@@ -32,18 +34,20 @@ rows straight into the database after the migrations, together with a project no
 (`PARITY/OTRO`), so a case can prove another project's rows stay invisible. Against two running APIs the
 rows load only with `SIPGES_PARITY_SEED_DATABASE_URL`.
 
-| Field        | Meaning                                                                              |
-| ------------ | ------------------------------------------------------------------------------------ |
-| `name`       | Unique name in the report.                                                           |
-| `method`     | HTTP method.                                                                         |
-| `path`       | Path and query, starting with `/`.                                                   |
-| `headers`    | Extra request headers; `{origin}` becomes each API's own base URL.                   |
-| `body`       | `{ json: … }`, `{ form: { … } }` or `{ raw: '…' }` (sent byte for byte).             |
-| `rawTarget`  | Sends `path` exactly as written (dot segments, `\`), through `node:http`.            |
-| `auth`       | `'admin'`, `'consulta'` or `'multi'`: that seeded user's session, sent to both APIs. |
-| `sameOrigin` | `true` sends `Origin` set to each API's own base URL (same-origin write).            |
-| `normalize`  | JSON paths that differ per run (`id`, `items.*.created_at`); fields only.            |
-| `perApi`     | `true` runs a write once per API; `{api}` becomes `TSAPI` or `GOAPI`.                |
+| Field        | Meaning                                                                                        |
+| ------------ | ---------------------------------------------------------------------------------------------- |
+| `name`       | Unique name in the report.                                                                     |
+| `method`     | HTTP method.                                                                                   |
+| `path`       | Path and query, starting with `/`.                                                             |
+| `headers`    | Extra request headers; `{origin}` becomes each API's own base URL.                             |
+| `body`       | `{ json: … }`, `{ form: { … } }` or `{ raw: '…' }` (sent byte for byte).                       |
+| `rawTarget`  | Sends `path` exactly as written (dot segments, `\`), through `node:http`.                      |
+| `auth`       | `'admin'`, `'consulta'` or `'multi'`: that seeded user's session, sent to both APIs.           |
+| `sameOrigin` | `true` sends `Origin` set to each API's own base URL (same-origin write).                      |
+| `normalize`  | JSON paths that differ per run (`id`, `items.*.created_at`); fields only.                      |
+| `perApi`     | `true` runs a write once per API; `{api}` becomes `TSAPI` or `GOAPI`.                          |
+| `present`    | Text the response must contain, on both APIs.                                                  |
+| `absent`     | Text the response must not contain, on both APIs: two APIs agreeing is not proof of isolation. |
 
 JSON compares as values: object key order does not count, `null` and a missing key differ. A normalized
 path present on only one side is still a difference, and a path that names no field (`*`) is refused.

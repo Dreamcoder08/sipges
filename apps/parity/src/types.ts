@@ -31,6 +31,11 @@ export type ParityCase = {
    */
   readonly normalize?: readonly string[];
   /**
+   * For a text answer whose values differ per process: a regular expression; only the lines it
+   * matches are compared, in order. The schema of a metrics text, for example.
+   */
+  readonly compareLines?: string;
+  /**
    * Runs a write that is not idempotent (a creation, a revocation) once on each API: both share
    * one database, so the same create would answer 200 on one and 409 on the other. `{api}` in
    * the path, headers and body becomes `TSAPI` or `GOAPI`. In every answer, perApi or not, both

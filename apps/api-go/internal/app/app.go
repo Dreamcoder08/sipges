@@ -69,6 +69,7 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 		Ready:        readiness(opts.ReadyGate, database.Ping(pool)),
 		AllowedHosts: opts.AllowedHosts,
 		AccessLog:    opts.AccessLog,
+		Metrics:      httpx.NewMetrics(time.Now),
 		Auth: append([]httpx.Middleware{
 			identityhttp.Session(identityhttp.SessionOptions{
 				Sessions:   sessions,

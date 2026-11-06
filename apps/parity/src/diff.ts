@@ -71,12 +71,27 @@ const diffValues = (ts: unknown, go: unknown, path: string, out: Mismatch[]) => 
   if (!Object.is(ts, go)) out.push({ field: 'body', path, ts, go });
 };
 
+const linesOf = (body: Body, pattern: RegExp | undefined): Body =>
+  body.kind === 'text' && pattern
+    ? {
+        kind: 'text',
+        value: body.value
+          .split('\n')
+          .filter((line) => pattern.test(line))
+          .join('\n'),
+      }
+    : body;
+
 /** Every difference between the two responses, after normalizing the declared JSON paths. */
 export const compare = (
-  ts: Observed,
-  go: Observed,
+  tsAnswer: Observed,
+  goAnswer: Observed,
   normalized: readonly string[] = [],
+  compareLines?: string,
 ): Mismatch[] => {
+  const pattern = compareLines === undefined ? undefined : new RegExp(compareLines);
+  const ts = { ...tsAnswer, body: linesOf(tsAnswer.body, pattern) };
+  const go = { ...goAnswer, body: linesOf(goAnswer.body, pattern) };
   const out: Mismatch[] = [];
   if (ts.status !== go.status) out.push({ field: 'status', ts: ts.status, go: go.status });
   const [tsType, goType] = [mediaType(ts.contentType), mediaType(go.contentType)];
