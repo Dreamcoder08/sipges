@@ -39,6 +39,8 @@ type MCP struct {
 	Keys  KeyService
 	Tools Tools
 	Log   *slog.Logger
+	// SlowSearch prepares the response for a search that may take minutes; nil when none can.
+	SlowSearch func(http.ResponseWriter, *http.Request)
 }
 
 // RegisterMCP mounts /mcp.
@@ -137,7 +139,7 @@ func (m MCP) post(w http.ResponseWriter, r *http.Request) {
 		}
 		writeValue(w, http.StatusOK, rpcResult(id, object("tools", tools)))
 	case "tools/call":
-		writeValue(w, http.StatusOK, m.call(r, *principal, id, params))
+		writeValue(w, http.StatusOK, m.call(w, r, *principal, id, params))
 	default:
 		writeValue(w, http.StatusOK, rpcError(id, -32601, "Método no soportado: "+name))
 	}
@@ -158,7 +160,7 @@ func initializeResult(params *records.Object) *records.Object {
 	)
 }
 
-func (m MCP) call(r *http.Request, principal domain.Principal, id any, params *records.Object) *records.Object {
+func (m MCP) call(w http.ResponseWriter, r *http.Request, principal domain.Principal, id any, params *records.Object) *records.Object {
 	raw, _ := params.Get("name")
 	name, _ := raw.(string)
 	at := slices.IndexFunc(domain.ToolsFor(principal), func(t domain.Tool) bool { return t.Name == name })
@@ -174,6 +176,9 @@ func (m MCP) call(r *http.Request, principal domain.Principal, id any, params *r
 	parsed, issues := tool.ParseArguments(input)
 	if issues != "" {
 		return rpcResult(id, toolError("Argumentos no válidos: "+issues))
+	}
+	if tool.Name == domain.ToolSearchRecords && m.SlowSearch != nil {
+		m.SlowSearch(w, r)
 	}
 	result, err := m.answer(r.Context(), tool, principal, parsed)
 	if err != nil {

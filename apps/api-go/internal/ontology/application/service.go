@@ -144,8 +144,16 @@ type Timeline struct {
 	Truncated bool
 }
 
-// Service answers the ontology read routes over one tenant's Store.
-type Service struct{ Store Store }
+// VisibleField says whether a field may explain a search hit.
+type VisibleField func(slug, field string) bool
+
+// Service answers the ontology read routes over one tenant's Store. With Visible, only those fields
+// explain a search hit: the excerpt comes from them, and a record found only through other fields
+// (or only by meaning) is left out, so a hit never reveals what a hidden field holds.
+type Service struct {
+	Store   Store
+	Visible VisibleField
+}
 
 func key(r NodeRef) string { return r.Module + "\x00" + r.ID }
 
@@ -483,18 +491,36 @@ func (s Service) Search(ctx context.Context, raw domain.Units, slugs []string, l
 		if !ok {
 			continue
 		}
-		hits = append(hits, hit(t, row, found.Terms, false))
+		if found, ok := s.hit(t, row, found.Terms, false); ok {
+			hits = append(hits, found)
+		}
 	}
 	return hits, nil
 }
 
-func hit(t domain.ObjectType, row NodeRow, terms []string, semantic bool) Hit {
+// hit is the end of search for one row; false when no visible field explains it.
+func (s Service) hit(t domain.ObjectType, row NodeRow, terms []string, semantic bool) (Hit, bool) {
 	preferred := append([]string{t.TitleField}, t.SummaryFields...)
+	payload := row.Payload
+	if s.Visible != nil {
+		payload = make(domain.Payload, len(row.Payload))
+		for field, value := range row.Payload {
+			if s.Visible(t.Slug, field) {
+				payload[field] = value
+			}
+		}
+	}
+	match := domain.MatchExcerpt(payload, terms, preferred)
+	// The store requires every term somewhere in the record; with hidden fields every term must be
+	// in a visible one, or pairing a visible word with a probe reveals hidden text.
+	if s.Visible != nil && (match == nil || !domain.HoldsTerms(payload, terms)) {
+		return Hit{}, false
+	}
 	return Hit{
 		Summary:  domain.Summarize(t, row.ID, row.Payload, row.Marking, nil),
-		Match:    domain.MatchExcerpt(row.Payload, terms, preferred),
+		Match:    match,
 		Semantic: semantic,
-	}
+	}, true
 }
 
 // Lexical is the lexical half of search and what its semantic half needs.
@@ -567,7 +593,9 @@ func (s Service) Fuse(ctx context.Context, found Lexical, refs []NodeRef) ([]Hit
 		if !ok {
 			continue
 		}
-		hits = append(hits, hit(t, row, found.Terms, slices.Contains(semantic, key)))
+		if found, ok := s.hit(t, row, found.Terms, slices.Contains(semantic, key)); ok {
+			hits = append(hits, found)
+		}
 	}
 	return hits, nil
 }

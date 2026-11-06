@@ -61,20 +61,26 @@ type Assistance struct {
 	Narrator  *string
 	Narrative *domain.Sentence
 	Notice    *string
+	// Withheld is an outside reader's briefing of a restricted record: the guard kept it back whole.
+	Withheld bool
 }
 
 // Brief is briefing(tenant, slug, id) with a narrator. Every failure on the way leaves the
 // extractive briefing with a notice. The team keeps the real records; only the shared view leaves.
 func (a Assisted) Brief(ctx context.Context, tenantID string, found Neighbourhood, now time.Time) Assistance {
 	today := Today(now)
-	full := domain.BuildBriefing(found.Subject, found.Connections, today)
-	out := Assistance{Briefing: full, Engine: EngineExtractive}
+	return a.assist(ctx, tenantID, found, domain.BuildBriefing(found.Subject, found.Connections, today), today)
+}
+
+// assist adds the narrator's prose to shown, the briefing its reader will see.
+func (a Assisted) assist(ctx context.Context, tenantID string, found Neighbourhood, shown domain.Briefing, today string) Assistance {
+	out := Assistance{Briefing: shown, Engine: EngineExtractive}
 	if found.Subject.Marking == markingRestricted {
 		notice := narrationWithheld
 		out.Notice = &notice
 		return out
 	}
-	text, refs, err := a.narrate(ctx, tenantID, found, full, today)
+	text, refs, err := a.narrate(ctx, tenantID, found, shown, today)
 	if err != nil {
 		a.logFailure(ctx, err)
 		notice := narrationFailed
@@ -85,6 +91,21 @@ func (a Assisted) Brief(ctx context.Context, tenantID string, found Neighbourhoo
 	out.Engine, out.Narrator = EngineAssisted, &name
 	out.Narrative = &domain.Sentence{Text: text, Refs: refs}
 	return out
+}
+
+// OutsideBriefing is briefing(tenant, slug, id, {session}): what an outside reader of session sees,
+// with prose when assisted is not nil. The session seals it; the narrator gets its own.
+func OutsideBriefing(ctx context.Context, assisted *Assisted, session *privacy.Session, tenantID string, found Neighbourhood, now time.Time) Assistance {
+	today := Today(now)
+	subject, connections, withheld := sanitisedView(session, found)
+	seen := domain.BuildBriefing(subject, connections, today)
+	if withheld {
+		return Assistance{Briefing: seen, Engine: EngineExtractive, Withheld: true}
+	}
+	if assisted == nil {
+		return Assistance{Briefing: seen, Engine: EngineExtractive}
+	}
+	return assisted.assist(ctx, tenantID, found, seen, today)
 }
 
 // narrationError says why a narration failed. Cause is logged, so it must hold no record text and
@@ -124,7 +145,7 @@ func (a Assisted) narrate(ctx context.Context, tenantID string, found Neighbourh
 		return "", nil, narrationError{reason: reasonGuard}
 	}
 	// Restricted neighbours never leave the platform, and the rest only as the guard allows.
-	view, connections := sanitisedView(session, found)
+	view, connections, _ := sanitisedView(session, found)
 	shared := domain.BuildBriefing(view, connections, today)
 	cleared, err := privacy.Release(ctx, session, domain.BriefingText(shared))
 	if err != nil {
@@ -147,8 +168,8 @@ func (a Assisted) narrate(ctx context.Context, tenantID string, found Neighbourh
 
 // sanitisedView is sanitisedView of analyst-service.ts: the briefing as an outside reader may see
 // it. Record ids stay, since citations need them; the session scrubs every string again when it
-// releases the text.
-func sanitisedView(session *privacy.Session, found Neighbourhood) (domain.Summary, []domain.Connection) {
+// releases the text. withheld says the guard kept the subject back whole.
+func sanitisedView(session *privacy.Session, found Neighbourhood) (subject domain.Summary, connections []domain.Connection, withheld bool) {
 	unique := []domain.Summary{found.Subject}
 	seen := map[domain.Ref]int{{Slug: found.Subject.Slug, ID: found.Subject.ID}: 0}
 	for _, c := range found.Connections {
@@ -163,7 +184,7 @@ func sanitisedView(session *privacy.Session, found Neighbourhood) (domain.Summar
 		raw[i] = rawRecord(s)
 	}
 	cleaned := session.Records(raw)
-	connections := make([]domain.Connection, 0, len(found.Connections))
+	connections = make([]domain.Connection, 0, len(found.Connections))
 	for _, c := range found.Connections {
 		at := seen[domain.Ref{Slug: c.Other.Slug, ID: c.Other.ID}]
 		if at >= len(cleaned) || cleaned[at].Withheld {
@@ -172,7 +193,7 @@ func sanitisedView(session *privacy.Session, found Neighbourhood) (domain.Summar
 		c.Other = cleanSummary(c.Other, cleaned[at])
 		connections = append(connections, c)
 	}
-	return cleanSummary(found.Subject, cleaned[0]), connections
+	return cleanSummary(found.Subject, cleaned[0]), connections, cleaned[0].Withheld
 }
 
 func rawRecord(s domain.Summary) privacydomain.RawRecord {

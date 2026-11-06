@@ -16209,6 +16209,32 @@
       "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"Argumentos no válidos: module: Invalid input: expected string, received undefined; id: Invalid input: expected string, received undefined\"}],\"isError\":true}}"
     },
     {
+      "label": "a read tool with the switch off",
+      "method": "POST",
+      "host": "mcp.example:8080",
+      "origin": null,
+      "key": "clave-lectura",
+      "body": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"get_record\",\"arguments\":{\"module\":\"actores\",\"id\":\"A-1\"}}}",
+      "hex": null,
+      "status": 200,
+      "content_type": "application/json",
+      "www_authenticate": null,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"El envío a IA externa está desactivado para este proyecto\"}],\"isError\":true}}"
+    },
+    {
+      "label": "a search with the switch off",
+      "method": "POST",
+      "host": "mcp.example:8080",
+      "origin": null,
+      "key": "clave-lectura",
+      "body": "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"search_records\",\"arguments\":{\"query\":\"agua\"}}}",
+      "hex": null,
+      "status": 200,
+      "content_type": "application/json",
+      "www_authenticate": null,
+      "response": "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"El envío a IA externa está desactivado para este proyecto\"}],\"isError\":true}}"
+    },
+    {
       "label": "several issues",
       "method": "POST",
       "host": "mcp.example:8080",

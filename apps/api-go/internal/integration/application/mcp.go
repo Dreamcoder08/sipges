@@ -3,10 +3,14 @@ package application
 import (
 	"context"
 	"errors"
+	"strconv"
 
+	analyst "github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/domain"
+	ontologyapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/application"
 	ontology "github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/domain"
 	privacy "github.com/Dreamcoder08/sipges/apps/api-go/internal/privacy/application"
+	recordsapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 )
 
@@ -20,18 +24,96 @@ type ToolResult struct {
 	Error string
 }
 
-// MCP runs the tools.
-type MCP struct{}
+// MCPOntology is the ontology a tool reads, in the tenant of each call.
+type MCPOntology interface {
+	Search(ctx context.Context, tenantID string, query ontology.Units, slugs []string, limit int64, visible ontologyapp.VisibleField) ([]ontologyapp.Hit, error)
+	Neighbours(ctx context.Context, tenantID, slug, id string) (*ontologyapp.Links, error)
+	Timeline(ctx context.Context, tenantID, from, to string, slugs []string, limit int64) (*ontologyapp.Timeline, error)
+}
+
+// MCPRecords is the record a tool reads.
+type MCPRecords interface {
+	Get(ctx context.Context, tenantID, module, id string) (*recordsapp.StoredRecord, error)
+}
+
+// MCPBriefings gives a record's briefing as session's reader may see it; nil when it is missing.
+type MCPBriefings interface {
+	Briefing(ctx context.Context, tenantID, slug, id string, session *privacy.Session) (*analyst.Assistance, error)
+}
+
+// Egress is the egress guard.
+type Egress interface {
+	Open(ctx context.Context, request privacy.Request) (*privacy.Session, error)
+}
+
+// MCP runs the tools. Every tool that reads tenant data goes through Guard (docs/adr/0030); nil
+// when SIPGES_DATA_KEY is missing, and then every such tool is refused.
+type MCP struct {
+	Ontology MCPOntology
+	Records  MCPRecords
+	Analyst  MCPBriefings
+	Guard    Egress
+}
 
 // ErrToolUnavailable is a tool this server does not run yet; the route answers as a tool failure.
 var ErrToolUnavailable = errors.New("integration: tool not available")
 
-// Run runs a tool whose input ParseArguments already checked.
-func (m MCP) Run(_ context.Context, tool domain.Tool, _ domain.Principal, _ *records.Object) (ToolResult, error) {
-	if tool.Kind == domain.ToolCatalogue {
+// Run is runTool, for a tool whose input ParseArguments already checked. A read tool is refused
+// while the project keeps external AI off; otherwise its data is sanitised and the release is
+// logged before it can be returned. The catalogue carries no tenant data out.
+func (m MCP) Run(ctx context.Context, tool domain.Tool, principal domain.Principal, input *records.Object) (ToolResult, error) {
+	switch tool.Kind {
+	case domain.ToolCatalogue:
 		return ToolResult{OK: true, Data: privacy.ExemptPayload[any](objectCatalogue(), privacy.ExemptConstant)}, nil
+	case domain.ToolRead:
+		return m.runRead(ctx, tool, principal, input)
 	}
 	return ToolResult{}, ErrToolUnavailable
+}
+
+func (m MCP) runRead(ctx context.Context, tool domain.Tool, principal domain.Principal, input *records.Object) (ToolResult, error) {
+	if m.Guard == nil {
+		return ToolResult{Error: privacy.ExternalAIDisabled}, nil
+	}
+	actor := domain.KeyActor(principal) + " (clave " + strconv.Itoa(principal.KeyID) + ")"
+	session, err := m.Guard.Open(ctx, privacy.Request{
+		TenantID: principal.TenantID, Channel: privacy.ChannelMCP, Purpose: tool.Name, Actor: &actor,
+	})
+	if errors.Is(err, privacy.ErrDisabled) {
+		return ToolResult{Error: privacy.ExternalAIDisabled}, nil
+	}
+	if err != nil {
+		return ToolResult{}, err
+	}
+	call := readCall{MCP: m, tenant: principal.TenantID, session: session, input: input}
+	var data any
+	var refusal string
+	switch tool.Name {
+	case domain.ToolSearchRecords:
+		data, err = call.search(ctx)
+	case domain.ToolGetRecord:
+		data, refusal, err = call.record(ctx)
+	case domain.ToolGetLinks:
+		data, refusal, err = call.links(ctx)
+	case domain.ToolGetTimeline:
+		data, refusal, err = call.timeline(ctx)
+	case domain.ToolGetBriefing:
+		data, refusal, err = call.briefing(ctx)
+	default:
+		err = ErrToolUnavailable
+	}
+	if err != nil {
+		return ToolResult{}, err
+	}
+	// A refusal carries a fixed message, never a record's content.
+	if refusal != "" {
+		return ToolResult{Error: refusal}, nil
+	}
+	sealed, err := privacy.Release(ctx, session, data)
+	if err != nil {
+		return ToolResult{}, err
+	}
+	return ToolResult{OK: true, Data: sealed}, nil
 }
 
 type catalogueObject struct {

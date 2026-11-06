@@ -154,6 +154,24 @@ func MatchExcerpt(payload Payload, terms, preferred []string) *Match {
 	return nil
 }
 
+// HoldsTerms says whether the strings and numbers of payload, folded, hold every term. Terms are
+// ASCII words, so none can span two values.
+func HoldsTerms(payload Payload, terms []string) bool {
+	values := make([]string, 0, len(payload))
+	for _, value := range payload {
+		if text, ok := scalarText(value); ok {
+			values = append(values, text)
+		}
+	}
+	folded := FoldText(strings.Join(values, " "))
+	for _, term := range terms {
+		if !strings.Contains(folded, term) {
+			return false
+		}
+	}
+	return true
+}
+
 var (
 	isoDay   = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 	isoYear  = regexp.MustCompile(`^\d{4}$`)
