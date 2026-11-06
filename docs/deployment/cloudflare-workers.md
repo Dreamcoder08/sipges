@@ -57,9 +57,10 @@ The Worker sets `NODE_ENV=production`, the database URL (from Hyperdrive), the u
 Deploys are automatic: when the `CI` workflow succeeds on a push to `main`, the
 `Deploy Workers` workflow (`.github/workflows/deploy-workers.yml`) checks out that exact
 commit, builds, applies the migrations, runs `deploy:worker` and smoke-tests `/health/ready`
-(six attempts, ten seconds apart). If the smoke test fails, the job runs `wrangler rollback`
-to the previous Worker version and then fails, so a broken deploy does not stay live. It can
-also be started by hand (`workflow_dispatch`, `main` only) and runs one at a time. Define these
+(six attempts, ten seconds apart), then one route of `GO_ROUTES` with no session, which must
+answer its JSON 401 (nothing is sent while the list is empty). If either smoke test fails, the
+job runs `wrangler rollback` to the previous Worker version and then fails, so a broken deploy
+does not stay live. It can also be started by hand (`workflow_dispatch`, `main` only) and runs one at a time. Define these
 secrets on the GitHub `production` environment:
 
 | Secret | Value |

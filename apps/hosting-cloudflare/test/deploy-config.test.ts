@@ -38,10 +38,26 @@ describe('Deploy Workers workflow', () => {
     expect(smoke).toMatch(/curl -fsS[^\n]*\/health\/ready/);
   });
 
+  it('probes a Go route after /health/ready, which only ever reaches TypeScript', async () => {
+    const text = await workflow();
+    const smoke = step(text, 'Smoke test a Go route');
+    expect(smoke).toContain('id: smoke_go');
+    expect(smoke).toContain('node apps/hosting-cloudflare/smoke-go.mjs');
+    expect(smoke).toContain('SIPGES_SMOKE_URL: https://sipges.dreamcoder-dev08.workers.dev');
+    expect(text.indexOf('Smoke test a Go route')).toBeGreaterThan(
+      text.indexOf('Smoke test /health/ready'),
+    );
+    expect(text.indexOf('Smoke test a Go route')).toBeLessThan(
+      text.indexOf('Roll back the Worker'),
+    );
+  });
+
   it('rolls back to the previous version when the smoke test fails, then fails the job', async () => {
     const text = await workflow();
     const rollback = step(text, 'Roll back the Worker');
-    expect(rollback).toContain("if: failure() && steps.smoke.outcome == 'failure'");
+    expect(rollback).toContain(
+      "if: failure() && (steps.smoke.outcome == 'failure' || steps.smoke_go.outcome == 'failure')",
+    );
     expect(rollback).toMatch(/wrangler rollback --yes --message /);
     expect(rollback).toMatch(/exit 1\s*$/);
     expect(text.indexOf('Roll back the Worker')).toBeGreaterThan(
