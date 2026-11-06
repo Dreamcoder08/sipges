@@ -2,8 +2,8 @@
 // with the same answers: GET /api/dashboard, /system/situational-analysis,
 // /system/strategic-assessment, /system/consensus-engine and /system/integrated-analysis. The
 // scope's project is always used; the session, project scope (which refuses a `project_id` of
-// another project) and role gate ran before (internal/app). The .docx reports and
-// /system/conflict-risk stay in TypeScript.
+// another project) and role gate ran before (internal/app). The .docx reports are alongside;
+// /system/conflict-risk stays in TypeScript.
 package http
 
 import (
@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analytics/application"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analytics/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analytics/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
@@ -29,7 +30,9 @@ type Deps struct {
 	Pool *pgxpool.Pool
 	// Engine runs the analytics WebAssembly module (engines.Set.Analytics).
 	Engine application.Engine
-	Logger *slog.Logger
+	// Renderer writes the Word reports.
+	Renderer application.ReportRenderer
+	Logger   *slog.Logger
 	// Now is the clock of generated_at; nil means time.Now.
 	Now func() time.Time
 }
@@ -37,10 +40,11 @@ type Deps struct {
 // Register adds the context's routes to mux, reading through the SQL readers.
 func Register(mux *http.ServeMux, deps Deps) {
 	Routes(mux, application.Service{
-		Records: infrastructure.Records{DB: deps.Pool},
-		Labels:  infrastructure.Labels{DB: deps.Pool},
-		Engine:  deps.Engine,
-		Now:     deps.Now,
+		Records:  infrastructure.Records{DB: deps.Pool},
+		Labels:   infrastructure.Labels{DB: deps.Pool},
+		Engine:   deps.Engine,
+		Renderer: deps.Renderer,
+		Now:      deps.Now,
 	}, deps.Logger)
 }
 
@@ -62,6 +66,44 @@ func Routes(mux *http.ServeMux, service application.Service, log *slog.Logger) {
 		mux.HandleFunc("GET "+path, handle(log, func(ctx context.Context, scope tenancy.Scope) ([]byte, error) {
 			return analysis(ctx, scope)
 		}))
+	}
+	if service.Renderer == nil {
+		return // Deps' fields work at their zero value: without a renderer there are no reports.
+	}
+	for path, kind := range map[string]domain.ReportKind{
+		"/system/situational-report.docx":  domain.ReportSituational,
+		"/system/strategic-report.docx":    domain.ReportStrategic,
+		"/system/integrated-analysis.docx": domain.ReportIntegrated,
+		"/system/consensus-engine.docx":    domain.ReportConsensus,
+	} {
+		mux.HandleFunc("GET "+path, report(log, service, kind))
+	}
+}
+
+// report answers one Word report as an attachment; a failure is the same 500 as handle's.
+func report(log *slog.Logger, service application.Service, kind domain.ReportKind) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		scope, ok := tenancyhttp.ScopeFrom(r.Context())
+		var (
+			out application.RenderedReport
+			err = tenancyhttp.ErrNoScope
+		)
+		if ok {
+			out, err = service.Report(r.Context(), kind, scope)
+		}
+		if err != nil {
+			if log != nil {
+				log.LogAttrs(r.Context(), slog.LevelError, "analytics report failed",
+					slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+			}
+			httpx.WriteError(w, http.StatusInternalServerError, "Internal Server Error")
+			return
+		}
+		w.Header().Set("Content-Type", out.ContentType)
+		w.Header().Set("Content-Disposition", `attachment; filename="`+out.FileName+`"`)
+		w.Header().Set("Cache-Control", "no-store") // securityHeaders on the TypeScript side
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(out.Bytes)
 	}
 }
 

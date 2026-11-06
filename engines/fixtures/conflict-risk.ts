@@ -8,8 +8,8 @@
  *
  * `cases` store the request as raw JSON text (`{records, alerts, irsa, today}`) and `value`,
  * `JSON.stringify(conflictRisk(request))`, which the Rust engine must reproduce byte for byte.
- * `errors` are requests the TypeScript engine cannot answer (it throws, or its result holds a lone
- * UTF-16 surrogate); the Rust engine must refuse them. `collation`, `math` and `mn` pin the
+ * `errors` are requests the TypeScript engine cannot answer (it throws); the Rust engine must
+ * refuse them. `collation`, `math` and `mn` pin the
  * runtime pieces the engine depends on: `localeCompare(…, 'es')` signs, `Math.exp`/`Math.log`/
  * `Math.log1p` results and the `\p{Mn}` ranges of this Node.
  */
@@ -479,24 +479,23 @@ for (const [seed, days, density] of [
   addText('generated/seed5-other-today', JSON.stringify({ ...g, irsa: [] }));
 }
 
+add('titles/cut-inside-an-emoji', [
+  demand('Titulos', ago(1), { Tema: `${'a'.repeat(116)}😀😀x` }),
+  demand('Titulos', ago(1), { Tema: `${'b'.repeat(116)}😀${'c'.repeat(20)}` }),
+]);
+
 // --- requests the TypeScript engine cannot answer --------------------------------------------------
 
 for (const module of ['constructor', '__proto__', 'toString', 'hasOwnProperty'])
   addError(`prototype-module/${module}`, [rec(module, { Territorio: 'X', Fecha: ago(1) })], 'TypeError: spec.dates is not iterable');
-addError(
-  'lone-surrogate-title',
-  [demand('Titulos', ago(1), { Tema: `${'a'.repeat(116)}😀😀x` })],
-  'title.slice(0, 117) splits a surrogate pair; JSON.stringify writes a lone \\ud83d',
-);
 for (const e of errors) {
   let threw = false;
-  let lone = false;
   try {
-    lone = /\\ud[89ab][0-9a-f]{2}(?!\\ud[c-f])/.test(JSON.stringify(conflictRisk(JSON.parse(e.request) as RiskInput)));
+    conflictRisk(JSON.parse(e.request) as RiskInput);
   } catch {
     threw = true;
   }
-  if (!threw && !lone) throw new Error(`error case ${e.name} is answered by TypeScript`);
+  if (!threw) throw new Error(`error case ${e.name} is answered by TypeScript`);
 }
 
 // --- runtime pins: collation, math and \p{Mn} ------------------------------------------------------

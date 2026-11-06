@@ -16,8 +16,7 @@
 //!
 //! Every field is required; another shape is `invalid_input`. `unsupported_value` reports what
 //! TypeScript cannot answer: a record whose `module` names an `Object.prototype` property (it
-//! throws a `TypeError`), and a reported title whose 117-unit cut splits a surrogate pair
-//! (`JSON.stringify` would write a lone surrogate).
+//! throws a `TypeError`).
 //!
 //! JavaScript runtime pieces reproduced here: `Math.exp`/`log`/`log1p` as V8's fdlibm port
 //! (`jsmath`), `localeCompare(…, 'es')` for tied scores (`collation`, exact for the repertoire
@@ -368,26 +367,20 @@ fn horizon_prediction(calibration: &Calibration, score: f64) -> Value {
 
 // --- output ---------------------------------------------------------------------------------------
 
-fn factor_value(index: &SignalIndex, factor: &Factor) -> Result<Value, EngineError> {
+fn factor_value(index: &SignalIndex, factor: &Factor) -> Value {
     let records = factor
         .records
         .iter()
         .filter_map(|&i| index.signals.get(i))
         .map(|s| {
-            if s.title.split {
-                return Err(EngineError::UnsupportedValue(format!(
-                    "the title of {} {} is cut inside a surrogate pair; the TypeScript result holds a lone surrogate",
-                    s.module, s.id
-                )));
-            }
             let mut r = Map::new();
             r.insert("module".into(), Value::from(s.module.as_str()));
             r.insert("id".into(), Value::from(s.id.as_str()));
-            r.insert("title".into(), Value::from(s.title.text.as_str()));
+            r.insert("title".into(), Value::from(s.title.as_str()));
             r.insert("date".into(), Value::from(s.date.as_str()));
-            Ok(Value::Object(r))
+            Value::Object(r)
         })
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Vec<_>>();
     let mut f = Map::new();
     f.insert("id".into(), Value::from(factor.spec.id));
     f.insert("label".into(), Value::from(factor.spec.label));
@@ -395,7 +388,7 @@ fn factor_value(index: &SignalIndex, factor: &Factor) -> Result<Value, EngineErr
     f.insert("value".into(), js::number(factor.value));
     f.insert("contribution".into(), js::number(factor.contribution));
     f.insert("records".into(), Value::Array(records));
-    Ok(Value::Object(f))
+    Value::Object(f)
 }
 
 struct Prediction {
@@ -403,7 +396,7 @@ struct Prediction {
     name: String,
     score: f64,
     /// Built eagerly, failing only when the prediction is reported (within `MAX_UNITS`).
-    value: Result<Value, EngineError>,
+    value: Value,
 }
 
 /// Runs `conflictRisk` on a request (see the crate documentation for its shape).
@@ -448,20 +441,17 @@ pub fn run(request: &Map<String, Value>) -> Result<Value, EngineError> {
         p.insert("horizons".into(), Value::Object(horizons));
         p.insert("confidence".into(), Value::from(confidence));
         p.insert("confidenceReason".into(), Value::String(reason));
-        let value = factors
+        let factors = factors
             .iter()
             .take(4)
             .map(|f| factor_value(&index, f))
-            .collect::<Result<_, _>>()
-            .map(|factors| {
-                p.insert("factors".into(), Value::Array(factors));
-                Value::Object(p)
-            });
+            .collect();
+        p.insert("factors".into(), Value::Array(factors));
         predictions.push(Prediction {
             locality,
             name,
             score,
-            value,
+            value: Value::Object(p),
         });
     }
     // `b.score − a.score || a.name.localeCompare(b.name, 'es')`, stable.
@@ -475,14 +465,8 @@ pub fn run(request: &Map<String, Value>) -> Result<Value, EngineError> {
     };
     let (localities, actors): (Vec<Prediction>, Vec<Prediction>) =
         predictions.into_iter().partition(|p| p.locality);
-    let list = |items: Vec<Prediction>| -> Result<Value, EngineError> {
-        Ok(Value::Array(
-            items
-                .into_iter()
-                .take(MAX_UNITS)
-                .map(|p| p.value)
-                .collect::<Result<_, _>>()?,
-        ))
+    let list = |items: Vec<Prediction>| {
+        Value::Array(items.into_iter().take(MAX_UNITS).map(|p| p.value).collect())
     };
 
     let mut backtest = Map::new();
@@ -493,8 +477,8 @@ pub fn run(request: &Map<String, Value>) -> Result<Value, EngineError> {
     out.insert("status".into(), Value::from(status));
     out.insert("method".into(), Value::from(METHOD));
     out.insert("backtest".into(), Value::Object(backtest));
-    out.insert("localities".into(), list(localities)?);
-    out.insert("actors".into(), list(actors)?);
+    out.insert("localities".into(), list(localities));
+    out.insert("actors".into(), list(actors));
     out.insert(
         "limitations".into(),
         Value::Array(LIMITATIONS.iter().map(|&l| Value::from(l)).collect()),

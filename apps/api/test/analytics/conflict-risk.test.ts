@@ -43,6 +43,17 @@ const input = (records: RiskRecord[], extra: Partial<RiskInput> = {}): RiskInput
 });
 
 describe('conflict-risk prediction', () => {
+  it('drops the broken half of an emoji the title cut splits', () => {
+    const report = conflictRisk(
+      input([
+        demand('Pampa Alta', addDays(TODAY, -5), { Tema: `${'a'.repeat(116)}😀${'b'.repeat(20)}` }),
+      ]),
+    );
+    const factor = report.localities[0]?.factors.find((f) => f.records.length > 0);
+    expect(factor?.records[0]?.title).toBe(`${'a'.repeat(116)}…`);
+    expect(JSON.stringify(report)).not.toMatch(/\\ud83d/);
+  });
+
   it('answers «sin datos suficientes» and lists nothing when the project has no dated signals', () => {
     const report = conflictRisk(input([rec('Demandas', { Territorio: 'Pampa Alta' })]));
     expect(report.status).toBe('sin datos suficientes');

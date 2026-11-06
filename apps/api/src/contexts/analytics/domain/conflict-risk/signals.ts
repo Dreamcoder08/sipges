@@ -166,7 +166,9 @@ export class Names {
 
 const shortTitle = (value: string, fallback: string) => {
   const title = value || fallback;
-  return title.length > 120 ? `${title.slice(0, 117)}…` : title;
+  if (title.length <= 120) return title;
+  // A cut inside an emoji would leave half of it, which is not valid text.
+  return `${title.slice(0, 117).replace(/[\uD800-\uDBFF]$/, '')}…`;
 };
 
 /** Every record of the tenant counts: the tenant is the project (S13), whatever `Proyecto_ID` says. */
