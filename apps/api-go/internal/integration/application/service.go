@@ -1,6 +1,6 @@
 // Package application holds the integration read use cases: the project's API key metadata,
-// media feeds and authorized-source catalog. Fetching feeds, previews and every write stay in
-// the TypeScript API.
+// media feeds and authorized-source catalog. Fetching feeds, previews and every write are in
+// runtime.go.
 package application
 
 import (

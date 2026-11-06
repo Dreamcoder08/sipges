@@ -1,6 +1,6 @@
 // Package domain holds the read rules of the territorial alert inbox,
 // apps/api/src/contexts/intelligence/domain/alerts.ts: the alert, the list limit and the summary.
-// The classifier and the text analysis stay in TypeScript (see the package README entry).
+// The classifier and the text analysis run in the Rust analytics module (application.Writes).
 package domain
 
 import (

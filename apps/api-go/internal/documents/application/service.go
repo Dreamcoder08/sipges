@@ -2,7 +2,7 @@
 // apps/api/src/contexts/documents/application/document-lab-service.ts: one page of the
 // verification inbox, each item with the records module its approval writes to and, once that
 // record exists, a link to it. Reading, comparing and reporting on uploaded documents, importing
-// excerpts and deciding items stay in TypeScript for now.
+// excerpts and deciding items are alongside; PDF text alone stays in TypeScript.
 package application
 
 import (
