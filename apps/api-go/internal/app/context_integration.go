@@ -34,7 +34,7 @@ func integrationRuntime(d Deps, feeds integration.FeedGateway, official integrat
 	store := recordssql.Records{DB: d.Pool}
 	media, sources := integrationPolling(d, feeds, official)
 	return integrationhttp.Runtime{
-		Keys: integration.Keys{Store: integrationsql.Keys{DB: d.Pool}, Clock: clock, Crypto: integrationsql.KeyCrypto{}},
+		Keys: apiKeys(d),
 		Ingest: integration.Ingest{
 			Records:  records.Writes{Store: store, Now: now, RandomHex: randomHexUpper},
 			Receipts: integrationsql.Receipts{DB: d.Pool},
@@ -44,6 +44,15 @@ func integrationRuntime(d Deps, feeds integration.FeedGateway, official integrat
 		Sources: sources,
 		Log:     d.Logger,
 	}
+}
+
+// apiKeys is the API key service: the webhooks and the MCP server authenticate with it.
+func apiKeys(d Deps) integration.Keys {
+	now := d.Now
+	if now == nil {
+		now = time.Now
+	}
+	return integration.Keys{Store: integrationsql.Keys{DB: d.Pool}, Clock: integration.Clock(now), Crypto: integrationsql.KeyCrypto{}}
 }
 
 // integrationPolling composes the media monitor and the Defensoría connector: the routes use

@@ -81,7 +81,12 @@ func DecodeUTF8(data []byte) string {
 	return b.String()
 }
 
-// ParseBody is JSON.parse(DecodeUTF8(data)).
+// MaxBodyDepth is how deep a body may nest, encoding/json's limit. JSON.parse has no such limit,
+// but the parser here recurses, and a stack overflow ends the process for every tenant; past this
+// depth JSON.stringify overflows in TypeScript anyway.
+const MaxBodyDepth = 10000
+
+// ParseBody is JSON.parse(DecodeUTF8(data)), refusing nesting past MaxBodyDepth.
 func ParseBody(data []byte) (any, error) {
 	p := parser{s: DecodeUTF8(data)}
 	p.space()
@@ -97,8 +102,9 @@ func ParseBody(data []byte) (any, error) {
 }
 
 type parser struct {
-	s string
-	i int
+	s     string
+	i     int
+	depth int
 }
 
 // space skips JSON whitespace (only these four, as JSON.parse).
@@ -126,9 +132,15 @@ func (p *parser) value() (any, error) {
 		return nil, ErrJSONSyntax
 	}
 	switch c := p.s[p.i]; {
-	case c == '{':
-		return p.object()
-	case c == '[':
+	case c == '{', c == '[':
+		if p.depth == MaxBodyDepth {
+			return nil, ErrJSONSyntax
+		}
+		p.depth++
+		defer func() { p.depth-- }()
+		if c == '{' {
+			return p.object()
+		}
 		return p.array()
 	case c == '"':
 		return p.string()
