@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
@@ -54,10 +55,10 @@ func openOf(found bool, proposals ...domain.Proposal) application.OpenProposals 
 
 func decide(t *testing.T, open application.OpenProposals, actions *fakeActions, store *fakeStore, fingerprint string, approve bool) (*string, string) {
 	t.Helper()
-	d := application.Deciding{Actions: actions, Store: store}
+	d := application.Deciding{Actions: actions, Store: store, Now: func() time.Time { return at }}
 	result, kind, err := d.Decide(t.Context(), tenant, open, application.DecisionInput{
 		Slug: "alertas", ID: "AL-1", Fingerprint: fingerprint, Approve: approve,
-	}, "analista", at)
+	}, "analista")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,16 +153,73 @@ func TestAnotherPersonDecidedFirst(t *testing.T) {
 	}
 }
 
+// awareStore and awareActions see the request ending between the two steps, as a client that
+// goes away does: the action has committed by then, so the decision must still be saved.
+type awareStore struct {
+	fakeStore
+	sawErr error
+}
+
+func (a *awareStore) Save(ctx context.Context, tenantID string, d application.ProposalDecision) (bool, error) {
+	a.sawErr = ctx.Err()
+	return a.fakeStore.Save(ctx, tenantID, d)
+}
+
+type awareActions struct {
+	fakeActions
+	cancel context.CancelFunc
+	sawErr error
+}
+
+func (a *awareActions) Create(ctx context.Context, tenantID string, record domain.ProposedRecord) (string, error) {
+	a.cancel()
+	a.sawErr = ctx.Err()
+	return a.fakeActions.Create(ctx, tenantID, record)
+}
+
+func TestALeavingClientDoesNotLoseACommittedDecision(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+	actions := &awareActions{fakeActions: fakeActions{created: "ACC-9"}, cancel: cancel}
+	store := &awareStore{}
+	d := application.Deciding{Actions: actions, Store: store, Now: func() time.Time { return at }}
+	input := application.DecisionInput{Slug: "alertas", ID: "AL-1", Fingerprint: "record:1", Approve: true}
+	if _, kind, err := d.Decide(ctx, tenant, openOf(true, recordProposal), input, "a"); err != nil || kind != "" {
+		t.Fatalf("%q %v", kind, err)
+	}
+	if actions.sawErr != nil || store.sawErr != nil || len(store.saved) != 1 {
+		t.Fatalf("action saw %v, save saw %v, saved %d", actions.sawErr, store.sawErr, len(store.saved))
+	}
+}
+
+func TestTheDecisionIsStampedAfterTheAction(t *testing.T) {
+	t.Parallel()
+	actions, store := &fakeActions{created: "ACC-9"}, &fakeStore{}
+	stampedAfter := -1
+	d := application.Deciding{Actions: actions, Store: store, Now: func() time.Time {
+		stampedAfter = len(actions.calls)
+		return at
+	}}
+	input := application.DecisionInput{Slug: "alertas", ID: "AL-1", Fingerprint: "record:1", Approve: true}
+	if _, _, err := d.Decide(t.Context(), tenant, openOf(true, recordProposal), input, "a"); err != nil {
+		t.Fatal(err)
+	}
+	if stampedAfter != 1 {
+		t.Fatalf("the clock was read after %d actions", stampedAfter)
+	}
+}
+
 func TestErrorsFailTheRequest(t *testing.T) {
 	t.Parallel()
 	boom := errors.New("db")
-	d := application.Deciding{Actions: &fakeActions{err: boom}, Store: &fakeStore{}}
+	d := application.Deciding{Actions: &fakeActions{err: boom}, Store: &fakeStore{}, Now: func() time.Time { return at }}
 	input := application.DecisionInput{Fingerprint: "link:1", Approve: true}
-	if _, _, err := d.Decide(t.Context(), tenant, openOf(true, linkProposal), input, "a", at); !errors.Is(err, boom) {
+	if _, _, err := d.Decide(t.Context(), tenant, openOf(true, linkProposal), input, "a"); !errors.Is(err, boom) {
 		t.Fatalf("error = %v", err)
 	}
 	failing := func(context.Context) ([]domain.Proposal, bool, error) { return nil, false, boom }
-	if _, _, err := d.Decide(t.Context(), tenant, failing, input, "a", at); !errors.Is(err, boom) {
+	if _, _, err := d.Decide(t.Context(), tenant, failing, input, "a"); !errors.Is(err, boom) {
 		t.Fatalf("error = %v", err)
 	}
 }

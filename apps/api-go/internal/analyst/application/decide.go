@@ -21,7 +21,11 @@ const (
 	LinkFailed    = "failed"
 )
 
-const approvedNote = "Propuesta del analista aprobada"
+const (
+	approvedNote = "Propuesta del analista aprobada"
+	// decisionTimeout bounds the writes once they outlive the request.
+	decisionTimeout = 30 * time.Second
+)
 
 // ProposalActions writes an approved proposal through the owning contexts, which audit it.
 type ProposalActions interface {
@@ -57,12 +61,14 @@ type DecisionInput struct {
 type Deciding struct {
 	Actions ProposalActions
 	Store   DecisionStore
+	// Now stamps the decision; nil is time.Now.
+	Now func() time.Time
 }
 
 // Decide applies or discards one proposal. The proposal is recomputed from current data, so only
 // an action the analyst would offer right now can be approved. kind is "" on success; result is
 // the record an approval created. Each step has its own tenant transaction, as in TypeScript.
-func (d Deciding) Decide(ctx context.Context, tenantID string, open OpenProposals, in DecisionInput, actor string, at time.Time) (result *string, kind string, err error) {
+func (d Deciding) Decide(ctx context.Context, tenantID string, open OpenProposals, in DecisionInput, actor string) (result *string, kind string, err error) {
 	proposals, found, err := open(ctx)
 	if err != nil {
 		return nil, "", err
@@ -71,6 +77,10 @@ func (d Deciding) Decide(ctx context.Context, tenantID string, open OpenProposal
 	if !found || !ok {
 		return nil, DecideMissing, nil
 	}
+	// From here the request's end does not count: an action commits on its own, so a client going
+	// away must not leave it without its decision and audit row. Node finishes them the same way.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), decisionTimeout)
+	defer cancel()
 	decision := "rejected"
 	if in.Approve {
 		decision = "approved"
@@ -94,9 +104,15 @@ func (d Deciding) Decide(ctx context.Context, tenantID string, open OpenProposal
 			result = &created
 		}
 	}
+	now := time.Now
+	if d.Now != nil {
+		now = d.Now
+	}
 	saved, err := d.Store.Save(ctx, tenantID, ProposalDecision{
 		Fingerprint: proposal.Fingerprint, SubjectSlug: in.Slug, SubjectID: in.ID, Kind: proposal.Kind,
-		Decision: decision, Result: result, Title: proposal.Title, Actor: actor, At: at,
+		Decision: decision, Result: result, Title: proposal.Title, Actor: actor,
+		// JavaScript dates hold milliseconds, and the audit trail reads action first, decision after.
+		At: now().Truncate(time.Millisecond),
 	})
 	if err != nil {
 		return nil, "", err

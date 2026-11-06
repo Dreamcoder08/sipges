@@ -59,7 +59,7 @@ func decide(w http.ResponseWriter, r *http.Request, opts Options, now func() tim
 	}
 	created, kind, err := opts.Deciding.Decide(r.Context(), scope.TenantID(), open, application.DecisionInput{
 		Slug: in.Module, ID: in.ID, Fingerprint: in.Fingerprint, Approve: in.Decision == "approve",
-	}, principal.Username, at)
+	}, principal.Username)
 	if err != nil {
 		fail(w, r)
 		return

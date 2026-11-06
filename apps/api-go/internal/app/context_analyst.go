@@ -29,7 +29,7 @@ func init() {
 		}
 		options := analysthttp.Options{
 			DB: d.Pool, Now: d.Now, Logger: d.Logger, Assisted: assisted,
-			Deciding: analyst.Deciding{Actions: proposalActions{d}, Store: analystsql.Decisions{DB: d.Pool}},
+			Deciding: analyst.Deciding{Actions: proposalActions{d}, Store: analystsql.Decisions{DB: d.Pool}, Now: d.Now},
 		}
 		return func(mux *http.ServeMux) { analysthttp.Routes(mux, options) }, nil
 	})
