@@ -322,6 +322,8 @@ const cases = [
     post(`catalogue, arguments ${JSON.stringify(args)}`, call('list_object_types', args)),
   ),
   post('a read tool without arguments', call('get_record')),
+  post('a read tool with the switch off', call('get_record', { module: 'actores', id: 'A-1' })),
+  post('a search with the switch off', call('search_records', { query: 'agua' })),
   post(
     'several issues',
     call('link_records', { link_type: 1, source: 1, target: { module: 1 } }),
