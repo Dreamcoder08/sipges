@@ -411,6 +411,12 @@ const buildDefaultTenant = (data: string) => {
     alert('AL-24', { at: '2026-01-24', reviewed: blob('2026-10-01T09:00:00') }),
     alert('AL-25', { at: '2026-01-25', reviewed: blob('  ') }),
     alert('AL-26', { at: '2026-01-26', reviewed: '01-02-2026' }),
+    // The edges of what PostgreSQL stores from an ISO text, years 1 to 9999.
+    alert('AL-27', { at: '2026-01-27', reviewed: 253_402_300_799 }),
+    alert('AL-28', { at: '2026-01-28', reviewed: 253_402_300_800 }),
+    alert('AL-29', { at: '2026-01-29', reviewed: -62_135_596_800 }),
+    alert('AL-30', { at: '2026-01-30', reviewed: -62_135_596_801 }),
+    alert('AL-31', { at: '2026-01-31', reviewed: 1_000_000_000_000 }),
   ]);
 
   const action = (id: Cell, alertId: Cell, due: Cell, status: Cell, progress: Cell, at: string): Cell[] => [
