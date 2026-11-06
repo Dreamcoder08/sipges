@@ -127,3 +127,17 @@ func FollowUpProposals(subject Summary, connections []Connection, today string) 
 	}
 	return []Proposal{}
 }
+
+const maxDecisionDetail = 500
+
+// DecisionDetail is the audit text of a decided proposal, cut as slice(0, 500) cuts it.
+func DecisionDetail(approved bool, title string, result *string) string {
+	detail := "Descartada: " + title
+	if approved {
+		detail = "Aprobada: " + title
+	}
+	if result != nil {
+		detail += " → " + *result
+	}
+	return slice16(detail, 0, maxDecisionDetail)
+}

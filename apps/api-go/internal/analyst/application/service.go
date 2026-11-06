@@ -2,8 +2,7 @@
 // apps/api/src/contexts/analyst/application/analyst-service.ts: the extractive briefing of one
 // record and its open proposals. The record's neighbourhood and text mentions are read as
 // apps/api/src/contexts/ontology/application/ontology-service.ts (neighbours, mentions) reads
-// them. The narrator behind the egress guard is in assisted.go; proposal decisions stay in
-// TypeScript.
+// them. The narrator behind the egress guard is in assisted.go and proposal decisions in decide.go.
 //
 //nolint:misspell // Spanish record fields, modules and messages, verbatim from the TypeScript API.
 package application
