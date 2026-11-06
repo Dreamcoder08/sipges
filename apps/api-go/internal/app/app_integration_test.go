@@ -300,8 +300,8 @@ func TestPublicAndMachinePathsNeedNoSession(t *testing.T) {
 	// Public writes still need the Origin check.
 	expect(t, s.do(t, req{method: "POST", path: "/logout"}), http.StatusForbidden, badOrigin)
 	expect(t, s.do(t, req{method: "POST", path: "/logout", sameOrigin: true}), http.StatusOK, `{"ok":true}`)
-	// Machine paths authenticate with their own credential in their route (none served yet).
-	expect(t, s.do(t, req{method: "POST", path: "/mcp"}), http.StatusNotFound, notFound)
+	// Machine paths authenticate with their own credential in their route.
+	expect(t, s.do(t, req{method: "POST", path: "/mcp"}), http.StatusUnauthorized, `{"detail":"Clave de API no válida o revocada"}`)
 	expect(t, s.do(t, req{method: "POST", path: "/hooks/feed"}), http.StatusNotFound, notFound)
 }
 

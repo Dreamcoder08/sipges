@@ -20,7 +20,8 @@ type URL struct {
 	Username string
 	Password string
 	// Hostname is url.hostname: a lower-case domain, a dotted IPv4 address or a bracketed IPv6
-	// address. Empty for a non-special URL without a host.
+	// address; for a non-special URL its percent-encoded host, in its own case. Empty without a
+	// host, and for file URLs, which only parse.
 	Hostname string
 	// Port is url.port: empty when absent or the scheme's default.
 	Port string
@@ -29,6 +30,18 @@ type URL struct {
 }
 
 var defaultPorts = map[string]string{"http": "80", "https": "443", "ws": "80", "wss": "443", "ftp": "21"}
+
+// URLHost is `new URL(input).host` in lower case, or "" where it throws.
+func URLHost(input string) string {
+	u, ok := ParseURL(input)
+	if !ok {
+		return ""
+	}
+	if u.Port != "" {
+		return strings.ToLower(u.Hostname + ":" + u.Port)
+	}
+	return strings.ToLower(u.Hostname)
+}
 
 // ParseURL is `new URL(input)`; ok is false where it throws.
 func ParseURL(input string) (URL, bool) {
@@ -145,14 +158,18 @@ func parseOpaque(scheme, rest string) (URL, bool) {
 		return URL{}, false
 	}
 	if port != "" {
-		if n, err := strconv.Atoi(port); err != nil || n > 65535 {
+		n, err := strconv.Atoi(port)
+		if err != nil || n > 65535 {
 			return URL{}, false
 		}
+		u.Port = strconv.Itoa(n)
 	}
 	if strings.HasPrefix(host, "[") {
-		if _, ok := parseIPv6(host); !ok {
+		ip, ok := parseIPv6(host)
+		if !ok {
 			return URL{}, false
 		}
+		u.Hostname = ip
 		return u, true
 	}
 	for _, r := range host {
@@ -160,6 +177,7 @@ func parseOpaque(scheme, rest string) (URL, bool) {
 			return URL{}, false
 		}
 	}
+	u.Hostname = percentEncode(host, "")
 	return u, true
 }
 

@@ -128,7 +128,7 @@ func (rt Runtime) fail(w http.ResponseWriter, r *http.Request, _ error) {
 func writeRaw(w http.ResponseWriter, status int, body []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	_, _ = w.Write(body)
+	_, _ = w.Write(body) //nolint:gosec // G705: always application/json, a browser never renders it
 }
 
 func detail(w http.ResponseWriter, status int, text string) {
@@ -154,9 +154,14 @@ func invalid(w http.ResponseWriter, issues []domain.Issue) {
 
 // ---- Webhooks ----
 
-// authenticate is authenticateKey: the key, made the request's actor (`api:<name>`, with its
-// clearance), or the 401/403 already written.
+// authenticate is authenticateKey for a webhook, which needs a write key.
 func (rt Runtime) authenticate(w http.ResponseWriter, r *http.Request) (*domain.Principal, *http.Request, bool) {
+	return rt.authenticateKey(w, r, true)
+}
+
+// authenticateKey is authenticateKey: the key, made the request's actor (`api:<name>`, with its
+// clearance), or the 401/403 already written. write refuses a read key.
+func (rt Runtime) authenticateKey(w http.ResponseWriter, r *http.Request, write bool) (*domain.Principal, *http.Request, bool) {
 	header, present := httpx.Header(r, "Authorization")
 	principal, err := rt.Keys.Authenticate(r.Context(), header, present)
 	if err != nil {
@@ -168,7 +173,7 @@ func (rt Runtime) authenticate(w http.ResponseWriter, r *http.Request) (*domain.
 		detail(w, http.StatusUnauthorized, "Clave de API no válida o revocada")
 		return nil, nil, false
 	}
-	if principal.Access != "write" {
+	if write && principal.Access != "write" {
 		detail(w, http.StatusForbidden, "La clave es de solo lectura")
 		return nil, nil, false
 	}
