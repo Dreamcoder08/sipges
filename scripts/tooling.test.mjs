@@ -222,6 +222,9 @@ esac
 
     assert.equal(land([]).status, 2);
     assert.equal(land(['12;x']).status, 2);
+    const twoNumbers = land(['12', '34', '--merge']);
+    assert.equal(twoNumbers.status, 2);
+    assert.equal(twoNumbers.calls, '');
   }));
 test('ODD rejects blank evidence and multiline labels without changing the task', () =>
   fixture((dir) => {

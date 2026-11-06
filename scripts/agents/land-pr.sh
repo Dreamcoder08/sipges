@@ -33,7 +33,13 @@ while [ $# -gt 0 ]; do
       usage >&2
       exit 2
       ;;
-    *) pr="$1" ;;
+    *)
+      [ -z "$pr" ] || {
+        usage >&2
+        exit 2
+      }
+      pr="$1"
+      ;;
   esac
   shift
 done
