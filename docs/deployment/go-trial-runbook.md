@@ -21,7 +21,7 @@ Measuring on synthetic data needs enough rows first: the [memory table](go-conta
 
 ## 1. Neon branch
 
-Never the production branch: every URL below names `go-trial`.
+Never the production branch: every database URL below is on `go-trial`.
 
 ```bash
 neon branches create --project-id "$NEON_PROJECT_ID" --name go-trial --parent <production branch> --schema-only
@@ -56,7 +56,7 @@ GRANT sipges_app TO neondb_owner WITH SET TRUE;
 
 ### 2A. Synthetic: an empty database
 
-`sipges_app` has no `CREATEROLE`, and migration `0003` still names `mascli_tenant`, so the role must exist first.
+`sipges_app` has no `CREATEROLE`, and migration `0003` still names `mascli_tenant`, so the role must exist first. If `CREATE ROLE` says it already exists, go on.
 
 ```sql
 CREATE ROLE mascli_tenant NOLOGIN NOINHERIT;
@@ -98,12 +98,14 @@ TRIAL_URL=postgresql://sipges_app:<password>@<direct host>/<database>?sslmode=re
 Run from `apps/hosting-cloudflare`, with `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` set.
 
 ```bash
-pnpm exec wrangler hyperdrive create sipges-go-trial --connection-string="$TRIAL_URL"
+pnpm exec wrangler hyperdrive create sipges-go-trial --connection-string="$TRIAL_URL" --update-config=false
 pnpm exec wrangler hyperdrive update <id> --caching-disabled true
-pnpm exec wrangler r2 bucket create sipges-evidence-go
+pnpm exec wrangler r2 bucket create sipges-evidence-go --update-config=false
 ```
 
-Query caching stays off for the reason in `deploy-config.test.ts`: a cached read could keep a revoked session alive.
+**Keep `--update-config=false`.** These commands read `wrangler.jsonc`, the production config, and otherwise offer to write the new resource into it, with yes as the default. Confirm `git status` is clean afterwards.
+
+Query caching stays off for the reason in `deploy-config.test.ts`: a cached read could keep a revoked session alive. `pnpm config:go` only compares ids, so it cannot see where a new Hyperdrive points: check that `TRIAL_URL` names the `go-trial` host before running this step.
 
 ## 4. Build and migrate
 
@@ -122,7 +124,7 @@ Nothing starts the container while `GO_ROUTES` is empty, and `main` keeps it emp
 SIPGES_GO_HYPERDRIVE_ID=<id> pnpm config:go
 ```
 
-Already set in the config and in code: `instance_type: "basic"`, `regions: ["ENAM"]`, `sleepAfter: 10m`. The image embeds `pdf-text.wasm` and `pdfjs.qbc`; CI's `Go image` job builds it on every pull request.
+Already set in the config and in code: `instance_type: "basic"`, `regions: ["ENAM"]`, `sleepAfter: 10m`. The image embeds `pdf-text.wasm` and `pdfjs.qbc`; CI's `Go image` job builds it whenever Go changes.
 
 ## 6. Secrets
 
@@ -134,7 +136,7 @@ for name in SIPGES_GO_DATABASE_URL SIPGES_DATA_KEY SIPGES_ADMIN_USERNAME SIPGES_
 done
 ```
 
-`SIPGES_GO_DATABASE_URL` is the `sipges_app` URL with `sslmode=verify-full&pool_max_conns=10`, on the direct host. Ten matches the TypeScript pool; it was not measured. Hyperdrive and this URL must use the same role. For synthetic data, `SIPGES_DATA_KEY` is a new `openssl rand -base64 32`, never production's. To exercise `/system/automations/runtime`, also set `SIPGES_CRON_SECRET` (24 characters or more; a shorter one stops the container) and add `SIPGES_CRON_SCHEDULE` as a var: unset, Go reports `null` where TypeScript reports `*/15 * * * *`.
+`SIPGES_GO_DATABASE_URL` is the `sipges_app` URL with `sslmode=verify-full&pool_max_conns=10`, on the direct host. Ten matches the TypeScript pool; it was not measured. Hyperdrive and this URL must use the same role. For synthetic data, `SIPGES_DATA_KEY` is a new `openssl rand -base64 32`, never production's. `SIPGES_ADMIN_PASSWORD` needs at least 12 characters. To exercise `/system/automations/runtime`, also set `SIPGES_CRON_SECRET` (24 characters or more; a shorter one stops the container) and add `SIPGES_CRON_SCHEDULE` as a var: unset, Go reports `null` where TypeScript reports `*/15 * * * *`.
 
 ## 7. Deploy
 
@@ -144,6 +146,8 @@ pnpm exec wrangler deploy -c wrangler.go.deploy.jsonc
 
 Wrangler builds and pushes the image. The first rollout can take minutes: until then the proxy answers its JSON 503.
 
+Deploy from a clean clone of the `trial/go-routes` branch. Wrangler feeds Docker the Dockerfile on standard input, so `Dockerfile.dockerignore` does not apply and the whole directory goes to the local build context. The image still takes only what the Dockerfile copies, but a checkout with `data/` or `node_modules` would send them to the Docker daemon.
+
 ## 8. Check it
 
 Run these against `https://sipges-go.dreamcoder-dev08.workers.dev`, then work through the trial checklist in the [go/no-go](go-activation-reads.md#what-must-be-true-first).
@@ -151,9 +155,9 @@ Run these against `https://sipges-go.dreamcoder-dev08.workers.dev`, then work th
 | Check | Expected |
 | --- | --- |
 | `GET /health/ready` | `200`, from TypeScript through Hyperdrive |
-| `GET /api/dashboard`, no session | `401 {"detail": "Inicie sesión para acceder a SIPGES"}`, from Go: the first call starts the container |
+| `GET /api/dashboard`, no session | `401 {"detail": "Inicie sesión para acceder a SIPGES"}`, the first call starts the container. TypeScript's body is the same: confirm in the container's log that Go answered |
 | `SIPGES_SMOKE_URL=<origin> node smoke-go.mjs` | `Listed route answered the sign-in 401` |
-| Same route after setting `SIPGES_GO_DATABASE_URL` to the owner's URL, which Go refuses at start | `503 {"detail": "SIPGES no está disponible temporalmente"}`, never text. Restore the secret afterwards |
+| Same route after setting `SIPGES_GO_DATABASE_URL` to the owner's URL, which Go refuses at start. The container reads its environment when it starts, so wait for `sleepAfter` or redeploy | `503 {"detail": "SIPGES no está disponible temporalmente"}`, never text. Restore the secret the same way |
 | Container logs at start | No `must not be a superuser or have BYPASSRLS` |
 
 Then [measure](go-activation-reads.md#measurement-with-the-owner).
@@ -169,7 +173,9 @@ pnpm exec wrangler r2 bucket delete sipges-evidence-go
 neon branches delete go-trial --project-id "$NEON_PROJECT_ID"
 ```
 
-Deleting the branch deletes the copy, its `sipges_app` and its password; production never had them.
+Then confirm `wrangler containers list` no longer shows `sipges-go-gobackend`, and delete it with `wrangler containers delete <id>` if it does.
+
+Deleting the branch deletes the copy, its `sipges_app` and its password. They were created on `go-trial`, so production never had them.
 
 ## Not enabled: OCR
 
@@ -203,6 +209,8 @@ For step 6 of the order of work. "Passed" means `goContainerEnv` forwards it tod
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` | secret | no | Analyst prose |
 | `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | var | no, not enabled | OCR, see above |
 | `SIPGES_ACCESS_LOG` | var | no | Go's request log |
+| `SIPGES_TRUST_PROXY`, `SIPGES_UPLOAD_DIR` | var | no, not for Cloudflare | Other hosting: the Worker sets `SIPGES_TRUST_CF_CONNECTING_IP`, and uploads go to S3 |
+| `SIPGES_ALLOW_PRIVILEGED_DB_ROLE` | var | no, never set | Synthetic test servers on loopback only |
 
 Outside the Worker:
 
