@@ -43,6 +43,12 @@ func (d Deps) activityOptions() activityOptions {
 	}
 }
 
+// streamAccess reports whether the request's session token still opens its project: the session
+// and the grant, read fresh, never from the request's grant cache.
+type streamAccess interface {
+	StillAllowed(r *http.Request) (bool, error)
+}
+
 // activityBatch is BATCH: a full batch is followed by another poll without waiting.
 const activityBatch = 100
 
@@ -53,9 +59,12 @@ type activityData struct {
 
 // activityHandler is activityRoutes (docs/adr/0014 §10): server-sent events with the project's
 // activity so open screens refresh themselves. Each event names only the module and action,
-// never a record id or detail, so every role may listen. A failed read ends the stream, as
-// Hono's streamSSE does without an onError handler; the browser then reconnects.
-func activityHandler(t trail, opts activityOptions, log *slog.Logger) http.HandlerFunc {
+// never a record id or detail, so every role may listen. Those names still belong to the
+// project, so the session and the grant are read again before every poll: a logout, an expired
+// session, a deactivated account or a revoked grant ends the stream within one poll, and the
+// browser's reconnection then meets the gates. A failed read ends the stream, as Hono's streamSSE
+// does without an onError handler; the browser then reconnects.
+func activityHandler(t trail, access streamAccess, opts activityOptions, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rc := http.NewResponseController(w)
 		// The stream outlives the server's read and write timeouts by design.
@@ -93,6 +102,14 @@ func activityHandler(t trail, opts activityOptions, log *slog.Logger) http.Handl
 		deadline := time.Now().Add(opts.max)
 		var quiet time.Duration
 		for r.Context().Err() == nil && time.Now().Before(deadline) {
+			allowed, err := access.StillAllowed(r)
+			if err != nil {
+				logReadFailure(r, log, err)
+				return
+			}
+			if !allowed {
+				return
+			}
 			entries, err := t.After(r, cursor, application.AfterLimit(activityBatch))
 			if err != nil {
 				logReadFailure(r, log, err)
