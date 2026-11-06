@@ -16,9 +16,9 @@ const BASE = `INSERT INTO tenants (company_id, project_id, label)
   VALUES ('PARITY', 'OTRO', 'Proyecto sintético ajeno');`;
 
 /**
- * Loads the fixtures into the database at `databaseUrl` as its owner (a superuser on the
- * synthetic server, so row-level security does not apply), after the TypeScript API applied
- * the migrations and created the default project.
+ * Loads the fixtures into the database at `databaseUrl` as the synthetic server's superuser, so
+ * row-level security does not apply, after the TypeScript API applied the migrations and created
+ * the default project.
  */
 export const seedDatabase = async (databaseUrl: string) => {
   const sql = postgres(databaseUrl, { max: 1, onnotice: () => undefined });

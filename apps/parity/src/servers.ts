@@ -47,23 +47,51 @@ const baseEnv = () =>
     ].flatMap((key) => (process.env[key] ? [[key, process.env[key] ?? '']] : [])),
   );
 
-/** A throwaway database on the server named by `serverUrl`; `drop` removes it with its sessions. */
+/**
+ * A throwaway database on the server named by `serverUrl`, owned by a login of its own with no
+ * attribute that bypasses row-level security, the production role of docs/deployment/readiness.md,
+ * so both APIs run under forced RLS. `url` is that login, which migrates the database; `adminUrl`
+ * is the server's own, for what must see every project (the fixtures); `drop` removes it all.
+ */
 export const scratchDatabase = async (serverUrl: string) => {
   const name = `sipges_parity_${randomBytes(6).toString('hex')}`;
+  const owner = `${name}_owner`;
+  const password = randomBytes(24).toString('hex');
   const admin = postgres(serverUrl, { max: 1, onnotice: () => undefined });
+  const dropAll = async () => {
+    await admin.unsafe(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    await admin.unsafe(`DROP ROLE IF EXISTS ${owner}`);
+  };
   try {
-    await admin.unsafe(`CREATE DATABASE ${name}`);
+    await admin.unsafe(
+      `CREATE ROLE ${owner} LOGIN PASSWORD '${password}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS`,
+    );
+    // Migration 0003 still names mascli_tenant, and an owner without CREATEROLE cannot create it.
+    await admin.unsafe(`DO $$ BEGIN
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'mascli_tenant') THEN
+        CREATE ROLE mascli_tenant NOLOGIN NOINHERIT;
+      END IF;
+      IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'sipges_tenant') THEN
+        CREATE ROLE sipges_tenant NOLOGIN NOINHERIT;
+      END IF;
+    END $$`);
+    await admin.unsafe(`GRANT mascli_tenant, sipges_tenant TO ${owner} WITH ADMIN OPTION`);
+    await admin.unsafe(`CREATE DATABASE ${name} OWNER ${owner}`);
   } catch (error) {
-    await admin.end();
+    await dropAll().finally(() => admin.end());
     throw error;
   }
-  const url = new URL(serverUrl);
-  url.pathname = `/${name}`;
+  const adminUrl = new URL(serverUrl);
+  adminUrl.pathname = `/${name}`;
+  const url = new URL(adminUrl);
+  url.username = owner;
+  url.password = password;
   return {
     url: url.toString(),
+    adminUrl: adminUrl.toString(),
     drop: async () => {
       try {
-        await admin.unsafe(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+        await dropAll();
       } finally {
         await admin.end();
       }
@@ -191,8 +219,6 @@ export const startGoApi = async (
     // Same switch as the TypeScript API above: the parity session has no second factor.
     {
       SIPGES_DATABASE_URL: databaseUrl,
-      // The synthetic server's login is a superuser; the override only works on loopback.
-      SIPGES_ALLOW_PRIVILEGED_DB_ROLE: '1',
       SIPGES_ACCESS_LOG: '0',
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_DATA_KEY: dataKey,
