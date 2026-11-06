@@ -120,7 +120,8 @@ jobs:
     name: End-to-end parity (Playwright, ${{ matrix.browser }} ${{ matrix.shard }})
     # Repository variable SIPGES_RUNS_ON (a JSON label list) moves CI to the self-hosted runner; unset uses GitHub-hosted.
     runs-on: ${{ fromJSON(vars.SIPGES_RUNS_ON || '"ubuntu-latest"') }}
-    timeout-minutes: 20
+    # Three bounded install attempts of 8 minutes must still leave time for the tests.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
