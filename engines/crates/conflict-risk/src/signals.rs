@@ -78,15 +78,6 @@ pub enum Kind {
     Event,
 }
 
-/// A record title as `shortTitle` leaves it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Title {
-    /// The text, without the lone surrogate when [`Title::split`].
-    pub text: String,
-    /// The 117-unit cut split a surrogate pair: TypeScript keeps a lone high surrogate there.
-    pub split: bool,
-}
-
 /// `Signal`: a dated source reference with its units and weight.
 #[derive(Debug, Clone)]
 pub struct Signal {
@@ -95,7 +86,7 @@ pub struct Signal {
     /// Source id.
     pub id: String,
     /// Short title.
-    pub title: Title,
+    pub title: String,
     /// `YYYY-MM-DD`.
     pub date: String,
     /// Kind.
@@ -253,25 +244,15 @@ fn units_of(payload: &Map<String, Value>, actors: &[&str], names: &mut Names) ->
     units
 }
 
-/// `shortTitle(value, fallback)`: at most 120 UTF-16 units, cut to 117 plus `…`.
-fn short_title(value: &str, fallback: &str) -> Title {
+/// `shortTitle(value, fallback)`: at most 120 UTF-16 units, cut to 117 plus `…`; a cut inside a
+/// surrogate pair drops the broken half.
+fn short_title(value: &str, fallback: &str) -> String {
     let title = if value.is_empty() { fallback } else { value };
     if utf16_len(title) <= 120 {
-        return Title {
-            text: title.to_owned(),
-            split: false,
-        };
+        return title.to_owned();
     }
-    match utf16_prefix(title, 117) {
-        Some(head) => Title {
-            text: format!("{head}…"),
-            split: false,
-        },
-        None => Title {
-            text: format!("{}…", utf16_prefix(title, 116).unwrap_or_default()),
-            split: true,
-        },
-    }
+    let head = utf16_prefix(title, 117).or_else(|| utf16_prefix(title, 116));
+    format!("{}…", head.unwrap_or_default())
 }
 
 fn record_signals(record: &RiskRecord<'_>, names: &mut Names) -> Result<Vec<Signal>, EngineError> {
@@ -389,10 +370,7 @@ fn alert_signals(alert: &RiskAlert<'_>, names: &mut Names) -> Vec<Signal> {
     let signal = Signal {
         module: TERRITORIAL_ALERT_MODULE.to_owned(),
         id: alert.id.to_owned(),
-        title: Title {
-            text: format!("Alerta territorial {}", alert.level),
-            split: false,
-        },
+        title: format!("Alerta territorial {}", alert.level),
         units: vec![names.add('L', territory)],
         kind: Kind::Alert,
         weight: alert_weight(&level),
@@ -496,4 +474,15 @@ pub fn index_signals(input: &RiskInput<'_>) -> Result<SignalIndex, EngineError> 
         names: names.by_key,
         first_day,
     })
+}
+
+#[cfg(test)]
+mod title_tests {
+    use super::short_title;
+
+    #[test]
+    fn a_cut_inside_an_emoji_drops_its_broken_half() {
+        let title = format!("{}😀{}", "a".repeat(116), "b".repeat(20));
+        assert_eq!(short_title(&title, "x"), format!("{}…", "a".repeat(116)));
+    }
 }

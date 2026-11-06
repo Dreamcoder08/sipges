@@ -122,8 +122,8 @@ pub fn utf16_len(s: &str) -> usize {
     s.chars().map(char::len_utf16).sum()
 }
 
-/// `s.slice(0, n)` in UTF-16 code units; `None` when the cut splits a surrogate pair (JavaScript
-/// would keep a lone high surrogate, which a Rust string cannot hold).
+/// `s.slice(0, n)` in UTF-16 code units; `None` when the cut splits a surrogate pair, which a Rust
+/// string cannot hold.
 #[must_use]
 pub fn utf16_prefix(s: &str, n: usize) -> Option<&str> {
     let mut units = 0;
