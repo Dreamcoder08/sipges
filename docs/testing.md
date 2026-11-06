@@ -9,6 +9,9 @@ Run `pnpm verify` from the repository root for the full local gate: lint, format
 | Full gate        | `pnpm verify`                                                                                                      |
 | One API area     | `timeout 60s pnpm --filter @sipges/api exec vitest run <files> --reporter=verbose`                                 |
 | One browser flow | `pnpm --filter @sipges/web build`, then `pnpm --filter @sipges/e2e exec playwright test <file> --project=chromium` |
+| Go               | `cd apps/api-go && go test ./...`                                                                                  |
+| Rust engines     | `cd engines && cargo test --locked`                                                                                |
+| Go/TS parity     | `pnpm parity` ([apps/parity](../apps/parity/README.md))                                                            |
 | Tooling tests    | `pnpm test:tooling`                                                                                                |
 
 Use explicit package `exec vitest` file filters; arguments forwarded through `pnpm test --` may not select the intended files. Always inspect the final file and test counts.

@@ -16,11 +16,11 @@ Qué tecnología usa SIPGES, qué módulos están implementados y cómo se arran
 | Semántica                | Embeddings de Ollama cuando se solicita el modo semántico                                                  |
 | Calidad                  | pnpm, TypeScript 7 por paquete, TS 6 para herramientas, ESLint, Prettier, dependency-cruiser, Vitest y MSW |
 
-Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron Turborepo/Biome. Go/Rust solo se incorporaría si un benchmark lo justifica; no forma parte del runtime actual.
+Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron Turborepo/Biome. El [ADR 0032](adr/0032-go-backend-rust-engines.md) adoptó un backend Go y motores Rust compilados a WebAssembly; la tabla describe el runtime TypeScript vigente hasta su retiro.
 
 ## Estado
 
-Versión publicada: **v1.0.0** (ver [CHANGELOG](../CHANGELOG.md) y las releases de GitHub). La aplicación se publica en Cloudflare Workers (Hyperdrive + Neon, R2), el único host de SIPGES: <https://sipges.dreamcoder-dev08.workers.dev>. La demo anterior en Vercel se retiró ([ADR 0029](adr/0029-retire-vercel-host.md)).
+Versión publicada: **v1.1.0** (ver [CHANGELOG](../CHANGELOG.md) y las releases de GitHub). La aplicación se publica en Cloudflare Workers (Hyperdrive + Neon, R2), el único host de SIPGES: <https://sipges.dreamcoder-dev08.workers.dev>. La demo anterior en Vercel se retiró ([ADR 0029](adr/0029-retire-vercel-host.md)).
 
 - 14 módulos de registros (eventos, actores, directorio, demandas y compromisos, narrativas, fuentes, alertas y acciones, intereses, diálogos, oportunidades, hechos y AARC) con alta, búsqueda, ficha, edición, eliminación, importación CSV, evidencias, vínculos e historial.
 - Dashboard y vista «Hoy», centro gerencial, inteligencia de redes, mapa territorial y ubicación geoespacial con mapa satelital, cronología, análisis situacional, inteligencia estratégica, IRSA, validación, automatizaciones e integración.
