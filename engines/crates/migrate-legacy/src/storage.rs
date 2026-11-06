@@ -4,6 +4,7 @@
 use std::fmt::Write as _;
 use std::fs;
 use std::io::Write as _;
+use std::time::Duration;
 
 use ring::hmac;
 use ring::rand::{SecureRandom, SystemRandom};
@@ -56,6 +57,9 @@ fn parse_endpoint(text: &str) -> Option<(Endpoint, bool)> {
             None => (authority.as_str(), ""),
         }
     };
+    if hostname.is_empty() || hostname == "[]" {
+        return None;
+    }
     if !(port.is_empty() || (port.len() > 1 && port.starts_with(':'))) {
         return None;
     }
@@ -96,6 +100,25 @@ pub enum Storage {
     S3(Box<S3>),
 }
 
+/// Longest a request or response body may take. ureq has no idle timer, as Node's fetch has, so
+/// this bounds the whole transfer: 100 MB, the largest upload the API accepts, at about 1 Mbit/s.
+const BODY_TIMEOUT: Duration = Duration::from_mins(15);
+
+fn s3_agent(body_timeout: Duration) -> ureq::Agent {
+    ureq::Agent::config_builder()
+        .http_status_as_error(false)
+        // Node's fetch reads no proxy from the environment. A redirect would carry a signature
+        // made for another URL, so the reply stands as it is.
+        .proxy(None)
+        .max_redirects(0)
+        .timeout_connect(Some(Duration::from_secs(30)))
+        .timeout_send_body(Some(body_timeout))
+        .timeout_recv_response(Some(Duration::from_secs(300)))
+        .timeout_recv_body(Some(body_timeout))
+        .build()
+        .new_agent()
+}
+
 /// `parseStorage`, then `createObjectStorage`.
 ///
 /// # Errors
@@ -126,17 +149,7 @@ pub fn from_env(env: &dyn Fn(&str) -> Option<String>) -> Result<Storage, ConfigE
     let bucket = required("SIPGES_S3_BUCKET")?;
     let access_key_id = required("SIPGES_S3_ACCESS_KEY_ID")?;
     let secret_access_key = required("SIPGES_S3_SECRET_ACCESS_KEY")?;
-    let timeouts = |seconds| Some(std::time::Duration::from_secs(seconds));
-    let agent = ureq::Agent::config_builder()
-        .http_status_as_error(false)
-        // Node's fetch reads no proxy from the environment. A redirect would carry a signature
-        // made for another URL, so the reply stands as it is.
-        .proxy(None)
-        .max_redirects(0)
-        .timeout_connect(timeouts(30))
-        .timeout_recv_response(timeouts(300))
-        .build()
-        .new_agent();
+    let agent = s3_agent(BODY_TIMEOUT);
     Ok(Storage::S3(Box::new(S3 {
         endpoint,
         region: env("SIPGES_S3_REGION").unwrap_or_else(|| "auto".to_owned()),
@@ -418,7 +431,73 @@ impl Storage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{Duration, UNIX_EPOCH};
+    use std::io::Read as _;
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::mpsc;
+    use std::time::UNIX_EPOCH;
+
+    /// An S3 client against a local server that runs `serve` on one connection, then holds it.
+    fn stalled(serve: fn(&mut TcpStream)) -> Option<S3> {
+        let listener = TcpListener::bind("127.0.0.1:0").ok()?;
+        let port = listener.local_addr().ok()?.port();
+        std::thread::spawn(move || {
+            if let Ok((mut stream, _)) = listener.accept() {
+                serve(&mut stream);
+                std::thread::sleep(Duration::from_secs(30));
+            }
+        });
+        Some(S3 {
+            endpoint: Endpoint {
+                secure: false,
+                host: format!("127.0.0.1:{port}"),
+            },
+            region: "auto".into(),
+            bucket: "b".into(),
+            access_key_id: "k".into(),
+            secret_access_key: "s".into(),
+            agent: s3_agent(Duration::from_millis(200)),
+        })
+    }
+
+    /// Whether `call` ends with an error well before the server would let go.
+    fn fails_in_time<T: Send + 'static>(
+        call: impl FnOnce() -> Result<T, StorageError> + Send + 'static,
+    ) -> bool {
+        let (done, wait) = mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = done.send(call().is_err());
+        });
+        wait.recv_timeout(Duration::from_secs(10)) == Ok(true)
+    }
+
+    fn read_request(stream: &mut TcpStream) {
+        let mut seen = Vec::new();
+        let mut byte = [0_u8];
+        while !seen.ends_with(b"\r\n\r\n") {
+            match stream.read(&mut byte) {
+                Ok(1) => seen.extend_from_slice(&byte),
+                _ => return,
+            }
+        }
+    }
+
+    #[test]
+    fn a_stalled_download_fails_instead_of_hanging() {
+        let s3 = stalled(|stream| {
+            read_request(stream);
+            let _ = stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nab");
+            let _ = stream.flush();
+        });
+        assert!(s3.is_some_and(|s3| fails_in_time(move || s3.get("k"))));
+    }
+
+    #[test]
+    fn a_stalled_upload_fails_instead_of_hanging() {
+        // Larger than the socket buffers, so the write blocks once the server stops reading.
+        let body = vec![0_u8; 64 * 1024 * 1024];
+        let s3 = stalled(read_request);
+        assert!(s3.is_some_and(|s3| fails_in_time(move || s3.put("k", &body, ""))));
+    }
 
     #[test]
     fn reads_endpoints_like_new_url() {
@@ -457,6 +536,12 @@ mod tests {
             "http://u:p@h",
             "http://a:b",
             "http://a:",
+            // Observed with Node: new URL throws on an empty host.
+            "https://:443",
+            "http://:80",
+            "https://:443/x",
+            "http://[]",
+            "http://[]:9",
         ] {
             assert_eq!(parse_endpoint(bad), None, "{bad}");
         }
