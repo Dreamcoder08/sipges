@@ -77,6 +77,7 @@ const transport: readonly ParityCase[] = [
   { name: 'mcp trailing slash', method: 'POST', path: `${PATH}/`, body: { json: {} } },
   post('without a key', null, rpc('ping')),
   post('without a key, before the body', null, {}, { body: { raw: '{' } }),
+  raw('unclosed nesting a million levels deep', '['.repeat(1_000_000)),
   post('with a session instead of a key', null, rpc('ping'), { auth: 'admin' }),
   post('with a revoked key', 'revoked', rpc('ping')),
   post('with an unknown key', null, rpc('ping'), { headers: { authorization: 'Bearer mscli_x' } }),
