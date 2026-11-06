@@ -5,7 +5,10 @@ import (
 	"os"
 
 	evidencehttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/http"
+	evidenceinfra "github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/infrastructure/objectstore"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
 )
 
 func init() {
@@ -21,8 +24,13 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
+		ocr, err := config.LoadOCR(os.LookupEnv)
+		if err != nil {
+			return nil, err
+		}
 		return func(mux *http.ServeMux) {
 			evidencehttp.Register(mux, evidencehttp.Deps{
+				Text:           evidenceinfra.DocText{OCR: doctext.NewOCR(ocr.Enabled, ocr.Languages)},
 				DB:             d.Pool,
 				Logger:         d.Logger,
 				Storage:        storage,

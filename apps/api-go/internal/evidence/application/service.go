@@ -1,6 +1,6 @@
 // Package application is the metadata read side of
 // apps/api/src/contexts/evidence/application/evidence-service.ts: the attachment list and one
-// attachment. Uploads, previews and downloads need the object storage and stay in TypeScript.
+// attachment. Uploads, previews and downloads, which need the object storage, are alongside.
 package application
 
 import (

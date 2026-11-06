@@ -4225,6 +4225,21 @@
       "issues": "module: Invalid input: expected string, received array; id: Invalid input: expected string, received undefined"
     },
     {
+      "tool": "get_record",
+      "args": "{\"module\":{\"length\":[\"\",[\"\",[5]]]},\"id\":\"A-1\"}",
+      "issues": "module: Invalid input: expected string, received object; module: Too big: expected unknown to be <=40"
+    },
+    {
+      "tool": "get_record",
+      "args": "{\"module\":{\"length\":[[[[7]]]]},\"id\":\"A-1\"}",
+      "issues": "module: Invalid input: expected string, received object"
+    },
+    {
+      "tool": "get_record",
+      "args": "{\"module\":{\"length\":[\"1\",[2]]},\"id\":\"A-1\"}",
+      "issues": "module: Invalid input: expected string, received object; module: Too big: expected unknown to be <=40"
+    },
+    {
       "tool": "get_links",
       "args": "null",
       "issues": "argumentos: Invalid input: expected object, received null"

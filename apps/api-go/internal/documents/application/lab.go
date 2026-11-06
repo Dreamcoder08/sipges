@@ -18,10 +18,6 @@ import (
 // The rest of document-lab-service.ts: reading, comparing and reporting on uploaded documents
 // (never stored), importing review excerpts and deciding them, one at a time or in bulk.
 
-// ErrPDFUnsupported is a DocumentReader's answer for a PDF it cannot read the way the
-// TypeScript API does (pdf.js's text items); the routes answer 501.
-var ErrPDFUnsupported = errors.New("documents: PDF text is read by the TypeScript API only")
-
 // DocumentReader parses untrusted document bytes into plain text; any other error is an
 // unreadable document (422, without parser details).
 type DocumentReader interface {
@@ -103,19 +99,17 @@ type Lab struct {
 	MaxUploadBytes int
 }
 
-// ReadError is the kind of a refused document (ReadError of document-lab-service.ts, plus
-// the PDF this server cannot read).
+// ReadError is the kind of a refused document (ReadError of document-lab-service.ts).
 type ReadError string
 
 // The kinds of ReadError.
 const (
-	ReadExtension      ReadError = "extension"
-	ReadEmpty          ReadError = "empty"
-	ReadTooLarge       ReadError = "too_large"
-	ReadTooManyPages   ReadError = "too_many_pages"
-	ReadUnreadable     ReadError = "unreadable"
-	ReadNoText         ReadError = "no_text"
-	ReadPDFUnsupported ReadError = "pdf_unsupported"
+	ReadExtension    ReadError = "extension"
+	ReadEmpty        ReadError = "empty"
+	ReadTooLarge     ReadError = "too_large"
+	ReadTooManyPages ReadError = "too_many_pages"
+	ReadUnreadable   ReadError = "unreadable"
+	ReadNoText       ReadError = "no_text"
 )
 
 // DocumentFile is one uploaded file: the name the client gave and its bytes.
@@ -140,8 +134,6 @@ func (l Lab) chunksOf(ctx context.Context, kind domain.DocumentKind, data []byte
 	}
 	pages, tooMany, err := l.Reader.ReadPDF(ctx, data, domain.MaxPDFPages)
 	switch {
-	case errors.Is(err, ErrPDFUnsupported):
-		return nil, ReadPDFUnsupported
 	case err != nil:
 		return nil, ReadUnreadable
 	case tooMany:
