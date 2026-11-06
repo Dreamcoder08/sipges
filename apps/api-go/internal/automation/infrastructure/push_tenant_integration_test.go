@@ -1,6 +1,7 @@
 package infrastructure_test
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -31,6 +32,17 @@ func queuedPush(t *testing.T, pool *pgxpool.Pool, tenantID, username, device str
 		t.Fatal(err)
 	}
 	return id
+}
+
+func TestClaimStatementIsTypeScriptsOwn(t *testing.T) {
+	source, err := os.ReadFile(typeScriptPushStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := typeScriptPushClaim.FindSubmatch(source)
+	if found == nil || string(found[1]) != infrastructure.ClaimPush {
+		t.Fatalf("the two claims differ:\n%s\n%s", found, infrastructure.ClaimPush)
+	}
 }
 
 func TestClaimLeavesTheDeliveriesOfAnotherProject(t *testing.T) {

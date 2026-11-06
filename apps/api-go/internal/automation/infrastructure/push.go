@@ -46,10 +46,10 @@ func inPushTenant(ctx context.Context, db *pgxpool.Pool, tenantID string, fn fun
 	})
 }
 
-func claimDeliveries(ctx context.Context, db *pgxpool.Pool, sql, tenantID string, args ...any) ([]application.PushDelivery, error) {
+func claimDeliveries(ctx context.Context, db *pgxpool.Pool, sql, tenantID string, at, leaseUntil time.Time) ([]application.PushDelivery, error) {
 	var out []application.PushDelivery
 	err := inPushTenant(ctx, db, tenantID, func(tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, sql, args...)
+		rows, err := tx.Query(ctx, sql, at, leaseUntil, tenantID)
 		if err != nil {
 			return err
 		}
@@ -73,7 +73,7 @@ func claimDeliveries(ctx context.Context, db *pgxpool.Pool, sql, tenantID string
 
 // Claim leases the next due delivery of the tenant, if any.
 func (p PushOutbox) Claim(ctx context.Context, tenantID string, at, leaseUntil time.Time) ([]application.PushDelivery, error) {
-	return claimDeliveries(ctx, p.DB, claimPush, tenantID, at, leaseUntil, tenantID)
+	return claimDeliveries(ctx, p.DB, claimPush, tenantID, at, leaseUntil)
 }
 
 // Finish settles a delivery.

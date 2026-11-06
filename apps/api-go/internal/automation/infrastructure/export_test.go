@@ -15,6 +15,9 @@ func ClaimWith(ctx context.Context, q database.Querier, sql string, at time.Time
 	return collectClaimed(q.Query(ctx, sql, at, limit, leaseUntil))
 }
 
+// ClaimPush is the claim statement, compared with TypeScript's in the tests.
+const ClaimPush = claimPush
+
 // ClaimPushWith runs a claim statement of the same columns as claimPush (TypeScript's, in the tests).
 func ClaimPushWith(ctx context.Context, db *pgxpool.Pool, sql, tenantID string, at, leaseUntil time.Time) ([]application.PushDelivery, error) {
 	return claimDeliveries(ctx, db, sql, tenantID, at, leaseUntil)
