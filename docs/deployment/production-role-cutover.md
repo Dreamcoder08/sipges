@@ -35,7 +35,7 @@ That order was considered and not run, because the evidence removed its reason a
 - A fresh clone of `main` with `pnpm install` and Node 22.18 or later: `migrate` applies whatever migrations are on disk.
 - `NEON_PROJECT_ID`, a `NEON_API_KEY`, and `DIR`, a private directory outside the repository. `neon branches list --project-id "$NEON_PROJECT_ID"` gives `<production branch id>`.
 
-**Do not read these files aloud or `cat` them.** Everything below passes them by redirection.
+**Never print these files.** The commands pass them by redirection or as `$(cat …)` arguments, so a URL or key is visible in the process list while a command runs: use a machine only you have access to.
 
 ## Step 0: freeze, save, restore point
 
@@ -43,18 +43,21 @@ A deploy can land mid-cutover: during the rehearsal, `Deploy Workers` for #335 r
 
 ```bash
 gh workflow disable deploy-workers.yml
-gh run list --workflow deploy-workers.yml --status in_progress   # must print nothing; wait if it does
+# Must print 0. Counts queued, waiting and running: a disabled workflow does not stop those.
+gh run list --workflow deploy-workers.yml --limit 20 --json status \
+  --jq '[.[] | select(.status != "completed")] | length'
 umask 077
 mkdir -p "$DIR"
 
 # Hyperdrive never gives a password back: this file is what makes step 4 reversible.
+# channel_binding is stripped from both URLs: only this form was rehearsed through Hyperdrive.
 neon connection-string main --project-id "$NEON_PROJECT_ID" \
-  --role-name mascli_workers --database-name mascli_workers > "$DIR/old.url"
+  --role-name mascli_workers --database-name mascli_workers \
+  | sed 's/&channel_binding=require//' > "$DIR/old.url"
 
 # Hex: URL-safe, needs no encoding, and 256 bits against Neon's minimum of 60.
 openssl rand -hex 32 > "$DIR/app.pw"
-sed -e "s#//mascli_workers:[^@]*@#//sipges_app:$(cat "$DIR/app.pw")@#" \
-  -e 's/&channel_binding=require//' "$DIR/old.url" > "$DIR/new.url"
+sed "s#//mascli_workers:[^@]*@#//sipges_app:$(cat "$DIR/app.pw")@#" "$DIR/old.url" > "$DIR/new.url"
 
 # The restore point. No expiry: a branch with one cannot have children.
 date -u +%Y-%m-%dT%H:%M:%SZ > "$DIR/before.txt"
@@ -67,7 +70,7 @@ Confirm you are on production, as the old role:
 psql "$(cat "$DIR/old.url")" -X -At -c "SELECT current_user, current_database()"
 ```
 
-The password never reaches the screen, the shell history or the SQL text. `psql` reads it from the environment with `\getenv`. Neon refuses SCRAM verifiers, so the plain value does reach the server, encrypted in transit. Do not use the Neon console's SQL editor: it keeps the statement in its history, which happened on the trial branch. Every `psql` and `wrangler` below takes the URL as an argument and `curl` takes the API key, so all are visible in the process list while they run: use a machine only you have access to. A search of wrangler's logs found neither rehearsal password.
+The password never reaches the screen, the shell history or the SQL text. `psql` reads it from the environment with `\getenv`. Neon refuses SCRAM verifiers, so the plain value does reach the server, encrypted in transit. Do not use the Neon console's SQL editor: it keeps the statement in its history, which happened on the trial branch. A search of wrangler's logs found neither rehearsal password.
 
 **Rollback:** `gh workflow enable deploy-workers.yml`. Delete the branch only if you stop here.
 
@@ -132,7 +135,7 @@ psql "$(cat "$DIR/old.url")" -X -At -f handover.sql
 A `canceling statement due to lock timeout` is harmless: run it again until no `left` line prints. **Only then** move the functions, last. The history trigger is `SECURITY DEFINER`, so it must always run as a role that can write `record_versions`.
 
 ```bash
-psql "$(cat "$DIR/old.url")" -X -At <<'SQL'
+psql "$(cat "$DIR/old.url")" -X <<'SQL'
 SELECT format('ALTER FUNCTION %s OWNER TO sipges_app', p.oid::regprocedure)
 FROM pg_proc p
 WHERE p.pronamespace = 'public'::regnamespace
@@ -142,6 +145,8 @@ WHERE r.rolname = 'mascli_workers' AND d.deptype = 'o'
   AND d.dbid = (SELECT oid FROM pg_database WHERE datname = current_database());
 SQL
 ```
+
+`must_be_0` must print `0`. If not, step 4 waits: list what is left with `\dt` and the query above, and run this step again.
 
 **Breaks:** nothing failed, and latency did not move. A request can wait up to 3 s behind one table. **Rollback:** [R3](#rollback).
 
@@ -155,7 +160,7 @@ pnpm exec wrangler hyperdrive update 9eae2c5e3d614feca42b525fc82e10e1 \
 grep -E '"user"|"disabled"' "$DIR/hyperdrive.log"
 ```
 
-Expect `sipges_app` and `"disabled": true`. Hyperdrive tests the connection first and refuses a bad one, leaving the old config in place. The switch is live for the same id with no deploy: the first `sipges_app` session appeared 1 s after the command ended, and old sessions were gone about 20 s later.
+Expect `sipges_app` and `"disabled": true`, which is query caching staying off. If it reads `false`, run `pnpm exec wrangler hyperdrive update <id> --caching-disabled true` before going on: a cached read could keep a revoked session alive. Hyperdrive tests the connection first and refuses a bad one, leaving the old config in place. The switch is live for the same id with no deploy: the first `sipges_app` session appeared 1 s after the command ended, and old sessions were gone about 20 s later.
 
 Check the drain **as the old role**. `sipges_app` cannot see other users' `backend_type`, so asking as it always answers 0, which fooled the rehearsal once.
 
@@ -170,7 +175,7 @@ Wait until the only `mascli_workers` line is this query. Idle sessions took abou
 
 ## Step 5: the migration secret
 
-After step 7 the old URL fails, so this comes first. The deploy job would stop at `migrate`, before `wrangler deploy`: safe, but blocked. `ops-review-materialize.yml` reads the same secret; it scopes by tenant and keeps working.
+After step 7 `migrate` fails on the old URL with `permission denied for schema public`, so this comes first. The old URL still connects: it is only the deploy job that would stop, at `migrate`, before `wrangler deploy`. That is safe, but blocked. `ops-review-materialize.yml` reads the same secret; it scopes by tenant and keeps working.
 
 ```bash
 gh secret set SIPGES_MIGRATION_DATABASE_URL --env production < "$DIR/new.url"
@@ -181,28 +186,71 @@ Expect `Database up to date`, after a harmless `already exists` notice. **Rollba
 
 ## Step 6: prove RLS is enforced
 
-Save as `rls.sql`. It writes nothing: the one `INSERT` must be refused, and every transaction rolls back.
+Save as `rls.sql`. It covers every table, not a sample, and it writes nothing: the one `INSERT` must be refused, and every transaction rolls back. Each sweep is one query built from the catalog, so a table added later is covered without editing this file.
 
 ```sql
 \pset footer off
+\set a 'SIPGES/PRJ-ALGARROBO'
+\set b 'SIPGES/PRJ-SECHURA'
+\echo == 1. The login
 SELECT r.rolsuper, r.rolbypassrls FROM pg_roles r WHERE r.rolname = current_user;
-SELECT count(*) AS no_tenant_must_be_0 FROM module_records;
+
+\echo == 2. Every table, unforced ones first
+SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity,
+       has_table_privilege('sipges_tenant', c.oid, 'SELECT') AS tenant_role_reads
+FROM pg_class c
+WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r'
+ORDER BY c.relforcerowsecurity, c.relname;
+
+\echo == 3. Unforced outside the deliberate list: no rows
+SELECT c.relname AS unexpected FROM pg_class c
+WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r' AND NOT c.relforcerowsecurity
+  AND c.relname <> ALL (ARRAY['api_keys', 'automation_cursors', 'grants', 'login_failures',
+    'push_subscriptions', 'schema_migrations', 'sessions', 'tenants', 'users']);
+
+\echo == 4. Login, no tenant, forced tables: no rows
+SELECT 'SELECT * FROM (' || string_agg(format('SELECT %L AS leak, count(*) AS n FROM %s',
+         c.relname, c.oid::regclass), ' UNION ALL ') || ') s WHERE n > 0'
+FROM pg_class c
+WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r' AND c.relforcerowsecurity \gexec
+
+\echo == 5. Login with a tenant, forced tables, rows of any other tenant: no rows
+BEGIN;
+SELECT set_config('app.tenant_id', :'a', true) \g /dev/null
+SELECT 'SELECT * FROM (' || string_agg(format(
+         'SELECT %L AS leak, count(*) AS n FROM %s WHERE tenant_id <> %L',
+         c.relname, c.oid::regclass, :'a'), ' UNION ALL ') || ') s WHERE n > 0'
+FROM pg_class c
+WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r' AND c.relforcerowsecurity \gexec
+ROLLBACK;
+
+\echo == 6. Tenant role, each project, every table it can read: no rows
 BEGIN;
 SET LOCAL ROLE sipges_tenant;
-SELECT count(*) AS role_no_tenant_must_be_0 FROM module_records;
-SELECT set_config('app.tenant_id', 'SIPGES/PRJ-ALGARROBO', true) \g /dev/null
+SELECT set_config('app.tenant_id', :'a', true) \g /dev/null
+SELECT 'SELECT * FROM (' || string_agg(format(
+         'SELECT %L AS leak, count(*) AS n FROM %s WHERE tenant_id <> %L',
+         c.relname, c.oid::regclass, :'a'), ' UNION ALL ') || ') s WHERE n > 0'
+FROM pg_class c
+WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r' AND c.relrowsecurity
+  AND has_table_privilege('sipges_tenant', c.oid, 'SELECT') \gexec
+SELECT set_config('app.tenant_id', :'b', true) \g /dev/null
+SELECT 'SELECT * FROM (' || string_agg(format(
+         'SELECT %L AS leak, count(*) AS n FROM %s WHERE tenant_id <> %L',
+         c.relname, c.oid::regclass, :'b'), ' UNION ALL ') || ') s WHERE n > 0'
+FROM pg_class c
+WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r' AND c.relrowsecurity
+  AND has_table_privilege('sipges_tenant', c.oid, 'SELECT') \gexec
+
+\echo == 7. The control: this tenant does see its own rows
+SELECT set_config('app.tenant_id', :'a', true) \g /dev/null
 SELECT count(*) AS own_rows_above_0 FROM module_records;
-SELECT count(*) AS cross_tenant_must_be_0 FROM module_records WHERE tenant_id = 'SIPGES/PRJ-SECHURA';
-SELECT count(*) AS cross_audit_must_be_0 FROM audit WHERE tenant_id = 'SIPGES/PRJ-SECHURA';
-SELECT count(*) AS cross_history_must_be_0 FROM record_versions WHERE tenant_id = 'SIPGES/PRJ-SECHURA';
+
+\echo == 8. Writing into the other project must be refused
 SAVEPOINT s;
 INSERT INTO module_records (tenant_id, module, id, payload)
-VALUES ('SIPGES/PRJ-SECHURA', 'Fuentes', 'RLS-PROBE', '{}');  -- must be refused
+VALUES (:'b', 'Fuentes', 'RLS-PROBE', '{}');
 ROLLBACK TO s;
-ROLLBACK;
-BEGIN;
-SELECT set_config('app.tenant_id', 'SIPGES/PRJ-ALGARROBO', true) \g /dev/null
-SELECT count(*) AS login_cross_must_be_0 FROM module_records WHERE tenant_id = 'SIPGES/PRJ-SECHURA';
 ROLLBACK;
 ```
 
@@ -210,18 +258,28 @@ ROLLBACK;
 psql "$(cat "$DIR/new.url")" -X -f rls.sql
 ```
 
-| Check | Expected |
+| Section | Expected |
 | --- | --- |
-| `rolsuper`, `rolbypassrls` | `f`, `f` |
-| Every `must_be_0` | `0` |
-| `own_rows_above_0` | Above 0 |
-| The `INSERT` | `new row violates row-level security policy` |
+| 1 | `f`, `f` |
+| 2 | 34 tables. 25 forced, then the 9 below |
+| 3, 4, 5, 6 | Each query returns no rows. A `leak` line names the table and how many rows it exposed |
+| 7 | Above 0 |
+| 8 | `new row violates row-level security policy` |
 
-The opposite run is the control. As `mascli_workers`, the same cross-tenant query without `SET LOCAL ROLE` returns rows. Any non-zero result here means stop and go to [R4](#rollback).
+**Stop and go to [R4](#rollback) if** section 1 is not `f`, `f`; sections 3 to 6 print any row; section 7 prints 0; or section 8 succeeds. An error in a section counts: it proved nothing. `link_evidence_history` is forced and not readable by the tenant role, so section 6 skips it and sections 4 and 5 cover it.
+
+**The deliberate exceptions.** These nine are not forced, and `sipges_app` reads across projects in all of them:
+
+| Table | Why it is not forced | Tenant role |
+| --- | --- | --- |
+| `automation_cursors` | The scheduler lists projects from it before it has one. RLS is on without `FORCE`, so the owner passes and everyone else is filtered | Filtered by RLS |
+| `api_keys`, `grants`, `tenants` | They decide which project a request belongs to, so they are read before one is set | No grant |
+| `users`, `sessions`, `login_failures`, `push_subscriptions` | Accounts and devices, not project data | No grant |
+| `schema_migrations` | Applied versions, no project data | No grant |
 
 **Over HTTP:** an account granted one project got `403` naming the other project in the header, `403` in `project_id`, and `404` for the other project's record id. Production has no such account to spare, so the SQL above is the proof; repeat this only with one already in place.
 
-Then sign in and open Inicio, Registros and Bandeja.
+The opposite run shows the proof can fail: as `mascli_workers`, a cross-tenant count without `SET LOCAL ROLE` returns rows. Then sign in and open Inicio, Registros and Bandeja.
 
 ## Step 7: stop inheriting
 
@@ -229,7 +287,7 @@ Then sign in and open Inicio, Registros and Bandeja.
 psql "$(cat "$DIR/old.url")" -X -q -v ON_ERROR_STOP=1 -c "REVOKE sipges_app FROM mascli_workers;"
 ```
 
-This removes ownership rights only. `mascli_workers` **keeps `BYPASSRLS` and can still read and write everything** through `neon_superuser`, and it keeps `ADMIN` on `sipges_app` from `cloud_admin`. Neither can be removed: `cloud_admin` manages that role. The real boundary is step 9.
+This removes ownership rights only. `mascli_workers` **keeps `BYPASSRLS` and can still read and write everything** through `neon_superuser`, and it keeps `ADMIN` on `sipges_app` from `cloud_admin`. Neither can be removed: `cloud_admin` manages that role. See [who can still reach it](#step-9-retire-the-old-login).
 
 **Breaks:** nothing. **Rollback:** [R7](#rollback).
 
@@ -246,22 +304,44 @@ psql "$(cat "$DIR/new.url")" -X -At -c \
   "SELECT tenant_id, last_tick_finished_at, last_tick_source, last_tick_status FROM automation_cursors"
 ```
 
+The rehearsal's cron had no rules, channels or keys to work on, as production had none on 2026-11-06. So if rules exist by then, this is the first real automation under the new role. **If a line is older than 20 minutes or not `completed`**, read `last_tick_error` in the same table, then go to [R4](#rollback): automation is the one failure that makes no noise.
+
 Do not force a compute restart to test the owner. The rehearsal's restart stalled probes by up to 2 s and gave one browser visit four `500`s, and the next idle suspend proves the same thing. After it, the check in step 2 must still say `sipges_app`.
 
 ## Step 9: retire the old login
 
-Wait for the observation window the owner sets. Until then `old.url` is the rollback.
+Wait for the observation window the owner sets. Until then `old.url` is the rollback. The steps are chained: the restore point goes only after the old password is proven dead.
 
 ```bash
-curl -fsS -X POST \
-  "https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches/<production branch id>/roles/mascli_workers/reset_password" \
-  -H "Authorization: Bearer $NEON_API_KEY" > /dev/null
-neon branches delete pre-role-cutover --project-id "$NEON_PROJECT_ID"
+reset=
+for attempt in 1 2 3 4 5; do
+  if curl -fsS -X POST \
+    "https://console.neon.tech/api/v2/projects/$NEON_PROJECT_ID/branches/<production branch id>/roles/mascli_workers/reset_password" \
+    -H "Authorization: Bearer $NEON_API_KEY" > /dev/null; then reset=1; break; fi
+  sleep 5   # 423: another Neon operation is running
+done
+if [ -n "$reset" ] && ! psql "$(cat "$DIR/old.url")" -X -At -c 'SELECT 1' 2> /dev/null; then
+  neon branches delete pre-role-cutover --project-id "$NEON_PROJECT_ID"
+else
+  echo 'STOP: the reset is not proven. The restore point stays.'
+fi
 ```
 
-Discard the response and delete `$DIR`. Nobody then holds the old password, which is what actually ends the `BYPASSRLS` login.
+The response holds the new password, so it goes nowhere. Delete `$DIR` only after the `neon branches delete` succeeds.
 
-> **Never delete `mascli_workers`, in the Neon console or the API.** It is the grantor of `sipges_app`'s membership in `sipges_tenant`, and deleting it removed that membership too. Every tenant route answered `500`, and `neondb_owner` could not restore it (`Only roles with the ADMIN option`). The only tested way out was a restore. The role stays, with an unknown password.
+**This retires a copy of a password, not access to `BYPASSRLS`.** The boundary is the Neon account. After step 9, these can still bypass RLS:
+
+| Who | How |
+| --- | --- |
+| Any member of the Neon organization, in the console | Reads the new password, or runs SQL as `mascli_workers` or `neondb_owner` |
+| Anyone with a Neon API key or a signed-in Neon CLI | `neon connection-string` returns the current password, the same call as step 0 |
+| Anyone who creates a role in the console, CLI or API | Neon adds it to `neon_superuser`, which brings `BYPASSRLS` |
+| `neondb_owner` | Same attributes as `mascli_workers`; step 9 does not touch its password |
+| Neon itself | `cloud_admin` manages the cluster |
+
+What step 9 ends is every file, secret and cached Hyperdrive config that held the old password. `sipges_app` is what the application runs as, and that is what RLS now binds. Keeping Neon membership short and revoking unused API keys is the control that remains.
+
+> **Never delete `mascli_workers`, in the Neon console or the API.** It is the grantor of `sipges_app`'s membership in `sipges_tenant`, and deleting it removed that membership too. Every tenant route answered `500`, and `neondb_owner` could not restore it (`Only roles with the ADMIN option`). The only tested way out was a restore. The role stays.
 
 ## Rollback
 
@@ -271,7 +351,7 @@ Run backwards from the step you reached. If you already lifted the freeze, repea
 | --- | --- | --- | --- |
 | R7 | As the old role: `GRANT sipges_app TO mascli_workers WITH INHERIT TRUE, SET TRUE;` | 1 s | 0 |
 | R5 | `gh secret set SIPGES_MIGRATION_DATABASE_URL --env production < "$DIR/old.url"` | No | n/a |
-| R4 | `wrangler hyperdrive update <id> --connection-string="$(cat "$DIR/old.url")"`. Works with or without R7 | 3 s | 0 |
+| R4 | The step 4 block with `old.url` in place of `new.url`, same pinned id, log and `grep`; expect `mascli_workers`. Works with or without R7 | 3 s | 0 |
 | R3 | **Functions first, then tables**: step 3 with the two role names swapped, until nothing is left. Needs R7 | 6 to 13 s | 0 |
 | R2 | The step 2 `PATCH` with `"owner_name":"mascli_workers"` | 1 s | 0 |
 | R1 | `REVOKE sipges_tenant FROM sipges_app; REVOKE sipges_app FROM mascli_workers; DROP ROLE sipges_app;` | 1 s | 0 |
@@ -352,11 +432,11 @@ A Neon branch of `main` with an expiry, 0.25 CU like production, and a throwaway
 ## Open risks
 
 1. **The tests do not run as this role.** CI uses `postgres`, a superuser, so a path that reads a forced table outside a tenant transaction would return nothing here and pass there. The read sweep covers GET routes, and the trial ran on `sipges_app`, but write routes have no equivalent sweep.
-2. **`mascli_workers` keeps `BYPASSRLS` until step 9**, and permanently as a role. Only the password protects it.
+2. **`BYPASSRLS` stays reachable from the Neon account**, permanently. See [step 9](#step-9-retire-the-old-login).
 3. **`sipges_app` depends on a grant from `mascli_workers`.** One careless delete in the console is an outage with no SQL repair.
 4. **Load was light and the data small.** 3.3 requests per second on 23 MB. Quiet hours are still the plan.
 5. **`gh secret set`, the production restore and step 9 under traffic were not rehearsed.**
-6. **The rehearsal's sign-in used no MFA and uploaded no file.** Neither depends on the role, and Hyperdrive and R2 are separate.
+6. **The rehearsal's sign-in used no MFA and uploaded no file.** Neither depends on the role, and Hyperdrive and object storage are separate.
 7. **Go is not part of this.** `SIPGES_GO_DATABASE_URL` must use the same role, per the [go-live list](go-trial-runbook.md#go-live-list-names-never-values).
 
 ## Sources
