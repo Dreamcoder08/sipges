@@ -307,6 +307,9 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     expect(again?.target).toEqual(again?.mapped);
     const other = resumed.tenants.find((t) => t.tenantId === fixture.otherTenant);
     expect(other?.written).toEqual(other?.mapped);
+    // The objects of the failed attempt hold the same bytes, so resuming reuses them.
+    expect(other?.objects.copied).toBe(0);
+    expect(other?.problems.map((p) => p.code)).toContain('attachment_object_reused');
 
     const verified = (await run(sql, 'verify', { storage })).report;
     expect(codesOf(verified).filter((code) => code.startsWith('verify_'))).toEqual([]);
@@ -701,5 +704,73 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     } finally {
       await own.cleanup();
     }
+  });
+
+  it('refuses a tenant whose object key holds other bytes and leaves those bytes alone', async () => {
+    const filled = memoryStorage();
+    await run(await target(), 'apply', { storage: filled });
+    const storage = memoryStorage();
+    for (const [key, bytes] of filled.objects) storage.objects.set(key, bytes);
+    const [conflicting] = [...filled.objects.keys()].sort();
+    const foreign = new TextEncoder().encode('otros bytes');
+    storage.objects.set(conflicting ?? '', foreign);
+    const puts = vi.spyOn(storage.storage, 'put');
+
+    const sql = await target();
+    const { report } = await run(sql, 'apply', { storage });
+
+    const conflicts = report.tenants.flatMap((t) =>
+      t.problems.filter((p) => p.code === 'attachment_object_conflict'),
+    );
+    expect(conflicts).toHaveLength(1);
+    expect(conflicts[0]).toMatchObject({ severity: 'error', table: 'attachments' });
+    expect(conflicts[0]?.id).toBeTruthy();
+    expect(storage.objects.get(conflicting ?? '')).toBe(foreign);
+    expect(puts).not.toHaveBeenCalled();
+    expect(report.ok).toBe(false);
+
+    const refused = report.tenants.find((t) => t.tenantId === conflicts[0]?.tenantId);
+    expect(totalRows(refused?.written ?? emptyCounts())).toBe(0);
+    expect(totalRows(refused?.target ?? emptyCounts())).toBe(0);
+    const other = report.tenants.find((t) => t.tenantId !== conflicts[0]?.tenantId);
+    expect(other?.written).toEqual(other?.mapped);
+  });
+
+  it('writes a stored file shared by two attachment rows without calling it a conflict', async () => {
+    const own = await buildLegacyFixture();
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/sipges.db'));
+      db.exec(`
+        INSERT INTO attachments SELECT 'ADJ-SEGUNDO', stored_name, original_name, content_type,
+          size_bytes, sha256, linked_module, linked_record_id, document_type, author, verification,
+          notes, project_id, project_name, created_at FROM attachments LIMIT 1;`);
+      db.close();
+      const { report } = await run(await target(), 'apply', { root: own.root });
+      expect(codesOf(report)).not.toContain('attachment_object_conflict');
+      const main = report.tenants.find((t) => t.tenantId === fixture.defaultTenant);
+      expect(main?.objects.copied).toBe(2);
+    } finally {
+      await own.cleanup();
+    }
+  });
+
+  it('leaves an identical object in place and migrates its metadata', async () => {
+    const filled = memoryStorage();
+    await run(await target(), 'apply', { storage: filled });
+    const storage = memoryStorage();
+    for (const [key, bytes] of filled.objects) storage.objects.set(key, bytes);
+    const puts = vi.spyOn(storage.storage, 'put');
+
+    const { report } = await run(await target(), 'apply', { storage });
+
+    expect(codesOf(report)).not.toContain('attachment_object_conflict');
+    expect(puts).not.toHaveBeenCalled();
+    const main = report.tenants.find((t) => t.tenantId === fixture.defaultTenant);
+    expect(main?.objects.copied).toBe(0);
+    expect(main?.written).toEqual(main?.mapped);
+    expect(main?.problems.find((p) => p.code === 'attachment_object_reused')).toMatchObject({
+      severity: 'info',
+      table: 'attachments',
+    });
   });
 });

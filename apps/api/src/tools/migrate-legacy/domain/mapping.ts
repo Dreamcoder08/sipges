@@ -44,6 +44,8 @@ export type ProblemCode =
   | 'attachment_module_unknown'
   | 'attachment_record_missing'
   | 'attachment_object_missing'
+  | 'attachment_object_conflict'
+  | 'attachment_object_reused'
   | 'attachment_sha256_mismatch'
   | 'attachment_name_sanitized'
   | 'attachment_stored_name_unsafe'
