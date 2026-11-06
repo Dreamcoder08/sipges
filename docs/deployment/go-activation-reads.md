@@ -8,7 +8,7 @@ Each one stops the switch on its own. The numbers are names, not a sequence: [Or
 
 | # | Blocker | Evidence | What clears it |
 | --- | --- | --- | --- |
-| B1 | No trial of this image has run on Cloudflare. | `wrangler.go.jsonc` still has the all-zero Hyperdrive placeholder; L7 left the trial pending, and the last Cloudflare numbers are the T2 spike, a minimal container without the engines. | Deploy `sipges-go` with the owner (see [Order of work](#order-of-work)). |
+| B1 | No trial of this image has run on Cloudflare. | The [trial runbook](go-trial-runbook.md) is ready and has not run; L7 left the trial pending, and the last Cloudflare numbers are the T2 spike, a minimal container without the engines. | Follow the [trial runbook](go-trial-runbook.md) with the owner. |
 | B2 | No before/after measurement exists (S7). | Nothing in the repository measures a Go route through a Worker. | [Measurement](#measurement-with-the-owner) passes. |
 | B3 | `basic` may be too small. One named instance takes all traffic, with 1/4 vCPU. | Local table in [go-container.md](go-container.md#memory): 2.2–2.5 req/s, p95 3.5–5.3 s at 4–8 clients (it does not say which routes). Production today: 682 requests in 20 s at 8 screens, about 34 req/s (`backend-latency` L19). A local figure is not a Cloudflare figure, but the gap is more than tenfold. | Measure B2 at 8 screens. If it fails, Fly.io `iad` is the fallback in ADR 0032 §4. |
 | B4 | Production has no route to a container. | `wrangler.jsonc` has no `containers`, `durable_objects` or `SIPGES_GO_ROUTING`, and `go-routing.test.ts` asserts so. `deploy-workers.yml` has no buildx. | One reviewed PR: the config, the Durable Object migration, buildx, and that test changed on purpose. |

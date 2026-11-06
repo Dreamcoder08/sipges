@@ -1,9 +1,10 @@
 // The Go routing Worker (docs/adr/0032 §4, T6): the same Worker code as wrangler.jsonc plus the
 // Go container. It is a separate Worker (`sipges-go`) for no-traffic trials, deployed by hand with
-// `wrangler deploy -c wrangler.go.jsonc`; no workflow deploys it, and production (wrangler.jsonc)
-// declares no container, no GO_BACKEND binding and no SIPGES_GO_ROUTING, so every route stays on
-// TypeScript there. Before its first deploy (docs/deployment/go-container.md): a Hyperdrive for a
-// Neon branch (never the production one), the R2 bucket, and the SIPGES_GO_DATABASE_URL secret.
+// `wrangler deploy -c wrangler.go.deploy.jsonc`; no workflow deploys it, and production
+// (wrangler.jsonc) declares no container, no GO_BACKEND binding and no SIPGES_GO_ROUTING, so every route stays on
+// TypeScript there. It has no Hyperdrive on purpose: go-trial-config.mjs adds the id of the trial's
+// Neon branch at deploy, and refuses production's. Deploy wrangler.go.deploy.jsonc, the file it
+// writes, by following docs/deployment/go-trial-runbook.md.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "sipges-go",
@@ -19,8 +20,6 @@
     "html_handling": "none",
     "not_found_handling": "none",
   },
-  // Placeholder: replace with the Hyperdrive of a Neon branch (`wrangler hyperdrive create`).
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" }],
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "sipges-evidence-go" }],
   // No cron trigger: scheduled automation runs only in the production Worker.
   "vars": {

@@ -41,17 +41,7 @@ not get TypeScript's 401. Only routes whose parity cases include the unauthentic
 
 ## Trying it (`sipges-go` Worker)
 
-`wrangler.go.jsonc` is a separate Worker, `sipges-go`, with no cron trigger and its own allowed host. No
-workflow deploys it. Before the first deploy:
-
-1. Create a Neon branch for trials and a Hyperdrive for it (`wrangler hyperdrive create …`); put its id in
-   `wrangler.go.jsonc` (the placeholder is all zeros, and a test refuses the production id).
-2. Create the R2 bucket `sipges-evidence-go`.
-3. Build the SPA (`pnpm --filter @sipges/hosting-cloudflare build`) and migrate the branch.
-4. Set the secrets with `wrangler secret put … -c wrangler.go.jsonc`: `SIPGES_DATA_KEY`, the admin
-   variables of the deployment guide, and `SIPGES_GO_DATABASE_URL` (the branch's direct or pooled URL,
-   `sslmode=verify-full`).
-5. `wrangler deploy -c wrangler.go.jsonc` (needs Docker with buildx; it builds `apps/api-go/Dockerfile` from the repository root, sending only `apps/api-go` and `engines/go` per `Dockerfile.dockerignore`).
+`wrangler.go.jsonc` is a separate Worker, `sipges-go`, with no cron trigger, its own allowed host and no Hyperdrive: `pnpm config:go` adds the trial's id at deploy and refuses production's. No workflow deploys it. Follow the [trial runbook](go-trial-runbook.md).
 
 CI builds the same image and smoke-tests `/health` in the `Go image` job of `.github/workflows/go.yml`.
 
