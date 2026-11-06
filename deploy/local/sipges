@@ -44,6 +44,7 @@ write_env() {
   local host=$1
   (
     umask 077
+    : >"$ENV_FILE.new"
     cat >"$ENV_FILE" <<ENV
 # Written once by ./sipges install. Keep a copy somewhere safe, away from this machine:
 # without SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE no backup can be used.
@@ -101,6 +102,8 @@ unfinished_restore() { printf '%s/.restore-unfinished' "$(env_value SIPGES_BACKU
 
 start() {
   mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
+  [[ $(env_value SIPGES_BACKUP_HOUR) =~ ^([01]?[0-9]|2[0-3])?$ ]] ||
+    die 'SIPGES_BACKUP_HOUR must be a whole hour from 0 to 23'
   if [[ -f $(unfinished_restore) ]]; then
     die "the restore of $(cat "$(unfinished_restore)") did not finish, so SIPGES stays off. Run ./sipges restore $(cat "$(unfinished_restore)") again"
   fi
@@ -110,15 +113,15 @@ start() {
 
 cmd_install() {
   need_docker
-  local first=0
-  [[ -f $ENV_FILE ]] || first=1
   use_host "${1:-}"
   build
   start
   say "Open https://$(env_value SIPGES_SITE_HOST)/"
-  if ((first)); then
+  # Until this prints, the first sign-in is still owed, even after a failed build and a retry.
+  if [[ -f $ENV_FILE.new ]]; then
     say "First sign-in: user $(env_value SIPGES_ADMIN_USERNAME), password $(env_value SIPGES_ADMIN_PASSWORD)"
     say 'Set up the authenticator code when asked, then keep a copy of the .env file off this machine.'
+    command rm -f "$ENV_FILE.new"
   fi
 }
 
@@ -317,7 +320,7 @@ restore) shift; cmd_restore "$@" ;;
 update) cmd_update ;;
 ca) need_env; compose cp caddy:/data/caddy/pki/authorities/local/root.crt sipges-root-ca.crt; say 'Wrote sipges-root-ca.crt' ;;
 wipe) shift; cmd_wipe "$@" ;;
-help | *)
+help)
   cat <<HELP
 ./sipges install [host]    First install, or rebuild and start. Host defaults to localhost.
 ./sipges prepare [host]    First install for a client with data: no application yet.
@@ -333,4 +336,5 @@ help | *)
 ./sipges wipe              Delete all data on this machine. Backups and .env stay.
 HELP
   ;;
+*) die "unknown command \"$1\": see ./sipges help" ;;
 esac
