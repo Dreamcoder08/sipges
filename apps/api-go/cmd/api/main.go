@@ -64,6 +64,8 @@ func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen fun
 		AccessLog:          cfg.AccessLog,
 		RequireMFA:         cfg.RequireMFA,
 		GoogleEnabled:      cfg.GoogleEnabled,
+		WebDir:             cfg.WebDir,
+		HSTS:               cfg.CookieSecure,
 		ReadyGate:          bootstrap.Ready,
 		AutomationInterval: cfg.AutomationInterval,
 	})
