@@ -23,6 +23,12 @@ const proposed = async (): Promise<GoRoute[]> =>
     return { method, path } as GoRoute;
   });
 
+const proposedWrites = async (): Promise<GoRoute[]> =>
+  block(await doc(), 'go-writes').map((line) => {
+    const [method, path] = line.split(' ');
+    return { method, path } as GoRoute;
+  });
+
 const SCOPE = 'X-SIPGES-Scope';
 
 describe('Proposed Go routes for Inicio and Registros', () => {
@@ -58,5 +64,34 @@ describe('Proposed Go routes for Inicio and Registros', () => {
       (url) => !CASES.some((c) => c.method === 'GET' && c.path === url && c.headers?.[SCOPE]),
     );
     expect(uncovered).toEqual([]);
+  });
+
+  it('proposes the other ported reads in Wave D', async () => {
+    const paths = (await proposed()).map((route) => route.path);
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        '/system/indicators',
+        '/system/irsa/history',
+        '/system/prevention/summary',
+        '/system/conflict-risk',
+        '/system/intelligence/territorial-alerts/:id',
+      ]),
+    );
+  });
+
+  it('leaves out the reads that need settings the container does not get', async () => {
+    const paths = (await proposed()).map((route) => route.path);
+    for (const path of ['/system/search', '/system/notifications/push', '/system/metrics'])
+      expect(paths).not.toContain(path);
+  });
+
+  it('lists the ported writes apart, each with a parity case and no read among them', async () => {
+    const writes = await proposedWrites();
+    expect(writes.length).toBeGreaterThan(0);
+    expect(validateGoRoutes(writes, CASES)).toEqual([]);
+    expect(writes.filter(({ method }) => method === 'GET')).toEqual([]);
+    for (const { path } of writes) expect(path).not.toMatch(/^\/api\/:/);
+    expect(writes).toContainEqual({ method: 'POST', path: '/api/eventos' });
+    expect(writes).toContainEqual({ method: 'POST', path: '/system/uploads' });
   });
 });
