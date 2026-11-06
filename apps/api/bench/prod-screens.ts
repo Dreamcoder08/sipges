@@ -5,19 +5,41 @@
  */
 import { createHmac } from 'node:crypto';
 
-/** The GET requests each screen fires together when it opens (read-only). */
+/**
+ * The calls of the authenticated shell, on every screen. /system/events, the SSE stream, is left
+ * out: it never finishes, so it has no latency to compare.
+ */
+const SHELL = [
+  '/system/auth/me',
+  '/system/auth/current-scope',
+  '/system/auth/scopes',
+  '/system/notifications?limit=30',
+  '/system/v4/settings',
+] as const;
+
+const REGISTROS = [...SHELL, '/api/registros/summary?limit=500&offset=0'] as const;
+
+/**
+ * The GET requests each screen fires together when it opens (read-only), URL for URL as apps/web
+ * sends them. Records past the first 500 would add pages. Keep the data URLs in step with the
+ * first-paint block of docs/deployment/go-activation-reads.md.
+ */
 export const SCREENS = {
   Inicio: [
-    '/system/auth/me',
-    '/system/auth/current-scope',
-    '/system/notifications',
+    ...SHELL,
     '/api/dashboard',
     '/system/irsa',
-    '/system/v4/settings',
-    '/api/alertas',
+    '/api/alertas?limit=500&offset=0&q=',
+    '/api/eventos?limit=500&offset=0&q=',
   ],
-  Registros: ['/system/auth/me', '/api/registros/summary'],
-  IRSA: ['/system/irsa', '/system/model-status'],
+  Registros: REGISTROS,
+  // The Fuentes tab, the type list that also loads its uploads; the hub query stays mounted.
+  'Registros lista': [
+    ...REGISTROS,
+    '/api/fuentes?limit=500&offset=0&q=',
+    '/system/uploads?linked_module=fuentes&limit=500',
+  ],
+  IRSA: [...SHELL, '/system/irsa', '/system/irsa/config', '/system/irsa/history?limit=50'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** Only this role may be used: it can read, never write. */
@@ -191,14 +213,19 @@ export type Probe = {
 
 /** A real GET: drains and discards the body, so nothing from it is kept. */
 export const httpProbe =
-  (baseUrl: string, cookie: string, fetcher: Fetcher, timeoutMs: number) =>
+  (baseUrl: string, cookie: string, fetcher: Fetcher, timeoutMs: number, scope: string) =>
   async (path: string): Promise<Probe> => {
     const started = performance.now();
     const elapsed = () => Math.round(performance.now() - started);
     const signal = AbortSignal.timeout(timeoutMs);
     try {
       const response = await fetcher(baseUrl + path, {
-        headers: { cookie, accept: 'application/json' },
+        headers: {
+          cookie,
+          accept: 'application/json',
+          // As apps/web: data calls name the project, session calls do not.
+          ...(path.startsWith('/system/auth/') ? {} : { 'X-SIPGES-Scope': scope }),
+        },
         signal,
       });
       await response.arrayBuffer();

@@ -65,7 +65,7 @@ try {
     steps,
     stepMs: stepSeconds * 1000,
     abortErrorRate: ABORT_ERROR_RATE,
-    get: httpProbe(config.baseUrl, session.cookie, fetch, REQUEST_TIMEOUT_MS),
+    get: httpProbe(config.baseUrl, session.cookie, fetch, REQUEST_TIMEOUT_MS, config.scope),
     now: () => performance.now(),
   });
 } finally {

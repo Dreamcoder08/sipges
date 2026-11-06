@@ -1,6 +1,9 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
   type Probe,
+  SCREENS as PROD_SCREENS,
+  httpProbe,
   loadConfig,
   login,
   parseEnvFile,
@@ -209,5 +212,75 @@ describe('login', () => {
     const { calls, fetcher } = fakeAuth('admin');
     await expect(login(config, fetcher, 59_000)).rejects.toThrow(/consulta/);
     expect(calls.at(-1)?.path).toBe('/logout');
+  });
+});
+
+describe('SCREENS, the first paint of each measured screen', () => {
+  const SHELL = [
+    '/system/auth/me',
+    '/system/auth/current-scope',
+    '/system/auth/scopes',
+    '/system/notifications?limit=30',
+    '/system/v4/settings',
+  ];
+
+  it('opens every screen with the calls of the authenticated shell', () => {
+    for (const paths of Object.values(PROD_SCREENS))
+      expect(paths).toEqual(expect.arrayContaining(SHELL));
+  });
+
+  it('sends the exact URLs of Inicio and of a Registros list', () => {
+    expect(PROD_SCREENS.Inicio).toEqual(
+      expect.arrayContaining([
+        '/api/dashboard',
+        '/system/irsa',
+        '/api/alertas?limit=500&offset=0&q=',
+        '/api/eventos?limit=500&offset=0&q=',
+      ]),
+    );
+    expect(PROD_SCREENS.Registros).toContain('/api/registros/summary?limit=500&offset=0');
+    expect(PROD_SCREENS['Registros lista']).toEqual(
+      expect.arrayContaining([
+        '/api/registros/summary?limit=500&offset=0',
+        '/api/fuentes?limit=500&offset=0&q=',
+        '/system/uploads?linked_module=fuentes&limit=500',
+      ]),
+    );
+  });
+
+  it('asks only for URLs the go/no-go document lists as first paint', async () => {
+    const doc = await readFile(
+      new URL('../../../../docs/deployment/go-activation-reads.md', import.meta.url),
+      'utf8',
+    );
+    const listed = new Set(/```text first-paint\n([\s\S]*?)```/.exec(doc)?.[1]?.split('\n'));
+    const paths = [PROD_SCREENS.Inicio, PROD_SCREENS.Registros, PROD_SCREENS['Registros lista']]
+      .flat()
+      .filter((path) => !path.startsWith('/system/auth/'));
+    expect(paths.filter((path) => !listed.has(path))).toEqual([]);
+  });
+
+  it('leaves out the SSE stream: it never finishes, so it is no request to time', () => {
+    expect(Object.values(PROD_SCREENS).flat()).not.toContain('/system/events');
+  });
+});
+
+describe('httpProbe', () => {
+  const sent = async (path: string) => {
+    let headers = new Headers();
+    const fetcher = async (_url: string, init?: RequestInit) => {
+      headers = new Headers(init?.headers);
+      return new Response('{}');
+    };
+    await httpProbe('https://sipges.example.test', 'c=1', fetcher, 1000, 'SIPGES/PRJ-DEMO')(path);
+    return headers;
+  };
+
+  it('sends the project header on data calls, like the web client', async () => {
+    expect((await sent('/api/dashboard')).get('x-sipges-scope')).toBe('SIPGES/PRJ-DEMO');
+  });
+
+  it('sends no project header on the session calls, like the web client', async () => {
+    expect((await sent('/system/auth/me')).has('x-sipges-scope')).toBe(false);
   });
 });
