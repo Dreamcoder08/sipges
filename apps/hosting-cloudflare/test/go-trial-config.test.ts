@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import { renderGoConfig } from '../src/go-trial-config.ts';
 
@@ -34,4 +35,22 @@ describe('Go trial config', () => {
       expect(() => renderGoConfig(go, production, id)).toThrow(/SIPGES_GO_HYPERDRIVE_ID/);
     },
   );
+
+  it('reads the real files: the id of production is refused and nothing else changes', async () => {
+    const read = (name: string) => readFile(new URL(`../${name}`, import.meta.url), 'utf8');
+    const [goText, productionText] = await Promise.all([
+      read('wrangler.go.jsonc'),
+      read('wrangler.jsonc'),
+    ]);
+    const id = /"hyperdrive":\s*\[\{[^}]*"id":\s*"([0-9a-f]{32})"/.exec(productionText)?.[1];
+    expect(() => renderGoConfig(goText, productionText, id)).toThrow(/production/);
+    const rendered = JSON.parse(renderGoConfig(goText, productionText, TRIAL)) as {
+      name: string;
+      hyperdrive: unknown;
+      containers: unknown[];
+    };
+    expect(rendered.name).toBe('sipges-go');
+    expect(rendered.hyperdrive).toEqual([{ binding: 'HYPERDRIVE', id: TRIAL }]);
+    expect(rendered.containers).toHaveLength(1);
+  });
 });

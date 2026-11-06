@@ -26,7 +26,7 @@ These no longer block the reads. Measured here on synthetic data unless marked.
 | Does the MFA gate match with it on, as production? | Yes, with the default on and a session without TOTP. | 26 of 26 URLs identical (25 `403`, `me` `200`). Parity itself runs with MFA off, so it does not show this. |
 | Are security headers and `no-store` applied? | Yes, by the Worker. Go sets neither, so Go must only be reached through `go-proxy.ts`. | `no-store`, `nosniff`, CSP and HSTS seen on a proxied answer. |
 | Does the container env start Go and serve the reads? | Yes, locally. | 1866 of 1888 parity cases with Go on `goContainerEnv` plus `SIPGES_REQUIRE_MFA=0`, which the parity session needs and the container does not get; all 22 differences are `POST` uploads and TOTP, none in `screens.ts`. The MFA-on row above covers the default. |
-| Do writes need Go first? | No. Every write stays on TypeScript, so L36 and T37 do not apply. | Proposed list is `GET` only, enforced by `go-activation-reads.test.ts`. |
+| Do the reads need writes in Go first? | No. Reads move alone, and every write stays on TypeScript until its own wave. | `go-activation-reads.test.ts` keeps the read waves `GET` only. |
 
 ## Routes of the two screens
 
@@ -69,7 +69,7 @@ Registros (`/registros` and the lists of the sixteen modules):
 
 Modules: `eventos`, `actores`, `directorio`, `demandas`, `compromisos`, `narrativas`, `fuentes`, `alertas`, `acciones`, `intereses`, `dialogos`, `oportunidades`, `hechos`, `aarc`, `buzon`, `lecciones`.
 
-Also on TypeScript, not proposed here: every write the screens can make, the search palette, the Gerencial tab of Inicio, and `GET /system/auth/providers` (the login page).
+Not in Waves A to C: every write the screens can make, the search palette, the Gerencial tab of Inicio, and `GET /system/auth/providers` (the login page). Wave D and the write waves below cover what else is ported.
 
 ### Why `/system/events` stays
 
@@ -81,7 +81,7 @@ Before T48, `validateGoRoutes` refused 33 of these routes for lack of a parity c
 
 ## Proposed `GO_ROUTES`
 
-Copy these only into a reviewed change, one wave at a time. They are `GET` only and name each module: `/api/:module` would also catch paths nobody compared. `go-activation-reads.test.ts` holds these blocks to what the Worker accepts.
+Copy these only into a reviewed change, one wave at a time. Waves A to D are `GET` only and name each module: `/api/:module` would also catch paths nobody compared. `go-activation-reads.test.ts` holds these blocks to what the Worker accepts.
 
 Wave A, the data of each first paint. A failure here leaves the shell standing:
 
@@ -186,6 +186,170 @@ URLs of a first paint that carry `X-SIPGES-Scope`, copied by hand from `apps/web
 /api/lecciones?limit=500&offset=0&q=
 ```
 
+Wave D, the other reads ported to Go. They need nothing beyond what the container gets today, and they are compared by parity, not yet watched in a browser. Take them screen by screen:
+
+```text go-routes
+GET /system/indicators
+GET /system/irsa/config
+GET /system/irsa/history
+GET /system/prevention/actions
+GET /system/prevention/situation-room
+GET /system/prevention/summary
+GET /system/management/overview
+GET /system/management/report.csv
+GET /system/audit
+GET /system/timeline
+GET /system/graph
+GET /system/canonical-entities
+GET /system/project-coordinates
+GET /system/validation-template
+GET /system/geography/catalogue
+GET /system/conflict-risk
+GET /system/v4/situations
+GET /system/v4/media
+GET /system/situational-analysis
+GET /system/strategic-assessment
+GET /system/consensus-engine
+GET /system/integrated-analysis
+GET /system/situational-report.docx
+GET /system/strategic-report.docx
+GET /system/integrated-analysis.docx
+GET /system/consensus-engine.docx
+GET /system/intelligence/sources
+GET /system/intelligence/territorial-alerts
+GET /system/intelligence/territorial-alerts/:id
+GET /system/intelligence/territorial-summary
+GET /system/document-lab/review
+GET /system/briefing
+GET /system/briefing/proposals
+GET /system/export
+GET /system/automations
+GET /system/automations/runs
+GET /system/automations/runtime
+GET /system/auth/accounts
+GET /system/integrations/api-keys
+```
+
+Reads that stay on TypeScript for now:
+
+| Route | Why |
+| --- | --- |
+| `/system/events` | See [below](#why-systemevents-stays). |
+| `/system/uploads/{id}`, `/preview`, `/download` | No S3 settings in the container; PDF and DOCX preview answer 501 (L37). |
+| `/system/search`, `/system/intelligence/embedder` | Their answers depend on `SIPGES_OLLAMA_*` and `SIPGES_SEMANTIC_SEARCH`, which the container does not get. |
+| `/system/intelligence/sources/defensoria/preview` | Calls an outside site; moves with Wave H. |
+| `/system/notifications/push`, `/push/state` | Need `SIPGES_VAPID_*`. |
+| `/system/auth/providers` | Needs `SIPGES_GOOGLE_*`; the login page depends on it. |
+| `/system/metrics` | Counts one process: on Go it would stop showing the Worker's requests. |
+| `/system/automations/cron` | See [go-automation-cron.md](go-automation-cron.md). |
+| `/system/intelligence/` | No parity case. |
+
+## Proposed writes, not before the reads
+
+Every write is ported, with parity cases. **None is proposed yet:** this list says what would move and what each wave needs, and it is not a go-ahead. Writes change the rollback: a route can go back, but rows Go wrote stay, so a defect here is not undone by a deploy. Start only after Waves A to D are measured, and after the owner decides. `go-activation-reads.test.ts` holds these blocks to the Worker's check too.
+
+| Wave | Needs first |
+| --- | --- |
+| E, records and project data | `SIPGES_DATA_KEY` and `SIPGES_DATA_KEY_PREVIOUS` forwarded: these writes wake automation in Go, and its channels need the key. |
+| F, identity, keys and automations | The same, plus an independent verifier, as identity is a high-risk area. |
+| G, uploads and documents | `SIPGES_STORAGE`, `SIPGES_S3_*` and `SIPGES_MAX_UPLOAD_BYTES` forwarded; a timeout on the `http.Client` in `objectstore/s3.go` (L37), which has none today; the owner's choice on the `basic` PDF limit (ADR 0033). |
+| H, outside services | `SIPGES_OLLAMA_*`, `SIPGES_ANALYST_*`, `ANTHROPIC_*` and `SIPGES_VAPID_*` forwarded, as each is used in production. |
+
+Wave E:
+
+```text go-writes
+POST /api/eventos
+POST /api/demandas
+POST /api/buzon
+PUT /api/compromisos/:id
+PUT /api/buzon/:id
+DELETE /api/compromisos/:id
+DELETE /api/buzon/:id
+POST /system/links
+DELETE /system/links/:id
+PUT /system/links/:id/evidence
+PUT /system/marking
+PUT /system/v4/settings
+POST /system/irsa/config
+POST /system/irsa/snapshot
+POST /system/prevention/actions
+PATCH /system/prevention/actions/:id
+POST /system/intelligence/territorial-alerts
+PATCH /system/intelligence/territorial-alerts/:id
+POST /system/notifications/read
+PATCH /system/document-lab/review/:id
+POST /system/document-lab/review/bulk
+POST /system/graph/neighbourhood
+POST /system/geography/query
+```
+
+Wave F:
+
+```text go-writes
+POST /system/auth/accounts
+POST /system/auth/accounts/:username/deactivate
+POST /system/auth/accounts/:username/google
+POST /system/auth/accounts/:username/reset-mfa
+POST /system/auth/grants
+DELETE /system/auth/grants
+POST /system/auth/scopes
+POST /system/auth/totp/setup
+POST /system/auth/totp/enable
+POST /system/integrations/api-keys
+DELETE /system/integrations/api-keys/:id
+POST /system/automations/rules
+PUT /system/automations/rules/:id
+DELETE /system/automations/rules/:id
+POST /system/automations/channels
+DELETE /system/automations/channels/:id
+POST /system/automations/channels/:id/test
+POST /system/automations/tick
+```
+
+Wave G:
+
+```text go-writes
+POST /system/import/compromisos
+POST /system/uploads
+POST /system/document-lab/analyze
+POST /system/document-lab/compare
+POST /system/document-lab/report.docx
+POST /system/document-lab/review/import
+POST /system/analyze
+```
+
+Wave H:
+
+```text go-writes
+POST /system/intelligence/analyze-text
+POST /system/intelligence/semantic-analyze
+POST /system/intelligence/sources/defensoria/import
+POST /system/intelligence/sources/defensoria/poll
+PUT /system/intelligence/sources/defensoria/config
+POST /system/briefing/proposals
+POST /system/notifications/push
+POST /system/notifications/push/test
+POST /system/notifications/push/unsubscribe
+POST /system/v4/media/feeds
+PUT /system/v4/media/feeds/:id
+DELETE /system/v4/media/feeds/:id
+POST /system/v4/media/poll
+POST /system/v4/media/preview
+```
+
+**Gap: 56 write routes have no parity case of their own, so they are not listed.** Go serves them, through the same handler as a listed module, but `validateGoRoutes` refuses a route without a case for that method and path, and these lists must pass it. Parity samples the writes instead of covering each module:
+
+| Route | Has a case | No case |
+| --- | --- | --- |
+| `POST /api/{module}` | `eventos`, `demandas`, `buzon` | The other 13 |
+| `PUT /api/{module}/{id}` | `compromisos`, `buzon` | The other 14 |
+| `DELETE /api/{module}/{id}` | `compromisos`, `buzon` | The other 14 |
+| `POST /system/import/{module}` | `compromisos` | The other 15 |
+
+Add those cases before Wave E or G moves; do not loosen the check.
+
+Ported but not on any list: `/login`, `/logout`, `/select-project`, `/hooks/ingest/{module}`, `/hooks/signals`, `/mcp` and `/auth/google/*`. They sit outside `/api/` and `/system/`, so `validateGoRoutes` refuses them. Moving them means changing that rule on purpose, after everything above.
+
 ## Container environment
 
 `goContainerEnv` passes only what the reads need. That is enough for this list and not for anything after it.
@@ -286,7 +450,8 @@ None blocks the reads. Check them when reading the trial's results.
 4. Measure Wave A, then A+B, then A+B+C on `sipges-go` (B2, B3).
 5. Owner decides B7 and the go/no-go.
 6. Add the production container (B4) with `GO_ROUTES` still empty, and confirm production is unchanged.
-7. Switch Wave A alone, measure again, then B, then C.
+7. Switch Wave A alone, measure again, then B, then C, then D.
+8. Owner decides on the [write waves](#proposed-writes-not-before-the-reads).
 
 ## Evidence
 
