@@ -66,6 +66,8 @@ ENV
 }
 
 build() {
+  # The drill's way to test install without touching images a real install may share.
+  [[ -z ${SIPGES_SKIP_BUILD:-} ]] || return 0
   docker build -f "$REPO_ROOT/apps/api-go/Dockerfile" -t sipges-api-go:local "$REPO_ROOT"
   docker build -f Dockerfile -t sipges-local:new "$REPO_ROOT"
   # Only a real change moves `previous`, so a rebuild of the same code keeps the way back.
@@ -76,6 +78,10 @@ build() {
     docker tag sipges-local:current sipges-local:previous
   fi
   docker tag sipges-local:new sipges-local:current
+  # The import tools embed the migrations, so they must not fall behind once they exist.
+  if [[ -f Dockerfile.import ]] && docker image inspect sipges-import:current >/dev/null 2>&1; then
+    docker build -f Dockerfile.import -t sipges-import:current "$REPO_ROOT"
+  fi
 }
 
 wait_ready() {
@@ -218,7 +224,7 @@ restore) shift; cmd_restore "$@" ;;
 update) cmd_update ;;
 ca) need_env; compose cp caddy:/data/caddy/pki/authorities/local/root.crt sipges-root-ca.crt; say 'Wrote sipges-root-ca.crt' ;;
 wipe) shift; cmd_wipe "$@" ;;
-help)
+help | -h | --help)
   cat <<HELP
 ./sipges install [host]    First install, or rebuild and start. Host defaults to localhost.
 ./sipges start | stop      Start or stop everything.
