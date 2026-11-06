@@ -5,7 +5,9 @@
  * Output is a summary plus an optional JSON report; both contain counts, problem codes and
  * identifiers only — never record contents, password hashes or TOTP secrets.
  */
+import { realpathSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { PGlite } from '@electric-sql/pglite';
 import { z } from 'zod';
@@ -154,7 +156,12 @@ export const main = async (argv: readonly string[]): Promise<number> => {
   }
 };
 
-// Run only as a program, never on import (tests import `main` and `parseCliArgs`).
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// Run only as a program, never on import (tests import `main` and `parseCliArgs`). The URL is
+// percent-encoded and Node resolves links, so a plain text comparison fails on a path with a
+// space or a link, and the tool would exit 0 without doing anything.
+const program = process.argv[1];
+if (program && import.meta.url === pathToFileURL(realpathSync(program)).href) {
+  // Legacy timestamps read as UTC whatever zone the operator's machine is in.
+  process.env['TZ'] = 'UTC';
   process.exitCode = await main(process.argv.slice(2));
 }

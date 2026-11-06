@@ -1,7 +1,9 @@
-import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { cp, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { fileURLToPath } from 'node:url';
 import { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createSecretCipher } from '../../src/contexts/identity/infrastructure/secret-cipher.ts';
@@ -57,10 +59,14 @@ describe('legacy SQLite → PostgreSQL migration', () => {
   const run = async (
     sql: SqlClient,
     mode: MigrationMode,
-    options: { allowNonEmptyTarget?: boolean; storage?: ReturnType<typeof memoryStorage> } = {},
+    options: {
+      allowNonEmptyTarget?: boolean;
+      storage?: ReturnType<typeof memoryStorage>;
+      root?: string;
+    } = {},
   ) => {
     const store = options.storage ?? memoryStorage();
-    const source = createSqliteLegacySource(legacyLayout(fixture.root));
+    const source = createSqliteLegacySource(legacyLayout(options.root ?? fixture.root));
     try {
       const report = await runMigration(
         {
@@ -411,6 +417,43 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     expect(() => parseCliArgs(['--', 'posicional'])).toThrow();
   });
 
+  it('drops a -- anywhere in the arguments, never a value that merely contains it', () => {
+    expect(parseCliArgs(['--legacy-root', '/x', '--', '--apply'])).toMatchObject({
+      'legacy-root': '/x',
+      mode: 'apply',
+    });
+    expect(parseCliArgs(['--legacy-root', '--', '/x'])).toMatchObject({ 'legacy-root': '/x' });
+    expect(parseCliArgs(['--legacy-root', '/x', '--apply', '--'])).toMatchObject({ mode: 'apply' });
+    expect(parseCliArgs(['--legacy-root=--', '--report=a--b'])).toMatchObject({
+      'legacy-root': '--',
+      report: 'a--b',
+    });
+    expect(() => parseCliArgs(['--legacy-root', '/x', '--', 'posicional'])).toThrow();
+  });
+
+  it('runs as a program from a path with spaces and through a symbolic link', async () => {
+    const api = fileURLToPath(new URL('../..', import.meta.url));
+    const dir = await mkdtemp(join(tmpdir(), 'sipges cli copy '));
+    const help = (cli: string) =>
+      spawnSync(process.execPath, [cli, '--help'], { encoding: 'utf8', timeout: 60_000 });
+    try {
+      await cp(join(api, 'src'), join(dir, 'src'), { recursive: true });
+      await cp(join(api, 'package.json'), join(dir, 'package.json'));
+      await symlink(join(api, 'node_modules'), join(dir, 'node_modules'));
+      const cli = join(dir, 'src/tools/migrate-legacy/cli.ts');
+      const spaced = help(cli);
+      expect(spaced.status).toBe(0);
+      expect(spaced.stdout).toContain('Usage:');
+
+      await symlink(cli, join(dir, 'enlace.ts'));
+      const linked = help(join(dir, 'enlace.ts'));
+      expect(linked.status).toBe(0);
+      expect(linked.stdout).toContain('Usage:');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('does not read a target with pending schema migrations in a dry run', async () => {
     const untouched = new Proxy({} as TargetStore, {
       get: (_target, name) => () => {
@@ -565,6 +608,44 @@ describe('legacy SQLite → PostgreSQL migration', () => {
       }
     } finally {
       await own.cleanup();
+    }
+  });
+
+  it('reads every timestamp the same whatever zone the process starts in', async () => {
+    const own = await buildLegacyFixture();
+    const dir = await mkdtemp(join(tmpdir(), 'sipges-time-zone-'));
+    const cli = fileURLToPath(new URL('../../src/tools/migrate-legacy/cli.ts', import.meta.url));
+    const sourceChecksums = async (zone: string) => {
+      const reportPath = join(dir, `${zone.replace('/', '-')}.json`);
+      const run = spawnSync(
+        process.execPath,
+        [cli, '--legacy-root', own.root, '--report', reportPath],
+        {
+          encoding: 'utf8',
+          timeout: 60_000,
+          env: {
+            PATH: process.env['PATH'] ?? '',
+            TZ: zone,
+            SIPGES_PGLITE_DIR: join(dir, zone.replace('/', '-')),
+            SIPGES_DATA_KEY: TEST_DATA_KEY,
+            SIPGES_UPLOAD_DIR: join(dir, 'objects'),
+          },
+        },
+      );
+      expect(run.status, run.stderr).toBe(1);
+      const report = JSON.parse(await readFile(reportPath, 'utf8')) as MigrationReport;
+      return report.tenants.map((t) => t.checksums.source);
+    };
+    try {
+      const db = new DatabaseSync(join(own.root, 'data/sipges.db'));
+      db.exec(`
+        INSERT INTO records (module, record_id, payload, created_at, updated_at)
+          VALUES ('Eventos', 'EV-ZONA-1', '{}', '01-02-2026', '2798Sept');`);
+      db.close();
+      expect(await sourceChecksums('Pacific/Kiritimati')).toEqual(await sourceChecksums('UTC'));
+    } finally {
+      await own.cleanup();
+      await rm(dir, { recursive: true, force: true });
     }
   });
 });
