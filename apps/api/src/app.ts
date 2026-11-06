@@ -108,7 +108,17 @@ export const createApp = (
   app.route('/', ontologyRoutes(container.ontology));
   app.route('/', analystRoutes(container.analyst));
   app.route('/', auditRoutes(audit));
-  app.route('/', activityRoutes(audit, options.activity));
+  app.route(
+    '/',
+    activityRoutes(
+      audit,
+      async (token, tenantId) => {
+        const principal = await identity.authenticate(token);
+        return principal !== null && tenancy.isGranted(principal.username, tenantId);
+      },
+      options.activity,
+    ),
+  );
   app.route('/', indicatorsRoutes({ indicators }));
   app.route('/', evidenceRoutes(evidence));
   app.route('/', documentLabRoutes(documents));
