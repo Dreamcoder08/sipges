@@ -1,0 +1,166 @@
+# SIPGES on one machine: PostgreSQL, the Go API with the web app, and Caddy for HTTPS.
+# Do not run this file directly: `./sipges` builds, checks and starts it (docs/deployment/local-install.md).
+name: sipges
+
+x-hardening: &hardening
+  restart: unless-stopped
+  cap_drop: [ALL]
+  security_opt: ['no-new-privileges:true']
+  logging:
+    driver: json-file
+    options: { max-size: 10m, max-file: '5' }
+
+x-database-url: &database-url postgres://sipges_app:${SIPGES_DB_PASSWORD:?}@db:5432/sipges?sslmode=disable
+
+services:
+  db:
+    image: postgres:17@sha256:748a18a54d3842d43bc156f0840d78029b8d349e0feca98c12b9c4ce3404a6b3
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sipges_admin
+      POSTGRES_PASSWORD: ${SIPGES_DB_ADMIN_PASSWORD:?}
+      POSTGRES_DB: postgres
+      # Password on every connection: the default trusts the database's own loopback, which the
+      # import job shares.
+      POSTGRES_INITDB_ARGS: --auth-local=scram-sha-256 --auth-host=scram-sha-256
+      SIPGES_DB_PASSWORD: ${SIPGES_DB_PASSWORD:?}
+      SIPGES_DB_BACKUP_PASSWORD: ${SIPGES_DB_BACKUP_PASSWORD:?}
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d:ro
+    networks: [backend]
+    healthcheck:
+      # Over TCP: the first-run setup listens only on its socket, so this waits for the end of it.
+      test: [CMD-SHELL, pg_isready -h 127.0.0.1 -U sipges_app -d sipges]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: '5' }
+
+  migrate:
+    image: sipges-local:${SIPGES_IMAGE_TAG:-current}
+    command: [migrate]
+    restart: 'no'
+    environment:
+      SIPGES_DATABASE_URL: *database-url
+    depends_on:
+      db: { condition: service_healthy }
+    # Unused by this job. It runs first, so the new volume takes its owner from this image.
+    volumes:
+      - uploads:/data/uploads
+    networks: [backend]
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    read_only: true
+
+  api:
+    <<: *hardening
+    image: sipges-local:${SIPGES_IMAGE_TAG:-current}
+    environment:
+      SIPGES_DATABASE_URL: *database-url
+      SIPGES_ALLOWED_HOSTS: ${SIPGES_SITE_HOST:?}
+      SIPGES_DATA_KEY: ${SIPGES_DATA_KEY:?}
+      SIPGES_ADMIN_USERNAME: ${SIPGES_ADMIN_USERNAME:-admin}
+      SIPGES_ADMIN_PASSWORD: ${SIPGES_ADMIN_PASSWORD:?}
+      # Caddy is the only way in, and it appends the real client address.
+      SIPGES_TRUST_PROXY: '1'
+      # No Worker cron here: Go runs the scheduled automation itself.
+      SIPGES_GO_AUTOMATION_CRON: '1'
+      SIPGES_AUTOMATION_INTERVAL: ${SIPGES_AUTOMATION_INTERVAL:-60}
+      # Optional providers: with no value here, a name is left out of the container.
+      SIPGES_VAPID_PUBLIC_KEY:
+      SIPGES_VAPID_PRIVATE_KEY:
+      SIPGES_VAPID_SUBJECT:
+      SIPGES_GOOGLE_CLIENT_ID:
+      SIPGES_GOOGLE_CLIENT_SECRET:
+      SIPGES_GOOGLE_ADMIN_EMAIL:
+      SIPGES_OLLAMA_URL:
+      SIPGES_OLLAMA_EMBED_MODEL:
+      SIPGES_SEMANTIC_SEARCH:
+      SIPGES_ANALYST_PROVIDER:
+      SIPGES_ANALYST_MODEL:
+      ANTHROPIC_BASE_URL:
+      ANTHROPIC_API_KEY:
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes:
+      - uploads:/data/uploads
+    networks: [backend, frontend]
+    read_only: true
+    tmpfs: [/tmp]
+    mem_limit: 1g
+
+  caddy:
+    <<: *hardening
+    image: caddy:2-alpine@sha256:78bd35025c7ba85961dd149ae670315129954e77abe2383ac47c89106b35ade9
+    cap_add: [NET_BIND_SERVICE]
+    environment:
+      SIPGES_SITE_HOST: ${SIPGES_SITE_HOST:?}
+    ports:
+      - ${SIPGES_BIND_ADDRESS:-0.0.0.0}:${SIPGES_HTTP_PORT:-80}:80
+      - ${SIPGES_BIND_ADDRESS:-0.0.0.0}:${SIPGES_HTTPS_PORT:-443}:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [api]
+    networks: [frontend]
+
+  backup:
+    image: postgres:17@sha256:748a18a54d3842d43bc156f0840d78029b8d349e0feca98c12b9c4ce3404a6b3
+    restart: unless-stopped
+    entrypoint: [/bin/bash, /ops/schedule.sh]
+    environment: &backup-env
+      PGHOST: db
+      PGDATABASE: sipges
+      PGUSER: sipges_backup
+      PGPASSWORD: ${SIPGES_DB_BACKUP_PASSWORD:?}
+      SIPGES_BACKUP_PASSPHRASE: ${SIPGES_BACKUP_PASSPHRASE:?}
+      SIPGES_BACKUP_HOUR: ${SIPGES_BACKUP_HOUR:-2}
+      SIPGES_BACKUP_KEEP: ${SIPGES_BACKUP_KEEP:-14}
+      SIPGES_HOST_OWNER: ${SIPGES_HOST_OWNER:?}
+      TZ: ${SIPGES_TIMEZONE:-America/Lima}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    volumes:
+      - uploads:/data/uploads:ro
+      - ./ops:/ops:ro
+      - ${SIPGES_BACKUP_DIR:-./backups}:/backups
+    networks: [backend]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_OVERRIDE, DAC_READ_SEARCH, FOWNER]
+    security_opt: ['no-new-privileges:true']
+
+  # Only ever started by `./sipges restore`: the one service that holds the superuser password.
+  restore:
+    profiles: [ops]
+    image: postgres:17@sha256:748a18a54d3842d43bc156f0840d78029b8d349e0feca98c12b9c4ce3404a6b3
+    entrypoint: [/bin/bash, /ops/restore.sh]
+    restart: 'no'
+    environment:
+      PGHOST: db
+      PGDATABASE: postgres
+      PGUSER: sipges_admin
+      PGPASSWORD: ${SIPGES_DB_ADMIN_PASSWORD:?}
+      SIPGES_BACKUP_PASSPHRASE: ${SIPGES_BACKUP_PASSPHRASE:?}
+      SIPGES_DRILL_STOP_AFTER_SWAP: ${SIPGES_DRILL_STOP_AFTER_SWAP:-}
+    volumes:
+      - uploads:/data/uploads
+      - ./ops:/ops:ro
+      - ${SIPGES_BACKUP_DIR:-./backups}:/backups:ro
+    networks: [backend]
+
+volumes:
+  db:
+  uploads:
+  caddy-data:
+  caddy-config:
+
+networks:
+  # No route out: only the API and the backup jobs reach the database.
+  backend:
+    internal: true
+  frontend:
