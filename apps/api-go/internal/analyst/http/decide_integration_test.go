@@ -115,7 +115,7 @@ func TestApprovingAFollowUpCreatesTheRecordAndAuditsIt(t *testing.T) {
 func TestApprovingALinkReadFromTextCreatesIt(t *testing.T) {
 	undoDecisions(t)
 	base := start(t)
-	code, body := get(t, base, proposalsPath+"?module=narrativas&id=N-1", "solo", nil)
+	code, body := get(t, base, proposalsPath+"?module=narrativas&id=N-1", "solo", nil) //nolint:misspell // Spanish, verbatim
 	var open []struct {
 		Fingerprint string `json:"fingerprint"`
 		Kind        string `json:"kind"`
@@ -123,7 +123,7 @@ func TestApprovingALinkReadFromTextCreatesIt(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &open); err != nil || code != http.StatusOK || len(open) == 0 || open[0].Kind != "link" {
 		t.Fatalf("%d %s", code, body)
 	}
-	code, body = post(t, base, "solo", decision("narrativas", "N-1", open[0].Fingerprint, "approve"))
+	code, body = post(t, base, "solo", decision("narrativas", "N-1", open[0].Fingerprint, "approve")) //nolint:misspell // Spanish, verbatim
 	if code != http.StatusOK || body != `{"ok":true,"result":null}` {
 		t.Fatalf("%d %s", code, body)
 	}
@@ -131,7 +131,7 @@ func TestApprovingALinkReadFromTextCreatesIt(t *testing.T) {
 	if links != 1 {
 		t.Fatalf("links = %d", links)
 	}
-	if code, body = get(t, base, proposalsPath+"?module=narrativas&id=N-1", "solo", nil); code != http.StatusOK || body != "[]" {
+	if code, body = get(t, base, proposalsPath+"?module=narrativas&id=N-1", "solo", nil); code != http.StatusOK || body != "[]" { //nolint:misspell // Spanish, verbatim
 		t.Fatalf("still open: %d %s", code, body)
 	}
 }
