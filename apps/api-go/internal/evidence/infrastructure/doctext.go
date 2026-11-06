@@ -9,20 +9,21 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
 )
 
-// previewParseTimeout bounds one DOCX read, as the TypeScript PDF worker pool bounds a PDF.
+// previewParseTimeout bounds one read, as the TypeScript PDF worker pool bounds a PDF.
 const previewParseTimeout = 30 * time.Second
 
-// DocText is the viewer's text reader of compose.ts: DOCX with the document lab's reader
-// (platform/doctext), its paragraphs and then each table row's cells joined by tabs. PDF text
-// comes from pdf.js, which no Go library reproduces, so a PDF answers
-// application.ErrNoTextExtractor (the route's 501) and its preview stays in TypeScript.
-type DocText struct{}
+// DocText is the viewer's text reader of compose.ts, with the document lab's readers
+// (platform/doctext): PDF pages, and DOCX paragraphs and then each table row's cells joined by tabs.
+type DocText struct {
+	// OCR reads PDFs without a text layer; nil keeps text-only reading.
+	OCR *doctext.OCR
+}
 
 var _ application.TextExtractor = DocText{}
 
-// PDF is not ported (see DocText).
-func (DocText) PDF(context.Context, []byte, int) ([]string, bool, error) {
-	return nil, false, application.ErrNoTextExtractor
+// PDF is the viewer's `pdf` text function of compose.ts.
+func (d DocText) PDF(ctx context.Context, data []byte, maxPages int) ([]string, bool, error) {
+	return d.OCR.ReadPDF(ctx, data, maxPages, previewParseTimeout)
 }
 
 // DOCX is the viewer's `docx` text function of compose.ts.

@@ -10,6 +10,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/domain"
 	identityhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/http"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
@@ -49,29 +50,24 @@ type statusDetail struct {
 	detail string
 }
 
-// pdfUnsupported answers a PDF while pdf.js's text reading exists only in the TypeScript API.
-var pdfUnsupported = statusDetail{http.StatusNotImplemented, "La lectura de PDF aún no está disponible en este servidor"}
-
 // analyzeErrors is ANALYZE_ERRORS.
 var analyzeErrors = map[application.ReadError]statusDetail{
-	application.ReadExtension:      {http.StatusUnsupportedMediaType, "Tipo de documento no compatible"},
-	application.ReadTooLarge:       {http.StatusRequestEntityTooLarge, "Archivo demasiado grande"},
-	application.ReadEmpty:          {http.StatusBadRequest, "Archivo vacío"},
-	application.ReadTooManyPages:   {http.StatusRequestEntityTooLarge, "El PDF supera 100 páginas"},
-	application.ReadUnreadable:     {http.StatusUnprocessableEntity, "No se puede leer el documento"},
-	application.ReadNoText:         {http.StatusUnprocessableEntity, "No se detectó texto extraíble. Los PDF escaneados requieren OCR externo."},
-	application.ReadPDFUnsupported: pdfUnsupported,
+	application.ReadExtension:    {http.StatusUnsupportedMediaType, "Tipo de documento no compatible"},
+	application.ReadTooLarge:     {http.StatusRequestEntityTooLarge, "Archivo demasiado grande"},
+	application.ReadEmpty:        {http.StatusBadRequest, "Archivo vacío"},
+	application.ReadTooManyPages: {http.StatusRequestEntityTooLarge, "El PDF supera 100 páginas"},
+	application.ReadUnreadable:   {http.StatusUnprocessableEntity, "No se puede leer el documento"},
+	application.ReadNoText:       {http.StatusUnprocessableEntity, "No se detectó texto extraíble. Los PDF escaneados requieren OCR externo."},
 }
 
 // compareErrors is COMPARE_ERRORS.
 var compareErrors = map[application.ReadError]statusDetail{
-	application.ReadExtension:      {http.StatusUnsupportedMediaType, "Formato no permitido"},
-	application.ReadTooLarge:       {http.StatusRequestEntityTooLarge, "Tamaño inválido"},
-	application.ReadEmpty:          {http.StatusRequestEntityTooLarge, "Tamaño inválido"},
-	application.ReadTooManyPages:   {http.StatusRequestEntityTooLarge, "El PDF supera 100 páginas"},
-	application.ReadUnreadable:     {http.StatusUnprocessableEntity, "No se puede leer el documento"},
-	application.ReadNoText:         {http.StatusUnprocessableEntity, "Documento sin texto extraíble"},
-	application.ReadPDFUnsupported: pdfUnsupported,
+	application.ReadExtension:    {http.StatusUnsupportedMediaType, "Formato no permitido"},
+	application.ReadTooLarge:     {http.StatusRequestEntityTooLarge, "Tamaño inválido"},
+	application.ReadEmpty:        {http.StatusRequestEntityTooLarge, "Tamaño inválido"},
+	application.ReadTooManyPages: {http.StatusRequestEntityTooLarge, "El PDF supera 100 páginas"},
+	application.ReadUnreadable:   {http.StatusUnprocessableEntity, "No se puede leer el documento"},
+	application.ReadNoText:       {http.StatusUnprocessableEntity, "Documento sin texto extraíble"},
 }
 
 // importErrors is IMPORT_ERRORS.
@@ -212,6 +208,7 @@ func LabRoutes(mux *http.ServeMux, lab Lab, log *slog.Logger) {
 	twoFiles := 2*int64(lab.UploadLimit()) + multipartSlack
 
 	mux.HandleFunc("POST /system/document-lab/analyze", func(w http.ResponseWriter, r *http.Request) {
+		httpx.ExtendWriteDeadline(w, doctext.LongestRead)
 		files, project, ok := readForm(w, r, oneFile, analyzeErrors[application.ReadTooLarge].detail, "file")
 		if !ok {
 			return
@@ -225,6 +222,7 @@ func LabRoutes(mux *http.ServeMux, lab Lab, log *slog.Logger) {
 	})
 
 	mux.HandleFunc("POST /system/document-lab/report.docx", func(w http.ResponseWriter, r *http.Request) {
+		httpx.ExtendWriteDeadline(w, doctext.LongestRead)
 		files, project, ok := readForm(w, r, oneFile, analyzeErrors[application.ReadTooLarge].detail, "file")
 		if !ok {
 			return
@@ -244,6 +242,7 @@ func LabRoutes(mux *http.ServeMux, lab Lab, log *slog.Logger) {
 	})
 
 	mux.HandleFunc("POST /system/document-lab/compare", func(w http.ResponseWriter, r *http.Request) {
+		httpx.ExtendWriteDeadline(w, 2*doctext.LongestRead)
 		files, project, ok := readForm(w, r, twoFiles, compareErrors[application.ReadTooLarge].detail, "file_a", "file_b")
 		if !ok {
 			return

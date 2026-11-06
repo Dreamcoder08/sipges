@@ -13,9 +13,8 @@ import (
 
 // The upload rules of upload-policy.ts (app.py:1063-1127, corrected per docs/adr/0008 #9): the
 // extension allowlist and name sanitizing keep parity; the content must also match the
-// extension's file signature, so a renamed executable or HTML page is refused. Uploads stay in
-// TypeScript; these rules are ported so both sides answer the same, pinned by
-// testdata/upload-policy.json.
+// extension's file signature, so a renamed executable or HTML page is refused. Both APIs answer
+// the same, pinned by testdata/upload-policy.json.
 
 var (
 	zipMagic  = []byte{0x50, 0x4b, 0x03, 0x04}

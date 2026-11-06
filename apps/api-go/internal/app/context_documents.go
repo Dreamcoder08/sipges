@@ -13,6 +13,8 @@ import (
 	documentshttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/http"
 	documentssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/evidence/infrastructure/objectstore"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/doctext"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	recordsdomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	recordssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/infrastructure"
@@ -26,13 +28,17 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
+		ocr, err := config.LoadOCR(os.LookupEnv)
+		if err != nil {
+			return nil, err
+		}
 		now := d.Now
 		if now == nil {
 			now = time.Now
 		}
 		service := documents.Service{Store: documentssql.Reviews{DB: d.Pool}}
 		lab := documents.Lab{
-			Reader:         documentssql.Reader{},
+			Reader:         documentssql.Reader{OCR: doctext.NewOCR(ocr.Enabled, ocr.Languages)},
 			Renderer:       documentssql.DocxRenderer{},
 			Reviews:        documentssql.Reviews{DB: d.Pool},
 			Records:        reviewRecordsPort{store: recordssql.Records{DB: d.Pool}, now: now},

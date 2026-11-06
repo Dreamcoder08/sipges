@@ -243,3 +243,29 @@ test('{api} names each API in a perApi case and reads back as {api} in the answe
     server.close();
   }
 });
+
+test('a base64 body reaches the server as its bytes', async () => {
+  const seen: Buffer[] = [];
+  const server = createServer((req, res) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => {
+      seen.push(Buffer.concat(chunks));
+      res.writeHead(200, { 'content-type': 'application/json' }).end('{"ok":1}');
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+  try {
+    const bytes = Buffer.from([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x00, 0xff]);
+    await send(
+      `http://127.0.0.1:${port}`,
+      { name: 'b', method: 'POST', path: '/x', body: { base64: bytes.toString('base64') } },
+      undefined,
+      1000,
+    );
+    assert.deepEqual(seen, [bytes]);
+  } finally {
+    server.close();
+  }
+});

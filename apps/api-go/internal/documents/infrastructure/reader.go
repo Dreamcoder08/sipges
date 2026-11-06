@@ -14,32 +14,32 @@ import (
 const ParseTimeout = 30 * time.Second
 
 // Reader is the document lab's DocumentReader: DOCX through doctext (the TypeScript reader,
-// ported), and no PDF. pdf.js's text items (spacing, line ends, ordering) are what the lexical
-// reading splits into findings, and no Go or Rust library reproduces them, so a PDF answers
-// application.ErrPDFUnsupported and the routes that read PDFs stay in TypeScript.
+// ported) and PDF with pdf.js itself, in WebAssembly, because its text items (spacing, line ends,
+// ordering) are what the lexical reading splits into findings (ADR 0033).
 type Reader struct {
 	// Timeout overrides ParseTimeout when positive.
 	Timeout time.Duration
+	// OCR reads PDFs without a text layer; nil keeps text-only reading.
+	OCR *doctext.OCR
 }
 
 var _ application.DocumentReader = Reader{}
 
-func (r Reader) bound(ctx context.Context) (context.Context, context.CancelFunc) {
-	timeout := r.Timeout
-	if timeout <= 0 {
-		timeout = ParseTimeout
+func (r Reader) timeout() time.Duration {
+	if r.Timeout > 0 {
+		return r.Timeout
 	}
-	return context.WithTimeout(ctx, timeout)
+	return ParseTimeout
 }
 
-// ReadPDF is not ported (see Reader).
-func (Reader) ReadPDF(context.Context, []byte, int) ([]string, bool, error) {
-	return nil, false, application.ErrPDFUnsupported
+// ReadPDF is readPdf with the fallback of withOcr.
+func (r Reader) ReadPDF(ctx context.Context, data []byte, maxPages int) ([]string, bool, error) {
+	return r.OCR.ReadPDF(ctx, data, maxPages, r.timeout())
 }
 
 // ReadDOCX is readDocx.
 func (r Reader) ReadDOCX(ctx context.Context, data []byte) (domain.DocxContent, error) {
-	ctx, cancel := r.bound(ctx)
+	ctx, cancel := context.WithTimeout(ctx, r.timeout())
 	defer cancel()
 	c, err := doctext.ReadDOCX(ctx, data)
 	if err != nil {
