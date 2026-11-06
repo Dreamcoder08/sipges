@@ -146,6 +146,9 @@ func formChain(depth int) []byte {
 
 // The peak is the whole process's, so the read runs in a child of its own.
 func TestReadPDFKeepsMemoryBoundedOnDeepRecursion(t *testing.T) {
+	if raceDetector {
+		t.Skip("the race detector's shadow memory hides the peak")
+	}
 	const child = "SIPGES_PDF_MEMORY_CHILD"
 	if os.Getenv(child) == "1" {
 		ctx, cancel := context.WithTimeout(context.Background(), 12*time.Second)
