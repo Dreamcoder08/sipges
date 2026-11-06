@@ -352,7 +352,7 @@ Ported but not on any list: `/login`, `/logout`, `/select-project`, `/hooks/inge
 
 ## Container environment
 
-`goContainerEnv` passes only what the reads need. That is enough for Waves A to D and not for the write waves.
+`goContainerEnv` passes every setting the routes read, when it is set. What the reads need is enough for Waves A to D; the write waves also need the rest set on the Worker ([go-live list](go-trial-runbook.md#go-live-list-names-never-values)).
 
 | Variable | Passed | Needed by these reads | Note |
 | --- | --- | --- | --- |
@@ -361,11 +361,11 @@ Ported but not on any list: `/login`, `/logout`, `/select-project`, `/hooks/inge
 | `SIPGES_ALLOWED_HOSTS` | yes | yes | **Unverified:** that the container sees the public `Host`. The library forwards the original URL (`container.js:886`); only the trial proves it. |
 | `SIPGES_TRUST_CF_CONNECTING_IP` | yes | no | |
 | `SIPGES_CRON_SECRET`, `CRON_SECRET`, `SIPGES_CRON_SCHEDULE` | yes, when set | no | For `/system/automations/runtime`. Inert while `SIPGES_GO_AUTOMATION_CRON` stays out, as it does. |
-| `SIPGES_REQUIRE_MFA` | no | yes | Go defaults to on, as production should. **Unverified:** that production does not override it. Secrets need the owner to read. |
-| `SIPGES_DATA_KEY` | no | no | Go still starts, but TOTP answers 404 or 500. Required before identity writes move; the `not-for-go` value in `go-routing.test.ts` is out of date for them. |
-| `SIPGES_STORAGE`, `SIPGES_S3_*` | no | no | Uploads answer 500 (L37). Required before any upload route moves. |
-| `SIPGES_COOKIE_SECURE` | no | no | Reads set no cookie; unset means `Secure`. |
-| `SIPGES_GOOGLE_*` | no | no | This is why `/system/auth/providers` is not proposed. |
+| `SIPGES_REQUIRE_MFA` | yes, when set | yes | Go defaults to on, as production should. **Unverified:** that production does not override it. Secrets need the owner to read. |
+| `SIPGES_DATA_KEY` | yes, when set | no | A working Worker always has it, because TypeScript requires it. Without it Go still starts, but TOTP answers 404 or 500. |
+| `SIPGES_STORAGE`, `SIPGES_S3_*` | yes, when set | no | Unset, Go stores on the container's disk, whose working directory the image's user can write, so a file is lost at the next restart. The 500 of L37 came from a read-only directory in the parity run. Required before any upload route moves. |
+| `SIPGES_COOKIE_SECURE` | yes, when set | no | Reads set no cookie; unset means `Secure`. |
+| `SIPGES_GOOGLE_*` | yes, when set | no | Unset, the sign-in stays hidden. This is why `/system/auth/providers` is not proposed yet. |
 
 ## What must be true first
 

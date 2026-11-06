@@ -181,9 +181,27 @@ Deleting the branch deletes the copy, its `sipges_app` and its password. They we
 
 `SIPGES_OCR` stays unset, and `ocrmypdf` and Tesseract are not in the image ([ADR 0033](../adr/0033-pdf-text-in-wasm.md)). So a scanned PDF answers as it does without OCR. If it is ever enabled, **add a concurrency cap first**: Go caps PDF text reads (`pdfSlots`) but has no cap on OCR processes, and one page took 24 s and 282 MiB at 1/4 vCPU, so a few at once would exhaust a `basic` instance.
 
+## Evidence files from the container
+
+The R2 binding (`EVIDENCE`) exists only in the Worker. The container reaches the same bucket through R2's S3 API, with the client Go already has (`objectstore.S3`): same keys, so TypeScript and Go read each other's files. **Not proved against real R2:** no credentials exist yet, so the first upload on the trial is the proof.
+
+| Name | Value |
+| --- | --- |
+| `SIPGES_STORAGE` | `s3` |
+| `SIPGES_S3_ENDPOINT` | `https://<account-id>.r2.cloudflarestorage.com` |
+| `SIPGES_S3_REGION` | Leave unset: `auto` |
+| `SIPGES_S3_BUCKET` | The Worker's own bucket: `sipges-evidence-go` on the trial, `sipges-evidence` in production |
+| `SIPGES_S3_ACCESS_KEY_ID`, `SIPGES_S3_SECRET_ACCESS_KEY` | An R2 token with Object Read & Write on that one bucket, one token per Worker |
+
+**Set `SIPGES_STORAGE` last.** The Worker passes every string it has to the TypeScript config, even though TypeScript stores through the binding. `SIPGES_STORAGE=s3` with the endpoint, bucket or either key missing makes that config throw, and then the whole Worker fails, the web shell included. Once the set is complete, TypeScript validates it and keeps using the binding.
+
+Unset, Go uses local storage on the container's disk, and nothing there survives a restart. So `s3` must be in place before any upload route moves.
+
+Considered: `@cloudflare/containers` can send the container's outbound traffic through a Worker handler, which could use the binding with no long-lived credentials in the container. It would need new, untested Worker code in the path of every file, and the S3 client already has parity. If the token ever becomes a concern, this is the path to look at.
+
 ## Go-live list: names, never values
 
-For step 6 of the order of work. "Passed" means `goContainerEnv` forwards it today; anything marked no needs a code change before the routes that use it move.
+For step 6 of the order of work. "Passed" means `goContainerEnv` forwards it today; anything marked no needs a code change before the routes that use it move. The container reads its environment when it starts, so a changed value needs a restart. Every forwarded value is optional, and no secret may reach a log. The one setting Go logs is the public `SIPGES_ANALYST_MODEL`, in `briefing_narration_failed`, as TypeScript does.
 
 | Name | Kind | Passed | Needed for |
 | --- | --- | --- | --- |
@@ -195,20 +213,20 @@ For step 6 of the order of work. "Passed" means `goContainerEnv` forwards it tod
 | `SIPGES_CRON_SCHEDULE` | var | yes | `/system/automations/runtime` |
 | `SIPGES_HOST`, `SIPGES_PORT`, `SIPGES_TRUST_CF_CONNECTING_IP` | fixed in code | yes | Every route |
 | `GOMEMLIMIT` | fixed in the image | n/a | Memory limit |
-| `SIPGES_REQUIRE_MFA`, `SIPGES_COOKIE_SECURE` | var | no | Unset means on in Go. Confirm production does not override them |
-| `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS` | secret | no | TOTP, identity and automation channel writes |
+| `SIPGES_REQUIRE_MFA`, `SIPGES_COOKIE_SECURE` | var | yes, when set | Unset stays unset and means on in Go. The Worker adds no default. Confirm production does not override them |
+| `SIPGES_DATA_KEY`, `SIPGES_DATA_KEY_PREVIOUS` | secret | yes, when set | TOTP, identity and automation channel writes. With the key, a write route on Go sends through real channels: see [go-automation-cron.md](go-automation-cron.md) |
 | `SIPGES_GO_AUTOMATION_CRON`, `SIPGES_AUTOMATION_INTERVAL` | var | no, on purpose | The Go cron: see [go-automation-cron.md](go-automation-cron.md) |
-| `SIPGES_STORAGE`, `SIPGES_S3_ENDPOINT`, `SIPGES_S3_REGION`, `SIPGES_S3_BUCKET`, `SIPGES_MAX_UPLOAD_BYTES` | var | no | Uploads, previews and downloads |
-| `SIPGES_S3_ACCESS_KEY_ID`, `SIPGES_S3_SECRET_ACCESS_KEY` | secret | no | Uploads, previews and downloads |
-| `SIPGES_GOOGLE_CLIENT_ID`, `SIPGES_GOOGLE_ADMIN_EMAIL` | var | no | Google sign-in, `/system/auth/providers` |
-| `SIPGES_GOOGLE_CLIENT_SECRET` | secret | no | Google sign-in |
-| `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_SUBJECT` | var | no | Push |
-| `SIPGES_VAPID_PRIVATE_KEY` | secret | no | Push |
-| `SIPGES_OLLAMA_URL`, `SIPGES_OLLAMA_EMBED_MODEL`, `SIPGES_SEMANTIC_SEARCH` | var | no | Semantic analysis |
-| `SIPGES_ANALYST_PROVIDER`, `SIPGES_ANALYST_MODEL`, `ANTHROPIC_BASE_URL` | var | no | Analyst prose |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` | secret | no | Analyst prose |
+| `SIPGES_STORAGE`, `SIPGES_S3_ENDPOINT`, `SIPGES_S3_REGION`, `SIPGES_S3_BUCKET`, `SIPGES_MAX_UPLOAD_BYTES` | var | yes, when set | Uploads, previews and downloads. See [Evidence files from the container](#evidence-files-from-the-container) |
+| `SIPGES_S3_ACCESS_KEY_ID`, `SIPGES_S3_SECRET_ACCESS_KEY` | secret | yes, when set | Uploads, previews and downloads |
+| `SIPGES_GOOGLE_CLIENT_ID`, `SIPGES_GOOGLE_ADMIN_EMAIL` | var | yes, when set | Google sign-in, `/system/auth/providers` |
+| `SIPGES_GOOGLE_CLIENT_SECRET` | secret | yes, when set | Google sign-in |
+| `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_SUBJECT` | var | yes, when set | Push |
+| `SIPGES_VAPID_PRIVATE_KEY` | secret | yes, when set | Push |
+| `SIPGES_OLLAMA_URL`, `SIPGES_OLLAMA_EMBED_MODEL`, `SIPGES_SEMANTIC_SEARCH` | var | yes, when set | Semantic analysis |
+| `SIPGES_ANALYST_PROVIDER`, `SIPGES_ANALYST_MODEL`, `ANTHROPIC_BASE_URL` | var | yes, when set | Analyst prose |
+| `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` | secret | yes, when set | Analyst prose |
 | `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | var | no, not enabled | OCR, see above |
-| `SIPGES_ACCESS_LOG` | var | no | Go's request log |
+| `SIPGES_ACCESS_LOG` | var | yes, when set | Go's request log. TypeScript reads it too |
 | `SIPGES_TRUST_PROXY`, `SIPGES_UPLOAD_DIR` | var | no, not for Cloudflare | Other hosting: the Worker sets `SIPGES_TRUST_CF_CONNECTING_IP`, and uploads go to S3 |
 | `SIPGES_ALLOW_PRIVILEGED_DB_ROLE` | var | no, never set | Synthetic test servers on loopback only |
 
