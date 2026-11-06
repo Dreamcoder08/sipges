@@ -93,6 +93,29 @@ describe('Go container', () => {
     });
   });
 
+  it('passes the cron secret and schedule, and only when they are set', () => {
+    const synthetic = 'synthetic-cron-value-of-24+chars';
+    expect(
+      goContainerEnv({
+        SIPGES_CRON_SECRET: synthetic,
+        CRON_SECRET: 'fallback',
+        SIPGES_CRON_SCHEDULE: '*/15 * * * *',
+      }),
+    ).toMatchObject({
+      SIPGES_CRON_SECRET: synthetic,
+      CRON_SECRET: 'fallback',
+      SIPGES_CRON_SCHEDULE: '*/15 * * * *',
+    });
+    expect(Object.keys(goContainerEnv({}))).not.toContain('SIPGES_CRON_SECRET');
+    expect(Object.keys(goContainerEnv({}))).not.toContain('SIPGES_CRON_SCHEDULE');
+  });
+
+  it('never starts the Go cron: its switch stays out of the container', () => {
+    expect(goContainerEnv({ SIPGES_GO_AUTOMATION_CRON: '1' })).not.toHaveProperty(
+      'SIPGES_GO_AUTOMATION_CRON',
+    );
+  });
+
   it('sleeps after 10 minutes idle in one named instance', () => {
     expect(GO_SLEEP_AFTER).toBe('10m');
     expect(GO_INSTANCE).toEqual({ name: 'go-enam', locationHint: 'enam' });
