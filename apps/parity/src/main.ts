@@ -23,6 +23,9 @@ import { seedDatabase } from './fixtures.ts';
 import { REQUEST_TIMEOUT_MS, send } from './request.ts';
 import { type Sessions, seed } from './seed.ts';
 import type { ParityCase } from './types.ts';
+import { secondStageWrites } from './second-stage-writes.ts';
+import { type Ledger, openLedger, withApplicationName } from './write-ledger.ts';
+import { WriteProof, isWriteCase } from './write-proof.ts';
 import {
   type Running,
   scratchDatabase,
@@ -42,17 +45,36 @@ const describe = (m: Mismatch) =>
     ? `  body ${m.path}: ts=${JSON.stringify(m.ts)} go=${JSON.stringify(m.go)}`
     : `  ${m.field}: ts=${JSON.stringify(m.ts)} go=${JSON.stringify(m.go)}`;
 
+const reportProof = (routes: WriteProof) => {
+  const unproved = routes.unproved();
+  for (const { route, attempts } of unproved) {
+    const seen = attempts.slice(0, 3).map((a) => `${a.ts}/${a.go} ${a.name}`);
+    console.info(`FAIL  write ${route.method} ${route.path}: ${seen.join(' | ') || 'no case'}`);
+  }
+  for (const route of routes.blocked()) {
+    console.info(`note  write ${route.method} ${route.path}: blocked, ${route.blocked}`);
+  }
+  console.info(`${unproved.length} write routes unproved`);
+  return unproved.length === 0;
+};
+
 const compareCases = async (
   { tsUrl, goUrl }: Targets,
   cases: readonly ParityCase[],
   sessions: Sessions | undefined,
+  proof?: { readonly ledger: Ledger; readonly routes: WriteProof },
 ) => {
   let failed = 0;
   for (const c of cases) {
-    const [ts, go] = await Promise.all([
-      send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'ts'),
-      send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'go'),
-    ]);
+    const sendTs = () => send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'ts');
+    const sendGo = () => send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'go');
+    const [ts, go] = c.oneAtATime
+      ? [await sendTs(), await sendGo()]
+      : await Promise.all([sendTs(), sendGo()]);
+    if (proof) {
+      const rows = await proof.ledger.drain();
+      if (isWriteCase(c)) proof.routes.record(c, ts.status, go.status, rows);
+    }
     const mismatches = compare(ts, go, c.normalize, c.compareLines);
     const promises = [
       ...checkText(ts.body, c.present, c.absent).map((m) => `  ts: ${m}`),
@@ -71,14 +93,14 @@ const compareCases = async (
   return failed === 0;
 };
 
-const runCases = async (targets: Targets) => {
+const runCases = async (targets: Targets, proof?: Parameters<typeof compareCases>[3]) => {
   const { tsUrl, credentials } = targets;
   let sessions: Sessions | undefined;
   if (CASES.some((c) => c.auth)) {
     if (!credentials) throw new Error('cases with auth need SIPGES_PARITY_ADMIN_USERNAME/PASSWORD');
     sessions = await seed(tsUrl, credentials);
   }
-  return { passed: await compareCases(targets, CASES, sessions), sessions };
+  return { passed: await compareCases(targets, CASES, sessions, proof), sessions };
 };
 
 const main = async () => {
@@ -133,24 +155,32 @@ const main = async () => {
     // TypeScript first: it applies the migrations the Go API expects.
     const embedder = await startEmbedderDouble();
     running.push(embedder);
-    const ts = await startTypeScriptApi(database.url, secrets, embedder.url);
+    const tsDatabase = withApplicationName(database.url, 'ts');
+    const goDatabase = withApplicationName(database.url, 'go');
+    const ts = await startTypeScriptApi(tsDatabase, secrets, embedder.url);
     running.push(ts);
     await database.migrated();
     await seedDatabase(database.adminUrl);
-    const go = await startGoApi(database.url, scratch, secrets.dataKey, embedder.url);
+    const go = await startGoApi(goDatabase, scratch, secrets.dataKey, embedder.url);
     running.push(go);
-    const { passed, sessions } = await runCases({
-      tsUrl: ts.url,
-      goUrl: go.url,
-      credentials: { username: secrets.adminUsername, password: secrets.adminPassword },
-    });
+    const ledger = await openLedger(database.adminUrl);
+    const routes = new WriteProof();
+    const proof = { ledger, routes };
+    const { passed, sessions } = await runCases(
+      {
+        tsUrl: ts.url,
+        goUrl: go.url,
+        credentials: { username: secrets.adminUsername, password: secrets.adminPassword },
+      },
+      proof,
+    );
     if (!sessions) throw new Error('the cases seeded no sessions');
 
     // Hybrid search needs both APIs restarted with it on; see semantic-search.ts.
     await Promise.all(running.splice(1).map((api) => api.stop()));
-    const hybridTs = await startTypeScriptApi(database.url, secrets, embedder.url, true);
+    const hybridTs = await startTypeScriptApi(tsDatabase, secrets, embedder.url, true);
     running.push(hybridTs);
-    const hybridGo = await startGoApi(database.url, scratch, secrets.dataKey, embedder.url, true);
+    const hybridGo = await startGoApi(goDatabase, scratch, secrets.dataKey, embedder.url, true);
     running.push(hybridGo);
     const indexes = await compareIndexes(database.adminUrl, sessions.admin, {
       ts: hybridTs.url,
@@ -163,21 +193,25 @@ const main = async () => {
       { tsUrl: hybridTs.url, goUrl: hybridGo.url },
       semanticSearchCases,
       sessions,
+      proof,
     );
 
     const urls = { tsUrl: hybridTs.url, goUrl: hybridGo.url };
+    const second = await compareCases(urls, secondStageWrites, sessions, proof);
     // Earlier cases may have left the switch on.
     await setExternalAi(hybridTs.url, sessions.admin, false);
-    const off = await compareCases(urls, assistedBriefingCases('switch off'), sessions);
+    const off = await compareCases(urls, assistedBriefingCases('switch off'), sessions, proof);
     const leaked = embedder.narrated.length;
     await setExternalAi(hybridTs.url, sessions.admin, true);
-    const on = await compareCases(urls, assistedBriefingCases('switch on'), sessions);
+    const on = await compareCases(urls, assistedBriefingCases('switch on'), sessions, proof);
     const unpaired = unpairedNarrations(embedder.narrated);
     const narrated = leaked === 0 && embedder.narrated.length > 0 && unpaired === 0;
     console.info(
       `${narrated ? 'ok  ' : 'FAIL'}  narrated briefings: ${leaked} with the switch off, ${embedder.narrated.length} with it on, ${unpaired} unpaired`,
     );
-    return passed && indexes.same && hybrid && off && on && narrated;
+    const written = reportProof(routes);
+    await ledger.close();
+    return passed && indexes.same && hybrid && off && on && narrated && second && written;
   } finally {
     process.off('SIGINT', interrupted);
     process.off('SIGTERM', interrupted);
