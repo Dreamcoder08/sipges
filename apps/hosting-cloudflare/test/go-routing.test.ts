@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CASES } from '../../parity/src/cases.ts';
 import {
   GO_INSTANCE,
@@ -71,7 +71,7 @@ describe('Go container', () => {
       goContainerEnv({
         SIPGES_GO_DATABASE_URL: 'postgres://synthetic@db.invalid/synthetic',
         SIPGES_ALLOWED_HOSTS: 'sipges.example.org',
-        SIPGES_DATA_KEY: 'not-for-go',
+        SIPGES_OCR: 'not-for-go',
         SIPGES_ADMIN_USERNAME: 'admin',
         SIPGES_ADMIN_PASSWORD: 'synthetic-password',
         SIPGES_ADMIN_FULL_NAME: 'Synthetic',
@@ -108,6 +108,76 @@ describe('Go container', () => {
     });
     expect(Object.keys(goContainerEnv({}))).not.toContain('SIPGES_CRON_SECRET');
     expect(Object.keys(goContainerEnv({}))).not.toContain('SIPGES_CRON_SCHEDULE');
+  });
+
+  it('passes every setting real routes need, and only when it is set', () => {
+    const names = [
+      'SIPGES_REQUIRE_MFA',
+      'SIPGES_COOKIE_SECURE',
+      'SIPGES_ACCESS_LOG',
+      'SIPGES_DATA_KEY',
+      'SIPGES_DATA_KEY_PREVIOUS',
+      'SIPGES_STORAGE',
+      'SIPGES_S3_ENDPOINT',
+      'SIPGES_S3_REGION',
+      'SIPGES_S3_BUCKET',
+      'SIPGES_S3_ACCESS_KEY_ID',
+      'SIPGES_S3_SECRET_ACCESS_KEY',
+      'SIPGES_MAX_UPLOAD_BYTES',
+      'SIPGES_GOOGLE_CLIENT_ID',
+      'SIPGES_GOOGLE_CLIENT_SECRET',
+      'SIPGES_GOOGLE_ADMIN_EMAIL',
+      'SIPGES_VAPID_PUBLIC_KEY',
+      'SIPGES_VAPID_PRIVATE_KEY',
+      'SIPGES_VAPID_SUBJECT',
+      'SIPGES_OLLAMA_URL',
+      'SIPGES_OLLAMA_EMBED_MODEL',
+      'SIPGES_SEMANTIC_SEARCH',
+      'SIPGES_ANALYST_PROVIDER',
+      'SIPGES_ANALYST_MODEL',
+      'ANTHROPIC_BASE_URL',
+      'ANTHROPIC_API_KEY',
+      'ANTHROPIC_AUTH_TOKEN',
+    ];
+    const set = Object.fromEntries(names.map((name) => [name, `synthetic-${name}`]));
+    expect(goContainerEnv(set)).toEqual({ ...goContainerEnv({}), ...set });
+    for (const name of names) expect(goContainerEnv({})).not.toHaveProperty(name);
+  });
+
+  it('adds no security default: unset stays unset, so Go keeps MFA and Secure cookies on', () => {
+    const unset = goContainerEnv({});
+    expect(unset).not.toHaveProperty('SIPGES_REQUIRE_MFA');
+    expect(unset).not.toHaveProperty('SIPGES_COOKIE_SECURE');
+    expect(goContainerEnv({ SIPGES_REQUIRE_MFA: '1', SIPGES_COOKIE_SECURE: '1' })).toMatchObject({
+      SIPGES_REQUIRE_MFA: '1',
+      SIPGES_COOKIE_SECURE: '1',
+    });
+  });
+
+  it('keeps switches that are not for this container out', () => {
+    const env = goContainerEnv({
+      SIPGES_ALLOW_PRIVILEGED_DB_ROLE: '1',
+      SIPGES_TRUST_PROXY: '1',
+      SIPGES_UPLOAD_DIR: '/unused',
+      SIPGES_AUTOMATION_INTERVAL: '60',
+      SIPGES_OCR: '1',
+      SIPGES_OCR_LANGUAGES: 'spa',
+      SIPGES_GO_ROUTING: '1',
+    });
+    expect(env).toEqual(goContainerEnv({}));
+  });
+
+  it('ignores bindings and logs nothing it passes', () => {
+    const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) =>
+      vi.spyOn(console, method),
+    );
+    const env = goContainerEnv({ SIPGES_DATA_KEY: 'synthetic-key', SIPGES_S3_BUCKET: {} });
+    expect(env).toMatchObject({ SIPGES_DATA_KEY: 'synthetic-key' });
+    expect(env).not.toHaveProperty('SIPGES_S3_BUCKET');
+    for (const spy of spies) {
+      expect(spy).not.toHaveBeenCalled();
+      spy.mockRestore();
+    }
   });
 
   it('never starts the Go cron: its switch stays out of the container', () => {

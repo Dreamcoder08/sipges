@@ -73,6 +73,60 @@ export const validateGoRoutes = (
 };
 
 /**
+ * What the container receives when the Worker has it. Every name is optional and none gets a
+ * default here: an unset SIPGES_REQUIRE_MFA or SIPGES_COOKIE_SECURE stays unset, and Go then keeps
+ * it on. Left out on purpose: SIPGES_GO_AUTOMATION_CRON and SIPGES_AUTOMATION_INTERVAL (the cron
+ * stays with TypeScript, go-automation-cron.md), SIPGES_OCR* (no OCR in the image),
+ * SIPGES_TRUST_PROXY and SIPGES_UPLOAD_DIR (other hosting) and SIPGES_ALLOW_PRIVILEGED_DB_ROLE
+ * (synthetic test servers only). Values are secrets: never log them.
+ */
+const GO_FORWARDED_ENV = [
+  // The identity bootstrap: without a password an empty installation stops the container.
+  'SIPGES_ADMIN_USERNAME',
+  'SIPGES_ADMIN_PASSWORD',
+  'SIPGES_ADMIN_FULL_NAME',
+  // What GET /system/automations/runtime reports. Go ignores the secret on the cron route until
+  // SIPGES_GO_AUTOMATION_CRON is on.
+  'SIPGES_CRON_SECRET',
+  'CRON_SECRET',
+  'SIPGES_CRON_SCHEDULE',
+  // Sessions and the request log.
+  'SIPGES_REQUIRE_MFA',
+  'SIPGES_COOKIE_SECURE',
+  'SIPGES_ACCESS_LOG',
+  // TOTP, identity and automation channel secrets.
+  'SIPGES_DATA_KEY',
+  'SIPGES_DATA_KEY_PREVIOUS',
+  // Evidence files. The R2 binding stays in the Worker, so the container uses R2's S3 API
+  // (go-trial-runbook.md, "Evidence files from the container").
+  'SIPGES_STORAGE',
+  'SIPGES_S3_ENDPOINT',
+  'SIPGES_S3_REGION',
+  'SIPGES_S3_BUCKET',
+  'SIPGES_S3_ACCESS_KEY_ID',
+  'SIPGES_S3_SECRET_ACCESS_KEY',
+  'SIPGES_MAX_UPLOAD_BYTES',
+  // Google sign-in.
+  'SIPGES_GOOGLE_CLIENT_ID',
+  'SIPGES_GOOGLE_CLIENT_SECRET',
+  'SIPGES_GOOGLE_ADMIN_EMAIL',
+  // Push.
+  'SIPGES_VAPID_PUBLIC_KEY',
+  'SIPGES_VAPID_PRIVATE_KEY',
+  'SIPGES_VAPID_SUBJECT',
+  // Semantic analysis.
+  'SIPGES_OLLAMA_URL',
+  'SIPGES_OLLAMA_EMBED_MODEL',
+  'SIPGES_SEMANTIC_SEARCH',
+  // Analyst prose.
+  'SIPGES_ANALYST_PROVIDER',
+  'SIPGES_ANALYST_MODEL',
+  'ANTHROPIC_BASE_URL',
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_AUTH_TOKEN',
+] as const;
+
+/**
  * The container's environment: only what apps/api-go reads. The database URL is a secret of
  * the `go` environment (Hyperdrive is not reachable from containers, ADR 0032 §4): the
  * container connects to Neon over TLS itself.
@@ -90,17 +144,7 @@ export const goContainerEnv = (env: Readonly<Record<string, unknown>>) => {
   if (typeof env.SIPGES_GO_DATABASE_URL === 'string') {
     vars.SIPGES_DATABASE_URL = env.SIPGES_GO_DATABASE_URL;
   }
-  for (const name of [
-    // The identity bootstrap: without a password an empty installation stops the container.
-    'SIPGES_ADMIN_USERNAME',
-    'SIPGES_ADMIN_PASSWORD',
-    'SIPGES_ADMIN_FULL_NAME',
-    // What GET /system/automations/runtime reports. Go ignores the secret on the cron route until
-    // SIPGES_GO_AUTOMATION_CRON is on, and that switch stays out of this list (go-automation-cron.md).
-    'SIPGES_CRON_SECRET',
-    'CRON_SECRET',
-    'SIPGES_CRON_SCHEDULE',
-  ]) {
+  for (const name of GO_FORWARDED_ENV) {
     const value = env[name];
     if (typeof value === 'string') vars[name] = value;
   }
