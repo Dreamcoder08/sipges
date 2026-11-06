@@ -105,3 +105,14 @@ test('checkText reports text an answer lacks or must not hold', () => {
     'unexpected "ajeno"',
   ]);
 });
+
+test('compareLines compares only the matching lines of a text answer', () => {
+  const text = (value: string): Observed => ({
+    status: 200,
+    contentType: 'text/plain',
+    body: { kind: 'text', value },
+  });
+  assert.deepEqual(compare(text('# T a\nx 1'), text('# T a\nx 2'), [], '^# T '), []);
+  assert.equal(compare(text('# T a\nx 1'), text('# T b\nx 1'), [], '^# T ').length, 1);
+  assert.equal(compare(text('x 1'), text('x 2')).length, 1);
+});
