@@ -20,6 +20,24 @@ const DEFAULT_ROWS: readonly Row[] = [
   ['Eventos', 'PAR-EV-2', { Territorio: 'Caleta sintética norte' }],
   ['Eventos', 'PAR-EV-3', { Territorio: 'Zona sintética reservada' }, 'restringido'],
   ['Actores', 'PAR-AC-1', { Nombre: 'Asociación sintética de pescadores' }],
+  [
+    'Intereses',
+    'PAR-IN-R',
+    { Actor: 'Actor reservada', Interes: 'Interés reservada' },
+    'restringido',
+  ],
+  [
+    'Dialogos',
+    'PAR-DI-R',
+    { Proceso: 'Mesa reservada', Tema: 'Tema reservada', Estado: 'Abierto' },
+    'restringido',
+  ],
+  [
+    'Hechos_Compartidos',
+    'PAR-HE-R',
+    { Asunto: 'Asunto reservada', Estado: 'Abierto' },
+    'restringido',
+  ],
   ['Demandas', 'PAR-DE-1', { Tema: 'Agua', Estado: 'Abierta' }],
   ['Demandas', 'PAR-DE-2', { Tema: 'Empleo', Estado: ' CERRADA ' }],
   ['Alertas', 'PAR-AL-1', { Nivel_Preliminar: 'Alto', Estado: 'Activa' }],
@@ -135,7 +153,14 @@ const REPORTS: readonly (readonly [name: string, path: string])[] = [
 ];
 
 const reportCases = REPORTS.flatMap(([route, path]): ParityCase[] => [
-  { name: `analytics ${route}`, method: 'GET', path, auth: 'admin', absent: ['AJENA'] },
+  {
+    name: `analytics ${route}`,
+    method: 'GET',
+    path,
+    auth: 'admin',
+    present: ['reservada'],
+    absent: ['AJENA'],
+  },
   { name: `analytics ${route} without a session`, method: 'GET', path },
   {
     name: `analytics ${route} read-only role`,
