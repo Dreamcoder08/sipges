@@ -16,18 +16,18 @@ line of the task list; delivery `auto-chain`; runners `node --test scripts/tooli
 
 ## Tasks
 
-- T1 [ ] — S4, S5: this plan. Route: inline, three read-only explorers (mapping trigger).
-- T2 [ ] — S1: remove the 64 worktrees of batch W1 (no PR). Route: inline.
-- T3 [ ] — S1, S3: correct the agent docs and skills that lie (A1). Route: inline.
-- T4 [ ] — S1, S3: correct the product and operations docs that lie (A2). Route: inline.
-- T5 [ ] — S1, S3: archive `docs/design/mobile-first`, fix `design/system.md`, add `gomod` and `cargo` to Dependabot (A3). Route: inline.
-- T6 [ ] — S2: `odd-close-task.mjs` log-only mode, tolerant ids, required `--file` (B1). Route: inline.
-- T7 [ ] — S2: `land-pr.sh` (B2). Route: inline.
-- T8 [ ] — S2: `test-pg.sh`, `new-worktree.sh` (B3). Route: inline.
-- T9 [ ] — S2: `watch-tabs.sh` status and until modes, `review-next.sh` (B4). Route: inline.
-- T10 [ ] — S2: `.engram/manifest.json` conflicts, `fmt:changed`, `engram sync --commit` (B5). Route: inline.
+- T1 [x] — S4, S5: this plan. PR #342. Route: inline, three read-only explorers (mapping trigger).
+- T2 [x] — S1: remove the 64 worktrees of batch W1 (no PR). Route: inline. See L3.
+- T3 [ ] — S1, S3: correct the agent docs and skills that lie (A1). Route: inline. PR #343.
+- T4 [ ] — S1, S3: correct the product and operations docs that lie (A2). Route: inline. PR #344.
+- T5 [ ] — S1, S3: fix `design/system.md`, add `gomod` and `cargo` to Dependabot (A3). Route: inline. PR #349.
+- T6 [ ] — S2: `odd-close-task.mjs` log-only mode, tolerant ids, required `--file` (B1). Route: inline. PR #345.
+- T7 [ ] — S2: `land-pr.sh` (B2). Route: inline. PR #346.
+- T8 [ ] — S2: `test-pg.sh`, `new-worktree.sh` (B3). Route: inline. PR #347.
+- T9 [ ] — S2: `watch-tabs.sh` status and until modes, `review-next.sh` (B4). Route: inline. PR #348.
+- T10 [ ] — S2: `.engram/manifest.json` conflicts, `fmt:changed` (B5). Route: inline. PR #350.
 - T11 [ ] — S1, S7: after go-local, delete `spikes/go-container`, raise `engines/go` to Go 1.27, pin CI Go and Postgres, prune `pnpm-workspace.yaml` (C1). Route: inline.
-- T12 [ ] — S7: after go-local, worktree batch W2 and the deferred README and `docs/deployment` corrections, with the orchestrator as their single writer (C2). Route: inline.
+- T12 [ ] — S7: after go-local, worktree batch W2 the deferred README and `docs/deployment` corrections, and the archive of `docs/design/mobile-first`, which needs `docs/README.md`, with the orchestrator as their single writer (C2). Route: inline.
 
 ## Plan
 
@@ -114,3 +114,7 @@ Session counts include worker tabs of one orchestration, so they are upper bound
 
 - L1 (Request): T65 of `odd/tasks/go-rust-stack.md`, 2026-11-06. Owner, verbatim: «parece que es necesario eliminar documentacion legacy , skills legacy , conifguraciones legacy , objetivo crear nueva documentacion , nuevas skills , mejor automatizacion si algo se hace mas de 2 veces se automatiza , limpieza , mejor estructura , arquitectura limpia , modularidad , performance , cuestiona con informacion actualizada de esta semana , mes 2026 , mejorate a ti mismo».
 - L2 (Rule breach): two inventory greps ran from the root without excluding `data/` and scanned `data/seed.json`. They printed nothing from it; the affected counts were discarded and redone.
+- L3 (T2): all 64 W1 worktrees removed with `git worktree remove`, no force; each one rechecked first; none skipped or failed. 33 remain under `.worktrees`. Branches were kept. Log with HEADs was not committed: every HEAD is in `origin/main`.
+- L4 (Plan changes): the archive of `docs/design/mobile-first` moved to T12 because it must edit `docs/README.md`, a single-writer file. `--report` for `watch-tabs.sh` was dropped since `hc read` is already one command. `engram sync --commit` was dropped: it is one line and could only be tested against the real repository.
+- L5 (Bugs found): running `land-pr.sh` filters against real `gh` showed a docs-only merge starts no Deploy Workers run (#340) and a skipped run would have read as deployed. Both fixed in #346.
+- L6 (Slips): one command wrote a PR body to `/tmp/.x` and removed it, against the scratchpad rule. The `spikes/go-container` proof was tightened: `docs/deployment/go-container.md` and `apps/hosting-cloudflare/src/go-container.ts` share the name but do not depend on the spike.
