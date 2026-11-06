@@ -265,3 +265,51 @@ func TestProseIsCutAtFourThousandUnits(t *testing.T) {
 		t.Fatalf("the cut must fall in the middle of the last emoji: …%s", body[len(body)-12:])
 	}
 }
+
+// OutsideBriefing is what the MCP tool get_briefing answers: built from the sanitised view, also
+// when a narrator writes the prose, and its citations point at that same briefing.
+func TestOutsideBriefingShowsOnlyTheSanitisedView(t *testing.T) {
+	g := &guardFakes{enabled: true}
+	guard := guardOf(g)
+	session, err := guard.Open(t.Context(), privacy.Request{TenantID: tenant, Channel: privacy.ChannelMCP, Purpose: "get_briefing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := neighbourhood()
+	narrator := saying("Los hechos constan en [1].")
+	assisted := &application.Assisted{Narrator: narrator, Egress: guard}
+	got := application.OutsideBriefing(t.Context(), assisted, session, tenant, found, at)
+	if got.Engine != application.EngineAssisted || got.Narrative == nil || got.Withheld {
+		t.Fatalf("%+v", got)
+	}
+	if strings.Contains(got.Subject.Title, "Comunidad Norte Sintética") {
+		t.Errorf("the subject keeps its name: %q", got.Subject.Title)
+	}
+	for _, source := range got.Sources {
+		if source.ID == "EV-2" {
+			t.Errorf("a restricted neighbour is cited: %+v", source)
+		}
+	}
+	session, err = guard.Open(t.Context(), privacy.Request{TenantID: tenant, Channel: privacy.ChannelMCP, Purpose: "get_briefing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if plain := application.OutsideBriefing(t.Context(), nil, session, tenant, found, at); plain.Engine != application.EngineExtractive || plain.Narrative != nil {
+		t.Errorf("without a narrator: %+v", plain)
+	}
+}
+
+func TestOutsideBriefingWithholdsARestrictedSubject(t *testing.T) {
+	guard := guardOf(&guardFakes{enabled: true})
+	session, err := guard.Open(t.Context(), privacy.Request{TenantID: tenant, Channel: privacy.ChannelMCP, Purpose: "get_briefing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := neighbourhood()
+	found.Subject.Marking = "restringido"
+	narrator := saying("[1]")
+	got := application.OutsideBriefing(t.Context(), &application.Assisted{Narrator: narrator, Egress: guard}, session, tenant, found, at)
+	if !got.Withheld || len(narrator.seen) != 0 {
+		t.Errorf("%+v, narrator saw %d", got, len(narrator.seen))
+	}
+}
