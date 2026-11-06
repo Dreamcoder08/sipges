@@ -6,7 +6,8 @@
 #   CHECKS_FAILED #<n>     use sipges-ci-triage (exit 4)
 #   MERGED #<n> <sha>      merged with a merge commit
 #   DEPLOYED #<n> <run>    Deploy Workers for that commit succeeded
-#   DEPLOY_FAILED #<n> <run|none>  it failed or never started (exit 5)
+#   DEPLOY_FAILED #<n> <run> <conclusion>  it failed or was skipped (exit 5)
+#   NO_DEPLOY #<n> <sha>   no run for that commit; a docs-only merge starts none, so check which (exit 6)
 # Needs gh and jq. No credentials are read or printed.
 set -euo pipefail
 
@@ -89,11 +90,13 @@ for ((i = 0; i < attempts; i++)); do
   sleep "$poll"
 done
 [ -n "$run" ] || {
-  echo "DEPLOY_FAILED #$pr none"
-  exit 5
+  echo "NO_DEPLOY #$pr $sha"
+  exit 6
 }
-gh run watch "$run" --exit-status >/dev/null 2>&1 || {
-  echo "DEPLOY_FAILED #$pr $run"
+gh run watch "$run" >/dev/null 2>&1 || true
+conclusion="$(gh run view "$run" --json conclusion --jq .conclusion)"
+[ "$conclusion" = "success" ] || {
+  echo "DEPLOY_FAILED #$pr $run $conclusion"
   exit 5
 }
 echo "DEPLOYED #$pr $run"

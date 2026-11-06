@@ -167,8 +167,8 @@ case "$*" in
   "pr checks"*) exit "\${FAKE_CHECKS:-0}" ;;
   *isDraft*) echo true ;;
   *state,mergeCommit*) echo abc123 ;;
-  "run list"*) echo 77 ;;
-  "run watch"*) exit "\${FAKE_DEPLOY:-0}" ;;
+  "run list"*) echo "\$FAKE_RUN" ;;
+  "run view"*) echo "\${FAKE_DEPLOY:-success}" ;;
 esac
 `,
       { mode: 0o755 },
@@ -181,6 +181,8 @@ esac
           ...process.env,
           PATH: `${bin}:${process.env.PATH}`,
           LAND_PR_POLL: '0',
+          LAND_PR_ATTEMPTS: '2',
+          FAKE_RUN: '77',
           FAKE_MERGE_STATE: 'MERGEABLE CLEAN',
           ...extra,
         },
@@ -208,9 +210,15 @@ esac
     assert.equal(landed.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
     assert.match(landed.calls, /pr ready 12\npr merge 12 --merge\n/);
 
-    const failed = land(['12', '--merge'], { FAKE_DEPLOY: '1' });
-    assert.equal(failed.status, 5);
-    assert.equal(failed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77\n');
+    for (const conclusion of ['failure', 'skipped']) {
+      const failed = land(['12', '--merge'], { FAKE_DEPLOY: conclusion });
+      assert.equal(failed.status, 5);
+      assert.equal(failed.stdout, `MERGED #12 abc123\nDEPLOY_FAILED #12 77 ${conclusion}\n`);
+    }
+
+    const none = land(['12', '--merge'], { FAKE_RUN: '' });
+    assert.equal(none.status, 6);
+    assert.equal(none.stdout, 'MERGED #12 abc123\nNO_DEPLOY #12 abc123\n');
 
     assert.equal(land([]).status, 2);
     assert.equal(land(['12;x']).status, 2);
