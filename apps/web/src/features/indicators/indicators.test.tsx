@@ -176,6 +176,7 @@ describe('Indicadores e IRSA', () => {
     renderPage(<IrsaPage {...context} />);
     const group = await screen.findByRole('group', { name: 'Contribuciones del prototipo' });
     expect(group).toHaveTextContent('No intervienen en el cálculo del IRSA V0.4');
+    expect(group).toHaveTextContent('para comparar con el prototipo SIPGES.');
   });
   it('valida pesos antes de guardar y no modifica parámetros no editados', async () => {
     renderPage(<IrsaPage {...context} />);
