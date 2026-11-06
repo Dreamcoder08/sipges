@@ -76,6 +76,10 @@ build() {
     docker tag sipges-local:current sipges-local:previous
   fi
   docker tag sipges-local:new sipges-local:current
+  # The import tools embed the migrations, so they must not fall behind once they exist.
+  if docker image inspect sipges-import:current >/dev/null 2>&1; then
+    docker build -f Dockerfile.import -t sipges-import:current "$REPO_ROOT"
+  fi
 }
 
 wait_ready() {
