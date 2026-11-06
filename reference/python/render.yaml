@@ -10,5 +10,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.8
-      - key: MASCLI_DB_PATH
-        value: /tmp/mascli.db
+      - key: SIPGES_DB_PATH
+        value: /tmp/sipges.db

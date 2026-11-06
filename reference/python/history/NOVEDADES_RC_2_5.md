@@ -1,4 +1,4 @@
-# MASCLI RC 2.5 — Inteligencia semántica local
+# SIPGES RC 2.5 — Inteligencia semántica local
 
 Se mantiene RC 2.4 y todos los módulos existentes. Nuevo endpoint `POST /system/intelligence/semantic-analyze` con tres modos: `rules`, `automatic`, `semantic`.
 
@@ -11,8 +11,8 @@ Se mantiene RC 2.4 y todos los módulos existentes. Nuevo endpoint `POST /system
 1. Instale Ollama desde https://ollama.com.
 2. Ejecute `ollama pull nomic-embed-text`.
 3. Mantenga activo el servidor local Ollama (`ollama serve` si su instalación no lo inició).
-4. Inicie MASCLI normalmente y escoja “Solo semántico local” o “Automático”.
-5. Si utiliza otro modelo: establezca `MASCLI_OLLAMA_EMBED_MODEL` al nombre del modelo de embeddings instalado.
+4. Inicie SIPGES normalmente y escoja “Solo semántico local” o “Automático”.
+5. Si utiliza otro modelo: establezca `SIPGES_OLLAMA_EMBED_MODEL` al nombre del modelo de embeddings instalado.
 
 ## Limitaciones críticas
 - No hay LLM generativo: se utilizan embeddings y similitud coseno. No se debe presentar como análisis de causalidad, emociones o verificación automática.

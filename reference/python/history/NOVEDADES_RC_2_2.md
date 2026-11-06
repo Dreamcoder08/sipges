@@ -1,4 +1,4 @@
-# MASCLI RC 2.2 – enlaces digitales y contactos
+# SIPGES RC 2.2 – enlaces digitales y contactos
 
 - Conserva la arquitectura y base de datos de RC 2.1.
 - Permite registrar un enlace a publicaciones públicas de LinkedIn, Facebook, TikTok, Instagram, YouTube, X y otros sitios; valida protocolo web y reconoce plataforma.

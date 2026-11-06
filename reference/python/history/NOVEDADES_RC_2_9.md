@@ -1,13 +1,13 @@
-# MASCLI RC 2.9 — Acceso y roles efectivos
+# SIPGES RC 2.9 — Acceso y roles efectivos
 
-Versión incremental basada en RC 2.8. Conserva panel gerencial, MASCLI IRSA, directorio, redes y medidas preventivas.
+Versión incremental basada en RC 2.8. Conserva panel gerencial, SIPGES IRSA, directorio, redes y medidas preventivas.
 
 ## Primer inicio (Windows PowerShell)
 Desde la carpeta extraída, antes de iniciar:
 
 ```powershell
-$env:MASCLI_ADMIN_USERNAME="crystell"
-$env:MASCLI_ADMIN_PASSWORD="COLOQUE_AQUI_UNA_CLAVE_UNICA_DE_AL_MENOS_12_CARACTERES"
+$env:SIPGES_ADMIN_USERNAME="crystell"
+$env:SIPGES_ADMIN_PASSWORD="COLOQUE_AQUI_UNA_CLAVE_UNICA_DE_AL_MENOS_12_CARACTERES"
 python -m uvicorn app:app --host 127.0.0.1 --port 8000
 ```
 Abra http://127.0.0.1:8000; luego inicie sesión con el usuario y clave configurados.
@@ -29,11 +29,11 @@ La lista auténtica está en GET /system/auth/accounts. Las fichas legadas en el
 
 ## Seguridad y limitaciones
 - Sesiones aleatorias almacenadas como hash SHA-256; cookies HttpOnly / SameSite Strict; PBKDF2 para contraseñas.
-- Para HTTPS configurar MASCLI_COOKIE_SECURE=1. En desarrollo localhost HTTP mantener 0.
+- Para HTTPS configurar SIPGES_COOKIE_SECURE=1. En desarrollo localhost HTTP mantener 0.
 - Control de acceso del lado servidor para rutas web y API; restricciones de escritura por rol.
 - NO implementa aislamiento de datos multiempresa ni permisos granulares por proyecto.
 - NO incluye MFA, restablecimiento de contraseña, protección avanzada contra fuerza bruta ni auditoría de ciberseguridad.
 - NO se recomienda exponer esta versión directamente a Internet ni cargar datos personales reales hasta concluir controles, pruebas y un despliegue seguro.
 - La comprobación de origen mitiga algunas solicitudes cruzadas; los endpoints deben seguir evaluándose frente a CSRF en despliegues reales.
 - El motor de IRSA sigue independiente de las alertas digitales.
-- El ZIP no incorpora mascli.db: se crea desde seed.json al iniciar. Si tiene una base anterior, haga copia de seguridad y coloque su archivo mascli.db en data/ antes del arranque; la tabla de autenticación se añadirá automáticamente.
+- El ZIP no incorpora sipges.db: se crea desde seed.json al iniciar. Si tiene una base anterior, haga copia de seguridad y coloque su archivo sipges.db en data/ antes del arranque; la tabla de autenticación se añadirá automáticamente.

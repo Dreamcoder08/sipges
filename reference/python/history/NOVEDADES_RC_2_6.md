@@ -1,4 +1,4 @@
-# MASCLI RC 2.6 — integración territorial de señales digitales
+# SIPGES RC 2.6 — integración territorial de señales digitales
 
 - Continuación íntegra de RC 2.5.
 - Nueva bandeja SQLite `digital_alert_reviews` por proyecto con fecha, URL, extracto, SHA-256 del texto, temas, señales, prioridad y método de análisis.

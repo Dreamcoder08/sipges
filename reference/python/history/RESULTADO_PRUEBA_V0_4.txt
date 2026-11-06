@@ -1,4 +1,4 @@
-MASCLI V0.4 – RESULTADO DE PRUEBA DEL MOTOR DE INDICADORES
+SIPGES V0.4 – RESULTADO DE PRUEBA DEL MOTOR DE INDICADORES
 Proyecto Sechura | Base inicial: octubre 2026
 
 ESTADO METODOLÓGICO
@@ -28,7 +28,7 @@ I: 100.0%
 
 INTERPRETACIÓN TÉCNICA
 El motor V0.4 ya desagrega el riesgo en indicadores G1–I6. Cuando un indicador
-no cuenta con datos estructurados suficientes, MASCLI lo marca como N/D o como
+no cuenta con datos estructurados suficientes, SIPGES lo marca como N/D o como
 proxy y no finge una precisión inexistente.
 
 EJEMPLO
@@ -42,4 +42,4 @@ SIGUIENTE VALIDACIÓN CIENTÍFICA
 - AHP/Delphi para pesos.
 - Calibración retrospectiva.
 - Análisis de sensibilidad de umbrales.
-- Concordancia MASCLI–expertos.
+- Concordancia SIPGES–expertos.

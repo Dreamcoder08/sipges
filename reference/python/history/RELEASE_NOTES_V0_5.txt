@@ -1,4 +1,4 @@
-MASCLI V0.5 PREVALIDACIÓN
+SIPGES V0.5 PREVALIDACIÓN
 - Se estandariza el nombre canónico “Comunidad Campesina San Martín de Sechura (CCSMS)”.
 - Se mantiene intacto el texto de fuentes originales.
 - Se incorpora módulo de Validación experta.

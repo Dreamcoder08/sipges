@@ -1,4 +1,4 @@
-# MASCLI RC 2.3 — Inteligencia de Redes Sociales
+# SIPGES RC 2.3 — Inteligencia de Redes Sociales
 
 Continúa RC 2.2, conservando todos sus módulos.
 

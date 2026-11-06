@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-DEFAULT = "MASCLI/PRJ-SECHURA"
+DEFAULT = "SIPGES/PRJ-SECHURA"
 TENANT_A = "SYNTHETIC-A/PROJECT-A"
 TENANT_B = "SYNTHETIC-B/PROJECT-B"
 MISSING = "SYNTHETIC-MISSING/PROJECT-MISSING"
@@ -31,20 +31,20 @@ def tenant_path(module, scope):
 def isolated_import(tmp_path, monkeypatch):
     # All environment-derived resource paths are redirected BEFORE import.
     for name, path in {
-        "MASCLI_DB_PATH": tmp_path / "default.db",
-        "MASCLI_AUTH_DB_PATH": tmp_path / "auth.db",
-        "MASCLI_UPLOAD_DIR": tmp_path / "uploads",
-        "MASCLI_TENANT_DIR": tmp_path / "tenants",
+        "SIPGES_DB_PATH": tmp_path / "default.db",
+        "SIPGES_AUTH_DB_PATH": tmp_path / "auth.db",
+        "SIPGES_UPLOAD_DIR": tmp_path / "uploads",
+        "SIPGES_TENANT_DIR": tmp_path / "tenants",
     }.items():
         monkeypatch.setenv(name, str(path))
-    monkeypatch.setenv("MASCLI_ADMIN_USERNAME", "synthetic-admin")
-    monkeypatch.setenv("MASCLI_ADMIN_PASSWORD", PASSWORD)
+    monkeypatch.setenv("SIPGES_ADMIN_USERNAME", "synthetic-admin")
+    monkeypatch.setenv("SIPGES_ADMIN_PASSWORD", PASSWORD)
 
     def load(cookie_secure="0"):
         if cookie_secure is None:
-            monkeypatch.delenv("MASCLI_COOKIE_SECURE", raising=False)
+            monkeypatch.delenv("SIPGES_COOKIE_SECURE", raising=False)
         else:
-            monkeypatch.setenv("MASCLI_COOKIE_SECURE", cookie_secure)
+            monkeypatch.setenv("SIPGES_COOKIE_SECURE", cookie_secure)
         spec = importlib.util.spec_from_file_location(
             "isolated_test_app", Path(__file__).resolve().parents[1] / "app.py"
         )
@@ -98,7 +98,7 @@ def isolated_app(tmp_path, monkeypatch, request, isolated_import):
                      role, 1, module.now()),
                 )
                 auth.execute("INSERT INTO access_grants VALUES (?,?,?)",
-                             (username, "MASCLI", "PRJ-SECHURA"))
+                             (username, "SIPGES", "PRJ-SECHURA"))
         yield module, client
 
 

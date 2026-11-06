@@ -8,9 +8,9 @@ from storage_sqlite import connect_sqlite
 import sqlite3, json, uuid, datetime, re, unicodedata, os, mimetypes, hashlib, secrets, hmac, time, base64, struct, contextvars
 
 def cookie_secure_policy():
-    value = os.getenv("MASCLI_COOKIE_SECURE")
+    value = os.getenv("SIPGES_COOKIE_SECURE")
     if value not in (None, "0", "1"):
-        raise ValueError("MASCLI_COOKIE_SECURE must be unset or exactly '0' or '1'")
+        raise ValueError("SIPGES_COOKIE_SECURE must be unset or exactly '0' or '1'")
     return value != "0"
 
 
@@ -18,15 +18,15 @@ def cookie_secure_policy():
 COOKIE_SECURE = cookie_secure_policy()
 
 BASE = Path(__file__).resolve().parent
-DB = Path(os.getenv("MASCLI_DB_PATH", str(BASE / "data" / "mascli.db")))
+DB = Path(os.getenv("SIPGES_DB_PATH", str(BASE / "data" / "sipges.db")))
 SEED = BASE / "data" / "seed.json"
 IRSA_CONFIG = BASE / "data" / "irsa_config.json"
 INDICATOR_CONFIG = BASE / "data" / "indicator_config.json"
 MODEL_STATUS = BASE / "data" / "model_status.json"
 CANONICAL_ENTITIES = BASE / "data" / "canonical_entities.json"
 PROJECT_COORDINATES = BASE / "data" / "project_coordinates.json"
-UPLOAD_DIR = Path(os.getenv("MASCLI_UPLOAD_DIR", str(BASE / "data" / "uploads")))
-MAX_UPLOAD_BYTES = int(os.getenv("MASCLI_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
+UPLOAD_DIR = Path(os.getenv("SIPGES_UPLOAD_DIR", str(BASE / "data" / "uploads")))
+MAX_UPLOAD_BYTES = int(os.getenv("SIPGES_MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
 ALLOWED_UPLOAD_EXTENSIONS = {".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".jpg", ".jpeg", ".png", ".webp", ".txt"}
 
 MODULES = {
@@ -38,16 +38,16 @@ MODULES = {
     "hechos":"Hechos_Compartidos","aarc":"Evaluaciones_AARC"
 }
 
-app = FastAPI(title="MASCLI – Gestión Territorial Empresarial", version="3.0.0-rc")
+app = FastAPI(title="SIPGES – Gestión Territorial Empresarial", version="3.0.0-rc")
 app.mount("/static", StaticFiles(directory=BASE/"static"), name="static")
 
 class RecordIn(BaseModel):
     payload: Dict[str, Any]
 
-SCOPE_DB=contextvars.ContextVar('mascli_scope_db',default=None)
-SCOPE_ID=contextvars.ContextVar('mascli_scope_id',default=None)
-AUTH_DB=Path(os.getenv('MASCLI_AUTH_DB_PATH',str(BASE/'data'/'auth_global.db')))
-TENANT_DIR=Path(os.getenv('MASCLI_TENANT_DIR',str(BASE/'data'/'tenants')))
+SCOPE_DB=contextvars.ContextVar('sipges_scope_db',default=None)
+SCOPE_ID=contextvars.ContextVar('sipges_scope_id',default=None)
+AUTH_DB=Path(os.getenv('SIPGES_AUTH_DB_PATH',str(BASE/'data'/'auth_global.db')))
+TENANT_DIR=Path(os.getenv('SIPGES_TENANT_DIR',str(BASE/'data'/'tenants')))
 
 def auth_conn():
     AUTH_DB.parent.mkdir(parents=True,exist_ok=True)
@@ -58,7 +58,7 @@ def conn():
 
 def upload_root():
     scope=SCOPE_ID.get()
-    if not scope or scope==('MASCLI','PRJ-SECHURA'):return UPLOAD_DIR
+    if not scope or scope==('SIPGES','PRJ-SECHURA'):return UPLOAD_DIR
     return UPLOAD_DIR/hashlib.sha256((scope[0]+'/'+scope[1]).encode()).hexdigest()[:24]
 
 def now():
@@ -150,13 +150,13 @@ def init_db():
         for item in users:
             c.execute("INSERT OR IGNORE INTO records VALUES(?,?,?,?,?)",("Usuarios",item["ID_Usuario"],json.dumps(item,ensure_ascii=False),now(),now()))
     if c.execute("SELECT COUNT(*) n FROM records WHERE module='Proyectos'").fetchone()["n"] == 0:
-        project={"Proyecto_ID":"PRJ-SECHURA","Nombre":"Proyecto Sechura","Territorio":"Sechura, Piura","Estado":"Activo","Descripcion":"Proyecto predeterminado de la Base Maestra MASCLI","Fecha_Creacion":"2026-10-10"}
+        project={"Proyecto_ID":"PRJ-SECHURA","Nombre":"Proyecto Sechura","Territorio":"Sechura, Piura","Estado":"Activo","Descripcion":"Proyecto predeterminado de la Base Maestra SIPGES","Fecha_Creacion":"2026-10-10"}
         c.execute("INSERT OR IGNORE INTO records VALUES(?,?,?,?,?)",("Proyectos",project["Proyecto_ID"],json.dumps(project,ensure_ascii=False),now(),now()))
     c.commit(); c.close()
 
-# MASCLI RC 2.9: sesiones opacas y roles efectivos. Una instalación = una organización.
+# SIPGES RC 2.9: sesiones opacas y roles efectivos. Una instalación = una organización.
 AUTH_ROLES={"admin","analista","coordinador","consulta"}
-COOKIE_NAME="mascli_session"
+COOKIE_NAME="sipges_session"
 SESSION_SECONDS=8*3600
 
 def hash_password(password):
@@ -199,7 +199,7 @@ async def enforce_auth(request:Request, call_next):
     identity=auth_identity(request)
     if not identity:
         if path=='/' and request.method=='GET': return RedirectResponse('/login',status_code=303)
-        return JSONResponse({'detail':'Inicie sesión para acceder a MASCLI'},status_code=401)
+        return JSONResponse({'detail':'Inicie sesión para acceder a SIPGES'},status_code=401)
     if request.method not in ('GET','HEAD','OPTIONS'):
         origin=request.headers.get('origin')
         host=request.headers.get('host')
@@ -210,15 +210,15 @@ async def enforce_auth(request:Request, call_next):
     ac=auth_conn()
     grants=ac.execute('SELECT company_id,project_id FROM access_grants WHERE username=?',(identity['username'],)).fetchall()
     ac.close()
-    target=request.headers.get('X-MASCLI-Scope','') or request.cookies.get('mascli_scope','')
+    target=request.headers.get('X-SIPGES-Scope','') or request.cookies.get('sipges_scope','')
     if not target and len(grants)==1:
         target=grants[0]['company_id']+'/'+grants[0]['project_id']
     if not target or target not in [g['company_id']+'/'+g['project_id'] for g in grants]:
         if path=='/' and request.method=='GET':return RedirectResponse('/select-project',status_code=303)
-        return JSONResponse({'detail':'Seleccione un proyecto autorizado mediante X-MASCLI-Scope o /select-project','projects':[g['company_id']+'/'+g['project_id'] for g in grants]},status_code=403)
+        return JSONResponse({'detail':'Seleccione un proyecto autorizado mediante X-SIPGES-Scope o /select-project','projects':[g['company_id']+'/'+g['project_id'] for g in grants]},status_code=403)
     company_id,project_id=target.split('/',1)
     scope_hash=hashlib.sha256(target.encode()).hexdigest()[:24]
-    scoped_path=DB if target=='MASCLI/PRJ-SECHURA' else TENANT_DIR/(scope_hash+'.db')
+    scoped_path=DB if target=='SIPGES/PRJ-SECHURA' else TENANT_DIR/(scope_hash+'.db')
     if not scoped_path.exists():return JSONResponse({'detail':'Base del proyecto no inicializada'},status_code=503)
     tok=SCOPE_DB.set(scoped_path); sid=SCOPE_ID.set((company_id,project_id))
     # Proyecto/empresa enviados por cliente no pueden sustituir el alcance autenticado.
@@ -261,7 +261,7 @@ async def enforce_auth(request:Request, call_next):
 
 @app.get('/login',response_class=HTMLResponse)
 def login_page():
-    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acceso MASCLI 2.9</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(410px,90vw);padding:32px;background:#1b2a46;border-radius:16px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:22px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}small{color:#c5d3e9}#error{color:#ffaaaa}</style><div class="panel"><h1>MASCLI RC 3.0</h1><p>Acceso al Sistema de Gestión Territorial</p><form id="f"><label>Usuario</label><input name="username" autocomplete="username" required><label>Contraseña</label><input type="password" name="password" autocomplete="current-password" required><label>Código de autenticador (si está activado)</label><input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button>Ingresar</button></form><p id="error" role="alert"></p><small>Acceso exclusivo para personal autorizado.</small></div><script>document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const d=new FormData(e.target);const r=await fetch('/login',{method:'POST',body:d});if(r.ok)location.href='/';else document.querySelector('#error').textContent='Credenciales inválidas o acceso inhabilitado';};</script></html>''')
+    return HTMLResponse('''<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Acceso SIPGES 2.9</title><style>body{font:16px system-ui;background:#101b32;color:#eef4ff;display:grid;place-items:center;min-height:100vh;margin:0}.panel{width:min(410px,90vw);padding:32px;background:#1b2a46;border-radius:16px}label{display:block;margin:16px 0 6px}input,button{box-sizing:border-box;width:100%;padding:12px;border-radius:8px;border:1px solid #8290a9}button{margin-top:22px;background:#6de7d4;color:#071e31;border:0;font-weight:700;cursor:pointer}small{color:#c5d3e9}#error{color:#ffaaaa}</style><div class="panel"><h1>SIPGES RC 3.0</h1><p>Acceso al Sistema de Gestión Territorial</p><form id="f"><label>Usuario</label><input name="username" autocomplete="username" required><label>Contraseña</label><input type="password" name="password" autocomplete="current-password" required><label>Código de autenticador (si está activado)</label><input name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6"><button>Ingresar</button></form><p id="error" role="alert"></p><small>Acceso exclusivo para personal autorizado.</small></div><script>document.querySelector('#f').onsubmit=async e=>{e.preventDefault();const d=new FormData(e.target);const r=await fetch('/login',{method:'POST',body:d});if(r.ok)location.href='/';else document.querySelector('#error').textContent='Credenciales inválidas o acceso inhabilitado';};</script></html>''')
 
 @app.post('/login')
 def login_action(username:str=Form(...),password:str=Form(...),otp:str=Form('')):
@@ -319,7 +319,7 @@ def select_project_page(request:Request):
     if not identity:return RedirectResponse('/login',status_code=303)
     c=auth_conn();items=c.execute('SELECT p.company_id,p.project_id,p.label FROM tenant_projects p JOIN access_grants g ON p.company_id=g.company_id AND p.project_id=g.project_id WHERE g.username=?',(identity['username'],)).fetchall();c.close()
     choices=''.join('<option value="'+html.escape(r['company_id']+'/'+r['project_id'],quote=True)+'">'+html.escape(r['label'])+' ('+html.escape(r['company_id']+'/'+r['project_id'])+')</option>' for r in items)
-    return HTMLResponse('<html lang="es"><meta charset="utf-8"><title>Seleccionar proyecto MASCLI</title><body style="font:18px system-ui;max-width:600px;margin:10vh auto"><h1>Selecciona tu proyecto autorizado</h1><form method="post" action="/select-project"><select name="scope" style="padding:12px;width:100%">'+choices+'</select><p><button style="padding:12px">Entrar al proyecto</button></p></form></body></html>')
+    return HTMLResponse('<html lang="es"><meta charset="utf-8"><title>Seleccionar proyecto SIPGES</title><body style="font:18px system-ui;max-width:600px;margin:10vh auto"><h1>Selecciona tu proyecto autorizado</h1><form method="post" action="/select-project"><select name="scope" style="padding:12px;width:100%">'+choices+'</select><p><button style="padding:12px">Entrar al proyecto</button></p></form></body></html>')
 
 @app.post('/select-project')
 def select_project_action(request:Request,scope:str=Form(...)):
@@ -331,12 +331,12 @@ def select_project_action(request:Request,scope:str=Form(...)):
     c=auth_conn();ok=c.execute("SELECT 1 FROM access_grants WHERE username=? AND company_id||'/'||project_id=?",(identity['username'],scope)).fetchone();c.close()
     if not ok:raise HTTPException(403,'Proyecto no autorizado')
     resp=RedirectResponse('/',status_code=303)
-    resp.set_cookie('mascli_scope',scope,httponly=True,samesite='strict',secure=COOKIE_SECURE,max_age=SESSION_SECONDS)
+    resp.set_cookie('sipges_scope',scope,httponly=True,samesite='strict',secure=COOKIE_SECURE,max_age=SESSION_SECONDS)
     return resp
 
 @app.get('/system/auth/current-scope')
 def current_scope():
-    company,project=SCOPE_ID.get() or ('MASCLI','PRJ-SECHURA')
+    company,project=SCOPE_ID.get() or ('SIPGES','PRJ-SECHURA')
     return {'company_id':company,'project_id':project,'scope':company+'/'+project}
 
 @app.get('/system/auth/scopes')
@@ -357,7 +357,7 @@ def create_scope(item:ScopeCreate,request:Request):
     if not auth_identity(request) or auth_identity(request)['role']!='admin':raise HTTPException(403,'Administrador requerido')
     if not re.fullmatch('[A-Za-z0-9_-]{2,64}',item.company_id) or not re.fullmatch('[A-Za-z0-9_-]{2,64}',item.project_id):raise HTTPException(422,'IDs inválidos')
     target=item.company_id+'/'+item.project_id
-    if target=='MASCLI/PRJ-SECHURA':raise HTTPException(409,'Proyecto reservado')
+    if target=='SIPGES/PRJ-SECHURA':raise HTTPException(409,'Proyecto reservado')
     path=TENANT_DIR/(hashlib.sha256(target.encode()).hexdigest()[:24]+'.db')
     c=auth_conn()
     if not c.execute('SELECT 1 FROM auth_users WHERE username=?',(item.username,)).fetchone():c.close();raise HTTPException(404,'Usuario no existe')
@@ -403,7 +403,7 @@ def totp_setup(request:Request):
         c.commit()
     finally:c.close()
     from urllib.parse import quote
-    uri=f'otpauth://totp/MASCLI:{quote(user["username"])}?secret={secret}&issuer=MASCLI&algorithm=SHA1&digits=6&period=30'
+    uri=f'otpauth://totp/SIPGES:{quote(user["username"])}?secret={secret}&issuer=SIPGES&algorithm=SHA1&digits=6&period=30'
     return {'secret':secret,'otpauth_uri':uri,'instruction':'Añada el código en una aplicación TOTP y confirme con /system/auth/totp/enable.'}
 
 class TOTPVerify(BaseModel):
@@ -436,14 +436,14 @@ def init_auth_global():
         for r in rows:c.execute("INSERT OR IGNORE INTO auth_users(username,full_name,password_hash,role,active,created_at) VALUES(?,?,?,?,?,?)",(r['username'],r['full_name'],r['password_hash'],r['role'],r['active'],r['created_at']))
     except sqlite3.OperationalError:pass
     finally:legacy.close()
-    username=os.getenv('MASCLI_ADMIN_USERNAME','admin').strip().lower()
-    password=os.getenv('MASCLI_ADMIN_PASSWORD','')
+    username=os.getenv('SIPGES_ADMIN_USERNAME','admin').strip().lower()
+    password=os.getenv('SIPGES_ADMIN_PASSWORD','')
     if not c.execute('SELECT 1 FROM auth_users LIMIT 1').fetchone():
-        if len(password)<12: raise RuntimeError('Configure MASCLI_ADMIN_PASSWORD (mínimo 12 caracteres)')
+        if len(password)<12: raise RuntimeError('Configure SIPGES_ADMIN_PASSWORD (mínimo 12 caracteres)')
         c.execute('INSERT INTO auth_users(username,full_name,password_hash,role,active,created_at) VALUES(?,?,?,?,?,?)',(username,'Crystell Granda',hash_password(password),'admin',1,now()))
-    c.execute("INSERT OR IGNORE INTO tenant_projects VALUES('MASCLI','PRJ-SECHURA','Proyecto Sechura (migración)')")
+    c.execute("INSERT OR IGNORE INTO tenant_projects VALUES('SIPGES','PRJ-SECHURA','Proyecto Sechura (migración)')")
     for r in c.execute("SELECT username FROM auth_users WHERE role='admin'").fetchall():
-        c.execute("INSERT OR IGNORE INTO access_grants VALUES(?,'MASCLI','PRJ-SECHURA')",(r['username'],))
+        c.execute("INSERT OR IGNORE INTO access_grants VALUES(?,'SIPGES','PRJ-SECHURA')",(r['username'],))
     c.commit();c.close()
 
 
@@ -616,7 +616,7 @@ def compute_irsa():
 
 @app.get("/health")
 def health():
-    return {"status":"ok","service":"MASCLI","version":"V0.5.1"}
+    return {"status":"ok","service":"SIPGES","version":"V0.5.1"}
 
 @app.get("/", response_class=HTMLResponse)
 def home():
@@ -684,7 +684,7 @@ def situational_report_docx(project_id:str='PRJ-SECHURA'):
     doc=Document()
     doc.add_heading('INFORME DE ANÁLISIS SITUACIONAL',0)
     doc.add_paragraph(data['project_name']+' | Corte: '+data['generated_at'])
-    doc.add_paragraph('Documento generado automáticamente por MASCLI. BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN HUMANA.')
+    doc.add_paragraph('Documento generado automáticamente por SIPGES. BORRADOR SUJETO A REVISIÓN Y VALIDACIÓN HUMANA.')
     doc.add_heading('1. Resumen ejecutivo',1)
     doc.add_paragraph(f"Se integraron {data['counts']['eventos']} eventos, {data['counts']['actores']} actores, {data['demandas_pendientes']} demandas pendientes y {data['alertas_activas']} alertas activas en la Base Maestra del proyecto. Las cifras indican registros, no hechos necesariamente corroborados.")
     doc.add_heading('2. Diagnóstico de la situación',1)
@@ -701,12 +701,12 @@ def situational_report_docx(project_id:str='PRJ-SECHURA'):
     for x in data['recomendaciones']: doc.add_paragraph(x,style='List Bullet')
     doc.add_heading('8. Alcances y limitaciones',1)
     for x in data['limitations']: doc.add_paragraph(x,style='List Bullet')
-    doc.add_paragraph('Preparado por: Sistema MASCLI | Revisión técnica: __________________ | Fecha de validación: ______________')
+    doc.add_paragraph('Preparado por: Sistema SIPGES | Revisión técnica: __________________ | Fecha de validación: ______________')
     output=BytesIO();doc.save(output);output.seek(0)
-    return StreamingResponse(output,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="MASCLI_Analisis_Situacional.docx"'})
+    return StreamingResponse(output,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="SIPGES_Analisis_Situacional.docx"'})
 
 
-# RC 1.7: segunda capa MASCLI. No altera el cálculo del IRSA ni sus umbrales.
+# RC 1.7: segunda capa SIPGES. No altera el cálculo del IRSA ni sus umbrales.
 EXTENDED_MODULES = {
     'intereses':'Intereses', 'dialogos':'Dialogos', 'oportunidades':'Oportunidades',
     'hechos':'Hechos_Compartidos', 'aarc':'Evaluaciones_AARC'
@@ -908,7 +908,7 @@ def integrated_analysis_docx(project_id:str='PRJ-SECHURA'):
     from docx import Document
     from io import BytesIO
     d=integrated_analysis(project_id)
-    doc=Document();doc.add_heading('MASCLI | Análisis integrado RC 1.9',0)
+    doc=Document();doc.add_heading('SIPGES | Análisis integrado RC 1.9',0)
     doc.add_paragraph(f"Proyecto {project_id} · Corte {d['generated_at']}")
     doc.add_paragraph('DOCUMENTO AUTOMÁTICO EN BORRADOR. Los vínculos no están confirmados; requiere revisión profesional y contrastación de fuentes.')
     doc.add_heading('1. Cruces candidatos entre módulos',1)
@@ -927,7 +927,7 @@ def integrated_analysis_docx(project_id:str='PRJ-SECHURA'):
     for x in d['limitations']:doc.add_paragraph(x,style='List Bullet')
     doc.add_paragraph('Revisado por: __________________  Fecha: _________________')
     buf=BytesIO();doc.save(buf);buf.seek(0)
-    return StreamingResponse(buf,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="MASCLI_RC19_Analisis_Integrado.docx"'})
+    return StreamingResponse(buf,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="SIPGES_RC19_Analisis_Integrado.docx"'})
 
 @app.get('/system/consensus-engine')
 def consensus_engine(project_id:str='PRJ-SECHURA'):
@@ -938,7 +938,7 @@ def consensus_engine_docx(project_id:str='PRJ-SECHURA'):
     from docx import Document
     from io import BytesIO
     report=automated_consensus(project_id)
-    doc=Document();doc.add_heading('MASCLI | Motor de valor y consenso',0)
+    doc=Document();doc.add_heading('SIPGES | Motor de valor y consenso',0)
     doc.add_paragraph(f"Proyecto: {project_id} · Corte: {report['generated_at']}")
     doc.add_paragraph('BORRADOR AUTOMATIZADO: recomendaciones basadas en registros y reglas. REVISIÓN HUMANA OBLIGATORIA.')
     for i,x in enumerate(report['recommendations'],1):
@@ -950,7 +950,7 @@ def consensus_engine_docx(project_id:str='PRJ-SECHURA'):
     doc.add_paragraph('Modelo original: Dick Castillo Inca y Crystell Lizett Granda Agurto. Iniciativa de automatización: Crystell Lizett Granda Agurto.')
     doc.add_paragraph('Revisó: ______________________ Fecha: __________')
     b=BytesIO();doc.save(b);b.seek(0)
-    return StreamingResponse(b,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="MASCLI_Motor_Valor_Consenso.docx"'})
+    return StreamingResponse(b,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="SIPGES_Motor_Valor_Consenso.docx"'})
 
 @app.get('/system/strategic-report.docx')
 def strategic_report_docx(project_id:str='PRJ-SECHURA'):
@@ -958,7 +958,7 @@ def strategic_report_docx(project_id:str='PRJ-SECHURA'):
     from io import BytesIO
     r=extended_records(project_id); report=strategic_assessment(project_id)
     situ=build_situational(project_id)
-    doc=Document();doc.add_heading('MASCLI | Informe estratégico territorial',0)
+    doc=Document();doc.add_heading('SIPGES | Informe estratégico territorial',0)
     doc.add_paragraph(f"{situ['project_name']} | Corte: {report['generated_at']}")
     doc.add_paragraph('BORRADOR AUTOMATIZADO — REQUIERE REVISIÓN Y APROBACIÓN HUMANA. No sustituye decisiones institucionales.')
     doc.add_heading('1. Situación social documentada',1)
@@ -979,7 +979,7 @@ def strategic_report_docx(project_id:str='PRJ-SECHURA'):
     doc.add_paragraph('Concepto de automatización y desarrollo de tesis: Crystell Lizett Granda Agurto.')
     doc.add_paragraph('Validado por: _________________________    Fecha: __________________')
     out=BytesIO();doc.save(out);out.seek(0)
-    return StreamingResponse(out,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="MASCLI_Informe_Estrategico.docx"'})
+    return StreamingResponse(out,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="SIPGES_Informe_Estrategico.docx"'})
 
 @app.get("/api/dashboard")
 def dashboard():
@@ -1331,12 +1331,12 @@ def export_db():
     scoped_db = SCOPE_DB.get()
     if scoped_db is None:
         raise HTTPException(status_code=403, detail="Seleccione un proyecto autorizado")
-    return FileResponse(scoped_db, filename="mascli.db", media_type="application/octet-stream")
+    return FileResponse(scoped_db, filename="sipges.db", media_type="application/octet-stream")
 
 
 
 # ---------------------------------------------------------------------------
-# MASCLI V0.4 - Motor de indicadores desagregados
+# SIPGES V0.4 - Motor de indicadores desagregados
 # Estado: PROVISIONAL / PARA PROTOTIPADO Y CALIBRACIÓN
 # ---------------------------------------------------------------------------
 def _txt(*parts):
@@ -1666,13 +1666,13 @@ def model_status():
 
 @app.get("/system/canonical-entities")
 def canonical_entities():
-    if SCOPE_ID.get() != ("MASCLI","PRJ-SECHURA"):return {}
+    if SCOPE_ID.get() != ("SIPGES","PRJ-SECHURA"):return {}
     return json.loads(CANONICAL_ENTITIES.read_text(encoding="utf-8"))
 
 @app.get("/system/project-coordinates")
 def project_coordinates(project_id: str = "PRJ-SECHURA"):
     """Geometría pública de referencia vinculada al catálogo de proyectos."""
-    if SCOPE_ID.get() != ("MASCLI","PRJ-SECHURA"):raise HTTPException(404,"Sin cartografía registrada para este proyecto")
+    if SCOPE_ID.get() != ("SIPGES","PRJ-SECHURA"):raise HTTPException(404,"Sin cartografía registrada para este proyecto")
     data=json.loads(PROJECT_COORDINATES.read_text(encoding="utf-8"))
     if str(data.get("project_id")) != str(project_id):
         raise HTTPException(status_code=404, detail="El proyecto no tiene coordenadas registradas")
@@ -1782,7 +1782,7 @@ async def document_lab_analyze(file:UploadFile=File(...),project_id:str=Form('PR
 @app.post('/system/document-lab/report.docx')
 async def document_lab_report(file:UploadFile=File(...),project_id:str=Form('PRJ-SECHURA')):
     data=await document_lab_analyze(file,project_id)
-    d=WordDocument();d.add_heading('MASCLI RC 2.0 | Informe de lectura documental',0)
+    d=WordDocument();d.add_heading('SIPGES RC 2.0 | Informe de lectura documental',0)
     d.add_paragraph('PROTOTIPO · Material para revisión técnica, no informe oficial')
     for k in ('filename','project_id','sha256','generated_at','method'):
         d.add_paragraph(f'{k}: {data[k]}')
@@ -1796,10 +1796,10 @@ async def document_lab_report(file:UploadFile=File(...),project_id:str=Form('PRJ
     d.add_heading('Limitaciones y revisión',level=1)
     for v in data['limitations']:d.add_paragraph(v,style='List Bullet')
     out=BytesIO();d.save(out);out.seek(0)
-    return StreamingResponse(out,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="MASCLI_RC20_Lectura_Documental.docx"'})
+    return StreamingResponse(out,media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',headers={'Content-Disposition':'attachment; filename="SIPGES_RC20_Lectura_Documental.docx"'})
 
 
-# MASCLI RC 2.1 — comparación asistida y bandeja de verificación.
+# SIPGES RC 2.1 — comparación asistida y bandeja de verificación.
 # NO usa IA generativa. Las diferencias son candidatas a contrastación.
 from pydantic import Field
 from difflib import SequenceMatcher
@@ -1995,7 +1995,7 @@ class SemanticAnalysisIn(DigitalAnalysisIn):
 
 
 def _rc25_embedding(text: str):
-    model=os.environ.get('MASCLI_OLLAMA_EMBED_MODEL','nomic-embed-text')
+    model=os.environ.get('SIPGES_OLLAMA_EMBED_MODEL','nomic-embed-text')
     req=urllib.request.Request('http://127.0.0.1:11434/api/embed',
         data=json.dumps({'model':model,'input':text[:12000]}).encode('utf-8'),
         headers={'Content-Type':'application/json'},method='POST')
@@ -2030,7 +2030,7 @@ def rc25_semantic_analyze(payload:SemanticAnalysisIn):
             if similarity>=0.38:scored.append({'theme':label,'similarity':round(similarity,3),'reference':description})
         scored.sort(key=lambda x:-x['similarity'])
         base['semantic']={'active':True,'method':'Similitud coseno de embeddings del modelo local Ollama',
-           'model':os.environ.get('MASCLI_OLLAMA_EMBED_MODEL','nomic-embed-text'),
+           'model':os.environ.get('SIPGES_OLLAMA_EMBED_MODEL','nomic-embed-text'),
            'matches':scored[:5], 'note':'Los valores son similitudes relativas, no probabilidades de conflicto ni pruebas de veracidad.'}
         base['method']='Análisis híbrido: reglas y similitud semántica local. Requiere corroboración humana.'
     except (OSError,ValueError,TimeoutError,urllib.error.URLError,KeyError) as exc:
@@ -2264,10 +2264,10 @@ def rc28_overview(project_id:str=Query(...,min_length=1,max_length=120)):
 @app.get('/system/management/report.csv')
 def rc28_export_csv(project_id:str=Query(...,min_length=1,max_length=120)):
     result=rc28_report(project_id); f=io.StringIO();w=csv.writer(f)
-    w.writerow(['MASCLI RC 2.8','Resumen gerencial',result['project_id'],result['generated_at']]);w.writerow(['Indicador','Valor'])
+    w.writerow(['SIPGES RC 2.8','Resumen gerencial',result['project_id'],result['generated_at']]);w.writerow(['Indicador','Valor'])
     for k,v in result['metrics'].items():w.writerow([k,v])
     w.writerow([]);w.writerow(['Acciones críticas','Responsable','Plazo','Estado','Avance (%)'])
     for item in result['critical_actions']:w.writerow([item['title'],item['responsible'],item['due_date'],item['status'],item['progress']])
     w.writerow([]);w.writerow(['Nota metodológica',result['methodology']])
     content='\ufeff'+f.getvalue()
-    return Response(content=content,media_type='text/csv; charset=utf-8',headers={'Content-Disposition':'attachment; filename="mascli_rc28_reporte_gerencial.csv"'})
+    return Response(content=content,media_type='text/csv; charset=utf-8',headers={'Content-Disposition':'attachment; filename="sipges_rc28_reporte_gerencial.csv"'})
