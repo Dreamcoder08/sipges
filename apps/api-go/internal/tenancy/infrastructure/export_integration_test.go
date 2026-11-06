@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -86,6 +87,23 @@ func TestExportSurvivesAMigrationOfAnExportedTable(t *testing.T) {
 			t.Fatalf("after %s: %v", change, err)
 		}
 	}
+}
+
+func TestConcurrentExportsShareNoState(t *testing.T) {
+	pool := exportDatabase(t)
+	if _, err := pool.Exec(t.Context(), `INSERT INTO automation_rules (tenant_id, name, trigger_module, trigger_actions,
+	  actions, created_by, created_at, updated_at) VALUES ('EXP/UNO', 'Regla', '*', '{CREATE}', '[]', 'x', now(), now())`); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Go(func() {
+			if _, err := (infrastructure.ExportData{DB: pool}).Read(t.Context(), exportScope); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+	wg.Wait()
 }
 
 func TestExportIsOneReadOnlySnapshot(t *testing.T) {
