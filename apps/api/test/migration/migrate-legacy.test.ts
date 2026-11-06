@@ -434,6 +434,17 @@ describe('legacy SQLite → PostgreSQL migration', () => {
     expect(() => parseCliArgs(['--legacy-root', '/x', '--', 'posicional'])).toThrow();
   });
 
+  it('stays importable when the first argument names no file', () => {
+    const cli = new URL('../../src/tools/migrate-legacy/cli.ts', import.meta.url).href;
+    const run = spawnSync(
+      process.execPath,
+      ['--input-type=module', '-e', `await import(${JSON.stringify(cli)})`, 'no-existe'],
+      { encoding: 'utf8', timeout: 60_000 },
+    );
+    expect(run.stderr).not.toContain('ENOENT');
+    expect(run.status).toBe(0);
+  });
+
   it('runs as a program from a path with spaces and through a symbolic link', async () => {
     const api = fileURLToPath(new URL('../..', import.meta.url));
     const dir = await mkdtemp(join(tmpdir(), 'sipges cli copy '));
@@ -452,6 +463,15 @@ describe('legacy SQLite → PostgreSQL migration', () => {
       const linked = help(join(dir, 'enlace.ts'));
       expect(linked.status).toBe(0);
       expect(linked.stdout).toContain('Usage:');
+
+      await symlink(join(dir, 'src'), join(dir, 'vinculo'));
+      const kept = spawnSync(
+        process.execPath,
+        ['--preserve-symlinks-main', join(dir, 'vinculo/tools/migrate-legacy/cli.ts'), '--help'],
+        { encoding: 'utf8', timeout: 60_000 },
+      );
+      expect(kept.status).toBe(0);
+      expect(kept.stdout).toContain('Usage:');
     } finally {
       await rm(dir, { recursive: true, force: true });
     }
