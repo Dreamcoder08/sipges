@@ -34,7 +34,8 @@ The general Herdr mechanics (`herdr-app do tab.new`, `hc ls`, `hc read`) are in 
 ## Watch
 
 Run `scripts/agents/watch-tabs.sh` (or `--once`) beside the tabs. It prints `BLOCKED`, `CONSENT`,
-`DONE` and `MERGED` lines and changes nothing.
+`DONE` and `MERGED` lines and changes nothing. `--status` shows every tab; `--until <event>` ends on
+the first match, which suits Monitor.
 
 - `BLOCKED` / `CONSENT`: read the tab (`hc read <tab> --lines 60`) and relay the prompt to the owner
   losslessly: every option, label and description, in order. Never answer it yourself; send the

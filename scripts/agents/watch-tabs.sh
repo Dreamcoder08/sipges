@@ -11,8 +11,11 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/agents/watch-tabs.sh [--once] [--interval SECONDS]
+Usage: scripts/agents/watch-tabs.sh [--once] [--interval SECONDS] [--until EVENT]
+       scripts/agents/watch-tabs.sh --status
   --once       one pass, then exit (default: repeat every --interval seconds, 60)
+  --until      keep passing and exit after the first pass that prints EVENT, for Monitor
+  --status     print address, status and place of every live agent tab, then exit
   WATCH_TABS_STATE  file of merged PR numbers already reported
                     (default: ${XDG_STATE_HOME:-$HOME/.local/state}/sipges/watch-tabs-merged)
 EOF
@@ -20,9 +23,16 @@ EOF
 
 once=0
 interval=60
+until_event=''
+show_status=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --once) once=1 ;;
+    --status) show_status=1 ;;
+    --until)
+      until_event="${2:?--until needs BLOCKED, CONSENT, DONE or MERGED}"
+      shift
+      ;;
     --interval)
       interval="${2:?--interval needs a number of seconds}"
       shift
@@ -38,6 +48,13 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+
+if [ "$show_status" -eq 1 ]; then
+  hc ls --json | jq -r '.terminals[]
+    | select(.state == "live" and (.agent // "") != "")
+    | [.address, .status, .where] | @tsv'
+  exit 0
+fi
 
 state="${WATCH_TABS_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/sipges/watch-tabs-merged}"
 mkdir -p "$(dirname "$state")"
@@ -78,7 +95,11 @@ pass() {
 }
 
 while :; do
-  pass
+  events="$(pass)"
+  [ -z "$events" ] || printf '%s\n' "$events"
   [ "$once" -eq 1 ] && break
+  if [ -n "$until_event" ] && printf '%s\n' "$events" | grep -q "^$until_event "; then
+    break
+  fi
   sleep "$interval"
 done
