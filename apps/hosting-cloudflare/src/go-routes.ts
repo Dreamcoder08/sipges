@@ -90,8 +90,17 @@ export const goContainerEnv = (env: Readonly<Record<string, unknown>>) => {
   if (typeof env.SIPGES_GO_DATABASE_URL === 'string') {
     vars.SIPGES_DATABASE_URL = env.SIPGES_GO_DATABASE_URL;
   }
-  // The identity bootstrap: without a password an empty installation stops the container.
-  for (const name of ['SIPGES_ADMIN_USERNAME', 'SIPGES_ADMIN_PASSWORD', 'SIPGES_ADMIN_FULL_NAME']) {
+  for (const name of [
+    // The identity bootstrap: without a password an empty installation stops the container.
+    'SIPGES_ADMIN_USERNAME',
+    'SIPGES_ADMIN_PASSWORD',
+    'SIPGES_ADMIN_FULL_NAME',
+    // What GET /system/automations/runtime reports. Go ignores the secret on the cron route until
+    // SIPGES_GO_AUTOMATION_CRON is on, and that switch stays out of this list (go-automation-cron.md).
+    'SIPGES_CRON_SECRET',
+    'CRON_SECRET',
+    'SIPGES_CRON_SCHEDULE',
+  ]) {
     const value = env[name];
     if (typeof value === 'string') vars[name] = value;
   }

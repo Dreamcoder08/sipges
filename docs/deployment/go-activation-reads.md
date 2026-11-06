@@ -196,6 +196,7 @@ URLs of a first paint that carry `X-SIPGES-Scope`, copied by hand from `apps/web
 | `SIPGES_DATABASE_URL` | yes, from `SIPGES_GO_DATABASE_URL` | yes | Without it Go refuses to start. |
 | `SIPGES_ALLOWED_HOSTS` | yes | yes | **Unverified:** that the container sees the public `Host`. The library forwards the original URL (`container.js:886`); only the trial proves it. |
 | `SIPGES_TRUST_CF_CONNECTING_IP` | yes | no | |
+| `SIPGES_CRON_SECRET`, `CRON_SECRET`, `SIPGES_CRON_SCHEDULE` | yes, when set | no | For `/system/automations/runtime`. Inert while `SIPGES_GO_AUTOMATION_CRON` stays out, as it does. |
 | `SIPGES_REQUIRE_MFA` | no | yes | Go defaults to on, as production should. **Unverified:** that production does not override it. Secrets need the owner to read. |
 | `SIPGES_DATA_KEY` | no | no | Go still starts, but TOTP answers 404 or 500. Required before identity writes move; the `not-for-go` value in `go-routing.test.ts` is out of date for them. |
 | `SIPGES_STORAGE`, `SIPGES_S3_*` | no | no | Uploads answer 500 (L37). Required before any upload route moves. |
