@@ -177,6 +177,24 @@ services:
     security_opt: ['no-new-privileges:true']
     read_only: true
 
+  # Only ever started by `./sipges inventory`: the client's folder, read-only, and a place for the
+  # report. No network and no setting at all, so it cannot reach the database.
+  inventory:
+    profiles: [ops]
+    image: sipges-local:${SIPGES_IMAGE_TAG:-current}
+    restart: 'no'
+    environment:
+      GOMEMLIMIT: 400MiB
+    volumes:
+      - ${SIPGES_IMPORT_FOLDER:-./no-import-folder}:/import:ro
+      - ${SIPGES_IMPORT_REPORTS:-./imports}:/reports
+    network_mode: none
+    group_add: ['${SIPGES_HOST_GID:-65532}']
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    read_only: true
+    mem_limit: 512m
+
 volumes:
   db:
   uploads:

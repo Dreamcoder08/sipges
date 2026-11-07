@@ -137,6 +137,38 @@ if run import base-maestra "$work/client/nested/file.txt"; then fail 'a group sh
 check 'nothing ran under a shared group' test ! -f "$FAKE/reports-during-run"
 command rm "$root/getent"
 
+# --- the inventory
+
+fresh
+echo sha256:1 >"$FAKE/images/sipges-local_current"
+chmod 000 "$work/client/nested/file.txt"
+run inventory "$work/client"
+check 'the inventory takes a folder with an unreadable file: that file is a line of the report' test -f "$FAKE/reports-during-run"
+check 'it never starts the database' test -z "$(grep -F ' up ' "$FAKE/calls" || true)"
+check 'it runs the inventory service' called 'run --rm inventory inventory --root /import --report /reports/inventory-'
+check 'it names the report' said "$work/reports/inventory-"
+check 'the reports folder closes after it too' test "$(stat -c %a "$SIPGES_IMPORT_REPORTS" | tail -c 4)" = 700
+
+fresh
+echo sha256:1 >"$FAKE/images/sipges-local_current"
+run inventory "$work/client" --show-unconfirmed-headers
+check 'the owner may ask for unconfirmed headers' called '--show-unconfirmed-headers'
+
+fresh
+echo sha256:1 >"$FAKE/images/sipges-local_current"
+if run inventory "$work/client" --apply; then fail 'the inventory has no --apply'; else ok 'the inventory has no --apply'; fi
+check 'and ran nothing' test ! -f "$FAKE/reports-during-run"
+
+fresh
+if run inventory "$work/client"; then fail 'an install that was never built is refused'; else ok 'an install that was never built is refused'; fi
+check 'and it says what to run' said './sipges prepare'
+
+fresh
+echo sha256:1 >"$FAKE/images/sipges-local_current"
+if run inventory "$(dirname "$script")"; then fail 'a folder inside the repository is refused'; else ok 'a folder inside the repository is refused'; fi
+if run inventory "$work/no-such-folder"; then fail 'a missing folder is refused'; else ok 'a missing folder is refused'; fi
+if run inventory; then fail 'no folder is refused'; else ok 'no folder is refused'; fi
+
 # --- an import right after a reboot
 
 fresh
