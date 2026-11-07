@@ -217,19 +217,39 @@ done
 echo "MERGED #$pr $sha"
 [ "$wait_deploy" -eq 1 ] || exit 0
 
-# Deploy Workers starts after CI on main, and paths-ignore starts no CI on a docs-only merge. Without
-# a CI run after a few polls, nothing is coming, so do not spend the whole wait on it.
+deploy_runs() {
+  gh_read run list --workflow deploy-workers.yml --branch main --limit 20 --json databaseId,headSha,conclusion \
+    --jq "map(select(.headSha == \"$sha\" ${1:-})) | .[0].databaseId // empty" || true
+}
+
+# Deploy Workers starts after CI on main, and paths-ignore starts no CI on a docs-only merge. Without a
+# CI run after a few polls, nothing is coming, so do not spend the whole wait on it. A run takes main's
+# tip when it starts, so the skipped run of the previous, cancelled CI can carry this commit: a skipped
+# run only counts once this commit's own CI has ended without success.
 run=''
+conclusion=''
 quiet=0
 for ((i = 0; i < attempts; i++)); do
-  run="$(gh_read run list --workflow deploy-workers.yml --branch main --limit 20 --json databaseId,headSha \
-    --jq "map(select(.headSha == \"$sha\")) | .[0].databaseId // empty" || true)"
-  [ -n "$run" ] && break
-  if [ -z "$(latest_ci "$sha")" ]; then
-    quiet=$((quiet + 1))
-    [ "$quiet" -lt 8 ] || break
-  else
-    quiet=0
+  ci="$(latest_ci "$sha")"
+  run="$(deploy_runs 'and .conclusion != "skipped"')"
+  case "$ci" in
+    '')
+      quiet=$((quiet + 1))
+      [ -n "$run" ] || [ "$quiet" -lt 8 ] || break
+      ;;
+    pending | unknown | success) quiet=0 ;;
+    *)
+      quiet=0
+      [ -n "$run" ] || run="$(deploy_runs)"
+      ;;
+  esac
+  if [ -n "$run" ]; then
+    conclusion="$(gh_read run view "$run" --json status,conclusion \
+      --jq 'select(.status == "completed") | .conclusion' || true)"
+    case "$conclusion:$ci" in
+      : | skipped:pending | skipped:unknown | skipped:success) conclusion='' ;;
+      *) break ;;
+    esac
   fi
   sleep "$poll"
 done
@@ -237,38 +257,21 @@ if [ -z "$run" ] && [ "$quiet" -ge 8 ]; then
   echo "NO_DEPLOY #$pr $sha"
   exit 6
 fi
-[ -n "$run" ] || {
-  echo "DEPLOY_UNKNOWN #$pr none"
-  exit 7
-}
-
-conclusion=''
-for ((i = 0; i < attempts; i++)); do
-  conclusion="$(gh_read run view "$run" --json status,conclusion \
-    --jq 'select(.status == "completed") | .conclusion' || true)"
-  [ -n "$conclusion" ] && break
-  sleep "$poll"
-done
 case "$conclusion" in
   success) echo "DEPLOYED #$pr $run" ;;
   '')
-    echo "DEPLOY_UNKNOWN #$pr $run"
+    echo "DEPLOY_UNKNOWN #$pr ${run:-none}"
     exit 7
     ;;
   cancelled) report_stopped_deploy ;;
   skipped)
     # A merge in a row cancels the CI of the one before it, and that skips its deploy.
-    case "$(latest_ci "$sha")" in
-      cancelled) report_stopped_deploy ;;
-      unknown)
-        echo "DEPLOY_UNKNOWN #$pr $run"
-        exit 7
-        ;;
-      *)
-        echo "DEPLOY_FAILED #$pr $run $conclusion"
-        exit 5
-        ;;
-    esac
+    if [ "$ci" = "cancelled" ]; then
+      report_stopped_deploy
+    else
+      echo "DEPLOY_FAILED #$pr $run $conclusion"
+      exit 5
+    fi
     ;;
   *)
     echo "DEPLOY_FAILED #$pr $run $conclusion"

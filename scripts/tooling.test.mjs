@@ -190,6 +190,7 @@ case "$*" in
   *state,mergeCommit*) echo "\${FAKE_MERGED-abc123}" ;;
   "pr view"*"--json state "*) echo "\${FAKE_PR_STATE:-OPEN}" ;;
   "run list --workflow ci.yml"*) echo "\${FAKE_CI-success}" ;;
+  "run list"*skipped*) echo "\${FAKE_ACTIVE_RUN-$FAKE_RUN}" ;;
   "run list"*) echo "$FAKE_RUN" ;;
   "run view"*) echo "\${FAKE_DEPLOY-success}" ;;
 esac
@@ -350,6 +351,20 @@ esac
       assert.equal(last.status, 5);
       assert.equal(last.stdout, `MERGED #12 abc123\nDEPLOY_FAILED #12 77 ${extra.FAKE_DEPLOY}\n`);
     }
+
+    // The skipped run of the previous, cancelled CI can carry this commit; the real deploy follows it.
+    const real = land(['12', '--merge'], { FAKE_ACTIVE_RUN: '88' });
+    assert.equal(real.status, 0);
+    assert.equal(real.stdout, 'MERGED #12 abc123\nDEPLOYED #12 88\n');
+    const queuedBehind = land(['12', '--merge'], { FAKE_ACTIVE_RUN: '', FAKE_DEPLOY: 'skipped' });
+    assert.equal(queuedBehind.status, 7);
+    assert.equal(queuedBehind.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
+    const staleSkip = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped' });
+    assert.equal(staleSkip.status, 7);
+    assert.equal(staleSkip.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+    const skippedOnly = land(['12', '--merge'], { FAKE_ACTIVE_RUN: '', FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' });
+    assert.equal(skippedOnly.status, 0);
+    assert.equal(skippedOnly.stdout, 'MERGED #12 abc123\nDEPLOY_SUPERSEDED #12 77 abc123\n');
 
     // Running it again after a lost answer resumes instead of merging twice.
     const again = land(['12', '--merge'], { FAKE_PR_STATE: 'MERGED' });
