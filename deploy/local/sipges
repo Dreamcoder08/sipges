@@ -108,6 +108,12 @@ wait_ready() {
   die 'SIPGES did not become ready. See ./sipges logs'
 }
 
+image_tag() {
+  local tag
+  tag=$(env_value SIPGES_IMAGE_TAG)
+  printf '%s' "${tag:-current}"
+}
+
 # Marks the image that just answered as one worth going back to. A drill, or an install running
 # an older tag, says nothing about `current`.
 mark_ready() {
@@ -197,16 +203,23 @@ check_private_group() {
     die "the group $(id -gn) is shared with other accounts, so they could read the client's files. Use an account of its own for SIPGES: see \"Bringing in the client's data\" in the guide"
 }
 
-# Everything that can be refused before a backup or a container. A path inside the repository is
-# refused: the repository's data/ folder is not client input, and client files must never land
-# here. A file neither this group nor everyone may read would look missing to the tools.
-check_source() {
-  local folder=$1 file=${2:-} real repo blocked open gid
+# A path inside the repository is refused: the repository's data/ folder is not client input, and
+# client files must never land here.
+check_place() {
+  local folder=$1 real repo
   real=$(readlink -f "$folder" || true)
   repo=$(readlink -f "$REPO_ROOT")
   [[ -n $real && -d $real ]] || die "no folder $folder"
   [[ $real != "$repo" && $real != "$repo"/* ]] || die 'use a folder outside the SIPGES folder'
   [[ $real != *:* ]] || die 'the folder path may not contain a colon'
+}
+
+# Everything that can be refused before a backup or a container. A file neither this group nor
+# everyone may read would look missing to the tools.
+check_source() {
+  local folder=$1 file=${2:-} real blocked open gid
+  check_place "$folder"
+  real=$(readlink -f "$folder")
   gid=$(id -g)
   local -a no_dir=(! '(' -group "$gid" -perm -g=rx ')' ! -perm -o=rx)
   local -a no_file=(! '(' -group "$gid" -perm -g=r ')' ! -perm -o=r)
@@ -293,6 +306,35 @@ cmd_import() {
   esac
 }
 
+# Only reads: the folder is mounted read-only into a container with no network and no database
+# setting. A file SIPGES cannot read is an answer here, not a refusal: it is a line of the report.
+cmd_inventory() {
+  need_env
+  need_docker
+  local folder=${1:-} arg
+  local -a options=()
+  [[ -n $folder ]] || die 'usage: ./sipges inventory <folder> [--show-unconfirmed-headers]'
+  shift
+  for arg in "$@"; do
+    [[ $arg == --show-unconfirmed-headers ]] || die "unknown option $arg"
+    options+=("$arg")
+  done
+  docker image inspect "sipges-local:$(image_tag)" >/dev/null 2>&1 || die 'no SIPGES build here yet: run ./sipges prepare first'
+  check_private_group
+  check_place "$folder"
+  local real reports report
+  real=$(readlink -f "$folder")
+  reports=$(import_reports)
+  report="inventory-$(date -u +%Y%m%dT%H%M%SZ)-$$.json"
+  open_reports "$reports"
+  SIPGES_IMPORT_FOLDER=$real SIPGES_IMPORT_REPORTS=$reports SIPGES_HOST_GID=$(id -g) \
+    compose run --rm inventory inventory --root /import --report "/reports/$report" "${options[@]}"
+  say "Full report: $reports/$report"
+  say 'It names files, sheets and columns, so keep it as private as the files themselves.'
+  ((${#options[@]} == 0)) ||
+    say 'You asked for unconfirmed headers: those rows may be real data. Read this report yourself before sharing it.'
+}
+
 cmd_status() {
   need_env
   compose ps
@@ -377,6 +419,7 @@ case ${1:-help} in
 install) shift; cmd_install "$@" ;;
 prepare) shift; cmd_prepare "$@" ;;
 import) shift; cmd_import "$@" ;;
+inventory) shift; cmd_inventory "$@" ;;
 build) need_docker; build ;;
 start) need_env; start ;;
 stop) need_env; compose stop ;;
@@ -392,6 +435,7 @@ help | -h | --help)
   cat <<HELP
 ./sipges install [host]    First install, or rebuild and start. Host defaults to localhost.
 ./sipges prepare [host]    First install for a client with data: no application yet.
+./sipges inventory <dir>   List what a client's folder holds. Changes nothing.
 ./sipges import ...        Read client files. Only tries, unless given --apply.
 ./sipges start | stop      Start or stop everything.
 ./sipges status            What is running, the latest backup, any backup failure.

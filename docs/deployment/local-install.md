@@ -124,6 +124,46 @@ The restore matters: database changes only go forward, so the old version needs 
 
 The client's files stay in a folder **outside** the SIPGES folder, for example a USB disk at `/media/usb/client`. SIPGES reads that folder and never writes to it. Every import only tries unless you add `--apply`, and `--apply` takes a backup first.
 
+### First, see what the folder holds
+
+Before planning any import, ask SIPGES what is in the folder:
+
+```bash
+./sipges inventory /media/usb/client
+```
+
+This changes nothing: the folder is mounted read-only, in a container with no network and no access to the database. It works on anything an install has built, so `./sipges prepare` is enough. A file SIPGES cannot read is not a problem here; it becomes a line of the report.
+
+The screen shows counts only. The full report is a JSON file in `deploy/local/imports`:
+
+| Part | What it says |
+| --- | --- |
+| `totals`, `byType`, `byReason` | How many files of each type, their size, how many can be read, and why the others cannot. |
+| `duplicates` | Files with identical bytes, found by SHA-256. |
+| `tables` | For each XLSX and CSV file: sheet names, column headers, and row counts. Never a cell value. |
+| `files` | Every file with its path, size, hash and verdict. |
+
+| Verdict | Meaning |
+| --- | --- |
+| `readable` | SIPGES opened it. For a PDF this does not mean it has text: a scanned PDF is readable and still has no text. |
+| `not-inspected` | A type this report does not open, such as images. It is counted and hashed. |
+| `encrypted` | Protected with a password. Ask the client for an open copy. |
+| `legacy-format` | An old `.doc`, `.xls` or `.ppt`. Save it in the new format from Office. |
+| `corrupt` | Damaged, or not really the format its name claims. |
+| `empty`, `too-large`, `permission-denied`, `link`, `special-file` | Empty, beyond the safety limits, closed to SIPGES, a link (never followed), or not a regular file. |
+
+A column header is itself a cell, and nothing in a file can prove a first row is not a person's data: `Juan Perez` above a column of numbers reads exactly like `Monto`. So by default SIPGES shows a header only when Excel itself marks that row, with a filter or a frozen pane. Everything else, every CSV included, says `headersWithheld: unconfirmed` and still gives its row and column counts.
+
+After you have looked at those files yourself, ask for the rest:
+
+```bash
+./sipges inventory /media/usb/client --show-unconfirmed-headers
+```
+
+That report may hold real data if a file has no header row. A cell that looks like a value, such as a document number, an email or a date, shows as `[withheld]` in both reports, but that guard cannot catch a name. **Read it yourself before you share it with anyone or any tool.**
+
+**Treat the report as private as the files.** It holds no cell values, but file names, sheet names and column names can hold a client's or a person's name. Read it before you share it with anyone or any tool.
+
 ### Which files are accepted
 
 | What the client has | Command | Accepted format |
@@ -200,7 +240,7 @@ To remove everything from this computer, run `./sipges wipe`. Backups and `.env`
 | `migrate` | `api migrate`, once on every start, before `api` and `backup`. |
 | `db` | PostgreSQL 17, on a network with no route out and no published port. |
 | `backup` | Nightly `pg_dump` and evidence archive, encrypted with AES-256 by GnuPG. |
-| `restore`, `import` | Started only by their commands. |
+| `restore`, `import`, `inventory` | Started only by their commands. `inventory` has no network and no settings. |
 
 Go serves the web app itself (`SIPGES_WEB_DIR`), so the Worker's headers live in one tested place: CSP, HSTS, `no-store`, frame and referrer rules, with the host allowlist in front. On 23 requests its status, body and headers matched `createWebApp`; the only header it lacks is the trace header `traceresponse`. Caddy adds TLS only, and `SIPGES_TRUST_PROXY=1` is safe because nothing else reaches the API.
 
@@ -223,7 +263,7 @@ Push, Google sign-in, Ollama and the analyst provider stay off until their varia
 ```bash
 deploy/local/test/unit.sh                         # the script against a stand-in for Docker, under a minute
 deploy/local/test/drill.sh [work folder]          # install, MFA, record, evidence, backup, wipe, restore
-deploy/local/test/import-drill.sh [work folder]   # both import paths on synthetic files
+deploy/local/test/import-drill.sh [work folder]   # the inventory and both import paths on synthetic files
 ```
 
 Both use their own project and ports, only synthetic data, and clean up after themselves. Run `./sipges build` first, or set `SIPGES_DRILL_BUILD=1` for `drill.sh`.

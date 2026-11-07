@@ -29,7 +29,10 @@ func dispatch(ctx context.Context, args []string, lookup config.Lookup, stdout i
 	if args[0] == "import-report" && len(args) == 1 {
 		return importReport(os.Stdin, stdout)
 	}
-	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate` or `import-report`", args[0])
+	if args[0] == "inventory" {
+		return inventory(ctx, args[1:], stdout)
+	}
+	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate`, `import-report` or `inventory`", args[0])
 }
 
 // runMigrate applies the pending migrations as the login the API serves with: that role owns the

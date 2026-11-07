@@ -68,6 +68,32 @@ if sipges import legacy "$local_dir"; then
 fi
 echo 'ok - refused'
 
+step 'inventory: a report of the folder, and nothing else moves'
+before=$(fingerprint)
+sipges inventory "$work/client/mixed" | tee "$work/inventory.log"
+report=$(sed -n 's/^Full report: //p' "$work/inventory.log")
+[[ $(fingerprint) == "$before" ]] || { echo 'the inventory changed the database'; exit 1; }
+[[ $(client_sum) == "$client_before" ]] || { echo 'the inventory changed the folder'; exit 1; }
+grep -q CANARY "$report" "$work/inventory.log" && { echo 'a cell value reached the report'; exit 1; }
+node --no-warnings -e '
+  const report = JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"));
+  const assert = (ok, what) => { if (!ok) { console.error("not as expected: " + what); process.exit(1); } };
+  assert(report.totals.files === 7 && report.totals.readable === 5, "totals");
+  assert(report.totals.unreadable === 1 && report.totals.notInspected === 1, "verdicts");
+  assert(report.duplicates.length === 1 && report.duplicates[0].paths.length === 2, "duplicates");
+  const sheet = (path) => report.tables.find((t) => t.path === path).sheets[0];
+  assert(sheet("book.xlsx").name === "Concesiones" && sheet("book.xlsx").dataRows === 1, "workbook");
+  assert(sheet("book.xlsx").headers.join() === "Codigo,Titular", "workbook headers");
+  assert(sheet("list.csv").headersWithheld === "unconfirmed" && sheet("list.csv").dataRows === 2, "csv");
+' "$report"
+sipges inventory "$work/client/mixed" --show-unconfirmed-headers | tee "$work/inventory-shown.log"
+report=$(sed -n 's/^Full report: //p' "$work/inventory-shown.log")
+grep -q CANARY "$report" && { echo 'a cell value reached the report'; exit 1; }
+grep -q '"Monto"' "$report" || { echo 'the header the owner asked for is missing'; exit 1; }
+[[ $(in_compose --profile ops config inventory | sed -n 's/^ *network_mode: //p') == none ]] ||
+  { echo 'the inventory has a network'; exit 1; }
+echo 'ok - counted, no value in the report, database and folder as they were'
+
 step 'legacy: the dry run writes nothing'
 before=$(fingerprint)
 sipges import legacy "$work/client/legacy"
