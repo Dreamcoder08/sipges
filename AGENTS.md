@@ -59,6 +59,7 @@ it is installed locally; the repo does not require it.
 | `scripts/agents/test-pg.sh up` / `url` / `down` | Throwaway loopback PostgreSQL per checkout, for tests and parity. |
 | `scripts/agents/new-worktree.sh <name> <branch>` (`--install`) | Creates `.worktrees/<name>` from a fresh `origin/main`. |
 | `scripts/agents/land-pr.sh <n>` (`--merge`, `--no-deploy-wait`) | Waits for checks and reports; with `--merge`, which needs authorization, merges, confirms the head is on `origin/main` and waits for Deploy Workers. Exit 7 means unknown, not failed. |
+| `deploy/local/test/cli-drill.sh [work folder]` | Clean local install, then `sipgesctl verify` over HTTPS; synthetic data only. |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
 | `pnpm odd:close -- --task T<n> --label … --text … --file odd/tasks/<feature>.md` | Marks the task done and appends the next `L<n>` entry in the document's style; `--log-only` replaces `--task` to append the entry alone. |
 | `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
@@ -68,6 +69,17 @@ it is installed locally; the repo does not require it.
 | `pnpm engram sync` / `import` / `status` | Export, import or compare Engram memory chunks in `.engram/`. |
 | `node scripts/agents/engram-manifest-merge.mjs` | During a merge, resolves `.engram/manifest.json` to both sides. |
 | `pnpm fmt:changed` | Runs Prettier on the files this branch changed. |
+
+## CLI first
+
+Behaviour is proved through the CLI before any frontend work, and agents verify through it:
+`sipgesctl` (`apps/api-go/cmd/sipgesctl`, [docs/agents/sipgesctl.md](docs/agents/sipgesctl.md)) speaks
+HTTP to a running API, never to tables, and `sipgesctl verify --synthetic-target` runs the whole
+journey. `deploy/local/sipges` stays the script that runs an installation.
+
+For new features the sequence is CLI, then core library (`internal/<context>/{domain,application}`),
+then GUI, API or MCP wrappers holding no business logic. Every new route gets an entry in
+`apps/api-go/internal/cli/routes.json`; a test fails CI without it.
 
 ## Gentle AI and Engram memory
 

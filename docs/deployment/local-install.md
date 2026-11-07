@@ -307,9 +307,10 @@ Push, Google sign-in, Ollama and the analyst provider stay off until their varia
 deploy/local/test/unit.sh                         # the script against a stand-in for Docker, under a minute
 deploy/local/test/drill.sh [work folder]          # install, MFA, record, evidence, backup, wipe, restore
 deploy/local/test/import-drill.sh [work folder]   # the inventory and both import paths on synthetic files
+deploy/local/test/cli-drill.sh [work folder]      # sign-in, MFA and sipgesctl verify, the whole journey
 ```
 
-Both use their own project and ports, only synthetic data, and clean up after themselves. Run `./sipges build` first, or set `SIPGES_DRILL_BUILD=1` for `drill.sh`.
+All three use their own project and ports, only synthetic data, and clean up after themselves. Run `./sipges build` first, or set `SIPGES_DRILL_BUILD=1` for `drill.sh` or `cli-drill.sh`.
 
 ### What is not included yet
 
