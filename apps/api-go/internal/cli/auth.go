@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,8 @@ import (
 const badOTP = "Código de autenticación inválido"
 
 const totpPeriod = 30
+
+const apiKeysPath = "/system/integrations/api-keys"
 
 // totpCode is RFC 6238 with the API's settings: SHA-1, six digits, thirty seconds.
 func totpCode(secret string, step int64) (string, error) {
@@ -42,14 +45,16 @@ func (a *app) step() int64 { return a.now().Unix() / totpPeriod }
 
 // credentials reads the password and code: environment first, then stdin, one per line. They have
 // no flags on purpose: a command line is visible to every process on the machine.
-func (a *app) credentials(secretFile string) (password, code, secret string, err error) {
+func (a *app) credentials(ctx context.Context, secretFile string) (password, code, secret string, err error) {
 	lines := bufio.NewReader(a.stdin)
 	readLine := func() string {
 		line, _ := lines.ReadString('\n') // EOF still returns what was read
 		return strings.TrimRight(line, "\r\n")
 	}
 	if password = a.env("SIPGES_PASSWORD"); password == "" {
-		password = readLine()
+		if password, err = a.typedPassword(ctx, readLine); err != nil {
+			return "", "", "", err
+		}
 	}
 	if password == "" {
 		return "", "", "", usageError("no password: set SIPGES_PASSWORD or send it on stdin")
@@ -112,7 +117,7 @@ func (a *app) login(ctx context.Context, o *options, args []string) (int, error)
 	if *username == "" {
 		return 0, usageError("no account: pass --username or set SIPGES_USERNAME")
 	}
-	password, code, secret, err := a.credentials(*secretFile)
+	password, code, secret, err := a.credentials(ctx, *secretFile)
 	if err != nil {
 		return 0, err
 	}
@@ -242,6 +247,8 @@ func (a *app) sessionState(ctx context.Context, o *options, args []string) (int,
 		view.ChooseProject = body["projects"]
 	case strings.Contains(fmt.Sprint(body["detail"]), "MFA"):
 		view.MFARequired = true
+	default:
+		return o.answer("GET /system/auth/current-scope", scope), nil
 	}
 	if err := c.persist(sessionFile); err != nil {
 		return 0, err
@@ -308,20 +315,41 @@ func (a *app) mfaEnroll(ctx context.Context, o *options, args []string) (int, er
 	return a.write(o.json, envelope{OK: true, Status: enabled.status, Data: view}, ExitOK), nil
 }
 
-func writePrivate(path, content string) error {
+// writeSecret puts a secret in its open file.
+var writeSecret = func(file io.Writer, content string) error {
+	_, err := io.WriteString(file, content+"\n")
+	return err
+}
+
+// reservePrivate creates a new file only its owner can read, so a path that cannot hold the secret
+// is found before the secret exists.
+func reservePrivate(path string) (*os.File, error) {
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600) //nolint:gosec // the caller's file
 	if err != nil {
-		return localError("write the secret file: %v", err)
+		return nil, localError("write the secret file: %v", err)
 	}
-	if _, err := io.WriteString(file, content+"\n"); err != nil {
-		_ = file.Close()
-		_ = os.Remove(path)
-		return localError("write the secret file: %v", err)
+	return file, nil
+}
+
+// fillPrivate writes the secret and closes its reserved file, or removes it.
+func fillPrivate(file *os.File, content string) error {
+	err := writeSecret(file, content)
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
 	}
-	if err := file.Close(); err != nil {
+	if err != nil {
+		_ = os.Remove(file.Name())
 		return localError("write the secret file: %v", err)
 	}
 	return nil
+}
+
+func writePrivate(path, content string) error {
+	file, err := reservePrivate(path)
+	if err != nil {
+		return err
+	}
+	return fillPrivate(file, content)
 }
 
 func (a *app) projectList(ctx context.Context, o *options, args []string) (int, error) {
@@ -368,11 +396,15 @@ func (a *app) projectSwitch(ctx context.Context, o *options, args []string) (int
 	if err != nil {
 		return 0, err
 	}
+	if body, ok := current.data.(map[string]any); current.status == http.StatusOK && (!ok || body["scope"] != positional[0]) {
+		return 0, &exitError{exit: ExitFailed, code: "project_not_switched", detail: fmt.Sprintf("asked for %s, the session is on %v", positional[0], body["scope"])}
+	}
 	return o.answer("GET /system/auth/current-scope", current), nil
 }
 
 // apiKeyCreate issues a key for the machine routes. The API shows a key once, so it goes to a new
-// private file, ready for SIPGES_MACHINE_TOKEN; it never reaches stdout.
+// private file, ready for SIPGES_MACHINE_TOKEN; it never reaches stdout. The file exists before the
+// key does, and a key that still cannot be written is revoked: nobody could ever use it.
 func (a *app) apiKeyCreate(ctx context.Context, o *options, args []string) (int, error) {
 	name := o.flags.String("name", "", "what the key is for")
 	access := o.flags.String("access", "read", "read or write")
@@ -395,27 +427,55 @@ func (a *app) apiKeyCreate(ctx context.Context, o *options, args []string) (int,
 	if err != nil {
 		return 0, localError("build the request: %v", err)
 	}
-	ctx, cancel := o.timeoutContext(ctx)
-	defer cancel()
-	const route = "POST /system/integrations/api-keys"
-	answer, err := c.do(ctx, request{method: http.MethodPost, path: "/system/integrations/api-keys", body: body, contentType: "application/json"})
+	reserved, err := reservePrivate(*secretFile)
 	if err != nil {
 		return 0, err
 	}
-	if err := c.persist(path); err != nil {
+	discard := func() {
+		_ = reserved.Close()
+		_ = os.Remove(*secretFile)
+	}
+	ctx, cancel := o.timeoutContext(ctx)
+	defer cancel()
+	const route = "POST " + apiKeysPath
+	answer, err := c.do(ctx, request{method: http.MethodPost, path: apiKeysPath, body: body, contentType: "application/json"})
+	if err != nil {
+		discard()
 		return 0, err
 	}
 	if answer.status != http.StatusOK {
+		discard()
+		if err := c.persist(path); err != nil {
+			return 0, err
+		}
 		return o.answer(route, answer), nil
 	}
 	fields, _ := answer.data.(map[string]any)
 	token, _ := fields["token"].(string)
 	if token == "" {
+		discard()
 		return 0, &exitError{exit: ExitFailed, code: "bad_answer", detail: "the API sent no key"}
 	}
-	if err := writePrivate(*secretFile, token); err != nil {
+	if err := fillPrivate(reserved, token); err != nil {
+		return 0, revokeUnsaved(ctx, c, fields["id"], err)
+	}
+	if err := c.persist(path); err != nil {
 		return 0, err
 	}
 	view := map[string]any{"id": fields["id"], "secret_file": *secretFile}
 	return a.write(o.json, envelope{OK: true, Status: answer.status, Route: route, Data: view}, ExitOK), nil
+}
+
+// revokeUnsaved undoes a key the command could not save, and says so if the API refused.
+func revokeUnsaved(ctx context.Context, c *client, id any, cause error) error {
+	number, ok := id.(float64)
+	if !ok {
+		return localError("%v, and the API sent no key id: revoke the key by hand", cause)
+	}
+	name := strconv.FormatFloat(number, 'f', -1, 64)
+	answer, err := c.do(ctx, request{method: http.MethodDelete, path: apiKeysPath + "/" + name})
+	if err != nil || answer.status != http.StatusOK {
+		return localError("%v, and key %s is still active: revoke it with sipgesctl call DELETE %s/{id}", cause, name, apiKeysPath)
+	}
+	return localError("%v: the key was revoked, create it again", cause)
 }

@@ -36,11 +36,13 @@ Run `sipgesctl help` for every command.
 ## Secrets
 
 - Passwords and codes have no flag. The password comes from `SIPGES_PASSWORD` or the first line of
-  stdin; the code from `--totp-secret-file`, `SIPGES_TOTP` or the next line of stdin.
+  stdin, typed unseen at a `Password:` prompt on a terminal (through `stty`; without it, set the
+  variable); the code from `--totp-secret-file`, `SIPGES_TOTP` or the next line of stdin.
 - The TOTP secret goes to a new private file and is never printed.
 - Fields that hold a credential (`token`, `secret`, `password` and others) print as `[redacted]`
   on every command, the generic call included. `apikey create --secret-file FILE` keeps a new key,
-  which the API shows only once, in a private file.
+  which the API shows only once, in a private file. The file is created first, so a bad path issues
+  no key, and a key that still cannot be written is revoked.
 - The session is saved in `$XDG_STATE_HOME/sipges/session.json` with mode 0600. A file others can
   read is refused, and a session is never sent to an address other than its own.
 - Plain `http://` is accepted only for a loopback address.
