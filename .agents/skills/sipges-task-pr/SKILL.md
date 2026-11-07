@@ -18,7 +18,7 @@ Si se fusionó la base, inspecciona la nueva relación antes de retarget/integra
 
 ## Aterrizar (land), solo con merge autorizado
 
-`scripts/agents/land-pr.sh <n> --merge` hace los pasos 1, 3 y 4 e imprime `CONFLICT`, `CHECKS_FAILED`, `MERGED`, `DEPLOYED`, `DEPLOY_FAILED` o `NO_DEPLOY` (un merge solo de docs no lanza despliegue). Sin `--merge` solo espera los checks e informa `READY`.
+`scripts/agents/land-pr.sh <n> --merge` hace los pasos 1, 3 y 4 e imprime `CONFLICT`, `CHECKS_FAILED`, `MERGED` (solo con el head ya ancestro de `origin/main`), `DEPLOYED`, `DEPLOY_SUPERSEDED` (un merge posterior canceló la CI; decide su despliegue), `DEPLOY_FAILED` o `NO_DEPLOY` (un merge solo de docs no lanza despliegue). La salida 7 (`UNKNOWN_STATE`, `CHECKS_PENDING`, `MERGE_UNCONFIRMED`, `DEPLOY_UNKNOWN`) significa que no se sabe, no que falló: repetir el comando retoma sin fusionar dos veces. Sin `--merge` solo espera los checks e informa `READY`; `--no-deploy-wait` se detiene en `MERGED` para varios merges seguidos.
 
 1. Espera los checks: `gh pr checks <n> --watch`. Ante uno rojo aplica `sipges-ci-triage`.
 2. Si `gh pr view <n> --json mergeable,mergeStateStatus` dice `CONFLICTING`/`DIRTY`: `git fetch origin && git merge origin/main` en el worktree (nunca rebase ni force-push). El driver `union` de `.gitattributes` (T2 de `odd/tasks/conflict-free-delivery.md`) resuelve los logs de solo-agregado; lo que quede, con `sipges-sync-main`. Verifica, `git push` y vuelve al paso 1.

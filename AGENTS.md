@@ -54,7 +54,7 @@ it is installed locally; the repo does not require it.
 | `pnpm verify` | Lint, format, boundaries, typecheck, all tests; PostgreSQL integration only with an explicitly supplied synthetic connection. |
 | `pnpm verify:fast` | Local inner loop: lint, boundaries and typecheck in parallel, then tests of the packages changed since `origin/main` (and tooling tests when `scripts/` or skills change). CI still runs the full suite. |
 | `pnpm parity` | Go/TypeScript parity: same requests to both APIs on one synthetic database, diffs status and JSON ([apps/parity](apps/parity/README.md)). |
-| `scripts/agents/land-pr.sh <n>` (`--merge`) | Waits for checks and reports; with `--merge`, which needs authorization, merges and waits for Deploy Workers. |
+| `scripts/agents/land-pr.sh <n>` (`--merge`, `--no-deploy-wait`) | Waits for checks and reports; with `--merge`, which needs authorization, merges, confirms the head is on `origin/main` and waits for Deploy Workers. Exit 7 means unknown, not failed. |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
 | `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
 | `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
