@@ -1,4 +1,4 @@
-/* global process */
+/* global process, Buffer */
 // Writes the synthetic client files the import drill reads: a legacy installation folder and a
 // Base Maestra JSON. Every value is invented. Node 22.5 or later, for node:sqlite.
 import { createHash, pbkdf2Sync, randomBytes } from 'node:crypto';
