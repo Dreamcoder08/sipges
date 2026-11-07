@@ -154,6 +154,80 @@ test('ODD dry-run preserves bytes and real close allocates the next log number o
     assert.notEqual(spawnSync(process.execPath, args).status, 0);
     assert.equal(readFileSync(file, 'utf8'), closed);
   }));
+test('the Engram manifest conflict resolves to the union of both sides by chunk id', () =>
+  fixture((dir) => {
+    const git = (...args) => {
+      const result = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e.st', ...args], {
+        cwd: dir,
+        encoding: 'utf8',
+      });
+      return result;
+    };
+    const chunk = (id, at) => ({ id, created_at: at, sessions: 1, memories: 1, prompts: 0 });
+    const manifest = path.join(dir, '.engram/manifest.json');
+    const write = (chunks) =>
+      writeFileSync(manifest, `${JSON.stringify({ version: 2, chunks }, null, 2)}\n`);
+    git('init', '-q', '-b', 'main');
+    mkdirSync(path.join(dir, '.engram'));
+    const base = chunk('a', '2026-01-01');
+    write([base]);
+    git('add', '.');
+    git('commit', '-qm', 'base');
+    git('switch', '-qc', 'side');
+    write([base, chunk('c', '2026-01-03')]);
+    git('commit', '-qam', 'side');
+    git('switch', '-q', 'main');
+    write([base, chunk('b', '2026-01-02')]);
+    git('commit', '-qam', 'main');
+    assert.notEqual(git('merge', 'side').status, 0);
+    const resolve = (cwd) =>
+      spawnSync(process.execPath, [path.join(root, 'scripts/agents/engram-manifest-merge.mjs')], {
+        cwd,
+        encoding: 'utf8',
+      });
+    const merged = resolve(dir);
+    assert.equal(merged.status, 0, merged.stderr);
+    const { version, chunks } = JSON.parse(readFileSync(manifest, 'utf8'));
+    assert.equal(version, 2);
+    assert.deepEqual(
+      chunks.map((entry) => entry.id),
+      ['a', 'b', 'c'],
+    );
+    assert.equal(git('diff', '--name-only', '--diff-filter=U').stdout, '');
+    assert.equal(resolve(dir).status, 1);
+  }));
+test('fmt:changed formats only the files changed against the base', () =>
+  fixture((dir) => {
+    const git = (...args) =>
+      spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e.st', ...args], { cwd: dir });
+    git('init', '-q', '-b', 'main');
+    writeFileSync(path.join(dir, 'old.md'), 'old\n');
+    writeFileSync(path.join(dir, 'removed.md'), 'x\n');
+    git('add', '.');
+    git('commit', '-qm', 'base');
+    git('branch', 'base');
+    writeFileSync(path.join(dir, 'new.md'), 'new\n');
+    git('add', '.');
+    git('commit', '-qm', 'more');
+    git('rm', '-q', 'removed.md');
+    const bin = path.join(dir, 'bin');
+    mkdirSync(bin);
+    const log = path.join(dir, 'calls');
+    writeFileSync(path.join(bin, 'prettier'), `#!/bin/sh\necho "$*" >> "${log}"\n`, {
+      mode: 0o755,
+    });
+    const run = (base) =>
+      spawnSync('bash', [path.join(root, 'scripts/fmt-changed.sh')], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, SIPGES_VERIFY_BASE: base },
+      });
+    const result = run('base');
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(readFileSync(log, 'utf8'), '--write --ignore-unknown new.md\n');
+    assert.notEqual(run('no-such-base').status, 0);
+    assert.equal(readFileSync(log, 'utf8'), '--write --ignore-unknown new.md\n');
+  }));
 test('review-next prints the provider command verbatim and stops on consent', () => {
   const script = path.join(root, 'scripts/agents/review-next.sh');
   const run = (value) =>

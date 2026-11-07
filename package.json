@@ -13,6 +13,7 @@
     "test": "pnpm -r --workspace-concurrency=1 run test && pnpm test:tooling",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
+    "fmt:changed": "bash scripts/fmt-changed.sh",
     "boundaries": "node scripts/check-boundaries.mjs",
     "check": "pnpm lint && pnpm boundaries && pnpm typecheck && pnpm test",
     "e2e": "pnpm --filter @sipges/web build && pnpm --filter @sipges/e2e run e2e",

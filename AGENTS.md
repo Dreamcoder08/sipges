@@ -66,6 +66,8 @@ it is installed locally; the repo does not require it.
 | `pnpm --filter @sipges/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
 | `pnpm --filter @sipges/api import:base-maestra -- --seed <file>` | Insert-only load of the prototype's Base Maestra (dry-run by default). |
 | `pnpm engram sync` / `import` / `status` | Export, import or compare Engram memory chunks in `.engram/`. |
+| `node scripts/agents/engram-manifest-merge.mjs` | During a merge, resolves `.engram/manifest.json` to both sides. |
+| `pnpm fmt:changed` | Runs Prettier on the files this branch changed. |
 
 ## Gentle AI and Engram memory
 
