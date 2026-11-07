@@ -24,14 +24,15 @@ var errNotText = errors.New("not text")
 
 // recordLimiter fails on one record that csv.Reader could not hold cheaply: too many bytes, which
 // it keeps in one piece, or too many fields, which it allocates one by one. It follows the quotes
-// the way the reader does with LazyQuotes: only a quote that opens a field starts a quoted run, so
-// an inch mark in a description is just a character.
+// the way the reader does with LazyQuotes: only a quote that opens a field starts a quoted run, an
+// inch mark in a description is just a character, and a quoted field ends only at a quote right
+// before a delimiter or a line end.
 type recordLimiter struct {
 	in      io.Reader
 	comma   byte
 	started bool // inside a field, past its first byte
 	quoted  bool
-	closed  bool // just past a closing quote, where a second one means a literal quote
+	closing bool // inside a quoted field, just past a quote
 	run     int
 	fields  int
 }
@@ -49,14 +50,24 @@ func (l *recordLimiter) Read(p []byte) (int, error) {
 
 func (l *recordLimiter) step(c byte) {
 	l.run++
-	wasClosed := l.closed
-	l.closed = false
+	if l.closing {
+		switch c {
+		case '\r':
+			return
+		case '"':
+			l.closing = false
+			return
+		case l.comma, '\n':
+			l.closing, l.quoted = false, false
+		default:
+			l.closing = false
+			return
+		}
+	}
 	switch {
 	case l.quoted:
-		if c == '"' {
-			l.quoted, l.closed = false, true
-		}
-	case c == '"' && (wasClosed || !l.started):
+		l.closing = c == '"'
+	case c == '"' && !l.started:
 		l.quoted, l.started = true, true
 	case c == l.comma:
 		l.fields++
