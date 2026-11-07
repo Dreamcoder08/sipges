@@ -14,7 +14,8 @@ publish = false
 serde = { version = "=1.0.229", default-features = false, features = ["std"] }
 serde_json = { version = "=1.0.154", default-features = false, features = ["std", "float_roundtrip", "preserve_order"] }
 # Operator tools (T43): synchronous PostgreSQL client; TLS through rustls with the ring provider
-# and the Mozilla roots. Every version was published at least two weeks before it was pinned.
+# and the Mozilla roots. Every version was published at least two weeks before it was pinned,
+# except rusqlite 0.41.1: the owner asked for 0.41 and no 0.41 release was two weeks old yet.
 postgres = { version = "=0.19.14", default-features = false, features = ["with-serde_json-1"] }
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 tokio-postgres-rustls = { version = "=0.14.0", default-features = false }
@@ -24,7 +25,7 @@ ring = { version = "=0.17.14", default-features = false, features = ["std"] }
 # migrate-legacy: the legacy SQLite files, read only, with SQLite built in rather than from the
 # host; and the S3 calls of object storage, over the same rustls and ring as PostgreSQL.
 rusqlite = { version = "=0.41.1", default-features = false, features = ["bundled"] }
-ureq = { version = "=3.5.1", default-features = false, features = ["rustls"] }
+ureq = { version = "=3.5.0", default-features = false, features = ["rustls"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

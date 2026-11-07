@@ -196,7 +196,6 @@ func TestOriginNormalizesPortsLikeNewURL(t *testing.T) {
 	}
 }
 
-// Node refuses methods that are not upper-case tokens before any handler runs.
 // GHSA-jpvv-r467-5p4w: a raw backslash in the request path is a 400 with no body, before any
 // handler, so a reverse proxy and this API can never read two different paths.
 func TestRefusesABackslashInThePath(t *testing.T) {
@@ -236,6 +235,7 @@ func TestRefusesABackslashInThePath(t *testing.T) {
 	}
 }
 
+// Node refuses methods that are not upper-case tokens before any handler runs.
 func TestRefusesLowerCaseMethods(t *testing.T) {
 	h := httpx.Chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		t.Fatal("handler ran")
