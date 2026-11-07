@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       apply:
-        description: 'Create the records (unticked = dry run, writes nothing)'
+        description: 'Create the records (unticked = dry run: no records, but pending migrations still apply)'
         type: boolean
         default: false
       scope:

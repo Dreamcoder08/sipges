@@ -47,7 +47,7 @@ Tras aceptar la configuración del proyecto, reinicia Pi o ejecuta `/reload` par
 | --- | --- |
 | `.claude/CLAUDE.md` del orquestador (87 KB) | Se cargaría en cada sesión, duplica `AGENTS.md` y choca con el arnés de Claude Projects. Se resume en la sección *Gentle AI* de `AGENTS.md`. |
 | Hooks RDD, telemetría y `skill-registry` | Ejecutan el binario `gentle-ai`, que no existe en las sesiones en la nube; fallarían en cada turno. |
-| `react-19`, `playwright`, `go-testing`, `skill-registry` | `react-19` asume React Compiler (no activo aquí), `playwright` exige Page Objects que `apps/e2e` no usa, no hay Go, y `skill-registry` depende del binario `gentle-ai`. |
+| `react-19`, `playwright`, `go-testing`, `skill-registry` | `react-19` asume React Compiler (no activo aquí), `playwright` exige Page Objects que `apps/e2e` no usa, `go-testing` está orientada a Bubbletea y archivos golden (sigue disponible como skill global), y `skill-registry` depende del binario `gentle-ai`. |
 | Context7 | Las sesiones en la nube ya tienen el conector; en local lo instala `gentle-ai`. |
 | GGA (revisión con IA en pre-commit) | Requiere claves de proveedor en la máquina; opcional y local (`gga init && gga install`). |
 

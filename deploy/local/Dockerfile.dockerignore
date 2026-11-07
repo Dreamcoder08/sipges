@@ -1,0 +1,14 @@
+# Build context is the repository root: send only what the web build and the migrations need.
+*
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!tsconfig.base.json
+!apps/*/package.json
+!apps/web
+!packages
+!apps/api/src/platform/database/migrations
+**/node_modules
+**/dist
+**/*.test.ts
+**/*.test.tsx

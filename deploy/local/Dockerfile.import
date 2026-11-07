@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+# The import tools of a local install: the Rust ports of import:base-maestra and migrate:legacy,
+# so reading a client's files needs no TypeScript. Built only when `./sipges import` first needs
+# them. Context: the repository root, because the tools embed the SQL migrations.
+FROM --platform=linux/amd64 rust:1.98-slim-bookworm@sha256:ff521445a372125ed4f76e1453a1f8098f2d05332d1601d30db1c1f62757e730 AS build
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
+WORKDIR /src/engines
+COPY engines ./
+COPY apps/api/src/platform/database/migrations /src/apps/api/src/platform/database/migrations
+# RUSTUP_TOOLCHAIN skips the wasm target of rust-toolchain.toml, which these tools do not use. The
+# profile overrides keep the build within a small machine's memory; they change speed, not results.
+ENV RUSTUP_TOOLCHAIN=1.98.0 CARGO_BUILD_JOBS=2 CARGO_PROFILE_RELEASE_LTO=off CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16
+RUN cargo build --release --locked -p sipges-base-maestra -p sipges-migrate-legacy
+
+FROM gcr.io/distroless/cc-debian12:nonroot@sha256:9dac0a79194e45a7da0158a9c6da57b217585af0786db3845d1f0ec1a0dd182f
+COPY --from=build /src/engines/target/release/import-base-maestra /src/engines/target/release/migrate-legacy /usr/local/bin/
+USER 65532:65532
+ENV SIPGES_STORAGE=local SIPGES_UPLOAD_DIR=/data/uploads

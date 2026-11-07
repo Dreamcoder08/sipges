@@ -24,7 +24,7 @@ El backend organiza cada contexto en `http`, `application`, `domain` e `infrastr
 | Aplicación y dominio | Puertos, políticas puras, `Result` y kernel compartido | [ADR 0002](adr/0002-hexagonal-architecture-and-bounded-contexts.md) |
 | Composición | Inyección manual en `main.ts` / `compose.ts` | [ADR 0002](adr/0002-hexagonal-architecture-and-bounded-contexts.md) |
 | SQL | Puerto SqlClient, postgres.js y migraciones `.sql` | Enmienda del [ADR 0003](adr/0003-persistence-and-tenant-isolation.md): Drizzle no se utiliza |
-| Objetos | ObjectStorage local, S3-compatible con SigV4 o Blob privado | [Migración T8](migration/evidence.md) |
+| Objetos | ObjectStorage local o S3-compatible con SigV4 | [Migración T8](migration/evidence.md) |
 | Procesamiento | DocumentReader: unpdf/pdf.js y fflate; ReportRenderer: docx | [Migración T9](migration/documents.md) |
 | Embeddings | EmbeddingProvider con adaptador Ollama | [Migración T10](migration/operations.md) |
 | Ontología | Catálogo de objetos y vínculos, historial por trigger, búsqueda GIN, grafo y cronología | [ADR 0011](adr/0011-ontology-links-and-provenance.md) |
@@ -57,7 +57,7 @@ La configuración IRSA y los snapshots pasan a SQL. Los adjuntos usan el adaptad
 | T1–T10 | Contratos, ADRs, workspace y contextos backend completados |
 | T11a/b | Shell, login/MFA, selección/cambio de proyecto, dashboard, registros y evidencias completados |
 | T11c–d | IRSA/validación, alertas/mapa, análisis/documentos, gerencia/inteligencia, administración/auditoría/metodología completados |
-| T12 | Benchmarks sintéticos completados; Go/Rust no justificado por los resultados |
+| T12 | Benchmarks sintéticos completados; Go/Rust no justificado entonces. El [ADR 0032](adr/0032-go-backend-rust-engines.md) lo adoptó después |
 | T13 | Migrador SQLite → PostgreSQL y ensayo sintético completados |
 | T14 | Paridad E2E y preparación del despliegue completadas |
 | Ontología T1–T11 | Historial, vínculos tipados e inferidos, búsqueda, grafo, observabilidad, clasificación, importación CSV, analista con citas, cronología y E2E |
