@@ -81,7 +81,7 @@ jobs:
       - name: go test (race detector, PostgreSQL 17)
         run: go test -race -count=1 ./...
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           # Pinned; built from source with the Go above so it understands this module's Go version.
           version: v2.15.0
