@@ -1,0 +1,5 @@
+# Build context is the repository root: send only the tools and the migrations they embed.
+*
+!engines
+!apps/api/src/platform/database/migrations
+**/target
