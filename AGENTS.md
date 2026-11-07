@@ -1,11 +1,11 @@
 # Agent guide
 
-SIPGES is a pnpm TypeScript monorepo (`apps/api` Hono + PostgreSQL, `apps/web` React/Vite,
-`packages/*`). The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
+SIPGES is a pnpm monorepo moving to a Go backend, Rust engines and a TypeScript frontend (ADR 0032): `apps/api` Hono +
+PostgreSQL, `apps/api-go`, `engines/`, `apps/web` React/Vite, `packages/*`. The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
 in one feature document per feature under `odd/tasks/` (`pnpm odd:status` lists the open tasks; superseded plans
 move to `odd/archive/`); decisions live in `docs/adr/`.
 
-## Skills (`.agents/skills/`, linked for Claude Code from `.claude/skills/`)
+## Skills (`.agents/skills/`; the `sipges-*`, `neon` and `neon-postgres` ones are linked from `.claude/skills/`)
 
 | Skill | Use it to |
 | --- | --- |

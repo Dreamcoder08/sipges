@@ -15,10 +15,10 @@ El usuario solicitó explícitamente instalar `neon` y `neon-postgres` con `npx 
 | `sipges-sync-main` | Integraciones de `main` en ramas de feature: `d582bee`, `c929201`, `1bb3233`, `264596a` y `9889bc3` (2026-10/11) |
 | `sipges-ci-triage` | CI rota en #128 (e2e parity), #132 (360 px y puerto 55432 ocupado en el runner) y `71ef5f0` (carrera en e2e) |
 | `sipges-phone-check` | Arreglos de ancho de teléfono `11a1b96`, `44ac859`, `bec39b3`, `3bd65d5` y `ab92898` |
-| `sipges-self-improve` | Pedido explícito del usuario (2026-11-01): mejora continua de skills, docs y flujos con fuentes oficiales; fuentes consultadas el 2026-11-01 (Claude Code 2.1.316) |
+| `sipges-self-improve` | Pedido explícito del usuario (2026-11-01): mejora continua de skills, docs y flujos con fuentes oficiales; fuentes consultadas el 2026-11-01 (Claude Code 2.1.316); segundo uso en la limpieza T65 (2026-11-06, Claude Code 2.1.319). Lleva dos usos: un tercero la confirma, si no se propone retirarla |
 | `sipges-code-quality` | Pedido explícito del usuario (2026-11-01); aplicada en las revisiones de #128, #131, #132 y el verificador de #130 |
 | `sipges-go-port` | Puertos a Go de contextos de lectura con casos de paridad: reference (#217), audit (#219), management (#220), geography (#221), prevention (#222), situations (#223) e indicators (#225) |
-| `sipges-rust-engine` | Motores TypeScript portados a Rust/WebAssembly/Go: indicators e IRSA (#206), los cinco de analytics (#214) y conflict-risk/text-analysis (rama `feat/rust-risk-text-engines`, con tablas generadas en commits propios) |
+| `sipges-rust-engine` | Motores TypeScript portados a Rust/WebAssembly/Go: indicators e IRSA (#206), los cinco de analytics (#214) y conflict-risk/text-analysis (#229, con tablas generadas en commits propios) |
 | `sipges-parallel-agents` | Pestañas paralelas de Herdr de la sesión del 2026-11-03 (una por unidad, worktree propio) que entregaron #203 a #225; el vigilante `scripts/agents/watch-tabs.sh` automatiza el seguimiento manual de `hc ls`/`hc read` |
 | `sipges-deps-bump` | PR de Dependabot revisados y aterrizados: #75, #76, #77, #78, #94, #102–#106, #139–#149; retenciones `cebd8fd` (tipos de Node 24) y `fb325da` (Playwright 1.63) |
 | `sipges-adr` | ADR 0028 (#84), 0029 (#115), 0030 (#130), 0031 (#161) y 0032 (#202) |
@@ -28,7 +28,7 @@ El usuario pidió también adoptar Gentle AI (2026-10-19). Las skills `chained-p
 
 Benchmarks conserva su [procedimiento](../benchmarks/README.md) y comparador existentes. Solo se archivan dos ejecuciones independientes (baseline/after); no se crea una skill de benchmark hasta demostrar una tercera necesidad independiente. Tampoco se crean skills específicas de migración o despliegue por una sola fase T13/T14.
 
-Invocación explícita en Codex: `$sipges-verify`, `$sipges-odd-task`, `$sipges-task-pr`, `$sipges-archify`, `$sipges-sync-main`, `$sipges-ci-triage`, `$sipges-phone-check`, `$sipges-code-quality`, `$sipges-go-port`, `$sipges-rust-engine`, `$sipges-parallel-agents`, `$sipges-deps-bump`, `$sipges-adr` o `$sipges-e2e-stabilize`.
+Invocación explícita en Codex: `$sipges-verify`, `$sipges-odd-task`, `$sipges-task-pr`, `$sipges-archify`, `$sipges-sync-main`, `$sipges-ci-triage`, `$sipges-phone-check`, `$sipges-self-improve`, `$sipges-code-quality`, `$sipges-go-port`, `$sipges-rust-engine`, `$sipges-parallel-agents`, `$sipges-deps-bump`, `$sipges-adr` o `$sipges-e2e-stabilize`.
 
 Claude Code no lee `.agents/skills/`: descubre las skills de proyecto en `.claude/skills/` ([documentación oficial](https://code.claude.com/docs/en/skills), consultada el 2026-11-01). Cada skill SIPGES y Neon tiene allí un enlace simbólico a su carpeta en `.agents/skills/`, de modo que ambas herramientas leen la misma fuente; en Claude Code se invocan con `/sipges-verify`, etc. Las skills de Gentle AI no se enlazan porque Claude Code ya las recibe del instalador global de Gentle AI. La descripción determina cuándo aplica cada skill; `AGENTS.md` resume convenciones del repositorio sin cargar todas las instrucciones en cada tarea.
 
