@@ -60,7 +60,7 @@ func Scan(ctx context.Context, root string, opts Options) (Report, error) {
 	if err != nil {
 		return Report{}, fmt.Errorf("open the folder: %w", err)
 	}
-	defer folder.Close()
+	defer func() { _ = folder.Close() }()
 	files := []File{}
 	err = fs.WalkDir(folder.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
 		if err := ctx.Err(); err != nil {
