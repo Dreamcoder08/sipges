@@ -57,6 +57,11 @@ export type ParityCase = {
   readonly oneAtATime?: true;
   /** Text both answers must hold, for a promise that two equal answers alone would not prove. */
   readonly present?: readonly string[];
+  /**
+   * Repeats the request for a few seconds until `present` holds on both APIs: for the effect of
+   * work the previous case left running in the background.
+   */
+  readonly eventually?: true;
   /** Text neither answer may hold: another project's rows, for example. */
   readonly absent?: readonly string[];
 };

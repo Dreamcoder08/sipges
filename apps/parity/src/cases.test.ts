@@ -34,3 +34,8 @@ test('{api} and perApi go together', () => {
     ],
   );
 });
+
+test('a case that waits names what it waits for', () => {
+  const errors = validateCases([{ name: 'wait', method: 'GET', path: '/x', eventually: true }]);
+  assert.deepEqual(errors, ['wait: eventually needs present']);
+});

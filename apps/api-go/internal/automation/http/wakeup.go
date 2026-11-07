@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -14,8 +15,7 @@ type Dispatcher interface{ Dispatch(tenantID string) }
 var _ Dispatcher = (*application.Runtime)(nil)
 
 // wakesAutomation is the business test of automationWakeup: the paths whose successful writes
-// change what rules may match. The machine paths (/hooks/ingest/*, /hooks/signals) are not
-// served by the Go API.
+// change what rules may match. Their tenant is the request's project scope.
 func wakesAutomation(path string) bool {
 	return strings.HasPrefix(path, "/api/") ||
 		strings.HasPrefix(path, "/system/intelligence/territorial-alerts") ||
@@ -23,6 +23,12 @@ func wakesAutomation(path string) bool {
 		path == "/system/v4/media/poll" ||
 		strings.HasPrefix(path, "/system/prevention/") ||
 		strings.HasPrefix(path, "/system/automations/rules")
+}
+
+// isMachineWrite is the machine test of automationWakeup: webhooks have no project scope, so
+// their tenant is the one the route reports, from the API key it verified.
+func isMachineWrite(path string) bool {
+	return strings.HasPrefix(path, "/hooks/ingest/") || path == "/hooks/signals"
 }
 
 var writeMethods = map[string]bool{http.MethodPost: true, http.MethodPut: true, http.MethodPatch: true, http.MethodDelete: true}
@@ -51,7 +57,8 @@ func (s *statusRecorder) Write(b []byte) (int, error) {
 func (s *statusRecorder) Unwrap() http.ResponseWriter { return s.ResponseWriter }
 
 // Wakeup is automationWakeup of apps/api/src/platform/http/automation-wakeup.ts: after a 2xx
-// write to a business path, the request's project gets a scan. It runs after the role gate,
+// write to a business path the request's project gets a scan, and after a webhook that wrote
+// something, the project of its API key. It runs after the role gate,
 // around the routes, as in apps/api/src/app.ts. Dispatch never waits for a tick another request
 // started, and the tick it starts runs in the background (as the Worker's waitUntil), so the
 // response is not delayed by it.
@@ -62,13 +69,29 @@ func Wakeup(runtime Dispatcher) httpx.Middleware {
 				next.ServeHTTP(w, r)
 				return
 			}
+			machine := isMachineWrite(r.URL.Path)
+			machineTenant := func() string { return "" }
+			if machine {
+				var ctx context.Context
+				ctx, machineTenant = httpx.WatchMachineTenant(r.Context())
+				r = r.WithContext(ctx)
+			}
 			rec := &statusRecorder{ResponseWriter: w}
 			next.ServeHTTP(rec, r)
 			status := rec.status
 			if status == 0 {
 				status = http.StatusOK // a handler that wrote nothing answered 200
 			}
-			if status < 200 || status >= 300 || !wakesAutomation(r.URL.Path) {
+			if status < 200 || status >= 300 {
+				return
+			}
+			if machine {
+				if tenant := machineTenant(); tenant != "" {
+					runtime.Dispatch(tenant)
+				}
+				return
+			}
+			if !wakesAutomation(r.URL.Path) {
 				return
 			}
 			if tenant, ok := tenantOf(r); ok {
