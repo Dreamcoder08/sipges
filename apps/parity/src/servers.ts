@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import postgres from 'postgres';
+import { CRON_SECRET, VAPID } from './synthetic.ts';
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -184,6 +185,7 @@ const secondStage = (on: boolean, embedderUrl: string) => ({
         // A synthetic value: the base URL is the local double, never a real provider.
         ANTHROPIC_API_KEY: 'synthetic-test-value',
         ANTHROPIC_BASE_URL: embedderUrl,
+        ...VAPID,
       }
     : {}),
 });
@@ -207,6 +209,7 @@ export const startTypeScriptApi = async (
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_ACCESS_LOG: '0',
       SIPGES_AUTOMATION_INTERVAL: '0',
+      SIPGES_CRON_SECRET: CRON_SECRET,
       // The synthetic embedder both APIs share (embedder-double.ts).
       SIPGES_OLLAMA_URL: embedderUrl,
       ...secondStage(semanticSearch, embedderUrl),
@@ -236,9 +239,14 @@ export const startGoApi = async (
       SIPGES_DATABASE_URL: databaseUrl,
       SIPGES_ACCESS_LOG: '0',
       SIPGES_REQUIRE_MFA: '0',
+      SIPGES_CRON_SECRET: CRON_SECRET,
       SIPGES_DATA_KEY: dataKey,
       SIPGES_OLLAMA_URL: embedderUrl,
       ...secondStage(semanticSearch, embedderUrl),
+      // Go answers the cron only with its timer on, an hour off so it cannot fire during the run.
+      ...(semanticSearch
+        ? { SIPGES_GO_AUTOMATION_CRON: '1', SIPGES_AUTOMATION_INTERVAL: '3600' }
+        : {}),
     },
     await freePort(),
   );

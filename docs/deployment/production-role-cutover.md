@@ -384,7 +384,7 @@ neon branches restore main pre-role-cutover --project-id "$NEON_PROJECT_ID" \
 | `UPDATE` on a forced-RLS table, no tenant | **0 rows, no error** |
 | Same, after `ALTER TABLE … NO FORCE ROW LEVEL SECURITY` | All rows |
 
-**The last two matter most.** `mascli_workers` bypassed RLS, so a data migration simply worked. Under `sipges_app` the same SQL does nothing, silently, and the migration is recorded as applied. Every future migration that rewrites rows must lift `FORCE` and restore it, as `0030` and `0031` do. None is pending today. No check enforces this yet.
+**The last two matter most.** `mascli_workers` bypassed RLS, so a data migration simply worked. Under `sipges_app` the same SQL does nothing, silently, and the migration is recorded as applied. Every future migration that rewrites rows must lift `FORCE` and restore it, as `0030` and `0031` do. None is pending today. `data-migration-guard.test.ts` fails on a later migration that rewrites rows without lifting `FORCE`, and `forced-rls-migration-postgres.test.ts` pins the silent case on a real server.
 
 ## Is renaming the database worth it?
 
@@ -431,7 +431,7 @@ A Neon branch of `main` with an expiry, 0.25 CU like production, and a throwaway
 
 ## Open risks
 
-1. **The tests do not run as this role.** CI uses `postgres`, a superuser, so a path that reads a forced table outside a tenant transaction would return nothing here and pass there. The read sweep covers GET routes, and the trial ran on `sipges_app`, but write routes have no equivalent sweep.
+1. **Seven write routes are proved only up to their refusal.** Parity runs both APIs as a NOSUPERUSER, NOBYPASSRLS owner with `FORCE`, and its write proof requires each write route to answer normally and leave a row from both APIs. Seven call a live service or need a live code, so `apps/parity/src/write-routes.ts` lists them as blocked, with the reason. The other suites still run as `postgres`.
 2. **`BYPASSRLS` stays reachable from the Neon account**, permanently. See [step 9](#step-9-retire-the-old-login).
 3. **`sipges_app` depends on a grant from `mascli_workers`.** One careless delete in the console is an outage with no SQL repair.
 4. **Load was light and the data small.** 3.3 requests per second on 23 MB. Quiet hours are still the plan.

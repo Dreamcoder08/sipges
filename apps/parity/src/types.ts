@@ -50,6 +50,11 @@ export type ParityCase = {
    * or deleting a row) names a row of its own on each side, such as `{ w: { ts: 'WT', go: 'WG' } }`.
    */
   readonly vary?: Readonly<Record<string, { readonly ts: string; readonly go: string }>>;
+  /**
+   * Sends to TypeScript, then Go, instead of both at once: for a route where the two would race
+   * for one lease and the loser would rightly write nothing.
+   */
+  readonly oneAtATime?: true;
   /** Text both answers must hold, for a promise that two equal answers alone would not prove. */
   readonly present?: readonly string[];
   /** Text neither answer may hold: another project's rows, for example. */
