@@ -61,13 +61,31 @@
   { "method": "GET", "path": "/health/ready", "access": "public" },
   { "method": "POST", "path": "/hooks/ingest/{module}", "access": "machine" },
   { "method": "POST", "path": "/hooks/signals", "access": "machine" },
-  { "method": "POST", "path": "/login", "access": "public" },
-  { "method": "POST", "path": "/logout", "access": "public" },
+  {
+    "method": "POST",
+    "path": "/login",
+    "access": "public",
+    "command": "login",
+    "summary": "Sign in"
+  },
+  {
+    "method": "POST",
+    "path": "/logout",
+    "access": "public",
+    "command": "logout",
+    "summary": "Sign out"
+  },
   { "method": "DELETE", "path": "/mcp", "access": "machine" },
   { "method": "GET", "path": "/mcp", "access": "machine" },
   { "method": "POST", "path": "/mcp", "access": "machine" },
   { "method": "GET", "path": "/select-project", "access": "public" },
-  { "method": "POST", "path": "/select-project", "access": "public" },
+  {
+    "method": "POST",
+    "path": "/select-project",
+    "access": "public",
+    "command": "project switch",
+    "summary": "Choose the project"
+  },
   { "method": "POST", "path": "/system/analyze", "access": "session" },
   { "method": "GET", "path": "/system/audit", "access": "session" },
   {
@@ -105,7 +123,13 @@
     "command": "users reset-mfa",
     "summary": "Clear an MFA enrolment"
   },
-  { "method": "GET", "path": "/system/auth/current-scope", "access": "session" },
+  {
+    "method": "GET",
+    "path": "/system/auth/current-scope",
+    "access": "session",
+    "command": "session",
+    "summary": "The active project"
+  },
   {
     "method": "DELETE",
     "path": "/system/auth/grants",
@@ -120,9 +144,21 @@
     "command": "users grant",
     "summary": "Give an account a project"
   },
-  { "method": "GET", "path": "/system/auth/me", "access": "public" },
+  {
+    "method": "GET",
+    "path": "/system/auth/me",
+    "access": "public",
+    "command": "session",
+    "summary": "Who is signed in"
+  },
   { "method": "GET", "path": "/system/auth/providers", "access": "public" },
-  { "method": "GET", "path": "/system/auth/scopes", "access": "session" },
+  {
+    "method": "GET",
+    "path": "/system/auth/scopes",
+    "access": "session",
+    "command": "project list",
+    "summary": "Projects of this account"
+  },
   {
     "method": "POST",
     "path": "/system/auth/scopes",
@@ -130,8 +166,20 @@
     "command": "project create",
     "summary": "Create a project"
   },
-  { "method": "POST", "path": "/system/auth/totp/enable", "access": "session" },
-  { "method": "POST", "path": "/system/auth/totp/setup", "access": "session" },
+  {
+    "method": "POST",
+    "path": "/system/auth/totp/enable",
+    "access": "session",
+    "command": "mfa enroll",
+    "summary": "Finish TOTP enrolment"
+  },
+  {
+    "method": "POST",
+    "path": "/system/auth/totp/setup",
+    "access": "session",
+    "command": "mfa enroll",
+    "summary": "Start TOTP enrolment"
+  },
   {
     "method": "GET",
     "path": "/system/automations",
@@ -294,9 +342,27 @@
     "command": "reports integrated",
     "summary": "Integrated analysis: use --output"
   },
-  { "method": "GET", "path": "/system/integrations/api-keys", "access": "session" },
-  { "method": "POST", "path": "/system/integrations/api-keys", "access": "session" },
-  { "method": "DELETE", "path": "/system/integrations/api-keys/{id}", "access": "session" },
+  {
+    "method": "GET",
+    "path": "/system/integrations/api-keys",
+    "access": "session",
+    "command": "apikey list",
+    "summary": "Machine keys of the project"
+  },
+  {
+    "method": "POST",
+    "path": "/system/integrations/api-keys",
+    "access": "session",
+    "command": "apikey create",
+    "summary": "Issue a machine key"
+  },
+  {
+    "method": "DELETE",
+    "path": "/system/integrations/api-keys/{id}",
+    "access": "session",
+    "command": "apikey revoke",
+    "summary": "Revoke a machine key"
+  },
   { "method": "POST", "path": "/system/intelligence/analyze-text", "access": "session" },
   { "method": "GET", "path": "/system/intelligence/embedder", "access": "session" },
   { "method": "POST", "path": "/system/intelligence/semantic-analyze", "access": "session" },
