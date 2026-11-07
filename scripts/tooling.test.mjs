@@ -256,7 +256,10 @@ esac
     assert.equal(landed.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
     assert.match(landed.calls, /pr ready 12\n/);
     assert.match(landed.calls, /pr merge 12 --merge --match-head-commit head456\n/);
-    assert.match(landed.calls, /git merge-base --is-ancestor head456 refs\/remotes\/origin\/main\n/);
+    assert.match(
+      landed.calls,
+      /git merge-base --is-ancestor head456 refs\/remotes\/origin\/main\n/,
+    );
 
     const failed = land(['12', '--merge'], { FAKE_DEPLOY: 'failure' });
     assert.equal(failed.status, 5);
@@ -274,7 +277,15 @@ esac
     assert.equal(twoNumbers.calls, '');
 
     // Transient gh errors never read as a result.
-    for (const flaky of ['pr checks', 'mergeable', 'headRefOid', 'pr ready', 'state,mergeCommit', 'run list', 'run view']) {
+    for (const flaky of [
+      'pr checks',
+      'mergeable',
+      'headRefOid',
+      'pr ready',
+      'state,mergeCommit',
+      'run list',
+      'run view',
+    ]) {
       const retried = land(['12', '--merge'], { FAKE_FLAKY: flaky });
       assert.equal(retried.status, 0, flaky);
       assert.equal(retried.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n', flaky);
@@ -338,7 +349,10 @@ esac
     const closed = land(['12', '--merge'], { FAKE_PR_STATE: 'CLOSED' });
     assert.equal(closed.status, 3);
     assert.equal(closed.stdout, 'NOT_OPEN #12 CLOSED\n');
-    const blocked = land(['12', '--merge'], { FAKE_MERGE_STATE: 'MERGEABLE BLOCKED', LAND_PR_ATTEMPTS: '6' });
+    const blocked = land(['12', '--merge'], {
+      FAKE_MERGE_STATE: 'MERGEABLE BLOCKED',
+      LAND_PR_ATTEMPTS: '6',
+    });
     assert.equal(blocked.status, 3);
     assert.equal(blocked.stdout, 'BLOCKED #12\n');
     assert.doesNotMatch(blocked.calls, /pr merge/);
@@ -369,13 +383,20 @@ esac
     const slow = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: 'pending' });
     assert.equal(slow.status, 7);
     assert.equal(slow.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
-    const ciDown = land(['12', '--merge'], { FAKE_RUN: '', FAKE_DOWN: 'ci.yml', LAND_PR_ATTEMPTS: '30' });
+    const ciDown = land(['12', '--merge'], {
+      FAKE_RUN: '',
+      FAKE_DOWN: 'ci.yml',
+      LAND_PR_ATTEMPTS: '30',
+    });
     assert.equal(ciDown.status, 7);
     assert.equal(ciDown.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
     const unreadCi = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped', FAKE_DOWN: 'ci.yml' });
     assert.equal(unreadCi.status, 7);
     assert.equal(unreadCi.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
-    for (const extra of [{ FAKE_DEPLOY: 'cancelled' }, { FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' }]) {
+    for (const extra of [
+      { FAKE_DEPLOY: 'cancelled' },
+      { FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' },
+    ]) {
       const last = land(['12', '--merge'], { ...extra, FAKE_MAIN: 'abc123' });
       assert.equal(last.status, 5);
       assert.equal(last.stdout, `MERGED #12 abc123\nDEPLOY_FAILED #12 77 ${extra.FAKE_DEPLOY}\n`);
@@ -391,7 +412,11 @@ esac
     const staleSkip = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped' });
     assert.equal(staleSkip.status, 7);
     assert.equal(staleSkip.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
-    const skippedOnly = land(['12', '--merge'], { FAKE_ACTIVE_RUN: '', FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' });
+    const skippedOnly = land(['12', '--merge'], {
+      FAKE_ACTIVE_RUN: '',
+      FAKE_DEPLOY: 'skipped',
+      FAKE_CI: 'cancelled',
+    });
     assert.equal(skippedOnly.status, 0);
     assert.equal(skippedOnly.stdout, 'MERGED #12 abc123\nDEPLOY_SUPERSEDED #12 77 abc123\n');
 
