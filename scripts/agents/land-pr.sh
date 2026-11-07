@@ -9,7 +9,8 @@
 #   MERGED #<n> <sha>      merged with a merge commit, and its head is an ancestor of origin/main
 #   DEPLOYED #<n> <run>    Deploy Workers for that commit succeeded
 #   DEPLOY_SUPERSEDED #<n> <run> <sha>  main has moved on from that commit; the newer deploy decides
-#   DEPLOY_FAILED #<n> <run> <conclusion>  it failed, was cancelled, or CI failed and skipped it (exit 5)
+#   DEPLOY_FAILED #<n> <run> <conclusion>  it failed, was cancelled, or CI failed; ci:<c> marks a run
+#                          that finished although this commit's CI did not pass (exit 5)
 #   NO_DEPLOY #<n> <sha>   no run for that commit; a docs-only merge starts none, so check which (exit 6)
 # Exit 7 means the answer is unknown, never that it failed. gh's last error, if any, is on stderr, so
 # read it before running the script again; a run on a merged pull request resumes without merging twice.
@@ -79,9 +80,10 @@ gh_read() {
 }
 
 # UNKNOWN only means GitHub has not finished computing, so it is neither a conflict nor a green light.
-# BLOCKED is normal while checks run, so only the last look, with "final", treats it as a refusal.
+# BLOCKED is normal while checks run and just after a draft turns ready, so only the last look, with
+# "final", treats it as a refusal, and only once it lasts.
 wait_mergeable() {
-  local i state='' final="${1:-}"
+  local i state='' final="${1:-}" blocked=0
   for ((i = 0; i < attempts; i++)); do
     state="$(gh_read pr view "$pr" --json mergeable,mergeStateStatus --jq '.mergeable + " " + .mergeStateStatus' || true)"
     case "$state" in
@@ -92,8 +94,12 @@ wait_mergeable() {
       MERGEABLE\ UNKNOWN | UNKNOWN* | '') sleep "$poll" ;;
       *BLOCKED)
         [ -n "$final" ] || return 0
-        echo "BLOCKED #$pr"
-        exit 3
+        blocked=$((blocked + 1))
+        if [ "$blocked" -ge 4 ]; then
+          echo "BLOCKED #$pr"
+          exit 3
+        fi
+        sleep "$poll"
         ;;
       *) return 0 ;;
     esac
@@ -121,6 +127,11 @@ wait_checks() {
     esac
     sleep "$poll"
   done
+  if [ -z "$buckets" ]; then
+    gh pr checks "$pr" --json bucket >/dev/null || true
+    echo "UNKNOWN_STATE #$pr checks"
+    exit 7
+  fi
   echo "CHECKS_PENDING #$pr"
   exit 7
 }
@@ -185,6 +196,9 @@ if [ "$state" = "OPEN" ]; then
   wait_checks
   if [ "$merge" -eq 1 ] && [ "$(gh_read pr view "$pr" --json isDraft --jq .isDraft || true)" != "false" ]; then
     gh_read pr ready "$pr" >/dev/null || true
+    # Turning ready can start more checks, and the merge is bound to green ones.
+    sleep "$poll"
+    wait_checks
   fi
   wait_mergeable final
   now="$(read_head)"
@@ -224,8 +238,8 @@ deploy_runs() {
 
 # Deploy Workers starts after CI on main, and paths-ignore starts no CI on a docs-only merge. Without a
 # CI run after a few polls, nothing is coming, so do not spend the whole wait on it. A run takes main's
-# tip when it starts, so the skipped run of the previous, cancelled CI can carry this commit: a skipped
-# run only counts once this commit's own CI has ended without success.
+# tip when it starts, so the run of the previous CI can carry this commit: no run counts before this
+# commit's own CI has ended, and a skipped one only counts when that CI ended without success.
 run=''
 conclusion=''
 quiet=0
@@ -234,8 +248,9 @@ for ((i = 0; i < attempts; i++)); do
   run="$(deploy_runs 'and .conclusion != "skipped"')"
   case "$ci" in
     '')
+      run=''
       quiet=$((quiet + 1))
-      [ -n "$run" ] || [ "$quiet" -lt 8 ] || break
+      [ "$quiet" -lt 8 ] || break
       ;;
     pending | unknown | success) quiet=0 ;;
     *)
@@ -247,7 +262,7 @@ for ((i = 0; i < attempts; i++)); do
     conclusion="$(gh_read run view "$run" --json status,conclusion \
       --jq 'select(.status == "completed") | .conclusion' || true)"
     case "$conclusion:$ci" in
-      : | skipped:pending | skipped:unknown | skipped:success) conclusion='' ;;
+      :* | *:pending | *:unknown | skipped:success) conclusion='' ;;
       *) break ;;
     esac
   fi
@@ -258,7 +273,13 @@ if [ -z "$run" ] && [ "$quiet" -ge 8 ]; then
   exit 6
 fi
 case "$conclusion" in
-  success) echo "DEPLOYED #$pr $run" ;;
+  success)
+    if [ "$ci" != "success" ]; then
+      echo "DEPLOY_FAILED #$pr $run ci:$ci"
+      exit 5
+    fi
+    echo "DEPLOYED #$pr $run"
+    ;;
   '')
     echo "DEPLOY_UNKNOWN #$pr ${run:-none}"
     exit 7

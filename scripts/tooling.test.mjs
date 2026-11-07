@@ -161,6 +161,7 @@ test('land-pr reports without merging, and merges only with --merge', () =>
     const flaked = path.join(dir, 'flaked');
     const unknownSeen = path.join(dir, 'unknown-seen');
     const headSeen = path.join(dir, 'head-seen');
+    const views = path.join(dir, 'views');
     writeFileSync(
       path.join(bin, 'gh'),
       `#!/bin/sh
@@ -192,7 +193,12 @@ case "$*" in
   "run list --workflow ci.yml"*) echo "\${FAKE_CI-success}" ;;
   "run list"*skipped*) echo "\${FAKE_ACTIVE_RUN-$FAKE_RUN}" ;;
   "run list"*) echo "$FAKE_RUN" ;;
-  "run view"*) echo "\${FAKE_DEPLOY-success}" ;;
+  "run view"*)
+    if [ -n "$FAKE_RUNNING_VIEWS" ] && [ "$(wc -l < "${views}" 2>/dev/null || echo 0)" -lt "$FAKE_RUNNING_VIEWS" ]; then
+      echo seen >> "${views}"
+    else
+      echo "\${FAKE_DEPLOY-success}"
+    fi ;;
 esac
 `,
       { mode: 0o755 },
@@ -214,6 +220,7 @@ esac
       rmSync(flaked, { force: true });
       rmSync(unknownSeen, { force: true });
       rmSync(headSeen, { force: true });
+      rmSync(views, { force: true });
       const result = spawnSync('bash', [path.join(root, 'scripts/agents/land-pr.sh'), ...args], {
         encoding: 'utf8',
         env: {
@@ -331,10 +338,32 @@ esac
     const closed = land(['12', '--merge'], { FAKE_PR_STATE: 'CLOSED' });
     assert.equal(closed.status, 3);
     assert.equal(closed.stdout, 'NOT_OPEN #12 CLOSED\n');
-    const blocked = land(['12', '--merge'], { FAKE_MERGE_STATE: 'MERGEABLE BLOCKED' });
+    const blocked = land(['12', '--merge'], { FAKE_MERGE_STATE: 'MERGEABLE BLOCKED', LAND_PR_ATTEMPTS: '6' });
     assert.equal(blocked.status, 3);
     assert.equal(blocked.stdout, 'BLOCKED #12\n');
     assert.doesNotMatch(blocked.calls, /pr merge/);
+
+    const staleBlock = land(['12', '--merge'], { FAKE_FIRST_MERGE_STATE: 'MERGEABLE BLOCKED' });
+    assert.equal(staleBlock.status, 0);
+    const noChecks = land(['12'], { FAKE_DOWN: 'pr checks' });
+    assert.equal(noChecks.status, 7);
+    assert.equal(noChecks.stdout, 'UNKNOWN_STATE #12 checks\n');
+    assert.match(noChecks.stderr, /HTTP 502/);
+
+    // A running deploy is waited for, and only this commit's CI gives its result meaning.
+    const running = land(['12', '--merge'], { FAKE_RUNNING_VIEWS: '2' });
+    assert.equal(running.status, 0);
+    assert.equal(running.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
+    assert.equal(running.calls.match(/run view/g).length, 3);
+    const early = land(['12', '--merge'], { FAKE_CI: 'pending' });
+    assert.equal(early.status, 7);
+    assert.equal(early.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+    const ciFailed = land(['12', '--merge'], { FAKE_CI: 'failure' });
+    assert.equal(ciFailed.status, 5);
+    assert.equal(ciFailed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77 ci:failure\n');
+    const docsOnly = land(['12', '--merge'], { FAKE_CI: '', LAND_PR_ATTEMPTS: '30' });
+    assert.equal(docsOnly.status, 6);
+    assert.equal(docsOnly.stdout, 'MERGED #12 abc123\nNO_DEPLOY #12 abc123\n');
 
     // Unknown never becomes a result: CI still running, CI unreadable, main unreadable or not moved.
     const slow = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: 'pending' });
