@@ -3,7 +3,8 @@ package httpx_test
 // honoCases were recorded from the TypeScript API's stack (hono 4.13.14 on @hono/node-server
 // 2.1.4): each raw request was sent over a socket to a Hono app echoing c.req.path,
 // c.req.query('project_id'), getCookie for both cookies and originAllowed. Regenerate them the
-// same way when either package is upgraded.
+// same way when either package is upgraded. Since 2.1.6 a backslash in the path is a 400:
+// TestRefusesABackslashInThePath holds those targets.
 var honoCases = []honoCase{
 	{target: "/health", headers: []string{}, path: "/health", projectID: nil, session: nil, scope: nil, originOK: false},
 	{target: "/health/ready", headers: []string{}, path: "/health/ready", projectID: nil, session: nil, scope: nil, originOK: false},
@@ -21,7 +22,6 @@ var honoCases = []honoCase{
 	{target: "/system/a%C3%A1%ZZb", headers: []string{}, path: "/system/aá%ZZb", projectID: nil, session: nil, scope: nil, originOK: false},
 	{target: "/system/a%3Bb%3fc%23d", headers: []string{}, path: "/system/a%3Bb%3fc%23d", projectID: nil, session: nil, scope: nil, originOK: false},
 	{target: "/system/%EF%BF%BD", headers: []string{}, path: "/system/�", projectID: nil, session: nil, scope: nil, originOK: false},
-	{target: "/system/a\\b", headers: []string{}, path: "/system/a/b", projectID: nil, session: nil, scope: nil, originOK: false},
 	{target: "/System/Audit", headers: []string{}, path: "/System/Audit", projectID: nil, session: nil, scope: nil, originOK: false},
 	{target: "/system/a^b|c", headers: []string{}, path: "/system/a^b|c", projectID: nil, session: nil, scope: nil, originOK: false},
 	{target: "/system/.", headers: []string{}, path: "/system/", projectID: nil, session: nil, scope: nil, originOK: false},

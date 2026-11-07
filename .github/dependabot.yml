@@ -61,3 +61,8 @@ updates:
     groups:
       rust:
         patterns: ['*']
+    ignore:
+      # 0.1.26 carries Unicode 18 data; the engines must match Node and the toolchain, both on 17
+      # (test unicode_data_versions_agree). Drop this when both move to 18.
+      - dependency-name: unicode-normalization
+        versions: ['>=0.1.26']

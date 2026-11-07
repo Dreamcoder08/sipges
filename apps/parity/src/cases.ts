@@ -208,7 +208,7 @@ export const CASES: readonly ParityCase[] = [
     rawTarget: true,
   },
   {
-    name: 'backslash dot segments leave the machine path',
+    name: 'backslash dot segments are refused',
     method: 'GET',
     path: '/hooks\\..\\system\\x',
     rawTarget: true,
@@ -228,7 +228,7 @@ export const CASES: readonly ParityCase[] = [
     rawTarget: true,
   },
   {
-    name: 'backslashes are slashes',
+    name: 'backslashes are refused',
     method: 'GET',
     path: '/system\\auth\\me',
     auth: 'consulta',

@@ -196,6 +196,45 @@ func TestOriginNormalizesPortsLikeNewURL(t *testing.T) {
 	}
 }
 
+// GHSA-jpvv-r467-5p4w: a raw backslash in the request path is a 400 with no body, before any
+// handler, so a reverse proxy and this API can never read two different paths.
+func TestRefusesABackslashInThePath(t *testing.T) {
+	hits := 0
+	h := httpx.Chain(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits++
+		w.WriteHeader(http.StatusNoContent)
+	}), httpx.CanonicalPath())
+	srv := httptest.NewServer(h)
+	t.Cleanup(srv.Close)
+	addr := srv.Listener.Addr().String()
+
+	for _, target := range []string{
+		`/system\auth\me`,
+		`/hooks\..\system\x`,
+		`/admin\secret?x=1`,
+		`/a\b#fragment`,
+		`/a#\b`,
+		`http://h.example/a\b`,
+	} {
+		t.Run("refused "+target, func(t *testing.T) {
+			hits = 0
+			status, body := rawGet(t, addr, target, nil)
+			if status != http.StatusBadRequest || len(body) != 0 || hits != 0 {
+				t.Fatalf("status %d, body %q, handler ran %d times; want 400, empty, 0", status, body, hits)
+			}
+		})
+	}
+	for _, target := range []string{`/system%5Cauth`, `/system/x?q=\`, `/system/x?a=1\2`, `/a#?\b`} {
+		t.Run("accepted "+target, func(t *testing.T) {
+			hits = 0
+			status, _ := rawGet(t, addr, target, nil)
+			if status != http.StatusNoContent || hits != 1 {
+				t.Fatalf("status %d, handler ran %d times; want 204 once", status, hits)
+			}
+		})
+	}
+}
+
 // Node refuses methods that are not upper-case tokens before any handler runs.
 func TestRefusesLowerCaseMethods(t *testing.T) {
 	h := httpx.Chain(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {

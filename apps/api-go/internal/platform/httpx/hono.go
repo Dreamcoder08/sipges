@@ -34,6 +34,10 @@ func CanonicalPath() Middleware {
 				http.Error(w, "Bad Request", http.StatusBadRequest)
 				return
 			}
+			if backslashInPath(r.RequestURI) {
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
 			path := HonoPath(r)
 			if path != r.URL.Path || r.URL.RawPath != "" {
 				u := *r.URL
@@ -45,6 +49,18 @@ func CanonicalPath() Middleware {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// backslashInPath is @hono/node-server's validateRequestTarget (GHSA-jpvv-r467-5p4w): a raw
+// backslash before the query is refused, because a proxy keeps it as an ordinary character and
+// this API would read it as a separator. %5C and a backslash in the query change no path.
+func backslashInPath(target string) bool {
+	backslash := strings.IndexByte(target, '\\')
+	if backslash < 0 {
+		return false
+	}
+	query := strings.IndexByte(target, '?')
+	return query < 0 || backslash < query
 }
 
 // HonoPath is c.req.path for this request: the raw target, normalized like `new URL` when
@@ -67,19 +83,16 @@ func HonoPath(r *http.Request) string {
 	return tryDecode(strings.ReplaceAll(path, "%25", "%2525"), true)
 }
 
-// whatwgPath percent-encodes the bytes of the WHATWG path percent-encode set, turns '\' into
-// '/' (http and https are special schemes) and resolves single- and double-dot segments,
-// including their percent-encoded spellings.
+// whatwgPath percent-encodes the bytes of the WHATWG path percent-encode set and resolves
+// single- and double-dot segments, including their percent-encoded spellings. It never sees a
+// backslash: CanonicalPath refuses those first.
 func whatwgPath(raw string) string {
 	var b strings.Builder
 	for i := 0; i < len(raw); i++ {
 		c := raw[i]
-		switch {
-		case c == '\\':
-			b.WriteByte('/')
-		case c <= 0x20 || c >= 0x7f || strings.IndexByte("\"#<>?`{}", c) >= 0:
+		if c <= 0x20 || c >= 0x7f || strings.IndexByte("\"#<>?`{}", c) >= 0 {
 			b.WriteString("%" + strings.ToUpper(hexByte(c)))
-		default:
+		} else {
 			b.WriteByte(c)
 		}
 	}
