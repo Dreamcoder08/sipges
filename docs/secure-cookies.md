@@ -36,9 +36,11 @@ Bash distinguishes unset from empty using `${SIPGES_COOKIE_SECURE+x}`; an export
 
 Names, eight-hour Max-Age, `/` path, HttpOnly, SameSite=Strict and host-only behavior remain unchanged. Logout behavior is unchanged. Secure cookies are not transported over HTTP by the synthetic client; tests deliberately avoid browser-specific loopback exceptions. Scope selection tests authenticate and follow up using cookies alone, without `X-SIPGES-Scope`.
 
-`tests/test_secure_cookies.py` uses synthetic temporary databases, seed/config paths and HTTP/HTTPS TestClient URLs. It covers default/explicit policies, both headers, authenticated follow-up, scope switching, HTTP non-transport, denied selections, startup-static configuration and invalid-config rejection before initialization. Existing synthetic HTTP tests still explicitly select `0`.
+`reference/python/tests/test_secure_cookies.py` uses synthetic temporary databases, seed/config paths and HTTP/HTTPS TestClient URLs. It covers default/explicit policies, both headers, authenticated follow-up, scope switching, HTTP non-transport, denied selections, startup-static configuration and invalid-config rejection before initialization. Existing synthetic HTTP tests still explicitly select `0`.
 
 ## Remaining deployment blockers
+
+These applied to the legacy Python app on Render, which is no longer the deployed system. The live API reads the same `SIPGES_COOKIE_SECURE` policy in `apps/api/src/platform/config.ts`.
 
 - Durable private storage for global auth, tenant databases, mutable settings and uploads is not implemented; Render Free local storage is ephemeral.
 - MFA policy/recovery, login throttling and further CSRF/host/request hardening remain separate security work.

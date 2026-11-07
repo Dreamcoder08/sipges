@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   writeFileSync,
   readdirSync,
   rmSync,
@@ -175,6 +176,417 @@ test('review-next prints the provider command verbatim and stops on consent', ()
   assert.equal(consent.status, 3);
   assert.match(consent.stdout, /^CONSENT /);
 });
+test('test-pg starts one loopback server per checkout and deletes only its own directory', (t) => {
+  if (spawnSync('sh', ['-c', 'command -v initdb']).status !== 0) {
+    t.skip('initdb is not installed');
+    return;
+  }
+  return fixture((dir) => {
+    const env = { ...process.env, TEST_PG_ROOT: path.join(dir, 'pg'), TEST_PG_PORT: '56439' };
+    const run = (action) =>
+      spawnSync('bash', [path.join(root, 'scripts/agents/test-pg.sh'), action], {
+        cwd: dir,
+        env,
+        encoding: 'utf8',
+      });
+    assert.equal(run('url').status, 1);
+    const up = run('up');
+    assert.equal(up.status, 0, up.stderr);
+    assert.match(up.stdout, /^postgres:\/\/sipges_test@127\.0\.0\.1:\d+\/sipges_test\n$/);
+    try {
+      assert.equal(run('up').stdout, up.stdout);
+      assert.equal(run('url').stdout, up.stdout);
+    } finally {
+      assert.equal(run('down').status, 0);
+    }
+    assert.equal(run('url').status, 1);
+    assert.deepEqual(readdirSync(path.join(dir, 'pg')), []);
+    assert.equal(run('nope').status, 2);
+  });
+});
+test('new-worktree starts from origin/main and reuses an existing branch', () =>
+  fixture((dir) => {
+    const git = (cwd, ...args) => {
+      const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+      return result.stdout.trim();
+    };
+    const origin = path.join(dir, 'origin.git');
+    git(dir, 'init', '-q', '--bare', '-b', 'main', origin);
+    const clone = path.join(dir, 'clone');
+    git(dir, 'clone', '-q', origin, clone);
+    git(
+      clone,
+      '-c',
+      'user.name=t',
+      '-c',
+      'user.email=t@e.st',
+      'commit',
+      '-q',
+      '--allow-empty',
+      '-m',
+      'one',
+    );
+    git(clone, 'push', '-q', 'origin', 'HEAD:main');
+    const head = git(clone, 'rev-parse', 'HEAD');
+    const script = path.join(root, 'scripts/agents/new-worktree.sh');
+    const run = (...args) => spawnSync('bash', [script, ...args], { cwd: clone, encoding: 'utf8' });
+
+    const created = run('unit', 'feat/unit');
+    assert.equal(created.status, 0, created.stderr);
+    const target = created.stdout.trim();
+    assert.equal(target, path.join(realpathSync(clone), '.worktrees/unit'));
+    assert.equal(git(target, 'rev-parse', 'HEAD'), head);
+    assert.equal(git(target, 'branch', '--show-current'), 'feat/unit');
+
+    assert.equal(run('unit', 'feat/unit').status, 1);
+    git(clone, 'worktree', 'remove', target);
+    const reused = run('again', 'feat/unit');
+    assert.equal(reused.status, 0, reused.stderr);
+    assert.equal(git(reused.stdout.trim(), 'branch', '--show-current'), 'feat/unit');
+
+    assert.equal(run('../escape', 'b').status, 2);
+    assert.equal(run('only-name').status, 2);
+  }));
+test('land-pr reports without merging, and merges only with --merge', () =>
+  fixture((dir) => {
+    const bin = path.join(dir, 'bin');
+    mkdirSync(bin);
+    const log = path.join(dir, 'gh.log');
+    const flaked = path.join(dir, 'flaked');
+    const unknownSeen = path.join(dir, 'unknown-seen');
+    const headSeen = path.join(dir, 'head-seen');
+    const views = path.join(dir, 'views');
+    writeFileSync(
+      path.join(bin, 'gh'),
+      `#!/bin/sh
+echo "$*" >> "${log}"
+if [ -n "$FAKE_DOWN" ] && echo "$*" | grep -qE "$FAKE_DOWN"; then
+  echo 'HTTP 502' >&2
+  exit 1
+fi
+if [ -n "$FAKE_FLAKY" ] && [ ! -e "${flaked}" ] && echo "$*" | grep -qE "$FAKE_FLAKY"; then
+  touch "${flaked}"
+  echo 'HTTP 502' >&2
+  exit 1
+fi
+case "$*" in
+  *mergeable,mergeStateStatus*)
+    if [ -n "$FAKE_FIRST_MERGE_STATE" ] && [ ! -e "${unknownSeen}" ]; then
+      touch "${unknownSeen}"
+      echo "$FAKE_FIRST_MERGE_STATE"
+    else
+      echo "$FAKE_MERGE_STATE"
+    fi ;;
+  "pr checks"*) echo "\${FAKE_CHECKS-pass}" ;;
+  *headRefOid*)
+    if [ -n "$FAKE_LATER_HEAD" ] && [ -e "${headSeen}" ]; then echo "$FAKE_LATER_HEAD"; else touch "${headSeen}"; echo head456; fi ;;
+  *isDraft*) echo true ;;
+  "pr merge"*) exit "\${FAKE_MERGE_EXIT:-0}" ;;
+  *state,mergeCommit*) echo "\${FAKE_MERGED-abc123}" ;;
+  "pr view"*"--json state "*) echo "\${FAKE_PR_STATE:-OPEN}" ;;
+  "run list --workflow ci.yml"*) echo "\${FAKE_CI-success}" ;;
+  "run list"*skipped*) echo "\${FAKE_ACTIVE_RUN-$FAKE_RUN}" ;;
+  "run list"*) echo "$FAKE_RUN" ;;
+  "run view"*)
+    if [ -n "$FAKE_RUNNING_VIEWS" ] && [ "$(wc -l < "${views}" 2>/dev/null || echo 0)" -lt "$FAKE_RUNNING_VIEWS" ]; then
+      echo seen >> "${views}"
+    else
+      echo "\${FAKE_DEPLOY-success}"
+    fi ;;
+esac
+`,
+      { mode: 0o755 },
+    );
+    writeFileSync(
+      path.join(bin, 'git'),
+      `#!/bin/sh
+echo "git $*" >> "${log}"
+case "$*" in
+  fetch*) exit 0 ;;
+  merge-base*) exit "\${FAKE_ANCESTOR:-0}" ;;
+  rev-parse*) echo "\${FAKE_MAIN-newer999}" ;;
+esac
+`,
+      { mode: 0o755 },
+    );
+    const land = (args, extra = {}) => {
+      writeFileSync(log, '');
+      rmSync(flaked, { force: true });
+      rmSync(unknownSeen, { force: true });
+      rmSync(headSeen, { force: true });
+      rmSync(views, { force: true });
+      const result = spawnSync('bash', [path.join(root, 'scripts/agents/land-pr.sh'), ...args], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${bin}:${process.env.PATH}`,
+          LAND_PR_POLL: '0',
+          LAND_PR_ATTEMPTS: '3',
+          FAKE_RUN: '77',
+          FAKE_MERGE_STATE: 'MERGEABLE CLEAN',
+          ...extra,
+        },
+      });
+      return { ...result, calls: readFileSync(log, 'utf8') };
+    };
+
+    const ready = land(['12']);
+    assert.equal(ready.status, 0);
+    assert.equal(ready.stdout, 'READY #12\n');
+    assert.doesNotMatch(ready.calls, /pr merge|pr ready/);
+
+    const dirty = land(['12', '--merge'], { FAKE_MERGE_STATE: 'CONFLICTING DIRTY' });
+    assert.equal(dirty.status, 3);
+    assert.equal(dirty.stdout, 'CONFLICT #12 CONFLICTING DIRTY\n');
+    assert.doesNotMatch(dirty.calls, /pr merge/);
+
+    const red = land(['12', '--merge'], { FAKE_CHECKS: 'fail pass' });
+    assert.equal(red.status, 4);
+    assert.equal(red.stdout, 'CHECKS_FAILED #12\n');
+    assert.doesNotMatch(red.calls, /pr merge/);
+
+    const landed = land(['12', '--merge']);
+    assert.equal(landed.status, 0);
+    assert.equal(landed.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
+    assert.match(landed.calls, /pr ready 12\n/);
+    assert.match(landed.calls, /pr merge 12 --merge --match-head-commit head456\n/);
+    assert.match(
+      landed.calls,
+      /git merge-base --is-ancestor head456 refs\/remotes\/origin\/main\n/,
+    );
+
+    const failed = land(['12', '--merge'], { FAKE_DEPLOY: 'failure' });
+    assert.equal(failed.status, 5);
+    assert.equal(failed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77 failure\n');
+
+    const none = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: '', LAND_PR_ATTEMPTS: '30' });
+    assert.equal(none.status, 6);
+    assert.equal(none.stdout, 'MERGED #12 abc123\nNO_DEPLOY #12 abc123\n');
+    assert.equal(none.calls.match(/run list --workflow deploy-workers/g).length, 8);
+
+    assert.equal(land([]).status, 2);
+    assert.equal(land(['12;x']).status, 2);
+    const twoNumbers = land(['12', '34', '--merge']);
+    assert.equal(twoNumbers.status, 2);
+    assert.equal(twoNumbers.calls, '');
+
+    // Transient gh errors never read as a result.
+    for (const flaky of [
+      'pr checks',
+      'mergeable',
+      'headRefOid',
+      'pr ready',
+      'state,mergeCommit',
+      'run list',
+      'run view',
+    ]) {
+      const retried = land(['12', '--merge'], { FAKE_FLAKY: flaky });
+      assert.equal(retried.status, 0, flaky);
+      assert.equal(retried.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n', flaky);
+    }
+
+    // A 502 on the merge call can hide a merge that happened; only the repository says which.
+    const hidden = land(['12', '--merge'], { FAKE_MERGE_EXIT: '1' });
+    assert.equal(hidden.status, 0);
+    assert.equal(hidden.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
+    const stale = land(['12', '--merge'], { FAKE_ANCESTOR: '1' });
+    assert.equal(stale.status, 7);
+    assert.equal(stale.stdout, 'MERGE_UNCONFIRMED #12 head456\n');
+    const refused = land(['12', '--merge'], { FAKE_MERGE_EXIT: '1', FAKE_MERGED: '' });
+    assert.equal(refused.status, 7);
+    assert.equal(refused.stdout, 'MERGE_UNCONFIRMED #12 head456\n');
+
+    // A merge state GitHub has not computed is neither conflict nor permission.
+    const computed = land(['12', '--merge'], { FAKE_FIRST_MERGE_STATE: 'UNKNOWN UNKNOWN' });
+    assert.equal(computed.status, 0);
+    const uncomputed = land(['12', '--merge'], { FAKE_MERGE_STATE: 'UNKNOWN UNKNOWN' });
+    assert.equal(uncomputed.status, 7);
+    assert.equal(uncomputed.stdout, 'UNKNOWN_STATE #12 UNKNOWN UNKNOWN\n');
+    assert.doesNotMatch(uncomputed.calls, /pr merge/);
+
+    const pending = land(['12', '--merge'], { FAKE_CHECKS: 'pass pending' });
+    assert.equal(pending.status, 7);
+    assert.equal(pending.stdout, 'CHECKS_PENDING #12\n');
+    assert.doesNotMatch(pending.calls, /pr merge/);
+
+    // Merges in a row cancel CI on main, which skips the older deploy: not a failure.
+    const skipped = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' });
+    assert.equal(skipped.status, 0);
+    assert.equal(skipped.stdout, 'MERGED #12 abc123\nDEPLOY_SUPERSEDED #12 77 abc123\n');
+    const queued = land(['12', '--merge'], { FAKE_DEPLOY: 'cancelled' });
+    assert.equal(queued.status, 0);
+    assert.equal(queued.stdout, 'MERGED #12 abc123\nDEPLOY_SUPERSEDED #12 77 abc123\n');
+    const ciRed = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped', FAKE_CI: 'failure' });
+    assert.equal(ciRed.status, 5);
+    assert.equal(ciRed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77 skipped\n');
+    const lost = land(['12', '--merge'], { FAKE_DEPLOY: '' });
+    assert.equal(lost.status, 7);
+    assert.equal(lost.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+
+    const noWait = land(['12', '--merge', '--no-deploy-wait']);
+    assert.equal(noWait.status, 0);
+    assert.equal(noWait.stdout, 'MERGED #12 abc123\n');
+    assert.doesNotMatch(noWait.calls, /run list/);
+
+    // The merge is bound to the commit the checks saw.
+    const pushed = land(['12', '--merge'], { FAKE_LATER_HEAD: 'head789' });
+    assert.equal(pushed.status, 7);
+    assert.equal(pushed.stdout, 'HEAD_CHANGED #12 head789\n');
+    assert.doesNotMatch(pushed.calls, /pr merge/);
+
+    // Lasting failures show their cause and answer at once; refusals are not "ask again".
+    const down = land(['12'], { FAKE_DOWN: 'pr view' });
+    assert.equal(down.status, 7);
+    assert.equal(down.stdout, 'UNKNOWN_STATE #12 unreadable\n');
+    assert.match(down.stderr, /HTTP 502/);
+    assert.equal(down.calls.split('\n').filter(Boolean).length, 3);
+    const closed = land(['12', '--merge'], { FAKE_PR_STATE: 'CLOSED' });
+    assert.equal(closed.status, 3);
+    assert.equal(closed.stdout, 'NOT_OPEN #12 CLOSED\n');
+    const blocked = land(['12', '--merge'], {
+      FAKE_MERGE_STATE: 'MERGEABLE BLOCKED',
+      LAND_PR_ATTEMPTS: '6',
+    });
+    assert.equal(blocked.status, 3);
+    assert.equal(blocked.stdout, 'BLOCKED #12\n');
+    assert.doesNotMatch(blocked.calls, /pr merge/);
+
+    const staleBlock = land(['12', '--merge'], { FAKE_FIRST_MERGE_STATE: 'MERGEABLE BLOCKED' });
+    assert.equal(staleBlock.status, 0);
+    const noChecks = land(['12'], { FAKE_DOWN: 'pr checks' });
+    assert.equal(noChecks.status, 7);
+    assert.equal(noChecks.stdout, 'UNKNOWN_STATE #12 checks\n');
+    assert.match(noChecks.stderr, /HTTP 502/);
+
+    // A running deploy is waited for, and only this commit's CI gives its result meaning.
+    const running = land(['12', '--merge'], { FAKE_RUNNING_VIEWS: '2' });
+    assert.equal(running.status, 0);
+    assert.equal(running.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
+    assert.equal(running.calls.match(/run view/g).length, 3);
+    const early = land(['12', '--merge'], { FAKE_CI: 'pending' });
+    assert.equal(early.status, 7);
+    assert.equal(early.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+    const ciFailed = land(['12', '--merge'], { FAKE_CI: 'failure' });
+    assert.equal(ciFailed.status, 5);
+    assert.equal(ciFailed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77 ci:failure\n');
+    const docsOnly = land(['12', '--merge'], { FAKE_CI: '', LAND_PR_ATTEMPTS: '30' });
+    assert.equal(docsOnly.status, 6);
+    assert.equal(docsOnly.stdout, 'MERGED #12 abc123\nNO_DEPLOY #12 abc123\n');
+
+    // Unknown never becomes a result: CI still running, CI unreadable, main unreadable or not moved.
+    const slow = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: 'pending' });
+    assert.equal(slow.status, 7);
+    assert.equal(slow.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
+    const ciDown = land(['12', '--merge'], {
+      FAKE_RUN: '',
+      FAKE_DOWN: 'ci.yml',
+      LAND_PR_ATTEMPTS: '30',
+    });
+    assert.equal(ciDown.status, 7);
+    assert.equal(ciDown.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
+    const unreadCi = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped', FAKE_DOWN: 'ci.yml' });
+    assert.equal(unreadCi.status, 7);
+    assert.equal(unreadCi.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+    for (const extra of [
+      { FAKE_DEPLOY: 'cancelled' },
+      { FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' },
+    ]) {
+      const last = land(['12', '--merge'], { ...extra, FAKE_MAIN: 'abc123' });
+      assert.equal(last.status, 5);
+      assert.equal(last.stdout, `MERGED #12 abc123\nDEPLOY_FAILED #12 77 ${extra.FAKE_DEPLOY}\n`);
+    }
+
+    // The skipped run of the previous, cancelled CI can carry this commit; the real deploy follows it.
+    const real = land(['12', '--merge'], { FAKE_ACTIVE_RUN: '88' });
+    assert.equal(real.status, 0);
+    assert.equal(real.stdout, 'MERGED #12 abc123\nDEPLOYED #12 88\n');
+    const queuedBehind = land(['12', '--merge'], { FAKE_ACTIVE_RUN: '', FAKE_DEPLOY: 'skipped' });
+    assert.equal(queuedBehind.status, 7);
+    assert.equal(queuedBehind.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
+    const staleSkip = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped' });
+    assert.equal(staleSkip.status, 7);
+    assert.equal(staleSkip.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+    const skippedOnly = land(['12', '--merge'], {
+      FAKE_ACTIVE_RUN: '',
+      FAKE_DEPLOY: 'skipped',
+      FAKE_CI: 'cancelled',
+    });
+    assert.equal(skippedOnly.status, 0);
+    assert.equal(skippedOnly.stdout, 'MERGED #12 abc123\nDEPLOY_SUPERSEDED #12 77 abc123\n');
+
+    // Running it again after a lost answer resumes instead of merging twice.
+    const again = land(['12', '--merge'], { FAKE_PR_STATE: 'MERGED' });
+    assert.equal(again.status, 0);
+    assert.equal(again.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
+    assert.doesNotMatch(again.calls, /pr merge/);
+  }));
+test('ODD close keeps the log style of the document it edits', () =>
+  fixture((dir) => {
+    const close = path.join(root, 'scripts/odd-close-task.mjs');
+    for (const [initial, expected] of [
+      ['- T1 [ ] one\n- L7 — Evidence: old\n', '- L8 — T1 proof: Synthetic'],
+      ['- T1 [ ] one\n- L7: old\n', '- L8: T1 proof: Synthetic'],
+    ]) {
+      const file = path.join(dir, 'odd.md');
+      writeFileSync(file, initial);
+      const result = spawnSync(process.execPath, [
+        close,
+        '--task',
+        'T1',
+        '--label',
+        'T1 proof',
+        '--text',
+        'Synthetic',
+        '--file',
+        file,
+      ]);
+      assert.equal(result.status, 0);
+      const written = readFileSync(file, 'utf8');
+      assert.match(written, /- T1 \[x\] one/);
+      assert.ok(written.includes(`${expected}\n`));
+    }
+  }));
+test('ODD log-only appends an entry and touches no task', () =>
+  fixture((dir) => {
+    const file = path.join(dir, 'odd.md');
+    const initial = '- T1 [ ] open\n- L1 (one): first\n';
+    writeFileSync(file, initial);
+    const args = [
+      path.join(root, 'scripts/odd-close-task.mjs'),
+      '--log-only',
+      '--label',
+      'Decision',
+      '--text',
+      'Synthetic',
+      '--file',
+      file,
+    ];
+    const dry = spawnSync(process.execPath, [...args, '--dry-run'], { encoding: 'utf8' });
+    assert.equal(dry.status, 0);
+    assert.match(dry.stdout, /- L2 \(Decision\): Synthetic/);
+    assert.equal(readFileSync(file, 'utf8'), initial);
+    assert.equal(spawnSync(process.execPath, args).status, 0);
+    assert.equal(readFileSync(file, 'utf8'), `${initial}- L2 (Decision): Synthetic\n`);
+  }));
+test('ODD close refuses to guess the feature document', () =>
+  fixture((dir) => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(root, 'scripts/odd-close-task.mjs'),
+        '--task',
+        'T1',
+        '--label',
+        'x',
+        '--text',
+        'y',
+      ],
+      { cwd: dir, encoding: 'utf8' },
+    );
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /--file/);
+  }));
 test('ODD rejects blank evidence and multiline labels without changing the task', () =>
   fixture((dir) => {
     const file = path.join(dir, 'odd.md');

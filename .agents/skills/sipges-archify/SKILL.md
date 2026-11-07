@@ -15,7 +15,7 @@ Desde la raíz, con la herramienta clonada en una carpeta hermana:
 ARCHIFY_UPDATE_CHECK_DISABLED=1 node ../archify-tool/archify/bin/archify.mjs finalize architecture docs/diagrams/arquitectura.json docs/diagrams/arquitectura.html --repo-root . --quality showcase --json --out-dir /tmp/sipges-archify-new-review
 ```
 
-Usa una carpeta de recibos nueva para cada candidato. Conserva bytes HTML generados y licencia; revisa fuente, generación e integridad. Inspecciona escritorio/móvil, etiquetas, fuentes Git, tema y menú de exportación. Guarda la captura PNG y registra SHA-256 del HTML y revisión de fuente en `docs/VERIFICACION.md`.
+Usa una carpeta de recibos nueva para cada candidato. Conserva bytes HTML generados y licencia; revisa fuente, generación e integridad. Inspecciona escritorio/móvil, etiquetas, fuentes Git, tema y menú de exportación. Guarda la captura PNG y registra SHA-256 del HTML y revisión de fuente en el log del documento ODD de la tarea.
 
 Si `browser-check` falla con `ERR_BLOCKED_BY_ADMINISTRATOR` por `file://`, registra esa comprobación como fallida. Puedes añadir una prueba independiente por HTTP local; no la presentes como aprobación del gate geométrico integrado ni de los formatos exportados. No cambies la política del navegador para obtener verde.
 

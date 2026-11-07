@@ -358,3 +358,41 @@ func TestShutdownStopsTheRetriesWhileTheDatabaseIsMissing(t *testing.T) {
 		t.Fatalf("logs: %s", api.out.String())
 	}
 }
+
+// tenancy.bootstrap of compose.ts: without it an installation with no TypeScript has no project,
+// and even its administrator can do nothing. Scratch databases keep earlier tests' tenants out.
+func TestStartCreatesTheDefaultProjectAndGrantsItToEveryAdministrator(t *testing.T) {
+	s := scratchDB(t)
+	exec(t, s.URL, `TRUNCATE users, tenants CASCADE`)
+	exec(t, s.URL, `INSERT INTO users (username, full_name, password_hash, role) VALUES
+		('owner', 'Owner', 'x', 'admin'), ('second', 'Second', 'x', 'admin'), ('reader', 'Reader', 'x', 'consulta')`)
+	for range 2 { // the second start finds both rows and changes nothing
+		api := startAPI(t, map[string]string{"SIPGES_DATABASE_URL": s.URL})
+		api.eventually(t, "readiness", func() bool { return api.get(t, "/health/ready") == http.StatusOK })
+		if err := api.stopped(t); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := scalar(t, s.URL, `SELECT count(*)::text || '|' || min(tenant_id) || '|' || min(label) FROM tenants`); got != "1|SIPGES/PRJ-SECHURA|Proyecto Sechura (migración)" {
+		t.Fatalf("tenants %q", got)
+	}
+	if got := scalar(t, s.URL, `SELECT string_agg(username, ',' ORDER BY username) FROM grants WHERE tenant_id = 'SIPGES/PRJ-SECHURA'`); got != "owner,second" {
+		t.Fatalf("grants %q", got)
+	}
+}
+
+// A project an operator renamed keeps its label: the insert changes nothing that exists.
+func TestStartKeepsTheDefaultProjectsLabel(t *testing.T) {
+	s := scratchDB(t)
+	exec(t, s.URL, `TRUNCATE users, tenants CASCADE`)
+	exec(t, s.URL, `INSERT INTO users (username, full_name, password_hash, role) VALUES ('owner', 'Owner', 'x', 'admin')`)
+	exec(t, s.URL, `INSERT INTO tenants (company_id, project_id, label, created_at) VALUES ('SIPGES', 'PRJ-SECHURA', 'Kept', now())`)
+	api := startAPI(t, map[string]string{"SIPGES_DATABASE_URL": s.URL})
+	api.eventually(t, "readiness", func() bool { return api.get(t, "/health/ready") == http.StatusOK })
+	if err := api.stopped(t); err != nil {
+		t.Fatal(err)
+	}
+	if got := scalar(t, s.URL, `SELECT label FROM tenants`); got != "Kept" {
+		t.Fatalf("label %q", got)
+	}
+}

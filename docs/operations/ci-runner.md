@@ -6,7 +6,7 @@ increased». CI and deploys can then run on a runner on the owner's machine inst
 
 ## How the switch works
 
-Every job reads `runs-on` from the repository variable `SIPGES_RUNS_ON`:
+Most jobs read `runs-on` from the repository variable `SIPGES_RUNS_ON`. The exceptions stay on `ubuntu-latest`, so they still need hosted minutes: every `changes` job, on which the gated jobs depend, plus `image` in `go.yml`, `engines`, `fixtures` and `tools` in `rust.yml`, and `ops-review-materialize.yml`.
 
 | `SIPGES_RUNS_ON` | Jobs run on |
 | --- | --- |
