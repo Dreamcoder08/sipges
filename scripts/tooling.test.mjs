@@ -312,6 +312,72 @@ esac
     assert.equal(again.stdout, 'MERGED #12 abc123\nDEPLOYED #12 77\n');
     assert.doesNotMatch(again.calls, /pr merge/);
   }));
+test('ODD close keeps the log style of the document it edits', () =>
+  fixture((dir) => {
+    const close = path.join(root, 'scripts/odd-close-task.mjs');
+    for (const [initial, expected] of [
+      ['- T1 [ ] one\n- L7 — Evidence: old\n', '- L8 — T1 proof: Synthetic'],
+      ['- T1 [ ] one\n- L7: old\n', '- L8: T1 proof: Synthetic'],
+    ]) {
+      const file = path.join(dir, 'odd.md');
+      writeFileSync(file, initial);
+      const result = spawnSync(process.execPath, [
+        close,
+        '--task',
+        'T1',
+        '--label',
+        'T1 proof',
+        '--text',
+        'Synthetic',
+        '--file',
+        file,
+      ]);
+      assert.equal(result.status, 0);
+      const written = readFileSync(file, 'utf8');
+      assert.match(written, /- T1 \[x\] one/);
+      assert.ok(written.includes(`${expected}\n`));
+    }
+  }));
+test('ODD log-only appends an entry and touches no task', () =>
+  fixture((dir) => {
+    const file = path.join(dir, 'odd.md');
+    const initial = '- T1 [ ] open\n- L1 (one): first\n';
+    writeFileSync(file, initial);
+    const args = [
+      path.join(root, 'scripts/odd-close-task.mjs'),
+      '--log-only',
+      '--label',
+      'Decision',
+      '--text',
+      'Synthetic',
+      '--file',
+      file,
+    ];
+    const dry = spawnSync(process.execPath, [...args, '--dry-run'], { encoding: 'utf8' });
+    assert.equal(dry.status, 0);
+    assert.match(dry.stdout, /- L2 \(Decision\): Synthetic/);
+    assert.equal(readFileSync(file, 'utf8'), initial);
+    assert.equal(spawnSync(process.execPath, args).status, 0);
+    assert.equal(readFileSync(file, 'utf8'), `${initial}- L2 (Decision): Synthetic\n`);
+  }));
+test('ODD close refuses to guess the feature document', () =>
+  fixture((dir) => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(root, 'scripts/odd-close-task.mjs'),
+        '--task',
+        'T1',
+        '--label',
+        'x',
+        '--text',
+        'y',
+      ],
+      { cwd: dir, encoding: 'utf8' },
+    );
+    assert.equal(result.status, 2);
+    assert.match(result.stderr, /--file/);
+  }));
 test('ODD rejects blank evidence and multiline labels without changing the task', () =>
   fixture((dir) => {
     const file = path.join(dir, 'odd.md');

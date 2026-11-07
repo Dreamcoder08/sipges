@@ -1,11 +1,11 @@
 # Agent guide
 
-SIPGES is a pnpm TypeScript monorepo (`apps/api` Hono + PostgreSQL, `apps/web` React/Vite,
-`packages/*`). The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
+SIPGES is a pnpm monorepo moving to a Go backend, Rust engines and a TypeScript frontend (ADR 0032): `apps/api` Hono +
+PostgreSQL, `apps/api-go`, `engines/`, `apps/web` React/Vite, `packages/*`. The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
 in one feature document per feature under `odd/tasks/` (`pnpm odd:status` lists the open tasks; superseded plans
 move to `odd/archive/`); decisions live in `docs/adr/`.
 
-## Skills (`.agents/skills/`, linked for Claude Code from `.claude/skills/`)
+## Skills (`.agents/skills/`; the `sipges-*`, `neon` and `neon-postgres` ones are linked from `.claude/skills/`)
 
 | Skill | Use it to |
 | --- | --- |
@@ -56,7 +56,7 @@ it is installed locally; the repo does not require it.
 | `pnpm parity` | Go/TypeScript parity: same requests to both APIs on one synthetic database, diffs status and JSON ([apps/parity](apps/parity/README.md)). |
 | `scripts/agents/land-pr.sh <n>` (`--merge`, `--no-deploy-wait`) | Waits for checks and reports; with `--merge`, which needs authorization, merges, confirms the head is on `origin/main` and waits for Deploy Workers. Exit 7 means unknown, not failed. |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
-| `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
+| `pnpm odd:close -- --task T<n> --label … --text … --file odd/tasks/<feature>.md` | Marks the task done and appends the next `L<n>` entry in the document's style; `--log-only` replaces `--task` to append the entry alone. |
 | `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
 | `pnpm --filter @sipges/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @sipges/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
