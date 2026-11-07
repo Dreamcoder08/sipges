@@ -84,7 +84,7 @@ jobs:
           echo "b7d4d944c88503e4f21d84af07ac293e3440b1b6210bfd7fe78e0afd92c23bc2  $RUNNER_TEMP/wasi-sdk.tar.gz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/wasi-sdk.tar.gz" -C "$RUNNER_TEMP"
           echo "WASI_SDK=$RUNNER_TEMP/wasi-sdk-27.0-x86_64-linux" >> "$GITHUB_ENV"
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: engines/go/go.mod
           cache-dependency-path: engines/go/go.sum
