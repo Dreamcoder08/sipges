@@ -27,3 +27,8 @@ odd/evidence/**/*.exit
 odd/evidence/**/*.stderr
 odd/evidence/**/*.path
 odd/evidence/t6-benchmark/current-quick.json
+
+# Local install: secrets, backups and the exported certificate never enter the repository.
+deploy/local/.env
+deploy/local/backups/
+deploy/local/sipges-root-ca.crt
