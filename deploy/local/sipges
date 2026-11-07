@@ -76,6 +76,10 @@ build() {
   running=$(docker image inspect -f '{{.Id}}' sipges-local:current 2>/dev/null || true)
   started=$(docker image inspect -f '{{.Id}}' sipges-local:ready 2>/dev/null || true)
   new=$(docker image inspect -f '{{.Id}}' sipges-local:new)
+  # An install from before `ready` existed has no mark: the version answering now earns it.
+  if [[ -z $started && -n $running && -z $(env_value SIPGES_IMAGE_TAG) ]] && answers; then
+    started=$running
+  fi
   if [[ -n $running && $running != "$new" && $running == "$started" ]]; then
     docker tag sipges-local:current sipges-local:previous
   fi
@@ -86,13 +90,15 @@ build() {
   fi
 }
 
+answers() {
+  compose exec -T caddy wget -qO- --header "Host: $(env_value SIPGES_SITE_HOST)" \
+    http://api:8080/health/ready 2>/dev/null | grep -q '"ready"'
+}
+
 wait_ready() {
-  local host
-  host=$(env_value SIPGES_SITE_HOST)
   say 'Waiting for SIPGES to answer...'
   for _ in $(seq 1 90); do
-    if compose exec -T caddy wget -qO- --header "Host: $host" http://api:8080/health/ready 2>/dev/null |
-      grep -q '"ready"'; then
+    if answers; then
       say 'SIPGES is ready.'
       return 0
     fi
@@ -332,10 +338,9 @@ cmd_inventory() {
 cmd_status() {
   need_env
   compose ps
-  local host dir latest
-  host=$(env_value SIPGES_SITE_HOST)
+  local dir latest
   dir=$(env_value SIPGES_BACKUP_DIR)
-  if compose exec -T caddy wget -qO- --header "Host: $host" http://api:8080/health/ready 2>/dev/null | grep -q '"ready"'; then
+  if answers; then
     say 'Application: ready'
   else
     say 'Application: NOT READY'
