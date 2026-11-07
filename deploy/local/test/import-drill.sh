@@ -84,8 +84,12 @@ node --no-warnings -e '
   const sheet = (path) => report.tables.find((t) => t.path === path).sheets[0];
   assert(sheet("book.xlsx").name === "Concesiones" && sheet("book.xlsx").dataRows === 1, "workbook");
   assert(sheet("book.xlsx").headers.join() === "Codigo,Titular", "workbook headers");
-  assert(sheet("list.csv").headers.join() === "Codigo,Monto" && sheet("list.csv").dataRows === 2, "csv");
+  assert(sheet("list.csv").headersWithheld === "unconfirmed" && sheet("list.csv").dataRows === 2, "csv");
 ' "$report"
+sipges inventory "$work/client/mixed" --show-unconfirmed-headers | tee "$work/inventory-shown.log"
+report=$(sed -n 's/^Full report: //p' "$work/inventory-shown.log")
+grep -q CANARY "$report" && { echo 'a cell value reached the report'; exit 1; }
+grep -q '"Monto"' "$report" || { echo 'the header the owner asked for is missing'; exit 1; }
 [[ $(in_compose --profile ops config inventory | sed -n 's/^ *network_mode: //p') == none ]] ||
   { echo 'the inventory has a network'; exit 1; }
 echo 'ok - counted, no value in the report, database and folder as they were'

@@ -16,8 +16,13 @@ import (
 // Every synthetic cell value below a header carries this mark, so one search proves none left.
 const canary = "CANARY"
 
+// view and after are what Excel writes around the rows: a frozen pane, a filter.
 type sheetXML struct {
-	name, state, rows string
+	name, state, rows, view, after string
+}
+
+func frozen(rows int) string {
+	return fmt.Sprintf(`<sheetViews><sheetView><pane ySplit="%d" topLeftCell="A2" state="frozen"/></sheetView></sheetViews>`, rows)
 }
 
 func workbook(t *testing.T, shared []string, sheets ...sheetXML) []byte {
@@ -32,7 +37,7 @@ func workbook(t *testing.T, shared []string, sheets ...sheetXML) []byte {
 		}
 		fmt.Fprintf(&list, `<sheet name="%s" sheetId="%s"%s r:id="rId%s"/>`, s.name, id, state, id)
 		fmt.Fprintf(&rels, `<Relationship Id="rId%s" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet%s.xml"/>`, id, id)
-		parts["xl/worksheets/sheet"+id+".xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="x"><dimension ref="A1"/><sheetData>` + s.rows + `</sheetData></worksheet>`
+		parts["xl/worksheets/sheet"+id+".xml"] = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="x"><dimension ref="A1"/>` + s.view + `<sheetData>` + s.rows + `</sheetData>` + s.after + `</worksheet>`
 	}
 	parts["xl/workbook.xml"] = `<?xml version="1.0" encoding="UTF-8"?><workbook xmlns:r="r"><sheets>` + list.String() + `</sheets></workbook>`
 	parts["xl/_rels/workbook.xml.rels"] = `<Relationships>` + rels.String() + `</Relationships>`
@@ -48,6 +53,15 @@ func s(ref string, index int) string { return fmt.Sprintf(`<c r="%s" t="s"><v>%d
 func n(ref, value string) string     { return fmt.Sprintf(`<c r="%s"><v>%s</v></c>`, ref, value) }
 func row(index int, cells ...string) string {
 	return fmt.Sprintf(`<row r="%d">%s</row>`, index, strings.Join(cells, ""))
+}
+
+func scanShowing(t *testing.T, root string) Report {
+	t.Helper()
+	report, err := Scan(context.Background(), root, Options{ShowUnconfirmedHeaders: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return report
 }
 
 func tableOf(t *testing.T, r Report, path string) Table {
@@ -81,12 +95,13 @@ func TestXLSXGivesSheetsHeadersAndRowCountsAndNoValue(t *testing.T) {
 	root := t.TempDir()
 	put(t, root, "book.xlsx", workbook(t,
 		[]string{"Código", "Nombre", "Monto", "Fecha", canary + " person", canary + " other"},
-		sheetXML{name: "Concesiones", rows: row(1, s("A1", 0), s("B1", 1), s("C1", 2)) +
+		sheetXML{name: "Concesiones", view: frozen(1), rows: row(1, s("A1", 0), s("B1", 1), s("C1", 2)) +
 			row(2, n("A2", "1001"), s("B2", 4), n("C2", "12.5")) +
 			row(3, n("A3", "1002"), s("B3", 5), n("C3", "13.5")) +
 			// A styled empty row is not a row of data.
 			`<row r="4"><c r="A4" s="3"/><c r="B4" s="3"/></row>`},
-		sheetXML{name: "Oculta", state: "hidden", rows: row(1, s("A1", 3), s("B1", 1)) + row(2, n("A2", "45000"), s("B2", 4))},
+		sheetXML{name: "Oculta", state: "hidden", after: `<autoFilter ref="A1:B2"/>`,
+			rows: row(1, s("A1", 3), s("B1", 1)) + row(2, n("A2", "45000"), s("B2", 4))},
 	))
 
 	r := scan(t, root)
@@ -112,7 +127,7 @@ func TestXLSXGivesSheetsHeadersAndRowCountsAndNoValue(t *testing.T) {
 func TestXLSXSkipsATitleAboveTheHeader(t *testing.T) {
 	root := t.TempDir()
 	put(t, root, "book.xlsm", workbook(t, []string{"REPORTE " + canary, "Código", "Monto"},
-		sheetXML{name: "Datos", rows: row(1, s("A1", 0)) + row(3, s("A3", 1), s("C3", 2)) + row(4, n("A4", "1"), n("C4", "2"))}))
+		sheetXML{name: "Datos", view: frozen(3), rows: row(1, s("A1", 0)) + row(3, s("A3", 1), s("C3", 2)) + row(4, n("A4", "1"), n("C4", "2"))}))
 
 	r := scan(t, root)
 
@@ -125,7 +140,7 @@ func TestXLSXSkipsATitleAboveTheHeader(t *testing.T) {
 
 func TestXLSXInlineAndRichStrings(t *testing.T) {
 	root := t.TempDir()
-	body := workbook(t, nil, sheetXML{name: "Datos", rows: row(1,
+	body := workbook(t, nil, sheetXML{name: "Datos", view: frozen(1), rows: row(1,
 		`<c r="A1" t="inlineStr"><is><t>Zona</t></is></c>`,
 		`<c r="B1" t="inlineStr"><is><r><t>Área </t></r><r><t>total</t></r><rPh><t>ignored</t></rPh></is></c>`) +
 		row(2, `<c r="A2" t="inlineStr"><is><t>`+canary+`</t></is></c>`, n("B2", "1"))})
@@ -139,29 +154,38 @@ func TestXLSXInlineAndRichStrings(t *testing.T) {
 	}
 }
 
-// No row looks different from the one under it, so the first row may well be data.
-func TestHeadersThatCannotBeConfirmedAreWithheld(t *testing.T) {
-	rows := row(1, s("A1", 0), s("B1", 1)) + row(2, s("A2", 2), s("B2", 3))
-	shared := []string{canary + " a", canary + " b", canary + " c", canary + " d"}
+// Rows that look exactly like a header above numbers: nothing tells a column's name from a person's,
+// so by default only the file itself can say which row is the header.
+func TestAFirstRowIsNeverShownUnlessTheFileMarksIt(t *testing.T) {
+	cases := map[string]string{
+		"data-over-numbers.csv": canary + " Juan Perez,pendiente,Lima\nMaria Lopez,1200,Cusco\nRosa Diaz,1300,Puno\n",
+		"key-value.csv":         "Cliente:," + canary + " Juan Perez\n1,2\n3,4\n",
+		"single.csv":            canary + " Juan Perez\n12\n13\n",
+		"after-title.csv":       "Reporte\n" + canary + " Maria Lopez,-\n1,2\n",
+		"all-text.csv":          canary + " a," + canary + " b\n" + canary + " c," + canary + " d\n",
+	}
 	root := t.TempDir()
-	put(t, root, "names.xlsx", workbook(t, shared, sheetXML{name: "Datos", rows: rows}))
-	put(t, root, "names.csv", []byte(canary+" a,"+canary+" b\n"+canary+" c,"+canary+" d\n"))
+	for name, body := range cases {
+		put(t, root, name, []byte(body))
+	}
+	put(t, root, "unmarked.xlsx", workbook(t, []string{canary + " Juan Perez", "pendiente"},
+		sheetXML{name: "Datos", rows: row(1, s("A1", 0), s("B1", 1)) + row(2, s("A2", 0), n("B2", "1"))}))
+	put(t, root, "marked-elsewhere.xlsx", workbook(t, []string{canary + " Juan Perez", "pendiente"},
+		sheetXML{name: "Datos", view: frozen(5), after: `<autoFilter ref="A7:B9"/>`, rows: row(1, s("A1", 0), s("B1", 1)) + row(2, s("A2", 0), n("B2", "1"))}))
 
 	r := scan(t, root)
 
 	noCanary(t, r)
-	for _, path := range []string{"names.xlsx", "names.csv"} {
-		sheet := tableOf(t, r, path).Sheets[0]
-		if sheet.Headers != nil || sheet.HeadersWithheld != WithheldUnconfirmed || sheet.Columns != 2 || sheet.DataRows != 1 {
-			t.Errorf("%s: %+v", path, sheet)
+	if len(r.Tables) != len(cases)+2 {
+		t.Fatalf("%+v", r.Tables)
+	}
+	for _, table := range r.Tables {
+		sheet := table.Sheets[0]
+		if sheet.Headers != nil || sheet.HeadersWithheld != WithheldUnconfirmed || sheet.Columns == 0 || sheet.DataRows == 0 {
+			t.Errorf("%s: %+v", table.Path, sheet)
 		}
 	}
-
-	shown, err := Scan(context.Background(), root, Options{ShowUnconfirmedHeaders: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := tableOf(t, shown, "names.csv").Sheets[0]; len(got.Headers) != 2 || got.HeadersWithheld != "" {
+	if got := tableOf(t, scanShowing(t, root), "single.csv").Sheets[0]; got.Headers == nil || got.HeadersWithheld != "" {
 		t.Errorf("asked to show: %+v", got)
 	}
 }
@@ -216,7 +240,7 @@ func TestCSVDialects(t *testing.T) {
 	for _, c := range cases {
 		put(t, root, c.name, c.body)
 	}
-	r := scan(t, root)
+	r := scanShowing(t, root)
 	noCanary(t, r)
 	for _, c := range cases {
 		table := tableOf(t, r, c.name)
@@ -317,7 +341,7 @@ func TestCraftedShapesStopTheFileOnly(t *testing.T) {
 func TestCellsOutOfOrderKeepTheirColumns(t *testing.T) {
 	root := t.TempDir()
 	put(t, root, "order.xlsx", workbook(t, []string{"Monto", "Código"},
-		sheetXML{name: "Datos", rows: row(1, s("C1", 0), s("A1", 1)) + row(2, n("C2", "1"), n("A2", "2"))}))
+		sheetXML{name: "Datos", view: frozen(1), rows: row(1, s("C1", 0), s("A1", 1)) + row(2, n("C2", "1"), n("A2", "2"))}))
 
 	r := scan(t, root)
 
@@ -355,7 +379,7 @@ func TestSharedStringsMayLiveElsewhere(t *testing.T) {
 		"xl/data/strings.xml": `<sst><si><t>Zona</t></si><si><t>Monto</t></si></sst>`,
 	}))
 
-	r := scan(t, root)
+	r := scanShowing(t, root)
 
 	if got := tableOf(t, r, "moved.xlsx").Sheets[0].Headers; strings.Join(got, "|") != "Zona|Monto" {
 		t.Errorf("%q %+v", got, r.Files)
@@ -365,8 +389,62 @@ func TestSharedStringsMayLiveElsewhere(t *testing.T) {
 func TestABlankLineAfterTheHeaderLeavesItsLineNumber(t *testing.T) {
 	root := t.TempDir()
 	put(t, root, "gap.csv", []byte("Título\nCódigo,Monto\n,,\nx,1\n"))
-	sheet := tableOf(t, scan(t, root), "gap.csv").Sheets[0]
+	sheet := tableOf(t, scanShowing(t, root), "gap.csv").Sheets[0]
 	if sheet.HeaderRow != 2 || sheet.DataRows != 1 {
 		t.Errorf("%+v", sheet)
+	}
+}
+
+// One stray inch mark must not turn the rest of a large file into a single quoted field.
+func TestAStrayQuoteIsNotARecord(t *testing.T) {
+	oldRun := runLimit
+	runLimit = 1 << 16
+	t.Cleanup(func() { runLimit = oldRun })
+	root := t.TempDir()
+	put(t, root, "inch.csv", []byte("Pieza,Monto\nTubo 5\" acero,3\n"+strings.Repeat("otra pieza,1\n", 1<<14)))
+	put(t, root, "doubled.csv", []byte("a,\"say \"\"hi\"\" there\n"+strings.Repeat("y", 1<<17)+"\n\"\n"))
+
+	r := scan(t, root)
+
+	if got := file(t, r, "inch.csv"); got.Status != StatusReadable {
+		t.Errorf("%+v", got)
+	}
+	if got := tableOf(t, r, "inch.csv").Sheets[0]; got.DataRows != 1<<14+1 {
+		t.Errorf("%+v", got)
+	}
+	if got := file(t, r, "doubled.csv"); got.Reason != ReasonTooLarge {
+		t.Errorf("a doubled quote ended the field: %+v", got)
+	}
+}
+
+// Comments and CDATA are the only way past the limit, because the decoder holds each whole, and
+// a spreadsheet has no use for them.
+func TestMarkupThatHidesFromTheLimitStopsTheFile(t *testing.T) {
+	root := t.TempDir()
+	comment := workbook(t, nil, sheetXML{name: "Datos", rows: `<!-- x -->` + row(1, n("A1", "1"))})
+	cdata := workbook(t, nil, sheetXML{name: "Datos", rows: row(1, `<c r="A1" t="inlineStr"><is><t><![CDATA[x]]></t></is></c>`)})
+	put(t, root, "comment.xlsx", comment)
+	put(t, root, "cdata.xlsx", cdata)
+
+	r := scan(t, root)
+
+	for _, path := range []string{"comment.xlsx", "cdata.xlsx"} {
+		if got := file(t, r, path); got.Reason != ReasonCorrupt {
+			t.Errorf("%s: %+v", path, got)
+		}
+	}
+}
+
+func TestACellSplitIntoManyTextElementsKeepsOnlyItsStart(t *testing.T) {
+	inline := `<c r="A1" t="inlineStr"><is>` + strings.Repeat("<t>"+strings.Repeat("y", 1024)+"</t>", 64) + `</is></c>`
+	shared := strings.Repeat("y", 1024)
+	root := t.TempDir()
+	put(t, root, "split.xlsx", workbook(t, []string{shared},
+		sheetXML{name: "Datos", rows: row(1, inline, s("B1", 0)) + row(2, n("A2", "1"), n("B2", "2"))}))
+
+	got := tableOf(t, scanShowing(t, root), "split.xlsx").Sheets[0].Headers
+
+	if strings.Join(got, "|") != WithheldCell+"|"+WithheldCell {
+		t.Errorf("%q", got)
 	}
 }

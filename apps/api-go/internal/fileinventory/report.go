@@ -111,9 +111,10 @@ type Table struct {
 	Sheets    []Sheet `json:"sheets"`
 }
 
-// Sheet holds names and counts, never a cell of data. HeaderRow is the row the header came from,
-// on a CSV the line. Headers is empty when HeadersWithheld says why, and a cell that does not
-// read like a column's name is WithheldCell. DataRows counts filled rows below the header.
+// Sheet holds names and counts, never a cell of data. HeaderRow is the row the header would come
+// from, on a CSV the line. Headers is empty when HeadersWithheld says why: only a row the file
+// marks is shown unasked. A cell that does not read like a column's name is WithheldCell.
+// DataRows counts filled rows below HeaderRow.
 type Sheet struct {
 	Name            string   `json:"name,omitempty"`
 	Hidden          bool     `json:"hidden,omitempty"`
