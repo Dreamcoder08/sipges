@@ -160,10 +160,15 @@ test('land-pr reports without merging, and merges only with --merge', () =>
     const log = path.join(dir, 'gh.log');
     const flaked = path.join(dir, 'flaked');
     const unknownSeen = path.join(dir, 'unknown-seen');
+    const headSeen = path.join(dir, 'head-seen');
     writeFileSync(
       path.join(bin, 'gh'),
       `#!/bin/sh
 echo "$*" >> "${log}"
+if [ -n "$FAKE_DOWN" ] && echo "$*" | grep -qE "$FAKE_DOWN"; then
+  echo 'HTTP 502' >&2
+  exit 1
+fi
 if [ -n "$FAKE_FLAKY" ] && [ ! -e "${flaked}" ] && echo "$*" | grep -qE "$FAKE_FLAKY"; then
   touch "${flaked}"
   echo 'HTTP 502' >&2
@@ -178,7 +183,8 @@ case "$*" in
       echo "$FAKE_MERGE_STATE"
     fi ;;
   "pr checks"*) echo "\${FAKE_CHECKS-pass}" ;;
-  *headRefOid*) echo head456 ;;
+  *headRefOid*)
+    if [ -n "$FAKE_LATER_HEAD" ] && [ -e "${headSeen}" ]; then echo "$FAKE_LATER_HEAD"; else touch "${headSeen}"; echo head456; fi ;;
   *isDraft*) echo true ;;
   "pr merge"*) exit "\${FAKE_MERGE_EXIT:-0}" ;;
   *state,mergeCommit*) echo "\${FAKE_MERGED-abc123}" ;;
@@ -197,6 +203,7 @@ echo "git $*" >> "${log}"
 case "$*" in
   fetch*) exit 0 ;;
   merge-base*) exit "\${FAKE_ANCESTOR:-0}" ;;
+  rev-parse*) echo "\${FAKE_MAIN-newer999}" ;;
 esac
 `,
       { mode: 0o755 },
@@ -205,6 +212,7 @@ esac
       writeFileSync(log, '');
       rmSync(flaked, { force: true });
       rmSync(unknownSeen, { force: true });
+      rmSync(headSeen, { force: true });
       const result = spawnSync('bash', [path.join(root, 'scripts/agents/land-pr.sh'), ...args], {
         encoding: 'utf8',
         env: {
@@ -246,9 +254,10 @@ esac
     assert.equal(failed.status, 5);
     assert.equal(failed.stdout, 'MERGED #12 abc123\nDEPLOY_FAILED #12 77 failure\n');
 
-    const none = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: '' });
+    const none = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: '', LAND_PR_ATTEMPTS: '30' });
     assert.equal(none.status, 6);
     assert.equal(none.stdout, 'MERGED #12 abc123\nNO_DEPLOY #12 abc123\n');
+    assert.equal(none.calls.match(/run list --workflow deploy-workers/g).length, 8);
 
     assert.equal(land([]).status, 2);
     assert.equal(land(['12;x']).status, 2);
@@ -305,6 +314,42 @@ esac
     assert.equal(noWait.status, 0);
     assert.equal(noWait.stdout, 'MERGED #12 abc123\n');
     assert.doesNotMatch(noWait.calls, /run list/);
+
+    // The merge is bound to the commit the checks saw.
+    const pushed = land(['12', '--merge'], { FAKE_LATER_HEAD: 'head789' });
+    assert.equal(pushed.status, 7);
+    assert.equal(pushed.stdout, 'HEAD_CHANGED #12 head789\n');
+    assert.doesNotMatch(pushed.calls, /pr merge/);
+
+    // Lasting failures show their cause and answer at once; refusals are not "ask again".
+    const down = land(['12'], { FAKE_DOWN: 'pr view' });
+    assert.equal(down.status, 7);
+    assert.equal(down.stdout, 'UNKNOWN_STATE #12 unreadable\n');
+    assert.match(down.stderr, /HTTP 502/);
+    assert.equal(down.calls.split('\n').filter(Boolean).length, 3);
+    const closed = land(['12', '--merge'], { FAKE_PR_STATE: 'CLOSED' });
+    assert.equal(closed.status, 3);
+    assert.equal(closed.stdout, 'NOT_OPEN #12 CLOSED\n');
+    const blocked = land(['12', '--merge'], { FAKE_MERGE_STATE: 'MERGEABLE BLOCKED' });
+    assert.equal(blocked.status, 3);
+    assert.equal(blocked.stdout, 'BLOCKED #12\n');
+    assert.doesNotMatch(blocked.calls, /pr merge/);
+
+    // Unknown never becomes a result: CI still running, CI unreadable, main unreadable or not moved.
+    const slow = land(['12', '--merge'], { FAKE_RUN: '', FAKE_CI: 'pending' });
+    assert.equal(slow.status, 7);
+    assert.equal(slow.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
+    const ciDown = land(['12', '--merge'], { FAKE_RUN: '', FAKE_DOWN: 'ci.yml', LAND_PR_ATTEMPTS: '30' });
+    assert.equal(ciDown.status, 7);
+    assert.equal(ciDown.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 none\n');
+    const unreadCi = land(['12', '--merge'], { FAKE_DEPLOY: 'skipped', FAKE_DOWN: 'ci.yml' });
+    assert.equal(unreadCi.status, 7);
+    assert.equal(unreadCi.stdout, 'MERGED #12 abc123\nDEPLOY_UNKNOWN #12 77\n');
+    for (const extra of [{ FAKE_DEPLOY: 'cancelled' }, { FAKE_DEPLOY: 'skipped', FAKE_CI: 'cancelled' }]) {
+      const last = land(['12', '--merge'], { ...extra, FAKE_MAIN: 'abc123' });
+      assert.equal(last.status, 5);
+      assert.equal(last.stdout, `MERGED #12 abc123\nDEPLOY_FAILED #12 77 ${extra.FAKE_DEPLOY}\n`);
+    }
 
     // Running it again after a lost answer resumes instead of merging twice.
     const again = land(['12', '--merge'], { FAKE_PR_STATE: 'MERGED' });

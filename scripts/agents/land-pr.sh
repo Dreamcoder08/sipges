@@ -3,18 +3,21 @@
 # checks and reports; merging, and the deployment a merge triggers, stay the owner's decision.
 #   READY #<n>             checks green and no conflict; nothing merged
 #   CONFLICT #<n> <state>  merge origin/main locally first (exit 3)
+#   NOT_OPEN #<n> <state>  the pull request is closed (exit 3)
+#   BLOCKED #<n>           a rule or a required review stops it; see the pull request (exit 3)
 #   CHECKS_FAILED #<n>     use sipges-ci-triage (exit 4)
 #   MERGED #<n> <sha>      merged with a merge commit, and its head is an ancestor of origin/main
 #   DEPLOYED #<n> <run>    Deploy Workers for that commit succeeded
-#   DEPLOY_SUPERSEDED #<n> <run> <sha>  a newer merge took over; its deploy decides
-#   DEPLOY_FAILED #<n> <run> <conclusion>  it failed, or CI did and skipped it (exit 5)
+#   DEPLOY_SUPERSEDED #<n> <run> <sha>  main has moved on from that commit; the newer deploy decides
+#   DEPLOY_FAILED #<n> <run> <conclusion>  it failed, was cancelled, or CI failed and skipped it (exit 5)
 #   NO_DEPLOY #<n> <sha>   no run for that commit; a docs-only merge starts none, so check which (exit 6)
-# Exit 7 means the answer is unknown, never that it failed. Nothing was merged for the first three,
-# and running the script again resumes safely:
-#   UNKNOWN_STATE #<n> <state>  GitHub never computed the merge state
-#   CHECKS_PENDING #<n>         checks still running after the last poll
-#   MERGE_UNCONFIRMED #<n> <head>  the repository does not show the merge
-#   DEPLOY_UNKNOWN #<n> <run>   merged, but the deploy has no conclusion yet
+# Exit 7 means the answer is unknown, never that it failed. gh's last error, if any, is on stderr, so
+# read it before running the script again; a run on a merged pull request resumes without merging twice.
+#   UNKNOWN_STATE #<n> <state>  unreadable, or GitHub never computed the merge state; nothing merged
+#   CHECKS_PENDING #<n>         checks still running after the last poll; nothing merged
+#   HEAD_CHANGED #<n> <head>    a push landed after the checks were read; nothing merged
+#   MERGE_UNCONFIRMED #<n> <head>  gh refused, or the repository does not show the merge; it may be merged
+#   DEPLOY_UNKNOWN #<n> <run|none>  merged, but the deploy has no conclusion or never appeared in time
 # Needs gh, git and jq. No credentials are read or printed.
 set -euo pipefail
 
@@ -61,22 +64,24 @@ done
 poll="${LAND_PR_POLL:-15}"
 attempts="${LAND_PR_ATTEMPTS:-80}"
 
-# GitHub answers 502 under load, so a failed read means "ask again", never a result.
+# GitHub answers 502 under load, so a failed read means "ask again", never a result. The last try
+# keeps gh's error on stderr, so a lasting failure such as expired auth shows its cause.
 gh_read() {
   local i out
-  for ((i = 0; i < 3; i++)); do
+  for ((i = 0; i < 2; i++)); do
     if out="$(gh "$@" 2>/dev/null)"; then
       printf '%s\n' "$out"
       return 0
     fi
     sleep "$poll"
   done
-  return 1
+  gh "$@"
 }
 
 # UNKNOWN only means GitHub has not finished computing, so it is neither a conflict nor a green light.
+# BLOCKED is normal while checks run, so only the last look, with "final", treats it as a refusal.
 wait_mergeable() {
-  local i state=''
+  local i state='' final="${1:-}"
   for ((i = 0; i < attempts; i++)); do
     state="$(gh_read pr view "$pr" --json mergeable,mergeStateStatus --jq '.mergeable + " " + .mergeStateStatus' || true)"
     case "$state" in
@@ -85,6 +90,11 @@ wait_mergeable() {
         exit 3
         ;;
       MERGEABLE\ UNKNOWN | UNKNOWN* | '') sleep "$poll" ;;
+      *BLOCKED)
+        [ -n "$final" ] || return 0
+        echo "BLOCKED #$pr"
+        exit 3
+        ;;
       *) return 0 ;;
     esac
   done
@@ -125,38 +135,73 @@ merged_sha() {
   printf '%s\n' "$sha"
 }
 
+# Empty means no CI run exists; "unknown" means the read failed, which must never pass for that.
 latest_ci() {
   gh_read run list --workflow ci.yml --branch main --limit 30 --json headSha,conclusion \
-    --jq "map(select(.headSha == \"$1\")) | .[0] // empty | if .conclusion == \"\" then \"pending\" else .conclusion end" || true
+    --jq "map(select(.headSha == \"$1\")) | .[0] // empty | if .conclusion == \"\" then \"pending\" else .conclusion end" || echo unknown
 }
 
-already_merged=0
-[ "$(gh_read pr view "$pr" --json state --jq .state || true)" != "MERGED" ] || already_merged=1
+read_head() {
+  gh_read pr view "$pr" --json headRefOid --jq .headRefOid || true
+}
 
-if [ "$already_merged" -eq 0 ]; then
+# A cancelled or skipped deploy only counts as superseded when a newer commit really is on main.
+report_stopped_deploy() {
+  local tip=''
+  git fetch --quiet origin main 2>/dev/null && tip="$(git rev-parse refs/remotes/origin/main)"
+  if [ -z "$tip" ]; then
+    echo "DEPLOY_UNKNOWN #$pr $run"
+    exit 7
+  fi
+  if [ "$tip" = "$sha" ]; then
+    echo "DEPLOY_FAILED #$pr $run $conclusion"
+    exit 5
+  fi
+  echo "DEPLOY_SUPERSEDED #$pr $run $sha"
+}
+
+state="$(gh_read pr view "$pr" --json state --jq .state || true)"
+case "$state" in
+  MERGED | OPEN) ;;
+  '')
+    echo "UNKNOWN_STATE #$pr unreadable"
+    exit 7
+    ;;
+  *)
+    echo "NOT_OPEN #$pr $state"
+    exit 3
+    ;;
+esac
+
+# Taken before the checks, so the merge is bound to the commit they verified.
+head="$(read_head)"
+[ -n "$head" ] || {
+  echo "UNKNOWN_STATE #$pr head"
+  exit 7
+}
+
+if [ "$state" = "OPEN" ]; then
   wait_mergeable
   wait_checks
-  wait_mergeable
+  if [ "$merge" -eq 1 ] && [ "$(gh_read pr view "$pr" --json isDraft --jq .isDraft || true)" != "false" ]; then
+    gh_read pr ready "$pr" >/dev/null || true
+  fi
+  wait_mergeable final
+  now="$(read_head)"
+  [ "$now" = "$head" ] || {
+    echo "HEAD_CHANGED #$pr $now"
+    exit 7
+  }
   if [ "$merge" -eq 0 ]; then
     echo "READY #$pr"
     exit 0
   fi
 fi
 
-head="$(gh_read pr view "$pr" --json headRefOid --jq .headRefOid || true)"
-[ -n "$head" ] || {
-  echo "UNKNOWN_STATE #$pr head"
-  exit 7
-}
-
 tries="$attempts"
-if [ "$already_merged" -eq 0 ]; then
-  if [ "$(gh_read pr view "$pr" --json isDraft --jq .isDraft || true)" != "false" ]; then
-    gh_read pr ready "$pr" >/dev/null || true
-    wait_mergeable
-  fi
+if [ "$state" = "OPEN" ]; then
   # A 502 here can hide a merge that happened, so the answer comes from merged_sha below, not this exit.
-  gh pr merge "$pr" --merge --match-head-commit "$head" >/dev/null 2>&1 || tries=$((attempts < 4 ? attempts : 4))
+  gh pr merge "$pr" --merge --match-head-commit "$head" >/dev/null || tries=$((attempts < 4 ? attempts : 4))
 fi
 
 sha=''
@@ -183,12 +228,18 @@ for ((i = 0; i < attempts; i++)); do
   if [ -z "$(latest_ci "$sha")" ]; then
     quiet=$((quiet + 1))
     [ "$quiet" -lt 8 ] || break
+  else
+    quiet=0
   fi
   sleep "$poll"
 done
-[ -n "$run" ] || {
+if [ -z "$run" ] && [ "$quiet" -ge 8 ]; then
   echo "NO_DEPLOY #$pr $sha"
   exit 6
+fi
+[ -n "$run" ] || {
+  echo "DEPLOY_UNKNOWN #$pr none"
+  exit 7
 }
 
 conclusion=''
@@ -204,17 +255,20 @@ case "$conclusion" in
     echo "DEPLOY_UNKNOWN #$pr $run"
     exit 7
     ;;
-  cancelled)
-    echo "DEPLOY_SUPERSEDED #$pr $run $sha"
-    ;;
+  cancelled) report_stopped_deploy ;;
   skipped)
     # A merge in a row cancels the CI of the one before it, and that skips its deploy.
-    if [ "$(latest_ci "$sha")" = "cancelled" ]; then
-      echo "DEPLOY_SUPERSEDED #$pr $run $sha"
-    else
-      echo "DEPLOY_FAILED #$pr $run $conclusion"
-      exit 5
-    fi
+    case "$(latest_ci "$sha")" in
+      cancelled) report_stopped_deploy ;;
+      unknown)
+        echo "DEPLOY_UNKNOWN #$pr $run"
+        exit 7
+        ;;
+      *)
+        echo "DEPLOY_FAILED #$pr $run $conclusion"
+        exit 5
+        ;;
+    esac
     ;;
   *)
     echo "DEPLOY_FAILED #$pr $run $conclusion"
