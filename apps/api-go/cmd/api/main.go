@@ -32,14 +32,17 @@ const drainGrace = 20 * time.Second
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := run(ctx, os.LookupEnv, os.Stdout, net.Listen); err != nil {
+	if err := dispatch(ctx, os.Args[1:], os.LookupEnv, os.Stdout, net.Listen); err != nil {
 		fmt.Fprintln(os.Stderr, "sipges-api-go:", err)
 		stop()
 		os.Exit(1) //nolint:gocritic // stop already ran; nothing else is deferred
 	}
 }
 
-func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen func(network, address string) (net.Listener, error)) error {
+// listenFunc opens the server's socket; tests pass their own.
+type listenFunc = func(network, address string) (net.Listener, error)
+
+func run(ctx context.Context, lookup config.Lookup, stdout io.Writer, listen listenFunc) error {
 	cfg, err := config.Load(lookup)
 	if err != nil {
 		return err
