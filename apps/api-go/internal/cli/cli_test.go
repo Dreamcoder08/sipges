@@ -350,6 +350,8 @@ func TestOptionsThatWouldBeIgnoredAreRefused(t *testing.T) {
 	for _, args := range [][]string{
 		{"call", "GET", "/health", "--param", "nope=1"},
 		{"call", "GET", "/health", "--form"},
+		{"call", "DELETE", "/api/compromisos/C-1", "--param", "id=C-2"},
+		{"records", "delete", "--module", "compromisos", "--id", "A", "--param", "id=B"},
 		{"records", "list", "--module", "compromisos", "--param", "nope=1"},
 		{"routes", "extra"},
 		{"routes", "--project", "ACME/P1"},
@@ -402,6 +404,9 @@ func TestMachineRoutesCarryTheirCredentialAndNoOtherDoes(t *testing.T) {
 		t.Fatal(err)
 	}
 	h.env["SIPGES_MACHINE_TOKEN"] = "mscli_synthetic"
+	if got := h.run("", "call", "POST", "/hooks/ingest/compromisos", "--project", "ACME/P1"); got.code != ExitUsage {
+		t.Fatalf("a key's project cannot be chosen: %+v", got)
+	}
 	got := h.run("", "call", "POST", "/mcp", "--json")
 	if got.code != ExitOK || auth != "Bearer mscli_synthetic" || cookie != "" {
 		t.Fatalf("%+v auth=%q cookie=%q", got, auth, cookie)
