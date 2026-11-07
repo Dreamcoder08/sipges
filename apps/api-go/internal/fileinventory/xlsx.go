@@ -176,6 +176,19 @@ func columnOf(ref string, next int) int {
 	return col - 1
 }
 
+// rowOf reads the first row of a reference like B3:F90.
+func rowOf(ref string) int {
+	digits := strings.TrimLeft(ref, "ABCDEFGHIJKLMNOPQRSTUVWXYZ$")
+	if end := strings.IndexFunc(digits, func(r rune) bool { return r < '0' || r > '9' }); end >= 0 {
+		digits = digits[:end]
+	}
+	row, err := strconv.Atoi(digits)
+	if err != nil {
+		return 0
+	}
+	return row
+}
+
 // scanSheet feeds the profile row by row. Text is copied only while the profile may still need
 // it; below the header a cell is a kind and nothing else.
 func scanSheet(r io.Reader, p *profile) error {
@@ -191,10 +204,12 @@ func scanSheet(r io.Reader, p *profile) error {
 		value     strings.Builder
 		rowNumber int
 		nextCol   int
+		markedRow = map[int]bool{}
 	)
 	for {
 		token, err := dec.RawToken()
 		if errors.Is(err, io.EOF) {
+			p.marked = markedRow[p.headerRow]
 			return nil
 		}
 		if err != nil {
@@ -203,6 +218,14 @@ func scanSheet(r io.Reader, p *profile) error {
 		switch el := token.(type) {
 		case xml.StartElement:
 			switch el.Name.Local {
+			case "pane":
+				if strings.HasPrefix(attr(el, "state"), "frozen") {
+					if rows, err := strconv.Atoi(attr(el, "ySplit")); err == nil {
+						markedRow[rows] = true
+					}
+				}
+			case "autoFilter":
+				markedRow[rowOf(attr(el, "ref"))] = true
 			case "row":
 				cells, nextCol = cells[:0], 0
 				rowNumber++
@@ -225,8 +248,8 @@ func scanSheet(r io.Reader, p *profile) error {
 		case xml.CharData:
 			if inText && len(el) > 0 {
 				hasValue = true
-				if p.wantsValues() {
-					value.Write(el)
+				if p.wantsValues() && value.Len() < maxKeptBytes {
+					value.Write(el[:min(len(el), maxKeptBytes)])
 				}
 			}
 		case xml.EndElement:
@@ -250,19 +273,15 @@ func scanSheet(r io.Reader, p *profile) error {
 func finishCell(c cell, typeAttr, value string, keep bool) cell {
 	switch typeAttr {
 	case "s":
-		c.kind = kindText
+		c.isText = true
 		if keep {
 			if index, err := strconv.Atoi(strings.TrimSpace(value)); err == nil {
 				c.shared = index
 			}
 		}
 	case "str", "inlineStr":
-		c.kind = kindText
+		c.isText = true
 		c.text = value
-	case "", "n", "d":
-		c.kind = kindNumber
-	default:
-		c.kind = kindOther
 	}
 	return c
 }
@@ -299,8 +318,8 @@ func readShared(r io.Reader, wanted map[int]string) error {
 				inText = false
 			}
 		case xml.CharData:
-			if _, keep := wanted[index]; keep && inText {
-				wanted[index] += string(el)
+			if text, keep := wanted[index]; keep && inText && len(text) < maxKeptBytes {
+				wanted[index] = text + string(el[:min(len(el), maxKeptBytes)])
 			}
 		}
 	}

@@ -22,28 +22,51 @@ const (
 
 var errNotText = errors.New("not text")
 
-// quoteAwareReader fails on one logical record larger than the limit. Inside a quoted field a
-// newline does not end the record, and csv.Reader holds all of it in memory.
-type quoteAwareReader struct {
-	in     io.Reader
-	quoted bool
-	run    int
+// recordLimiter fails on one record that csv.Reader could not hold cheaply: too many bytes, which
+// it keeps in one piece, or too many fields, which it allocates one by one. It follows the quotes
+// the way the reader does with LazyQuotes: only a quote that opens a field starts a quoted run, so
+// an inch mark in a description is just a character.
+type recordLimiter struct {
+	in      io.Reader
+	comma   byte
+	started bool // inside a field, past its first byte
+	quoted  bool
+	closed  bool // just past a closing quote, where a second one means a literal quote
+	run     int
+	fields  int
 }
 
-func (q *quoteAwareReader) Read(p []byte) (int, error) {
-	n, err := q.in.Read(p)
+func (l *recordLimiter) Read(p []byte) (int, error) {
+	n, err := l.in.Read(p)
 	for _, c := range p[:n] {
-		switch {
-		case c == '"':
-			q.quoted = !q.quoted
-		case c == '\n' && !q.quoted:
-			q.run = 0
-		}
-		if q.run++; q.run > runLimit {
+		l.step(c)
+		if l.run > runLimit || l.fields > maxColumns {
 			return 0, errTooLarge
 		}
 	}
 	return n, err
+}
+
+func (l *recordLimiter) step(c byte) {
+	l.run++
+	wasClosed := l.closed
+	l.closed = false
+	switch {
+	case l.quoted:
+		if c == '"' {
+			l.quoted, l.closed = false, true
+		}
+	case c == '"' && (wasClosed || !l.started):
+		l.quoted, l.started = true, true
+	case c == l.comma:
+		l.fields++
+		l.started = false
+	case c == '\n':
+		l.run, l.fields = 0, 0
+		l.started = false
+	default:
+		l.started = true
+	}
 }
 
 // decoderFor names the text encoding and returns how to read it as UTF-8. Excel's "CSV" in a
@@ -113,7 +136,8 @@ func readCSV(f io.ReaderAt, size int64, showUnconfirmed bool) (Table, error) {
 	delimiter := delimiterOf(string(decoded))
 	decoder.Reset()
 
-	reader := csv.NewReader(bufio.NewReader(&quoteAwareReader{in: transform.NewReader(file, decoder)}))
+	limited := &recordLimiter{in: transform.NewReader(file, decoder), comma: byte(delimiter)} //nolint:gosec // delimiterOf only returns ASCII
+	reader := csv.NewReader(bufio.NewReader(limited))
 	reader.Comma = delimiter
 	reader.LazyQuotes = true
 	reader.FieldsPerRecord = -1
@@ -136,12 +160,9 @@ func readCSV(f io.ReaderAt, size int64, showUnconfirmed bool) (Table, error) {
 			if strings.TrimSpace(field) == "" {
 				continue
 			}
-			c := cell{col: col, kind: kindText, shared: -1}
-			if looksNumeric(field) {
-				c.kind = kindNumber
-			}
+			c := cell{col: col, isText: true, shared: -1}
 			if p.wantsValues() {
-				c.text = field
+				c.text = field[:min(len(field), maxKeptBytes)]
 			}
 			cells = append(cells, c)
 		}
