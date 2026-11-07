@@ -13,6 +13,8 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/domain"
 	identity "github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
+	tenancydomain "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
+	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
 )
 
 // Log messages of the bootstrap. Only these and a SQLSTATE are ever logged: driver errors may
@@ -96,16 +98,33 @@ func NewIdentityBootstrap(pool *pgxpool.Pool, lookup func(string) (string, bool)
 			if err := service.BootstrapAdmin(ctx, settings.admin); err != nil {
 				return err
 			}
-			if settings.googleEmail == "" {
-				return nil
+			if settings.googleEmail != "" {
+				if err := service.BootstrapGoogleAdmin(ctx, settings.admin.Username, settings.googleEmail); err != nil {
+					return err
+				}
 			}
-			return service.BootstrapGoogleAdmin(ctx, settings.admin.Username, settings.googleEmail)
+			return bootstrapTenancy(ctx, pool, now)
 		},
 		sleep:  sleepFor,
 		log:    log,
 		done:   make(chan struct{}),
 		failed: make(chan error, 1),
 	}
+}
+
+// bootstrapTenancy is tenancy.bootstrap of compose.ts, which ran next to Go until now: the default
+// project exists and every administrator reaches it. Without TypeScript nothing else does this,
+// and an install would have no project at all. Both statements change nothing on a second run.
+func bootstrapTenancy(ctx context.Context, pool *pgxpool.Pool, now func() time.Time) error {
+	at := time.Now()
+	if now != nil {
+		at = now()
+	}
+	store := tenancy.NewStore(pool)
+	if err := store.EnsureTenant(ctx, tenancydomain.DefaultScope, tenancydomain.DefaultScopeLabel, at); err != nil {
+		return err
+	}
+	return store.GrantDefaultToAdmins(ctx, at)
 }
 
 func sleepFor(ctx context.Context, d time.Duration) bool {

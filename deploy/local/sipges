@@ -1,0 +1,342 @@
+#!/usr/bin/env bash
+# Runs a local SIPGES installation. Run `./sipges help` for the commands, and read
+# docs/deployment/local-install.md first. SIPGES_ENV_FILE and SIPGES_PROJECT select another
+# installation on the same machine (the restore drill uses them).
+set -Eeuo pipefail
+cd "$(dirname "$(readlink -f "$0")")"
+
+ENV_FILE=${SIPGES_ENV_FILE:-.env}
+PROJECT=${SIPGES_PROJECT:-sipges}
+REPO_ROOT=../..
+
+compose() { docker compose --env-file "$ENV_FILE" -p "$PROJECT" -f compose.yaml "$@"; }
+say() { printf '%s\n' "$*"; }
+die() { printf 'sipges: %s\n' "$*" >&2; exit 1; }
+env_value() { sed -n "s/^$1=//p" "$ENV_FILE" | tail -n 1; }
+random_hex() { head -c "$1" /dev/urandom | od -An -tx1 | tr -d ' \n'; }
+
+need_env() { [[ -f $ENV_FILE ]] || die "no $ENV_FILE here: run ./sipges install first"; }
+need_docker() {
+  command -v docker >/dev/null || die 'Docker is not installed'
+  docker compose version >/dev/null 2>&1 || die 'Docker Compose is not installed'
+  docker info >/dev/null 2>&1 || die 'Docker is not running, or this user may not use it'
+}
+
+check_host() {
+  [[ $1 =~ ^[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?$ ]] ||
+    die "\"$1\" is not a valid host name or address (use lower case, no port)"
+}
+
+# A name given on the command line always wins: on a first run it goes into a new .env, later it
+# replaces the one there. Caddy issues the certificate for a new name by itself.
+use_host() {
+  local host=$1
+  [[ -z $host ]] || check_host "$host"
+  if [[ ! -f $ENV_FILE ]]; then
+    write_env "${host:-localhost}"
+  elif [[ -n $host && $host != "$(env_value SIPGES_SITE_HOST)" ]]; then
+    sed -i "s/^SIPGES_SITE_HOST=.*/SIPGES_SITE_HOST=$host/" "$ENV_FILE"
+    say "The address is now $host."
+  fi
+}
+
+write_env() {
+  local host=$1
+  (
+    umask 077
+    : >"$ENV_FILE.new"
+    cat >"$ENV_FILE" <<ENV
+# Written once by ./sipges install. Keep a copy somewhere safe, away from this machine:
+# without SIPGES_DATA_KEY and SIPGES_BACKUP_PASSPHRASE no backup can be used.
+SIPGES_SITE_HOST=$host
+SIPGES_ADMIN_USERNAME=admin
+SIPGES_ADMIN_PASSWORD=$(random_hex 16)
+SIPGES_DATA_KEY=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
+SIPGES_BACKUP_PASSPHRASE=$(random_hex 32)
+SIPGES_DB_ADMIN_PASSWORD=$(random_hex 32)
+SIPGES_DB_PASSWORD=$(random_hex 32)
+SIPGES_DB_BACKUP_PASSWORD=$(random_hex 32)
+SIPGES_HOST_OWNER=$(id -u):$(id -g)
+SIPGES_BACKUP_DIR=./backups
+SIPGES_BACKUP_HOUR=2
+SIPGES_BACKUP_KEEP=14
+SIPGES_TIMEZONE=America/Lima
+ENV
+  )
+}
+
+build() {
+  # The drill's way to test install without touching images a real install may share.
+  [[ -z ${SIPGES_SKIP_BUILD:-} ]] || return 0
+  docker build -f "$REPO_ROOT/apps/api-go/Dockerfile" -t sipges-api-go:local "$REPO_ROOT"
+  docker build -f Dockerfile -t sipges-local:new "$REPO_ROOT"
+  # Only a real change moves `previous`, so a rebuild of the same code keeps the way back.
+  local running new
+  running=$(docker image inspect -f '{{.Id}}' sipges-local:current 2>/dev/null || true)
+  new=$(docker image inspect -f '{{.Id}}' sipges-local:new)
+  if [[ -n $running && $running != "$new" ]]; then
+    docker tag sipges-local:current sipges-local:previous
+  fi
+  docker tag sipges-local:new sipges-local:current
+  # The import tools embed the migrations, so they must not fall behind once they exist.
+  if [[ -f Dockerfile.import ]] && docker image inspect sipges-import:current >/dev/null 2>&1; then
+    docker build -f Dockerfile.import -t sipges-import:current "$REPO_ROOT"
+  fi
+}
+
+wait_ready() {
+  local host
+  host=$(env_value SIPGES_SITE_HOST)
+  say 'Waiting for SIPGES to answer...'
+  for _ in $(seq 1 90); do
+    if compose exec -T caddy wget -qO- --header "Host: $host" http://api:8080/health/ready 2>/dev/null |
+      grep -q '"ready"'; then
+      say 'SIPGES is ready.'
+      return 0
+    fi
+    sleep 2
+  done
+  compose ps
+  die 'SIPGES did not become ready. See ./sipges logs'
+}
+
+unfinished_restore() { printf '%s/.restore-unfinished' "$(env_value SIPGES_BACKUP_DIR)"; }
+
+start() {
+  mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
+  [[ $(env_value SIPGES_BACKUP_HOUR) =~ ^([01]?[0-9]|2[0-3])?$ ]] ||
+    die 'SIPGES_BACKUP_HOUR must be a whole hour from 0 to 23'
+  if [[ -f $(unfinished_restore) ]]; then
+    die "the restore of $(cat "$(unfinished_restore)") did not finish, so SIPGES stays off. Run ./sipges restore $(cat "$(unfinished_restore)") again"
+  fi
+  compose up -d db api caddy backup
+  wait_ready
+}
+
+cmd_install() {
+  need_docker
+  use_host "${1:-}"
+  build
+  start
+  say "Open https://$(env_value SIPGES_SITE_HOST)/"
+  # Until this prints, the first sign-in is still owed, even after a failed build and a retry.
+  if [[ -f $ENV_FILE.new ]]; then
+    say "First sign-in: user $(env_value SIPGES_ADMIN_USERNAME), password $(env_value SIPGES_ADMIN_PASSWORD)"
+    say 'Set up the authenticator code when asked, then keep a copy of the .env file off this machine.'
+    command rm -f "$ENV_FILE.new"
+  fi
+}
+
+# First install for a client who brings data: everything but the API, because migrate-legacy needs
+# a database the API has never touched. `./sipges start` finishes the install after the import.
+cmd_prepare() {
+  need_docker
+  use_host "${1:-}"
+  build
+  mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
+  compose up -d db backup
+  say 'Ready for ./sipges import. Start SIPGES afterwards with ./sipges start.'
+}
+
+import_image() {
+  docker image inspect sipges-import:current >/dev/null 2>&1 ||
+    docker build -f Dockerfile.import -t sipges-import:current "$REPO_ROOT"
+}
+
+# Everything that can be refused before a backup or a container. A path inside the repository is
+# refused: the repository's data/ folder is not client input, and client files must never land
+# here. The tools run as the API's user, so a file only its owner may read would look missing.
+check_source() {
+  local folder=$1 file=${2:-} real repo blocked
+  real=$(readlink -f "$folder" || true)
+  repo=$(readlink -f "$REPO_ROOT")
+  [[ -n $real && -d $real ]] || die "no folder $folder"
+  [[ $real != "$repo" && $real != "$repo"/* ]] || die 'use a folder outside the SIPGES folder'
+  [[ $real != *:* ]] || die 'the folder path may not contain a colon'
+  if [[ -n $file ]]; then
+    blocked=$(find "$real" -maxdepth 0 ! -perm -o=rx; find "$real/$file" ! -perm -o=r)
+  else
+    blocked=$(find "$real" \( -type d ! -perm -o=rx -o -type f ! -perm -o=r \) -print -quit)
+  fi
+  [[ -z $blocked ]] ||
+    die "SIPGES cannot read $blocked. Copy the folder to this computer and run chmod -R a+rX on the copy, then import the copy."
+}
+
+# Runs one import tool with the folder mounted read-only.
+run_import() {
+  local tool=$2 real reports
+  real=$(readlink -f "$1")
+  shift 2
+  reports=$(import_reports)
+  mkdir -p "$reports"
+  # The tool runs as the API's user, which owns the evidence files, not as this user; it needs to
+  # write here only while it runs, and the reports hold counts, codes and ids.
+  chmod 777 "$reports"
+  compose up -d db
+  local status=0
+  SIPGES_IMPORT_FOLDER=$real SIPGES_IMPORT_REPORTS=$reports \
+    compose run --rm --entrypoint "$tool" import "$@" || status=$?
+  chmod 700 "$reports"
+  return "$status"
+}
+
+import_reports() { readlink -m "${SIPGES_IMPORT_REPORTS:-imports}"; }
+
+backup_before_import() {
+  compose up -d backup
+  compose exec -T backup bash /ops/backup.sh
+}
+
+cmd_import() {
+  need_env
+  need_docker
+  local kind=${1:-} target=${2:-}
+  [[ -n $kind && -n $target ]] ||
+    die 'usage: ./sipges import legacy <folder> [--apply|--verify] | import base-maestra <file.json> [--apply]'
+  shift 2
+  local apply=0 arg
+  for arg in "$@"; do
+    [[ $arg == --apply ]] && apply=1
+  done
+  import_image
+  case $kind in
+  legacy)
+    local report failed=0
+    report="report-$(date -u +%Y%m%dT%H%M%SZ).json"
+    check_source "$target"
+    ((apply == 0)) || backup_before_import
+    run_import "$target" migrate-legacy --legacy-root /import --report "/reports/$report" "$@" || failed=1
+    # A tool that stops before it starts, on a refused option for one, writes no report.
+    [[ -f "$(import_reports)/$report" ]] || die 'the import did not run; the line above says why'
+    docker run --rm -i --network none --entrypoint /api sipges-local:current import-report \
+      <"$(import_reports)/$report"
+    say "Full report: $(import_reports)/$report"
+    ((failed == 0)) || die 'the import reported problems; the report names them'
+    ;;
+  base-maestra)
+    [[ -f $target ]] || die "no file $target"
+    check_source "$(dirname "$target")" "$(basename "$target")"
+    ((apply == 0)) || backup_before_import
+    run_import "$(dirname "$target")" import-base-maestra --seed "/import/$(basename "$target")" "$@"
+    ;;
+  *) die 'import what? legacy or base-maestra' ;;
+  esac
+}
+
+cmd_status() {
+  need_env
+  compose ps
+  local host dir latest
+  host=$(env_value SIPGES_SITE_HOST)
+  dir=$(env_value SIPGES_BACKUP_DIR)
+  if compose exec -T caddy wget -qO- --header "Host: $host" http://api:8080/health/ready 2>/dev/null | grep -q '"ready"'; then
+    say 'Application: ready'
+  else
+    say 'Application: NOT READY'
+  fi
+  latest=$(find "$dir" -mindepth 1 -maxdepth 1 -type d -name '20*Z' -printf '%f\n' 2>/dev/null | sort | tail -n 1)
+  say "Latest backup: ${latest:-none yet}"
+  if [[ -f $dir/.last-failure ]]; then
+    say "WARNING: the nightly backup failed at $(cat "$dir/.last-failure"). See ./sipges logs backup"
+  fi
+}
+
+cmd_backups() {
+  need_env
+  find "$(env_value SIPGES_BACKUP_DIR)" -mindepth 1 -maxdepth 1 -type d -name '20*Z' -printf '%f\n' | sort
+}
+
+cmd_restore() {
+  need_env
+  local name=${1:-} confirm=${2:-}
+  [[ -n $name ]] || die 'usage: ./sipges restore <backup name> (see ./sipges backups)'
+  [[ $name =~ ^20[0-9]{6}T[0-9]{6}Z$ ]] || die "\"$name\" is not a backup name"
+  [[ -d "$(env_value SIPGES_BACKUP_DIR)/$name" ]] || die "no backup named $name"
+  if [[ $confirm != --yes ]]; then
+    say "This replaces everything in SIPGES with backup $name. Type RESTORE to go on:"
+    read -r answer
+    [[ $answer == RESTORE ]] || die 'nothing was changed'
+  fi
+  compose stop api caddy backup
+  compose up -d db
+  for _ in $(seq 1 60); do
+    [[ $(docker inspect -f '{{.State.Health.Status}}' "$(compose ps -q db)") == healthy ]] && break
+    sleep 2
+  done
+  # Written first and removed only on a known outcome: a power cut leaves it, and SIPGES stays off.
+  # A run that fails while an earlier one is unfinished clears nothing, whatever it reports.
+  local status=0 earlier=0
+  [[ ! -f $(unfinished_restore) ]] || earlier=1
+  printf '%s' "$name" >"$(unfinished_restore)"
+  compose run --rm restore "$name" || status=$?
+  if ((status == 0)); then
+    command rm -f "$(unfinished_restore)"
+    start
+    say "Restored $name."
+  elif ((status == 1 && earlier == 0)); then
+    command rm -f "$(unfinished_restore)"
+    start
+    die 'the restore failed before changing anything; SIPGES is back on the data it had'
+  else
+    die 'the restore stopped halfway, so SIPGES stays off. Run the restore again; the lines above name the backup if it is another one'
+  fi
+}
+
+cmd_update() {
+  need_env
+  need_docker
+  compose exec -T backup bash /ops/backup.sh
+  if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    git -C "$REPO_ROOT" pull --ff-only
+  fi
+  build
+  start
+  say 'Updated. If something is wrong, see "Going back" in the guide.'
+}
+
+cmd_wipe() {
+  need_env
+  if [[ ${1:-} != --yes ]]; then
+    say 'This deletes the database, the evidence files and the certificates. Backups and .env stay.'
+    say 'Type WIPE to go on:'
+    read -r answer
+    [[ $answer == WIPE ]] || die 'nothing was changed'
+  fi
+  compose --profile ops down --volumes --remove-orphans
+  # An empty install has no restore left to finish.
+  command rm -f "$(unfinished_restore)"
+}
+
+case ${1:-help} in
+install) shift; cmd_install "$@" ;;
+prepare) shift; cmd_prepare "$@" ;;
+import) shift; cmd_import "$@" ;;
+build) need_docker; build ;;
+start) need_env; start ;;
+stop) need_env; compose stop ;;
+status) cmd_status ;;
+logs) need_env; shift; compose logs --tail=200 "$@" ;;
+backup) need_env; compose exec -T backup bash /ops/backup.sh ;;
+backups) cmd_backups ;;
+restore) shift; cmd_restore "$@" ;;
+update) cmd_update ;;
+ca) need_env; compose cp caddy:/data/caddy/pki/authorities/local/root.crt sipges-root-ca.crt; say 'Wrote sipges-root-ca.crt' ;;
+wipe) shift; cmd_wipe "$@" ;;
+help | -h | --help)
+  cat <<HELP
+./sipges install [host]    First install, or rebuild and start. Host defaults to localhost.
+./sipges prepare [host]    First install for a client with data: no application yet.
+./sipges import ...        Read client files. Only tries, unless given --apply.
+./sipges start | stop      Start or stop everything.
+./sipges status            What is running, the latest backup, any backup failure.
+./sipges logs [service]    Recent logs: api, db, caddy, backup.
+./sipges backup            Take a backup now.
+./sipges backups           List the backups.
+./sipges restore <name>    Replace all data with a backup.
+./sipges update            Back up, get the new version, rebuild, restart.
+./sipges ca                Export the certificate each computer must trust.
+./sipges wipe              Delete all data on this machine. Backups and .env stay.
+HELP
+  ;;
+*) die "unknown command \"$1\": see ./sipges help" ;;
+esac
