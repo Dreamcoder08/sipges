@@ -33,3 +33,4 @@ deploy/local/.env
 deploy/local/.env.new
 deploy/local/backups/
 deploy/local/sipges-root-ca.crt
+deploy/local/imports/

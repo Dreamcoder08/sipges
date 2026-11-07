@@ -17,7 +17,7 @@ import (
 // defaultMigrationsDir is where the local install's image keeps the SQL files.
 const defaultMigrationsDir = "/migrations"
 
-// dispatch runs the API, or the one command the image offers besides it. The image is distroless,
+// dispatch runs the API, or one of the commands the image offers besides it. The image is distroless,
 // so a job of the install can only call this binary.
 func dispatch(ctx context.Context, args []string, lookup config.Lookup, stdout io.Writer, listen listenFunc) error {
 	switch {
@@ -26,7 +26,10 @@ func dispatch(ctx context.Context, args []string, lookup config.Lookup, stdout i
 	case args[0] == "migrate" && len(args) == 1:
 		return runMigrate(ctx, lookup, stdout)
 	}
-	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate`", args[0])
+	if args[0] == "import-report" && len(args) == 1 {
+		return importReport(os.Stdin, stdout)
+	}
+	return fmt.Errorf("unknown command %q: run with no arguments to serve, or use `migrate` or `import-report`", args[0])
 }
 
 // runMigrate applies the pending migrations as the login the API serves with: that role owns the
