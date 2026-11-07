@@ -1,6 +1,6 @@
 name: Local install
 
-# The restore and import drills of docs/deployment/local-install.md: a real install on empty
+# The restore, import and CLI drills of docs/deployment/local-install.md: a real install on empty
 # volumes, synthetic data only. Not a required check: it builds everything and is filtered by path.
 on:
   pull_request:
@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   drill:
-    name: Install, restore and import drills
+    name: Install, restore, import and CLI drills
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -30,6 +30,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+          cache-dependency-path: apps/api-go/go.sum
       - name: Script checks
         run: deploy/local/test/unit.sh
       - name: Build
@@ -38,3 +42,5 @@ jobs:
         run: deploy/local/test/drill.sh "$RUNNER_TEMP/drill"
       - name: Import drill
         run: deploy/local/test/import-drill.sh "$RUNNER_TEMP/import"
+      - name: CLI drill
+        run: deploy/local/test/cli-drill.sh "$RUNNER_TEMP/cli"
