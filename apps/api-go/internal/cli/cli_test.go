@@ -302,6 +302,131 @@ func TestEvidenceUploadNamesItsFields(t *testing.T) {
 	}
 }
 
+func TestOutputKeepsAJSONAnswerToo(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) { jsonAnswer(w, http.StatusOK, `{"tenant":"synthetic"}`) })
+	path := filepath.Join(t.TempDir(), "export.json")
+	got := h.run("", "reports", "export", "--output", path, "--json")
+	file, _ := decode(t, got.stdout)["file"].(map[string]any)
+	if got.code != ExitOK || file["path"] != path {
+		t.Fatalf("%+v", got)
+	}
+	if content, _ := os.ReadFile(path); string(content) != `{"tenant":"synthetic"}` {
+		t.Fatalf("file holds %q", content)
+	}
+}
+
+func TestOutputThatCannotBeWrittenIsAFailure(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusNoContent) })
+	got := h.run("", "reports", "export", "--output", filepath.Join(t.TempDir(), "x"), "--json")
+	if got.code == ExitOK {
+		t.Fatalf("--output was ignored with success: %+v", got)
+	}
+}
+
+func TestOptionsThatWouldBeIgnoredAreRefused(t *testing.T) {
+	asked := 0
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) {
+		asked++
+		jsonAnswer(w, http.StatusOK, `{}`)
+	})
+	for _, args := range [][]string{
+		{"call", "GET", "/health", "--param", "nope=1"},
+		{"call", "GET", "/health", "--form"},
+		{"records", "list", "--module", "compromisos", "--param", "nope=1"},
+		{"routes", "extra"},
+		{"routes", "--project", "ACME/P1"},
+		{"routes", "--url", "https://sipges.example.test"},
+	} {
+		if got := h.run("", append(args, "--json")...); got.code != ExitUsage {
+			t.Errorf("%v: %+v", args, got)
+		}
+	}
+	if asked != 0 {
+		t.Fatalf("%d refused commands reached the API", asked)
+	}
+}
+
+func TestEveryPathPrintsOneJSONObject(t *testing.T) {
+	h := newHarness(t, nil)
+	for _, args := range [][]string{
+		{"help", "--json"},
+		{"call", "--bogus", "--json=true"},
+		{"--json"},
+	} {
+		got := h.run("", args...)
+		if body := decode(t, got.stdout); body["schema"] != Schema {
+			t.Errorf("%v: %+v", args, got)
+		}
+	}
+}
+
+func TestHarmlessFieldsAreNotRedacted(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) {
+		jsonAnswer(w, http.StatusOK, `{"key":"cluster-1","uri":"/x","session":"s1","otpauth_uri":"otpauth://synthetic"}`)
+	})
+	got := h.run("", "call", "GET", "/health", "--json")
+	data, _ := decode(t, got.stdout)["data"].(map[string]any)
+	if data["key"] != "cluster-1" || data["uri"] != "/x" || data["session"] != "s1" {
+		t.Fatalf("%v", data)
+	}
+	if data["otpauth_uri"] != redacted {
+		t.Fatalf("otpauth_uri holds the TOTP secret: %v", data)
+	}
+}
+
+func TestMachineRoutesCarryTheirCredentialAndNoOtherDoes(t *testing.T) {
+	var auth, cookie string
+	h := newHarness(t, func(w http.ResponseWriter, r *http.Request) {
+		auth, cookie = r.Header.Get("Authorization"), r.Header.Get("Cookie")
+		jsonAnswer(w, http.StatusOK, `{"ok":true}`)
+	})
+	if err := saveSession(h.session, &session{URL: h.api.URL, Cookies: map[string]string{"sipges_session": "synthetic"}}); err != nil {
+		t.Fatal(err)
+	}
+	h.env["SIPGES_MACHINE_TOKEN"] = "mscli_synthetic"
+	got := h.run("", "call", "POST", "/mcp", "--json")
+	if got.code != ExitOK || auth != "Bearer mscli_synthetic" || cookie != "" {
+		t.Fatalf("%+v auth=%q cookie=%q", got, auth, cookie)
+	}
+	if strings.Contains(got.stdout+got.stderr, "mscli_synthetic") {
+		t.Fatal("the credential reached the output")
+	}
+	h.run("", "call", "GET", "/api/compromisos")
+	if auth != "" {
+		t.Fatalf("a session route carried the machine credential: %q", auth)
+	}
+	delete(h.env, "SIPGES_MACHINE_TOKEN")
+	if got := h.run("", "call", "POST", "/mcp"); got.code != ExitUsage {
+		t.Fatalf("a machine route without its credential: %+v", got)
+	}
+}
+
+func TestAddressesThatHideSomethingAreRefused(t *testing.T) {
+	h := newHarness(t, nil)
+	for _, address := range []string{
+		"http://127.0.0.1:18090?x=1", "http://127.0.0.1:18090#f", "http://user:synthetic@127.0.0.1:18090",
+	} {
+		got := h.run("", "call", "GET", "/health", "--url", address)
+		if got.code != ExitUsage || strings.Contains(got.stderr, "synthetic") {
+			t.Errorf("%s: %+v", address, got)
+		}
+	}
+}
+
+func TestASessionFileWithoutCookiesStillWorks(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) {
+		http.SetCookie(w, &http.Cookie{Name: "sipges_scope", Value: "ACME/P1", Path: "/"})
+		jsonAnswer(w, http.StatusOK, `{}`)
+	})
+	body := `{"schema":"` + sessionSchema + `","url":"` + h.api.URL + `"}`
+	if err := os.WriteFile(h.session, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.run("", "call", "GET", "/health"); got.code != ExitOK {
+		t.Fatalf("%+v", got)
+	}
+}
+
 func TestUsageErrorsAreJSONWhenAskedFor(t *testing.T) {
 	h := newHarness(t, nil)
 	got := h.run("", "no-such-command", "--json")

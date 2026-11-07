@@ -43,6 +43,8 @@ type request struct {
 	anonymous bool
 	// origin replaces the Origin header, to prove a foreign one is refused.
 	origin string
+	// bearer is the credential of a machine route.
+	bearer string
 }
 
 type response struct {
@@ -68,7 +70,8 @@ func newClient(address, caFile string, timeout time.Duration, s *session, projec
 		return nil, usageError("no API address: pass --url or set SIPGES_URL")
 	}
 	base, err := url.Parse(strings.TrimRight(address, "/"))
-	if err != nil || base.Host == "" || (base.Scheme != "https" && base.Scheme != "http") || base.Path != "" {
+	if err != nil || base.Host == "" || (base.Scheme != "https" && base.Scheme != "http") || base.Path != "" ||
+		base.RawQuery != "" || base.Fragment != "" || base.ForceQuery || base.User != nil {
 		return nil, usageError("--url must look like https://host[:port]")
 	}
 	if base.Scheme == "http" && !isLoopback(base.Hostname()) {
@@ -87,7 +90,10 @@ func newClient(address, caFile string, timeout time.Duration, s *session, projec
 		transport.TLSClientConfig = &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}
 	}
 	if s == nil {
-		s = &session{URL: base.String(), Cookies: map[string]string{}}
+		s = &session{URL: base.String()}
+	}
+	if s.Cookies == nil {
+		s.Cookies = map[string]string{}
 	}
 	if s.URL != base.String() {
 		return nil, usageError("the saved session belongs to %s, not %s: sign in to this one", s.URL, base.String())
@@ -127,6 +133,9 @@ func (c *client) do(ctx context.Context, r request) (*response, error) {
 	outgoing.Header.Set("Origin", c.base.Scheme+"://"+c.base.Host)
 	if r.origin != "" {
 		outgoing.Header.Set("Origin", r.origin)
+	}
+	if r.bearer != "" {
+		outgoing.Header.Set("Authorization", "Bearer "+r.bearer)
 	}
 	if r.contentType != "" {
 		outgoing.Header.Set("Content-Type", r.contentType)
@@ -187,7 +196,7 @@ func readAnswer(answer *http.Response, output string) (*response, error) {
 		// A stream never ends: its first headers are the whole proof it opened.
 		result.file = &fileInfo{ContentType: contentType, Stream: true}
 		return result, nil
-	case strings.HasPrefix(contentType, "application/json"):
+	case strings.HasPrefix(contentType, "application/json") && (output == "" || answer.StatusCode != http.StatusOK):
 		body, err := io.ReadAll(io.LimitReader(answer.Body, maxAnswer+1))
 		if err != nil {
 			return nil, networkError(err)
@@ -205,7 +214,7 @@ func readAnswer(answer *http.Response, output string) (*response, error) {
 	}
 	sink := io.Discard
 	var finish func(bool) error
-	if output != "" && answer.StatusCode < 300 {
+	if output != "" && answer.StatusCode == http.StatusOK {
 		file, done, err := openOutput(output)
 		if err != nil {
 			return nil, err
