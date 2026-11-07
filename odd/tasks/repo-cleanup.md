@@ -18,14 +18,14 @@ line of the task list; delivery `auto-chain`; runners `node --test scripts/tooli
 
 - T1 [x] — S4, S5: this plan. PR #342. Route: inline, three read-only explorers (mapping trigger).
 - T2 [x] — S1: remove the 64 worktrees of batch W1 (no PR). Route: inline. See L3.
-- T3 [ ] — S1, S3: correct the agent docs and skills that lie (A1). Route: inline. PR #343.
-- T4 [ ] — S1, S3: correct the product and operations docs that lie (A2). Route: inline. PR #344.
-- T5 [ ] — S1, S3: fix `design/system.md`, add `gomod` and `cargo` to Dependabot (A3). Route: inline. PR #349.
-- T6 [ ] — S2: `odd-close-task.mjs` log-only mode, tolerant ids, required `--file` (B1). Route: inline. PR #345.
-- T7 [ ] — S2: `land-pr.sh` (B2). Route: inline. PR #346.
-- T8 [ ] — S2: `test-pg.sh`, `new-worktree.sh` (B3). Route: inline. PR #347.
-- T9 [ ] — S2: `watch-tabs.sh` status and until modes, `review-next.sh` (B4). Route: inline. PR #348.
-- T10 [ ] — S2: `.engram/manifest.json` conflicts, `fmt:changed` (B5). Route: inline. PR #350.
+- T3 [x] — S1, S3: correct the agent docs and skills that lie (A1). Route: inline. PR #343.
+- T4 [x] — S1, S3: correct the product and operations docs that lie (A2). Route: inline. PR #344.
+- T5 [x] — S1, S3: fix `design/system.md`, add `gomod` and `cargo` to Dependabot (A3). Route: inline. PR #349.
+- T6 [x] — S2: `odd-close-task.mjs` log-only mode, tolerant ids, required `--file` (B1). Route: inline. PR #345.
+- T7 [x] — S2: `land-pr.sh` (B2). Route: inline. PR #346.
+- T8 [x] — S2: `test-pg.sh`, `new-worktree.sh` (B3). Route: inline. PR #347.
+- T9 [x] — S2: `watch-tabs.sh` status and until modes, `review-next.sh` (B4). Route: inline. PR #348.
+- T10 [x] — S2: `.engram/manifest.json` conflicts, `fmt:changed` (B5). Route: inline. PR #350.
 - T11 [ ] — S1, S7: after go-local, delete `spikes/go-container`, raise `engines/go` to Go 1.27, pin CI Go and Postgres, prune `pnpm-workspace.yaml` (C1). Route: inline.
 - T12 [ ] — S7: after go-local, worktree batch W2 the deferred README and `docs/deployment` corrections, and the archive of `docs/design/mobile-first`, which needs `docs/README.md`, with the orchestrator as their single writer (C2). Route: inline.
 
@@ -119,3 +119,12 @@ Session counts include worker tabs of one orchestration, so they are upper bound
 - L5 (Bugs found): running `land-pr.sh` filters against real `gh` showed a docs-only merge starts no Deploy Workers run (#340) and a skipped run would have read as deployed. Both fixed in #346.
 - L6 (Slips): one command wrote a PR body to `/tmp/.x` and removed it, against the scratchpad rule. The `spikes/go-container` proof was tightened: `docs/deployment/go-container.md` and `apps/hosting-cloudflare/src/go-container.ts` share the name but do not depend on the spike.
 - L7 (Reviews): the owner granted review of #344, #346, #347, #348 and #350; all five were approved and acknowledged. Two corrections came out of them: `land-pr.sh` silently dropped a second PR number and merged the last one, and `watch-tabs.sh --once --until` could exit 0 without the event. Both were fixed with RED and GREEN. Non-blocking advisories remain, mainly `land-pr.sh` handling of transient `gh` errors and unknown merge states, and `test-pg.sh` directories keyed by basename. A later lint fix to the #346 test changed one character, so #346 was reviewed a second time.
+- L8 (T3 landed): PR #343, merge c59412ae, CI green, head ancestor of origin/main.
+- L9 (T4 landed): PR #344, merge 28491f43, review reacquired and approved after integrating main.
+- L10 (T5 landed): PR #349, merge 6e3f76d3, first review approved.
+- L11 (T6 landed): PR #345, merge 4b1f33d7, first review approved.
+- L12 (T7 landed): PR #346, merge ea03961a. land-pr fixed for transient gh errors, unknown merge states and the false deploy failure; three review passes, two corrections.
+- L13 (T8 landed): PR #347, merge 4be4095f, review reacquired and approved.
+- L14 (T9 landed): PR #348, merge ab436d8c, one correction: rejected ignored flags and made review-next stop on any consent schema.
+- L15 (T10 landed): PR #350, merge fb03cdc8, one correction: fmt:changed fails when the base cannot be resolved.
+- L16 (Landing): Owner authorized landing #342 to #350, then #341 (merge 22ff99cb); #338 stays draft. The false deploy failure came from a workflow_run taking main's tip as its head, so the skipped run of a cancelled CI carries the next commit. Every deploy reaching migrations since 7141a3df failed on the Neon quota. T11 is draft #374 awaiting the owner's merge. T12 corrects README.md, docs/README.md and docs/benchmarks/README.md and archives docs/design/mobile-first to docs/history; docs/deployment corrections stay deferred while local-harden works there, and docs/diagrams was not regenerated.
