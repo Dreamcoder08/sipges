@@ -1,11 +1,11 @@
 # Agent guide
 
-SIPGES is a pnpm TypeScript monorepo (`apps/api` Hono + PostgreSQL, `apps/web` React/Vite,
-`packages/*`). The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
+SIPGES is a pnpm monorepo moving to a Go backend, Rust engines and a TypeScript frontend (ADR 0032): `apps/api` Hono +
+PostgreSQL, `apps/api-go`, `engines/`, `apps/web` React/Vite, `packages/*`. The Python `reference/python/app.py` is the legacy behavioural specification only. Work is planned
 in one feature document per feature under `odd/tasks/` (`pnpm odd:status` lists the open tasks; superseded plans
 move to `odd/archive/`); decisions live in `docs/adr/`.
 
-## Skills (`.agents/skills/`, linked for Claude Code from `.claude/skills/`)
+## Skills (`.agents/skills/`; the `sipges-*`, `neon` and `neon-postgres` ones are linked from `.claude/skills/`)
 
 | Skill | Use it to |
 | --- | --- |
@@ -54,13 +54,20 @@ it is installed locally; the repo does not require it.
 | `pnpm verify` | Lint, format, boundaries, typecheck, all tests; PostgreSQL integration only with an explicitly supplied synthetic connection. |
 | `pnpm verify:fast` | Local inner loop: lint, boundaries and typecheck in parallel, then tests of the packages changed since `origin/main` (and tooling tests when `scripts/` or skills change). CI still runs the full suite. |
 | `pnpm parity` | Go/TypeScript parity: same requests to both APIs on one synthetic database, diffs status and JSON ([apps/parity](apps/parity/README.md)). |
+| `scripts/agents/watch-tabs.sh` (`--status`, `--until <event>`) | Reports tab state and events; `--until` ends on the first match, for Monitor. |
+| `gentle-ai review … --json \| scripts/agents/review-next.sh` | Prints the next transition verbatim; exit 3 on a consent envelope. Never executes it. |
+| `scripts/agents/test-pg.sh up` / `url` / `down` | Throwaway loopback PostgreSQL per checkout, for tests and parity. |
+| `scripts/agents/new-worktree.sh <name> <branch>` (`--install`) | Creates `.worktrees/<name>` from a fresh `origin/main`. |
+| `scripts/agents/land-pr.sh <n>` (`--merge`, `--no-deploy-wait`) | Waits for checks and reports; with `--merge`, which needs authorization, merges, confirms the head is on `origin/main` and waits for Deploy Workers. Exit 7 means unknown, not failed. |
 | `pnpm odd:status` (`--all`, `--json`) | Lists every ODD feature with its open tasks; start here to resume work. |
-| `pnpm odd:close -- --task T<n> --label … --text …` | Marks the task done and appends the next `L<n>` entry. |
+| `pnpm odd:close -- --task T<n> --label … --text … --file odd/tasks/<feature>.md` | Marks the task done and appends the next `L<n>` entry in the document's style; `--log-only` replaces `--task` to append the entry alone. |
 | `pnpm odd:check` | Fails when a feature document repeats a task or log id (CI runs it). |
 | `pnpm --filter @sipges/api bench` / `bench:compare` | Runs benchmarks / compares two result files. |
 | `pnpm --filter @sipges/api migrate:legacy` | Legacy SQLite → PostgreSQL migration (dry-run by default). |
 | `pnpm --filter @sipges/api import:base-maestra -- --seed <file>` | Insert-only load of the prototype's Base Maestra (dry-run by default). |
 | `pnpm engram sync` / `import` / `status` | Export, import or compare Engram memory chunks in `.engram/`. |
+| `node scripts/agents/engram-manifest-merge.mjs` | During a merge, resolves `.engram/manifest.json` to both sides. |
+| `pnpm fmt:changed` | Runs Prettier on the files this branch changed. |
 
 ## Gentle AI and Engram memory
 

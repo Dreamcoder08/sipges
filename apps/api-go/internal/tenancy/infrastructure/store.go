@@ -61,6 +61,24 @@ func (s Store) CreateTenantWithGrant(ctx context.Context, t domain.NewTenant, at
 	return created, nil
 }
 
+// EnsureTenant is ensureTenant: an existing project keeps its label.
+func (s Store) EnsureTenant(ctx context.Context, sc domain.Scope, label string, at time.Time) error {
+	_, err := s.DB.Exec(ctx,
+		`INSERT INTO tenants (company_id, project_id, label, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+		sc.CompanyID, sc.ProjectID, label, at)
+	return err
+}
+
+// GrantDefaultToAdmins is the loop of tenancy.bootstrap in one statement: every administrator
+// reaches the default project.
+func (s Store) GrantDefaultToAdmins(ctx context.Context, at time.Time) error {
+	_, err := s.DB.Exec(ctx,
+		`INSERT INTO grants (username, tenant_id, created_at)
+		 SELECT username, $1, $2 FROM users WHERE role = 'admin' ON CONFLICT DO NOTHING`,
+		domain.DefaultScope.TenantID(), at)
+	return err
+}
+
 // TenantExists is tenantExists.
 func (s Store) TenantExists(ctx context.Context, sc domain.Scope) (bool, error) {
 	return exists(ctx, s.DB, `SELECT 1 FROM tenants WHERE company_id = $1 AND project_id = $2`, sc.CompanyID, sc.ProjectID)

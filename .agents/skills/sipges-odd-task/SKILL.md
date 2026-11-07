@@ -12,10 +12,10 @@ Redacta evidencia breve en un archivo: cambio, comandos/resultados, revisión, l
 Desde la raíz:
 
 ```bash
-corepack pnpm odd:close -- --task T14 --label "T14 E2E" --text @/tmp/evidence.txt --dry-run
+corepack pnpm odd:close -- --task T14 --label "T14 E2E" --text @evidencia.txt --file odd/tasks/<feature>.md --dry-run
 ```
 
-Revisa que solo cambien la casilla de la tarea, `commit: see L<n>` y una entrada `L<max+1>`. Sustituye T14 por la tarea efectivamente completada. Ejecuta el mismo comando sin `--dry-run` y compromete el cambio con su verificación. Usa `--file` para otro ODD.
+Revisa que solo cambien la casilla de la tarea, `commit: see L<n>` y una entrada `L<max+1>`. Sustituye T14 por la tarea efectivamente completada. Ejecuta el mismo comando sin `--dry-run` y compromete el cambio con su verificación. `--file` es obligatorio. Para una entrada sin cierre de tarea, cambia `--task T14` por `--log-only`; acepta los formatos `- L<n> (`, `- L<n> — ` y `- L<n>:`.
 
 Trabajo pequeño y entendido no necesita ODD (ver *Proportional work* en `AGENTS.md`); no crees un documento solo para registrarlo.
 
