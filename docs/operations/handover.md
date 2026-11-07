@@ -49,7 +49,7 @@ sessions, verified in `sql-identity-store.ts`).
 | `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Worker secret, only if push is used | Browser push (ADR 0014) |
 | `ANTHROPIC_API_KEY` | Worker secret, **not set** (ai-egress-privacy L2) | Optional analyst narrator |
 | `SIPGES_ALLOWED_HOSTS` | `vars` in `wrangler.jsonc` (not secret) | Public host |
-| `SIPGES_MIGRATION_DATABASE_URL` | GitHub environment `production` | Direct Neon URL for `migrate.mjs` |
+| `SIPGES_MIGRATION_DATABASE_URL` | GitHub environment `production` | Direct Neon URL for `migrate.mjs` and `ops-review-materialize.yml` |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | GitHub environment `production` | `wrangler` in the deploy workflow |
 | Neon role password | Neon console (through Vercel), and inside the Hyperdrive config | Database login for the Worker |
 | MCP / ingest API keys | `api_keys` table, SHA-256 of the secret part only | External clients; shown once at creation |
