@@ -152,11 +152,7 @@ fn select_all(db: &Connection, table: &str, order_by: &str) -> Result<Vec<Row>, 
     let mut statement = db
         .prepare(&format!("SELECT * FROM {table} ORDER BY {order_by}"))
         .map_err(error)?;
-    let names: Rc<[String]> = statement
-        .column_names()
-        .iter()
-        .map(|name| (*name).to_owned())
-        .collect();
+    let names: Rc<[String]> = statement.column_names().map(str::to_owned).collect();
     let columns = names.len();
     let mut rows = statement.query([]).map_err(error)?;
     let mut out = Vec::new();
@@ -611,6 +607,32 @@ mod tests {
         let reader = install.tenant(&scope("A", "B")).ok_or("tenant")?;
         assert_eq!(reader.read_object("propio.txt"), Some(b"propio".to_vec()));
         assert_eq!(reader.read_object("del-defecto.txt"), None);
+        Ok(())
+    }
+
+    #[test]
+    fn legacy_databases_stay_read_only() -> Result<(), &'static str> {
+        let install = Install::new("read-only").ok_or("install")?;
+        let path = install.path("data/sipges.db");
+        let db = Connection::open(&path).map_err(|_| "open")?;
+        db.execute_batch("CREATE TABLE t (id INTEGER, name TEXT); INSERT INTO t VALUES (1, 'a');")
+            .map_err(|_| "seed")?;
+        drop(db);
+        let before = fs::read(&path).map_err(|_| "before")?;
+
+        let reader = open_read_only(path.to_str().ok_or("path")?).map_err(|_| "read only")?;
+        assert_eq!(select_all(&reader, "t", "id").map(|rows| rows.len()), Ok(1));
+        assert!(reader.execute("INSERT INTO t VALUES (2, 'b')", []).is_err());
+        assert!(reader.execute_batch("DELETE FROM t").is_err());
+        drop(reader);
+
+        assert_eq!(fs::read(&path).map_err(|_| "after")?, before);
+        let names = fs::read_dir(install.path("data")).map_err(|_| "list")?;
+        assert!(
+            !names
+                .flatten()
+                .any(|entry| entry.file_name().to_string_lossy().ends_with("-journal"))
+        );
         Ok(())
     }
 
