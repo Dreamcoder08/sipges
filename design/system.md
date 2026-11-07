@@ -12,7 +12,7 @@ Read-only sync of the web app's design tokens and components. Every value below 
 | `apps/web/src/app/layout/AppShell.tsx`, `Sidebar.tsx` | Shell layout; the sidebar (`aside > nav[aria-label=Secciones]`) on wide screens and inside the phone menu drawer |
 | `apps/web/src/app/navigation.ts` | `SCREENS`, `DESTINATIONS`, `SYSTEM_PATHS`, `SCREEN_ICONS` |
 | `apps/web/src/shared/ui/` | Button, Badges, Card, ChipRow, SegmentedControl, Sheet, Icon, icons.ts, Field, Alert, EmptyState, Skeleton… |
-| `apps/web/src/features/search/SearchPalette.module.css`, `apps/web/src/features/notifications/NotificationBell.module.css`, `apps/web/src/features/tenancy/ProjectSwitcher.module.css`, `apps/web/src/features/records/Records.module.css` | Sidebar pieces (search composer, bell, project picker) and the Eventos table / status pill |
+| `apps/web/src/features/search/SearchPalette.module.css`, `apps/web/src/features/notifications/Avisos.module.css`, `apps/web/src/features/tenancy/ProjectSwitcher.module.css`, `apps/web/src/features/records/Records.module.css` | Sidebar pieces (search composer, bell, project picker) and the Eventos table / status pill |
 
 ## Token counts (from the sync)
 
@@ -356,7 +356,7 @@ Source: `apps/web/src/app/layout/AppShell.module.css`, `apps/web/src/app/layout/
 - Sticky, z `--z-sticky`, padding `--space-3 --space-6`, gap `--space-4`, background `--color-chrome` with `backdrop-filter: saturate(1.6) blur(14px)`, bottom border `--color-hairline`.
 - Left: eyebrow (project label) over `h1`. Right (`.tools`, gap `--space-3`): search composer, bell, project switcher, account.
 - Search composer (`apps/web/src/features/search/SearchPalette.module.css`): pill, min-width 13rem, height 2.5rem, background `--color-surface-raised`, shadow `--shadow-composer`, text `--color-muted` `--text-sm`, label "Buscar", `<kbd>Ctrl K</kbd>` (`--text-xs`, `--color-hairline-strong` border, `--radius-sm`). `aria-haspopup="dialog"`, `aria-keyshortcuts="Control+K Meta+K"`.
-- Bell (`apps/web/src/features/notifications/NotificationBell.module.css`): 2.5rem round ghost button, icon `--text-xl`, unread badge `--level-red` / `--color-on-strong`.
+- Notifications (`apps/web/src/features/notifications/Avisos.module.css`; the original bell was removed in `e4eb765a`): 2.5rem round ghost button, icon `--text-xl`, unread badge `--level-red` / `--color-on-strong`.
 - Project switcher (`apps/web/src/features/tenancy/ProjectSwitcher.module.css`): label "Proyecto activo" (`--text-xs`, 600, muted) above a native `select` (min-width 12rem, border `--color-hairline`). Label in the app: "Proyecto Sechura (Migración)".
 - Account (`apps/web/src/app/layout/SidebarAccount.module.css`): row at the foot of the sidebar (also inside the phone menu drawer) with avatar, name and «Configuración y sesión»; it opens the account menu (Configuración, Administración, Auditoría, Ayuda y metodología, Cerrar sesión).
 

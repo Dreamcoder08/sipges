@@ -1,0 +1,23 @@
+# HTTPS for a local network. Caddy is its own small certificate authority: `./sipges ca` exports
+# its root certificate, which each computer installs once (docs/deployment/local-install.md).
+{
+	local_certs
+	skip_install_trust
+	default_sni {$SIPGES_SITE_HOST}
+	admin off
+}
+
+{$SIPGES_SITE_HOST} {
+	encode {
+		zstd
+		gzip
+		match {
+			header Content-Type text/javascript*
+			header Content-Type text/css*
+			header Content-Type text/html*
+			header Content-Type application/json*
+			header Content-Type image/svg+xml*
+		}
+	}
+	reverse_proxy api:8080
+}

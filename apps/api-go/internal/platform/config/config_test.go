@@ -154,3 +154,37 @@ func TestTheFlagRefusesAnIntervalThatWouldRunNothing(t *testing.T) {
 		t.Errorf("flag: %v", err)
 	}
 }
+
+func TestWebDirRequiresAllowedHosts(t *testing.T) {
+	_, err := Load(env(map[string]string{
+		"SIPGES_DATABASE_URL": "postgres://u@h/d",
+		"SIPGES_WEB_DIR":      "/web",
+	}))
+	if err == nil || !strings.Contains(err.Error(), "SIPGES_WEB_DIR requires SIPGES_ALLOWED_HOSTS") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestWebDirAndSecureCookies(t *testing.T) {
+	cfg, err := Load(env(map[string]string{
+		"SIPGES_DATABASE_URL":  "postgres://u@h/d",
+		"SIPGES_WEB_DIR":       "/web",
+		"SIPGES_ALLOWED_HOSTS": "sipges.local",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.WebDir != "/web" || !cfg.CookieSecure {
+		t.Fatalf("WebDir %q, CookieSecure %v", cfg.WebDir, cfg.CookieSecure)
+	}
+	cfg, err = Load(env(map[string]string{
+		"SIPGES_DATABASE_URL":  "postgres://u@h/d",
+		"SIPGES_COOKIE_SECURE": "0",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.WebDir != "" || cfg.CookieSecure {
+		t.Fatalf("WebDir %q, CookieSecure %v", cfg.WebDir, cfg.CookieSecure)
+	}
+}
