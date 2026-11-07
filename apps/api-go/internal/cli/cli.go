@@ -46,7 +46,7 @@ Common options, on every command
   --url URL               API address (SIPGES_URL)
   --ca-file FILE          certificate to trust (SIPGES_CA_FILE)
   --session-file FILE     saved session (SIPGES_SESSION_FILE)
-  --project ID            project of this one command (SIPGES_PROJECT)
+  --project ID            project of this one command (SIPGES_SCOPE)
   --timeout DURATION      limit of each request (default 30s)
   --json                  one stable object on stdout
 
@@ -188,7 +188,7 @@ func (a *app) newOptions(name string) *options {
 	opts.flags.StringVar(&opts.url, "url", a.env("SIPGES_URL"), "API address")
 	opts.flags.StringVar(&opts.caFile, "ca-file", a.env("SIPGES_CA_FILE"), "certificate to trust")
 	opts.flags.StringVar(&opts.sessionFile, "session-file", a.env("SIPGES_SESSION_FILE"), "saved session")
-	opts.flags.StringVar(&opts.project, "project", a.env("SIPGES_PROJECT"), "project of this command")
+	opts.flags.StringVar(&opts.project, "project", a.env("SIPGES_SCOPE"), "project of this command")
 	opts.flags.DurationVar(&opts.timeout, "timeout", 30*time.Second, "limit of each request")
 	opts.flags.BoolVar(&opts.json, "json", false, "one stable object on stdout")
 	return opts
