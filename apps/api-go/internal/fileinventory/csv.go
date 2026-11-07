@@ -28,13 +28,14 @@ var errNotText = errors.New("not text")
 // inch mark in a description is just a character, and a quoted field ends only at a quote right
 // before a delimiter or a line end.
 type recordLimiter struct {
-	in      io.Reader
-	comma   byte
-	started bool // inside a field, past its first byte
-	quoted  bool
-	closing bool // inside a quoted field, just past a quote
-	run     int
-	fields  int
+	in        io.Reader
+	comma     byte
+	started   bool // inside a field, past its first byte
+	quoted    bool
+	closing   bool // inside a quoted field, just past a quote
+	closingCR bool // and past one return after it
+	run       int
+	fields    int
 }
 
 func (l *recordLimiter) Read(p []byte) (int, error) {
@@ -51,16 +52,20 @@ func (l *recordLimiter) Read(p []byte) (int, error) {
 func (l *recordLimiter) step(c byte) {
 	l.run++
 	if l.closing {
-		switch c {
-		case '\r':
+		// Only one return, directly before the line feed, belongs to the line end.
+		if c == '\r' && !l.closingCR {
+			l.closingCR = true
 			return
-		case '"':
-			l.closing = false
+		}
+		afterCR := l.closingCR
+		l.closing, l.closingCR = false, false
+		switch {
+		case c == '\n', c == l.comma && !afterCR:
+			l.quoted = false
+		case c == '"' && !afterCR: // a doubled quote is a literal one
 			return
-		case l.comma, '\n':
-			l.closing, l.quoted = false, false
 		default:
-			l.closing = false
+			l.closing = c == '"'
 			return
 		}
 	}

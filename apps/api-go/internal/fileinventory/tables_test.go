@@ -509,13 +509,17 @@ func TestAQuoteFollowedByTextStaysQuoted(t *testing.T) {
 	t.Cleanup(func() { runLimit = oldRun })
 	root := t.TempDir()
 	put(t, root, "text-after-quote.csv", []byte("\"5\" pipe,b\n"+strings.Repeat("next line,2\n", 1<<14)))
+	put(t, root, "return-before-comma.csv", []byte("\"a\"\r,b\n"+strings.Repeat("next line,2\n", 1<<14)))
+	put(t, root, "two-returns.csv", []byte("\"a\"\r\r\n"+strings.Repeat("next line,2\n", 1<<14)))
 	put(t, root, "closed-before-comma.csv", []byte("\"Código\",Monto\n"+strings.Repeat("\"x\",2\n", 1<<14)))
 	put(t, root, "closed-crlf.csv", []byte("\"Código\",\"Monto\"\r\n"+strings.Repeat("\"x\",\"2\"\r\n", 1<<14)))
 
 	r := scan(t, root)
 
-	if got := file(t, r, "text-after-quote.csv"); got.Reason != ReasonTooLarge {
-		t.Errorf("%+v", got)
+	for _, path := range []string{"text-after-quote.csv", "return-before-comma.csv", "two-returns.csv"} {
+		if got := file(t, r, path); got.Reason != ReasonTooLarge {
+			t.Errorf("%s: %+v", path, got)
+		}
 	}
 	for _, path := range []string{"closed-before-comma.csv", "closed-crlf.csv"} {
 		if got := file(t, r, path); got.Status != StatusReadable {
