@@ -224,6 +224,23 @@ run install
 check 'once one starts, previous follows again' test "$(image_id previous)" != "$started"
 
 fresh
+echo sha256:old >"$FAKE/images/sipges-local_current"
+run install
+check 'an install from before ready keeps the version that was answering' test "$(cat "$FAKE/images/sipges-local_previous")" = sha256:old
+
+fresh
+echo sha256:old >"$FAKE/images/sipges-local_current"
+touch "$FAKE/not-ready"
+run install || true
+check 'but not a version that never answered' test ! -f "$FAKE/images/sipges-local_previous"
+
+fresh
+echo sha256:old >"$FAKE/images/sipges-local_current"
+echo 'SIPGES_IMAGE_TAG=previous' >>"$SIPGES_ENV_FILE"
+run build
+check 'nor current while the old version is the one answering' test ! -f "$FAKE/images/sipges-local_previous"
+
+fresh
 touch "$FAKE/same-build"
 run install
 run install
