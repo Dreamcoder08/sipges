@@ -18,6 +18,14 @@ import (
 const usage = `sipgesctl speaks to a running SIPGES API over HTTP. Run it as a person would use the app.
 ./sipges (deploy/local) runs the installation; sipgesctl signs in to it.
 
+Session
+  login                   sign in; password from SIPGES_PASSWORD or the first line of stdin
+  logout                  end the session and remove the saved one
+  session                 who is signed in, with which role and project
+  mfa enroll              enrol TOTP; the secret goes to --secret-file only
+  project list            the projects this account may use
+  project switch ID       choose the project of this session
+
 Any route
   routes                  the route inventory, with the command that reaches each route
   call METHOD PATH        any route of the inventory
@@ -112,6 +120,12 @@ func wantsJSON(args []string) bool {
 
 func (a *app) builtins() map[string]command {
 	return map[string]command{
+		"login":           a.login,
+		"logout":          a.logout,
+		"session":         a.sessionState,
+		"mfa enroll":      a.mfaEnroll,
+		"project list":    a.projectList,
+		"project switch":  a.projectSwitch,
 		"routes":          a.listRoutes,
 		"call":            a.call,
 		"evidence upload": a.evidenceUpload,
