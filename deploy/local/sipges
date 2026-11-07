@@ -70,11 +70,17 @@ build() {
   [[ -z ${SIPGES_SKIP_BUILD:-} ]] || return 0
   docker build -f "$REPO_ROOT/apps/api-go/Dockerfile" -t sipges-api-go:local "$REPO_ROOT"
   docker build -f Dockerfile -t sipges-local:new "$REPO_ROOT"
-  # Only a real change moves `previous`, so a rebuild of the same code keeps the way back.
-  local running new
+  # `previous` is the way back, so only a build that really started may become it: a real change
+  # moves it only off the image `ready` vouches for, and a failed update can be retried freely.
+  local running new started
   running=$(docker image inspect -f '{{.Id}}' sipges-local:current 2>/dev/null || true)
+  started=$(docker image inspect -f '{{.Id}}' sipges-local:ready 2>/dev/null || true)
   new=$(docker image inspect -f '{{.Id}}' sipges-local:new)
-  if [[ -n $running && $running != "$new" ]]; then
+  # An install from before `ready` existed has no mark: the version answering now earns it.
+  if [[ -z $started && -n $running && -z $(env_value SIPGES_IMAGE_TAG) ]] && answers; then
+    started=$running
+  fi
+  if [[ -n $running && $running != "$new" && $running == "$started" ]]; then
     docker tag sipges-local:current sipges-local:previous
   fi
   docker tag sipges-local:new sipges-local:current
@@ -84,13 +90,15 @@ build() {
   fi
 }
 
+answers() {
+  compose exec -T caddy wget -qO- --header "Host: $(env_value SIPGES_SITE_HOST)" \
+    http://api:8080/health/ready 2>/dev/null | grep -q '"ready"'
+}
+
 wait_ready() {
-  local host
-  host=$(env_value SIPGES_SITE_HOST)
   say 'Waiting for SIPGES to answer...'
   for _ in $(seq 1 90); do
-    if compose exec -T caddy wget -qO- --header "Host: $host" http://api:8080/health/ready 2>/dev/null |
-      grep -q '"ready"'; then
+    if answers; then
       say 'SIPGES is ready.'
       return 0
     fi
@@ -100,22 +108,51 @@ wait_ready() {
   die 'SIPGES did not become ready. See ./sipges logs'
 }
 
+# Marks the image that just answered as one worth going back to. A drill, or an install running
+# an older tag, says nothing about `current`.
+mark_ready() {
+  [[ $PROJECT == sipges && -z ${SIPGES_SKIP_BUILD:-} ]] || return 0
+  [[ -z $(env_value SIPGES_IMAGE_TAG) ]] || return 0
+  docker tag sipges-local:current sipges-local:ready
+}
+
+wait_db() {
+  compose up -d db
+  local id
+  for _ in $(seq 1 150); do
+    id=$(compose ps -q db)
+    if [[ -n $id && $(docker inspect -f '{{.State.Health.Status}}' "$id" 2>/dev/null) == healthy ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+  die 'the database did not become ready in 5 minutes. See ./sipges logs db'
+}
+
 unfinished_restore() { printf '%s/.restore-unfinished' "$(env_value SIPGES_BACKUP_DIR)"; }
 
-start() {
-  mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
+# Everything that would stop a start, checked before anything slow or anything that changes state.
+preflight() {
   [[ $(env_value SIPGES_BACKUP_HOUR) =~ ^([01]?[0-9]|2[0-3])?$ ]] ||
     die 'SIPGES_BACKUP_HOUR must be a whole hour from 0 to 23'
   if [[ -f $(unfinished_restore) ]]; then
     die "the restore of $(cat "$(unfinished_restore)") did not finish, so SIPGES stays off. Run ./sipges restore $(cat "$(unfinished_restore)") again"
   fi
+  compose config -q
+}
+
+start() {
+  mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
+  preflight
   compose up -d db api caddy backup
   wait_ready
+  mark_ready
 }
 
 cmd_install() {
   need_docker
   use_host "${1:-}"
+  preflight
   build
   start
   say "Open https://$(env_value SIPGES_SITE_HOST)/"
@@ -132,6 +169,9 @@ cmd_install() {
 cmd_prepare() {
   need_docker
   use_host "${1:-}"
+  preflight
+  [[ -z $(compose ps -aq api) ]] ||
+    die 'the app has already run here, so a legacy import would refuse. To start over: ./sipges wipe, then ./sipges prepare'
   build
   mkdir -p "$(env_value SIPGES_BACKUP_DIR)"
   compose up -d db backup
@@ -143,23 +183,44 @@ import_image() {
     docker build -f Dockerfile.import -t sipges-import:current "$REPO_ROOT"
 }
 
+# The import tools run as the API's user, with this user's group added. That reaches the client's
+# copy and the reports without opening either to other accounts, as long as the group is this
+# user's alone, which is the default on Debian, Ubuntu and Fedora.
+check_private_group() {
+  local gid uid sharing
+  gid=$(id -g)
+  uid=$(id -u)
+  ((uid != 0)) || die 'run this as the user who installed SIPGES, not as root'
+  sharing=$(getent group "$gid" | cut -d: -f4 | tr ',' '\n' | grep -vx "$(id -un)" || true)
+  sharing+=$(getent passwd | awk -F: -v gid="$gid" -v uid="$uid" '$4 == gid && $3 != uid' || true)
+  [[ -z $sharing ]] ||
+    die "the group $(id -gn) is shared with other accounts, so they could read the client's files. Use an account of its own for SIPGES: see \"Bringing in the client's data\" in the guide"
+}
+
 # Everything that can be refused before a backup or a container. A path inside the repository is
 # refused: the repository's data/ folder is not client input, and client files must never land
-# here. The tools run as the API's user, so a file only its owner may read would look missing.
+# here. A file neither this group nor everyone may read would look missing to the tools.
 check_source() {
-  local folder=$1 file=${2:-} real repo blocked
+  local folder=$1 file=${2:-} real repo blocked open gid
   real=$(readlink -f "$folder" || true)
   repo=$(readlink -f "$REPO_ROOT")
   [[ -n $real && -d $real ]] || die "no folder $folder"
   [[ $real != "$repo" && $real != "$repo"/* ]] || die 'use a folder outside the SIPGES folder'
   [[ $real != *:* ]] || die 'the folder path may not contain a colon'
+  gid=$(id -g)
+  local -a no_dir=(! '(' -group "$gid" -perm -g=rx ')' ! -perm -o=rx)
+  local -a no_file=(! '(' -group "$gid" -perm -g=r ')' ! -perm -o=r)
   if [[ -n $file ]]; then
-    blocked=$(find "$real" -maxdepth 0 ! -perm -o=rx; find "$real/$file" ! -perm -o=r)
+    blocked=$(find "$real" -maxdepth 0 "${no_dir[@]}"; find "$real/$file" "${no_file[@]}")
+    open=$(find "$real/$file" -perm -o=r)
   else
-    blocked=$(find "$real" \( -type d ! -perm -o=rx -o -type f ! -perm -o=r \) -print -quit)
+    blocked=$(find "$real" \( -type d "${no_dir[@]}" -o -type f "${no_file[@]}" \) -print -quit)
+    open=$(find "$real" ! -type l -perm -o=r -print -quit)
   fi
   [[ -z $blocked ]] ||
-    die "SIPGES cannot read $blocked. Copy the folder to this computer and run chmod -R a+rX on the copy, then import the copy."
+    die "SIPGES cannot read $blocked. Copy the folder to this computer, run chgrp -R $(id -gn) on the copy and then chmod -R u+rwX,g+rX,o-rwx on the copy, and import the copy."
+  [[ -z $open ]] ||
+    say "WARNING: other users of this computer can read $open. On a copy, close it with chmod -R o-rwx."
 }
 
 # Runs one import tool with the folder mounted read-only.
@@ -168,21 +229,27 @@ run_import() {
   real=$(readlink -f "$1")
   shift 2
   reports=$(import_reports)
-  mkdir -p "$reports"
-  # The tool runs as the API's user, which owns the evidence files, not as this user; it needs to
-  # write here only while it runs, and the reports hold counts, codes and ids.
-  chmod 777 "$reports"
-  compose up -d db
-  local status=0
-  SIPGES_IMPORT_FOLDER=$real SIPGES_IMPORT_REPORTS=$reports \
-    compose run --rm --entrypoint "$tool" import "$@" || status=$?
-  chmod 700 "$reports"
-  return "$status"
+  open_reports "$reports"
+  wait_db
+  SIPGES_IMPORT_FOLDER=$real SIPGES_IMPORT_REPORTS=$reports SIPGES_HOST_GID=$(id -g) \
+    compose run --rm --entrypoint "$tool" import "$@"
 }
 
 import_reports() { readlink -m "${SIPGES_IMPORT_REPORTS:-imports}"; }
 
-backup_before_import() {
+# The tool runs as the API's user, so its reports keep this folder's group, and this user reads
+# them through it. Only this user's group may write here, and only until the command ends. The
+# reports hold counts, codes and ids.
+open_reports() {
+  mkdir -p "$1"
+  chgrp "$(id -g)" "$1"
+  chmod 2770 "$1"
+  # shellcheck disable=SC2064 # the path is fixed now, on purpose
+  trap "chmod u=rwx,g=,o=,g-s $(printf '%q' "$1")" EXIT
+}
+
+backup_now() {
+  wait_db
   compose up -d backup
   compose exec -T backup bash /ops/backup.sh
 }
@@ -198,13 +265,14 @@ cmd_import() {
   for arg in "$@"; do
     [[ $arg == --apply ]] && apply=1
   done
-  import_image
   case $kind in
   legacy)
     local report failed=0
     report="report-$(date -u +%Y%m%dT%H%M%SZ).json"
+    check_private_group
     check_source "$target"
-    ((apply == 0)) || backup_before_import
+    import_image
+    ((apply == 0)) || backup_now
     run_import "$target" migrate-legacy --legacy-root /import --report "/reports/$report" "$@" || failed=1
     # A tool that stops before it starts, on a refused option for one, writes no report.
     [[ -f "$(import_reports)/$report" ]] || die 'the import did not run; the line above says why'
@@ -215,8 +283,10 @@ cmd_import() {
     ;;
   base-maestra)
     [[ -f $target ]] || die "no file $target"
+    check_private_group
     check_source "$(dirname "$target")" "$(basename "$target")"
-    ((apply == 0)) || backup_before_import
+    import_image
+    ((apply == 0)) || backup_now
     run_import "$(dirname "$target")" import-base-maestra --seed "/import/$(basename "$target")" "$@"
     ;;
   *) die 'import what? legacy or base-maestra' ;;
@@ -226,10 +296,9 @@ cmd_import() {
 cmd_status() {
   need_env
   compose ps
-  local host dir latest
-  host=$(env_value SIPGES_SITE_HOST)
+  local dir latest
   dir=$(env_value SIPGES_BACKUP_DIR)
-  if compose exec -T caddy wget -qO- --header "Host: $host" http://api:8080/health/ready 2>/dev/null | grep -q '"ready"'; then
+  if answers; then
     say 'Application: ready'
   else
     say 'Application: NOT READY'
@@ -258,11 +327,7 @@ cmd_restore() {
     [[ $answer == RESTORE ]] || die 'nothing was changed'
   fi
   compose stop api caddy backup
-  compose up -d db
-  for _ in $(seq 1 60); do
-    [[ $(docker inspect -f '{{.State.Health.Status}}' "$(compose ps -q db)") == healthy ]] && break
-    sleep 2
-  done
+  wait_db
   # Written first and removed only on a known outcome: a power cut leaves it, and SIPGES stays off.
   # A run that fails while an earlier one is unfinished clears nothing, whatever it reports.
   local status=0 earlier=0
@@ -285,6 +350,7 @@ cmd_restore() {
 cmd_update() {
   need_env
   need_docker
+  preflight
   compose exec -T backup bash /ops/backup.sh
   if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     git -C "$REPO_ROOT" pull --ff-only

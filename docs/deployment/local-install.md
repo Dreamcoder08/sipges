@@ -112,13 +112,13 @@ It takes a backup, gets the new version, rebuilds and restarts. Database changes
 
 ### Going back
 
-If an update goes wrong:
+`previous` is the last version that really started, so a failed update, even retried, never replaces it. If an update goes wrong:
 
 1. Run `./sipges backups` and note the backup taken just before the update.
 2. Add `SIPGES_IMAGE_TAG=previous` to `.env`.
 3. Run `./sipges restore <that backup>`.
 
-The restore matters: database changes only go forward, so the old version needs the old database. Remove the line from `.env` when the fixed version is out. `previous` is only the version before the latest update.
+The restore matters: database changes only go forward, so the old version needs the old database. Remove the line from `.env` when the fixed version is out.
 
 ## Bringing in the client's data
 
@@ -133,7 +133,16 @@ The client's files stay in a folder **outside** the SIPGES folder, for example a
 
 **Excel, CSV, Word and PDF files are not imported in bulk.** Convert a spreadsheet to the Base Maestra JSON first, or ask for a converter. Single PDF, Word, Excel, CSV, image and text files can still be attached as evidence inside the app.
 
-The folder must be readable by everyone on this computer. If the import says `SIPGES cannot read`, copy the folder to this computer, run `chmod -R a+rX` on the copy, and import the copy. A USB disk may need this. Never change the permissions on the client's original.
+SIPGES reads the folder through your own user's group, so nobody else on this computer needs access. If the import says `SIPGES cannot read`, copy the folder to this computer, then run on the copy:
+
+```bash
+chgrp -R "$(id -gn)" /path/to/copy
+chmod -R u+rwX,g+rX,o-rwx /path/to/copy
+```
+
+A USB disk may need this. Never change the permissions on the client's original. If the import warns that other users can read the folder, the second command closes it on a copy.
+
+If the import says the group is shared with other accounts, your computer gives several users one group, and they could read the client's files. Create an account for SIPGES with `sudo adduser sipges`, add it to the `docker` group, and run everything from that account.
 
 ### An old SIPGES installation
 
@@ -212,6 +221,7 @@ Push, Google sign-in, Ollama and the analyst provider stay off until their varia
 ### Tests
 
 ```bash
+deploy/local/test/unit.sh                         # the script against a stand-in for Docker, under a minute
 deploy/local/test/drill.sh [work folder]          # install, MFA, record, evidence, backup, wipe, restore
 deploy/local/test/import-drill.sh [work folder]   # both import paths on synthetic files
 ```

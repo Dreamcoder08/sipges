@@ -153,7 +153,9 @@ services:
       - ${SIPGES_BACKUP_DIR:-./backups}:/backups:ro
     networks: [backend]
 
-  # Only ever started by `./sipges import`: the client's folder is mounted read-only.
+  # Only ever started by `./sipges import`: the client's folder is mounted read-only. It runs as
+  # the API's user plus the host user's own group, so neither the folder nor the reports need
+  # opening to other accounts of the machine.
   import:
     profiles: [ops]
     image: sipges-import:current
@@ -168,7 +170,9 @@ services:
       - ${SIPGES_IMPORT_FOLDER:-./no-import-folder}:/import:ro
       - ${SIPGES_IMPORT_REPORTS:-./imports}:/reports
     network_mode: service:db
-    depends_on: [db]
+    group_add: ['${SIPGES_HOST_GID:-65532}']
+    depends_on:
+      db: { condition: service_healthy }
     cap_drop: [ALL]
     security_opt: ['no-new-privileges:true']
     read_only: true
