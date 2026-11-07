@@ -268,6 +268,7 @@ export const validateCases = (cases: readonly ParityCase[]): string[] => {
     if (seen.has(c.name)) errors.push(`${c.name}: duplicate case name`);
     seen.add(c.name);
     if (!c.path.startsWith('/')) errors.push(`${c.name}: path must start with /`);
+    if (c.eventually && !c.present?.length) errors.push(`${c.name}: eventually needs present`);
     if (Boolean(c.perApi) !== JSON.stringify(c).includes('{api}'))
       errors.push(`${c.name}: {api} needs perApi, and perApi needs {api}`);
     for (const path of c.normalize ?? []) {

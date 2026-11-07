@@ -192,6 +192,11 @@ func (rt Runtime) answer(w http.ResponseWriter, r *http.Request, req application
 	if outcome.Replayed {
 		w.Header().Set("Idempotent-Replayed", "true")
 	}
+	// A replay wrote nothing, and any other answer than these two wrote nothing either. The
+	// tenant is the verified key's: nothing in the request can name another project.
+	if !outcome.Replayed && (outcome.Status == http.StatusCreated || outcome.Status == http.StatusMultiStatus) {
+		httpx.SetMachineTenant(r.Context(), req.Principal.TenantID)
+	}
 	writeRaw(w, outcome.Status, outcome.Body)
 }
 

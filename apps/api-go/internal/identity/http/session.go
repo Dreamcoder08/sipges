@@ -38,7 +38,7 @@ var publicPaths = map[string]bool{
 
 // isMachinePath: machine endpoints authenticate with a bearer credential of their own (cron
 // secret, API key) and never with the session cookie, so neither the session nor the Origin
-// check applies (ADR 0014 §4, §6). The Go API serves none of them yet: they answer its 404.
+// check applies (ADR 0014 §4, §6).
 func isMachinePath(path string) bool {
 	return path == "/system/automations/cron" || path == "/mcp" || strings.HasPrefix(path, "/hooks/")
 }

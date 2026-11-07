@@ -113,7 +113,7 @@ exit 0 means every check passed, and `--json` gives the same verdict as data.
 | anonymous, sign-in, projects, accounts, mfa | Nobody gets in anonymously, a foreign Origin is refused, projects and accounts are created, MFA gates data, and a used code is refused |
 | records, prevention, evidence | Create, update, history, search, delete, dry-run import; an action needs a corroborated alert and closes only with evidence; file bytes and hash survive |
 | reports, document-lab, management, automation, notifications | Reports download, the review queue moves, a rule fires and notifies, unread counts follow |
-| machine-routes | A key reaches `/mcp` and writes into its own project, the session does not, and a revoked key stops |
+| machine-routes | A key reaches `/mcp` and writes into its own project, the session does not, a revoked key stops, and a webhook alone wakes a rule of its project |
 | tenant-isolation | A second tenant sees nothing and can change nothing; naming the other project in a header, query or body is refused. Every read is compared with project A, because a read that shows nothing proves nothing unless the owner sees the data |
 | read-only-role | A read-only role is refused on every route that writes, and never sees a restricted record |
 | route-sweep | Every route of the inventory answers, nothing opens without its credential, and no read answers a server error |

@@ -18,6 +18,41 @@ const KEYS = {
   revokeGo: ['c0ffee101006', secret('g')],
 } as const;
 const bearer = ([prefix, value]: readonly [string, string]) => `Bearer mscli_${prefix}_${value}`;
+/**
+ * A webhook's wakeup: one project per API, so the TypeScript API's scan can never process the Go
+ * API's webhook. Each has a cursor, a rule and a write key; one account reads both, with a session
+ * made here because the runner's own accounts must keep their projects.
+ */
+const WAKE_TOKEN = 'ab'.repeat(32);
+const WAKE = {
+  ts: { tenant: 'PARITY/WAKE-TS', key: ['c0ffee101007', secret('a')] },
+  go: { tenant: 'PARITY/WAKE-GO', key: ['c0ffee101008', secret('b')] },
+} as const;
+const WAKE_TITLE = 'Webhook recibido paridad';
+type WakeProject = { readonly tenant: string; readonly key: readonly [string, string] };
+const wakeRows = ({ tenant, key }: WakeProject, id: number) => {
+  const project = tenant.split('/')[1];
+  return `
+INSERT INTO tenants (company_id, project_id, label) VALUES ('PARITY', '${project}', 'Despertar');
+INSERT INTO grants (username, tenant_id) VALUES ('parity-wake', '${tenant}');
+INSERT INTO automation_cursors (tenant_id, last_audit_id) VALUES ('${tenant}', 0);
+INSERT INTO automation_rules (tenant_id, name, enabled, trigger_module, trigger_actions, conditions,
+  actions, created_by, created_at, updated_at)
+VALUES ('${tenant}', 'Avisar webhooks', true, 'Narrativas', '{CREATE}', '[]',
+  '[{"kind":"notify","title":"${WAKE_TITLE}"}]', 'parity', '2026-10-01T08:00:00Z', '2026-10-01T08:00:00Z');
+INSERT INTO api_keys (id, tenant_id, name, prefix, secret_hash, access, clearance, created_by,
+  created_at, last_used_at, revoked_at) OVERRIDING SYSTEM VALUE VALUES
+  (${id}, '${tenant}', 'parity-despertar', '${key[0]}', '${sha256(key[1])}', 'write', 'full',
+   'parity', '2026-10-01 00:00:00+00', NULL, NULL);`;
+};
+const WAKE_SEED = `
+INSERT INTO users (username, full_name, password_hash, role, active, totp_enabled)
+VALUES ('parity-wake', 'Paridad despertar', 'x', 'consulta', true, true);
+INSERT INTO sessions (token_hash, username, expires_at)
+VALUES ('${sha256(WAKE_TOKEN)}', 'parity-wake', '2099-01-01 00:00:00+00');
+${wakeRows(WAKE.ts, 32107)}
+${wakeRows(WAKE.go, 32108)}`;
+
 const RUNTIME_SEED = `
 INSERT INTO api_keys (id, tenant_id, name, prefix, secret_hash, access, clearance, created_by,
   created_at, last_used_at, revoked_at) OVERRIDING SYSTEM VALUE VALUES
@@ -91,7 +126,8 @@ INSERT INTO source_import_settings (tenant_id, source_id, enabled, query, territ
   ('PARITY/OTRO', 'defensoria', true, 'AJENA', 'AJENA', 'AJENA', 9, 'AJENA',
    '2026-10-01 00:00:00+00', NULL, '', 0, 0)
 ON CONFLICT DO NOTHING;
-${RUNTIME_SEED}`;
+${RUNTIME_SEED}
+${WAKE_SEED}`;
 
 const API_KEYS = '/system/integrations/api-keys';
 
@@ -337,6 +373,24 @@ const RUNTIME_CASES: readonly ParityCase[] = [
     path: '/hooks/signals',
   }),
   hook('signal with a read-only key', bearer(KEYS.read), signal({}), { path: '/hooks/signals' }),
+  // No session write follows the webhook, and no other API sees its project: only its own wakeup
+  // can produce the notification.
+  hook(
+    'a webhook wakes its project',
+    '{wakeKey}',
+    { json: { ID_Narrativa: 'PARITY-WAKE', Descripcion: 'Despertar' } },
+    { vary: { ...W, wakeKey: { ts: bearer(WAKE.ts.key), go: bearer(WAKE.go.key) } } },
+  ),
+  {
+    name: 'integration runtime: the woken project has its notification',
+    method: 'GET',
+    path: '/system/notifications',
+    headers: { cookie: `sipges_session=${WAKE_TOKEN}`, 'x-sipges-scope': '{wakeScope}' },
+    vary: { wakeScope: { ts: WAKE.ts.tenant, go: WAKE.go.tenant } },
+    present: [WAKE_TITLE],
+    eventually: true,
+    normalize: ['items.*.id', 'items.*.created_at', 'items.*.link'],
+  },
   // Media feeds (admin only): create, read back, update, delete, refusals.
   admin('create a media feed', 'POST', FEEDS, feed({ keywords: [' agua ', 'agua'] }), {
     normalize: ['id', 'name', 'url', 'updated_at'],
