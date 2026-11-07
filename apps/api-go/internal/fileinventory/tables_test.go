@@ -448,3 +448,82 @@ func TestACellSplitIntoManyTextElementsKeepsOnlyItsStart(t *testing.T) {
 		t.Errorf("%q", got)
 	}
 }
+
+func TestAProcessingInstructionCannotHideARun(t *testing.T) {
+	oldRun := runLimit
+	runLimit = 1 << 16
+	t.Cleanup(func() { runLimit = oldRun })
+	root := t.TempDir()
+	body := workbook(t, nil, sheetXML{name: "Datos", rows: `<?x ` + strings.Repeat("<", 1<<17) + `?>` + row(1, n("A1", "1"))})
+	put(t, root, "pi.xlsx", body)
+	put(t, root, "fine.xlsx", workbook(t, nil, sheetXML{name: "Datos", rows: `<?keep this?>` + row(1, n("A1", "1"))}))
+
+	r := scan(t, root)
+
+	if got := file(t, r, "pi.xlsx"); got.Reason != ReasonTooLarge {
+		t.Errorf("%+v", got)
+	}
+	if got := file(t, r, "fine.xlsx"); got.Status != StatusReadable {
+		t.Errorf("a short instruction is harmless: %+v", got)
+	}
+}
+
+func TestAWorkbookCannotListWithoutLimit(t *testing.T) {
+	many := make([]sheetXML, maxSheets+1)
+	for i := range many {
+		many[i] = sheetXML{name: "s" + strconv.Itoa(i), rows: row(1, n("A1", "1"))}
+	}
+	wide := make([]string, 16000)
+	for i := range wide {
+		wide[i] = `<c><v>1</v></c>`
+	}
+	wideRow := `<row r="1">` + strings.Join(wide, "") + `</row>`
+	var heavy []sheetXML
+	for i := range 5 {
+		heavy = append(heavy, sheetXML{name: "s" + strconv.Itoa(i), rows: wideRow})
+	}
+	root := t.TempDir()
+	put(t, root, "many-sheets.xlsx", workbook(t, nil, many...))
+	put(t, root, "long-name.xlsx", workbook(t, nil, sheetXML{name: strings.Repeat("n", maxNameBytes+1), rows: row(1, n("A1", "1"))}))
+	put(t, root, "many-header-cells.xlsx", workbook(t, nil, heavy...))
+	put(t, root, "long-target.xlsx", zipped(t, map[string]string{
+		"xl/workbook.xml": `<workbook><sheets><sheet name="Datos" r:id="rId1"/></sheets></workbook>`,
+		"xl/_rels/workbook.xml.rels": `<Relationships><Relationship Id="rId1" Type="x/worksheet" Target="` +
+			strings.Repeat("t", maxNameBytes+1) + `"/></Relationships>`,
+	}))
+
+	r := scan(t, root)
+
+	for _, path := range []string{"many-sheets.xlsx", "long-name.xlsx", "many-header-cells.xlsx", "long-target.xlsx"} {
+		if got := file(t, r, path); got.Reason != ReasonTooLarge {
+			t.Errorf("%s: %+v", path, got)
+		}
+	}
+}
+
+// csv.Reader ends a quoted field only at a quote before a delimiter or a line end, so the limiter
+// must not call the record over at a quote followed by text.
+func TestAQuoteFollowedByTextStaysQuoted(t *testing.T) {
+	oldRun := runLimit
+	runLimit = 1 << 16
+	t.Cleanup(func() { runLimit = oldRun })
+	root := t.TempDir()
+	put(t, root, "text-after-quote.csv", []byte("\"5\" pipe,b\n"+strings.Repeat("next line,2\n", 1<<14)))
+	put(t, root, "return-before-comma.csv", []byte("\"a\"\r,b\n"+strings.Repeat("next line,2\n", 1<<14)))
+	put(t, root, "two-returns.csv", []byte("\"a\"\r\r\n"+strings.Repeat("next line,2\n", 1<<14)))
+	put(t, root, "closed-before-comma.csv", []byte("\"Código\",Monto\n"+strings.Repeat("\"x\",2\n", 1<<14)))
+	put(t, root, "closed-crlf.csv", []byte("\"Código\",\"Monto\"\r\n"+strings.Repeat("\"x\",\"2\"\r\n", 1<<14)))
+
+	r := scan(t, root)
+
+	for _, path := range []string{"text-after-quote.csv", "return-before-comma.csv", "two-returns.csv"} {
+		if got := file(t, r, path); got.Reason != ReasonTooLarge {
+			t.Errorf("%s: %+v", path, got)
+		}
+	}
+	for _, path := range []string{"closed-before-comma.csv", "closed-crlf.csv"} {
+		if got := file(t, r, path); got.Status != StatusReadable {
+			t.Errorf("%s: %+v", path, got)
+		}
+	}
+}
