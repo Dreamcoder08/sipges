@@ -12,7 +12,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -30,13 +30,22 @@ const (
 )
 
 var (
-	zipMagic = []byte("PK\x03\x04")
 	oleMagic = []byte{0xD0, 0xCF, 0x11, 0xE0}
 
-	// An extension is a short word; anything else after a dot is part of a file's name, which
-	// must not become a line of the report.
-	plainExtension = regexp.MustCompile(`^[a-z0-9]{1,12}$`)
+	// What may name a type. Anything else after a dot is part of a file's name ("Juan.Perez",
+	// "dni.12345678"), which must not become a line of the summary.
+	knownExtensions = extensionSet("pdf doc docx docm dotx xls xlsx xlsm xltx xlsb csv tsv txt rtf " +
+		"ppt pptx odt ods odp jpg jpeg png gif tif tiff bmp webp heic zip rar 7z gz tar msg eml " +
+		"html htm xml json db sqlite sql mp3 mp4 mov wav dwg dxf shp kml kmz")
 )
+
+func extensionSet(list string) map[string]bool {
+	set := map[string]bool{}
+	for _, ext := range strings.Fields(list) {
+		set[ext] = true
+	}
+	return set
+}
 
 type family int
 
@@ -61,47 +70,72 @@ func Scan(ctx context.Context, root string, opts Options) (Report, error) {
 		return Report{}, fmt.Errorf("open the folder: %w", err)
 	}
 	defer func() { _ = folder.Close() }()
-	files := []File{}
-	err = fs.WalkDir(folder.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if path == "." {
-			return walkErr
-		}
-		name := strings.ToValidUTF8(path, "�")
-		switch {
-		case walkErr != nil:
-			files = append(files, File{Path: name, Type: typeFolder, Status: StatusUnreadable, Reason: reasonOf(walkErr)})
-			return skipEntry(entry)
-		case entry.IsDir():
-			return nil
-		case entry.Type()&fs.ModeSymlink != 0:
-			files = append(files, File{Path: name, Type: typeLink, Status: StatusUnreadable, Reason: ReasonLink})
-		case !entry.Type().IsRegular():
-			files = append(files, File{Path: name, Type: typeSpecial, Status: StatusUnreadable, Reason: ReasonSpecialFile})
-		default:
-			files = append(files, inspect(folder, path, name))
-		}
-		return nil
-	})
-	if err != nil {
+	walk := walker{folder: folder, files: []File{}}
+	if err := walk.dir(ctx, "."); err != nil {
 		return Report{}, fmt.Errorf("walk the folder: %w", err)
 	}
 	now := time.Now
 	if opts.Now != nil {
 		now = opts.Now
 	}
-	return newReport(now().UTC(), files), nil
+	return newReport(now().UTC(), walk.files), nil
 }
 
-// A folder that cannot be listed is reported once, by the visit that failed to list it.
-func skipEntry(entry fs.DirEntry) error {
-	if entry != nil && entry.IsDir() {
-		return fs.SkipDir
+type walker struct {
+	folder *os.Root
+	files  []File
+}
+
+// dir lists with the file itself and not with fs.WalkDir: the fs.FS of a root refuses a name that
+// is not UTF-8, and an old USB is full of Latin-1 folders whose files must still be counted.
+func (w *walker) dir(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	entries, err := w.list(path)
+	if err != nil {
+		if path == "." {
+			return err
+		}
+		w.files = append(w.files, File{Path: printable(path), Type: typeFolder, Status: StatusUnreadable, Reason: reasonOf(err)})
+		return nil
+	}
+	slices.SortFunc(entries, func(a, b os.DirEntry) int { return strings.Compare(a.Name(), b.Name()) })
+	for _, entry := range entries {
+		child := entry.Name()
+		if path != "." {
+			child = path + "/" + child
+		}
+		name := printable(child)
+		switch {
+		case entry.IsDir():
+			if err := w.dir(ctx, child); err != nil {
+				return err
+			}
+		case entry.Type()&fs.ModeSymlink != 0:
+			w.files = append(w.files, File{Path: name, Type: typeLink, Status: StatusUnreadable, Reason: ReasonLink})
+		case !entry.Type().IsRegular():
+			w.files = append(w.files, File{Path: name, Type: typeSpecial, Status: StatusUnreadable, Reason: ReasonSpecialFile})
+		default:
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			w.files = append(w.files, inspect(w.folder, child, name))
+		}
 	}
 	return nil
 }
+
+func (w *walker) list(path string) ([]os.DirEntry, error) {
+	f, err := w.folder.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	return f.ReadDir(-1)
+}
+
+func printable(path string) string { return strings.ToValidUTF8(path, "\uFFFD") }
 
 func reasonOf(err error) string {
 	switch {
@@ -119,7 +153,7 @@ func typeOf(path string) string {
 	switch {
 	case ext == "":
 		return typeNone
-	case plainExtension.MatchString(ext):
+	case knownExtensions[ext]:
 		return ext
 	default:
 		return typeOther
