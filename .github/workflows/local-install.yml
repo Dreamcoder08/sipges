@@ -1,0 +1,38 @@
+name: Local install
+
+# The restore and import drills of docs/deployment/local-install.md: a real install on empty
+# volumes, synthetic data only. Not a required check: it builds everything and is filtered by path.
+on:
+  pull_request:
+    paths:
+      - 'deploy/local/**'
+      - 'apps/api-go/**'
+      - 'apps/api/src/platform/database/migrations/**'
+      - 'engines/crates/base-maestra/**'
+      - 'engines/crates/migrate-legacy/**'
+      - '.github/workflows/local-install.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: local-install-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    name: Install, restore and import drills
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - name: Build
+        run: deploy/local/sipges build
+      - name: Restore drill
+        run: deploy/local/test/drill.sh "$RUNNER_TEMP/drill"
+      - name: Import drill
+        run: deploy/local/test/import-drill.sh "$RUNNER_TEMP/import"
