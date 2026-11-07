@@ -158,3 +158,25 @@ func TestSessionStillReportsAnMFARequirement(t *testing.T) {
 		t.Fatalf("%+v", got)
 	}
 }
+
+// A session file that cannot be written is reported, and the issued key stays in its file.
+func TestASessionThatCannotBeSavedKeepsTheKey(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, _ *http.Request) {
+		jsonAnswer(w, http.StatusOK, `{"ok":true,"id":7,"token":"mscli_synthetic"}`)
+	})
+	if err := saveSession(h.session, &session{URL: h.api.URL, Cookies: map[string]string{"sipges_session": "s"}}); err != nil {
+		t.Fatal(err)
+	}
+	folder := filepath.Dir(h.session)
+	if err := os.Chmod(folder, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(folder, 0o700) })
+	file := filepath.Join(t.TempDir(), "key")
+	if got := h.run("", "apikey", "create", "--name", "bot", "--secret-file", file, "--json"); got.code != ExitLocal {
+		t.Fatalf("%+v", got)
+	}
+	if content, _ := os.ReadFile(file); strings.TrimSpace(string(content)) != "mscli_synthetic" {
+		t.Fatalf("key file holds %q", content)
+	}
+}

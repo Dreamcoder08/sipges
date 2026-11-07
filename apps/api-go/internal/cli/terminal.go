@@ -2,12 +2,19 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 )
+
+// NotifyContext ends a run on every signal a terminal or a supervisor sends, so a run can still put
+// the terminal back and remove a reserved secret file.
+func NotifyContext(parent context.Context) (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(parent, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT)
+}
 
 // stty runs on the terminal itself. It stands in for golang.org/x/term because this package imports
 // the standard library alone, and the standard library cannot turn echo off.
@@ -26,14 +33,11 @@ func (a *app) typedPassword(ctx context.Context, readLine func() string) (string
 		return readLine(), nil
 	}
 	saved, err := stty(terminal, "-g")
-	if errors.Is(err, exec.ErrNotFound) {
-		return "", localError("cannot hide a typed password without stty: set SIPGES_PASSWORD")
+	if err == nil {
+		_, err = stty(terminal, "-echo")
 	}
-	if err != nil { // a character device that is no terminal, such as /dev/null
-		return readLine(), nil //nolint:nilerr // that device has no echo to turn off
-	}
-	if _, err := stty(terminal, "-echo"); err != nil {
-		return "", localError("cannot hide a typed password: set SIPGES_PASSWORD")
+	if err != nil {
+		return "", localError("cannot hide a typed password without a working stty: set SIPGES_PASSWORD")
 	}
 	defer func() { _, _ = stty(terminal, saved) }()
 	_, _ = fmt.Fprint(a.stderr, "Password: ")

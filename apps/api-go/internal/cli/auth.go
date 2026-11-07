@@ -80,7 +80,11 @@ func (a *app) stdinIsTerminal() bool {
 		return false
 	}
 	info, err := file.Stat()
-	return err == nil && info.Mode()&os.ModeCharDevice != 0
+	if err != nil || info.Mode()&os.ModeCharDevice == 0 {
+		return false
+	}
+	null, err := os.Stat(os.DevNull) // the one character device that is routinely stdin
+	return err != nil || !os.SameFile(info, null)
 }
 
 // readPrivate refuses a credential file others can read.
@@ -443,10 +447,12 @@ func (a *app) apiKeyCreate(ctx context.Context, o *options, args []string) (int,
 		discard()
 		return 0, err
 	}
+	// Reported after the key is safe: a session that cannot be saved must not cost the key.
+	persistErr := c.persist(path)
 	if answer.status != http.StatusOK {
 		discard()
-		if err := c.persist(path); err != nil {
-			return 0, err
+		if persistErr != nil {
+			return 0, persistErr
 		}
 		return o.answer(route, answer), nil
 	}
@@ -459,8 +465,8 @@ func (a *app) apiKeyCreate(ctx context.Context, o *options, args []string) (int,
 	if err := fillPrivate(reserved, token); err != nil {
 		return 0, revokeUnsaved(ctx, c, fields["id"], err)
 	}
-	if err := c.persist(path); err != nil {
-		return 0, err
+	if persistErr != nil {
+		return 0, persistErr
 	}
 	view := map[string]any{"id": fields["id"], "secret_file": *secretFile}
 	return a.write(o.json, envelope{OK: true, Status: answer.status, Route: route, Data: view}, ExitOK), nil

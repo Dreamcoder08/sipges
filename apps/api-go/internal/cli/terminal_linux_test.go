@@ -149,3 +149,45 @@ func TestCtrlCDuringThePromptGivesTheTerminalBack(t *testing.T) {
 		t.Fatal("the terminal stayed silent")
 	}
 }
+
+// Anything but a terminal has no echo to hide, so it needs no stty, as before.
+func TestDevNullNeedsNoStty(t *testing.T) {
+	t.Setenv("PATH", "")
+	null, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = null.Close() }()
+	h := newHarness(t, nil)
+	stderr := &lockedBuffer{}
+	if code := <-loginOnTerminal(t.Context(), h, null, stderr); code != ExitUsage || !strings.Contains(stderr.String(), "no password") {
+		t.Fatalf("exit %d: %s", code, stderr.String())
+	}
+}
+
+// A terminal that cannot be silenced refuses the password instead of echoing it.
+func TestATerminalWithoutSttyRefusesThePrompt(t *testing.T) {
+	t.Setenv("PATH", "")
+	_, terminal := openPTY(t)
+	h := newHarness(t, nil)
+	stderr := &lockedBuffer{}
+	if code := <-loginOnTerminal(t.Context(), h, terminal, stderr); code != ExitLocal || !strings.Contains(stderr.String(), "SIPGES_PASSWORD") {
+		t.Fatalf("exit %d: %s", code, stderr.String())
+	}
+}
+
+// Every signal that ends a run reaches its context, or the prompt could not clean up.
+func TestEveryEndingSignalCancelsTheRun(t *testing.T) {
+	for _, sent := range []syscall.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGQUIT} {
+		ctx, stop := NotifyContext(t.Context())
+		if err := syscall.Kill(syscall.Getpid(), sent); err != nil {
+			t.Fatal(err)
+		}
+		select {
+		case <-ctx.Done():
+		case <-time.After(5 * time.Second):
+			t.Fatalf("%v did not cancel the run", sent)
+		}
+		stop()
+	}
+}
