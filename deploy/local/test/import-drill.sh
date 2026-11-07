@@ -48,6 +48,9 @@ SIPGES_HTTPS_PORT=$https_port
 ENV
 umask 022
 node --no-warnings "$here/make-import-fixtures.mjs" "$work/client" "$legacy_password"
+# As the guide asks: other accounts of the machine reach nothing, and the tools read through the
+# group they are given.
+chmod -R u+rwX,g+rX,o-rwx "$work/client"
 
 client_sum() { tar -C "$work/client" --sort=name --mtime=@0 -cf - . | sha256sum; }
 client_before=$(client_sum)
@@ -71,6 +74,10 @@ sipges import legacy "$work/client/legacy"
 [[ $(fingerprint) == "$before" ]] || { echo 'the dry run changed the database'; exit 1; }
 [[ $(counts) == '0|0|0|0' ]] || { echo "dry run wrote: $(counts)"; exit 1; }
 echo 'ok - every table is byte for byte as it was'
+[[ $(stat -c %a "$SIPGES_IMPORT_REPORTS" | tail -c 4) == 700 ]] ||
+  { echo 'the reports folder stayed open'; exit 1; }
+find "$SIPGES_IMPORT_REPORTS" -type f -perm /o=w | grep -q . && { echo 'a report anyone may write'; exit 1; }
+echo 'ok - the reports folder closed again'
 
 step 'a folder SIPGES cannot read is named, and nothing happens'
 cp -r "$work/client/legacy" "$work/locked"
