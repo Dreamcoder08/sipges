@@ -11,7 +11,7 @@ publish.workspace = true
 serde_json.workspace = true
 sipges-analytics-common = { path = "../analytics-common" }
 # String.prototype.normalize('NFKD' | 'NFD'); 0.1.25 was published on 2025-10-30 (Unicode 17).
-unicode-normalization = { version = "=0.1.26", default-features = false }
+unicode-normalization = { version = "=0.1.25", default-features = false }
 
 [lints]
 workspace = true
