@@ -443,6 +443,8 @@ func TestGatesAndRoutingReadTheSameCanonicalPath(t *testing.T) {
 		t.Fatalf("/heal%%74h is /health in Hono too: %d %s", got.status, got.body)
 	}
 	expect(t, s.raw(t, "/health%2Fready", ""), http.StatusUnauthorized, signIn)
+	expect(t, s.raw(t, `/system\audit`, "solo"), http.StatusBadRequest, "")
+	expect(t, s.raw(t, `/hooks\..\system\audit`, ""), http.StatusBadRequest, "")
 }
 
 func TestTenantWorkSeesOnlyTheResolvedProject(t *testing.T) {
