@@ -132,7 +132,7 @@ jobs:
           - { browser: webkit, shard: 1/1 }
     services:
       postgres:
-        image: postgres:17
+        image: postgres:17.11
         env:
           POSTGRES_PASSWORD: ci-only-password
         # Random host port, so two jobs can share one self-hosted machine.
