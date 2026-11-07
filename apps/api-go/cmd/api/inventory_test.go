@@ -28,7 +28,8 @@ func TestInventoryNeedsNoDatabaseAndWritesItsReport(t *testing.T) {
 	root, report := inventoryFolder(t)
 	var out bytes.Buffer
 
-	err := dispatch(context.Background(), []string{"inventory", "--root", root, "--report", report}, noEnvironment, &out, nil)
+	args := []string{"inventory", "--root", root, "--report", report, "--show-unconfirmed-headers"}
+	err := dispatch(context.Background(), args, noEnvironment, &out, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,9 +71,9 @@ func TestInventoryNeedsNoDatabaseAndWritesItsReport(t *testing.T) {
 	}
 }
 
-func TestInventoryShowsUnconfirmedHeadersOnlyWhenAsked(t *testing.T) {
+func TestInventoryKeepsUnconfirmedHeadersBackUnlessAsked(t *testing.T) {
 	root, report := inventoryFolder(t)
-	args := []string{"inventory", "--root", root, "--report", report, "--show-unconfirmed-headers"}
+	args := []string{"inventory", "--root", root, "--report", report}
 	if err := dispatch(context.Background(), args, noEnvironment, &bytes.Buffer{}, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +81,7 @@ func TestInventoryShowsUnconfirmedHeadersOnlyWhenAsked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Contains(body, []byte(`"Nombre"`)) {
+	if bytes.Contains(body, []byte(`"Nombre"`)) || !bytes.Contains(body, []byte(`"unconfirmed"`)) {
 		t.Errorf("%s", body)
 	}
 }

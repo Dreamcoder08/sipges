@@ -123,7 +123,8 @@ writeFileSync(
       '<Relationships><Relationship Id="rId1" Type="x/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
     'xl/sharedStrings.xml': `<sst><si><t>Codigo</t></si><si><t>Titular</t></si><si><t>${CANARY}</t></si></sst>`,
     'xl/worksheets/sheet1.xml':
-      '<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>' +
+      '<worksheet><sheetViews><sheetView><pane ySplit="1" state="frozen"/></sheetView></sheetViews>' +
+      '<sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c></row>' +
       '<row r="2"><c r="A2"><v>1001</v></c><c r="B2" t="s"><v>2</v></c></row></sheetData></worksheet>',
   }),
 );

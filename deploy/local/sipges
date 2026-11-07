@@ -252,7 +252,7 @@ open_reports() {
   chgrp "$(id -g)" "$1"
   chmod 2770 "$1"
   # shellcheck disable=SC2064 # the path is fixed now, on purpose
-  trap "chmod 700 '$1'" EXIT
+  trap "chmod u=rwx,g=,o=,g-s $(printf '%q' "$1")" EXIT
 }
 
 backup_now() {
@@ -272,13 +272,13 @@ cmd_import() {
   for arg in "$@"; do
     [[ $arg == --apply ]] && apply=1
   done
-  import_image
   case $kind in
   legacy)
     local report failed=0
     report="report-$(date -u +%Y%m%dT%H%M%SZ).json"
     check_private_group
     check_source "$target"
+    import_image
     ((apply == 0)) || backup_now
     run_import "$target" migrate-legacy --legacy-root /import --report "/reports/$report" "$@" || failed=1
     # A tool that stops before it starts, on a refused option for one, writes no report.
@@ -292,6 +292,7 @@ cmd_import() {
     [[ -f $target ]] || die "no file $target"
     check_private_group
     check_source "$(dirname "$target")" "$(basename "$target")"
+    import_image
     ((apply == 0)) || backup_now
     run_import "$(dirname "$target")" import-base-maestra --seed "/import/$(basename "$target")" "$@"
     ;;
@@ -318,12 +319,14 @@ cmd_inventory() {
   local real reports report
   real=$(readlink -f "$folder")
   reports=$(import_reports)
-  report="inventory-$(date -u +%Y%m%dT%H%M%SZ).json"
+  report="inventory-$(date -u +%Y%m%dT%H%M%SZ)-$$.json"
   open_reports "$reports"
   SIPGES_IMPORT_FOLDER=$real SIPGES_IMPORT_REPORTS=$reports SIPGES_HOST_GID=$(id -g) \
     compose run --rm inventory inventory --root /import --report "/reports/$report" "${options[@]}"
   say "Full report: $reports/$report"
   say 'It names files, sheets and columns, so keep it as private as the files themselves.'
+  ((${#options[@]} == 0)) ||
+    say 'You asked for unconfirmed headers: those rows may be real data. Read this report yourself before sharing it.'
 }
 
 cmd_status() {

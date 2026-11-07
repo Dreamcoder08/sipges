@@ -110,7 +110,7 @@ check 'the reports folder is not open to other users during an import' \
 check 'the reports folder belongs to the installing user group' test "${group:-}" = "$(id -g)"
 check 'and that group may write there while the import runs' test "$((8#${mode:-0} & 8#070))" -eq "$((8#070))"
 check 'the import runs with that group' grep -qx "gid=$(id -g)" "$FAKE/run-env"
-check 'the reports folder closes after the import' test "$(stat -c %a "$SIPGES_IMPORT_REPORTS" | tail -c 4)" = 700
+check 'the reports folder closes after the import' test "$(stat -c %a "$SIPGES_IMPORT_REPORTS")" = 700
 
 fresh
 run import base-maestra "$work/client/nested/file.txt" || true
@@ -137,6 +137,7 @@ if run import base-maestra "$work/client/nested/file.txt"; then fail 'a group sh
 check 'nothing ran under a shared group' test ! -f "$FAKE/reports-during-run"
 command rm "$root/getent"
 
+<<<<<<< HEAD
 # --- the inventory
 
 fresh
@@ -168,6 +169,21 @@ echo sha256:1 >"$FAKE/images/sipges-local_current"
 if run inventory "$(dirname "$script")"; then fail 'a folder inside the repository is refused'; else ok 'a folder inside the repository is refused'; fi
 if run inventory "$work/no-such-folder"; then fail 'a missing folder is refused'; else ok 'a missing folder is refused'; fi
 if run inventory; then fail 'no folder is refused'; else ok 'no folder is refused'; fi
+=======
+fresh
+export SIPGES_IMPORT_REPORTS="$work/it's reports"
+run import base-maestra "$work/client/nested/file.txt" || true
+check 'a quote in the reports path still closes the folder' test "$(stat -c %a "$SIPGES_IMPORT_REPORTS")" = 700
+
+fresh
+chmod -R go= "$work/client"
+run import base-maestra "$work/client/nested/file.txt" || true
+check 'a refused folder never builds the import tools' never_built
+
+fresh
+run import unknown "$work/client" || true
+check 'an unknown import never builds them either' never_built
+>>>>>>> feat/inventory-tables
 
 # --- an import right after a reboot
 
