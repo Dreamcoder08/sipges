@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readFileSync,
   readlinkSync,
+  realpathSync,
   writeFileSync,
   readdirSync,
   rmSync,
@@ -152,6 +153,78 @@ test('ODD dry-run preserves bytes and real close allocates the next log number o
     const closed = readFileSync(file, 'utf8');
     assert.notEqual(spawnSync(process.execPath, args).status, 0);
     assert.equal(readFileSync(file, 'utf8'), closed);
+  }));
+test('test-pg starts one loopback server per checkout and deletes only its own directory', (t) => {
+  if (spawnSync('sh', ['-c', 'command -v initdb']).status !== 0) {
+    t.skip('initdb is not installed');
+    return;
+  }
+  return fixture((dir) => {
+    const env = { ...process.env, TEST_PG_ROOT: path.join(dir, 'pg'), TEST_PG_PORT: '56439' };
+    const run = (action) =>
+      spawnSync('bash', [path.join(root, 'scripts/agents/test-pg.sh'), action], {
+        cwd: dir,
+        env,
+        encoding: 'utf8',
+      });
+    assert.equal(run('url').status, 1);
+    const up = run('up');
+    assert.equal(up.status, 0, up.stderr);
+    assert.match(up.stdout, /^postgres:\/\/sipges_test@127\.0\.0\.1:\d+\/sipges_test\n$/);
+    try {
+      assert.equal(run('up').stdout, up.stdout);
+      assert.equal(run('url').stdout, up.stdout);
+    } finally {
+      assert.equal(run('down').status, 0);
+    }
+    assert.equal(run('url').status, 1);
+    assert.deepEqual(readdirSync(path.join(dir, 'pg')), []);
+    assert.equal(run('nope').status, 2);
+  });
+});
+test('new-worktree starts from origin/main and reuses an existing branch', () =>
+  fixture((dir) => {
+    const git = (cwd, ...args) => {
+      const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+      return result.stdout.trim();
+    };
+    const origin = path.join(dir, 'origin.git');
+    git(dir, 'init', '-q', '--bare', '-b', 'main', origin);
+    const clone = path.join(dir, 'clone');
+    git(dir, 'clone', '-q', origin, clone);
+    git(
+      clone,
+      '-c',
+      'user.name=t',
+      '-c',
+      'user.email=t@e.st',
+      'commit',
+      '-q',
+      '--allow-empty',
+      '-m',
+      'one',
+    );
+    git(clone, 'push', '-q', 'origin', 'HEAD:main');
+    const head = git(clone, 'rev-parse', 'HEAD');
+    const script = path.join(root, 'scripts/agents/new-worktree.sh');
+    const run = (...args) => spawnSync('bash', [script, ...args], { cwd: clone, encoding: 'utf8' });
+
+    const created = run('unit', 'feat/unit');
+    assert.equal(created.status, 0, created.stderr);
+    const target = created.stdout.trim();
+    assert.equal(target, path.join(realpathSync(clone), '.worktrees/unit'));
+    assert.equal(git(target, 'rev-parse', 'HEAD'), head);
+    assert.equal(git(target, 'branch', '--show-current'), 'feat/unit');
+
+    assert.equal(run('unit', 'feat/unit').status, 1);
+    git(clone, 'worktree', 'remove', target);
+    const reused = run('again', 'feat/unit');
+    assert.equal(reused.status, 0, reused.stderr);
+    assert.equal(git(reused.stdout.trim(), 'branch', '--show-current'), 'feat/unit');
+
+    assert.equal(run('../escape', 'b').status, 2);
+    assert.equal(run('only-name').status, 2);
   }));
 test('land-pr reports without merging, and merges only with --merge', () =>
   fixture((dir) => {

@@ -13,7 +13,7 @@ The general Herdr mechanics (`herdr-app do tab.new`, `hc ls`, `hc read`) are in 
 1. Split only units with disjoint edit surfaces. Units that need the same file run in series in one tab.
    The orchestrator assigns each unit its task ID (`T<n>` of a feature document); a worker never picks one.
 2. One worktree and branch per unit, from `origin/main`:
-   `git fetch origin && git worktree add -b <branch> .worktrees/<name> origin/main`.
+   `scripts/agents/new-worktree.sh <name> <branch>` (`--install` when the unit needs Node dependencies).
 3. Each tab prompt stands alone, in English: what to read first (`AGENTS.md`, the feature document
    until `## Log`, the skill to apply), the exclusive worktree, the owner's words verbatim, scope and
    what not to touch, checks, delivery and report. It ends with this block, unchanged:
@@ -27,7 +27,8 @@ The general Herdr mechanics (`herdr-app do tab.new`, `hc ls`, `hc read`) are in 
    appears, stop and wait for the owner; never answer it. When done, do not pick another task.
    ```
 
-4. Synthetic PostgreSQL for tests and parity: a local server whose superuser is `sipges_test`, URL
+4. Synthetic PostgreSQL for tests and parity: `scripts/agents/test-pg.sh up` prints the URL of a
+   local server whose superuser is `sipges_test`; `down` removes it. The URL has this form,
    without a query string, e.g. `postgres://sipges_test@127.0.0.1:55439/sipges_test`. Never a real
    database.
 
