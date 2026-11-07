@@ -39,7 +39,8 @@ Run `sipgesctl help` for every command.
   stdin; the code from `--totp-secret-file`, `SIPGES_TOTP` or the next line of stdin.
 - The TOTP secret goes to a new private file and is never printed.
 - Fields that hold a credential (`token`, `secret`, `password` and others) print as `[redacted]`
-  on every command, the generic call included. Read a new API key from the web app instead.
+  on every command, the generic call included. `apikey create --secret-file FILE` keeps a new key,
+  which the API shows only once, in a private file.
 - The session is saved in `$XDG_STATE_HOME/sipges/session.json` with mode 0600. A file others can
   read is refused, and a session is never sent to an address other than its own.
 - Plain `http://` is accepted only for a loopback address.
@@ -82,7 +83,16 @@ what reaches each route.
 ./sipgesctl reports situational --output informe.docx
 ```
 
-Request bodies come from a file or stdin, never from the command line.
+Request bodies come from a file or stdin, never from the command line. An option a command would
+ignore is refused with exit 2.
+
+Machine routes (`/mcp`, `/hooks/*`, the cron route) take `SIPGES_MACHINE_TOKEN` and never the
+session:
+
+```sh
+./sipgesctl apikey create --name bot --access write --secret-file ~/.config/sipges/bot-key
+SIPGES_MACHINE_TOKEN=$(cat ~/.config/sipges/bot-key) ./sipgesctl call POST /mcp --body request.json
+```
 
 **Adding a route.** `TestEveryRouteHasACLIPath` in `internal/app` reads the routes off the real
 mux and fails CI when one is missing from the inventory, or listed and no longer served. Add one
@@ -103,7 +113,8 @@ exit 0 means every check passed, and `--json` gives the same verdict as data.
 | anonymous, sign-in, projects, accounts, mfa | Nobody gets in anonymously, a foreign Origin is refused, projects and accounts are created, MFA gates data, and a used code is refused |
 | records, prevention, evidence | Create, update, history, search, delete, dry-run import; an action needs a corroborated alert and closes only with evidence; file bytes and hash survive |
 | reports, document-lab, management, automation, notifications | Reports download, the review queue moves, a rule fires and notifies, unread counts follow |
-| tenant-isolation | A second tenant sees nothing and can change nothing; naming the other project in a header, query or body is refused |
+| machine-routes | A key reaches `/mcp` and writes into its own project, the session does not, and a revoked key stops |
+| tenant-isolation | A second tenant sees nothing and can change nothing; naming the other project in a header, query or body is refused. Every read is compared with project A, because a read that shows nothing proves nothing unless the owner sees the data |
 | read-only-role | A read-only role is refused on every route that writes, and never sees a restricted record |
 | route-sweep | Every route of the inventory answers, nothing opens without its credential, and no read answers a server error |
 | cleanup | The run's accounts are deactivated and cannot sign in |
