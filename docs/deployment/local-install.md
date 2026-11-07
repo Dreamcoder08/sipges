@@ -4,6 +4,8 @@ This guide installs SIPGES on one computer in your office, so everyone on your n
 
 Everything lives on that computer: the data, the evidence files and the backups. Nothing is sent to Neon or Cloudflare.
 
+[Versión en español](local-install.es.md)
+
 ## What you need
 
 | Need | Detail |
@@ -13,6 +15,14 @@ Everything lives on that computer: the data, the evidence files and the backups.
 | Docker | [Docker Engine](https://docs.docker.com/engine/install/) with the Compose plugin, version 2.24 or later. |
 | Internet | For the first install and for updates. Not needed to use SIPGES afterwards, except for map tiles. |
 | A folder for this project | A copy of the SIPGES repository. The commands run from `deploy/local`. |
+
+## Encrypt the disk
+
+SIPGES encrypts its backups, but the database and the evidence files sit unencrypted on this computer. If someone takes the computer or its disk, only disk encryption protects them.
+
+Turn on disk encryption when you install the system; on Ubuntu and Debian the option uses LUKS. A system already installed without it usually needs a reinstall. Encrypt external disks that hold backups or client files too.
+
+Someone must type the disk password after every power cut or restart, and SIPGES stays off until then. Nobody can recover the disk without that password, so keep it with your copy of `.env`. To check, run `lsblk -o NAME,TYPE,FSTYPE,MOUNTPOINT`: an encrypted disk shows `crypto_LUKS`.
 
 ## Install
 
@@ -216,6 +226,37 @@ This works any time, on a running install:
 
 It prints, per module, the rows in the file, the new ones and those already there. It only inserts: a record that already exists is left as it is, so repeating the import is safe and never undoes an edit. Users, roles and projects in the file are ignored. A row naming another project stops the whole file before anything is written. See the [runbook](../migration/base-maestra.md).
 
+## The authenticator of imported people
+
+People sign in with their old password. Sessions are not moved, so everyone signs in again.
+
+| The person | What happens | What to do |
+| --- | --- | --- |
+| Already used an authenticator | Their codes keep working: the secret moved, sealed with `SIPGES_DATA_KEY`. | Nothing. |
+| Had none | SIPGES asks them to set one up at their first sign-in. | Have the phone at hand. |
+| Lost the phone or the entry | They cannot sign in. | An administrator uses **Restablecer MFA** in Administración, inside the active project. |
+
+**Restablecer MFA** clears the authenticator and closes all that person's sessions. They set up a new one at their next sign-in.
+
+**Before using real data:** the old installation kept authenticator secrets unencrypted in `auth_global.db`, so anyone who held a copy of that folder could read them. If the folder travelled by USB or email, reset the MFA of every account after the import, and lock the USB away.
+
+Do not change `SIPGES_DATA_KEY` by hand: authenticators could no longer be read.
+
+## External credentials
+
+SIPGES works in full with none of these. Each one turns on an optional feature, and none has been tried on this install yet, so check it before promising it. Those in `.env` apply with `./sipges start`; channels are typed inside the app.
+
+| Feature | What you need | Where it goes | Condition |
+| --- | --- | --- | --- |
+| Google sign-in | A Google OAuth client | `.env`: `SIPGES_GOOGLE_CLIENT_ID`, `SIPGES_GOOGLE_CLIENT_SECRET`, optional `SIPGES_GOOGLE_ADMIN_EMAIL` | Google requires HTTPS and refuses IP addresses, so this needs a public domain. Authorize `https://<your domain>/auth/google/callback`. |
+| Device notifications (push) | A VAPID key pair | `.env`: `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Generate once with `pnpm --filter @sipges/api vapid:keys` on any computer with the repository. Each device must trust the certificate, and the server needs internet. |
+| Email | A [Resend](https://resend.com) key, a verified sender and up to 20 recipients | In the app, as an email channel | There is no SMTP option. The server needs internet. |
+| Slack, Teams, Discord, Google Chat, Telegram | A webhook URL, or a bot token and chat for Telegram | In the app, as a channel | The server needs internet. |
+| AI-assisted summary | An Anthropic key | `.env`: `SIPGES_ANALYST_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, optional `SIPGES_ANALYST_MODEL` | Information leaves for an outside service. Without it, the summary stays deterministic. |
+| Semantic search | An Ollama server with an embedding model | `.env`: `SIPGES_OLLAMA_URL`, `SIPGES_OLLAMA_EMBED_MODEL`, `SIPGES_SEMANTIC_SEARCH=1` | The address must be reachable from the container, where `localhost` is the container itself. A remote Ollama gets pseudonymized text, and only with **Envío a IA externa** on. |
+
+See [integrations](../integrations/README.md).
+
 ## If something goes wrong
 
 | What you see | What to do |
@@ -224,6 +265,8 @@ It prints, per module, the rows in the file, the new ones and those already ther
 | Browser says the certificate is not trusted | Install `sipges-root-ca.crt` on that computer. After `./sipges wipe` the certificate is new, so install it again. |
 | A blank page | You used a different name or address from the install. Use that one, or change it with `./sipges install <new name>`. |
 | The status shows a backup failure | Run `./sipges logs backup`. Disk space is the usual cause. |
+| `the database did not become ready` | Run `./sipges logs db`. After a power cut it may need a while to recover, so wait and try again. |
+| `the app has already run here` | `prepare` is only for an unused install. To start over: `./sipges wipe`, then `./sipges prepare`. |
 | `SIPGES did not become ready` | Run `./sipges logs api`, and keep the output for support. It holds no passwords. |
 | Port 80 or 443 already in use | Set `SIPGES_HTTP_PORT` and `SIPGES_HTTPS_PORT` in `.env`, and add the port to the address. |
 
@@ -256,7 +299,7 @@ Go serves the web app itself (`SIPGES_WEB_DIR`), so the Worker's headers live in
 
 The import job shares the database's network, because the Rust tools require TLS unless the database is on loopback.
 
-Push, Google sign-in, Ollama and the analyst provider stay off until their variables are in `.env`; `compose.yaml` lists the names. None of them has been tried on this install.
+Push, Google sign-in, Ollama and the analyst provider stay off until their variables are in `.env`; `compose.yaml` lists the names, and [External credentials](#external-credentials) says what each needs.
 
 ### Tests
 
@@ -276,8 +319,7 @@ Both use their own project and ports, only synthetic data, and clean up after th
 | Prebuilt images | Each client builds from source and needs the repository. Publishing images, or `docker save` for a machine with no internet, would remove that. | Medium |
 | ARM computers | The API image is `linux/amd64` only. | Medium |
 | Windows | `./sipges` is a Bash script. WSL 2 should work; nobody has tried it. | Small |
-| Excel or CSV bulk import | Not offered by any tool. | Medium |
-| Spanish version of this guide | Written in English. | Small |
+| Excel or CSV bulk import | Not offered yet. `./sipges inventory` gives the real columns to design it from. | Medium |
 | `vapid:keys` | The generator of push keys is TypeScript. Generate them anywhere, then set the `SIPGES_VAPID_*` variables in `.env`. | Small |
 
 No API route is missing: every TypeScript route has a Go handler. `rotate-data-key` and `review-materialize` exist in Rust but are not in the import image.
