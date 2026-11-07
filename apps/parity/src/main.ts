@@ -13,6 +13,7 @@
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { assistedBriefingCases, setExternalAi, unpairedNarrations } from './assisted-briefing.ts';
 import { CASES, validateCases } from './cases.ts';
 import { startEmbedderDouble } from './embedder-double.ts';
@@ -58,6 +59,13 @@ const reportProof = (routes: WriteProof) => {
   return unproved.length === 0;
 };
 
+type Answer = Awaited<ReturnType<typeof send>>;
+
+const EVENTUALLY_TRIES = 25;
+const EVENTUALLY_EVERY_MS = 200;
+
+const holds = (answer: Answer, c: ParityCase) => checkText(answer.body, c.present).length === 0;
+
 const compareCases = async (
   { tsUrl, goUrl }: Targets,
   cases: readonly ParityCase[],
@@ -68,9 +76,17 @@ const compareCases = async (
   for (const c of cases) {
     const sendTs = () => send(tsUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'ts');
     const sendGo = () => send(goUrl, c, c.auth && sessions?.[c.auth], REQUEST_TIMEOUT_MS, 'go');
-    const [ts, go] = c.oneAtATime
-      ? [await sendTs(), await sendGo()]
-      : await Promise.all([sendTs(), sendGo()]);
+    const sendBoth = async (): Promise<[Answer, Answer]> =>
+      c.oneAtATime ? [await sendTs(), await sendGo()] : await Promise.all([sendTs(), sendGo()]);
+    let [ts, go] = await sendBoth();
+    for (
+      let tries = 0;
+      c.eventually && tries < EVENTUALLY_TRIES && !(holds(ts, c) && holds(go, c));
+      tries++
+    ) {
+      await sleep(EVENTUALLY_EVERY_MS);
+      [ts, go] = await sendBoth();
+    }
     if (proof) {
       const rows = await proof.ledger.drain();
       if (isWriteCase(c)) proof.routes.record(c, ts.status, go.status, rows);

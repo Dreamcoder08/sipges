@@ -521,6 +521,13 @@ func (v *verifier) isolation() error {
 	return nil
 }
 
+// A webhook's scan runs in the background: how long verify waits for its notification. Short of
+// the local install's default schedule of 60 s, so a scheduled tick rarely hides a missing wakeup.
+const (
+	webhookWakeTries = 20
+	webhookWakeEvery = 250 * time.Millisecond
+)
+
 // machine proves the machine routes work with their own credential, and only with it: a key
 // reaches /mcp and writes into its own project, and a revoked key stops at once.
 func (v *verifier) machine() error {
@@ -551,9 +558,67 @@ func (v *verifier) machine() error {
 	v.that("a webhook is accepted", ingest.status < 300, fmt.Sprintf("%d %s", ingest.status, shortDetail(ingest)))
 	v.want("the webhook's record is in the key's project", http.StatusOK, call{as: v.analyst, method: http.MethodGet, path: "/api/" + verifyModule + "/" + hook})
 	v.want("and not in the other project", http.StatusNotFound, call{as: v.outsider, method: http.MethodGet, path: "/api/" + verifyModule + "/" + hook})
+	if err := v.webhookWakes(token); err != nil {
+		return err
+	}
 	v.want("the key is revoked", http.StatusOK, call{as: v.admin, method: http.MethodDelete, path: "/system/integrations/api-keys/" + id})
 	v.want("a revoked key stops", http.StatusUnauthorized, call{bearer: token, method: http.MethodPost, path: "/mcp", json: initialize})
 	return nil
+}
+
+// webhookWakes proves a webhook starts the scan itself. Everything after it is a read, because
+// any session write would wake the project and process the webhook on the webhook's behalf.
+func (v *verifier) webhookWakes(token string) error {
+	title := "Verify webhook " + v.run
+	before := v.settledAttempt("")
+	rule, err := v.must("the administrator creates a webhook rule", call{
+		as: v.admin, method: http.MethodPost, path: "/system/automations/rules",
+		json: map[string]any{
+			"name": title, "module": "Compromisos", "actions": []string{"CREATE"},
+			"steps": []map[string]any{{"kind": "notify", "title": title}},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	// Creating the rule is a write, and the scan it starts would pick the webhook up.
+	v.settledAttempt(before)
+	ingest := v.send(call{
+		bearer: token, method: http.MethodPost, path: "/hooks/ingest/" + verifyModule,
+		json: map[string]any{"ID_Compromiso": "VERIFY-WAKE-" + v.run, "Texto": "synthetic webhook trigger"},
+	})
+	v.that("a webhook for the rule is accepted", ingest.status == http.StatusCreated, fmt.Sprintf("%d %s", ingest.status, shortDetail(ingest)))
+	notified := false
+	for range webhookWakeTries {
+		answer := v.send(call{as: v.admin, method: http.MethodGet, path: "/system/notifications"})
+		if notified = holds(answer, title); notified {
+			break
+		}
+		time.Sleep(webhookWakeEvery)
+	}
+	v.that("the webhook alone wakes the rule", notified, "no notification, and no session write followed the webhook")
+	id := text(rule, "id")
+	if id == "" {
+		id = fmt.Sprint(number(rule, "id"))
+	}
+	v.want("the webhook rule is deleted", http.StatusOK, call{as: v.admin, method: http.MethodDelete, path: "/system/automations/rules/" + id})
+	return nil
+}
+
+// settledAttempt waits for the project's latest scan to end and differ from after, and returns
+// when it started. With after empty, any ended scan will do, or none at all.
+func (v *verifier) settledAttempt(after string) string {
+	started := ""
+	for range webhookWakeTries {
+		answer := v.send(call{as: v.admin, method: http.MethodGet, path: "/system/automations/runtime"})
+		attempt := object(answer, "latest_attempt")
+		started = fmt.Sprint(attempt["started_at"])
+		if attempt["status"] != "running" && started != after {
+			return started
+		}
+		time.Sleep(webhookWakeEvery)
+	}
+	return started
 }
 
 // isolatedRead is one read seen from both sides. A read that shows nothing from project B proves
