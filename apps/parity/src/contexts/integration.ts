@@ -29,7 +29,8 @@ const WAKE = {
   go: { tenant: 'PARITY/WAKE-GO', key: ['c0ffee101008', secret('b')] },
 } as const;
 const WAKE_TITLE = 'Webhook recibido paridad';
-const wakeRows = ({ tenant, key }: (typeof WAKE)['ts'], id: number) => {
+type WakeProject = { readonly tenant: string; readonly key: readonly [string, string] };
+const wakeRows = ({ tenant, key }: WakeProject, id: number) => {
   const project = tenant.split('/')[1];
   return `
 INSERT INTO tenants (company_id, project_id, label) VALUES ('PARITY', '${project}', 'Despertar');
