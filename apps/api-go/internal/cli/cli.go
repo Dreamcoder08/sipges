@@ -36,6 +36,10 @@ Any route
 
 Typed commands (same flags, and one flag per path value)
 %s
+Proof
+  verify --synthetic-target   the whole journey against a synthetic install on this machine, as
+                          the signed-in administrator; PASS or FAIL per check
+
 A machine route (/mcp, /hooks/*, cron) takes SIPGES_MACHINE_TOKEN and never the session.
 
 Common options, on every command
@@ -142,6 +146,7 @@ func (a *app) builtins() map[string]command {
 		"routes":          a.listRoutes,
 		"call":            a.call,
 		"evidence upload": a.evidenceUpload,
+		"verify":          a.verifyCommand,
 	}
 }
 
