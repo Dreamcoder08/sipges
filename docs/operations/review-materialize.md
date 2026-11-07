@@ -7,6 +7,9 @@ T23 (S13).
 > **Production needs the owner's word.** This writes records into a real project. Run the dry
 > run first, show the owner its counts, and run `--apply` only after they say so.
 
+> **The dry run still migrates.** `cli.ts` calls `migrate()` before it reads `--apply`, so a dry run creates no
+> records but does apply any pending migration to the target database.
+
 ## What approving does
 
 The two approving decisions are «Aceptado para revisión» and «Corroborado documentalmente».
