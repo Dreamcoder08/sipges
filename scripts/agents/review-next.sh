@@ -10,8 +10,13 @@ if [ $# -gt 0 ]; then
 fi
 
 input="$(cat)"
-schema="$(printf '%s' "$input" | jq -r '.schema // ""')"
-if [ "$schema" = "gentle-ai.review-integration.consent/v3" ]; then
+[ -n "${input//[[:space:]]/}" ] || {
+  echo 'No JSON on stdin: the review command printed nothing' >&2
+  exit 2
+}
+# Any consent schema stops here, so a new version can never pass for a quiet result.
+kind="$(printf '%s' "$input" | jq -r '[.schema // "", .action // ""] | join(" ")')"
+if [[ "$kind" == *.consent/* || "$kind" == *consent_required* ]]; then
   echo 'CONSENT relay this envelope to the owner; never answer it'
   exit 3
 fi

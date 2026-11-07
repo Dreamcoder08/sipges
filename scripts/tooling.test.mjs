@@ -175,6 +175,9 @@ test('review-next prints the provider command verbatim and stops on consent', ()
   const consent = run({ schema: 'gentle-ai.review-integration.consent/v3', choices: [] });
   assert.equal(consent.status, 3);
   assert.match(consent.stdout, /^CONSENT /);
+  assert.equal(run({ schema: 'gentle-ai.review-integration.consent/v4' }).status, 3);
+  const empty = spawnSync('bash', [script], { input: ' \n', encoding: 'utf8' });
+  assert.equal(empty.status, 2);
 });
 test('test-pg starts one loopback server per checkout and deletes only its own directory', (t) => {
   if (spawnSync('sh', ['-c', 'command -v initdb']).status !== 0) {
@@ -739,6 +742,13 @@ test('the tab watcher reports blocked tabs, text consent prompts, finished tabs 
     assert.match(until.stdout, /^DONE t4 s \/ d$/m);
     const mixed = spawnSync('bash', [script, '--once', '--until', 'DONE'], { env });
     assert.equal(mixed.status, 2);
+    for (const args of [
+      ['--status', '--until', 'DONE'],
+      ['--status', '--interval', '5'],
+      ['--until', 'done'],
+    ]) {
+      assert.equal(spawnSync('bash', [script, ...args], { env }).status, 2, args.join(' '));
+    }
     const again = spawnSync('bash', [script, '--once'], { env, encoding: 'utf8' });
     assert.doesNotMatch(again.stdout, /MERGED/);
     const help = spawnSync('bash', [script, '--help'], { encoding: 'utf8' });

@@ -23,6 +23,7 @@ EOF
 
 once=0
 interval=60
+interval_set=0
 until_event=''
 show_status=0
 while [ $# -gt 0 ]; do
@@ -35,6 +36,7 @@ while [ $# -gt 0 ]; do
       ;;
     --interval)
       interval="${2:?--interval needs a number of seconds}"
+      interval_set=1
       shift
       ;;
     -h | --help)
@@ -49,7 +51,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 
-if [ "$once" -eq 1 ] && [ -n "$until_event" ]; then
+if ! [[ "$until_event" =~ ^(BLOCKED|CONSENT|DONE|MERGED)?$ ]] ||
+  { [ "$once" -eq 1 ] || [ "$show_status" -eq 1 ]; } && [ -n "$until_event" ] ||
+  { [ "$show_status" -eq 1 ] && [ "$interval_set" -eq 1 ]; }; then
   usage >&2
   exit 2
 fi
@@ -100,11 +104,13 @@ pass() {
 }
 
 while :; do
-  events="$(pass)"
-  [ -z "$events" ] || printf '%s\n' "$events"
-  [ "$once" -eq 1 ] && break
-  if [ -n "$until_event" ] && printf '%s\n' "$events" | grep -q "^$until_event "; then
-    break
+  if [ -z "$until_event" ]; then
+    pass
+    [ "$once" -eq 0 ] || break
+  else
+    events="$(pass)"
+    [ -z "$events" ] || printf '%s\n' "$events"
+    ! grep -q "^$until_event " <<<"$events" || break
   fi
   sleep "$interval"
 done
