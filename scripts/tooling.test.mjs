@@ -202,11 +202,11 @@ test('fmt:changed formats only the files changed against the base', () =>
       spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@e.st', ...args], { cwd: dir });
     git('init', '-q', '-b', 'main');
     writeFileSync(path.join(dir, 'old.md'), 'old\n');
+    writeFileSync(path.join(dir, 'removed.md'), 'x\n');
     git('add', '.');
     git('commit', '-qm', 'base');
     git('branch', 'base');
     writeFileSync(path.join(dir, 'new.md'), 'new\n');
-    writeFileSync(path.join(dir, 'removed.md'), 'x\n');
     git('add', '.');
     git('commit', '-qm', 'more');
     git('rm', '-q', 'removed.md');
@@ -216,12 +216,16 @@ test('fmt:changed formats only the files changed against the base', () =>
     writeFileSync(path.join(bin, 'prettier'), `#!/bin/sh\necho "$*" >> "${log}"\n`, {
       mode: 0o755,
     });
-    const result = spawnSync('bash', [path.join(root, 'scripts/fmt-changed.sh')], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, SIPGES_VERIFY_BASE: 'base' },
-    });
+    const run = (base) =>
+      spawnSync('bash', [path.join(root, 'scripts/fmt-changed.sh')], {
+        cwd: dir,
+        encoding: 'utf8',
+        env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, SIPGES_VERIFY_BASE: base },
+      });
+    const result = run('base');
     assert.equal(result.status, 0, result.stderr);
+    assert.equal(readFileSync(log, 'utf8'), '--write --ignore-unknown new.md\n');
+    assert.notEqual(run('no-such-base').status, 0);
     assert.equal(readFileSync(log, 'utf8'), '--write --ignore-unknown new.md\n');
   }));
 test('review-next prints the provider command verbatim and stops on consent', () => {
