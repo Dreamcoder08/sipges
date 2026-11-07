@@ -17,9 +17,11 @@ import (
 	"time"
 )
 
-// Options tunes a scan. Now is for tests.
+// Options tunes a scan. ShowUnconfirmedHeaders lets through first rows nothing proves are headers,
+// for an owner who has looked at the file. Now is for tests.
 type Options struct {
-	Now func() time.Time
+	ShowUnconfirmedHeaders bool
+	Now                    func() time.Time
 }
 
 // How far into a PDF to look for its markers: the head and the tail hold every trailer that
@@ -30,7 +32,6 @@ const (
 )
 
 var (
-	zipMagic = []byte("PK\x03\x04")
 	oleMagic = []byte{0xD0, 0xCF, 0x11, 0xE0}
 
 	// An extension is a short word; anything else after a dot is part of a file's name, which
@@ -45,11 +46,15 @@ const (
 	familyPDF
 	familyWord
 	familyLegacy
+	familySpreadsheet
+	familyDelimited
 )
 
 var families = map[string]family{
 	"pdf": familyPDF, "docx": familyWord, "docm": familyWord, "dotx": familyWord,
 	"doc": familyLegacy, "xls": familyLegacy, "ppt": familyLegacy,
+	"xlsx": familySpreadsheet, "xlsm": familySpreadsheet, "xltx": familySpreadsheet,
+	"csv": familyDelimited, "tsv": familyDelimited,
 }
 
 // Scan inventories the folder at root. Unreadable entries become lines of the report; only a
@@ -62,6 +67,7 @@ func Scan(ctx context.Context, root string, opts Options) (Report, error) {
 	}
 	defer folder.Close()
 	files := []File{}
+	tables := []Table{}
 	err = fs.WalkDir(folder.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -81,7 +87,11 @@ func Scan(ctx context.Context, root string, opts Options) (Report, error) {
 		case !entry.Type().IsRegular():
 			files = append(files, File{Path: name, Type: typeSpecial, Status: StatusUnreadable, Reason: ReasonSpecialFile})
 		default:
-			files = append(files, inspect(folder, path, name))
+			line, table := inspect(folder, path, name, opts)
+			files = append(files, line)
+			if table != nil {
+				tables = append(tables, *table)
+			}
 		}
 		return nil
 	})
@@ -92,7 +102,7 @@ func Scan(ctx context.Context, root string, opts Options) (Report, error) {
 	if opts.Now != nil {
 		now = opts.Now
 	}
-	return newReport(now().UTC(), files), nil
+	return newReport(now().UTC(), files, tables), nil
 }
 
 // A folder that cannot be listed is reported once, by the visit that failed to list it.
@@ -126,24 +136,25 @@ func typeOf(path string) string {
 	}
 }
 
-func inspect(folder *os.Root, path, name string) File {
+func inspect(folder *os.Root, path, name string, opts Options) (File, *Table) {
 	line := File{Path: name, Type: typeOf(path), Status: StatusUnreadable}
 	f, err := folder.Open(path)
 	if err != nil {
 		line.Reason = reasonOf(err)
-		return line
+		return line, nil
 	}
 	defer func() { _ = f.Close() }()
 	hash := sha256.New()
 	if line.Bytes, err = io.Copy(hash, f); err != nil {
 		line.Reason = reasonOf(err)
-		return line
+		return line, nil
 	}
 	line.SHA256 = hex.EncodeToString(hash.Sum(nil))
 	if line.Bytes == 0 {
 		line.Reason = ReasonEmpty
-		return line
+		return line, nil
 	}
+	var table *Table
 	reason, known := "", true
 	switch families[line.Type] {
 	case familyPDF:
@@ -155,6 +166,10 @@ func inspect(folder *os.Root, path, name string) File {
 		if bytes.HasPrefix(head(f, magicWindow), oleMagic) {
 			reason = ReasonLegacyFormat
 		}
+	case familySpreadsheet:
+		table, reason = inspectSpreadsheet(f, line.Bytes, opts)
+	case familyDelimited:
+		table, reason = inspectDelimited(f, line.Bytes, opts)
 	case familyOther:
 		known = false
 	}
@@ -166,7 +181,29 @@ func inspect(folder *os.Root, path, name string) File {
 	default:
 		line.Reason = reason
 	}
-	return line
+	if table != nil {
+		table.Path = name
+	}
+	return line, table
+}
+
+func inspectSpreadsheet(f io.ReaderAt, size int64, opts Options) (*Table, string) {
+	if bytes.HasPrefix(head(f, magicWindow), oleMagic) {
+		return nil, ReasonEncrypted
+	}
+	sheets, err := readWorkbook(f, size, opts.ShowUnconfirmedHeaders)
+	if err != nil {
+		return nil, reasonOf(err)
+	}
+	return &Table{Format: "xlsx", Sheets: sheets}, ""
+}
+
+func inspectDelimited(f io.ReaderAt, size int64, opts Options) (*Table, string) {
+	table, err := readCSV(f, size, opts.ShowUnconfirmedHeaders)
+	if err != nil {
+		return nil, reasonOf(err)
+	}
+	return &table, ""
 }
 
 func head(f io.ReaderAt, n int) []byte {
@@ -209,7 +246,8 @@ func inspectWord(f io.ReaderAt, size int64) string {
 		return ReasonCorrupt
 	}
 	defer func() { _ = body.Close() }()
-	if _, err := io.Copy(io.Discard, bounded(body, maxPartBytes, 0, 0)); err != nil {
+	budget := unpackLimit
+	if _, err := io.Copy(io.Discard, bounded(body, &budget, 0, 0)); err != nil {
 		return reasonOf(err)
 	}
 	return ""

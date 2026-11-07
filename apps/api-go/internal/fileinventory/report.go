@@ -54,6 +54,7 @@ type Report struct {
 	ByType      []TypeCount   `json:"byType"`
 	ByReason    []ReasonCount `json:"byReason"`
 	Duplicates  []Duplicate   `json:"duplicates"`
+	Tables      []Table       `json:"tables"`
 	Files       []File        `json:"files"`
 }
 
@@ -101,9 +102,31 @@ type File struct {
 	Reason string `json:"reason,omitempty"`
 }
 
-func newReport(now time.Time, files []File) Report {
+// Table is the shape of one spreadsheet file.
+type Table struct {
+	Path      string  `json:"path"`
+	Format    string  `json:"format"`
+	Encoding  string  `json:"encoding,omitempty"`
+	Delimiter string  `json:"delimiter,omitempty"`
+	Sheets    []Sheet `json:"sheets"`
+}
+
+// Sheet holds names and counts, never a cell of data. HeaderRow is the row the header came from,
+// on a CSV the line. Headers is empty when HeadersWithheld says why, and a cell that does not
+// read like a column's name is WithheldCell. DataRows counts filled rows below the header.
+type Sheet struct {
+	Name            string   `json:"name,omitempty"`
+	Hidden          bool     `json:"hidden,omitempty"`
+	HeaderRow       int      `json:"headerRow"`
+	DataRows        int      `json:"dataRows"`
+	Columns         int      `json:"columns"`
+	Headers         []string `json:"headers,omitempty"`
+	HeadersWithheld string   `json:"headersWithheld,omitempty"`
+}
+
+func newReport(now time.Time, files []File, tables []Table) Report {
 	report := Report{
-		Schema: Schema, GeneratedAt: now, Files: files,
+		Schema: Schema, GeneratedAt: now, Files: files, Tables: tables,
 		ByType: []TypeCount{}, ByReason: []ReasonCount{}, Duplicates: []Duplicate{},
 	}
 	types := map[string]*TypeCount{}
@@ -175,6 +198,18 @@ func (r Report) WriteSummary(out io.Writer) {
 	}
 	if len(r.Duplicates) > 0 {
 		print("duplicates: %d group(s), %d extra file(s), %s\n", len(r.Duplicates), t.DuplicateFiles, size(t.DuplicateBytes))
+	}
+	if len(r.Tables) > 0 {
+		sheets, withheld := 0, 0
+		for _, table := range r.Tables {
+			sheets += len(table.Sheets)
+			for _, sheet := range table.Sheets {
+				if sheet.HeadersWithheld != "" {
+					withheld++
+				}
+			}
+		}
+		print("spreadsheets: %d file(s), %d sheet(s), headers withheld on %d\n", len(r.Tables), sheets, withheld)
 	}
 }
 
