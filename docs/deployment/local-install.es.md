@@ -183,11 +183,15 @@ En pantalla solo ves conteos. El informe completo es un archivo JSON en `deploy/
 | `permission-denied` | SIPGES no tiene acceso. | Sigue los pasos de [Permisos de la carpeta](#permisos-de-la-carpeta). |
 | `empty`, `too-large`, `link`, `special-file` | Vacío, supera los límites de seguridad, un enlace (nunca se sigue) o no es un archivo normal. | Revísalo a mano. |
 
-SIPGES muestra la primera fila de una hoja como encabezados solo cuando, debajo, una columna tiene únicamente números o fechas, porque eso prueba que esa fila no es de datos. Si no, `headersWithheld` dice `unconfirmed`, porque la primera fila podría tener datos de una persona. Una celda que parece un valor, como un número de documento, un correo o una fecha, aparece como `[withheld]`. Después de revisar esos archivos tú mismo, puedes pedir el resto:
+Un encabezado de columna también es una celda, y nada en un archivo prueba que la primera fila no tenga datos de una persona: `Juan Perez` sobre una columna de números se ve igual que `Monto`. Por eso, de forma predeterminada, SIPGES muestra un encabezado solo cuando Excel marca esa fila, con un filtro o un panel inmovilizado. Lo demás, incluido todo CSV, dice `headersWithheld: unconfirmed` y conserva sus conteos de filas y columnas.
+
+Después de revisar esos archivos tú mismo, pide el resto:
 
 ```bash
 ./sipges inventory /media/usb/cliente --show-unconfirmed-headers
 ```
+
+Ese informe puede contener datos reales si un archivo no tiene fila de encabezados. Una celda que parece un valor, como un número de documento, un correo o una fecha, aparece como `[withheld]` en ambos informes, pero ese filtro no detecta un nombre. **Léelo tú antes de compartirlo con alguien o con cualquier herramienta.**
 
 **Trata el informe con la misma reserva que los archivos.** No tiene valores de celdas, pero los nombres de archivos, hojas y columnas pueden incluir el nombre de un cliente o de una persona. Léelo antes de compartirlo con alguien o con cualquier herramienta.
 
