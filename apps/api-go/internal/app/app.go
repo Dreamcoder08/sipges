@@ -37,6 +37,10 @@ type Options struct {
 	Engines *engines.Set
 	// AutomationInterval is config.Config's: zero leaves the cron to TypeScript.
 	AutomationInterval time.Duration
+	// WebDir is config.Config's: Go serves the SPA and adds the security headers itself.
+	WebDir string
+	// HSTS is config.Config's CookieSecure; it matters only with WebDir.
+	HSTS bool
 	// ReadyGate holds /health/ready at 503 until it answers nil; nil means no gate.
 	ReadyGate httpx.ReadyFunc
 	// Routes adds routes beyond the ones registered here (tests).
@@ -44,7 +48,7 @@ type Options struct {
 }
 
 // NewHandler builds the API on pool. It fails only when the embedded reference files do not
-// match their contract.
+// match their contract or WebDir cannot be opened.
 func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 	if opts.Engines == nil {
 		compiled, err := engines.Shared(context.Background())
@@ -64,8 +68,17 @@ func NewHandler(pool *pgxpool.Pool, opts Options) (http.Handler, error) {
 	}
 	grants := application.NewGrantCache(tenancy.Grants{DB: pool}.List, opts.Now)
 	sessions := identity.Sessions{DB: pool, Now: opts.Now}
+	var headers, web httpx.Middleware
+	if opts.WebDir != "" {
+		if web, err = httpx.Web(opts.WebDir); err != nil {
+			return nil, err
+		}
+		headers = httpx.SecurityHeaders(httpx.SecurityOptions{HSTS: opts.HSTS})
+	}
 	return httpx.NewHandler(httpx.Options{
 		Logger:       opts.Logger,
+		Headers:      headers,
+		Web:          web,
 		Ready:        readiness(opts.ReadyGate, database.Ping(pool)),
 		AllowedHosts: opts.AllowedHosts,
 		AccessLog:    opts.AccessLog,

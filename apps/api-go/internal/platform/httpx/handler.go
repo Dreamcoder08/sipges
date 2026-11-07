@@ -22,6 +22,10 @@ type Options struct {
 	ReadyTimeout time.Duration
 	AllowedHosts []string
 	AccessLog    bool
+	// Headers wraps every response from outside Recover and the allowlist; nil behind the Worker,
+	// which adds its own. Web answers the built SPA before Auth; nil without a web directory.
+	Headers Middleware
+	Web     Middleware
 	// Auth runs after the host allowlist and before routing: the session, project scope and
 	// role gates. Without it every route is public (unit tests of this package).
 	Auth []Middleware
@@ -98,7 +102,13 @@ func NewHandler(opts Options) http.Handler {
 	if opts.AccessLog {
 		middleware = append(middleware, AccessLog(opts.Logger))
 	}
+	if opts.Headers != nil {
+		middleware = append(middleware, opts.Headers)
+	}
 	middleware = append(middleware, Recover(opts.Logger), HostAllowlist(opts.AllowedHosts))
+	if opts.Web != nil {
+		middleware = append(middleware, opts.Web)
+	}
 	middleware = append(middleware, opts.Auth...)
 	return Chain(routes, middleware...)
 }

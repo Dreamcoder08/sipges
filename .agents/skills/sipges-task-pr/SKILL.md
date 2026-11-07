@@ -18,6 +18,8 @@ Si se fusionó la base, inspecciona la nueva relación antes de retarget/integra
 
 ## Aterrizar (land), solo con merge autorizado
 
+`scripts/agents/land-pr.sh <n> --merge` hace los pasos 1, 3 y 4 e imprime `CONFLICT`, `NOT_OPEN`, `BLOCKED`, `CHECKS_FAILED`, `MERGED` (solo con el head ya ancestro de `origin/main`), `DEPLOYED`, `DEPLOY_SUPERSEDED` (main ya avanzó; decide el despliegue posterior), `DEPLOY_FAILED` o `NO_DEPLOY` (un merge solo de docs no lanza despliegue). La salida 7 (`UNKNOWN_STATE`, `CHECKS_PENDING`, `HEAD_CHANGED`, `MERGE_UNCONFIRMED`, `DEPLOY_UNKNOWN`) significa que no se sabe, no que falló: lee el error de `gh` en stderr antes de repetir; repetir sobre un PR ya fusionado retoma sin fusionar dos veces. Sin `--merge` solo espera los checks e informa `READY`; `--no-deploy-wait` se detiene en `MERGED` para varios merges seguidos.
+
 1. Espera los checks: `gh pr checks <n> --watch`. Ante uno rojo aplica `sipges-ci-triage`.
 2. Si `gh pr view <n> --json mergeable,mergeStateStatus` dice `CONFLICTING`/`DIRTY`: `git fetch origin && git merge origin/main` en el worktree (nunca rebase ni force-push). El driver `union` de `.gitattributes` (T2 de `odd/tasks/conflict-free-delivery.md`) resuelve los logs de solo-agregado; lo que quede, con `sipges-sync-main`. Verifica, `git push` y vuelve al paso 1.
 3. En verde y `MERGEABLE`: `gh pr ready <n>` si es borrador, luego `gh pr merge <n> --merge` (commit de merge, sin squash ni rebase). Un PR a la vez cuando hay varios en paralelo.
