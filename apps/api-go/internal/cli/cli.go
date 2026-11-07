@@ -10,7 +10,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -25,6 +27,7 @@ Session
   mfa enroll              enrol TOTP; the secret goes to --secret-file only
   project list            the projects this account may use
   project switch ID       choose the project of this session
+  apikey create           issue a machine key; it goes to --secret-file only
 
 Any route
   routes                  the route inventory, with the command that reaches each route
@@ -36,6 +39,8 @@ Typed commands (same flags, and one flag per path value)
 Proof
   verify --synthetic-target   the whole journey against a synthetic install on this machine, as
                           the signed-in administrator; PASS or FAIL per check
+
+A machine route (/mcp, /hooks/*, cron) takes SIPGES_MACHINE_TOKEN and never the session.
 
 Common options, on every command
   --url URL               API address (SIPGES_URL)
@@ -81,6 +86,9 @@ func Run(ctx context.Context, args []string, streams IO) int {
 		return a.fail(wantsJSON(args), err)
 	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+		if wantsJSON(args) {
+			return a.write(true, envelope{OK: true, Data: map[string]any{"help": a.help()}}, ExitOK)
+		}
 		_, _ = io.WriteString(a.stdout, a.help())
 		return ExitOK
 	}
@@ -115,7 +123,11 @@ func (a *app) help() string {
 // wantsJSON answers before flags are parsed, so even a usage error can honour --json.
 func wantsJSON(args []string) bool {
 	for _, arg := range args {
-		if arg == "--json" || arg == "-json" {
+		name, value, hasValue := strings.Cut(strings.TrimLeft(arg, "-"), "=")
+		if name != "json" || !strings.HasPrefix(arg, "-") {
+			continue
+		}
+		if on, err := strconv.ParseBool(value); !hasValue || (err == nil && on) {
 			return true
 		}
 	}
@@ -130,6 +142,7 @@ func (a *app) builtins() map[string]command {
 		"mfa enroll":      a.mfaEnroll,
 		"project list":    a.projectList,
 		"project switch":  a.projectSwitch,
+		"apikey create":   a.apiKeyCreate,
 		"routes":          a.listRoutes,
 		"call":            a.call,
 		"evidence upload": a.evidenceUpload,
@@ -197,6 +210,30 @@ func (o *options) parse(args []string) ([]string, error) {
 		positional = append(positional, o.flags.Arg(0))
 		args = o.flags.Args()[1:]
 	}
+}
+
+// parseNone is parse for a command that takes flags only.
+func (o *options) parseNone(args []string) error {
+	positional, err := o.parse(args)
+	if err == nil && len(positional) > 0 {
+		return usageError("%s takes flags only, not %q", o.flags.Name(), positional[0])
+	}
+	return err
+}
+
+// refuse fails on an option this command would otherwise ignore: an explicit option that does
+// nothing is worse than an error. Environment defaults stay allowed.
+func (o *options) refuse(names ...string) error {
+	var given []string
+	o.flags.Visit(func(f *flag.Flag) {
+		if slices.Contains(names, f.Name) {
+			given = append(given, "--"+f.Name)
+		}
+	})
+	if len(given) > 0 {
+		return usageError("%s does not use %s", o.flags.Name(), strings.Join(given, ", "))
+	}
+	return nil
 }
 
 func (o *options) sessionPath() (string, error) {

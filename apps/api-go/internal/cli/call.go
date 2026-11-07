@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
@@ -38,6 +39,11 @@ func (o *options) addRequestFlags() *requestFlags {
 // expand fills the {names} of a path. Every value is one escaped segment, so a value cannot
 // reach another route.
 func expand(route Route, path string, params keyValues) (string, error) {
+	for name := range params {
+		if !slices.Contains(route.params(), name) {
+			return "", usageError("%s has no path value %s", route.Key(), name)
+		}
+	}
 	for _, name := range route.params() {
 		values := params[name]
 		marker := "{" + name + "}"
@@ -59,7 +65,15 @@ func (o *options) send(ctx context.Context, route Route, path string, f *request
 		return 0, err
 	}
 	out := request{method: route.Method, path: path, query: url.Values(f.query), output: f.output}
+	if route.Access == AccessMachine {
+		if out.bearer = o.app.env("SIPGES_MACHINE_TOKEN"); out.bearer == "" {
+			return 0, usageError("%s needs its own credential: set SIPGES_MACHINE_TOKEN", route.Key())
+		}
+		out.anonymous = true // a machine route never sees the session
+	}
 	switch {
+	case f.form && f.body == "":
+		return 0, usageError("--form needs --body")
 	case f.body != "" && (len(f.attach) > 0 || len(f.fields) > 0):
 		return 0, usageError("--body cannot be mixed with --field or --attach")
 	case len(f.attach) > 0 || len(f.fields) > 0:
@@ -91,6 +105,10 @@ func (o *options) send(ctx context.Context, route Route, path string, f *request
 	}
 	if err := c.persist(sessionFile); err != nil {
 		return 0, err
+	}
+	saved := answer.file != nil && answer.file.Path != ""
+	if f.output != "" && !saved && exitForStatus(answer.status) == ExitOK {
+		return 0, &exitError{exit: ExitFailed, code: "no_file", detail: fmt.Sprintf("status %d left nothing to write to %s", answer.status, f.output)}
 	}
 	return o.answer(route.Key(), answer), nil
 }
@@ -157,7 +175,10 @@ func (a *app) typed(route Route) command {
 
 // listRoutes prints the inventory, with the path that reaches each route.
 func (a *app) listRoutes(_ context.Context, o *options, args []string) (int, error) {
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
+		return 0, err
+	}
+	if err := o.refuse("url", "ca-file", "session-file", "project", "timeout"); err != nil {
 		return 0, err
 	}
 	type entry struct {
@@ -186,7 +207,7 @@ func (a *app) evidenceUpload(ctx context.Context, o *options, args []string) (in
 	for _, name := range []string{"document_type", "author", "verification", "notes"} {
 		optional[name] = o.flags.String(strings.ReplaceAll(name, "_", "-"), "", name)
 	}
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
 		return 0, err
 	}
 	if *file == "" || *module == "" || *record == "" {

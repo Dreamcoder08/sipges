@@ -18,10 +18,6 @@ func (v *verifier) anonymous() error {
 	me := v.want("no session means no identity", http.StatusOK, call{method: http.MethodGet, path: "/system/auth/me"})
 	v.that("the identity is null", me.data == nil, "an anonymous request got an identity")
 	v.want("data asks for a session", http.StatusUnauthorized, call{method: http.MethodGet, path: "/api/" + verifyModule})
-	v.want("a wrong password is refused", http.StatusUnauthorized, call{
-		method: http.MethodPost, path: "/login", contentType: "application/x-www-form-urlencoded",
-		form: loginForm("verify-nobody-"+v.run, "synthetic-wrong-password", ""),
-	})
 	return nil
 }
 
@@ -121,6 +117,10 @@ func (v *verifier) accounts() error {
 	if v.outsider, err = v.createAccount("outsider", "analista", v.projectB); err != nil {
 		return err
 	}
+	v.want("a wrong password is refused", http.StatusUnauthorized, call{
+		method: http.MethodPost, path: "/login", contentType: "application/x-www-form-urlencoded",
+		form: loginForm(v.analyst.username, "synthetic-wrong-password", ""),
+	})
 	list := v.want("the account list shows them", http.StatusOK, call{as: v.admin, method: http.MethodGet, path: "/system/auth/accounts"})
 	v.that("the list holds the new account", holds(list, v.viewer.username), "missing account")
 	v.that("the list holds no password", !holds(list, v.viewer.password), "a password was listed")
@@ -218,10 +218,17 @@ func (v *verifier) records() error {
 	history := v.want("the history answers", http.StatusOK, call{as: v.analyst, method: http.MethodGet, path: path + "/" + v.marker + "/history"})
 	v.that("the history has both versions", len(items(history)) == 2, fmt.Sprintf("%d versions", len(items(history))))
 	v.that("the history names the author", holds(history, v.analyst.username), "no author")
+	decoy := "VERIFY-DECOY-" + v.run
+	v.want("an unrelated record is created", http.StatusOK, call{
+		as: v.analyst, method: http.MethodPost, path: path,
+		json: map[string]any{"payload": map[string]any{"ID_Compromiso": decoy, "Texto": "unrelated"}},
+	})
 	found := v.want("search finds it", http.StatusOK, call{
 		as: v.analyst, method: http.MethodGet, path: path, query: url.Values{"q": {v.marker}},
 	})
-	v.that("the list holds exactly this record", len(items(found)) == 1, fmt.Sprintf("%d rows", len(items(found))))
+	all := v.want("the whole list answers", http.StatusOK, call{as: v.analyst, method: http.MethodGet, path: path})
+	v.that("the list holds both records", len(items(all)) >= 2, fmt.Sprintf("%d rows", len(items(all))))
+	v.that("search keeps only this record", len(items(found)) == 1 && holds(found, v.marker) && !holds(found, decoy), fmt.Sprintf("%d rows", len(items(found))))
 	v.want("an unknown module is refused", http.StatusNotFound, call{as: v.analyst, method: http.MethodGet, path: "/api/no-such-module"})
 	v.want("an unknown record is 404", http.StatusNotFound, call{as: v.analyst, method: http.MethodGet, path: path + "/VERIFY-NONE"})
 	other := "VERIFY-DELETE-" + v.run
@@ -240,7 +247,7 @@ func (v *verifier) records() error {
 	})
 	v.want("an event is created", http.StatusOK, call{
 		as: v.analyst, method: http.MethodPost, path: "/api/eventos",
-		json: map[string]any{"payload": map[string]any{"ID_Evento": "VERIFY-EV-" + v.run, "Descripcion": "synthetic event"}},
+		json: map[string]any{"payload": map[string]any{"ID_Evento": "VERIFY-EV-" + v.run, "Descripcion": "synthetic event", "Fecha": "2026-01-15"}},
 	})
 	summary := v.want("the register summary answers", http.StatusOK, call{as: v.analyst, method: http.MethodGet, path: "/api/registros/summary"})
 	v.that("the summary counts the event", object(summary, "counts")["eventos"] == float64(1), fmt.Sprint(object(summary, "counts")["eventos"]))
@@ -320,6 +327,14 @@ func (v *verifier) evidence() error {
 		query: url.Values{"linked_module": {verifyModule}, "linked_record_id": {v.record}},
 	})
 	v.that("exactly one file is linked", len(items(listed)) == 1, fmt.Sprint(len(items(listed))))
+	decoyLink := keyValues{"linked_module": {verifyModule}, "linked_record_id": {"VERIFY-DECOY-" + v.run}}
+	second := send(v.analyst, decoyLink, attachment{"file", "verify-other.txt", []byte("synthetic other\n")})
+	v.that("a second file links to another record", second.status == http.StatusOK, fmt.Sprint(second.status))
+	again := v.send(call{
+		as: v.viewer, method: http.MethodGet, path: "/system/uploads",
+		query: url.Values{"linked_module": {verifyModule}, "linked_record_id": {v.record}},
+	})
+	v.that("the link filter still gives one file", len(items(again)) == 1, fmt.Sprint(len(items(again))))
 	wrong := send(v.analyst, fields, attachment{"file", "verify.exe", []byte("MZ synthetic")})
 	v.that("an unsupported type is refused", wrong.status == http.StatusUnsupportedMediaType || wrong.status == http.StatusBadRequest, fmt.Sprint(wrong.status))
 	unknown := keyValues{"linked_module": {verifyModule}, "linked_record_id": {"VERIFY-NONE"}}
@@ -408,7 +423,7 @@ func (v *verifier) management() error {
 	overview := v.want("the overview answers", http.StatusOK, call{as: v.viewer, method: http.MethodGet, path: "/system/management/overview"})
 	v.that("the overview is of this project", text(overview, "project_id") == "A-"+v.run, text(overview, "project_id"))
 	dashboard := v.want("the dashboard answers", http.StatusOK, call{as: v.viewer, method: http.MethodGet, path: "/api/dashboard"})
-	v.that("the dashboard has its counters", dashboard.data != nil, "empty")
+	v.that("the dashboard counts the event", number(dashboard, "eventos") == 1, fmt.Sprint(number(dashboard, "eventos")))
 	return nil
 }
 
@@ -448,7 +463,8 @@ func (v *verifier) automation() error {
 	v.that("the rule notified", notified, "no notification with the marker")
 	v.want("the rule is deleted", http.StatusOK, call{as: v.admin, method: http.MethodDelete, path: "/system/automations/rules/" + id})
 	runtime := v.want("the runtime answers", http.StatusOK, call{as: v.admin, method: http.MethodGet, path: "/system/automations/runtime"})
-	v.that("the runtime reports its schedule", runtime.data != nil, "empty")
+	body, _ := runtime.data.(map[string]any)
+	v.that("the runtime reports event processing on", body["event_processing"] == true, shortDetail(runtime))
 	return nil
 }
 
@@ -501,19 +517,87 @@ func (v *verifier) isolation() error {
 	v.that("project A has a hit", len(hits(own)) > 0, "the search control found nothing, so the next check would prove nothing")
 	foreign := v.want("search answers in project B", http.StatusOK, call{as: who, method: http.MethodGet, path: "/system/search", query: query})
 	v.that("project B has no hit", len(hits(foreign)) == 0, fmt.Sprintf("%d hits", len(hits(foreign))))
-	for _, read := range []string{
-		"/system/uploads", "/system/prevention/actions", "/system/intelligence/territorial-alerts", "/api/registros/summary",
-		"/system/timeline", "/system/notifications", "/system/management/overview",
-		"/system/document-lab/review", "/api/dashboard", "/system/audit",
-	} {
-		answer := v.send(call{as: who, method: http.MethodGet, path: read})
-		if answer.status == http.StatusForbidden && read == "/system/audit" {
-			continue // administrators only: nothing to leak
-		}
-		v.that(read+" holds nothing of project A", answer.status == http.StatusOK && !holds(answer, v.marker) && !holds(answer, "A-"+v.run),
-			fmt.Sprintf("status %d", answer.status))
-	}
+	v.isolatedReads()
 	return nil
+}
+
+// machine proves the machine routes work with their own credential, and only with it: a key
+// reaches /mcp and writes into its own project, and a revoked key stops at once.
+func (v *verifier) machine() error {
+	created, err := v.must("the administrator issues a key", call{
+		as: v.admin, method: http.MethodPost, path: "/system/integrations/api-keys",
+		json: map[string]any{"name": "Verify " + v.run, "access": "write", "clearance": "limited"},
+	})
+	if err != nil {
+		return err
+	}
+	token, id := text(created, "token"), fmt.Sprint(number(created, "id"))
+	if !v.that("the answer holds the key and its id", token != "" && number(created, "id") > 0, shortDetail(created)) {
+		return errStop
+	}
+	listed := v.want("the key is listed", http.StatusOK, call{as: v.admin, method: http.MethodGet, path: "/system/integrations/api-keys"})
+	v.that("the list holds the key but not its value", holds(listed, id) && !holds(listed, token), "wrong list")
+	initialize := map[string]any{
+		"jsonrpc": "2.0", "id": 1, "method": "initialize",
+		"params": map[string]any{"protocolVersion": "2025-06-18", "capabilities": map[string]any{}, "clientInfo": map[string]any{"name": "sipgesctl", "version": "1"}},
+	}
+	v.want("the key reaches /mcp", http.StatusOK, call{bearer: token, method: http.MethodPost, path: "/mcp", json: initialize})
+	v.want("the session does not", http.StatusUnauthorized, call{as: v.admin, method: http.MethodPost, path: "/mcp", json: initialize})
+	hook := "VERIFY-HOOK-" + v.run
+	ingest := v.send(call{
+		bearer: token, method: http.MethodPost, path: "/hooks/ingest/" + verifyModule,
+		json: map[string]any{"ID_Compromiso": hook, "Texto": "synthetic webhook"},
+	})
+	v.that("a webhook is accepted", ingest.status < 300, fmt.Sprintf("%d %s", ingest.status, shortDetail(ingest)))
+	v.want("the webhook's record is in the key's project", http.StatusOK, call{as: v.analyst, method: http.MethodGet, path: "/api/" + verifyModule + "/" + hook})
+	v.want("and not in the other project", http.StatusNotFound, call{as: v.outsider, method: http.MethodGet, path: "/api/" + verifyModule + "/" + hook})
+	v.want("the key is revoked", http.StatusOK, call{as: v.admin, method: http.MethodDelete, path: "/system/integrations/api-keys/" + id})
+	v.want("a revoked key stops", http.StatusUnauthorized, call{bearer: token, method: http.MethodPost, path: "/mcp", json: initialize})
+	return nil
+}
+
+// isolatedRead is one read seen from both sides. A read that shows nothing from project B proves
+// nothing unless the same read shows the data from project A, so every entry has both.
+type isolatedRead struct {
+	path         string
+	owner, other *actor
+	otherProject string
+	seen         func(*response) bool
+}
+
+func (v *verifier) isolatedReads() {
+	marked := func(r *response) bool { return holds(r, v.marker) }
+	counted := func(r *response) bool { return number(r, "eventos") > 0 }
+	summed := func(r *response) bool {
+		return object(r, "counts")["eventos"] != float64(0) || holds(r, "VERIFY-EV-"+v.run)
+	}
+	listed := func(r *response) bool { return len(items(r)) > 0 }
+	dated := func(r *response) bool {
+		body, _ := r.data.(map[string]any)
+		entries, _ := body["entries"].([]any)
+		return len(entries) > 0
+	}
+	who := v.outsider
+	for _, read := range []isolatedRead{
+		{path: "/system/uploads", owner: v.analyst, other: who, seen: listed},
+		{path: "/system/prevention/actions", owner: v.analyst, other: who, seen: listed},
+		{path: "/system/intelligence/territorial-alerts", owner: v.analyst, other: who, seen: marked},
+		{path: "/api/registros/summary", owner: v.analyst, other: who, seen: summed},
+		{path: "/api/dashboard", owner: v.analyst, other: who, seen: counted},
+		{path: "/system/timeline", owner: v.analyst, other: who, seen: dated},
+		{path: "/system/document-lab/review", owner: v.analyst, other: who, seen: marked},
+		{path: "/system/notifications", owner: v.admin, other: v.admin, otherProject: v.projectB, seen: marked},
+		{path: "/system/audit", owner: v.admin, other: v.admin, otherProject: v.projectB, seen: marked},
+		{path: "/system/export", owner: v.admin, other: v.admin, otherProject: v.projectB, seen: marked},
+	} {
+		own := v.send(call{as: read.owner, method: http.MethodGet, path: read.path})
+		foreign := v.send(call{as: read.other, project: read.otherProject, method: http.MethodGet, path: read.path})
+		v.that(read.path+" shows the data in project A", own.status == http.StatusOK && read.seen(own), fmt.Sprintf("status %d", own.status))
+		v.that(read.path+" shows nothing of it in project B", foreign.status == http.StatusOK && !read.seen(foreign), fmt.Sprintf("status %d", foreign.status))
+	}
+	own := v.send(call{as: v.viewer, method: http.MethodGet, path: "/system/management/overview"})
+	foreign := v.send(call{as: who, method: http.MethodGet, path: "/system/management/overview"})
+	v.that("the overview stays in its project", text(own, "project_id") == "A-"+v.run && text(foreign, "project_id") == "B-"+v.run && !holds(foreign, v.marker), text(foreign, "project_id"))
 }
 
 // viewerWrites are the routes a read-only role may still post to: analysis that stores nothing
