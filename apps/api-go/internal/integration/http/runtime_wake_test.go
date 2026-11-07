@@ -1,3 +1,4 @@
+//nolint:misspell // Spanish module slugs, verbatim from the API.
 package http_test
 
 import (
