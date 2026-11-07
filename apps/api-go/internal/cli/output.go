@@ -159,9 +159,8 @@ const redacted = "[redacted]"
 // the check is on the name, at any depth, and it runs on every command, the generic call included.
 var secretFields = map[string]bool{
 	"password": true, "password_hash": true, "secret": true, "totp_secret": true, "token": true,
-	"session": true, "api_key": true, "apikey": true, "key": true, "otp": true, "otpauth": true,
-	"otpauth_uri": true, "otpauth_url": true, "uri": true, "plaintext": true, "webhook_secret": true,
-	"authorization": true, "cookie": true, "bot_token": true,
+	"api_key": true, "apikey": true, "otp": true, "otpauth": true, "otpauth_uri": true, "otpauth_url": true,
+	"plaintext": true, "webhook_secret": true, "authorization": true, "cookie": true, "bot_token": true,
 }
 
 func redact(value any) any {

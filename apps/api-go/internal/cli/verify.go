@@ -143,6 +143,7 @@ func (v *verifier) journey() {
 		{"management", v.management},
 		{"automation", v.automation},
 		{"notifications", v.notifications},
+		{"machine-routes", v.machine},
 		{"tenant-isolation", v.isolation},
 		{"read-only-role", v.readOnly},
 		{"route-sweep", v.sweep},
@@ -198,6 +199,7 @@ type call struct {
 	contentType string
 	project     string
 	origin      string
+	bearer      string
 	query       url.Values
 }
 
@@ -211,7 +213,7 @@ func (v *verifier) send(q call) *response {
 		c.project = q.project
 	}
 	defer func() { c.project = saved }()
-	out := request{method: q.method, path: q.path, query: q.query, anonymous: q.as == nil, origin: q.origin,
+	out := request{method: q.method, path: q.path, query: q.query, anonymous: q.as == nil, origin: q.origin, bearer: q.bearer,
 		body: q.form, contentType: q.contentType}
 	if q.json != nil {
 		body, err := json.Marshal(q.json)
