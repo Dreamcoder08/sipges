@@ -125,6 +125,24 @@ func TestProjectFlagIsSentAsTheScopeHeader(t *testing.T) {
 	}
 }
 
+func TestTheComposeProjectNameIsNotATenant(t *testing.T) {
+	var scope string
+	h := newHarness(t, func(w http.ResponseWriter, r *http.Request) {
+		scope = r.Header.Get("X-SIPGES-Scope")
+		jsonAnswer(w, http.StatusOK, `[]`)
+	})
+	h.env["SIPGES_PROJECT"] = "sipges-drill" // deploy/local/sipges names its Compose project with this
+	h.run("", "records", "list", "--module", "compromisos")
+	if scope != "" {
+		t.Fatalf("the Compose project became a tenant: %q", scope)
+	}
+	h.env["SIPGES_SCOPE"] = "ACME/P1"
+	h.run("", "records", "list", "--module", "compromisos")
+	if scope != "ACME/P1" {
+		t.Fatalf("SIPGES_SCOPE was ignored: %q", scope)
+	}
+}
+
 func TestCallOnlyReachesTheInventory(t *testing.T) {
 	asked := 0
 	h := newHarness(t, func(http.ResponseWriter, *http.Request) { asked++ })
