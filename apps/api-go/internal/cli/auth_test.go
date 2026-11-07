@@ -135,6 +135,72 @@ func TestASecretFileOthersCanReadIsRefused(t *testing.T) {
 	}
 }
 
+func TestSignInCommandsRefuseWhatTheyWouldIgnore(t *testing.T) {
+	h := newHarness(t, fakeLogin(func(w http.ResponseWriter, _ *http.Request) { jsonAnswer(w, http.StatusOK, `{}`) }))
+	h.env["SIPGES_PASSWORD"] = syntheticPassword
+	for _, args := range [][]string{
+		{"login", "--username", "ana", "--project", "ACME/P1"},
+		{"login", "--username", "ana", "extra"},
+		{"logout", "--project", "ACME/P1"},
+		{"logout", "extra"},
+		{"session", "extra"},
+		{"mfa", "enroll", "--secret-file", filepath.Join(t.TempDir(), "x"), "--project", "ACME/P1"},
+		{"project", "switch", "ACME/P1", "--project", "ACME/P2"},
+		{"project", "list", "extra"},
+	} {
+		if got := h.run("", args...); got.code != ExitUsage {
+			t.Errorf("%v: %+v", args, got)
+		}
+	}
+}
+
+func TestSessionReportsARefusedProject(t *testing.T) {
+	h := newHarness(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/system/auth/me" {
+			jsonAnswer(w, http.StatusOK, `{"username":"ana","full_name":"Ana","role":"admin","active":1}`)
+			return
+		}
+		jsonAnswer(w, http.StatusForbidden, `{"detail":"Seleccione","projects":["ACME/P1"]}`)
+	})
+	if err := saveSession(h.session, &session{URL: h.api.URL, Cookies: map[string]string{"sipges_session": "s"}}); err != nil {
+		t.Fatal(err)
+	}
+	if got := h.run("", "session", "--project", "NOPE/NOPE", "--json"); got.code != ExitForbidden {
+		t.Fatalf("a refused --project was swallowed: %+v", got)
+	}
+	got := h.run("", "session", "--json")
+	data, _ := decode(t, got.stdout)["data"].(map[string]any)
+	if got.code != ExitOK || data["choose_project"] == nil {
+		t.Fatalf("%+v", got)
+	}
+}
+
+func TestAPIKeyGoesToItsFileOnly(t *testing.T) {
+	var sent map[string]any
+	h := newHarness(t, func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewDecoder(r.Body).Decode(&sent)
+		jsonAnswer(w, http.StatusOK, `{"ok":true,"id":"k1","token":"mscli_synthetic"}`)
+	})
+	file := filepath.Join(t.TempDir(), "key")
+	got := h.run("", "apikey", "create", "--name", "bot", "--access", "write", "--secret-file", file, "--json")
+	if got.code != ExitOK || sent["name"] != "bot" || sent["access"] != "write" {
+		t.Fatalf("%+v %v", got, sent)
+	}
+	if strings.Contains(got.stdout+got.stderr, "mscli_synthetic") {
+		t.Fatal("the key reached the output")
+	}
+	info, err := os.Stat(file)
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("key file: %v %v", info, err)
+	}
+	if content, _ := os.ReadFile(file); strings.TrimSpace(string(content)) != "mscli_synthetic" {
+		t.Fatalf("key file holds %q", content)
+	}
+	if got := h.run("", "apikey", "create", "--name", "bot"); got.code != ExitUsage {
+		t.Fatalf("a key with nowhere to go: %+v", got)
+	}
+}
+
 func TestTOTPMatchesTheRFCVector(t *testing.T) {
 	// RFC 6238 appendix B, SHA-1, time 59: 94287082, of which six digits are kept.
 	got, err := totpCode("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", 59/totpPeriod)

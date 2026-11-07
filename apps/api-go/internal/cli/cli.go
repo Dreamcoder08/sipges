@@ -27,6 +27,7 @@ Session
   mfa enroll              enrol TOTP; the secret goes to --secret-file only
   project list            the projects this account may use
   project switch ID       choose the project of this session
+  apikey create           issue a machine key; it goes to --secret-file only
 
 Any route
   routes                  the route inventory, with the command that reaches each route
@@ -137,6 +138,7 @@ func (a *app) builtins() map[string]command {
 		"mfa enroll":      a.mfaEnroll,
 		"project list":    a.projectList,
 		"project switch":  a.projectSwitch,
+		"apikey create":   a.apiKeyCreate,
 		"routes":          a.listRoutes,
 		"call":            a.call,
 		"evidence upload": a.evidenceUpload,

@@ -61,10 +61,21 @@ func (a *app) credentials(secretFile string) (password, code, secret string, err
 		}
 		return password, "", strings.TrimSpace(string(body)), nil
 	}
-	if code = a.env("SIPGES_TOTP"); code == "" {
+	if code = a.env("SIPGES_TOTP"); code == "" && !a.stdinIsTerminal() {
 		code = readLine()
 	}
 	return password, code, "", nil
+}
+
+// stdinIsTerminal keeps a person from waiting on a prompt nobody printed; a code still comes from
+// a pipe or from SIPGES_TOTP.
+func (a *app) stdinIsTerminal() bool {
+	file, ok := a.stdin.(*os.File)
+	if !ok {
+		return false
+	}
+	info, err := file.Stat()
+	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
 
 // readPrivate refuses a credential file others can read.
@@ -92,7 +103,10 @@ func loginForm(username, password, code string) []byte {
 func (a *app) login(ctx context.Context, o *options, args []string) (int, error) {
 	username := o.flags.String("username", a.env("SIPGES_USERNAME"), "account")
 	secretFile := o.flags.String("totp-secret-file", a.env("SIPGES_TOTP_SECRET_FILE"), "file with the TOTP secret")
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
+		return 0, err
+	}
+	if err := o.refuse("project"); err != nil {
 		return 0, err
 	}
 	if *username == "" {
@@ -152,7 +166,10 @@ func (a *app) login(ctx context.Context, o *options, args []string) (int, error)
 }
 
 func (a *app) logout(ctx context.Context, o *options, args []string) (int, error) {
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
+		return 0, err
+	}
+	if err := o.refuse("project"); err != nil {
 		return 0, err
 	}
 	c, path, err := o.connect()
@@ -185,7 +202,7 @@ type sessionView struct {
 
 // sessionState asks the API, not the saved file: only the API knows a session is still alive.
 func (a *app) sessionState(ctx context.Context, o *options, args []string) (int, error) {
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
 		return 0, err
 	}
 	c, sessionFile, err := o.connect()
@@ -219,6 +236,8 @@ func (a *app) sessionState(ctx context.Context, o *options, args []string) (int,
 	switch body, _ := scope.data.(map[string]any); {
 	case scope.status == http.StatusOK:
 		view.Project = scope.data
+	case o.project != "":
+		return o.answer("GET /system/auth/current-scope", scope), nil
 	case body["projects"] != nil:
 		view.ChooseProject = body["projects"]
 	case strings.Contains(fmt.Sprint(body["detail"]), "MFA"):
@@ -234,7 +253,10 @@ func (a *app) sessionState(ctx context.Context, o *options, args []string) (int,
 // command, so it goes to a new private file; it never reaches stdout.
 func (a *app) mfaEnroll(ctx context.Context, o *options, args []string) (int, error) {
 	secretFile := o.flags.String("secret-file", "", "new file for the TOTP secret")
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
+		return 0, err
+	}
+	if err := o.refuse("project"); err != nil {
 		return 0, err
 	}
 	if *secretFile == "" {
@@ -303,7 +325,7 @@ func writePrivate(path, content string) error {
 }
 
 func (a *app) projectList(ctx context.Context, o *options, args []string) (int, error) {
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
 		return 0, err
 	}
 	return o.send(ctx, Route{Method: http.MethodGet, Path: "/system/auth/scopes"}, "/system/auth/scopes", o.emptyFlags())
@@ -314,6 +336,9 @@ func (a *app) projectList(ctx context.Context, o *options, args []string) (int, 
 func (a *app) projectSwitch(ctx context.Context, o *options, args []string) (int, error) {
 	positional, err := o.parse(args)
 	if err != nil {
+		return 0, err
+	}
+	if err := o.refuse("project"); err != nil {
 		return 0, err
 	}
 	if len(positional) != 1 {
@@ -344,4 +369,53 @@ func (a *app) projectSwitch(ctx context.Context, o *options, args []string) (int
 		return 0, err
 	}
 	return o.answer("GET /system/auth/current-scope", current), nil
+}
+
+// apiKeyCreate issues a key for the machine routes. The API shows a key once, so it goes to a new
+// private file, ready for SIPGES_MACHINE_TOKEN; it never reaches stdout.
+func (a *app) apiKeyCreate(ctx context.Context, o *options, args []string) (int, error) {
+	name := o.flags.String("name", "", "what the key is for")
+	access := o.flags.String("access", "read", "read or write")
+	clearance := o.flags.String("clearance", "limited", "limited or full")
+	secretFile := o.flags.String("secret-file", "", "new file for the key")
+	if err := o.parseNone(args); err != nil {
+		return 0, err
+	}
+	if *name == "" || *secretFile == "" {
+		return 0, usageError("usage: sipgesctl apikey create --name NAME --secret-file FILE: the key is never printed")
+	}
+	if _, err := os.Lstat(*secretFile); err == nil {
+		return 0, localError("%s already exists", *secretFile)
+	}
+	c, path, err := o.connect()
+	if err != nil {
+		return 0, err
+	}
+	body, err := json.Marshal(map[string]string{"name": *name, "access": *access, "clearance": *clearance})
+	if err != nil {
+		return 0, localError("build the request: %v", err)
+	}
+	ctx, cancel := o.timeoutContext(ctx)
+	defer cancel()
+	const route = "POST /system/integrations/api-keys"
+	answer, err := c.do(ctx, request{method: http.MethodPost, path: "/system/integrations/api-keys", body: body, contentType: "application/json"})
+	if err != nil {
+		return 0, err
+	}
+	if err := c.persist(path); err != nil {
+		return 0, err
+	}
+	if answer.status != http.StatusOK {
+		return o.answer(route, answer), nil
+	}
+	fields, _ := answer.data.(map[string]any)
+	token, _ := fields["token"].(string)
+	if token == "" {
+		return 0, &exitError{exit: ExitFailed, code: "bad_answer", detail: "the API sent no key"}
+	}
+	if err := writePrivate(*secretFile, token); err != nil {
+		return 0, err
+	}
+	view := map[string]any{"id": fields["id"], "secret_file": *secretFile}
+	return a.write(o.json, envelope{OK: true, Status: answer.status, Route: route, Data: view}, ExitOK), nil
 }
