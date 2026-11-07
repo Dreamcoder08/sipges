@@ -1,6 +1,6 @@
 # Contribuir a SIPGES
 
-La versión final de SIPGES es el monorepo TypeScript (`apps/`, `packages/`). La app Python (`app.py`, `static/`) es legada: solo recibe correcciones de seguridad hasta que la migración alcance paridad.
+SIPGES es un monorepo pnpm (`apps/`, `packages/`, `engines/`) que avanza hacia un backend Go, motores Rust y un frontend TypeScript ([ADR 0032](docs/adr/0032-go-backend-rust-engines.md)). La app Python (`reference/python/`) es la especificación de comportamiento legada; no recibe funciones nuevas.
 
 ## Ramas
 
@@ -20,7 +20,9 @@ La versión final de SIPGES es el monorepo TypeScript (`apps/`, `packages/`). La
 corepack enable
 pnpm install --frozen-lockfile
 pnpm check              # lint + límites de capas + typecheck + tests
-python -m pytest -q tests   # solo si tocas la app Python legada
+PYTHONPATH=reference/python python -m pytest -q reference/python/tests   # solo si tocas la app Python legada
+(cd apps/api-go && go test ./...)   # solo si tocas Go
+(cd engines && cargo test --locked)   # solo si tocas Rust
 ```
 
 Las pruebas de integración con PostgreSQL real corren en CI. En local, actívalas con `SIPGES_TEST_DATABASE_URL` (ver `docs/migration/workspace.md`).
