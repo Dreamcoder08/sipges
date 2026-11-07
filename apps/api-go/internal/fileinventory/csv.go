@@ -24,16 +24,18 @@ var errNotText = errors.New("not text")
 
 // recordLimiter fails on one record that csv.Reader could not hold cheaply: too many bytes, which
 // it keeps in one piece, or too many fields, which it allocates one by one. It follows the quotes
-// the way the reader does with LazyQuotes: only a quote that opens a field starts a quoted run, so
-// an inch mark in a description is just a character.
+// the way the reader does with LazyQuotes: only a quote that opens a field starts a quoted run, an
+// inch mark in a description is just a character, and a quoted field ends only at a quote right
+// before a delimiter or a line end.
 type recordLimiter struct {
-	in      io.Reader
-	comma   byte
-	started bool // inside a field, past its first byte
-	quoted  bool
-	closed  bool // just past a closing quote, where a second one means a literal quote
-	run     int
-	fields  int
+	in        io.Reader
+	comma     byte
+	started   bool // inside a field, past its first byte
+	quoted    bool
+	closing   bool // inside a quoted field, just past a quote
+	closingCR bool // and past one return after it
+	run       int
+	fields    int
 }
 
 func (l *recordLimiter) Read(p []byte) (int, error) {
@@ -49,14 +51,28 @@ func (l *recordLimiter) Read(p []byte) (int, error) {
 
 func (l *recordLimiter) step(c byte) {
 	l.run++
-	wasClosed := l.closed
-	l.closed = false
+	if l.closing {
+		// Only one return, directly before the line feed, belongs to the line end.
+		if c == '\r' && !l.closingCR {
+			l.closingCR = true
+			return
+		}
+		afterCR := l.closingCR
+		l.closing, l.closingCR = false, false
+		switch {
+		case c == '\n', c == l.comma && !afterCR:
+			l.quoted = false
+		case c == '"' && !afterCR: // a doubled quote is a literal one
+			return
+		default:
+			l.closing = c == '"'
+			return
+		}
+	}
 	switch {
 	case l.quoted:
-		if c == '"' {
-			l.quoted, l.closed = false, true
-		}
-	case c == '"' && (wasClosed || !l.started):
+		l.closing = c == '"'
+	case c == '"' && !l.started:
 		l.quoted, l.started = true, true
 	case c == l.comma:
 		l.fields++

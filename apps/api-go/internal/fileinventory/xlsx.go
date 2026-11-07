@@ -35,10 +35,14 @@ func readWorkbook(f io.ReaderAt, size int64, showUnconfirmed bool) ([]Sheet, err
 	}
 	profiles := make([]*profile, len(listed))
 	wanted := map[int]string{}
+	kept := 0
 	for i, sheet := range listed {
 		profiles[i] = &profile{}
 		if err := book.read(sheet.target, func(r io.Reader) error { return scanSheet(r, profiles[i]) }); err != nil {
 			return nil, err
+		}
+		if kept += len(profiles[i].header); kept > maxKeptCells {
+			return nil, errTooLarge
 		}
 		for _, c := range profiles[i].header {
 			if c.shared >= 0 {
@@ -93,7 +97,7 @@ func attr(el xml.StartElement, name string) string {
 	return ""
 }
 
-func eachStart(r io.Reader, visit func(xml.StartElement)) error {
+func eachStart(r io.Reader, visit func(xml.StartElement) error) error {
 	dec := xml.NewDecoder(r)
 	for {
 		token, err := dec.RawToken()
@@ -104,7 +108,9 @@ func eachStart(r io.Reader, visit func(xml.StartElement)) error {
 			return err
 		}
 		if el, ok := token.(xml.StartElement); ok {
-			visit(el)
+			if err := visit(el); err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -113,16 +119,21 @@ func (b *workbookParts) listSheets() ([]xlsxSheet, string, error) {
 	targets := map[string]string{}
 	shared := "xl/sharedStrings.xml"
 	err := b.read("xl/_rels/workbook.xml.rels", func(r io.Reader) error {
-		return eachStart(r, func(el xml.StartElement) {
+		return eachStart(r, func(el xml.StartElement) error {
 			if el.Name.Local != "Relationship" {
-				return
+				return nil
+			}
+			id, target := attr(el, "Id"), attr(el, "Target")
+			if len(id) > maxNameBytes || len(target) > maxNameBytes || len(targets) > maxSheets {
+				return errTooLarge
 			}
 			switch kind := attr(el, "Type"); {
 			case strings.HasSuffix(kind, "/worksheet"):
-				targets[attr(el, "Id")] = attr(el, "Target")
+				targets[id] = target
 			case strings.HasSuffix(kind, "/sharedStrings"):
-				shared = partPath(attr(el, "Target"))
+				shared = partPath(target)
 			}
+			return nil
 		})
 	})
 	if err != nil {
@@ -130,17 +141,22 @@ func (b *workbookParts) listSheets() ([]xlsxSheet, string, error) {
 	}
 	var sheets []xlsxSheet
 	err = b.read("xl/workbook.xml", func(r io.Reader) error {
-		return eachStart(r, func(el xml.StartElement) {
+		return eachStart(r, func(el xml.StartElement) error {
 			if el.Name.Local != "sheet" {
-				return
+				return nil
+			}
+			name := attr(el, "name")
+			if len(name) > maxNameBytes || len(sheets) >= maxSheets {
+				return errTooLarge
 			}
 			// A chart sheet is listed here too, and has no rows to look at.
 			if target, ok := targets[attr(el, "id")]; ok {
 				sheets = append(sheets, xlsxSheet{
-					name: attr(el, "name"), hidden: attr(el, "state") != "" && attr(el, "state") != "visible",
+					name: name, hidden: attr(el, "state") != "" && attr(el, "state") != "visible",
 					target: partPath(target),
 				})
 			}
+			return nil
 		})
 	})
 	if err != nil {
@@ -204,12 +220,13 @@ func scanSheet(r io.Reader, p *profile) error {
 		value     strings.Builder
 		rowNumber int
 		nextCol   int
-		markedRow = map[int]bool{}
+		frozenRow int
+		filterRow int
 	)
 	for {
 		token, err := dec.RawToken()
 		if errors.Is(err, io.EOF) {
-			p.marked = markedRow[p.headerRow]
+			p.marked = p.headerRow > 0 && (p.headerRow == frozenRow || p.headerRow == filterRow)
 			return nil
 		}
 		if err != nil {
@@ -220,12 +237,10 @@ func scanSheet(r io.Reader, p *profile) error {
 			switch el.Name.Local {
 			case "pane":
 				if strings.HasPrefix(attr(el, "state"), "frozen") {
-					if rows, err := strconv.Atoi(attr(el, "ySplit")); err == nil {
-						markedRow[rows] = true
-					}
+					frozenRow, _ = strconv.Atoi(attr(el, "ySplit"))
 				}
 			case "autoFilter":
-				markedRow[rowOf(attr(el, "ref"))] = true
+				filterRow = rowOf(attr(el, "ref"))
 			case "row":
 				cells, nextCol = cells[:0], 0
 				rowNumber++
