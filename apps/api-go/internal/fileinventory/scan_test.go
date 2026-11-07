@@ -321,3 +321,34 @@ func TestSummaryNamesNoFile(t *testing.T) {
 		}
 	}
 }
+
+func TestAFolderWithANameThatIsNotUTF8IsStillWalked(t *testing.T) {
+	root := t.TempDir()
+	put(t, root, "Se\xf1or/dentro.pdf", []byte("%PDF-1.7\n%%EOF\n"))
+	put(t, root, "caf\xe9.pdf", []byte("%PDF-1.7\n%%EOF\n"))
+
+	r := scan(t, root)
+
+	if r.Totals.Files != 2 || r.Totals.Readable != 2 {
+		t.Fatalf("%+v", r.Files)
+	}
+}
+
+func TestOnlyKnownExtensionsNameAType(t *testing.T) {
+	root := t.TempDir()
+	put(t, root, "dni.12345678", []byte("x"))
+	put(t, root, "Juan.Perez", []byte("x"))
+	put(t, root, "photo.JPEG", []byte("x"))
+
+	r := scan(t, root)
+
+	if got := file(t, r, "dni.12345678").Type; got != "other" {
+		t.Error(got)
+	}
+	if got := file(t, r, "Juan.Perez").Type; got != "other" {
+		t.Error(got)
+	}
+	if got := file(t, r, "photo.JPEG").Type; got != "jpeg" {
+		t.Error(got)
+	}
+}

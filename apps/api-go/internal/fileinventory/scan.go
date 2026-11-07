@@ -12,16 +12,14 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
 
-// Options tunes a scan. ShowUnconfirmedHeaders lets through first rows nothing proves are headers,
-// for an owner who has looked at the file. Now is for tests.
+// Options tunes a scan. Now is for tests.
 type Options struct {
-	ShowUnconfirmedHeaders bool
-	Now                    func() time.Time
+	Now func() time.Time
 }
 
 // How far into a PDF to look for its markers: the head and the tail hold every trailer that
@@ -34,10 +32,20 @@ const (
 var (
 	oleMagic = []byte{0xD0, 0xCF, 0x11, 0xE0}
 
-	// An extension is a short word; anything else after a dot is part of a file's name, which
-	// must not become a line of the report.
-	plainExtension = regexp.MustCompile(`^[a-z0-9]{1,12}$`)
+	// What may name a type. Anything else after a dot is part of a file's name ("Juan.Perez",
+	// "dni.12345678"), which must not become a line of the summary.
+	knownExtensions = extensionSet("pdf doc docx docm dotx xls xlsx xlsm xltx xlsb csv tsv txt rtf " +
+		"ppt pptx odt ods odp jpg jpeg png gif tif tiff bmp webp heic zip rar 7z gz tar msg eml " +
+		"html htm xml json db sqlite sql mp3 mp4 mov wav dwg dxf shp kml kmz")
 )
+
+func extensionSet(list string) map[string]bool {
+	set := map[string]bool{}
+	for _, ext := range strings.Fields(list) {
+		set[ext] = true
+	}
+	return set
+}
 
 type family int
 
@@ -46,15 +54,11 @@ const (
 	familyPDF
 	familyWord
 	familyLegacy
-	familySpreadsheet
-	familyDelimited
 )
 
 var families = map[string]family{
 	"pdf": familyPDF, "docx": familyWord, "docm": familyWord, "dotx": familyWord,
 	"doc": familyLegacy, "xls": familyLegacy, "ppt": familyLegacy,
-	"xlsx": familySpreadsheet, "xlsm": familySpreadsheet, "xltx": familySpreadsheet,
-	"csv": familyDelimited, "tsv": familyDelimited,
 }
 
 // Scan inventories the folder at root. Unreadable entries become lines of the report; only a
@@ -66,52 +70,72 @@ func Scan(ctx context.Context, root string, opts Options) (Report, error) {
 		return Report{}, fmt.Errorf("open the folder: %w", err)
 	}
 	defer func() { _ = folder.Close() }()
-	files := []File{}
-	tables := []Table{}
-	err = fs.WalkDir(folder.FS(), ".", func(path string, entry fs.DirEntry, walkErr error) error {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		if path == "." {
-			return walkErr
-		}
-		name := strings.ToValidUTF8(path, "�")
-		switch {
-		case walkErr != nil:
-			files = append(files, File{Path: name, Type: typeFolder, Status: StatusUnreadable, Reason: reasonOf(walkErr)})
-			return skipEntry(entry)
-		case entry.IsDir():
-			return nil
-		case entry.Type()&fs.ModeSymlink != 0:
-			files = append(files, File{Path: name, Type: typeLink, Status: StatusUnreadable, Reason: ReasonLink})
-		case !entry.Type().IsRegular():
-			files = append(files, File{Path: name, Type: typeSpecial, Status: StatusUnreadable, Reason: ReasonSpecialFile})
-		default:
-			line, table := inspect(folder, path, name, opts)
-			files = append(files, line)
-			if table != nil {
-				tables = append(tables, *table)
-			}
-		}
-		return nil
-	})
-	if err != nil {
+	walk := walker{folder: folder, files: []File{}}
+	if err := walk.dir(ctx, "."); err != nil {
 		return Report{}, fmt.Errorf("walk the folder: %w", err)
 	}
 	now := time.Now
 	if opts.Now != nil {
 		now = opts.Now
 	}
-	return newReport(now().UTC(), files, tables), nil
+	return newReport(now().UTC(), walk.files), nil
 }
 
-// A folder that cannot be listed is reported once, by the visit that failed to list it.
-func skipEntry(entry fs.DirEntry) error {
-	if entry != nil && entry.IsDir() {
-		return fs.SkipDir
+type walker struct {
+	folder *os.Root
+	files  []File
+}
+
+// dir lists with the file itself and not with fs.WalkDir: the fs.FS of a root refuses a name that
+// is not UTF-8, and an old USB is full of Latin-1 folders whose files must still be counted.
+func (w *walker) dir(ctx context.Context, path string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	entries, err := w.list(path)
+	if err != nil {
+		if path == "." {
+			return err
+		}
+		w.files = append(w.files, File{Path: printable(path), Type: typeFolder, Status: StatusUnreadable, Reason: reasonOf(err)})
+		return nil
+	}
+	slices.SortFunc(entries, func(a, b os.DirEntry) int { return strings.Compare(a.Name(), b.Name()) })
+	for _, entry := range entries {
+		child := entry.Name()
+		if path != "." {
+			child = path + "/" + child
+		}
+		name := printable(child)
+		switch {
+		case entry.IsDir():
+			if err := w.dir(ctx, child); err != nil {
+				return err
+			}
+		case entry.Type()&fs.ModeSymlink != 0:
+			w.files = append(w.files, File{Path: name, Type: typeLink, Status: StatusUnreadable, Reason: ReasonLink})
+		case !entry.Type().IsRegular():
+			w.files = append(w.files, File{Path: name, Type: typeSpecial, Status: StatusUnreadable, Reason: ReasonSpecialFile})
+		default:
+			if err := ctx.Err(); err != nil {
+				return err
+			}
+			w.files = append(w.files, inspect(w.folder, child, name))
+		}
 	}
 	return nil
 }
+
+func (w *walker) list(path string) ([]os.DirEntry, error) {
+	f, err := w.folder.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	return f.ReadDir(-1)
+}
+
+func printable(path string) string { return strings.ToValidUTF8(path, "\uFFFD") }
 
 func reasonOf(err error) string {
 	switch {
@@ -129,32 +153,31 @@ func typeOf(path string) string {
 	switch {
 	case ext == "":
 		return typeNone
-	case plainExtension.MatchString(ext):
+	case knownExtensions[ext]:
 		return ext
 	default:
 		return typeOther
 	}
 }
 
-func inspect(folder *os.Root, path, name string, opts Options) (File, *Table) {
+func inspect(folder *os.Root, path, name string) File {
 	line := File{Path: name, Type: typeOf(path), Status: StatusUnreadable}
 	f, err := folder.Open(path)
 	if err != nil {
 		line.Reason = reasonOf(err)
-		return line, nil
+		return line
 	}
 	defer func() { _ = f.Close() }()
 	hash := sha256.New()
 	if line.Bytes, err = io.Copy(hash, f); err != nil {
 		line.Reason = reasonOf(err)
-		return line, nil
+		return line
 	}
 	line.SHA256 = hex.EncodeToString(hash.Sum(nil))
 	if line.Bytes == 0 {
 		line.Reason = ReasonEmpty
-		return line, nil
+		return line
 	}
-	var table *Table
 	reason, known := "", true
 	switch families[line.Type] {
 	case familyPDF:
@@ -166,10 +189,6 @@ func inspect(folder *os.Root, path, name string, opts Options) (File, *Table) {
 		if bytes.HasPrefix(head(f, magicWindow), oleMagic) {
 			reason = ReasonLegacyFormat
 		}
-	case familySpreadsheet:
-		table, reason = inspectSpreadsheet(f, line.Bytes, opts)
-	case familyDelimited:
-		table, reason = inspectDelimited(f, line.Bytes, opts)
 	case familyOther:
 		known = false
 	}
@@ -181,29 +200,7 @@ func inspect(folder *os.Root, path, name string, opts Options) (File, *Table) {
 	default:
 		line.Reason = reason
 	}
-	if table != nil {
-		table.Path = name
-	}
-	return line, table
-}
-
-func inspectSpreadsheet(f io.ReaderAt, size int64, opts Options) (*Table, string) {
-	if bytes.HasPrefix(head(f, magicWindow), oleMagic) {
-		return nil, ReasonEncrypted
-	}
-	sheets, err := readWorkbook(f, size, opts.ShowUnconfirmedHeaders)
-	if err != nil {
-		return nil, reasonOf(err)
-	}
-	return &Table{Format: "xlsx", Sheets: sheets}, ""
-}
-
-func inspectDelimited(f io.ReaderAt, size int64, opts Options) (*Table, string) {
-	table, err := readCSV(f, size, opts.ShowUnconfirmedHeaders)
-	if err != nil {
-		return nil, reasonOf(err)
-	}
-	return &table, ""
+	return line
 }
 
 func head(f io.ReaderAt, n int) []byte {
@@ -246,8 +243,7 @@ func inspectWord(f io.ReaderAt, size int64) string {
 		return ReasonCorrupt
 	}
 	defer func() { _ = body.Close() }()
-	budget := unpackLimit
-	if _, err := io.Copy(io.Discard, bounded(body, &budget, 0, 0)); err != nil {
+	if _, err := io.Copy(io.Discard, bounded(body, maxPartBytes, 0, 0)); err != nil {
 		return reasonOf(err)
 	}
 	return ""
