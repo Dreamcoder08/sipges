@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.4.0",
-    "@electric-sql/pglite": "^0.5.13",
+    "@electric-sql/pglite": "^0.5.15",
     "@hono/node-server": "^2.1.6",
     "@sipges/contracts": "workspace:*",
     "@sipges/kernel": "workspace:*",
