@@ -33,6 +33,11 @@ type Config struct {
 	// GoogleEnabled is true when the Google OAuth client is configured (SIPGES_GOOGLE_CLIENT_ID
 	// and SIPGES_GOOGLE_CLIENT_SECRET, both or neither). The secret itself is never kept here.
 	GoogleEnabled bool
+	// CookieSecure is SIPGES_COOKIE_SECURE, default on: the deployment is HTTPS, so HSTS applies.
+	CookieSecure bool
+	// WebDir is SIPGES_WEB_DIR: the built apps/web that Go serves itself, with the security headers
+	// the Worker adds on Cloudflare. Empty, the default, leaves both to the Worker.
+	WebDir string
 	// AutomationInterval is the period of the Go cron; zero, the default, leaves TypeScript as
 	// the only runner (SIPGES_GO_AUTOMATION_CRON, docs/deployment/go-automation-cron.md).
 	AutomationInterval time.Duration
@@ -61,6 +66,8 @@ func Load(lookup Lookup) (Config, error) {
 	errs = append(errs, err)
 	cfg.RequireMFA, err = parseSwitch(lookup, "SIPGES_REQUIRE_MFA", true)
 	errs = append(errs, err)
+	cfg.CookieSecure, err = parseSwitch(lookup, "SIPGES_COOKIE_SECURE", true)
+	errs = append(errs, err)
 	cfg.AllowPrivilegedRole, err = parseSwitch(lookup, "SIPGES_ALLOW_PRIVILEGED_DB_ROLE", false)
 	errs = append(errs, err)
 	cfg.GoogleEnabled, err = parseGoogle(lookup)
@@ -69,6 +76,10 @@ func Load(lookup Lookup) (Config, error) {
 	errs = append(errs, err)
 	cfg.AutomationInterval, err = parseAutomationSchedule(lookup)
 	errs = append(errs, err)
+	cfg.WebDir, _ = lookup("SIPGES_WEB_DIR")
+	if cfg.WebDir != "" && len(cfg.AllowedHosts) == 0 {
+		errs = append(errs, errors.New("SIPGES_WEB_DIR requires SIPGES_ALLOWED_HOSTS: nothing else stands in front of Go"))
+	}
 	if err := errors.Join(errs...); err != nil {
 		return Config{}, fmt.Errorf("invalid configuration: %w", err)
 	}
