@@ -48,6 +48,9 @@ func expand(route Route, path string, params keyValues) (string, error) {
 		values := params[name]
 		marker := "{" + name + "}"
 		if !strings.Contains(path, marker) {
+			if len(values) > 0 {
+				return "", usageError("the path already holds %s: remove --param %s", name, name)
+			}
 			continue
 		}
 		if len(values) != 1 {
@@ -66,6 +69,9 @@ func (o *options) send(ctx context.Context, route Route, path string, f *request
 	}
 	out := request{method: route.Method, path: path, query: url.Values(f.query), output: f.output}
 	if route.Access == AccessMachine {
+		if err := o.refuse("project"); err != nil { // a key belongs to one project
+			return 0, err
+		}
 		if out.bearer = o.app.env("SIPGES_MACHINE_TOKEN"); out.bearer == "" {
 			return 0, usageError("%s needs its own credential: set SIPGES_MACHINE_TOKEN", route.Key())
 		}
@@ -166,7 +172,7 @@ func (a *app) typed(route Route) command {
 		}
 		for name, value := range values {
 			if *value != "" {
-				flags.params[name] = []string{*value}
+				flags.params[name] = append(flags.params[name], *value) // twice is refused by expand
 			}
 		}
 		return o.send(ctx, route, route.Path, flags)

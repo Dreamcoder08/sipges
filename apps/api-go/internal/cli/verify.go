@@ -70,7 +70,10 @@ var errStop = errors.New("stopped")
 // this machine's and asks to be told the target is synthetic. Exit 0 only if every check passed.
 func (a *app) verifyCommand(ctx context.Context, o *options, args []string) (int, error) {
 	synthetic := o.flags.Bool("synthetic-target", false, "confirm the target holds synthetic data only")
-	if _, err := o.parse(args); err != nil {
+	if err := o.parseNone(args); err != nil {
+		return 0, err
+	}
+	if err := o.refuse("project"); err != nil { // the journey only uses the projects it creates
 		return 0, err
 	}
 	if !*synthetic {

@@ -16,6 +16,12 @@ func TestVerifyRefusesAnythingButASyntheticInstallHere(t *testing.T) {
 		t.Fatalf("no session: %+v", got)
 	}
 	h.signIn()
+	if got := h.run("", "verify", "--synthetic-target", "--project", "ACME/P1"); got.code != ExitUsage {
+		t.Fatalf("--project was ignored: %+v", got)
+	}
+	if got := h.run("", "verify", "--synthetic-target", "extra"); got.code != ExitUsage {
+		t.Fatalf("an argument was ignored: %+v", got)
+	}
 	for _, target := range []string{"https://sipges.example.test", "https://192.0.2.10:8443"} {
 		saved, err := os.ReadFile(h.session)
 		if err != nil {
