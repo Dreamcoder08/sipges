@@ -1,8 +1,8 @@
 # SIPGES — Sistema Inteligente de Predicción y GEStión Social
 
-Gestión y análisis territorial con TypeScript y arquitectura hexagonal.
+Gestión y análisis territorial con TypeScript, Go, Rust y arquitectura hexagonal.
 
-SIPGES es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobre PostgreSQL con aislamiento por proyecto. Reúne registros territoriales, mapas, inteligencia de redes, IRSA y automatizaciones en una sola aplicación. La versión publicada es **v1.0.0** ([CHANGELOG](CHANGELOG.md)).
+SIPGES es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobre PostgreSQL con aislamiento por proyecto. Reúne registros territoriales, mapas, inteligencia de redes, IRSA y automatizaciones en una sola aplicación. La versión publicada es **v1.1.0** ([CHANGELOG](CHANGELOG.md)).
 
 ## Inicio rápido
 
@@ -29,7 +29,7 @@ SPA, contratos compartidos, Hono, casos de uso, dominio, adaptadores, PostgreSQL
 
 ## Stack y estado
 
-React 19 y Vite en el frontend; Node.js, Hono y postgres.js en el backend; PGlite para desarrollo y pruebas. Catorce módulos de registros, dashboard, centro gerencial, mapa territorial, IRSA, validación e integración están implementados.
+React 19 y Vite en el frontend; Node.js, Hono y postgres.js en el backend actual; un backend Go en `apps/api-go` y motores Rust compilados a WebAssembly en `engines/` ([ADR 0032](docs/adr/0032-go-backend-rust-engines.md)); PGlite para desarrollo y pruebas. Catorce módulos de registros, dashboard, centro gerencial, mapa territorial, IRSA, validación e integración están implementados.
 
 **[Docs →](docs/overview.md)**
 

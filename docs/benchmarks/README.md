@@ -1,6 +1,7 @@
 # Processing benchmarks (T12)
 
-ADR 0005 allows a Go or Rust adapter only when a benchmark justifies it. The gate trips when,
+ADR 0005 allowed a Go or Rust adapter only when a benchmark justified it. ADR 0032 superseded
+it and adopted both, so this gate is now the historical reference. It tripped when,
 after algorithmic fixes and at 10× the current data volume:
 - p95 latency exceeds 500 ms, or
 - a CPU-bound task blocks the event loop for more than 50 ms and worker threads cannot solve it.

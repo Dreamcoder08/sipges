@@ -20,7 +20,6 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | [architecture/ui-components.md](architecture/ui-components.md)                     | ¿Cómo se componen y de dónde vienen los componentes de interfaz?        |
 | [migration/tenancy.md](migration/tenancy.md)                                       | ¿Cómo se separan la administración global y las operaciones por tenant? |
 | [secure-cookies.md](secure-cookies.md)                                             | ¿Cómo se configuran las cookies seguras de sesión y proyecto?           |
-| [design/mobile-first/](design/mobile-first/)                                       | ¿Cómo se veía la interfaz antes y después del rediseño mobile-first?    |
 
 ## Módulos de la API y la web
 
@@ -42,6 +41,15 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | [deployment/readiness.md](deployment/readiness.md)                               | ¿Qué debo comprobar antes de publicar la API con la SPA?        |
 | [deployment/cloudflare-workers.md](deployment/cloudflare-workers.md)             | ¿Cómo se publica con el adaptador de Cloudflare Workers?        |
 | [operations/handover.md](operations/handover.md) | ¿Quién tiene cada acceso, cómo se rotan los secretos y cómo se restaura? |
+| [deployment/local-install.md](deployment/local-install.md), [deployment/local-install.es.md](deployment/local-install.es.md) | ¿Cómo instalo, respaldo, restauro e importo la versión local? |
+| [deployment/go-container.md](deployment/go-container.md) | ¿Cómo envía el Worker una ruta al backend Go? |
+| [deployment/go-activation-reads.md](deployment/go-activation-reads.md) | ¿Qué falta para activar las lecturas en Go? |
+| [deployment/go-automation-cron.md](deployment/go-automation-cron.md) | ¿Cómo pasa a Go el cron de automatización? |
+| [deployment/go-trial-runbook.md](deployment/go-trial-runbook.md), [deployment/go-trial-results.md](deployment/go-trial-results.md) | ¿Cómo se ensaya Go y qué resultado dio? |
+| [deployment/production-role-cutover.md](deployment/production-role-cutover.md) | ¿Cómo se cambia el rol de producción? |
+| [operations/ci-runner.md](operations/ci-runner.md) | ¿Dónde corre la CI y cómo se cambia el runner? |
+| [operations/data-key-rotation.md](operations/data-key-rotation.md) | ¿Cómo se rota la clave de datos? |
+| [operations/review-materialize.md](operations/review-materialize.md) | ¿Cómo pasan a registros las revisiones aprobadas? |
 | [deployment/territorial-intelligence.md](deployment/territorial-intelligence.md) | ¿Cómo se generan las señales y los avisos territoriales?        |
 | [migration/data-migration.md](migration/data-migration.md)                       | ¿Cómo muevo una instalación legada RC 3.0 a PostgreSQL?         |
 | [migration/base-maestra.md](migration/base-maestra.md)                           | ¿Cómo cargo la Base Maestra en una base vacía?                  |
@@ -59,6 +67,7 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | ------------------------------------------ | --------------------------------------------------------------- |
 | [agents/gentle-ai.md](agents/gentle-ai.md) | ¿Cómo se usan Gentle AI y Engram en el repositorio?             |
 | [agents/skills.md](agents/skills.md)       | ¿Qué skills locales existen y qué evidencia justifica cada una? |
+| [agents/parallel-delivery.md](agents/parallel-delivery.md) | ¿Cómo se entregan pull requests en paralelo sin conflictos? |
 
 ## Referencia y legado
 
@@ -72,6 +81,7 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | Página                                                                                                                                                                               | Responde                                                                    |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
 | [history/python-prototype.md](history/python-prototype.md)                                                                                                                           | ¿Qué trajo cada versión del prototipo Python (RC 1.7 → 3.0, v0.4 → v0.5.1)? |
+| [history/mobile-first/](history/mobile-first/) | ¿Cómo se veía la interfaz antes y después del rediseño móvil? |
 | [history/archify-verification.md](history/archify-verification.md)                                                                                                                   | ¿Qué gates pasó cada entrega del mapa Archify?                              |
 | [history/t11-verification.md](history/t11-verification.md), [history/t11b-verification.md](history/t11b-verification.md), [history/t14-verification.md](history/t14-verification.md) | ¿Qué se comprobó en T11, T11b y T14?                                        |
 | [history/main-consolidation.md](history/main-consolidation.md)                                                                                                                       | ¿Cómo se consolidó la cadena T8–T14 sobre `main`?                           |
