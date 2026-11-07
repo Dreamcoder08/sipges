@@ -154,6 +154,31 @@ test('ODD dry-run preserves bytes and real close allocates the next log number o
     assert.notEqual(spawnSync(process.execPath, args).status, 0);
     assert.equal(readFileSync(file, 'utf8'), closed);
   }));
+test('review-next prints the provider command verbatim and stops on consent', () => {
+  const script = path.join(root, 'scripts/agents/review-next.sh');
+  const run = (value) =>
+    spawnSync('bash', [script], { input: JSON.stringify(value), encoding: 'utf8' });
+  const command = 'gentle-ai review status --cwd=/a --token=x';
+  const assessed = run({
+    risk: 'high',
+    review_due: true,
+    review_due_reason: 'high_risk',
+    next_transition: { operation: 'review.status', command },
+  });
+  assert.equal(assessed.status, 0, assessed.stderr);
+  assert.equal(
+    assessed.stdout,
+    `risk=high review_due=true reason=high_risk\ntransition=none operation=review.status\ncommand=${command}\n`,
+  );
+  const stopped = run({ next_transition: { action: 'stop', reason_code: 'rdd_disabled' } });
+  assert.equal(stopped.stdout, 'transition=stop operation=none\nreason_code=rdd_disabled\n');
+  const consent = run({ schema: 'gentle-ai.review-integration.consent/v3', choices: [] });
+  assert.equal(consent.status, 3);
+  assert.match(consent.stdout, /^CONSENT /);
+  assert.equal(run({ schema: 'gentle-ai.review-integration.consent/v4' }).status, 3);
+  const empty = spawnSync('bash', [script], { input: ' \n', encoding: 'utf8' });
+  assert.equal(empty.status, 2);
+});
 test('test-pg starts one loopback server per checkout and deletes only its own directory', (t) => {
   if (spawnSync('sh', ['-c', 'command -v initdb']).status !== 0) {
     t.skip('initdb is not installed');
@@ -706,6 +731,24 @@ test('the tab watcher reports blocked tabs, text consent prompts, finished tabs 
       'BLOCKED t2 s / b\nCONSENT t3 s / c\nDONE t4 s / d\nMERGED #225 feat: two\n',
     );
     assert.equal(readFileSync(state, 'utf8'), '217\n225\n');
+    const status = spawnSync('bash', [script, '--status'], { env, encoding: 'utf8' });
+    assert.equal(status.stdout.split('\n')[0], 't1\tworking\ts / a');
+    const until = spawnSync('bash', [script, '--until', 'DONE', '--interval', '0'], {
+      env,
+      encoding: 'utf8',
+      timeout: 10000,
+    });
+    assert.equal(until.status, 0, until.stderr);
+    assert.match(until.stdout, /^DONE t4 s \/ d$/m);
+    const mixed = spawnSync('bash', [script, '--once', '--until', 'DONE'], { env });
+    assert.equal(mixed.status, 2);
+    for (const args of [
+      ['--status', '--until', 'DONE'],
+      ['--status', '--interval', '5'],
+      ['--until', 'done'],
+    ]) {
+      assert.equal(spawnSync('bash', [script, ...args], { env }).status, 2, args.join(' '));
+    }
     const again = spawnSync('bash', [script, '--once'], { env, encoding: 'utf8' });
     assert.doesNotMatch(again.stdout, /MERGED/);
     const help = spawnSync('bash', [script, '--help'], { encoding: 'utf8' });
