@@ -80,7 +80,18 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T57 [x] — S2, S3: PDF text through pdf.js on QuickJS in wasm, OCR off by default (#318, #319, ADR 0033).
 - T58 [x] — S7: what stopped the Cloudflare trial: JSON 503, smoke test, `SCREENS`, cron env, trial config and runbook (#323, #324, #326, #327, #328, #329, #330, #335).
 - T59 [x] — Old product name replaced outside applied migrations, the role they need and verbatim quotes (#331, #332, #333, #334).
-- T60 [ ] — S7, S8: live trial on `sipges-go` with a copy of production. Route: tab `go-measure`.
+- T60 [x] — S7, S8: live trial on `sipges-go` with a copy of production (#339).
+- T61 [x] — Container environment for production (#337); B4 stays draft in #338.
+- T62 [x] — Rehearsed production role cutover runbook (#340).
+- T63 [x] — Write routes proved as a non-BYPASSRLS owner (#341).
+- T64 [x] — Local install with encrypted backups and restore (#351 to #358).
+- T65 [x] — Repository cleanup, first wave (#342 to #350, #374, #375).
+- T66 [x] — Import hardening, Spanish guide, `./sipges inventory` (#359 to #363).
+- T67 [x] — `sipgesctl`, proved on a clean install (#376 to #379).
+- T68 [x] — Backslash paths rejected in Go; `rusqlite` 0.41 (#380).
+- T69 [ ] — Close what `sipgesctl` found. Route: tab `go-fixes`.
+- T70 [ ] — Excel importer as CLI, then library, then wrappers, designed from the client's real columns. Waits for the USB.
+- T71 [ ] — Extract the core library so it runs without HTTP. After the demo.
 - T44 [ ] — S7: switch routes in production by exact path, measuring before and after with the owner, then retire the TypeScript API.
 - T45 [x] — S2, S7: integration runtime (#264). Independent verifier: one blocker fixed (the 8 KiB source limit is mounted in the real handler).
 - T46 [x] — S2, S6, S7: documents uploads, Word report and review writes (#266). PDF text and OCR stay in TypeScript.
@@ -159,3 +170,6 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - L67 — T59 (2026-11-06): owner, verbatim: «elimina el nombre mascli en todo se supone que ahora se llama sipges». 76 files keep it on purpose: applied migrations, their tests and recorded version, the `mascli_tenant` role needed to replay them, and verbatim quotes. The migrator records versions only. Production's database and login keep the name until the cutover to `sipges_app`.
 - L68 — T60, trial setup (2026-11-06): owner chose a full copy of production on the Neon branch `go-trial` and the existing wrangler session. `sipges_app` created by SQL, no `BYPASSRLS`, owns the 34 tables after `REASSIGN OWNED BY mascli_workers`. Neon refuses SCRAM verifiers, so its password sits in the console history of the branch. The trial uses its own `SIPGES_DATA_KEY`, since production's cannot be read, so copied TOTP secrets do not open there. `sipges-go` deployed with Wave A on the unmerged branch `trial/go-routes`. The branch auto-deletes after one day.
 - L69 — T60, results (2026-11-06): Wave A on `sipges-go`, [results](../../docs/deployment/go-trial-results.md). 71,535 requests to Go, 0 errors. At 8 screens Inicio p50/p95 ranged from 701/882 (Atlanta) to 1187/1404 (Chicago), against 1311/1611 with routes off and 1431/1970 on production, with the container at 100 % of its 1/4 vCPU and 6 to 8 of 9 routes slower than TypeScript in Chicago. Verdict: `basic` is not enough at 8 screens. Cold start 2,662–2,867 ms, peak 108 MiB. B7: 560 of 560 equal in value on real rows. Rollback 4.0 s with `wrangler rollback`, 17 s by deploy. Container logs were not read (no Observability scope), and the Neon query target was not measured. T60 stays open until the owner has read this.
+- L70 — Incident (2026-11-06): about 19:00 UTC production answered 503 on every route. Neon paused the project at its monthly free plan limit, 6.72 GB transfer and 18.53 CU-hours since Nov 1. The trial on a branch of production shares that quota. Nothing was lost; the limit resets Dec 1. Every deploy stops at migrations until then.
+- L71 — Owner (2026-11-06), verbatim: «hey bro full cloudfare , no mas nada de vercel y neon», «mi cliente quiero su proyecto instalado en local y en la nube , objetivo lo mejor de lo mejor», «mi idea es que primero funcione en local ya despues en la nube entiendes ??», «ella tiene los archivos originales en su usb asi que puedo copiarlos otra ves y rellenar los datos para la version local entiendes ??». So PostgreSQL stays, D1 is out, local comes first, and cloud cutover, waves and #338 wait. Target for the cloud is PlanetScale Postgres billed through Cloudflare, not yet tested for RLS and roles.
+- L72 — Owner (2026-11-07), verbatim: «construye primero una cli has el frontend al final , el agente deberia poder probar y verificar completamente el comportamiento , la logica , el estado de la aplicacion usando la cli» and «primer cli , luego extraer biblioteca central , luego envolverla en una GUI o api/mcp». Retiring TypeScript stays authorized, «yes retira typescript y avanza», but runs last, after every route is on Go with writes measured.
