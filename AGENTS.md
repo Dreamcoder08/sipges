@@ -78,7 +78,7 @@ HTTP to a running API, never to tables, and `sipgesctl verify --synthetic-target
 journey. `deploy/local/sipges` stays the script that runs an installation.
 
 For new features the sequence is CLI, then core library (`internal/<context>/{domain,application}`),
-then GUI, API or MCP wrappers holding no business logic. Every new route gets a line in
+then GUI, API or MCP wrappers holding no business logic. Every new route gets an entry in
 `apps/api-go/internal/cli/routes.json`; a test fails CI without it.
 
 ## Gentle AI and Engram memory

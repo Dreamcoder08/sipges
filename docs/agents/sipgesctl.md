@@ -95,8 +95,8 @@ SIPGES_MACHINE_TOKEN=$(cat ~/.config/sipges/bot-key) ./sipgesctl call POST /mcp 
 ```
 
 **Adding a route.** `TestEveryRouteHasACLIPath` in `internal/app` reads the routes off the real
-mux and fails CI when one is missing from the inventory, or listed and no longer served. Add one
-line to `routes.json`. Give it `command` and `summary` to make it a typed command: its path values
+mux and fails CI when one is missing from the inventory, or listed and no longer served. Add an
+entry to `routes.json`. Give it `command` and `summary` to make it a typed command: its path values
 become flags by themselves. Nothing else is needed.
 
 ## verify
