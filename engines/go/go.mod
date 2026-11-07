@@ -1,6 +1,6 @@
 module github.com/Dreamcoder08/sipges/engines/go
 
-go 1.25.0
+go 1.27.0
 
 require github.com/tetratelabs/wazero v1.12.0
 

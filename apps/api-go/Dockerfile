@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # The Go backend image for Cloudflare Containers (linux/amd64), docs/adr/0032 §4. Base images are
-# pinned by digest, the same ones the hosting spike measured (spikes/go-container). The build context
+# pinned by digest, the same ones the hosting spike measured (ADR 0032). The build context
 # is the repository root (`docker build -f apps/api-go/Dockerfile .`), because the module replaces
 # engines/go with its local copy; Dockerfile.dockerignore sends only those two directories.
 FROM --platform=linux/amd64 golang:1.27-alpine@sha256:b8c9b82affbbb82a020bbcf998dad2ba9516944ac7e883524642a481a9505e9c AS build
