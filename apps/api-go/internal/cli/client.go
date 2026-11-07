@@ -222,20 +222,47 @@ func readAnswer(answer *http.Response, output string) (*response, error) {
 		sink, finish = file, done
 	}
 	hash := sha256.New()
-	size, err := io.Copy(io.MultiWriter(sink, hash), answer.Body)
+	size, err := saveBody(io.MultiWriter(sink, hash), answer.Body)
 	if finish != nil {
 		if doneErr := finish(err == nil); doneErr != nil {
 			return nil, doneErr
 		}
 	}
 	if err != nil {
-		return nil, networkError(err)
+		return nil, err
 	}
 	result.file = &fileInfo{ContentType: contentType, Bytes: size, SHA256: hex.EncodeToString(hash.Sum(nil))}
 	if finish != nil {
 		result.file.Path = output
 	}
 	return result, nil
+}
+
+// sinkWriter remembers a failure of the destination, which io.Copy mixes with the source's.
+type sinkWriter struct {
+	io.Writer
+	err error
+}
+
+func (s *sinkWriter) Write(p []byte) (int, error) {
+	n, err := s.Writer.Write(p)
+	if err != nil {
+		s.err = err
+	}
+	return n, err
+}
+
+// saveBody copies an answer: a failed write is this machine's, a failed read is the network's.
+func saveBody(sink io.Writer, body io.Reader) (int64, error) {
+	tracked := &sinkWriter{Writer: sink}
+	size, err := io.Copy(tracked, body)
+	switch {
+	case tracked.err != nil:
+		return size, localError("write the output file: %v", tracked.err)
+	case err != nil:
+		return size, networkError(err)
+	}
+	return size, nil
 }
 
 // openOutput writes beside the target and renames at the end: a broken download leaves nothing,

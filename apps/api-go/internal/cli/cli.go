@@ -21,7 +21,7 @@ const usage = `sipgesctl speaks to a running SIPGES API over HTTP. Run it as a p
 ./sipges (deploy/local) runs the installation; sipgesctl signs in to it.
 
 Session
-  login                   sign in; password from SIPGES_PASSWORD or the first line of stdin
+  login                   sign in; password from SIPGES_PASSWORD or stdin, unseen on a terminal
   logout                  end the session and remove the saved one
   session                 who is signed in, with which role and project
   mfa enroll              enrol TOTP; the secret goes to --secret-file only
