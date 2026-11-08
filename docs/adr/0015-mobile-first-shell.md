@@ -4,7 +4,7 @@
 The signed-in layout (ADR 0006) grew from the legacy sidebar: on phones it became a drawer of 21
 links in four equal groups under a two-row header holding a menu toggle, the title, search, a
 bell, a native project `<select>`, the avatar and a "Salir" button. The owner's review
-(`odd/tasks/mobile-first-redesign.md`, S1) found it reads as a compressed desktop: too many
+(`odd/archive/mobile-first-redesign.md`, S1) found it reads as a compressed desktop: too many
 visible choices, no frequency-based priority and a heavy navy panel.
 
 ## Decision
@@ -64,7 +64,7 @@ obscured).
 ## Addendum (2026-11-01): menu drawer instead of the bottom bar
 
 The owner asked to move the top bar icons into a mobile sidebar «asi como lo hace chat gpt mobile y claude mobile»
-and chose to remove the bottom bar (`odd/tasks/mobile-drawer-shell.md`). This replaces R1–R6 above for phones and
+and chose to remove the bottom bar (`odd/archive/mobile-drawer-shell.md`). This replaces R1–R6 above for phones and
 tablets (≤ 60rem):
 
 - The top bar holds only a menu button («Abrir menú», 44 px) and the page title (`h1`).

@@ -1,6 +1,6 @@
 # Arquitectura TypeScript de SIPGES · ODD
 
-El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de SIPGES en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/tasks/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/tasks/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](history/t11-verification.md) registra los flujos comprobados y sus límites.
+El [mapa interactivo Archify](diagrams/arquitectura.html) documenta la versión TypeScript de SIPGES en la revisión publicada `1fdad42f65f977a7fad85e2e26ee65f7b26c48d1` de inteligencia territorial. Su marco de decisiones son los ODD de [migración](../odd/archive/typescript-hexagonal-migration.md) y de [ontología e inteligencia](../odd/archive/ontology-intelligence-platform.md) y el nuevo ODD de [inteligencia territorial](../odd/tasks/territorial-intelligence-alerts.md), junto con las enmiendas de los [ADRs](adr/README.md). Las referencias del mapa apuntan al código de esa revisión. La [verificación de T11 completo](history/t11-verification.md) registra los flujos comprobados y sus límites.
 
 ## Abrir el mapa
 

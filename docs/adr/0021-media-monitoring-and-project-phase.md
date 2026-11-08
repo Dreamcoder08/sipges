@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-19
-- Task: `odd/tasks/media-monitoring-project-phase.md`
+- Task: `odd/archive/media-monitoring-project-phase.md`
 
 ## Context
 

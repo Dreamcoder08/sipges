@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-01
-- Task: `odd/tasks/retire-vercel.md` (T1–T3)
+- Task: `odd/archive/retire-vercel.md` (T1–T3)
 - Supersedes, for hosting only: the statements in ADRs 0006, 0014, 0016 and 0026 that describe Vercel as the current host.
 
 ## Context
