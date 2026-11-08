@@ -32,20 +32,11 @@ with provenance in `skills-lock.json`. They are vendor instructions, not newly a
 SIPGES workflows. Use them for Neon setup and PostgreSQL connections; installing skills
 does not authenticate the CLI or authorize additional services.
 
-Gentle AI skills, vendored at the user's explicit request (provenance in `skills-lock.json`,
-details in [docs/agents/gentle-ai.md](docs/agents/gentle-ai.md)):
-
-| Skill | Use it to |
-| --- | --- |
-| `chained-pr` | Split changes over ~400 lines into stacked, reviewable PRs. |
-| `work-unit-commits` | Plan commits as reviewable work units with their tests and docs. |
-| `cognitive-doc-design` | Write docs, ADRs and guides that are quick to review. |
-| `judgment-day` | Run a blind dual adversarial review, only when explicitly asked. |
-| `skill-creator` / `skill-improver` | Create or audit skills (still subject to the 3-use rule). |
-| `typescript` / `zod-4` | TypeScript strict patterns and Zod 4 API changes. |
-
-Commands in these skills that call the `gentle-ai` binary (review capture, skill-registry) apply only where
-it is installed locally; the repo does not require it.
+Generic Gentle AI skills (`chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`,
+`skill-creator`, `skill-improver`, `typescript`, `zod-4`) are not copied into the repo: they come from the
+global `gentle-ai install` (or Gentle Shell), so there is one copy per machine and no shadowing. The repo
+keeps only SIPGES-specific skills and the requested Neon ones. Setup in
+[docs/agents/gentle-ai.md](docs/agents/gentle-ai.md).
 
 ## Scripts
 

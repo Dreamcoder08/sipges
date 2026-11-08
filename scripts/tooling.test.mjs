@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import {
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -66,17 +66,9 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
   const dir = path.join(root, '.agents/skills');
   const expected = sipgesSkills;
   const vendor = ['neon', 'neon-postgres'];
-  const gentle = [
-    'chained-pr',
-    'cognitive-doc-design',
-    'judgment-day',
-    'skill-creator',
-    'skill-improver',
-    'typescript',
-    'work-unit-commits',
-    'zod-4',
-  ];
-  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor, ...gentle].sort());
+  // Gentle AI skills come from the global `gentle-ai install`; repo copies only shadowed them.
+  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor].sort());
+  assert.equal(existsSync(path.join(root, '.pi/settings.json')), false);
   for (const name of expected) {
     const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
     assert.match(text, new RegExp(`^---\\nname: ${name}\\n`));
@@ -97,13 +89,7 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
     assert.equal(lock.skills[name].skillPath, `skills/${name}/SKILL.md`);
     assert.match(lock.skills[name].computedHash, /^[a-f0-9]{64}$/);
   }
-  for (const name of gentle) {
-    const text = readFileSync(path.join(dir, name, 'SKILL.md'));
-    assert.match(text.toString('utf8'), new RegExp(`^---\\nname: ${name}\\n`));
-    assert.match(lock.skills[name].source, /^Gentleman-Programming\/(gentle-ai|Gentleman-Skills)$/);
-    assert.equal(lock.skills[name].computedHash, createHash('sha256').update(text).digest('hex'));
-    assert.ok(evidence.includes(name));
-  }
+  assert.deepEqual(Object.keys(lock.skills).sort(), vendor);
 });
 test('verification never starts a service or guesses a database connection and propagates failures', () =>
   fixture((dir) => {
