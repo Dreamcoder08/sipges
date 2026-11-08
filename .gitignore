@@ -34,3 +34,8 @@ deploy/local/.env.new
 deploy/local/backups/
 deploy/local/sipges-root-ca.crt
 deploy/local/imports/
+
+# Local agent workspaces: one git worktree per task (herdr tab) and run logs.
+.worktrees/
+.claude/worktrees/
+logs/
