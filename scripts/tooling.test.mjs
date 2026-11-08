@@ -1012,3 +1012,22 @@ test('CI installs Playwright through the script and names the runner', () => {
   assert.match(ci, /run: bash scripts\/ci-playwright-install\.sh \$\{\{ matrix\.browser \}\}/);
   assert.match(ci, /SIPGES_CI_RUNNER: \$\{\{ runner\.environment \}\}/);
 });
+test('fork collaboration: issue forms, fork PR memory guard and the upstream flow are in place', () => {
+  const forms = path.join(root, '.github/ISSUE_TEMPLATE');
+  for (const [file, label] of [
+    ['feedback.yml', 'feedback'],
+    ['idea.yml', 'idea'],
+  ]) {
+    const text = readFileSync(path.join(forms, file), 'utf8');
+    assert.match(text, new RegExp(`^labels: \\[${label}\\]$`, 'm'));
+    assert.match(text, /datos reales|real data/);
+  }
+  const guard = readFileSync(path.join(root, '.github/workflows/fork-pr-guard.yml'), 'utf8');
+  assert.match(guard, /github\.event\.pull_request\.head\.repo\.full_name != github\.repository/);
+  assert.match(guard, /\^\\\.engram\//);
+  assert.match(guard, /permissions:\n {2}contents: read/);
+  assert.doesNotMatch(guard, /^\s*pull_request_target:/m);
+  const contributing = readFileSync(path.join(root, 'CONTRIBUTING.md'), 'utf8');
+  assert.match(contributing, /## Trabajar desde un fork/);
+  assert.match(contributing, /git fetch upstream/);
+});
