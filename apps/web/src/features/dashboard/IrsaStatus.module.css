@@ -1,0 +1,21 @@
+.noData,
+.pending {
+  display: inline-block;
+  padding: var(--space-0) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  background: var(--color-track);
+  color: var(--color-muted);
+}
+
+.pending {
+  font-weight: var(--weight-regular);
+}
+
+.hint {
+  margin: var(--space-1) 0 0;
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}

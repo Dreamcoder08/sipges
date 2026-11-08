@@ -1,4 +1,4 @@
-import { DashboardResponse, IrsaSummary, ModelStatus } from '@sipges/contracts';
+import { DashboardResponse, IrsaConfig, IrsaSummary, ModelStatus } from '@sipges/contracts';
 import { queryOptions } from '@tanstack/react-query';
 import { moduleRecordsQuery as recordsQuery } from '../../shared/api/module-records.ts';
 import { requestJson } from '../../shared/api/client.ts';
@@ -16,6 +16,12 @@ export const irsaQuery = (scope: string) =>
   queryOptions({
     queryKey: ['indicators', scope, 'irsa-summary'],
     queryFn: ({ signal }) => requestJson('/system/irsa', IrsaSummary, { scope, signal }),
+  });
+
+export const irsaConfigQuery = (scope: string) =>
+  queryOptions({
+    queryKey: ['indicators', scope, 'irsa-config'],
+    queryFn: ({ signal }) => requestJson('/system/irsa/config', IrsaConfig, { scope, signal }),
   });
 
 export const modelStatusQuery = (scope: string) =>
