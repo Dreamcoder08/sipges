@@ -224,6 +224,7 @@ For step 6 of the order of work. "Passed" means `goContainerEnv` forwards it tod
 | `SIPGES_VAPID_PRIVATE_KEY` | secret | yes, when set | Push |
 | `SIPGES_OLLAMA_URL`, `SIPGES_OLLAMA_EMBED_MODEL`, `SIPGES_SEMANTIC_SEARCH` | var | yes, when set | Semantic analysis |
 | `SIPGES_ANALYST_PROVIDER`, `SIPGES_ANALYST_MODEL`, `ANTHROPIC_BASE_URL` | var | yes, when set | Analyst prose |
+| `SIPGES_ANALYST_BASE_URL`, `SIPGES_ANALYST_API_KEY` | var, secret | yes, when set | Analyst prose through an OpenAI-compatible provider |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` | secret | yes, when set | Analyst prose |
 | `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | var | no, not enabled | OCR, see above |
 | `SIPGES_ACCESS_LOG` | var | yes, when set | Go's request log. TypeScript reads it too |
