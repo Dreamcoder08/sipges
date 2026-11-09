@@ -205,25 +205,23 @@ export const DecisionInbox = ({
   return (
     <div className={styles.page}>
       <div className={styles.top}>
-        <div className={styles.chips} role="group" aria-label="Tipo de pendiente">
-          {[{ value: 'todo' as const, plural: 'Todo', icon: undefined }, ...KINDS].map((chip) => (
-            <button
-              key={chip.value}
-              type="button"
-              className={styles.chip}
-              aria-pressed={kind === chip.value}
-              onClick={() => {
-                setKind(chip.value);
-                setSelection({ key: '', index: 0 });
-                setRejecting(null);
-              }}
-            >
-              {chip.icon ? <Icon name={chip.icon} /> : null}
-              <span>{chip.plural}</span>
-              <span className={styles.n}>{countOf(chip.value)}</span>
-            </button>
-          ))}
-        </div>
+        <label className={styles.filter}>
+          Filtrar pendientes
+          <select
+            value={kind}
+            onChange={(event) => {
+              setKind(event.target.value as Kind | 'todo');
+              setSelection({ key: '', index: 0 });
+              setRejecting(null);
+            }}
+          >
+            {[{ value: 'todo' as const, plural: 'Todo' }, ...KINDS].map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.plural} ({countOf(option.value)})
+              </option>
+            ))}
+          </select>
+        </label>
         <p className={styles.keys} aria-label="Atajos de teclado">
           <span>
             <kbd>J</kbd> <kbd>K</kbd> moverse
