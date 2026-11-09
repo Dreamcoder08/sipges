@@ -42,7 +42,7 @@ func assistedBriefing(d Deps) (*analyst.Assisted, error) {
 	if err != nil || !settings.Enabled {
 		return nil, err
 	}
-	assisted := &analyst.Assisted{Narrator: analystsql.NewClaude(settings.Model, os.LookupEnv), Logger: d.Logger}
+	assisted := &analyst.Assisted{Narrator: narrator(settings), Logger: d.Logger}
 	guard, err := egressGuard(d)
 	switch {
 	case err == nil:
@@ -51,6 +51,15 @@ func assistedBriefing(d Deps) (*analyst.Assisted, error) {
 		return nil, err
 	}
 	return assisted, nil
+}
+
+// narrator is the adapter of the configured provider; both read their endpoint and credential from
+// the environment and contact nothing else.
+func narrator(settings config.Analyst) analyst.Narrator {
+	if settings.Provider == config.ProviderOpenAICompatible {
+		return analystsql.NewOpenAICompatible(settings.Model, os.LookupEnv)
+	}
+	return analystsql.NewClaude(settings.Model, os.LookupEnv)
 }
 
 // proposalActions writes an approved proposal through the ontology and records use cases, so it
