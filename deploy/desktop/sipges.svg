@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">SIPGES — Organic Terrain</title>
+  <desc id="desc">Two nested irregular terrain contours with one detached early-warning segment on the inner contour.</desc>
+  <rect width="512" height="512" fill="#0F2A2E"/>
+  <g fill="none" stroke-width="32" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#F5F2E8" d="M250 75C304 75 320 110 371 138C423 168 420 215 424 258C432 315 379 324 343 367C313 407 265 438 216 411C171 386 162 350 121 326C74 298 78 251 97 208C114 171 109 126 157 108C190 96 210 74 250 75Z"/>
+    <path stroke="#F5F2E8" d="M246 171C213 169 201 190 184 211C158 237 171 271 194 289C218 307 217 336 247 341C281 350 301 319 319 301C333 288 342 286 341 270"/>
+    <path stroke="#F2B544" d="M310 184C322 190 332 199 334 209"/>
+  </g>
+</svg>
