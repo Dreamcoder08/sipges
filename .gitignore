@@ -39,3 +39,6 @@ deploy/local/imports/
 .worktrees/
 .claude/worktrees/
 logs/
+
+# Rendered at deploy time from the owner's repository variables (apps/hosting-cloudflare/deploy-config.mjs)
+apps/hosting-cloudflare/wrangler.deploy.jsonc

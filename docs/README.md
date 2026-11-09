@@ -40,6 +40,7 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | [deployment/readiness.md](deployment/readiness.md)                               | ¿Qué debo comprobar antes de publicar la API con la SPA?        |
 | [deployment/cloudflare-workers.md](deployment/cloudflare-workers.md)             | ¿Cómo se publica con el adaptador de Cloudflare Workers?        |
+| [deployment/own-instance.es.md](deployment/own-instance.es.md), [deployment/own-instance.md](deployment/own-instance.md) | ¿Cómo despliego mi propia instancia con mis cuentas de GitHub, Neon y Cloudflare? |
 | [operations/handover.md](operations/handover.md) | ¿Quién tiene cada acceso, cómo se rotan los secretos y cómo se restaura? |
 | [deployment/local-install.md](deployment/local-install.md), [deployment/local-install.es.md](deployment/local-install.es.md) | ¿Cómo instalo, respaldo, restauro e importo la versión local? |
 | [../deploy/desktop/README.es.md](../deploy/desktop/README.es.md), [../deploy/desktop/README.md](../deploy/desktop/README.md) | ¿Cómo uso SIPGES como aplicación de escritorio en mi laptop con Windows o Linux? |
