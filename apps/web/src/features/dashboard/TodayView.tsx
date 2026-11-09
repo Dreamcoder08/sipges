@@ -32,7 +32,7 @@ const when = (date: string) =>
     : 'Sin fecha';
 
 /**
- * Phone home (odd/tasks/mobile-first-redesign.md T9): what matters today in one screen —
+ * Phone home (odd/archive/mobile-first-redesign.md T9): what matters today in one screen —
  * the risk level, four counters, the alerts that need action, the latest events and the most
  * frequent tasks. The full analysis follows below it on the same page.
  */

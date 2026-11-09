@@ -29,7 +29,7 @@ here** means it depends on an external console that the repository does not reco
 | GitHub `Dreamcoder08/sipges` (private) | Code, CI (`.github/workflows/ci.yml`), deploys (`deploy-workers.yml`), the `production` environment secrets | Owner (admin); maintainers (write) | Verified: workflows in the repo; when Actions minutes run out, CI and deploys move to a local runner ([ci-runner.md](ci-runner.md)) |
 | Cloudflare account (`dreamcoder-dev08.workers.dev`) | Worker `sipges`, its secrets, Hyperdrive config `9eae2c5e3d614feca42b525fc82e10e1`, private R2 bucket `sipges-evidence`, 15-minute Cron Trigger | Owner; whoever deploys by hand | Verified: `apps/hosting-cloudflare/wrangler.jsonc` |
 | Vercel account → Neon project `neon-aero-brush` | The production database (and the old `neondb` backup). Created through Vercel's Neon integration and billed via Vercel | Owner only | ADR 0029. **Removing the Vercel account or its Neon integration deletes the database.** |
-| Google Cloud project with the OAuth client | «Entrar con Google»; consent screen in Testing mode, redirect `/auth/google/callback` | Owner | `odd/tasks/cloudflare-workers.md` L22; current console state not verifiable here |
+| Google Cloud project with the OAuth client | «Entrar con Google»; consent screen in Testing mode, redirect `/auth/google/callback` | Owner | `odd/archive/cloudflare-workers.md` L22; current console state not verifiable here |
 | SIPGES itself | Accounts, roles, project grants, MCP/webhook API keys (Integraciones) | Administrators inside the app | Verified: identity and integration contexts |
 
 Grant the smallest role that does the job, and remove access when someone leaves: GitHub

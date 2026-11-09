@@ -19,7 +19,7 @@ Related documents: [workspace and configuration](../migration/workspace.md),
 
 Cloudflare Workers is the only SIPGES host (ADR 0028; the Vercel host was retired in
 [ADR 0029](../adr/0029-retire-vercel-host.md)). The
-[Workers investigation](../../odd/tasks/cloudflare-workers.md) was deferred (L14) because
+[Workers investigation](../../odd/archive/cloudflare-workers.md) was deferred (L14) because
 `hash-wasm` compiles WebAssembly at run time, which workerd rejects, and then resumed (L16) with a
 plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
 verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
@@ -45,7 +45,7 @@ its current status was not rechecked here. The owner must resolve the account-le
 
 ## Current local candidate, not production acceptance
 
-The [production-candidate ODD](../../odd/tasks/production-candidate.md) records the isolated
+The [production-candidate ODD](../../odd/archive/production-candidate.md) records the isolated
 code slice `4a4b5f0` → `2ba2b5a` and [its synthetic HTTP differential](../../odd/evidence/production-candidate/comparison.json).
 
 - Lint, format, architecture boundaries and six workspace typechecks passed. The complete
@@ -285,7 +285,7 @@ On Workers, roll back as described in the [Workers guide](cloudflare-workers.md#
 | Migración de datos reales | Fuera del alcance de la demo académica: solo datos sintéticos. |
 | Recursos de demo | Worker, Hyperdrive y R2 privado; PostgreSQL Neon vinculado por el propietario. La base `neondb` de la demo Vercel se conserva en Neon como respaldo, sin migrar. |
 | Restore drill and an E2E run against the deployed URL | Not done |
-| Operator inputs for the remaining gates | Not authorizations by themselves: (1) an explicitly synthetic, least-privilege PostgreSQL connection for the server integration run; (2) a disposable restore environment with coordinated database/object backups and key scope; (3) institutional identity, storage and monitoring owners, plus the external-acceptance owners already named in the [production-candidate ODD](../../odd/tasks/production-candidate.md); (4) a separate delivery/activation decision. No gate in these rows is closed and the candidate is not declared production-ready. |
+| Operator inputs for the remaining gates | Not authorizations by themselves: (1) an explicitly synthetic, least-privilege PostgreSQL connection for the server integration run; (2) a disposable restore environment with coordinated database/object backups and key scope; (3) institutional identity, storage and monitoring owners, plus the external-acceptance owners already named in the [production-candidate ODD](../../odd/archive/production-candidate.md); (4) a separate delivery/activation decision. No gate in these rows is closed and the candidate is not declared production-ready. |
 | Publicación de demo | Evidencia histórica del 2026-10-14: acceso sin inscripción MFA obligatoria por decisión del propietario; no es una excepción institucional. Smoke público CRUD/Blob/PDF/DOCX pendiente en esa evidencia. No se verificó de nuevo ni se publicó esta candidata. |
 
 ## Not verifiable in the development environment

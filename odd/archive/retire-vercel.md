@@ -18,6 +18,6 @@ synthetic academic data; the Neon `neondb` database stays untouched as a backup.
 ## Log
 
 - L1 — «no entiendo porque sigues con vercel si ya estamos con claudflare»; then «tu cual me recomindas ??»; recommendation accepted with «Yes, shut it off».
-- L2 — Evidence: both hosts answered `/health` 200 on 2026-11-01. Vercel uses Neon `neondb` (synthetic demo); Workers uses its own database with the real AMSAC data (odd/tasks/amsac-data-load.md). Vercel Hobby is non-commercial only (odd/tasks/cloudflare-workers.md L2).
+- L2 — Evidence: both hosts answered `/health` 200 on 2026-11-01. Vercel uses Neon `neondb` (synthetic demo); Workers uses its own database with the real AMSAC data (odd/archive/amsac-data-load.md). Vercel Hobby is non-commercial only (odd/archive/cloudflare-workers.md L2).
 - L3 — T1 verify: S3 wording was ambiguous ("it" read as the Vercel demo); reworded so the real AMSAC data is clearly in the Workers database. Stale diagram `referenceCount` 44 → 41 fixed.
 - L4 — T1 merged as PR #115 (`c1e6a5a`, CI 8/8). Finding before T2: the Neon project `neon-aero-brush`, which also holds the Workers database, is a Vercel Marketplace resource billed via Vercel, so only the Vercel project was deleted; the account and Neon integration stay (ADR 0029 consequences).

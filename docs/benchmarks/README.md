@@ -22,7 +22,7 @@ and [the 36-scenario result JSON](../../odd/evidence/t6-benchmark/full.json).
 
 ## Dashboard projection candidate (local, not a production gate)
 
-The first [production-candidate slice](../../odd/tasks/production-candidate.md) keeps the
+The first [production-candidate slice](../../odd/archive/production-candidate.md) keeps the
 summary engine and generic analytics reader unchanged. Only dashboard uses a dedicated SQL
 projection: row IDs and module names, raw JSON `Estado` for Demandas/Alertas and raw JSON
 `Nivel_Preliminar`/`Nivel` for Alertas. Count-only modules return empty payloads. Ordering,

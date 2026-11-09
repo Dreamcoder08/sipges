@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import {
+  existsSync,
   mkdtempSync,
   mkdirSync,
   readFileSync,
@@ -66,17 +66,9 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
   const dir = path.join(root, '.agents/skills');
   const expected = sipgesSkills;
   const vendor = ['neon', 'neon-postgres'];
-  const gentle = [
-    'chained-pr',
-    'cognitive-doc-design',
-    'judgment-day',
-    'skill-creator',
-    'skill-improver',
-    'typescript',
-    'work-unit-commits',
-    'zod-4',
-  ];
-  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor, ...gentle].sort());
+  // Gentle AI skills come from the global `gentle-ai install`; repo copies only shadowed them.
+  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor].sort());
+  assert.equal(existsSync(path.join(root, '.pi/settings.json')), false);
   for (const name of expected) {
     const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
     assert.match(text, new RegExp(`^---\\nname: ${name}\\n`));
@@ -97,13 +89,7 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
     assert.equal(lock.skills[name].skillPath, `skills/${name}/SKILL.md`);
     assert.match(lock.skills[name].computedHash, /^[a-f0-9]{64}$/);
   }
-  for (const name of gentle) {
-    const text = readFileSync(path.join(dir, name, 'SKILL.md'));
-    assert.match(text.toString('utf8'), new RegExp(`^---\\nname: ${name}\\n`));
-    assert.match(lock.skills[name].source, /^Gentleman-Programming\/(gentle-ai|Gentleman-Skills)$/);
-    assert.equal(lock.skills[name].computedHash, createHash('sha256').update(text).digest('hex'));
-    assert.ok(evidence.includes(name));
-  }
+  assert.deepEqual(Object.keys(lock.skills).sort(), vendor);
 });
 test('verification never starts a service or guesses a database connection and propagates failures', () =>
   fixture((dir) => {
@@ -718,6 +704,38 @@ test('ODD status lists open tasks in either checkbox style and hides finished fe
         ['open.md', 1, 3, ['T2', 'P3']],
       ],
     );
+  }));
+test('odd:status reads bracketed-word and dash-style tasks', () =>
+  fixture((dir) => {
+    writeFileSync(
+      path.join(dir, 'words.md'),
+      '# Words\n- T1 [done] (S1) shipped. Commit: abc.\n- T2 [dropped] (S1) superseded.\n' +
+        '- T3 [done, WebKit blocked] (S2) partial.\n- T4 [pending] (S2) later.\n',
+    );
+    writeFileSync(
+      path.join(dir, 'dash.md'),
+      '# Dash\n- T1 — S1: built it. Done: `abc`, PR #1 merged.\n' +
+        '- T2 — S2: check in production. Route: inline. Commit: n/a.\n' +
+        '- T3 — S3: drawer. Commit: this branch. Status: done.\n' +
+        '- L1 — request: not a task\n',
+    );
+    const json = JSON.parse(
+      spawnSync(
+        process.execPath,
+        [path.join(root, 'scripts/odd-status.mjs'), '--dir', dir, '--json'],
+        {
+          encoding: 'utf8',
+        },
+      ).stdout,
+    );
+    assert.deepEqual(
+      json.map((f) => [f.file, f.done, f.total, f.open.map((t) => t.id)]),
+      [
+        ['dash.md', 2, 3, ['T2']],
+        ['words.md', 3, 4, ['T4']],
+      ],
+    );
+    assert.equal(json[0].open[0].text, 'S2: check in production. Route: inline.');
   }));
 test('Engram wrapper never installs outside the cloud and keeps MCP stdout clean', () =>
   fixture((dir) => {

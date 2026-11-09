@@ -78,10 +78,10 @@ current real-PostgreSQL/restore/monitoring/external acceptance proof. Do not pro
 unavailable providers, original documents, hardware or real-data approval.
 
 Existing owners remain authoritative:
-[data quality](data-quality-relationships-followup.md),
+[data quality](../tasks/data-quality-relationships-followup.md),
 [Situaciones](sipges-4-situations.md),
 [media monitoring](media-monitoring-project-phase.md), and
-[territorial intelligence](territorial-intelligence-alerts.md).
+[territorial intelligence](../tasks/territorial-intelligence-alerts.md).
 No task there is closed by this programme without its required evidence.
 
 ## Risk and review boundaries

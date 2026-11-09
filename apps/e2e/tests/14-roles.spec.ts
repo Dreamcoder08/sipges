@@ -10,7 +10,7 @@ import { watchNetwork } from '../support/network.ts';
 
 /**
  * Non-admin roles see every screen without error banners: a screen either works for the role
- * or says plainly what the role cannot do (odd/tasks/full-functionality.md S1).
+ * or says plainly what the role cannot do (odd/archive/full-functionality.md S1).
  */
 for (const role of ['analista', 'coordinador', 'consulta'] as const) {
   test(`${role}: every screen opens without errors`, async ({ page, adminApi }) => {
