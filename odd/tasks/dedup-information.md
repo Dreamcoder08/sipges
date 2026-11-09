@@ -16,11 +16,14 @@ Remove real duplication found by a repo-wide audit; keep intentional duplication
 
 ## Tasks
 
-- T1 [x] — S3: unify the JSON parser in `httpx`, tenancy calls it. Risk: item 2 (auth/validation path). Route: inline, then independent verifier. Own commit.
-- T2 [ ] — S4: shared HTTP test helper, migrate the 14 packages. Risk: item 6 (no PostgreSQL here, only compile + vet). Route: inline. Own commit.
+- T1 [x] — S3: unify the JSON parser in `httpx`, tenancy calls it. Risk: item 2 (auth/validation path). Route: inline; the runtime did not admit a verifier, so a differential old-vs-new test ran inline (0 differences). Commit 65eebbc0.
+- T2 [x] — S4: shared HTTP test helper, migrate the 14 packages. Risk: item 6 (no PostgreSQL here, only compile + vet). Route: inline. Only the byte-identical copies moved (start 11, get 10, expect 10 of 14); drifted variants stay local. Compile check: `GOOS=linux go vet ./...` (doctext does not build on Windows). Commit 4efc5163.
 - T3 [x] — S1, S5, S6: audit and report. See L2.
 
 ## Log
 
 - L1 — «verificar duplicidad de informacion»; then «yes te autorizo todo has lo que haria gentleman buenas practicas de ingeneri de softwart y mas»
 - L2 — Audit: odd ids, docs, ADRs clean; 2 identical Engram observations; jscpd 40 clones / 0.85 %. No local PostgreSQL (no pg_ctl), so DB integration tests cannot run here.
+- L3 — T1: the parser copies were identical except the hex helpers; tenancy now uses httpx.JSONValue, ParseJSONBody and DecodeUTF8. The form parsers differ on purpose (stdlib multipart vs WHATWG) and stay. Differential test over 27 inputs plus all invalid-UTF-8 prefixes: no differences.
+- L4 — T2: new `internal/app/apitest` (Start, Get, Expect). A wrong Expect variant was caught by vet. DB integration tests were NOT run (no PostgreSQL locally).
+- L5 — Slice boundary: T1 (493 lines, mostly deletions) and T2 are separate commits.
