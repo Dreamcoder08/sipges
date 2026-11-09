@@ -36,22 +36,22 @@ func TestCompatibleNameCarriesTheModel(t *testing.T) {
 
 func TestCompatibleEndpointJoinsTheBaseURL(t *testing.T) {
 	t.Parallel()
-	cases := map[string]string{
-		"https://api.deepseek.com":         "https://api.deepseek.com/v1/chat/completions",
-		"https://api.deepseek.com/":        "https://api.deepseek.com/v1/chat/completions",
-		"https://api.openai.com/v1":        "https://api.openai.com/v1/chat/completions",
-		"https://api.openai.com/v1/":       "https://api.openai.com/v1/chat/completions",
-		"https://openrouter.ai/api":        "https://openrouter.ai/api/v1/chat/completions",
-		"https://openrouter.ai/api/v1":     "https://openrouter.ai/api/v1/chat/completions",
-		"http://127.0.0.1:11434":           "http://127.0.0.1:11434/v1/chat/completions",
-		" http://localhost:11434/v1 \n":    "http://localhost:11434/v1/chat/completions",
-		"https://host.example.test/v10":    "https://host.example.test/v10/v1/chat/completions",
-		"https://host.example.test/prefix": "https://host.example.test/prefix/v1/chat/completions",
+	cases := []struct{ base, want string }{
+		{"https://api.deepseek.com", "https://api.deepseek.com/v1/chat/completions"},
+		{"https://api.deepseek.com/", "https://api.deepseek.com/v1/chat/completions"},
+		{"https://api.openai.com/v1", "https://api.openai.com/v1/chat/completions"},
+		{"https://api.openai.com/v1/", "https://api.openai.com/v1/chat/completions"},
+		{"https://openrouter.ai/api", "https://openrouter.ai/api/v1/chat/completions"},
+		{"https://openrouter.ai/api/v1", "https://openrouter.ai/api/v1/chat/completions"},
+		{"http://127.0.0.1:11434", "http://127.0.0.1:11434/v1/chat/completions"},
+		{" http://localhost:11434/v1 \n", "http://localhost:11434/v1/chat/completions"},
+		{"https://host.example.test/v10", "https://host.example.test/v10/v1/chat/completions"},
+		{"https://host.example.test/prefix", "https://host.example.test/prefix/v1/chat/completions"},
 	}
-	for base, want := range cases {
-		got := NewOpenAICompatible("m", environment(map[string]string{"SIPGES_ANALYST_BASE_URL": base})).endpoint
-		if got != want {
-			t.Errorf("%q: endpoint = %q, want %q", base, got, want)
+	for _, c := range cases {
+		got := NewOpenAICompatible("m", environment(map[string]string{"SIPGES_ANALYST_BASE_URL": c.base})).endpoint
+		if got != c.want {
+			t.Errorf("%q: endpoint = %q, want %q", c.base, got, c.want)
 		}
 	}
 }

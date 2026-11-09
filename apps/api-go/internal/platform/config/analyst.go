@@ -12,8 +12,9 @@ import (
 const (
 	defaultAnalystModel = "claude-opus-5-5"
 
-	// The values of SIPGES_ANALYST_PROVIDER that switch the narrator on.
-	ProviderAnthropic        = "anthropic"
+	// ProviderAnthropic selects the Anthropic narrator.
+	ProviderAnthropic = "anthropic"
+	// ProviderOpenAICompatible selects the OpenAI-compatible narrator.
 	ProviderOpenAICompatible = "openai-compatible"
 )
 
