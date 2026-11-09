@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -196,6 +196,49 @@ describe('Indicadores e IRSA', () => {
         body: { payload: config },
       }),
     );
+  });
+  it('sin evidencia muestra «Sin datos suficientes», sin nivel ni color de riesgo (S3)', async () => {
+    server.use(
+      http.get('*/system/irsa', () =>
+        HttpResponse.json({
+          ...report,
+          coverage: { G: 0, A: 0, D: 0, N: 0, E: 0, I: 0 },
+          insufficient_data: true,
+        }),
+      ),
+    );
+    renderPage(<IrsaPage {...context} />);
+    const current = (await screen.findByRole('heading', { name: 'IRSA actual' })).closest(
+      'section',
+    ) as HTMLElement;
+    expect(await within(current).findByText('Sin datos suficientes')).toBeVisible();
+    expect(
+      within(current).getByText('Carga registros del proyecto para calcular el IRSA.'),
+    ).toBeVisible();
+    expect(current).not.toHaveTextContent('7.00 / 100');
+    expect(current).not.toHaveTextContent('Verde');
+  });
+  it('con datos muestra el valor y el nivel, sin el aviso de falta de datos (S3, S5)', async () => {
+    renderPage(<IrsaPage {...context} />);
+    const current = (await screen.findByRole('heading', { name: 'IRSA actual' })).closest(
+      'section',
+    ) as HTMLElement;
+    await waitFor(() => expect(current).toHaveTextContent('7.00 / 100 · Verde'));
+    expect(screen.queryByText('Sin datos suficientes')).not.toBeInTheDocument();
+  });
+  it('marca la metodología pendiente de validación junto al valor (S3)', async () => {
+    server.use(
+      http.get('*/system/irsa/config', () =>
+        HttpResponse.json({ ...config, status: 'PENDIENTE_DE_VALIDACION_METODOLOGICA' }),
+      ),
+    );
+    renderPage(<IrsaPage {...context} />);
+    expect(await screen.findByText('Metodología pendiente de validación')).toBeVisible();
+  });
+  it('no marca la metodología como pendiente cuando la configuración no lo dice (S3)', async () => {
+    renderPage(<IrsaPage {...context} />);
+    await screen.findByText(/7\.00 \/ 100/);
+    expect(screen.queryByText('Metodología pendiente de validación')).not.toBeInTheDocument();
   });
   it('presenta errores del servidor sin un resultado inventado', async () => {
     server.use(
