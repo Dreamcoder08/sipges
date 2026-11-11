@@ -16,8 +16,14 @@ task names its source document; that document stays the place where the work is 
 
 - S5 — «lo que pasa es que los datos reales de mi prima ya estan en la version de escritorio instalable en local de
   la laptop de mi prima crystell , tamien mejorar el sistem desing and diseño ui & Ux de vanguardia»
+- S6 — «mi idea es avanzar con todo lo necesario para despues ir donde mi prima crystell instalar la version
+  definitiva , agregarle o extraer sus datos y listo , entiendes ??»
 
 ## Tasks
+
+Goal set by S6: one visit to the laptop. Everything is finished and rehearsed beforehand; on the visit the
+definitive version is installed and the existing real data is carried into it. Order: phase 0, phase 1 with T33,
+phases 3 and 5, then T34. Phase 2 (cloud) and phase 4 do not block the visit.
 
 First, before anything else (S5: real data already lives on one laptop with no proven backup):
 
@@ -45,6 +51,10 @@ Phase 1, desktop (the nearest real use; does not depend on the cloud):
 - T10 [ ] — S2, S5: check the existing Windows install without risking its data. Route: owner on the laptop, parent
   reads the evidence. Commit: pending (fixes only).
 - T11 [ ] — S2: local backup and restore drill for the desktop state folder. Route: inline. Commit: pending.
+
+- T33 [ ] — S6: carry an existing install's data into the definitive version, rehearsed. Route: worker, then
+  verifier. Commit: pending.
+- T34 [ ] — S6: the visit, by a written runbook. Route: owner on the laptop. Commit: pending (runbook).
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
 
@@ -291,6 +301,46 @@ Every task that changes code follows the repository rules: synthetic data only, 
 - Done when: the drill passes once from a clean folder and the documented steps are the ones that were run.
 - Risk: item 1; work only on a scratch state folder, never the instance on port 8000.
 
+### T33 — Data from the old install into the definitive version
+
+- Problem: the laptop runs an older version (exact commit unknown until T27) with real data in a PGlite database,
+  uploads, an encryption key and an admin password. The definitive version has newer migrations and the managed
+  package layout from T6. Nothing has ever proved that an old state folder opens under the new version.
+- Two paths; build the first, keep the second as the fallback:
+  1. In place: the definitive version starts on a copy of the old state folder and migrates it forward.
+  2. Extract and load: export every project from the old install to a file and import it into a fresh definitive
+     install. Check first which export and import the product already has; add only what is missing.
+- Rehearsal, with synthetic data only:
+  1. Check out the commit from T27 in a scratch worktree; start it on a scratch state folder; load synthetic
+     records, links, uploads, users with MFA, and audit entries for two projects.
+  2. Stop it. Copy the folder. Start the definitive package on the copy.
+  3. Compare before and after through the public API: row counts per module and project, a sample of records
+     field by field, every upload by hash, sign-in with the old password and MFA, audit entries intact.
+  4. Repeat from every tagged version between the T27 commit and the definitive one if migrations were added.
+- Rules, one failing test each: a migration failure leaves the copy unusable but the original untouched; the
+  encryption key from the old folder decrypts under the new version; rows of one project never appear in another
+  after the move; a second run on an already migrated folder changes nothing.
+- Done when: the rehearsal passes from the T27 commit and the comparison script prints no difference.
+- Risk: items 1 and 2. Own commit, independent verifier.
+- Depends on: T27 (only the commit hash is needed, it can be sent by message), T6.
+
+### T34 — The visit
+
+- A printed runbook, `docs/deployment/desktop-visit.es.md`, in Spanish, with a box to tick per step:
+  1. Back up the state folder to the external drive (T26 steps), unless a backup from that day exists.
+  2. Record the old version and the counts shown on Inicio for each project.
+  3. Install the definitive version beside the old one, not over it.
+  4. Run the T33 move on a copy of the state folder.
+  5. Compare the counts with step 2; open ten records and three uploads chosen by the user.
+  6. The user signs in, with MFA, and works for ten minutes on her own tasks.
+  7. Point the shortcut to the new version. Keep the old install and the backup for thirty days.
+  8. Show her the update notice (T8) and the backup procedure (T11).
+- Stop rule: any difference in step 5 means the old version stays in use and the laptop is left as it was.
+- Entry conditions: T6–T9, T11 and T33 closed; the full runbook rehearsed once on another Windows machine or user
+  account (T10 lines 1–3).
+- Done when: the eight boxes are ticked and the owner records the date here.
+- Risk: item 1.
+
 ### T12 — Deploys and the Neon quota
 
 - Source: `go-rust-stack.md` L70: production answered 503 on 2026-11-06 because Neon paused the project at the free
@@ -508,3 +558,5 @@ Not chosen in S2. Each stays open in its own document.
 - L5 — S5 verbatim, 2026-11-11. Effect: T26 and T27 added and placed first; T10 rewritten from a first install to a
   check of the existing install; T7 gained rule 7; phase 5 (T28–T32) added. Slice boundary: the first commit of this
   document is one slice; these changes are the second.
+- L6 — S6 verbatim, 2026-11-11. Effect: the visit is the milestone; T33 and T34 added; T26 becomes step 1 of the
+  visit unless the user can do it earlier by herself; phases 2 and 4 no longer block the milestone.
