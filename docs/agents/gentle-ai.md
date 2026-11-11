@@ -12,7 +12,7 @@ explícita del dueño del repositorio.
 | Memoria compartida | `.engram/manifest.json`, `.engram/chunks/` | Fragmentos comprimidos que solo se añaden; viajan en git entre máquinas y sesiones en la nube. |
 | Engram en la nube | `scripts/agents/engram.mjs` | Solo si `CLAUDE_CODE_REMOTE=true` descarga la versión fijada, comprueba su sha256 y la deja en `~/.local/bin`. En una máquina personal nunca instala nada: indica los pasos. |
 | Guardarraíles de permisos | `.claude/settings.json` | Equivalente al componente `permissions` de Gentle AI: se niega leer `data/seed.json`, `data/*.db`, `.env*`, claves y `~/.ssh`. |
-| Skills de Gentle AI | `.agents/skills/` | `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver` (gentle-ai v4.2.0, copia renderizada por `install --scope workspace`) y `typescript`, `zod-4` (Gentleman-Skills `curated/`). Procedencia y sha256 de cada `SKILL.md` en `skills-lock.json`. |
+| Skills de Gentle AI | Instalación global | `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript` y `zod-4` llegan con `gentle-ai install` o Gentle Shell. El repositorio no las copia (ver abajo). |
 | ODD | `odd/tasks/`, skill `sipges-odd-task` | El ODD del repo ya sigue *Organic Driven Development*: trabajo pequeño en línea, trabajo grande con un documento recuperable. |
 
 Comandos (`pnpm engram <comando>`, equivalente a `node scripts/agents/engram.mjs <comando>`):
@@ -29,22 +29,20 @@ Reglas de memoria: guardar decisiones, correcciones, convenciones y hallazgos co
 **Qué / Por qué / Dónde / Aprendido**, en español y con `scope: project`. Nunca guardar datos reales,
 datos personales, credenciales ni URLs privadas: los fragmentos se commitean.
 
-## Skills duplicadas en Pi
+## Una sola copia de cada skill genérica
 
-[`.pi/settings.json`](../../.pi/settings.json) evita los ocho conflictos con `~/.agents/skills/`:
-`chained-pr`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript`,
-`work-unit-commits` y `zod-4`. Se conservan las copias del proyecto en `.agents/skills/`, su contenido y
-los hashes de `skills-lock.json`; las demás skills globales siguen disponibles.
-
-Cada ruta global concreta se declara y se excluye con `-` en la misma lista. La declaración permite que
-el resolvedor de Pi registre esa ruta como desactivada antes del autodescubrimiento global; las
-exclusiones solas no filtran ese ámbito en la versión comprobada. No se modifica la instalación global.
-Tras aceptar la configuración del proyecto, reinicia Pi o ejecuta `/reload` para aplicarla.
+Hasta noviembre de 2026 el repositorio copiaba las ocho skills genéricas de Gentle AI en `.agents/skills/`.
+Con la instalación global y Gentle Shell cada agente veía dos o tres copias, y `.pi/settings.json` tenía
+que desactivar las globales. Se quitaron las copias, sus entradas en `skills-lock.json` y ese parche.
+`.claude/skills/` nunca las enlazó, así que Claude Code no cambia. Codex y Pi las toman de la instalación
+global. En el repositorio quedan solo las skills `sipges-*` (flujos propios con tres usos o más) y las de
+Neon, pedidas explícitamente.
 
 ## Qué no se adopta en el repositorio y por qué
 
 | Pieza de Gentle AI | Motivo |
 | --- | --- |
+| Copias de las skills genéricas en `.agents/skills/` | Duplicaban la instalación global y obligaban a parchear Pi. |
 | `.claude/CLAUDE.md` del orquestador (87 KB) | Se cargaría en cada sesión, duplica `AGENTS.md` y choca con el arnés de Claude Projects. Se resume en la sección *Gentle AI* de `AGENTS.md`. |
 | Hooks RDD, telemetría y `skill-registry` | Ejecutan el binario `gentle-ai`, que no existe en las sesiones en la nube; fallarían en cada turno. |
 | `react-19`, `playwright`, `go-testing`, `skill-registry` | `react-19` asume React Compiler (no activo aquí), `playwright` exige Page Objects que `apps/e2e` no usa, `go-testing` está orientada a Bubbletea y archivos golden (sigue disponible como skill global), y `skill-registry` depende del binario `gentle-ai`. |

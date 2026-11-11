@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 /**
- * Visual record of the mobile shell for pull requests (odd/tasks/mobile-first-redesign.md).
+ * Visual record of the mobile shell for pull requests (odd/archive/mobile-first-redesign.md).
  * Runs only when SIPGES_E2E_SCREENSHOT_DIR names an output folder, so the regular suite
  * never writes files: `SIPGES_E2E_SCREENSHOT_DIR=/tmp/shots pnpm e2e -- screenshots`.
  */

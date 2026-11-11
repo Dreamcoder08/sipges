@@ -1,7 +1,7 @@
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 /**
- * Functional audit regressions (odd/tasks/functional-audit-correction.md), end to end on the
+ * Functional audit regressions (odd/archive/functional-audit-correction.md), end to end on the
  * real API. Records are synthetic.
  */
 test('counters follow records and every record opens, edits and shows its report', async ({

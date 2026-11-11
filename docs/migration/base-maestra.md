@@ -3,7 +3,7 @@
 El prototipo Python cargaba `data/seed.json` («Base Maestra octubre 2026») en una base vacía
 (`reference/python/app.py:125-134`). La versión TypeScript no lo hacía: el directorio, eventos,
 actores, demandas y fuentes de esa matriz no estaban en PostgreSQL (auditoría funcional,
-`odd/tasks/functional-audit-correction.md`, D2). Esta herramienta hace esa carga de forma
+`odd/archive/functional-audit-correction.md`, D2). Esta herramienta hace esa carga de forma
 explícita y reversible.
 
 - Solo inserta: un registro cuyo código ya existe no se modifica (las ediciones se conservan).

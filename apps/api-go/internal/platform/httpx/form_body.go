@@ -362,7 +362,7 @@ func multipartFormData(input []byte, boundaryString string) ([]FormEntry, bool) 
 		}
 		pos += len(body)
 		if h.encoding == "base64" {
-			body = nodeBase64(decodeUTF8(body, false))
+			body = nodeBase64(DecodeUTF8(body, false))
 		}
 		if formAt(input, pos) != '\r' || formAt(input, pos+1) != '\n' {
 			return nil, false
@@ -476,7 +476,7 @@ func multipartName(input []byte, pos int) (string, int, bool) {
 	if formAt(input, pos) != '"' {
 		return "", 0, false
 	}
-	name := decodeUTF8(input[start:pos], true)
+	name := DecodeUTF8(input[start:pos], true)
 	name = strings.NewReplacer("%0A", "\n", "%0a", "\n").Replace(name)
 	name = strings.NewReplacer("%0D", "\r", "%0d", "\r").Replace(name)
 	name = strings.ReplaceAll(name, "%22", `"`)
@@ -489,7 +489,7 @@ func utf8DecodeBytes(b []byte) string {
 	if len(b) >= 3 && b[0] == 0xef && b[1] == 0xbb && b[2] == 0xbf {
 		b = b[3:]
 	}
-	return decodeUTF8(b, true)
+	return DecodeUTF8(b, true)
 }
 
 // nodeBase64 is Buffer.from(string, 'base64'): characters of either alphabet are decoded,
@@ -552,7 +552,7 @@ func base64Value(c byte) (byte, bool) {
 // UTF-8, a leading '?' dropped, pairs split on '&', '+' read as a space, percent escapes
 // decoded to bytes and those decoded as UTF-8 (a BOM kept).
 func urlencoded(body []byte) []FormEntry {
-	s := decodeUTF8(body, false)
+	s := DecodeUTF8(body, false)
 	s = strings.TrimPrefix(s, "?")
 	entries := []FormEntry{}
 	for pair := range strings.SplitSeq(s, "&") {
@@ -580,7 +580,7 @@ func formDecode(s string) string {
 		}
 		out = append(out, b[i])
 	}
-	return decodeUTF8(out, false)
+	return DecodeUTF8(out, false)
 }
 
 func formHex(c byte) (byte, bool) {
@@ -595,9 +595,9 @@ func formHex(c byte) (byte, bool) {
 	return 0, false
 }
 
-// decodeUTF8 is the WHATWG UTF-8 decoder with replacement, as evidence DecodeUTF8 and TextDecoder
+// DecodeUTF8 is the WHATWG UTF-8 decoder with replacement, as evidence DecodeUTF8 and TextDecoder
 // read bytes: one U+FFFD per maximal invalid sequence, the BOM dropped when stripBOM is set.
-func decodeUTF8(b []byte, stripBOM bool) string {
+func DecodeUTF8(b []byte, stripBOM bool) string {
 	if stripBOM && len(b) >= 3 && b[0] == 0xef && b[1] == 0xbb && b[2] == 0xbf {
 		b = b[3:]
 	}
