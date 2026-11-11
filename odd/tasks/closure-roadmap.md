@@ -14,7 +14,16 @@ task names its source document; that document stays the place where the work is 
 - S4 — Location chosen by the owner: «Worktree nuevo desde main (recomendado)», described as «Rama docs/roadmap en
   .worktrees/roadmap, sin tocar este checkout ni tus cambios sin commitear.»
 
+- S5 — «lo que pasa es que los datos reales de mi prima ya estan en la version de escritorio instalable en local de
+  la laptop de mi prima crystell , tamien mejorar el sistem desing and diseño ui & Ux de vanguardia»
+
 ## Tasks
+
+First, before anything else (S5: real data already lives on one laptop with no proven backup):
+
+- T26 [ ] — S5: back up the real state folder on the laptop today. Route: owner on the laptop. Commit: n/a.
+- T27 [ ] — S5: record what is installed on the laptop. Route: owner on the laptop, parent reads the answers. Commit:
+  n/a.
 
 Phase 0, integration (nothing else is safe to build until `main` holds the verified units):
 
@@ -33,8 +42,8 @@ Phase 1, desktop (the nearest real use; does not depend on the cloud):
 - T8 [ ] — S2: update notice and approval at startup (desktop-updates T3). Route: inline. Commit: pending.
 - T9 [ ] — S2: independent verification of update, refusal and recovery (desktop-updates T4). Route:
   gentle-ai-verify. Commit: n/a.
-- T10 [ ] — S2: first run on the real Windows laptop. Route: owner on the laptop, parent reads the evidence. Commit:
-  pending (fixes only).
+- T10 [ ] — S2, S5: check the existing Windows install without risking its data. Route: owner on the laptop, parent
+  reads the evidence. Commit: pending (fixes only).
 - T11 [ ] — S2: local backup and restore drill for the desktop state folder. Route: inline. Commit: pending.
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
@@ -69,10 +78,49 @@ Phase 4, real data and owner decisions:
   Commit: n/a.
 - T25 [ ] — S2: record the pending owner decisions. Route: owner. Commit: pending.
 
+Phase 5, design system and interface (S5):
+
+- T28 [ ] — S5: audit the design system against the running app. Route: inline. Commit: pending.
+- T29 [ ] — S5: UX audit of the seven destinations. Route: one explorer, then inline. Commit: pending.
+- T30 [ ] — S5: design directions on the canvas, owner picks. Route: gentle-design. Commit: pending.
+- T31 [ ] — S5: build the chosen direction in slices. Route: inline per slice. Commit: pending.
+- T32 [ ] — S5: accessibility and speed budgets enforced in CI. Route: inline. Commit: pending.
+
 ## Task detail
 
 Every task that changes code follows the repository rules: synthetic data only, one failing test per rule first,
 `pnpm verify` before the commit, and no push, merge or deploy without the owner's word.
+
+### T26 — Back up the real data now
+
+- Why first: the laptop holds real data in `%LOCALAPPDATA%\SIPGES` (`pglite`, `uploads`, `data-key`,
+  `admin-password`). The documented update path is `git pull` and rerun the installer, which runs migrations on
+  that data. The backup procedure was never drilled (T11). One failed update or a disk fault loses everything.
+- Steps for the owner, on the laptop:
+  1. Close the SIPGES window and end the `node` process that serves it (Task Manager), so the database is not
+     copied mid-write.
+  2. Copy the whole `%LOCALAPPDATA%\SIPGES` folder to an external drive, in a folder named with the date.
+  3. Check that the copy has the same number of files and total size as the original.
+  4. Keep the drive away from the laptop. The folder contains the encryption key and the admin password: whoever
+     holds the copy can read the data, so it must not go to a shared or cloud folder without a decision (T25).
+  5. Open SIPGES again and confirm it works.
+- Rule until T7 is done: no `git pull`, no installer rerun and no update on the laptop without a backup taken the
+  same day.
+- The parent never receives, opens or copies this folder.
+- Done when: the owner confirms the dated copy exists and the app still opens.
+- Risk: item 1.
+
+### T27 — What is installed
+
+- Needed because every later desktop task depends on it, and nothing in the repository records it.
+- Questions for the owner, answered from the laptop:
+  1. How it was installed: clone plus `install.ps1`, or another way; from which repository (the owner's or a fork).
+  2. The installed version: `git log --oneline -1` in the cloned folder.
+  3. Windows version, `node --version`, `pnpm --version`, PowerShell version.
+  4. Whether MFA is on, and how many people use it.
+  5. Size of `%LOCALAPPDATA%\SIPGES` and of `api.log`.
+  6. Anything that failed or felt slow so far.
+- Done when: the six answers are in this document's Log. They contain no real data.
 
 ### T1 — Merge train
 
@@ -185,7 +233,9 @@ Every task that changes code follows the repository rules: synthetic data only, 
   5. If the new version fails its readiness check, the previous version is restored and the failure is logged.
   6. A database migration that fails rolls the update back; the previous database is restored from a copy taken
      before the update.
-- Done when: the six tests pass and a scripted update from version N to N+1 and a forced failed update both end
+  7. Because of S5: the update starts from the version recorded in T27, not only from the latest one, and the
+     first update on the laptop runs on a copy of the state folder before it touches the real one.
+- Done when: the seven tests pass and a scripted update from version N to N+1 and a forced failed update both end
   with a running instance and intact synthetic data.
 - Risk: items 1, 2 and 5. Own commit and independent verifier (T9).
 
@@ -212,7 +262,10 @@ Every task that changes code follows the repository rules: synthetic data only, 
 
 - Source: `desktop-launchers.md` S1 and L3; `deploy/desktop/README.md` Limits: Windows was checked by reading the
   scripts only.
-- Checklist on the laptop, in order, noting pass or fail for each line:
+- S5 changed this task: the laptop already has a working install with real data, so nothing is reinstalled there.
+  Lines 1–3 are checked on a second Windows user account or another machine, with an empty state folder. Lines 4–9
+  are read-only checks on the real install, after T26.
+- Checklist, in order, noting pass or fail for each line:
   1. `node --version` is 24 or higher; if not, `winget install OpenJS.NodeJS.LTS` and open a new terminal.
   2. Fork and clone under the user's own GitHub account.
   3. Run `deploy/desktop/windows/install.ps1` with `-ExecutionPolicy Bypass`. Known low-severity risks: the npm
@@ -226,7 +279,7 @@ Every task that changes code follows the repository rules: synthetic data only, 
 - On any failure: copy `%LOCALAPPDATA%\SIPGES\api.log` and the text of the message box, open an issue with the
   template from #394, and stop.
 - Done when: the nine lines pass, or each failure has an issue and a fix with a test.
-- Depends on: T1 (#391 and #394 on `main`).
+- Depends on: T26, T27; T1 for lines 1–3.
 
 ### T11 — Desktop backup and restore
 
@@ -382,6 +435,55 @@ Each line needs one answer from the owner; record it in the named document.
 - Backup retention period (T14).
 - Skip `migrate` on dry run (`repo-cleanup.md` F1).
 
+### T28 — Design system audit
+
+- Reading of S5: «sistem desing» is taken as the design system (tokens, components, themes). If the owner meant the
+  software architecture, say so and this phase gets an architecture task instead.
+- Sources: ADR 0018 (tokens and themes), ADR 0019 (OLED dark, conversational UI), `design/system.md`, the artboards
+  under `design/`.
+- Steps:
+  1. Run the design-system sync so `design/system.md` matches current `main`; the copy in the root checkout is 1098
+     commits old.
+  2. List every colour, spacing, radius, shadow and font size used in `apps/web/src` that is not a token.
+  3. List components that exist more than once with different looks (buttons, chips, cards, empty states, tables).
+  4. Check both themes for contrast: text 4.5:1, large text and icons 3:1.
+- Done when: a table of findings with `path:line`, ordered by how many screens each one touches.
+
+### T29 — UX audit
+
+- Scope: Inicio, Registros, Territorio, Bandeja, Análisis, Integraciones, Configuración, on desktop and phone width.
+- For each, with synthetic data: the main job of the screen and how many steps it takes; what the screen shows when
+  empty, loading, failing and with 5,000 rows; keyboard path; where a first-time user would hesitate. Use the
+  questions in T27 line 6 as real evidence of friction.
+- Done when: at most ten problems, each with a screenshot, its cost to the user and a proposed change. No redesign
+  of things that work.
+
+### T30 — Directions
+
+- Steps: three directions for the two screens used most (Inicio and Registros) plus the shared shell, as artboards
+  under `design/vanguard/`, shown on the canvas. Each direction states what it changes in tokens, density, type and
+  motion, and what it costs to build.
+- Constraints carried from earlier decisions: five destinations and one Integraciones page stay; integrity rules
+  stay visible (A–E verification, audit, approvals); works on a phone; works on the laptop without a network.
+- Done when: the owner picks one direction or a mix, recorded in the Log.
+
+### T31 — Build the direction
+
+- Slices of about 400 changed lines, in this order: tokens and themes; shell (sidebar, header, mobile drawer);
+  shared components; Inicio; Registros; the other destinations.
+- Each slice: visual check against the artboard, existing E2E still green, screenshots of both themes at desktop
+  and phone width.
+- Done when: every destination uses only tokens and shared components, and T28's table is empty.
+- Depends on: T30; T16–T18 first, so the redesign starts from a closed interface.
+
+### T32 — Budgets in CI
+
+- Steps: an automated accessibility check on the seven destinations in the E2E run (no serious or critical
+  violations); a bundle size limit for the web build, set from today's size; a check that Inicio becomes usable
+  within a stated time on the laptop-class profile recorded in T27.
+- Done when: the three checks run in `ci.yml` and fail the build when crossed.
+- Risk: item 5 (CI).
+
 ## Out of scope
 
 Not chosen in S2. Each stays open in its own document.
@@ -403,3 +505,6 @@ Not chosen in S2. Each stays open in its own document.
 - L4 — Not verified while planning: the current file list of the uncommitted Settings edits (T2), the merge order
   and conflicts of the local integration (not recorded in its document), and whether Workers `fetch` fails on the
   GEOCATMIN certificate chain (T20).
+- L5 — S5 verbatim, 2026-11-11. Effect: T26 and T27 added and placed first; T10 rewritten from a first install to a
+  check of the existing install; T7 gained rule 7; phase 5 (T28–T32) added. Slice boundary: the first commit of this
+  document is one slice; these changes are the second.
