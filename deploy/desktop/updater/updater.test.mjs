@@ -668,3 +668,58 @@ test('CLI: usage, refusals and recovery never boot a server', () =>
     );
     assert.equal((await inspectInstall(fresh)).complete, true);
   }));
+
+test('release notes: optional signed text shown by the update notice', () =>
+  withTemp(async (dir) => {
+    const pair = keys();
+    const sign = async (name, notes) => {
+      const pkg = join(dir, `package-${name}`);
+      await makePackage(pkg, '1.1.0');
+      const release = join(dir, `release-${name}`);
+      const manifest = await createRelease({
+        packageDir: pkg,
+        releaseDir: release,
+        privateKey: pair.privateKey,
+        ...(notes === undefined ? {} : { notes }),
+      });
+      return { release, manifest };
+    };
+    const withNotes = await sign('notes', 'Corrige el filtro.\nNuevo resumen.');
+    assert.equal(withNotes.manifest.notes, 'Corrige el filtro.\nNuevo resumen.');
+    const { readRelease, loadPublicKey } = await import('./release.mjs');
+    const key = loadPublicKey(publicPem(pair));
+    assert.equal(
+      (await readRelease(withNotes.release, key)).manifest.notes,
+      'Corrige el filtro.\nNuevo resumen.',
+    );
+    const without = await sign('plain');
+    assert.equal('notes' in without.manifest, false);
+    for (const [name, notes] of [
+      ['blank', '  '],
+      ['long', 'x'.repeat(4001)],
+      ['object', { text: 'x' }],
+    ])
+      await assert.rejects(
+        sign(name, notes),
+        /^Error: Release notes must be non-empty text of at most 4000 characters$/,
+      );
+    // CLI: --notes is signed into the manifest.
+    const pkg = join(dir, 'package-cli');
+    await makePackage(pkg, '1.2.0');
+    const signerFile = join(dir, 'keys', 'synthetic-signer.txt');
+    await put(signerFile, pair.privateKey.export({ type: 'pkcs8', format: 'pem' }));
+    const out = join(dir, 'release-cli');
+    const cli = node(
+      releaseCli,
+      '--package',
+      pkg,
+      '--out',
+      out,
+      '--key',
+      signerFile,
+      '--notes',
+      'Nota.',
+    );
+    assert.deepEqual([cli.status, cli.stderr], [0, '']);
+    assert.equal((await readRelease(out, key)).manifest.notes, 'Nota.');
+  }));

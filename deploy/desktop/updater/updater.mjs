@@ -15,6 +15,7 @@ import {
   mkdir,
   open,
   readFile,
+  readdir,
   readlink,
   rename,
   rm,
@@ -243,6 +244,9 @@ export async function inspectInstall(root) {
   return result(null);
 }
 
+/** The absolute state folder recorded at install or adoption. */
+export const readStateDir = (root) => stateDirOf(resolve(root));
+
 async function stateDirOf(root) {
   const config = await readJson(join(root, INSTALL));
   if (!config || typeof config.stateDir !== 'string' || !isAbsolute(config.stateDir))
@@ -297,6 +301,41 @@ function checkTarget(current, manifest) {
     throw refuse(
       `Release is for ${manifest.platform}/${manifest.arch}; this computer is ${process.platform}/${process.arch}`,
     );
+}
+
+/**
+ * The newest release in `source` that `update` would accept, verified the same way (signature
+ * with the installed key, newer version, minimum previous, platform) but without copying
+ * anything: only `release.json` and `release.sig` are read. `source` is one release directory
+ * or a directory of them. Refused candidates are listed in `skipped`; an install without an
+ * update key is refused as a whole (updates disabled).
+ */
+export async function findUpdate({ root, source }) {
+  root = resolve(root);
+  source = resolve(source);
+  const current = await readCurrent(root);
+  if (!current) throw new UpdateError('CORRUPT', 'No installed version here');
+  const key = await trustedKey(current.dir, undefined);
+  const candidates = (await exists(join(source, MANIFEST)))
+    ? [source]
+    : (await readdir(source, { withFileTypes: true }))
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => join(source, entry.name))
+        .sort();
+  let available = null;
+  const skipped = [];
+  for (const release of candidates) {
+    try {
+      const { manifest } = await readRelease(release, key);
+      checkTarget(current, manifest);
+      if (!available || compareVersions(manifest.version, available.version) > 0)
+        available = { version: manifest.version, notes: manifest.notes ?? null, release };
+    } catch (error) {
+      if (error.code !== 'REFUSED') throw error;
+      skipped.push({ release, reason: error.message });
+    }
+  }
+  return { installed: current.version, available, skipped };
 }
 
 /** Copies exactly the signed files into a staging folder, hashing the copy, not the source. */

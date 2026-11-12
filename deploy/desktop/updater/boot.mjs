@@ -36,22 +36,37 @@ async function secret(stateDir, name) {
   return value;
 }
 
+/**
+ * The environment a managed version runs with: secrets from the state folder, loopback only,
+ * plain-HTTP cookies, data under the state folder and the web app inside the version.
+ */
+export async function managedEnv({ versionDir, stateDir, port, base = process.env }) {
+  return {
+    ...base,
+    SIPGES_DATA_KEY: await secret(stateDir, 'data-key'),
+    SIPGES_ADMIN_PASSWORD: await secret(stateDir, 'admin-password'),
+    SIPGES_COOKIE_SECURE: '0',
+    SIPGES_HOST: '127.0.0.1',
+    SIPGES_PORT: String(port),
+    SIPGES_PGLITE_DIR: join(stateDir, 'pglite'),
+    SIPGES_UPLOAD_DIR: join(stateDir, 'uploads'),
+    SIPGES_WEB_DIR: join(versionDir, 'web'),
+  };
+}
+
+export { freePort, status as httpStatus };
+
 /** Returns `({ versionDir, stateDir }) => Promise<void>` that boots, checks and stops. */
 export function bootCheck({ logFile, timeoutMs = 120_000 }) {
   return async ({ versionDir, stateDir }) => {
     const port = await freePort();
-    const env = Object.fromEntries(
-      Object.entries(process.env).filter(([k]) => !k.startsWith('SIPGES_')),
-    );
-    Object.assign(env, {
-      SIPGES_DATA_KEY: await secret(stateDir, 'data-key'),
-      SIPGES_ADMIN_PASSWORD: await secret(stateDir, 'admin-password'),
-      SIPGES_COOKIE_SECURE: '0',
-      SIPGES_HOST: '127.0.0.1',
-      SIPGES_PORT: String(port),
-      SIPGES_PGLITE_DIR: join(stateDir, 'pglite'),
-      SIPGES_UPLOAD_DIR: join(stateDir, 'uploads'),
-      SIPGES_WEB_DIR: join(versionDir, 'web'),
+    const env = await managedEnv({
+      versionDir,
+      stateDir,
+      port,
+      base: Object.fromEntries(
+        Object.entries(process.env).filter(([k]) => !k.startsWith('SIPGES_')),
+      ),
     });
     const output = await open(logFile, 'a', 0o600);
     const child = spawn(process.execPath, [join(versionDir, 'start.mjs')], {

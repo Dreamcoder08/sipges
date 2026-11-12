@@ -15,6 +15,12 @@ export const SIGNATURE = 'release.sig';
 export const PUBLIC_KEY = 'update-public-key.pem';
 const REQUIRED = ['metadata.json', 'start.mjs', PUBLIC_KEY];
 const MAX_MANIFEST_BYTES = 64 * 1024 * 1024;
+/** Release notes shown in the update notice: plain text, optional. */
+export const MAX_NOTES_LENGTH = 4000;
+const validNotes = (notes) =>
+  notes === undefined ||
+  notes === null ||
+  (typeof notes === 'string' && notes.trim() !== '' && notes.length <= MAX_NOTES_LENGTH);
 const SEMVER =
   /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)?$/;
 
@@ -101,6 +107,7 @@ function validateManifest(manifest) {
     throw fail('minimum previous version');
   if (typeof manifest.platform !== 'string' || typeof manifest.arch !== 'string')
     throw fail('platform');
+  if (!validNotes(manifest.notes)) throw fail('notes');
   const { files, links, directories } = manifest;
   if (!files || typeof files !== 'object' || !links || typeof links !== 'object')
     throw fail('lists');
@@ -184,12 +191,17 @@ export async function createRelease({
   releaseDir,
   privateKey,
   minimumPrevious = null,
+  notes = null,
 }) {
   const key =
     typeof privateKey === 'object' && privateKey.type ? privateKey : createPrivateKey(privateKey);
   if (key.asymmetricKeyType !== 'ed25519') throw new Error('The signing key must be Ed25519');
   const metadata = JSON.parse(await readFile(join(packageDir, 'metadata.json'), 'utf8'));
   if (!isVersion(metadata.version)) throw new Error('metadata.json has no valid version');
+  if (!validNotes(notes))
+    throw new Error(
+      `Release notes must be non-empty text of at most ${MAX_NOTES_LENGTH} characters`,
+    );
   if (minimumPrevious !== null) {
     if (!isVersion(minimumPrevious)) throw new Error('Invalid minimum previous version');
     if (compareVersions(minimumPrevious, metadata.version) >= 0)
@@ -226,6 +238,7 @@ export async function createRelease({
     minimumPrevious,
     platform: metadata.platform,
     arch: metadata.arch,
+    ...(notes === null ? {} : { notes }),
     files,
     links,
     directories: scan.directories.sort(),
@@ -240,7 +253,7 @@ export async function createRelease({
 }
 
 const USAGE =
-  'Usage: node deploy/desktop/updater/release.mjs --package <dir> --out <new dir> --key <private.pem> [--minimum-previous <version>]';
+  'Usage: node deploy/desktop/updater/release.mjs --package <dir> --out <new dir> --key <private.pem> [--minimum-previous <version>] [--notes <text>]';
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
@@ -248,7 +261,7 @@ async function main(args) {
   for (let i = 0; i < args.length; i += 2) {
     const [key, value] = [args[i], args[i + 1]];
     if (
-      !['--package', '--out', '--key', '--minimum-previous'].includes(key) ||
+      !['--package', '--out', '--key', '--minimum-previous', '--notes'].includes(key) ||
       !value ||
       value.startsWith('--') ||
       options[key]
@@ -263,6 +276,7 @@ async function main(args) {
     releaseDir: resolve(options['--out']),
     privateKey: await readFile(resolve(options['--key'])),
     minimumPrevious: options['--minimum-previous'] ?? null,
+    notes: options['--notes'] ?? null,
   });
   console.log(`Release ${manifest.version} signed: ${resolve(options['--out'])}`);
 }
