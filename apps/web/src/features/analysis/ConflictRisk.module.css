@@ -12,7 +12,7 @@
 .toggle {
   display: inline-flex;
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 .toggle button {
@@ -57,7 +57,7 @@
 }
 .band {
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
   white-space: nowrap;
 }

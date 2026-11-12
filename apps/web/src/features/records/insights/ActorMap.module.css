@@ -15,7 +15,7 @@
   background: var(--color-surface-alt);
 }
 .toolbar select {
-  min-height: 44px;
+  min-height: var(--touch-target);
   flex: 1 1 11rem;
 }
 .searchField {
@@ -26,7 +26,7 @@
 }
 .searchField input {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding-left: 2.25rem;
 }
 .searchIcon {
@@ -54,7 +54,7 @@
   font-weight: 600;
 }
 .zoom button {
-  min-width: 44px;
+  min-width: var(--touch-target);
 }
 .status .hint {
   font-weight: 400;

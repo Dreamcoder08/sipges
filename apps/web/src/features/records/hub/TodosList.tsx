@@ -1,7 +1,8 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useRef, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
 import { Field } from '../../../shared/ui/Field.tsx';
+import { type ActiveFilter, ActiveFilters, FilterGroup, FilterSheet } from '../FilterSheet.tsx';
 import { MODULES } from '../modules.ts';
 import styles from './Hub.module.css';
 import type { OpenRecord } from './RecordSheet.tsx';
@@ -20,7 +21,7 @@ const matches = (row: RecordSummary, query: string) =>
     text.toLowerCase().includes(query),
   );
 
-/** Every record type in one list, filtered by search, A–E verification and validation. */
+/** Every record type in one list, filtered by search and, in one sheet, A–E and validation. */
 export const TodosList = ({
   rows,
   onOpen,
@@ -45,6 +46,25 @@ export const TodosList = ({
   );
   const toggle = <T extends string>(current: T | null, next: T, set: (value: T | null) => void) =>
     set(current === next ? null : next);
+  const filtersButton = useRef<HTMLButtonElement>(null);
+  const active: ActiveFilter[] = [
+    ...(letter
+      ? [{ id: 'letter', label: `Verificación ${letter}`, remove: () => setLetter(null) }]
+      : []),
+    ...(validation
+      ? [
+          {
+            id: 'validation',
+            label: `Validación: ${validation}`,
+            remove: () => setValidation(null),
+          },
+        ]
+      : []),
+  ];
+  const clear = () => {
+    setLetter(null);
+    setValidation(null);
+  };
   return (
     <>
       <div role="group" aria-label="Filtros de registros" className={styles.toolbar}>
@@ -57,33 +77,40 @@ export const TodosList = ({
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <div role="group" aria-label="Verificación A a E" className={styles.chips}>
-          {VERIFICATION_LETTERS.map((item) => (
-            <Button
-              key={item}
-              size="sm"
-              variant={letter === item ? 'primary' : 'secondary'}
-              aria-pressed={letter === item}
-              title={`Verificación ${item}`}
-              onClick={() => toggle(letter, item, setLetter)}
-            >
-              {item}
-            </Button>
-          ))}
-        </div>
-        <div role="group" aria-label="Validación" className={styles.chips}>
-          {VALIDATION_STATES.map((item) => (
-            <Button
-              key={item}
-              size="sm"
-              variant={validation === item ? 'primary' : 'secondary'}
-              aria-pressed={validation === item}
-              onClick={() => toggle(validation, item, setValidation)}
-            >
-              {item}
-            </Button>
-          ))}
-        </div>
+        <FilterSheet
+          active={active}
+          shown={visible.length}
+          onClear={clear}
+          buttonRef={filtersButton}
+        >
+          <FilterGroup label="Verificación A a E">
+            {VERIFICATION_LETTERS.map((item) => (
+              <Button
+                key={item}
+                size="sm"
+                variant={letter === item ? 'primary' : 'secondary'}
+                aria-pressed={letter === item}
+                title={`Verificación ${item}`}
+                onClick={() => toggle(letter, item, setLetter)}
+              >
+                {item}
+              </Button>
+            ))}
+          </FilterGroup>
+          <FilterGroup label="Validación">
+            {VALIDATION_STATES.map((item) => (
+              <Button
+                key={item}
+                size="sm"
+                variant={validation === item ? 'primary' : 'secondary'}
+                aria-pressed={validation === item}
+                onClick={() => toggle(validation, item, setValidation)}
+              >
+                {item}
+              </Button>
+            ))}
+          </FilterGroup>
+        </FilterSheet>
         <div className={styles.toolbarEnd}>
           {density}
           <p className={styles.shown} role="status">
@@ -91,6 +118,7 @@ export const TodosList = ({
           </p>
         </div>
       </div>
+      <ActiveFilters active={active} onClear={clear} fallback={filtersButton} />
       {visible.length ? (
         <div
           className={styles.tableWrap}
@@ -165,11 +193,10 @@ export const TodosList = ({
               variant="secondary"
               onClick={() => {
                 setQuery('');
-                setLetter(null);
-                setValidation(null);
+                clear();
               }}
             >
-              Limpiar filtros
+              Mostrar todos los registros
             </Button>
           }
         >

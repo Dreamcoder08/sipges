@@ -19,7 +19,13 @@ test.beforeEach(async ({ page, admin }) => {
 test('IRSA computes the index and stores a snapshot in the history', async ({ page }) => {
   await page.goto('/irsa');
   await expect(page.getByRole('heading', { level: 1, name: 'IRSA-SIPGES' })).toBeVisible();
-  await expect(page.getByText('PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS')).toBeVisible();
+  // One caveat next to the value; the methodology waits behind «Cómo se calcula».
+  await expect(page.getByText('Metodología pendiente de validación')).toHaveCount(1);
+  await expect(page.getByText('Metodología pendiente de validación')).toBeVisible();
+  const status = page.getByText('PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS');
+  await expect(status).toBeHidden();
+  await page.getByText('Cómo se calcula').click();
+  await expect(status).toBeVisible();
   await expect(
     page.getByRole('table', { name: 'Puntuación y disponibilidad por dimensión' }),
   ).toBeVisible();

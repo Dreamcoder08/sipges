@@ -289,33 +289,6 @@
   justify-content: space-between;
   gap: var(--space-2);
 }
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-.status::before {
-  content: '';
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--color-muted);
-}
-.status[data-status='ok']::before {
-  background: var(--tone-positive-solid);
-}
-.status[data-status='pause']::before,
-.status[data-status='available']::before {
-  background: var(--tone-neutral-solid);
-}
-.status[data-status='auth']::before {
-  background: var(--tone-warning-solid);
-}
-.status[data-status='down']::before {
-  background: var(--tone-negative-solid);
-}
 /* Secondary by default; primary where the next step is to authorize or resume. */
 .action {
   position: relative;
