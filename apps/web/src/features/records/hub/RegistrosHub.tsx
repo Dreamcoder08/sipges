@@ -12,7 +12,7 @@ import { type Density, useDensity } from './density.ts';
 import { useDocked } from './dock.ts';
 import styles from './Hub.module.css';
 import { HUB_TYPES } from './types.ts';
-import { type OpenRecord, RecordSheet } from './RecordSheet.tsx';
+import { type OpenRecord, type OpenWay, RecordSheet } from './RecordSheet.tsx';
 import type { RecordSummary } from './summary.ts';
 import { TodosList } from './TodosList.tsx';
 import { TypePicker } from './TypePicker.tsx';
@@ -20,10 +20,23 @@ import { TypePicker } from './TypePicker.tsx';
 const isType = (value: string | undefined): value is (typeof HUB_TYPES)[number][0] =>
   HUB_TYPES.some(([module]) => module === value);
 
+/** `?ficha=<type>.<id>`: the record open in the sheet, so a reload or a link keeps it. */
+const fichaOf = (record: OpenRecord | null) =>
+  record ? `${record.module}.${record.id}` : undefined;
+const parseFicha = (ficha: string | undefined): OpenRecord | null => {
+  const at = ficha?.indexOf('.') ?? -1;
+  const module = ficha?.slice(0, at);
+  const id = ficha?.slice(at + 1);
+  return at > 0 && isType(module) && id ? { module, id } : null;
+};
+
 type Props = {
   /** `?tipo=`: a record type, or `todos` (also the default) for the cross-type list. */
   tipo: string | undefined;
   onTipo: (tipo: string) => void;
+  /** `?ficha=`: the record open in the sheet; `onFicha` writes it back to the URL. */
+  ficha?: string | undefined;
+  onFicha?: (ficha: string | undefined) => void;
   scope: string;
   projectId: string;
   projectLabel: string;
@@ -40,7 +53,7 @@ const DENSITIES: readonly (readonly [Density, string])[] = [
  * with counts, one cross-type list, and the type screens unchanged underneath. Counts and the
  * cross-type list come from one request, GET /api/registros/summary.
  */
-export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
+export const RegistrosHub = ({ tipo, onTipo, ficha, onFicha, ...context }: Props) => {
   const selected: 'todos' | RecordModule = isType(tipo) ? tipo : 'todos';
   const summary = useQuery(recordsSummaryQuery(context.scope));
   const pending = summary.isError ? '—' : '…';
@@ -53,7 +66,19 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
     refetch: () => void summary.refetch(),
     data: summary.data?.rows,
   };
-  const [open, setOpen] = useState<OpenRecord | null>(null);
+  const [open, setRecord] = useState<OpenRecord | null>(() => parseFicha(ficha));
+  const [way, setWay] = useState<OpenWay>('select');
+  // A link to another record while the hub is open (the URL changed, not this component).
+  const [linked, setLinked] = useState(ficha);
+  if (ficha !== linked) {
+    setLinked(ficha);
+    if (ficha !== fichaOf(open)) setRecord(parseFicha(ficha));
+  }
+  const setOpen = (record: OpenRecord | null, how: OpenWay = 'select') => {
+    setWay(how);
+    setRecord(record);
+    if (fichaOf(record) !== fichaOf(open)) onFicha?.(fichaOf(record));
+  };
   const [intent, setIntent] = useState<{ module: RecordModule; kind: 'create' | 'import' } | null>(
     null,
   );
@@ -118,7 +143,8 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
             selected={selected}
             everything={everything}
             onOpen={setOpen}
-            docked={docked && open !== null}
+            open={open}
+            docked={docked}
             start={intent?.module === selected ? intent.kind : undefined}
             onStarted={() => setIntent(null)}
             {...context}
@@ -130,6 +156,7 @@ export const RegistrosHub = ({ tipo, onTipo, ...context }: Props) => {
           scope={context.scope}
           role={context.role}
           docked={docked}
+          way={way}
         />
       </div>
     </div>
@@ -140,6 +167,7 @@ const Workspace = ({
   selected,
   everything,
   onOpen,
+  open,
   docked,
   start,
   onStarted,
@@ -147,12 +175,17 @@ const Workspace = ({
 }: Omit<Props, 'tipo' | 'onTipo'> & {
   selected: 'todos' | RecordModule;
   everything: Parameters<typeof QueryState<readonly RecordSummary[]>>[0]['query'];
-  onOpen: (record: OpenRecord) => void;
+  onOpen: (record: OpenRecord, way?: OpenWay) => void;
+  open: OpenRecord | null;
+  /** Desktop: the sheet docks beside the list and Todos starts as the compact table. */
   docked: boolean;
   start: 'create' | 'import' | undefined;
   onStarted: () => void;
 }) => {
-  const [density, setDensity] = useDensity(selected);
+  const [density, setDensity] = useDensity(
+    selected,
+    docked && selected === 'todos' ? 'compact' : 'cozy',
+  );
   // The intent only opens the type screen once; later remounts must not reopen the form.
   useEffect(() => {
     if (start) onStarted();
@@ -177,7 +210,15 @@ const Workspace = ({
       <div className={styles.density} data-density={density}>
         {selected === 'todos' ? (
           <QueryState query={everything} label="los registros">
-            {(rows) => <TodosList rows={rows} onOpen={onOpen} density={control} narrow={docked} />}
+            {(rows) => (
+              <TodosList
+                rows={rows}
+                onOpen={onOpen}
+                density={control}
+                selected={open}
+                docked={docked}
+              />
+            )}
           </QueryState>
         ) : (
           <RecordsPage

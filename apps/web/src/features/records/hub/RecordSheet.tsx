@@ -17,6 +17,11 @@ import { TypeChip } from './TypeChip.tsx';
 import { ValidationChip, VerificationChip } from './VerificationChip.tsx';
 
 export type OpenRecord = { module: RecordModule; id: string };
+/**
+ * How the record was asked for: `select` (click, Enter, Space, a link) moves focus into the
+ * sheet; `browse` (arrow keys in the table) leaves it on the row so the next key still moves.
+ */
+export type OpenWay = 'select' | 'browse';
 
 /**
  * One record beside the list (docs/adr/0015 sheet): its fields, links and append-only audit
@@ -28,20 +33,22 @@ export const RecordSheet = ({
   scope,
   role,
   docked,
+  way = 'select',
 }: {
   record: OpenRecord | null;
   onClose: () => void;
   scope: string;
   role: Role;
-  /** From 1280 px: beside the list and non-modal instead of the modal sheet. */
+  /** From 1024 px: beside the list and non-modal instead of the modal sheet. */
   docked: boolean;
+  way?: OpenWay;
 }) => {
   const body = record ? (
     <SheetBody key={`${scope}/${record.module}/${record.id}`} {...{ record, scope, role }} />
   ) : null;
   if (docked)
     return record ? (
-      <DockedSheet record={record} onClose={onClose}>
+      <DockedSheet record={record} onClose={onClose} takeFocus={way === 'select'}>
         {body}
       </DockedSheet>
     ) : null;
@@ -59,12 +66,16 @@ export const RecordSheet = ({
 const DockedSheet = ({
   record,
   onClose,
+  takeFocus,
   children,
 }: {
   record: OpenRecord;
   onClose: () => void;
+  /** Read when the sheet opens: move focus to its heading. */
+  takeFocus: boolean;
   children: ReactNode;
 }) => {
+  const focusOnOpen = useRef(takeFocus);
   const panel = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -73,13 +84,19 @@ const DockedSheet = ({
     closeRef.current = onClose;
   });
   const key = `${record.module}/${record.id}`;
-  // Remember the row that asked for the record; picking another row updates it.
+  const shown = useRef(key);
+  // Remember the row that asked for the record; picking another row updates it. Opened from the
+  // URL nothing asked, so closing falls back to the record's own row (TodosList `data-opener`).
   useEffect(() => {
+    shown.current = key;
     const active = document.activeElement;
-    if (active instanceof HTMLElement && !panel.current?.contains(active)) opener.current = active;
+    opener.current =
+      active instanceof HTMLElement && active !== document.body && !panel.current?.contains(active)
+        ? active
+        : null;
   }, [key]);
   useEffect(() => {
-    heading.current?.focus();
+    if (focusOnOpen.current) heading.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return;
       if (document.querySelector('[aria-modal="true"]')) return;
@@ -88,7 +105,10 @@ const DockedSheet = ({
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
-      if (opener.current?.isConnected) opener.current.focus();
+      const row = document.querySelector<HTMLElement>(
+        `[data-opener="${CSS.escape(shown.current)}"]`,
+      );
+      (opener.current?.isConnected ? opener.current : row)?.focus();
     };
   }, []);
   return (

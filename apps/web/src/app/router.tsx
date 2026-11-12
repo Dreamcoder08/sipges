@@ -555,16 +555,25 @@ const screenFor = (path: ScreenPath): ((context: FeatureContext) => ReactNode) =
   return featurePages[path as keyof typeof featurePages];
 };
 
+/** Adds `ficha=` (the record open in the Registros sheet) to a hub href. */
+const withFicha = (href: string, ficha: string | undefined) =>
+  ficha ? `${href}${href.includes('?') ? '&' : '?'}ficha=${encodeURIComponent(ficha)}` : href;
+
 /** A destination: tabs in the URL search (`?vista=`), each tab one of today's screens. */
 const hubRoute = (hub: Destination) => {
   const route = createRoute({
     getParentRoute: () => appRoute,
     path: hub.path,
-    validateSearch: z.object({ [hub.param]: z.string().optional().catch(undefined) }),
+    validateSearch: z.object({
+      [hub.param]: z.string().optional().catch(undefined),
+      // Registros keeps the record open in its sheet in the URL (closure-roadmap T31).
+      ...(hub.path === '/registros' ? { ficha: z.string().optional().catch(undefined) } : {}),
+    }),
     component: function HubRoute() {
       const context = useFeatureContext();
       const navigate = useNavigate();
-      const asked = (route.useSearch() as Record<string, string | undefined>)[hub.param];
+      const search = route.useSearch() as Record<string, string | undefined>;
+      const asked = search[hub.param];
       // Riesgo de conflicto reads `?localidad=` on mount; a new one remounts it (ADR 0031).
       const searchStr = useLocation({ select: (location) => location.searchStr });
       if (hub.path === '/registros')
@@ -572,7 +581,18 @@ const hubRoute = (hub: Destination) => {
           <RegistrosHub
             key={context.scope}
             tipo={asked}
-            onTipo={(tipo) => void navigate({ href: hubHref(hub, tipo) })}
+            onTipo={(tipo) => void navigate({ href: withFicha(hubHref(hub, tipo), search.ficha) })}
+            ficha={search.ficha}
+            onFicha={(ficha) =>
+              void navigate({
+                // The type as written: hubHref would fold the first type (eventos) into Todos.
+                href: withFicha(
+                  asked ? `${hub.path}?${hub.param}=${encodeURIComponent(asked)}` : hub.path,
+                  ficha,
+                ),
+                replace: true,
+              })
+            }
             {...context}
           />
         );
