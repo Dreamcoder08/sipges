@@ -185,7 +185,7 @@ export async function startLogged(command, args, { cwd, env, log, ready }) {
 }
 
 /** Relative path -> SHA-256 of every file (content only), to prove a folder unchanged. */
-async function tree(dir) {
+export async function tree(dir) {
   const out = {};
   const walk = async (path) => {
     for (const entry of (await readdir(path, { withFileTypes: true })).sort((a, b) =>
@@ -199,7 +199,7 @@ async function tree(dir) {
   await walk(dir);
   return out;
 }
-const digest = (map) => sha256(JSON.stringify(map)).slice(0, 16);
+export const digest = (map) => sha256(JSON.stringify(map)).slice(0, 16);
 const sizeOf = async (dir) => {
   let bytes = 0;
   const files = Object.keys(await tree(dir));
@@ -346,7 +346,8 @@ const UPLOADS = {
   [BETA]: [['informe-sintetico-beta.txt', 'demandas', 'D-BETA-001', 'Informe sintético Beta.\n']],
 };
 
-async function seed(base, state, work) {
+/** Also seeds the old clone install of the Windows drill (deploy/desktop/windows/drill.mjs). */
+export async function seed(base, state, work) {
   const totpState = join(work, 'totp-state.json');
   const password = (await readFile(join(state, 'admin-password'), 'utf8')).trim();
   const first = await signIn({ base, username: 'admin', password });
@@ -474,7 +475,7 @@ export const sameAccess = (before, after) =>
   after.status === 200 &&
   after.projects === before.projects;
 
-async function analystSignsIn(base, { password, totpSecret, totpState }) {
+export async function analystSignsIn(base, { password, totpSecret, totpState }) {
   const session = await signIn({ base, username: ANALYST, password, totpSecret, totpState });
   const scopes = await session.call('/system/auth/scopes');
   const text = await scopes.text();
@@ -503,7 +504,7 @@ async function script(name, args) {
   return status;
 }
 
-const LOGIN = (secrets, state) => [
+export const LOGIN = (secrets, state) => [
   '--user',
   'admin',
   '--password-file',

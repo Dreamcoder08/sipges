@@ -88,8 +88,19 @@ export async function addDesktopRuntime(destination) {
   await writeFile(index, html.replace(/<head(\s[^>]*)?>/i, '$&\n    <meta name="sipges-desktop" content="1" />'));
 }
 
+/** On Windows pnpm is a .cmd shim, which Node starts only through cmd.exe (CVE-2024-27980); arguments are quoted for it. */
+export function commandFor(command, args, platform = process.platform, comspec = process.env.ComSpec) {
+  if (platform !== 'win32') return { file: command, args, options: {} };
+  const quote = (arg) => {
+    if (/["%]/.test(arg)) throw new Error(`Cannot pass ${arg} to cmd.exe`);
+    return /^[\w.:\\/@=+-]+$/.test(arg) ? arg : `"${arg}"`;
+  };
+  return { file: comspec || 'cmd.exe', args: ['/d', '/s', '/c', `"${[command, ...args].map(quote).join(' ')}"`], options: { windowsVerbatimArguments: true } };
+}
+
 function run(command, args) {
-  const result = spawnSync(command, args, { cwd: repo, stdio: 'inherit' });
+  const { file, args: argv, options } = commandFor(command, args);
+  const result = spawnSync(file, argv, { cwd: repo, stdio: 'inherit', ...options });
   if (result.error || result.status !== 0) throw new Error(`${command} failed: ${result.error?.message ?? result.status}`);
 }
 

@@ -1944,6 +1944,34 @@ test('the managed Windows launcher waits for the launcher and shows its halt not
   assert.ok(start.lastIndexOf('Show-Halt') > start.indexOf("Start-Process -FilePath 'msedge.exe'"));
 });
 
+test('the managed Windows launcher writes its messages to stdout and opens no window with SIPGES_DESKTOP_NO_UI=1', () => {
+  const start = readDesktop('windows/start-managed.ps1');
+  assert.ok(start.includes("$NoUi = $env:SIPGES_DESKTOP_NO_UI -eq '1'"));
+  // One place shows a message: a box, or with no UI (the Windows drill in CI) a line on stdout.
+  assert.equal((start.match(/MessageBox\]::Show/g) ?? []).length, 1);
+  assert.match(
+    start,
+    /function Show-Message\(\[string\]\$Message\) \{\s*if \(\$NoUi\) \{ Write-Output \$Message; return \}\s*\[System\.Windows\.Forms\.MessageBox\]::Show\(\$Message, 'SIPGES', 'OK', 'Error'\) \| Out-Null\s*\}/,
+  );
+  // Failures and the halt go through it and keep their exit codes.
+  assert.match(
+    start,
+    /function Show-Failure\(\[string\]\$Message\) \{\s*Show-Message \$Message\s*exit 1\s*\}/,
+  );
+  assert.match(start, /Show-Message \$notice\s*exit \$HaltExitCode/);
+  // Edge opens from one place, and not at all with no UI.
+  assert.equal((start.match(/msedge\.exe/g) ?? []).length, 1);
+  assert.match(
+    start,
+    /function Open-App \{\s*if \(\$NoUi\) \{ Write-Output "SIPGES: \$Url"; return \}\s*Start-Process -FilePath 'msedge\.exe' -ArgumentList "--app=\$Url"\s*\}/,
+  );
+  assert.equal(
+    (start.match(/^\s*Open-App\s*$/gm) ?? []).length,
+    3,
+    'every path that opened Edge opens the app',
+  );
+});
+
 test('start.ps1 releases the boot mutex before showing a boot failure', () => {
   const script = readDesktop('windows/start.ps1');
   for (const reason of ['se cerró al arrancar', 'no arrancó en'])

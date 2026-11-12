@@ -28,6 +28,11 @@ runbook y no se ejecutó en ningún sistema.
 | ⚠ Guardar y devolver los accesos directos (`.lnk`) | No probado |
 | ⚠ Calcular la huella de la clave, crear la clave, contar archivos con `-Force`, comprobar «SIPGES cerrado» | No probado en Windows |
 
+El [ensayo automático](#ensayo-en-otra-pc-con-windows) (`deploy\desktop\windows\drill.mjs`, también en
+GitHub Actions) recorre casi todas estas filas en un Windows real con datos inventados; la tabla cambia
+recién cuando una ejecución pasa y queda anotada en «Datos de esta visita». No cubre la memoria USB,
+la huella anotada a mano ni «SIPGES cerrado».
+
 ## Datos de esta visita
 
 En los comandos, `E:` es el disco externo del respaldo, `F:` es el USB de la visita y `K:` el USB de la
@@ -44,6 +49,7 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
 | Respaldo en `E:`: archivos / bytes (paso 1) | |
 | `%LOCALAPPDATA%\SIPGES` al cerrar SIPGES: archivos / bytes (paso 3) | |
 | Fecha del ensayo en otro Windows (sección 1) | |
+| Ensayo automático: `DRILL PASSED` (fecha y ejecución de Actions o PC) | |
 
 ## 1. Antes de salir de casa
 
@@ -121,10 +127,39 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
      (aviso, actualización, detención forzada y salida). Sacá una foto del aviso «Nueva versión de
      SIPGES» para el paso 8.
   4. Cualquier «falla»: no hay visita hasta corregirla con su prueba.
+- [ ] **Ensayo automático** con el commit de T27: `DRILL PASSED` en GitHub Actions o en otra PC
+  ([abajo](#ensayo-en-otra-pc-con-windows)). Anotalo en «Datos de esta visita».
 - [ ] **Disco externo** con espacio libre para dos copias de `%LOCALAPPDATA%\SIPGES` (tamaño de T27). Nunca
   una carpeta compartida ni sincronizada con la nube (OneDrive, Drive).
 - [ ] **Este runbook impreso**, una birome y el cargador de la laptop.
 - [ ] **La usuaria estará presente** con su teléfono (código MFA) durante unas dos horas.
+
+### Ensayo en otra PC con Windows
+
+El mismo ensayo que corre GitHub Actions en `windows-latest` (`.github/workflows/windows-desktop.yml`,
+se lanza a mano desde la pestaña Actions) se puede correr en otra PC o cuenta de Windows, **nunca en
+la laptop**. Solo usa datos inventados y una clave de firma descartable que crea y borra él mismo. En
+orden: instala el clon viejo con `LOCALAPPDATA` en una carpeta temporal y lo abre con su `start.ps1`,
+carga datos por la API y toma `snapshot.mjs`; construye y firma la versión N; hace el paso 3 de este
+runbook (`Copy-Item`, `install.ps1 -Release … -State …`), el primer arranque del paso 4 y la
+comparación del paso 5, y comprueba que la carpeta original no cambió; firma N+1 en
+`SIPGES-app\releases`, pide la actualización por la API y vuelve a comparar; provoca una detención y
+comprueba el código 3 y el mensaje.
+
+Hace falta Node 24 o más, pnpm 12.11.2, Git y el puerto 8000 libre (SIPGES cerrado). Tarda: instala
+dependencias dos veces y construye dos paquetes. En PowerShell, dentro del checkout definitivo:
+
+```powershell
+pnpm install --frozen-lockfile
+node deploy\desktop\windows\drill.mjs --old-commit <commit de T27>
+$LASTEXITCODE
+```
+
+Tenés que ver `DRILL PASSED` y `0`. Con `DRILL FAILED: …` no hay visita hasta corregirlo con su
+prueba. Mientras corre cambia los accesos directos «SIPGES» de esa cuenta y al final los devuelve;
+el `start.ps1` viejo abre Edge una vez. Deja `%TEMP%\sipges-drill-<hora>` (solo datos inventados) con
+los registros en `logs\`, y los paquetes en `.data\desktop-packages`. Los scripts salen de
+`git archive HEAD` como en el USB: un cambio sin commit no entra en el ensayo.
 
 ## 2. En la laptop
 
