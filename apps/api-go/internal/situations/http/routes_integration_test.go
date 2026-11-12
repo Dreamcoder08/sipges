@@ -7,20 +7,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
-	"log/slog"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"slices"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app/apitest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
 )
@@ -139,48 +134,12 @@ func seed(ctx context.Context, dsn string) error {
 
 func start(t *testing.T) string {
 	t.Helper()
-	if scratch == nil {
-		t.Skip(dbtest.EnvAdminURL + " is not set")
-	}
-	pool, err := pgxpool.New(t.Context(), scratch.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(pool.Close)
-	h, err := app.NewHandler(pool, app.Options{
-		Logger: slog.New(slog.DiscardHandler),
-		Now:    func() time.Time { return t0 },
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(h)
-	t.Cleanup(srv.Close)
-	return srv.URL
+	return apitest.Start(t, scratch, t0)
 }
 
 func get(t *testing.T, base, path, user string, headers map[string]string) (int, string) {
 	t.Helper()
-	r, err := http.NewRequestWithContext(t.Context(), http.MethodGet, base+path, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if user != "" {
-		r.Header.Set("Cookie", "sipges_session="+tokens[user])
-	}
-	for k, v := range headers {
-		r.Header.Set(k, v)
-	}
-	res, err := http.DefaultClient.Do(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() { _ = res.Body.Close() }()
-	b, _ := io.ReadAll(res.Body)
-	if ct := res.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/json") {
-		t.Fatalf("%s: content-type %q", path, ct)
-	}
-	return res.StatusCode, strings.TrimSpace(string(b))
+	return apitest.Get(t, base, path, tokens[user], headers)
 }
 
 type situationsBody struct {

@@ -2,7 +2,7 @@
 
 - Status: Accepted. Originally an optional host; since [ADR 0029](0029-retire-vercel-host.md) it is the only host.
 - Date: 2026-10-31
-- Task: `odd/tasks/cloudflare-workers.md` (T1–T5)
+- Task: `odd/archive/cloudflare-workers.md` (T1–T5)
 
 ## Context
 

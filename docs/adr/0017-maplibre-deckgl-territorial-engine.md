@@ -2,7 +2,7 @@
 
 - Estado: aceptada
 - Fecha: 2026-10-18
-- ODD: `odd/tasks/geospatial-timeline-intelligence.md`
+- ODD: `odd/archive/geospatial-timeline-intelligence.md`
 - Amplía ADR 0006 (frontend) y ADR 0016; conserva ADR 0002, 0004 y 0009.
 
 ## Contexto

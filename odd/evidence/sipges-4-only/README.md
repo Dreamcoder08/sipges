@@ -1,7 +1,7 @@
 # SIPGES 4.0 only: verification evidence
 
 Candidate: branch `feat/mascli-4-only` after `3bd65d5`, the working tree of the `feat!` commit
-that removes the SIPGES 3.0/4.0 switch ([ODD](../../tasks/sipges-4-only.md), ADR 0027).
+that removes the SIPGES 3.0/4.0 switch ([ODD](../../archive/sipges-4-only.md), ADR 0027).
 Raw `.log`/`.exit` files beside this index are kept locally and ignored by git.
 
 ## Results

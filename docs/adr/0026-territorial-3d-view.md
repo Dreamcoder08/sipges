@@ -4,7 +4,7 @@
 
 - Estado: aceptada
 - Fecha: 2026-10-20
-- ODD: `odd/tasks/territorial-3d.md`
+- ODD: `odd/archive/territorial-3d.md`
 - Amplía ADR 0017 (motor cartográfico); se apila sobre ADR 0025 (PR #71).
 
 ## Contexto

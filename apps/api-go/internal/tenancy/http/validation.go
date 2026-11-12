@@ -1,6 +1,10 @@
 package http
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+)
 
 // issue is one FastAPI/pydantic-style validation error item (validation.ts ValidationIssue,
 // docs/adr/0007), in the TypeScript key order.
@@ -63,21 +67,21 @@ var (
 // parse is schema.safeParse followed by toIssues: the object check, then each field in the
 // schema's order, and the refine only when every field is a string (zod skips refinements
 // on input that already has issues). A field absent from the input is "missing".
-func (s schema) parse(input jsValue) ([]string, []issue) {
-	if input.kind != kindObject {
-		return nil, []issue{{Type: "invalid_type", Loc: []any{"body"}, Msg: "Invalid input: expected object, received " + string(input.kind)}}
+func (s schema) parse(input httpx.JSONValue) ([]string, []issue) {
+	if input.Kind != httpx.JSONObject {
+		return nil, []issue{{Type: "invalid_type", Loc: []any{"body"}, Msg: "Invalid input: expected object, received " + string(input.Kind)}}
 	}
 	var issues []issue
 	values := make([]string, len(s.fields))
 	for i, name := range s.fields {
-		v, present := input.fields[name]
+		v, present := input.Fields[name]
 		switch {
 		case !present:
 			issues = append(issues, issue{Type: "missing", Loc: []any{"body", name}, Msg: "Field required"})
-		case v.kind != kindString:
-			issues = append(issues, issue{Type: "invalid_type", Loc: []any{"body", name}, Msg: "Invalid input: expected string, received " + string(v.kind)})
+		case v.Kind != httpx.JSONString:
+			issues = append(issues, issue{Type: "invalid_type", Loc: []any{"body", name}, Msg: "Invalid input: expected string, received " + string(v.Kind)})
 		default:
-			values[i] = v.text
+			values[i] = v.Text
 		}
 	}
 	if issues != nil {

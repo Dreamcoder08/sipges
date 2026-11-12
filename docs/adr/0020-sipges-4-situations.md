@@ -2,7 +2,7 @@
 
 - Status: Accepted; §1 (per-project switch) superseded by [ADR 0027](0027-sipges-4-only.md)
 - Date: 2026-10-19
-- Task: `odd/tasks/sipges-4-situations.md`
+- Task: `odd/archive/sipges-4-situations.md`
 
 ## Context
 

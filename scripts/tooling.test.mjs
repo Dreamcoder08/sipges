@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import {
+  chmodSync,
+  existsSync,
   mkdtempSync,
   mkdirSync,
+  statSync,
+  symlinkSync,
   readFileSync,
   readlinkSync,
   realpathSync,
@@ -66,17 +69,9 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
   const dir = path.join(root, '.agents/skills');
   const expected = sipgesSkills;
   const vendor = ['neon', 'neon-postgres'];
-  const gentle = [
-    'chained-pr',
-    'cognitive-doc-design',
-    'judgment-day',
-    'skill-creator',
-    'skill-improver',
-    'typescript',
-    'work-unit-commits',
-    'zod-4',
-  ];
-  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor, ...gentle].sort());
+  // Gentle AI skills come from the global `gentle-ai install`; repo copies only shadowed them.
+  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor].sort());
+  assert.equal(existsSync(path.join(root, '.pi/settings.json')), false);
   for (const name of expected) {
     const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
     assert.match(text, new RegExp(`^---\\nname: ${name}\\n`));
@@ -97,13 +92,7 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
     assert.equal(lock.skills[name].skillPath, `skills/${name}/SKILL.md`);
     assert.match(lock.skills[name].computedHash, /^[a-f0-9]{64}$/);
   }
-  for (const name of gentle) {
-    const text = readFileSync(path.join(dir, name, 'SKILL.md'));
-    assert.match(text.toString('utf8'), new RegExp(`^---\\nname: ${name}\\n`));
-    assert.match(lock.skills[name].source, /^Gentleman-Programming\/(gentle-ai|Gentleman-Skills)$/);
-    assert.equal(lock.skills[name].computedHash, createHash('sha256').update(text).digest('hex'));
-    assert.ok(evidence.includes(name));
-  }
+  assert.deepEqual(Object.keys(lock.skills).sort(), vendor);
 });
 test('verification never starts a service or guesses a database connection and propagates failures', () =>
   fixture((dir) => {
@@ -719,6 +708,38 @@ test('ODD status lists open tasks in either checkbox style and hides finished fe
       ],
     );
   }));
+test('odd:status reads bracketed-word and dash-style tasks', () =>
+  fixture((dir) => {
+    writeFileSync(
+      path.join(dir, 'words.md'),
+      '# Words\n- T1 [done] (S1) shipped. Commit: abc.\n- T2 [dropped] (S1) superseded.\n' +
+        '- T3 [done, WebKit blocked] (S2) partial.\n- T4 [pending] (S2) later.\n',
+    );
+    writeFileSync(
+      path.join(dir, 'dash.md'),
+      '# Dash\n- T1 — S1: built it. Done: `abc`, PR #1 merged.\n' +
+        '- T2 — S2: check in production. Route: inline. Commit: n/a.\n' +
+        '- T3 — S3: drawer. Commit: this branch. Status: done.\n' +
+        '- L1 — request: not a task\n',
+    );
+    const json = JSON.parse(
+      spawnSync(
+        process.execPath,
+        [path.join(root, 'scripts/odd-status.mjs'), '--dir', dir, '--json'],
+        {
+          encoding: 'utf8',
+        },
+      ).stdout,
+    );
+    assert.deepEqual(
+      json.map((f) => [f.file, f.done, f.total, f.open.map((t) => t.id)]),
+      [
+        ['dash.md', 2, 3, ['T2']],
+        ['words.md', 3, 4, ['T4']],
+      ],
+    );
+    assert.equal(json[0].open[0].text, 'S2: check in production. Route: inline.');
+  }));
 test('Engram wrapper never installs outside the cloud and keeps MCP stdout clean', () =>
   fixture((dir) => {
     const bin = path.join(dir, 'bin');
@@ -1011,4 +1032,424 @@ test('CI installs Playwright through the script and names the runner', () => {
   const ci = readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8');
   assert.match(ci, /run: bash scripts\/ci-playwright-install\.sh \$\{\{ matrix\.browser \}\}/);
   assert.match(ci, /SIPGES_CI_RUNNER: \$\{\{ runner\.environment \}\}/);
+});
+
+const desktop = path.join(root, 'deploy/desktop');
+const launcher = path.join(desktop, 'linux/sipges-desktop.sh');
+const linuxInstaller = path.join(desktop, 'linux/install.sh');
+const readDesktop = (file) => readFileSync(path.join(desktop, file), 'utf8');
+const nodeMessage =
+  'Node.js 24 o posterior es necesario: instálalo con `winget install OpenJS.NodeJS.LTS` y vuelve a ejecutar este script.';
+const pnpmMessage =
+  'No se pudo instalar pnpm: ejecuta `npm install -g pnpm@12.11.2` en una terminal nueva y vuelve a ejecutar este script.';
+
+test('desktop launchers ship every file, the icon sizes and the docs', () => {
+  for (const file of [
+    'windows/install.ps1',
+    'windows/start.ps1',
+    'linux/install.sh',
+    'linux/sipges-desktop.sh',
+    'sipges.ico',
+    'sipges.png',
+    'sipges.svg',
+    'README.md',
+    'README.es.md',
+  ])
+    assert.ok(existsSync(path.join(desktop, file)), `${file} is missing`);
+  for (const file of ['linux/install.sh', 'linux/sipges-desktop.sh'])
+    assert.ok(statSync(path.join(desktop, file)).mode & 0o100, `${file} is not executable`);
+
+  const ico = readFileSync(path.join(desktop, 'sipges.ico'));
+  assert.equal(ico.readUInt16LE(2), 1, 'sipges.ico is not an icon resource');
+  const sizes = Array.from({ length: ico.readUInt16LE(4) }, (_, i) => ico[6 + 16 * i] || 256);
+  assert.deepEqual(sizes, [16, 24, 32, 48, 64, 128, 256]);
+  const png = readFileSync(path.join(desktop, 'sipges.png'));
+  assert.equal(png.toString('latin1', 1, 4), 'PNG');
+  assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [512, 512]);
+  assert.match(readDesktop('sipges.svg'), /^<svg /);
+});
+
+test('the READMEs document the prerequisites and how to regenerate the icons', () => {
+  for (const file of ['README.md', 'README.es.md']) {
+    const text = readDesktop(file);
+    for (const needle of [
+      'curl',
+      'openssl',
+      'npm install -g pnpm@12.11.2',
+      'sipges.svg',
+      'rsvg-convert -w 512 -h 512 sipges.svg -o sipges.png',
+      'magick',
+      'sipges.ico',
+    ])
+      assert.ok(text.includes(needle), `${file} lacks ${needle}`);
+    assert.doesNotMatch(text, /corepack/i);
+    assert.doesNotMatch(text, /api-error\.log/);
+  }
+  assert.match(readDesktop('README.md'), /new terminal/i);
+  assert.match(readDesktop('README.es.md'), /terminal nueva/i);
+});
+
+test('the Windows installer carries the agreed message, pnpm handling and secret protection', () => {
+  const install = readDesktop('windows/install.ps1');
+  assert.ok(install.startsWith('\ufeff'), 'accents need a UTF-8 BOM in Windows PowerShell 5.1');
+  assert.ok(install.includes(nodeMessage));
+  assert.ok(install.includes(pnpmMessage));
+  for (const needle of [
+    'npm install -g pnpm@12.11.2',
+    'pnpm install --frozen-lockfile',
+    "pnpm --filter '@sipges/web' build",
+    "'^12\\.'",
+    'RandomNumberGenerator',
+    'icacls.exe',
+    'WScript.Shell',
+    'SIPGES.lnk',
+    'sipges.ico',
+    'start.ps1',
+    "'data-key'",
+    "'admin-password'",
+    "'pglite'",
+    "'uploads'",
+    'IsNullOrWhiteSpace',
+    '"$env:SystemRoot\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"',
+  ])
+    assert.ok(install.includes(needle), `install.ps1 lacks ${needle}`);
+  assert.doesNotMatch(install, /corepack/i);
+  assert.doesNotMatch(install, /\$PSHOME/);
+  assert.doesNotMatch(install, /SIPGES_REQUIRE_MFA/);
+});
+
+test('the Windows launcher carries the agreed variables and keeps the secrets out of Edge', () => {
+  const start = readDesktop('windows/start.ps1');
+  assert.ok(start.startsWith('\ufeff'), 'accents need a UTF-8 BOM in Windows PowerShell 5.1');
+  for (const needle of [
+    '$env:SIPGES_DATA_KEY',
+    '$env:SIPGES_ADMIN_PASSWORD',
+    "$env:SIPGES_COOKIE_SECURE = '0'",
+    '$env:SIPGES_PGLITE_DIR',
+    '$env:SIPGES_UPLOAD_DIR',
+    '$env:SIPGES_WEB_DIR',
+    "$env:SIPGES_HOST = '127.0.0.1'",
+    "$Url = 'http://localhost:8000'",
+    "$Probe = 'http://127.0.0.1:8000/health'",
+    'apps\\api\\src\\main.ts',
+    '$WaitSeconds = 90',
+    '>> ',
+    'api.log',
+    'MessageBox',
+    'msedge.exe',
+    '--app=$Url',
+    'System.Threading.Mutex',
+    'IsNullOrWhiteSpace',
+    'install.ps1',
+  ])
+    assert.ok(start.includes(needle), `start.ps1 lacks ${needle}`);
+  assert.ok(start.includes('-Uri $Probe'));
+  assert.doesNotMatch(start, /localhost:8000\/health|Redirect(Standard|Error)/);
+  assert.doesNotMatch(start, /SIPGES_REQUIRE_MFA|corepack/i);
+  const clearKey = start.indexOf('Remove-Item Env:SIPGES_DATA_KEY');
+  const clearPassword = start.indexOf('Env:SIPGES_ADMIN_PASSWORD', clearKey);
+  assert.ok(clearKey > start.indexOf('Start-Process'), 'secrets must be cleared after node starts');
+  assert.ok(clearPassword > clearKey, 'the admin password must be cleared too');
+  assert.ok(clearPassword < start.indexOf("Start-Process -FilePath 'msedge.exe'"));
+});
+
+test('no desktop file hard-codes a user path or depends on Corepack', () => {
+  for (const file of [
+    'windows/install.ps1',
+    'windows/start.ps1',
+    'linux/install.sh',
+    'linux/sipges-desktop.sh',
+  ]) {
+    const text = readDesktop(file);
+    assert.doesNotMatch(text, /\/home\/|C:\\Users\\/);
+    assert.doesNotMatch(text, /corepack/i);
+  }
+});
+
+test('the Linux desktop scripts are valid POSIX shell', () => {
+  for (const script of [launcher, linuxInstaller]) {
+    const result = spawnSync('sh', ['-n', script], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+  }
+});
+
+// The scripts run with a PATH holding only the fakes and the real tools they legitimately need,
+// so a missing tool (corepack, pnpm, openssl) is truly missing.
+const realTools = [
+  'cat',
+  'chmod',
+  'cp',
+  'cut',
+  'dirname',
+  'head',
+  'mkdir',
+  'nohup',
+  'openssl',
+  'readlink',
+  'sh',
+  'sleep',
+  'tr',
+];
+
+const desktopSandbox = (makeFakes, run, { omit = [] } = {}) =>
+  fixture((dir) => {
+    const bin = path.join(dir, 'bin');
+    const tools = path.join(dir, 'tools');
+    const home = path.join(dir, 'home');
+    const calls = path.join(dir, 'calls');
+    mkdirSync(bin);
+    mkdirSync(tools);
+    mkdirSync(home);
+    for (const name of realTools.filter((tool) => !omit.includes(tool))) {
+      const found = spawnSync('sh', ['-c', `command -v ${name}`], { encoding: 'utf8' });
+      symlinkSync(found.stdout.trim(), path.join(tools, name));
+    }
+    for (const [name, script] of Object.entries(makeFakes(calls)))
+      writeFileSync(path.join(bin, name), '#!/bin/sh\n' + script + '\n', { mode: 0o755 });
+    const env = {
+      HOME: home,
+      XDG_DATA_HOME: path.join(home, '.local/share'),
+      PATH: `${bin}:${tools}`,
+      SIPGES_DESKTOP_WAIT: '1',
+    };
+    const exec = (script, args = []) => {
+      const result = spawnSync(path.join(tools, 'sh'), [script, ...args], {
+        env,
+        encoding: 'utf8',
+      });
+      const log = existsSync(calls) ? readFileSync(calls, 'utf8') : '';
+      return { ...result, log };
+    };
+    run({ home, state: path.join(home, '.local/share/sipges-local'), exec, bin });
+  });
+
+const browserFake = (calls) => `echo "browser $*" >> '${calls}'`;
+const nodeFake = (calls) =>
+  `echo "node $* key=$SIPGES_DATA_KEY secure=$SIPGES_COOKIE_SECURE host=$SIPGES_HOST ` +
+  `pglite=$SIPGES_PGLITE_DIR uploads=$SIPGES_UPLOAD_DIR web=$SIPGES_WEB_DIR" >> '${calls}'`;
+const modeOf = (file) => statSync(file).mode & 0o777;
+
+test('the Linux launcher probes 127.0.0.1, reuses a healthy server and opens the app window', () =>
+  desktopSandbox(
+    (calls) => ({
+      curl: `echo "curl $*" >> '${calls}'`,
+      node: nodeFake(calls),
+      'google-chrome-stable': browserFake(calls),
+    }),
+    ({ state, exec }) => {
+      const result = exec(launcher);
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stdout + result.stderr, '');
+      const lines = result.log.trim().split('\n');
+      assert.equal(lines.length, 2, result.log);
+      assert.match(lines[0], /^curl .*http:\/\/127\.0\.0\.1:8000\/health$/);
+      assert.equal(
+        lines[1],
+        `browser --app=http://localhost:8000 --class=SIPGES --user-data-dir=${state}/chrome`,
+      );
+      assert.equal(modeOf(state), 0o700);
+      for (const secret of ['data-key', 'admin-password'])
+        assert.equal(modeOf(path.join(state, secret)), 0o600);
+      const key = readFileSync(path.join(state, 'data-key'), 'utf8').trim();
+      assert.equal(Buffer.from(key, 'base64').length, 32);
+      assert.ok(readFileSync(path.join(state, 'admin-password'), 'utf8').trim().length >= 12);
+    },
+  ));
+
+test('the Linux launcher starts node with the local environment and reports a server that never answers', () =>
+  desktopSandbox(
+    (calls) => ({
+      curl: 'exit 22',
+      node: nodeFake(calls),
+      'notify-send': `echo "notify $*" >> '${calls}'`,
+      'google-chrome-stable': browserFake(calls),
+    }),
+    ({ state, exec }) => {
+      const result = exec(launcher);
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, new RegExp(`did not start in 1 s; see ${state}/api.log`));
+      const node = result.log.split('\n').find((line) => line.startsWith('node '));
+      const key = readFileSync(path.join(state, 'data-key'), 'utf8').trim();
+      assert.equal(
+        node,
+        `node apps/api/src/main.ts key=${key} secure=0 host=127.0.0.1 pglite=${state}/pglite ` +
+          `uploads=${state}/uploads web=${path.join(root, 'apps/web/dist')}`,
+      );
+      assert.doesNotMatch(result.log, /browser/);
+      assert.match(result.log, /notify SIPGES /);
+    },
+  ));
+
+test('the Linux launcher keeps existing secrets, tightens loose permissions and replaces blank ones', () =>
+  desktopSandbox(
+    (calls) => ({ curl: 'exit 0', 'google-chrome-stable': browserFake(calls) }),
+    ({ state, exec }) => {
+      mkdirSync(state, { recursive: true, mode: 0o755 });
+      chmodSync(state, 0o755);
+      writeFileSync(path.join(state, 'data-key'), 'keep-this-key', { mode: 0o644 });
+      writeFileSync(path.join(state, 'admin-password'), 'keep-this-password', { mode: 0o644 });
+      chmodSync(path.join(state, 'data-key'), 0o644);
+      chmodSync(path.join(state, 'admin-password'), 0o644);
+      assert.equal(exec(launcher).status, 0);
+      assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'keep-this-key');
+      assert.equal(readFileSync(path.join(state, 'admin-password'), 'utf8'), 'keep-this-password');
+      assert.equal(modeOf(state), 0o700);
+      assert.equal(modeOf(path.join(state, 'data-key')), 0o600);
+      assert.equal(modeOf(path.join(state, 'admin-password')), 0o600);
+
+      writeFileSync(path.join(state, 'data-key'), ' \n');
+      writeFileSync(path.join(state, 'admin-password'), '\n\n');
+      assert.equal(exec(launcher).status, 0);
+      const key = readFileSync(path.join(state, 'data-key'), 'utf8').trim();
+      assert.equal(Buffer.from(key, 'base64').length, 32);
+      assert.ok(readFileSync(path.join(state, 'admin-password'), 'utf8').trim().length >= 12);
+    },
+  ));
+
+test('the Linux launcher names the missing curl or openssl before doing anything', () => {
+  desktopSandbox(
+    () => ({}),
+    ({ state, exec }) => {
+      const result = exec(launcher);
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /curl is required/);
+      assert.equal(existsSync(state), false);
+    },
+  );
+  desktopSandbox(
+    () => ({ curl: 'exit 0' }),
+    ({ state, exec }) => {
+      const result = exec(launcher);
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /openssl is required/);
+      assert.equal(existsSync(state), false);
+    },
+    { omit: ['openssl'] },
+  );
+});
+
+const installerFakes =
+  ({ nodeMajor = 24, pnpm = '12.11.2', npmFails = false } = {}) =>
+  (calls) => {
+    const pnpmScript = (version) =>
+      `case "$1" in --version) echo ${version};; *) echo "pnpm $*" >> '${calls}';; esac`;
+    const fakes = {
+      node: `echo ${nodeMajor}`,
+      curl: 'exit 0',
+      npm: npmFails
+        ? `echo "npm $*" >> '${calls}'; exit 1`
+        : `echo "npm $*" >> '${calls}'\n` +
+          `printf '#!/bin/sh\\n%s\\n' '${pnpmScript('12.11.2')}' > "$(dirname "$0")/pnpm"\n` +
+          'chmod +x "$(dirname "$0")/pnpm"',
+    };
+    if (pnpm) fakes.pnpm = pnpmScript(pnpm);
+    return fakes;
+  };
+
+test('the Linux installer builds, installs the entry and icon, and never overwrites the secrets', () =>
+  desktopSandbox(installerFakes(), ({ home, state, exec }) => {
+    const first = exec(linuxInstaller);
+    assert.equal(first.status, 0, first.stderr);
+    assert.equal(first.log, 'pnpm install --frozen-lockfile\npnpm --filter @sipges/web build\n');
+    assert.ok(first.stdout.includes(`${state}/admin-password`), first.stdout);
+    const data = path.join(home, '.local/share');
+    const entry = readFileSync(path.join(data, 'applications/sipges.desktop'), 'utf8');
+    assert.match(entry, /^Name=SIPGES$/m);
+    assert.ok(entry.includes(`Exec="${launcher}"`), entry);
+    assert.match(entry, /^Icon=sipges$/m);
+    assert.match(entry, /^StartupWMClass=SIPGES$/m);
+    assert.deepEqual(
+      readFileSync(path.join(data, 'icons/hicolor/512x512/apps/sipges.png')),
+      readFileSync(path.join(desktop, 'sipges.png')),
+    );
+    const secrets = () =>
+      ['data-key', 'admin-password'].map((name) => readFileSync(path.join(state, name), 'utf8'));
+    const created = secrets();
+    assert.ok(created.every((value) => value.length >= 12));
+    assert.equal(exec(linuxInstaller).status, 0);
+    assert.deepEqual(secrets(), created);
+    writeFileSync(path.join(state, 'data-key'), 'sentinel-key');
+    assert.equal(exec(linuxInstaller).status, 0);
+    assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+  }));
+
+test('the Linux installer reuses pnpm 12 and never needs Corepack', () =>
+  desktopSandbox(installerFakes(), ({ exec }) => {
+    const result = exec(linuxInstaller);
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.log, /^npm |corepack/m);
+  }));
+
+test('the Linux installer installs pnpm 12.11.2 with npm when pnpm is missing or another major', () => {
+  for (const pnpm of [null, '11.4.0'])
+    desktopSandbox(installerFakes({ pnpm }), ({ exec }) => {
+      const result = exec(linuxInstaller);
+      assert.equal(result.status, 0, result.stderr);
+      assert.equal(
+        result.log,
+        'npm install -g pnpm@12.11.2\npnpm install --frozen-lockfile\npnpm --filter @sipges/web build\n',
+      );
+    });
+});
+
+test('the Linux installer stops with the pnpm message when npm cannot install it', () => {
+  for (const options of [
+    { pnpm: null, npmFails: true },
+    { pnpm: '11.4.0', npmFails: true },
+  ])
+    desktopSandbox(installerFakes(options), ({ state, exec }) => {
+      const result = exec(linuxInstaller);
+      assert.equal(result.status, 1);
+      assert.match(
+        result.stderr,
+        /pnpm could not be installed: run `npm install -g pnpm@12\.11\.2` in a new terminal and run this script again\./,
+      );
+      assert.equal(result.log, 'npm install -g pnpm@12.11.2\n');
+      assert.equal(existsSync(state), false);
+    });
+});
+
+test('the Linux installer stops before touching anything when Node.js is older than 24', () =>
+  desktopSandbox(installerFakes({ nodeMajor: 23 }), ({ state, exec }) => {
+    const result = exec(linuxInstaller);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Node\.js 24 or later is required/);
+    assert.equal(result.log, '');
+    assert.equal(existsSync(state), false);
+  }));
+
+test('the Linux installer names a missing curl or openssl before building', () => {
+  desktopSandbox(
+    (calls) => {
+      const fakes = installerFakes()(calls);
+      delete fakes.curl;
+      return fakes;
+    },
+    ({ state, exec }) => {
+      const result = exec(linuxInstaller);
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /curl is required/);
+      assert.equal(result.log, '');
+      assert.equal(existsSync(state), false);
+    },
+  );
+  desktopSandbox(
+    installerFakes(),
+    ({ state, exec }) => {
+      const result = exec(linuxInstaller);
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /openssl is required/);
+      assert.equal(result.log, '');
+      assert.equal(existsSync(state), false);
+    },
+    { omit: ['openssl'] },
+  );
+});
+test('start.ps1 releases the boot mutex before showing a boot failure', () => {
+  const script = readDesktop('windows/start.ps1');
+  for (const reason of ['se cerró al arrancar', 'no arrancó en'])
+    assert.match(
+      script,
+      new RegExp(`ReleaseMutex\\(\\) \\}\\s*\\n\\s*Show-Failure "El servidor ${reason}`),
+    );
 });

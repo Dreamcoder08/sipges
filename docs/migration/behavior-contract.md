@@ -1,6 +1,6 @@
 # SIPGES Python Behavior Contract (migration reference)
 
-Source of truth for the TypeScript rewrite (`odd/tasks/typescript-hexagonal-migration.md`, T1, S6–S7).
+Source of truth for the TypeScript rewrite (`odd/archive/typescript-hexagonal-migration.md`, T1, S6–S7).
 Baseline: commit `c7fec1b`. `app.py:N` refers to the Python source. No real record values were read; `data/seed.json` and `.db` files are described by shape only.
 
 ## 1. Endpoints (65 routes)

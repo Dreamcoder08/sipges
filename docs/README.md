@@ -43,6 +43,7 @@ Un índice, una línea por página: qué pregunta responde cada una. Las guías 
 | [deployment/own-instance.es.md](deployment/own-instance.es.md), [deployment/own-instance.md](deployment/own-instance.md) | ¿Cómo despliego mi propia instancia con mis cuentas de GitHub, Neon y Cloudflare? |
 | [operations/handover.md](operations/handover.md) | ¿Quién tiene cada acceso, cómo se rotan los secretos y cómo se restaura? |
 | [deployment/local-install.md](deployment/local-install.md), [deployment/local-install.es.md](deployment/local-install.es.md) | ¿Cómo instalo, respaldo, restauro e importo la versión local? |
+| [../deploy/desktop/README.es.md](../deploy/desktop/README.es.md), [../deploy/desktop/README.md](../deploy/desktop/README.md) | ¿Cómo uso SIPGES como aplicación de escritorio en mi laptop con Windows o Linux? |
 | [deployment/go-container.md](deployment/go-container.md) | ¿Cómo envía el Worker una ruta al backend Go? |
 | [deployment/go-activation-reads.md](deployment/go-activation-reads.md) | ¿Qué falta para activar las lecturas en Go? |
 | [deployment/go-automation-cron.md](deployment/go-automation-cron.md) | ¿Cómo pasa a Go el cron de automatización? |
