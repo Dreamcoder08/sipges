@@ -73,6 +73,9 @@ jobs:
         run: pnpm -r --workspace-concurrency=1 --filter '!@sipges/api' run test && pnpm test:tooling
       - if: needs.changes.outputs.code == 'true'
         run: pnpm --filter @sipges/web build
+      # Bundle size budget (closure-roadmap T32, docs/testing/budgets.md): fails when the build grows past it.
+      - if: needs.changes.outputs.code == 'true'
+        run: node scripts/check-bundle-budget.mjs apps/web/dist
 
   api:
     needs: changes
