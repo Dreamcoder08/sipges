@@ -18,6 +18,11 @@ test('a question typed in the composer opens the global search with its text', a
   await signInToProject(page, admin, DEFAULT_SCOPE);
   await page.goto('/inicio');
   await expect(page.getByRole('heading', { level: 1, name: 'Inicio' })).toBeVisible();
+  const attention = page.getByRole('region', { name: 'Necesita tu atención' });
+  await expect(attention).toBeVisible();
+  expect((await attention.boundingBox())?.y ?? 0).toBeLessThan(
+    (await page.getByRole('textbox', { name: 'Pregunta a SIPGES' }).boundingBox())?.y ?? 0,
+  );
   const composer = page.getByRole('textbox', { name: 'Pregunta a SIPGES' });
   await page.getByRole('list', { name: 'Prueba con' }).getByRole('button').first().click();
   await expect(composer).not.toHaveValue('');
