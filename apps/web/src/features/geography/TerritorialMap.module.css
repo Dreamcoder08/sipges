@@ -497,10 +497,25 @@
   border-top: 1px solid var(--color-border);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow: var(--shadow-raised);
+  /* Fallback where keywords do not interpolate: the cap animates, as before. */
   transition: max-height var(--motion-medium) var(--ease-sheet);
 }
 .mapSheet[data-open='false'] {
   max-height: 6.5rem;
+}
+/* The height itself animates between the peek and the content height (at most 48vh), so folding
+   starts at once instead of first spending the unused part of the cap. Reduced motion: global.css. */
+@supports (interpolate-size: allow-keywords) {
+  .mapSheet {
+    interpolate-size: allow-keywords;
+    block-size: auto;
+    block-size: calc-size(auto, min(size, 48vh));
+    transition: block-size var(--motion-medium) var(--ease-sheet);
+  }
+  .mapSheet[data-open='false'] {
+    block-size: 6.5rem;
+    max-height: 48vh;
+  }
 }
 .mapSheetBar {
   display: grid;
@@ -519,7 +534,7 @@
 .handle span {
   width: 2.5rem;
   height: 0.3rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-border);
 }
 .sheetClose {

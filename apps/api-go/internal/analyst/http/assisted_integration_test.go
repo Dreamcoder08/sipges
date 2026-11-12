@@ -65,6 +65,7 @@ func withNarrator(t *testing.T) (*messagesDouble, string) {
 
 func setExternalAI(t *testing.T, enabled bool) {
 	t.Helper()
+	needsDatabase(t)
 	ctx := context.Background()
 	conn, err := pgx.Connect(ctx, scratch.URL)
 	if err != nil {

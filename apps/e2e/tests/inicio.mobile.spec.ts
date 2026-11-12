@@ -9,6 +9,57 @@ const box = async (locator: Locator) => {
 };
 
 /**
+ * At the narrowest phone (360 px) every briefing row is one line with one link: the IRSA hint and
+ * the conflict-risk link are desktop detail, and on a phone they squeezed «Riesgo del territorio»
+ * into three lines under a second chevron (closure-roadmap T18).
+ */
+test('each briefing row on a 360 px phone is one line with one link', async ({ page, admin }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/inicio');
+  const risk = page.getByRole('region', { name: /Riesgo del territorio/ });
+  await expect(risk).toBeVisible();
+  await expect(risk.getByText('Carga registros del proyecto para calcular el IRSA.')).toBeHidden();
+  await expect(risk.getByRole('link', { name: /Riesgo de conflicto/ })).toBeHidden();
+  await expect(risk.getByRole('link', { name: 'Abrir IRSA' })).toHaveAttribute('href', '/analisis');
+  const cards = page.getByRole('region', { name: /Alertas activas|Registros nuevos|Riesgo/ });
+  for (const card of await cards.all()) {
+    expect((await box(card)).height).toBeLessThanOrEqual(64);
+    const title = await box(card.getByRole('heading', { level: 3 }));
+    expect(title.height, 'the row title stays on one line').toBeLessThanOrEqual(40);
+  }
+});
+
+/**
+ * The suggestion strip hides its scrollbar, so a fade at each edge is the only cue that more chips
+ * lie that way (modern-web-guidance scrollability-affordance-hints). It follows the scroll with a
+ * scroll-driven animation, or with an observer under reduced motion, and clears at either end.
+ */
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`the 360 px suggestion strip fades where more chips lie (${reducedMotion})`, async ({
+    page,
+    admin,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.emulateMedia({ reducedMotion });
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    await page.goto('/inicio');
+    const strip = page.getByRole('list', { name: 'Prueba con' });
+    await expect(strip.getByRole('button').first()).toBeVisible();
+    const fades = () =>
+      strip.evaluate((node) => {
+        const style = getComputedStyle(node);
+        const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+        return { start: px('--fade-start') > 0, end: px('--fade-end') > 0 };
+      });
+    await expect.poll(fades).toEqual({ start: false, end: true });
+    await strip.evaluate((node) => node.scrollTo({ left: node.scrollWidth, behavior: 'instant' }));
+    await expect.poll(fades).toEqual({ start: true, end: false });
+  });
+}
+
+/**
  * Inicio on a phone reads like a chat app (ChatGPT, Claude): the greeting centred in the free
  * space, the briefing as one-line rows, the suggestions in one swipeable strip and the composer
  * resting at the bottom of the screen.

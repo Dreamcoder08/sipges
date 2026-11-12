@@ -135,6 +135,15 @@ func seed(ctx context.Context, dsn string) error {
 	return conn.SendBatch(ctx, batch).Close()
 }
 
+// needsDatabase skips a test before it touches the scratch database, which exists only when
+// dbtest.EnvAdminURL is set.
+func needsDatabase(t *testing.T) {
+	t.Helper()
+	if scratch == nil {
+		t.Skip(dbtest.EnvAdminURL + " is not set")
+	}
+}
+
 func start(t *testing.T) string {
 	t.Helper()
 	return apitest.Start(t, scratch, t0)
