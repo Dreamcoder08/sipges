@@ -1,4 +1,29 @@
 /* Layout and hierarchy follow design/workspace-architecture/01-inicio-composer.html. */
+
+/* Widths of the suggestion strip's edge fades; registered so they interpolate. */
+@property --fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes reveal-fade-start {
+  to {
+    --fade-start: var(--fade-size);
+  }
+}
+
+@keyframes hide-fade-end {
+  from {
+    --fade-end: var(--fade-size);
+  }
+}
 .home {
   display: grid;
   gap: var(--space-10);
@@ -134,6 +159,11 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Scroll sentinels of the phone strip (see the phone layout below). */
+.edge {
+  display: none;
 }
 
 .chip {
@@ -365,6 +395,57 @@
     overflow-x: auto;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
+    /* The scrollbar is hidden, so an edge fades while more chips lie that way
+       (modern-web-guidance scrollability-affordance-hints); snapped and focused chips stop clear of it. */
+    --fade-size: 2.5rem;
+    scroll-padding-inline: var(--fade-size);
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to right, black, transparent) 0 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to right, transparent, black) 100% 0 / var(--fade-end) 100% no-repeat no-clip;
+    transition:
+      --fade-start var(--motion-fast),
+      --fade-end var(--motion-fast);
+  }
+
+  /* 1 px sentinels at both ends, laid over the end chips so they add no width or gap. */
+  .edge {
+    display: block;
+    flex: none;
+    inline-size: 1px;
+    block-size: 1px;
+  }
+
+  .edge:first-child {
+    margin-inline-end: calc(-1px - var(--space-2));
+  }
+
+  .edge:last-child {
+    margin-inline-start: calc(-1px - var(--space-2));
+  }
+
+  /* Without a scroll timeline, or under reduced motion, useScrollHints sets these instead. */
+  .chips[data-more-start] {
+    --fade-start: var(--fade-size);
+  }
+
+  .chips[data-more-end] {
+    --fade-end: var(--fade-size);
+  }
+
+  @supports (animation-timeline: scroll()) {
+    /* Longhands: the minifier expands the shorthand with a 0s duration, which ends a scroll
+       timeline animation at once; scroll timelines need `auto`. */
+    .chips {
+      animation-name: reveal-fade-start, hide-fade-end;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: scroll(self inline);
+      animation-range:
+        0 var(--fade-size),
+        calc(100% - var(--fade-size)) 100%;
+    }
   }
 
   .chip {

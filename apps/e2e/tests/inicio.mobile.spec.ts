@@ -32,6 +32,34 @@ test('each briefing row on a 360 px phone is one line with one link', async ({ p
 });
 
 /**
+ * The suggestion strip hides its scrollbar, so a fade at each edge is the only cue that more chips
+ * lie that way (modern-web-guidance scrollability-affordance-hints). It follows the scroll with a
+ * scroll-driven animation, or with an observer under reduced motion, and clears at either end.
+ */
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`the 360 px suggestion strip fades where more chips lie (${reducedMotion})`, async ({
+    page,
+    admin,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.emulateMedia({ reducedMotion });
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    await page.goto('/inicio');
+    const strip = page.getByRole('list', { name: 'Prueba con' });
+    await expect(strip.getByRole('button').first()).toBeVisible();
+    const fades = () =>
+      strip.evaluate((node) => {
+        const style = getComputedStyle(node);
+        const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+        return { start: px('--fade-start') > 0, end: px('--fade-end') > 0 };
+      });
+    await expect.poll(fades).toEqual({ start: false, end: true });
+    await strip.evaluate((node) => node.scrollTo({ left: node.scrollWidth, behavior: 'instant' }));
+    await expect.poll(fades).toEqual({ start: true, end: false });
+  });
+}
+
+/**
  * Inicio on a phone reads like a chat app (ChatGPT, Claude): the greeting centred in the free
  * space, the briefing as one-line rows, the suggestions in one swipeable strip and the composer
  * resting at the bottom of the screen.
