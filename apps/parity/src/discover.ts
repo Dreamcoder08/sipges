@@ -14,12 +14,17 @@ export type ContextModule = {
 const isContextFile = (file: string) =>
   file.endsWith('.ts') && file !== 'index.ts' && !file.endsWith('.test.ts');
 
+const contextName = (file: string) => file.replace(/\.ts$/, '');
+
 /**
- * Loads every context module in `dir`, in file-name order. Adding a context means adding one
- * file; no shared list is edited, so parallel ports do not conflict.
+ * Loads every context module in `dir`, in context-name order (`sessions` before
+ * `sessions-hardening`, which sorting the file names with `.ts` would invert). Adding a context
+ * means adding one file; no shared list is edited, so parallel ports do not conflict.
  */
 export const loadContexts = async (dir: string): Promise<ContextModule[]> => {
-  const files = readdirSync(dir).filter(isContextFile).sort();
+  const files = readdirSync(dir)
+    .filter(isContextFile)
+    .sort((a, b) => (contextName(a) < contextName(b) ? -1 : 1));
   return Promise.all(
     files.map(async (file) => {
       const mod: Record<string, unknown> = await import(pathToFileURL(join(dir, file)).href);
@@ -28,7 +33,7 @@ export const loadContexts = async (dir: string): Promise<ContextModule[]> => {
       if (mod.seed !== undefined && typeof mod.seed !== 'string')
         throw new Error(`${file}: \`seed\` must be SQL text`);
       return {
-        name: file.replace(/\.ts$/, ''),
+        name: contextName(file),
         cases: mod.cases as ParityCase[],
         seed: (mod.seed as string | undefined) ?? '',
       };
