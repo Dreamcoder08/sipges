@@ -118,3 +118,38 @@ test('Registros keeps its filters in one toolbar row and docks the sheet at 1440
   await expect(sheet.getByRole('heading', { name: /^Ficha / })).toBeVisible();
   if (shot) await page.screenshot({ path: shot.replace(/\.png$/, '-sheet.png') });
 });
+
+/** A compromiso lives under the Demandas tab, yet «Ver» opens it as a compromiso, not a demanda. */
+test('Registros opens a compromiso from the Demandas tab as its own record and keeps it after a reload', async ({
+  page,
+  admin,
+}) => {
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  const stamp = Date.now();
+  const id = `C-HUB-${stamp}`;
+  const description = `Compromiso sintético del hub ${stamp}`;
+  const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+  const created = await page.request.post('/api/compromisos', {
+    headers,
+    data: { payload: { ID_Compromiso: id, Descripcion: description, Estado: 'Pendiente' } },
+  });
+  expect(created.status(), await created.text()).toBe(200);
+
+  await page.goto('/registros?tipo=demandas');
+  const compromisos = page.getByRole('button', { name: 'Compromisos', exact: true });
+  await compromisos.click();
+  await page.getByLabel('Buscar registros').fill(String(stamp));
+  await page.locator('#contenido').getByRole('button', { name: 'Buscar', exact: true }).click();
+  await page.getByRole('button', { name: `Ver ${id}`, exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: `Ficha ${id}` });
+  await expect(sheet.getByText(description).first()).toBeVisible();
+  await expect(sheet.getByRole('link', { name: 'Abrir ficha completa' })).toHaveAttribute(
+    'href',
+    `/objeto/compromisos/${id}`,
+  );
+  await expect(page).toHaveURL(new RegExp(`tipo=demandas.*ficha=compromisos\\.${id}`));
+
+  await page.reload();
+  await expect(sheet.getByText(description).first()).toBeVisible();
+  await expect(compromisos).toHaveAttribute('aria-pressed', 'true');
+});

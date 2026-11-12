@@ -37,8 +37,13 @@ type Props = {
   projectId: string;
   projectLabel: string;
   role: Role;
-  /** When set, «Ver» hands the record to the caller (the Registros hub's sheet) instead of this page's own panel. */
-  onView?: (id: string) => void;
+  /**
+   * When set, «Ver» hands the record to the caller (the Registros hub's sheet) instead of this
+   * page's own panel, with the list it came from: under Demandas that may be `compromisos`.
+   */
+  onView?: (id: string, module: RecordModule) => void;
+  /** Under Demandas, the sub-list to start on (the hub reopening a compromiso from the URL). */
+  list?: RecordModule | undefined;
   /** Open with the new-record form or the CSV import already showing (the hub's «Nuevo registro» / «Importar»). */
   start?: 'create' | 'import' | undefined;
   /** With `onView`: two-line rows that open the hub's sheet instead of the table (below 1024 px). */
@@ -56,7 +61,9 @@ const message = (error: unknown) =>
           : 'No se pudo completar la operación.';
 
 export const RecordsPage = (props: Props) => {
-  const [module, setModule] = useState(props.module);
+  const [module, setModule] = useState<RecordModule>(
+    props.module === 'demandas' && props.list === 'compromisos' ? 'compromisos' : props.module,
+  );
   return (
     <div className={styles.page}>
       {props.module === 'demandas' ? (
@@ -377,7 +384,9 @@ const RecordsWorkspace = ({
             const currentPage = Math.min(pageIndex, pageCount - 1);
             const pageRows = visible.slice(currentPage * 50, (currentPage + 1) * 50);
             const openInsight = (id: string, from?: string) =>
-              onView ? onView(id) : openPanel({ kind: 'view', id }, from ?? `insight-${id}`);
+              onView
+                ? onView(id, module)
+                : openPanel({ kind: 'view', id }, from ?? `insight-${id}`);
             return (
               <>
                 {module === 'acciones' || module === 'compromisos' ? (
@@ -484,7 +493,7 @@ const RecordsWorkspace = ({
                   <RecordRows
                     rows={pageRows.map((row) => summarize(module, row))}
                     label={`Registros de ${definition.label.toLowerCase()} del proyecto activo`}
-                    onOpen={({ id }) => onView(id)}
+                    onOpen={({ id }) => onView(id, module)}
                   />
                 ) : visible.length ? (
                   <div
@@ -565,7 +574,7 @@ const RecordsWorkspace = ({
                                   data-return={`ver-${row._id}`}
                                   onClick={() =>
                                     onView
-                                      ? onView(row._id)
+                                      ? onView(row._id, module)
                                       : openPanel({ kind: 'view', id: row._id }, `ver-${row._id}`)
                                   }
                                 >

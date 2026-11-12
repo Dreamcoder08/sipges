@@ -11,7 +11,7 @@ import { RecordsPage } from '../RecordsPage.tsx';
 import { type Density, useDensity } from './density.ts';
 import { useDocked, useTypeRows } from './dock.ts';
 import styles from './Hub.module.css';
-import { HUB_TYPES } from './types.ts';
+import { HUB_SUBTYPES, HUB_TYPES } from './types.ts';
 import { type OpenRecord, type OpenWay, RecordSheet } from './RecordSheet.tsx';
 import { type RecordSummary, VERIFICATION_LETTERS, type VerificationLetter } from './summary.ts';
 import { TodosList } from './TodosList.tsx';
@@ -20,6 +20,12 @@ import { TypePicker } from './TypePicker.tsx';
 const isType = (value: string | undefined): value is (typeof HUB_TYPES)[number][0] =>
   HUB_TYPES.some(([module]) => module === value);
 
+/** A type the sheet may open: a hub chip, or a sub-list under one (Compromisos). */
+const isRecordType = (
+  value: string | undefined,
+): value is (typeof HUB_TYPES)[number][0] | (typeof HUB_SUBTYPES)[number] =>
+  isType(value) || HUB_SUBTYPES.some((module) => module === value);
+
 /** `?ficha=<type>.<id>`: the record open in the sheet, so a reload or a link keeps it. */
 const fichaOf = (record: OpenRecord | null) =>
   record ? `${record.module}.${record.id}` : undefined;
@@ -27,7 +33,7 @@ const parseFicha = (ficha: string | undefined): OpenRecord | null => {
   const at = ficha?.indexOf('.') ?? -1;
   const module = ficha?.slice(0, at);
   const id = ficha?.slice(at + 1);
-  return at > 0 && isType(module) && id ? { module, id } : null;
+  return at > 0 && isRecordType(module) && id ? { module, id } : null;
 };
 
 type Props = {
@@ -252,7 +258,8 @@ const Workspace = ({
         ) : (
           <RecordsPage
             module={selected}
-            onView={(id) => onOpen({ module: selected, id })}
+            list={open?.module}
+            onView={(id, module) => onOpen({ module, id })}
             twoLineRows={typeRows}
             start={start}
             {...context}
