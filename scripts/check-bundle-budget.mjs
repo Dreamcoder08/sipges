@@ -36,6 +36,11 @@ export const measure = (dist) => {
   const entry = [...html.matchAll(/(?:src|href)="\/assets\/([^"]+\.(?:js|css))"/g)].map(
     (m) => m[1],
   );
+  // An entry that matches nothing would measure 0 and pass every entry budget silently.
+  if (entry.length === 0) throw new Error('index.html names no /assets/ script or style');
+  for (const name of entry)
+    if (!sizes.has(name))
+      throw new Error(`index.html names /assets/${name}, which the build did not emit`);
   const sum = (names, key) =>
     names.reduce((total, name) => total + (sizes.get(name)?.[key] ?? 0), 0);
   const js = files.filter((name) => name.endsWith('.js'));

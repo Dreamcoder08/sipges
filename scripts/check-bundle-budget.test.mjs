@@ -52,6 +52,24 @@ test('measure counts the index.html entry and every emitted script and style, no
   assert.deepEqual(Object.keys(totals).sort(), Object.keys(BUDGETS).sort());
 });
 
+test('an entry index.html that names no built asset, or a missing one, fails instead of measuring 0', (t) => {
+  const noEntry = syntheticDist(t);
+  writeFileSync(
+    path.join(noEntry, 'index.html'),
+    '<script type="module" src="./assets/index-a.js"></script>',
+  );
+  assert.throws(() => measure(noEntry), /index\.html names no \/assets\/ script or style/);
+  const missing = syntheticDist(t);
+  writeFileSync(
+    path.join(missing, 'index.html'),
+    '<script type="module" src="/assets/gone.js"></script>',
+  );
+  assert.throws(
+    () => measure(missing),
+    /index\.html names \/assets\/gone\.js, which the build did not emit/,
+  );
+});
+
 test('the command exits 0 within budget and 1 with a clear message when a total is crossed', (t) => {
   const small = spawnSync(process.execPath, [script, syntheticDist(t)], { encoding: 'utf8' });
   assert.equal(small.status, 0, small.stderr);
