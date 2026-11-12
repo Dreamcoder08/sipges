@@ -123,6 +123,9 @@ soporte.» en un cuadro de mensaje (Windows) o en una notificación y la termina
 
 ### Ensayo en Windows (para la visita, roadmap T34)
 
+El runbook impreso de la visita, con estos pasos dentro de su ensayo previo:
+[docs/deployment/desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md).
+
 En una segunda cuenta de Windows o en otro equipo, nunca en el portátil con datos reales. Anota
 «pasa» o «falla» en cada línea; ante un fallo, guarda `%LOCALAPPDATA%\SIPGES-app\launcher.log` y el
 texto del cuadro de mensaje, y detente. `<raíz>` es `%LOCALAPPDATA%\SIPGES-app`.

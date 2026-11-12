@@ -203,3 +203,6 @@ rm -r "$tmp"
   drill). On Windows, `install.ps1 -Release` and
   `start-managed.ps1` were checked statically; the Windows rehearsal in
   [README.es.md](README.es.md#ensayo-en-windows-para-la-visita-roadmap-t34) is their first run.
+- The visit to the laptop that already holds real data follows the printed runbook
+  [docs/deployment/desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md) (Spanish).
+  It installs beside the clone install, on a copy of the state folder, and says how to go back.
