@@ -56,6 +56,14 @@ EOF
   fi
 }
 
+# True when the folder exists and holds at least one entry, hidden ones included.
+has_entries() {
+  for entry in "$1"/* "$1"/.[!.]* "$1"/..?*; do
+    if [ -e "$entry" ]; then return 0; fi
+  done
+  return 1
+}
+
 # Managed mode. Nothing is written before every check passed; the state folder is never moved,
 # overwritten or deleted: only missing secrets are created, as in clone mode.
 install_managed() {
@@ -65,6 +73,11 @@ install_managed() {
     die "not a signed release (release.json, release.sig and package/ are needed): $RELEASE"
   if curl -fsS --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
     die "SIPGES is running on this computer (port $PORT): close it, end its node process or restart, and run this script again."
+  fi
+  # An existing database keeps its own key: a new one would leave its sealed values unreadable.
+  if has_entries "$STATE/pglite" &&
+    { [ ! -f "$STATE/data-key" ] || [ -z "$(tr -d ' \t\r\n' <"$STATE/data-key")" ]; }; then
+    die "the state folder $STATE holds a database but its data-key is missing or empty: restore it from your backup of that folder and run this script again; nothing was changed."
   fi
   had_state=no
   [ ! -e "$STATE" ] || had_state=yes
@@ -85,8 +98,9 @@ install_managed() {
   say 'SIPGES is installed. Open it from the application launcher.'
   say "Install root: $APP_ROOT. Copy newer signed releases into $APP_ROOT/releases to be offered them."
   say "Admin user: admin. Password: $STATE/admin-password"
-  if [ "$had_state" = yes ]; then
-    say "The existing state folder $STATE was kept as it is; the first start migrates it. Back it up before opening SIPGES."
+  if [ "$had_state" = yes ] && [ ! -f "$APP_ROOT/first-start.json" ]; then
+    say "The existing state folder $STATE was kept as it is. Its first start copies it beside itself ($STATE.pre-update-<time>-first-start-$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).version' "$APP_ROOT/current.json")), migrates a second copy and only then the folder."
+    say "Back it up yourself as well before opening SIPGES."
   fi
   say "Back up the whole folder $STATE (it holds your data and its key)."
 }

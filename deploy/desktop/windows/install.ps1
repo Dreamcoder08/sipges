@@ -6,12 +6,20 @@
 #     Managed mode: installs a signed release into %LOCALAPPDATA%\SIPGES-app, keeps the state
 #     folder where it is, and points the shortcuts at that install, so updates arrive through the
 #     update notice. A rerun keeps the installed version and only refreshes the shortcuts.
+#   ... install.ps1 -Release <folder> -State <folder>
+#     Managed mode on another state folder, such as a copy of %LOCALAPPDATA%\SIPGES made for
+#     the data move (deploy\desktop\migration\README.md); the original stays as it was.
 # Read deploy\desktop\README.md first.
-param([string]$Release)
+param([string]$Release, [string]$State)
 $ErrorActionPreference = 'Stop'
 
 $Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
-$State = Join-Path $env:LOCALAPPDATA 'SIPGES'
+if ($State -and -not $Release) {
+    Write-Host '-State solo sirve con -Release (instalación gestionada).' -ForegroundColor Red
+    exit 1
+}
+if (-not $State) { $State = Join-Path $env:LOCALAPPDATA 'SIPGES' }
+$State = [System.IO.Path]::GetFullPath($State)
 $AppRoot = Join-Path $env:LOCALAPPDATA 'SIPGES-app'
 $Updater = Join-Path $Repo 'deploy\desktop\updater'
 $Probe = 'http://127.0.0.1:8000/health'
@@ -90,6 +98,17 @@ function Initialize-State {
     Save-Secret (Join-Path $State 'admin-password') $password
 }
 
+# An existing database keeps its own key: a new one would leave its sealed values unreadable.
+function Test-DatabaseWithoutKey {
+    $pglite = Join-Path $State 'pglite'
+    if (-not (Test-Path -LiteralPath $pglite -PathType Container)) { return $false }
+    if (-not (Get-ChildItem -LiteralPath $pglite -Force | Select-Object -First 1)) { return $false }
+    $key = Join-Path $State 'data-key'
+    $value = $null
+    if (Test-Path -LiteralPath $key) { $value = Get-Content -LiteralPath $key -Raw }
+    return [string]::IsNullOrWhiteSpace($value)
+}
+
 function New-Shortcuts([string]$Start, [string]$WorkingDirectory, [string]$Icon) {
     $shell = New-Object -ComObject WScript.Shell
     foreach ($folder in [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) {
@@ -117,7 +136,10 @@ function Install-Managed {
     if (Test-Server) {
         Stop-Install 'SIPGES está abierto en este equipo: ciérralo (termina el proceso node o reinicia el equipo) y vuelve a ejecutar este script.'
     }
-    $hadState = Test-Path -LiteralPath $State
+    if (Test-DatabaseWithoutKey) {
+        Stop-Install "La carpeta de datos $State tiene una base de datos pero falta su data-key o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada."
+    }
+    $hadState = (Test-Path -LiteralPath $State) -and -not (Test-Path -LiteralPath (Join-Path $AppRoot 'first-start.json'))
     if (-not (Test-Path -LiteralPath $AppRoot)) { New-Item -ItemType Directory -Path $AppRoot | Out-Null }
     Protect-Path $AppRoot '(OI)(CI)F'
     if (Test-Path -LiteralPath (Join-Path $AppRoot 'current.json')) {
@@ -139,7 +161,8 @@ function Install-Managed {
     Write-Host "Instalación: $AppRoot. Copia las versiones firmadas nuevas en $AppRoot\releases para que se ofrezcan."
     Write-Host "Usuario administrador: admin. Contraseña: $State\admin-password"
     if ($hadState) {
-        Write-Host "Se conservó la carpeta de datos existente $State; el primer arranque la migra. Respáldala antes de abrir SIPGES."
+        Write-Host "Se conservó la carpeta de datos existente $State. Su primer arranque la copia al lado ($State.pre-update-<hora>-first-start-<versión>), migra una segunda copia y solo después la carpeta."
+        Write-Host 'Respáldala tú también antes de abrir SIPGES.'
     }
     Write-Host "Respalda la carpeta completa $State (contiene tus datos y su clave)."
 }

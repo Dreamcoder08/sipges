@@ -1596,6 +1596,62 @@ test('the Linux installer in managed mode refuses while SIPGES runs, or without 
   });
 });
 
+// Closure-roadmap T33: an older install's database must keep its own data key. A new key would
+// make its sealed values (MFA secrets) unreadable, so the installer stops before writing.
+test('the Linux installer in managed mode refuses a database without its data key, then keeps it', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    mkdirSync(path.join(state, 'pglite'), { recursive: true });
+    writeFileSync(path.join(state, 'pglite/PG_VERSION'), 'synthetic\n');
+    writeFileSync(path.join(state, 'admin-password'), 'sentinel-password');
+    for (const key of [null, ' \n']) {
+      if (key !== null) writeFileSync(path.join(state, 'data-key'), key);
+      const refused = exec(linuxInstaller, ['--managed', release]);
+      assert.equal(refused.status, 1);
+      assert.ok(
+        refused.stderr.includes(
+          `the state folder ${state} holds a database but its data-key is missing or empty: restore it from your backup of that folder and run this script again; nothing was changed.`,
+        ),
+        refused.stderr,
+      );
+      assert.equal(existsSync(path.join(home, '.local/share/sipges-app')), false);
+      assert.equal(existsSync(path.join(home, '.local/share/applications/sipges.desktop')), false);
+      assert.deepEqual(
+        readdirSync(state).sort(),
+        key === null ? ['admin-password', 'pglite'] : ['admin-password', 'data-key', 'pglite'],
+      );
+      if (key !== null) assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), key);
+    }
+    writeFileSync(path.join(state, 'data-key'), 'sentinel-key');
+    const kept = exec(linuxInstaller, ['--managed', release]);
+    assert.equal(kept.status, 0, kept.stderr);
+    assert.ok(
+      kept.stdout.includes(
+        `The existing state folder ${state} was kept as it is. Its first start copies it beside itself (${state}.pre-update-<time>-first-start-1.0.0), migrates a second copy and only then the folder.`,
+      ),
+      kept.stdout,
+    );
+    assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+  }));
+
+test('the Windows installer in managed mode takes a state folder and refuses a database without its data key', () => {
+  const install = readDesktop('windows/install.ps1');
+  assert.match(install, /^param\(\[string\]\$Release, \[string\]\$State\)$/m);
+  assert.ok(install.includes("if (-not $State) { $State = Join-Path $env:LOCALAPPDATA 'SIPGES' }"));
+  assert.ok(install.includes('-State solo sirve con -Release'));
+  assert.ok(
+    install.includes(
+      'tiene una base de datos pero falta su data-key o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.',
+    ),
+  );
+  // The check runs before the updater installs anything or a secret is created.
+  const managed = install.slice(install.indexOf('function Install-Managed'));
+  const guard = managed.indexOf('Test-DatabaseWithoutKey');
+  assert.ok(guard > 0 && guard < managed.indexOf("update.mjs')"), 'guard before the install');
+  assert.ok(guard < managed.indexOf('Initialize-State'), 'guard before any secret is created');
+  assert.ok(install.includes('primer arranque la copia al lado'));
+});
+
 /** The managed launcher script copied into a root, as the installer leaves it. */
 const managedRoot = (home) => {
   const app = path.join(home, 'app');
