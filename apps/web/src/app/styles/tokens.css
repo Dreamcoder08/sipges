@@ -499,3 +499,14 @@
   --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
   --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
 }
+
+/*
+ * Touch screens: every control size reaches the 44px target (WCAG 2.5.5). Chips, toggles and
+ * icon buttons read --control-*, so they grow with it while a mouse keeps the denser sizes.
+ */
+@media (pointer: coarse) {
+  :root {
+    --control-sm: var(--touch-target);
+    --control-md: var(--touch-target);
+  }
+}

@@ -211,6 +211,14 @@
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+/* Touch screens: the record name is a 44px target, even when it wraps to two lines. */
+@media (pointer: coarse) {
+  .open {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target);
+  }
+}
 .typeChip {
   display: inline-flex;
   align-items: center;

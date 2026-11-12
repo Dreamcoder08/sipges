@@ -49,6 +49,7 @@
 
 .ask textarea {
   width: 100%;
+  min-height: var(--control-sm);
   resize: none;
   border: 0;
   padding: 0;
@@ -136,7 +137,7 @@
 }
 
 .chip {
-  min-height: 2.25rem;
+  min-height: max(2.25rem, var(--control-sm));
   padding: 0 var(--space-3);
   border: 1px solid var(--color-hairline-strong);
   border-radius: var(--radius-pill);
@@ -286,8 +287,13 @@
   .eyebrow,
   .briefHead,
   .suggestLabel,
-  .hint,
-  .card :is(.list, .empty, .risk) {
+  .hint {
+    display: none;
+  }
+
+  /* A row keeps its title and the card's own link (the last child): lists, the IRSA reading and
+     hint, and secondary links are desktop detail that squeezed the title under a second chevron. */
+  .card > :not(h3, :last-child) {
     display: none;
   }
 

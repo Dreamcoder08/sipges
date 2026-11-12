@@ -235,6 +235,16 @@ describe('design tokens', () => {
     expect(values(darkMedia)).toEqual(values(darkPicked));
   });
 
+  it('raises every control size to the 44px touch target on touch screens (WCAG 2.5.5)', () => {
+    // Chips, toggles and icon buttons size themselves with --control-*; one rule covers them all.
+    const coarse = block(/@media \(pointer: coarse\) \{\s*:root \{([\s\S]*?)^ {2}\}/m);
+    expect(values(coarse)).toEqual({
+      '--control-sm': 'var(--touch-target)',
+      '--control-md': 'var(--touch-target)',
+    });
+    expect(light['--touch-target']).toBe('2.75rem');
+  });
+
   it('only redefines tokens that exist in the light theme', () => {
     const unknown = Object.keys(values(darkPicked)).filter((name) => !(name in light));
     expect(unknown).toEqual([]);

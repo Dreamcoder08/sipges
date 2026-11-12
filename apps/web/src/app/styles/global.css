@@ -101,11 +101,16 @@ canvas {
   max-width: 100%;
 }
 
-/* Touch screens: 44px targets for form controls (WCAG 2.5.5). */
+/* Touch screens: 44px targets for form controls and disclosures (WCAG 2.5.5). */
 @media (pointer: coarse) {
   input:not([type='checkbox'], [type='radio'], [type='range']),
   select {
     min-height: var(--touch-target);
+  }
+
+  summary {
+    min-height: var(--touch-target);
+    padding-block: var(--space-2);
   }
 }
 

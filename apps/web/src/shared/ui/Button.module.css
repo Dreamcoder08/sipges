@@ -37,11 +37,13 @@
   font-size: var(--text-sm);
 }
 
-/* Touch screens get a 44px minimum target (WCAG 2.5.5), whatever the density. */
+/* Touch screens get a 44px minimum target (WCAG 2.5.5), whatever the density; one-letter
+   buttons such as the A–E filter grow to a square instead of a 34px sliver. */
 @media (pointer: coarse) {
   .button,
   .sm {
     min-height: var(--touch-target);
+    min-width: var(--touch-target);
   }
 }
 
