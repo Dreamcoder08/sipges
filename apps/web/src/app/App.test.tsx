@@ -323,6 +323,36 @@ describe('phone shell', () => {
     expect(await screen.findByText('Conflicto por agua')).toBeVisible();
   });
 
+  it('offers a retry when the day summary fails, and shows the counters once it loads', async () => {
+    let fail = true;
+    server.use(
+      http.get('/api/dashboard', () =>
+        fail
+          ? HttpResponse.json({ detail: 'Resumen no disponible' }, { status: 400 })
+          : HttpResponse.json({
+              eventos: 2,
+              actores: 7,
+              demandas_abiertas: 3,
+              alertas_activas: 6,
+              directorio: 4,
+              priorizados: 5,
+              niveles: {},
+            }),
+      ),
+    );
+    signIn();
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    const tiles = await screen.findByRole('region', { name: 'Indicadores del día' });
+    expect(await within(tiles).findByText('Resumen no disponible')).toBeVisible();
+    fail = false;
+    await user.click(within(tiles).getByRole('button', { name: 'Reintentar' }));
+    expect(await within(tiles).findByRole('link', { name: /Alertas activas/ })).toHaveTextContent(
+      '6',
+    );
+  });
+
   it('keeps the project selector, inbox and sign-out inside the menu', async () => {
     signIn();
     at('/');

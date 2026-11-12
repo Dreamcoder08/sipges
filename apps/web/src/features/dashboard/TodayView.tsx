@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
+import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from './IrsaStatus.tsx';
 import { dashboardQuery, irsaQuery, moduleRecordsQuery } from './api.ts';
 import { criticalAlerts, recentEvents } from './model.ts';
@@ -74,27 +75,27 @@ export const TodayView = ({
       </section>
 
       <section aria-label="Indicadores del día">
-        {summary.error ? (
-          <p role="alert">No se pudo cargar el resumen.</p>
-        ) : (
-          <ul className={styles.tiles}>
-            {TILES.map(([key, label, to]) => (
-              <li
-                key={key}
-                className={styles.tile}
-                data-alert={key === 'alertas_activas' && (summary.data?.[key] ?? 0) > 0}
-              >
-                {renderLink(
-                  to,
-                  <>
-                    <span className={styles.value}>{summary.data ? summary.data[key] : '–'}</span>
-                    <span className={styles.label}>{label}</span>
-                  </>,
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
+        <QueryState query={summary} label="el resumen">
+          {(data) => (
+            <ul className={styles.tiles}>
+              {TILES.map(([key, label, to]) => (
+                <li
+                  key={key}
+                  className={styles.tile}
+                  data-alert={key === 'alertas_activas' && data[key] > 0}
+                >
+                  {renderLink(
+                    to,
+                    <>
+                      <span className={styles.value}>{data[key]}</span>
+                      <span className={styles.label}>{label}</span>
+                    </>,
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </QueryState>
       </section>
 
       <section className={styles.block} aria-labelledby="hoy-alertas">
