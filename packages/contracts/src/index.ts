@@ -19,3 +19,4 @@ export * from './authorized-sources.ts';
 export * from './runtime.ts';
 export * from './situations.ts';
 export * from './media-monitor.ts';
+export * from './desktop-update.ts';
