@@ -93,7 +93,7 @@ Phase 5, design system and interface (S5):
 
 - T28 [x] — S5: audit the design system against the running app. Route: inline. Done: design/vanguard branch 1cd53f6d (system.md re-synced; audit in L10).
 - T29 [x] — S5: UX audit of the seven destinations. Route: one explorer, then inline. Done: audit in L10.
-- T30 [ ] — S5: design directions on the canvas, owner picks. Route: gentle-design. Commit: pending.
+- T30 [x] — S5: design directions on the canvas, owner picks. Route: gentle-design. Done: decision in L11.
 - T31 [ ] — S5: build the chosen direction in slices. Route: inline per slice. Commit: pending.
 - T32 [ ] — S5: accessibility and speed budgets enforced in CI. Route: inline. Commit: pending.
 
@@ -618,3 +618,17 @@ Not chosen in S2. Each stays open in its own document.
   (≈6), 03 Mapa vivo (≈9). Shared proposed tokens: `--color-control-border`, `--color-warning(-soft)`,
   `--text-caption`, `--motion-spin`, `--motion-shimmer`; corrected `--dim-d`, `--level-yellow`/`--viz-6` light, dark
   `--ink-faint`. axe: 0 violations in both themes. Waiting for the owner to pick a direction.
+- L11 — 2026-11-12. Owner on T30: «me gusta estar en la vanguardia , puedes cuestionar consultando con el modelo fable
+  5.2» and «si tienes dudas puedes inspirarte en como lo estan haciendo los mejores del mundo esta semana , mes de 2026
+  y mas en la web». Fable 5.2 (claude-fable-5-2, read-only on the artboards) recommended a mix: shell and Inicio from 01
+  (attention list first, composer below with two labelled states: «Buscar en registros» while the external model is
+  off, «Preguntar, con citas» when on); Registros and Bandeja on desktop from 02 (36 px table with a side detail);
+  phone lists from 01 (two-line rows, one filter sheet); Territorio from 03 only inside Territorio (list ↔ numbered
+  marker, «sin ubicación» with an action). Not to build: the map as the shell, the filter-grammar parser, saved views,
+  J/K, the 80 px rail, server paging for ~200 rows, loading animations. «Vanguardia» here: state honesty (offline,
+  AI off, IRSA provisional, layer dates), integrity as material (one status family, A–E and four eyes on every row),
+  instant local response (filters and Ctrl+K without waiting, linkable by URL). Web research the same week agreed:
+  claims one click from their rows (DesignRush 2026-11-11), compact lists (GitHub dashboard 2026-11-10), light mode for
+  dense small type, palette shortcuts shown in place (Linear, Raycast). Decision taken by the parent under the owner's
+  delegation: build that mix in seven slices; slice 1 is tokens and states, common to every direction. Also: #401
+  split into the stack #403 → #413; native review approved slices 04 and 09 with advisories, fixed in #413.
