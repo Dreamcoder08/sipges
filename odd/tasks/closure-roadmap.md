@@ -655,3 +655,81 @@ Not chosen in S2. Each stays open in its own document.
   byte-identical; measured on the runner: 867 MB, under half a minute with a warm network; runbook «Paso K»). Still
   owner-side: confirm the laptop commit with `git log --oneline -1`, take the backup, bring two USB drives (or one
   plus `C:\SIPGES-kit-salida`) and network.
+- L15 — Recovery after provider/network interruption. Owner: «continue». T31 delivery slices 3 and 4 are merged
+  as #422 and #423: desktop Registros grid/detail and mobile Todos rows with the Eventos chip fix. Type-specific
+  record screens remain tables on phones; the combined browser run exposed a Territorio actor touch-target failure
+  not established against the base, so it remains unresolved rather than dismissed as pre-existing.
+  The Inicio and Bandeja workers timed out after a stalled shell call. Recovery confirmed both terminal and no
+  matching leftover processes; Inicio has preserved uncommitted edits, Bandeja has none. No surviving evidence
+  establishes checks on those edits. Read-only recovery identified a potential false all-clear while Inicio's
+  digital/IRSA sources load; reproduce and fix before completion. Resumed as two disjoint work units, no commits
+  or publishing by workers, one bounded correction cycle each. Delivery-slice labels 5 (Inicio) and 6
+  (Bandeja/search filters) are execution labels under T31, not additional owner requirements. T31 stays open.
+  Windows rehearsals do not establish readiness of the actual laptop: its backup, exact commit and acceptance
+  remain owner-side and unconfirmed.
+- L16 — T31 recovery verification: Inicio's new checks passed 588 unit tests and focused browser probes. The first
+  parent gate could not start (`corepack` absent, zero tests); installed pnpm ran it. Two task-created `.data/*.tsx`
+  splice files then failed root lint; preserved as text, without weakening lint. The next gate passed, but the full
+  browser suite returned 140 passed, 3 skipped, 2 failed: the new Inicio «Abrir Bandeja» link was 20 px high and
+  Territorio actor controls were 28/21 px. An independent synthetic actor seed and explicit actor selection now
+  reproduce those failures without suite-order dependence, also exposing two 24 px point-card action links.
+  Minimal token-based target-size corrections are under verification; Territorio correction is an early T31
+  slice-7 work unit, separate from Inicio's design commit. No failed check is treated as passed.
+  Bandeja's worker delivered dense rows/detail and real URL-backed palette filters. Parent reproduced two URL
+  defects (removal/restoring the same pendiente and opening with Enter); RED 2 new failures/21 preserved passes,
+  then GREEN 23/23. Formatting corrected and typecheck passed. The initial repository gate passed 598 tests before
+  this correction; the final-candidate gate and full browsers are separate pending evidence. Pending-item A–E
+  data is absent from the API and must not be invented. Unified filter styling and both-theme visual comparison
+  remain open. Neither Inicio nor Bandeja is committed or delivered at this checkpoint.
+- L17 — Subsequent delivery evidence: #424 merged at da3476b2 (Territorio touch targets, independent synthetic
+  actor regression). #425 publishes only the day-summary retry (73 lines, d0f94a9c); its CI/merge wait is still
+  pending. Inicio's complete corrected candidate passed 142 browser tests with 3 optional screenshot skips;
+  integration with current main and explicit light/dark desktop/phone captures then passed the gate and 11
+  focused browser tests. The attention model is committed as 5327ebb6 (113 lines). To keep behavior and tests
+  together, the remaining source is split into an approximately 464-line attention/layout unit and a smaller
+  composer/status unit; the former's first intermediate gate caught a missing node:path import in the phone
+  test, now corrected, with checks pending. The complete verified final files remain preserved locally.
+  Bandeja's full corrected candidate passed 143 browser tests/3 optional skips. Shared chip tint first failed
+  in both themes; its fix exposed a Registros count-opacity contrast regression (18 passed/1 axe failure).
+  Removing that opacity passed the final 19 desktop/mobile/axe probes; theme captures were visually reviewed.
+  #426 publishes only the isolated Bandeja layout (203db0e7, 335 lines/4 files, gate/build and 14 browser probes
+  passed), with CI pending. A following URL-state work unit on feat/bandeja-url is under isolated verification;
+  Ctrl K filters and shared selection styling remain for the next unit. No pending-item A–E data is invented.
+  Engram export was executed but withheld from Git: historical observations contain personal references.
+  The generated chunk and manifest are preserved in ignored .data/engram-review and the tracked manifest is
+  restored to its pre-sync state. This privacy disposition does not erase persistent project memory.
+- L18 — Work-unit boundaries applied (no test stripping): #426 merged at e080dafe after head-bound CI.
+  Inicio model is isolated at a5f576fd (113 lines, #427, independent of #425; gate passed with 587 web tests),
+  attention-first layout at f7c4c436 (465 lines including tests), and honest search/connectivity at 488a8a10
+  (296 lines including tests). The 65-line overage of the coherent layout unit is disclosed rather than
+  splitting tests from behavior or compressing code; its exact preceding integrated candidate passed the
+  gate/build and 9 browser tests/1 optional capture skip. The clean stacked layout and status branches are
+  being verified independently without the unrelated summary retry. These branches supersede publishing
+  the accumulated feat/design-inicio branch (original commit equivalents 5327ebb6/119b64ab/85749a81).
+  A first preparation of the separate Bandeja URL unit accidentally removed the existing Registros context
+  spread while excluding later A–E filter work; typecheck caught it before browser tests. The spread is
+  restored and typecheck passes; full gate/browser checks remain pending, so no URL unit is published yet.
+- L19 — Clean Inicio layout passed its isolated gate/build and 9 browser tests/1 optional capture skip and
+  is published as #428, stacked on #427 (must retarget to main only after #427 merges). Bandeja URL unit
+  passed gate/build and all 15 desktop/mobile probes including Registros regression coverage; published as
+  #429 at 926d3181 (257 lines/4 files). CI is pending. The remaining contextual Ctrl K/filter unit is isolated
+  in feat/bandeja-filter-commands, based on the URL unit: 386 diff lines including tests, real URL consumers
+  for Bandeja categories and Registros verification filters, and accessible shared selection tint. It is
+  being verified independently before commit/publication; original complete source is preserved unchanged.
+- L20 — The clean Inicio status/search unit passed its gate/build and all 11 browser probes with explicit
+  desktop/mobile light/dark captures; desktop-light and phone-dark images were reviewed. Published as #430
+  at 488a8a10, stacked on #428, with the same main-only retarget/CI policy. This does not close T31: #427,
+  #428, #429 and #430 still need their applicable CI/merge outcomes; Ctrl K verification is still pending.
+- L21 — #425 merged at a1e2e9d7: its watcher hung on a stale IN_PROGRESS frozen-Python check whose job and run
+  had both concluded success; merged head-bound to the exact tested head. #427 merged at ce576f8b after CI.
+  #428 was retargeted to main by merging main in (no rewrite); that combined head is re-verified before its
+  own CI/merge. The Ctrl K/filter unit first ran with a nonexistent accessibility spec path, which Playwright
+  silently ignored, so axe had not run; the correct 07-accessibility spec then passed WCAG 2.1 AA in light and
+  dark (4/4 with Bandeja). Published as #431 at c731631b (386 lines/12 files), stacked on #429.
+- L22 — All seven Inicio/Bandeja units merged after CI on their exact heads: #428 24dc7fe4, #429 7b12915d,
+  #430 ffae5863, #431 67508379 (each stacked PR re-verified after merging main in, #430/#431 including axe).
+  Next T31 unit, Territorio list ↔ numbered marker and «Sin ubicación», was implemented by a worker on
+  feat/territorio-list-map (from 24dc7fe4): RED 4 failures, GREEN geography 85/85 and web 602/602, e2e 8/8 plus
+  15 map/3D/hub regressions. ~500 lines, coherent overage disclosed. Limits: no numbers in the Cesium 3D view,
+  WebGL numbers only proven to load without errors, the unplaced group ignores toolbar filters, and coordinates
+  are not editable outside Sechura (the UI says so). Parent gate, PR, CI and merge pending. T31 stays open.
