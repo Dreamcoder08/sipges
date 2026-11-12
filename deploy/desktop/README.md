@@ -139,7 +139,10 @@ through the public API, `snapshot.mjs`; the package built and signed with a thro
 `compare.mjs` (`RESULT: no difference`) and the original folder unchanged; N+1 signed into
 `<root>\releases`, offered, asked for through `POST /system/desktop/update`, compared again; and a
 halt (exit code 3 and the notice). GitHub Actions runs it on `windows-latest`
-(`.github/workflows/windows-desktop.yml`) and uploads the logs. By hand, on another Windows
+(`.github/workflows/windows-desktop.yml`) once per candidate old commit (every clone-mode installer
+from `6d867050` to `main`; a manual run with `old_commit` drills just that one) and uploads the logs.
+The same workflow builds the visit kit with `deploy/desktop/windows/visit-kit.mjs` into a temporary
+folder and installs from it. By hand, on another Windows
 computer or account, never the laptop, with port 8000 free:
 
 ```powershell
@@ -151,7 +154,15 @@ It ends with `DRILL PASSED` (exit 0) or `DRILL FAILED: …` (exit 1). While it r
 SIPGES shortcuts of that account and puts them back at the end, and the old `start.ps1` opens Edge
 once. The scripts come from `git archive HEAD`, as on the visit USB, so uncommitted changes are not
 drilled. `SIPGES_DESKTOP_NO_UI=1` makes the installed `start.ps1` print its messages instead of
-showing a message box and skip Edge; the drill sets it.
+showing a message box and skip Edge; the drill sets it. `install.ps1` and `start-managed.ps1`
+write UTF-8 while they run, so a caller reading their output through a pipe gets the accents as
+typed; the drill checks `SIPGES está instalado`.
+
+The visit USB itself is one command, on Windows, from a clean checkout of the definitive commit:
+`node deploy\desktop\windows\visit-kit.mjs --version <semver> --key K:\<key>.pem --out F:\` builds,
+creates or reuses the signing key, signs, and writes `F:\SIPGES-visita` (the signed release,
+`sipges-scripts.zip`, `fingerprint.txt`, `LEEME.txt`). The runbook
+([desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md)) says when.
 
 ## Back up and restore
 

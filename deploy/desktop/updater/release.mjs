@@ -141,6 +141,17 @@ function validateManifest(manifest) {
       if (path.startsWith(`${link}/`)) throw fail(`path ${path} under link ${link}`);
 }
 
+/**
+ * The SHA-256 of a key's public part (SPKI DER), in hex: what `update.mjs --trust-release-key`
+ * prints at install and what the visit kit writes to fingerprint.txt. Takes a public or private
+ * KeyObject or PEM.
+ */
+export function keyFingerprint(key) {
+  const publicKey = key?.type === 'public' ? key : createPublicKey(key);
+  const der = publicKey.export({ type: 'spki', format: 'der' });
+  return createHash('sha256').update(der).digest('hex');
+}
+
 export function loadPublicKey(pem) {
   let key;
   try {

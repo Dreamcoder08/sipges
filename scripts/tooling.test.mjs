@@ -1208,6 +1208,40 @@ test('the Windows launcher carries the agreed variables and keeps the secrets ou
   assert.ok(clearPassword < start.indexOf("Start-Process -FilePath 'msedge.exe'"));
 });
 
+test('the Windows scripts keep their accents: a UTF-8 BOM, and UTF-8 output before any message', () => {
+  const windows = path.join(desktop, 'windows');
+  const scripts = readdirSync(windows).filter((file) => file.endsWith('.ps1'));
+  assert.deepEqual(scripts.sort(), ['install.ps1', 'start-managed.ps1', 'start.ps1']);
+  // Windows PowerShell 5.1 reads a .ps1 without a BOM in the ANSI code page.
+  for (const file of scripts)
+    assert.deepEqual(
+      [...readFileSync(path.join(windows, file)).subarray(0, 3)],
+      [0xef, 0xbb, 0xbf],
+      `${file} lacks its UTF-8 BOM`,
+    );
+  // Read through a pipe (the drill, a log), Windows PowerShell 5.1 writes in the OEM code page.
+  const utf8 = '[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false';
+  const restore = '[Console]::OutputEncoding = $PreviousOutputEncoding';
+  for (const file of ['windows/install.ps1', 'windows/start-managed.ps1']) {
+    const text = readDesktop(file);
+    const set = text.indexOf(utf8);
+    assert.ok(set > 0, `${file} does not write UTF-8`);
+    for (const output of ['Write-Host', 'Write-Output'])
+      assert.ok(
+        text.indexOf(output) === -1 || set < text.indexOf(output),
+        `${file} sets UTF-8 after its first ${output}`,
+      );
+    assert.ok(text.indexOf('$PreviousOutputEncoding = [Console]::OutputEncoding') < set);
+    assert.ok(text.includes(restore), `${file} does not put the console encoding back`);
+  }
+  assert.ok(
+    readDesktop('windows/install.ps1').includes(
+      'Get-Content -LiteralPath $config -Raw -Encoding UTF8',
+    ),
+    'install.json is UTF-8 without a BOM: read as ANSI, an accented folder never matches',
+  );
+});
+
 test('no desktop file hard-codes a user path or depends on Corepack', () => {
   for (const file of [
     'windows/install.ps1',

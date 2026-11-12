@@ -184,7 +184,10 @@ clave descartable; `install.ps1 -Release … -State <copia>`, `update.mjs --firs
 `start.ps1` instalado, `compare.mjs` (`RESULT: no difference`) y la carpeta original sin cambios;
 N+1 firmada en `<raíz>\releases`, ofrecida, pedida con `POST /system/desktop/update` y comparada
 otra vez; y una detención (código 3 y el mensaje). GitHub Actions lo corre en `windows-latest`
-(`.github/workflows/windows-desktop.yml`) y sube los registros. A mano, en otro equipo o cuenta de
+(`.github/workflows/windows-desktop.yml`) una vez por commit viejo candidato (cada instalador por
+clon de `6d867050` a `main`; a mano con `old_commit`, solo ese) y sube los registros. El mismo
+workflow arma el kit de la visita con `deploy/desktop/windows/visit-kit.mjs` en una carpeta
+temporal e instala desde ella. A mano, en otro equipo o cuenta de
 Windows, nunca en la laptop, con el puerto 8000 libre:
 
 ```powershell
@@ -196,7 +199,15 @@ Termina con `DRILL PASSED` (código 0) o `DRILL FAILED: …` (código 1). Mientr
 accesos directos «SIPGES» de esa cuenta y al final los devuelve, y el `start.ps1` viejo abre Edge una
 vez. Los scripts salen de `git archive HEAD`, como en el USB de la visita: lo que no tiene commit no
 se ensaya. Con `SIPGES_DESKTOP_NO_UI=1` el `start.ps1` instalado escribe sus mensajes en la terminal
-en vez de mostrar un cuadro y no abre Edge; el ensayo lo usa.
+en vez de mostrar un cuadro y no abre Edge; el ensayo lo usa. `install.ps1` y `start-managed.ps1`
+escriben UTF-8 mientras corren, así que quien lee su salida por una tubería recibe los acentos como
+se escribieron; el ensayo comprueba `SIPGES está instalado`.
+
+El USB de la visita es un solo comando, en Windows, desde un clon limpio del commit definitivo:
+`node deploy\desktop\windows\visit-kit.mjs --version <semver> --key K:\<clave>.pem --out F:\` construye,
+crea o reutiliza la clave de firma, firma y escribe `F:\SIPGES-visita` (la versión firmada,
+`sipges-scripts.zip`, `fingerprint.txt`, `LEEME.txt`). Cuándo, lo dice el runbook
+([desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md)).
 
 ## Respaldar y restaurar
 
