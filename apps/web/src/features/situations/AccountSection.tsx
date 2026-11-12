@@ -7,7 +7,7 @@ import {
 } from '@sipges/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { requestJson } from '../../shared/api/client.ts';
+import { isApiError, requestJson } from '../../shared/api/client.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import { formatDateTime } from '../../shared/lib/text.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
@@ -44,6 +44,8 @@ const othersEnded = (count: number) =>
 type Pending =
   { readonly kind: 'one'; readonly session: SessionSummary } | { readonly kind: 'others' };
 
+type Notice = { readonly tone: 'success' | 'info'; readonly text: string };
+
 /**
  * Cuenta (compact-sidebar S7): who is signed in and where. SIPGES records no device or address,
  * so a session is told apart by when it started and how. This device is signed out from the
@@ -66,7 +68,8 @@ export const AccountSection = ({
     queryFn: ({ signal }) => requestJson('/system/auth/sessions', SessionList, { scope, signal }),
   });
   const [pending, setPending] = useState<Pending | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const reload = () => cache.invalidateQueries({ queryKey: sessionsKey(scope) });
   const end = useMutation({
     mutationFn: async (target: Pending): Promise<string> => {
       if (target.kind === 'one') {
@@ -85,8 +88,16 @@ export const AccountSection = ({
     onMutate: () => setNotice(null),
     onSuccess: async (text) => {
       setPending(null);
-      setNotice(text);
-      await cache.invalidateQueries({ queryKey: sessionsKey(scope) });
+      setNotice({ tone: 'success', text });
+      await reload();
+    },
+    onError: async (error, target) => {
+      // The row was stale: that session already ended elsewhere. Drop it instead of keeping a
+      // dialog about a session that no longer exists.
+      if (target.kind !== 'one' || !isApiError(error, 404)) return;
+      setPending(null);
+      setNotice({ tone: 'info', text: 'Esa sesión ya estaba cerrada.' });
+      await reload();
     },
   });
   const ask = (target: Pending) => {
@@ -191,7 +202,7 @@ export const AccountSection = ({
             );
           }}
         </QueryState>
-        {notice ? <Alert tone="success">{notice}</Alert> : null}
+        {notice ? <Alert tone={notice.tone}>{notice.text}</Alert> : null}
       </Card>
     </>
   );
