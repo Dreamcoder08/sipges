@@ -29,7 +29,19 @@ const SELF_SERVICE_POSTS = new Set([
   '/system/notifications/push',
   '/system/notifications/push/unsubscribe',
   '/system/notifications/push/test',
+  // Signing one's own other devices out (Cuenta).
+  '/system/auth/sessions/revoke-others',
 ]);
+
+const OWN_SESSIONS = '/system/auth/sessions/';
+
+/** Personal writes any role may make: the posts above, and ending one of one's own sessions. */
+const isSelfService = (method: string, path: string) =>
+  SELF_SERVICE_POSTS.has(path) ||
+  (method === 'DELETE' &&
+    path.startsWith(OWN_SESSIONS) &&
+    path.length > OWN_SESSIONS.length &&
+    !path.slice(OWN_SESSIONS.length).includes('/'));
 
 const COORDINATOR_WRITABLE = ['/system/prevention/', '/system/intelligence/territorial-alerts'];
 
@@ -60,7 +72,7 @@ export const checkRoleAccess = (role: Role, method: string, path: string): Acces
   if (path.startsWith('/api/proyectos') && !isRead && !isAdmin) {
     return deny('Solo el administrador puede gestionar proyectos');
   }
-  if (!isRead && !READ_ONLY_POSTS.has(path) && !SELF_SERVICE_POSTS.has(path)) {
+  if (!isRead && !READ_ONLY_POSTS.has(path) && !isSelfService(method, path)) {
     if (role === 'consulta') return deny('Rol de consulta: solo lectura');
     if (role === 'coordinador' && !COORDINATOR_WRITABLE.some((prefix) => path.startsWith(prefix))) {
       return deny('Operación restringida para coordinador');

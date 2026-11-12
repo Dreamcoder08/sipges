@@ -115,7 +115,11 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
     within(nav)
       .getAllByRole('link')
       .map((link) => link.textContent),
-  ).toEqual(['Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones']);
+  ).toEqual(['Cuenta', 'Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones']);
+  expect(within(nav).getByRole('link', { name: 'Cuenta' })).toHaveAttribute(
+    'href',
+    '/version-4?seccion=cuenta',
+  );
   expect(within(nav).getByRole('link', { name: 'Apariencia' })).toHaveAttribute(
     'aria-current',
     'page',
@@ -156,6 +160,31 @@ it('keeps the section nav working without a router', async () => {
   expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
 });
 
+it('shows Cuenta with the signed-in user and the active sessions', async () => {
+  server.use(
+    http.get('*/system/auth/sessions', () =>
+      HttpResponse.json({
+        sessions: [
+          {
+            id: 'a'.repeat(32),
+            created_at: '2026-11-12T11:00:00Z',
+            expires_at: '2026-11-12T19:00:00Z',
+            method: 'password',
+            current: true,
+          },
+        ],
+      }),
+    ),
+  );
+  renderPage('consulta', 'cuenta');
+  expect(screen.getByRole('heading', { name: 'Cuenta' })).toBeInTheDocument();
+  expect(screen.getByText('Admin Demo')).toBeInTheDocument();
+  expect(await screen.findByText('Este dispositivo')).toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(within(nav).getByRole('link', { name: 'Cuenta' })).toHaveAttribute('aria-current', 'page');
+  expect(screen.queryByRole('group', { name: 'Tema' })).not.toBeInTheDocument();
+});
+
 it('shows only the notification preference that exists today: this device', () => {
   renderPage('consulta', 'notificaciones', {
     notifications: <p>Recibir avisos en este dispositivo</p>,
@@ -167,7 +196,8 @@ it('shows only the notification preference that exists today: this device', () =
 
 it('accepts only known sections in the URL', () => {
   expect(settingsSearch.parse({ seccion: 'privacidad' })).toEqual({ seccion: 'privacidad' });
-  expect(settingsSearch.parse({ seccion: 'cuenta' })).toEqual({ seccion: undefined });
+  expect(settingsSearch.parse({ seccion: 'cuenta' })).toEqual({ seccion: 'cuenta' });
+  expect(settingsSearch.parse({ seccion: 'facturacion' })).toEqual({ seccion: undefined });
   expect(settingsSearch.parse({ seccion: 7 })).toEqual({ seccion: undefined });
   expect(settingsSearch.parse({})).toEqual({ seccion: undefined });
 });

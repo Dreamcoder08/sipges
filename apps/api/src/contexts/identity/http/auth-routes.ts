@@ -4,6 +4,9 @@ import {
   LoginForm,
   type LoginResponse,
   type Me,
+  type SessionEnded,
+  type SessionList,
+  type SessionsRevoked,
   TotpEnableRequest,
 } from '@sipges/contracts';
 import { Hono } from 'hono';
@@ -137,6 +140,48 @@ export const authRoutes = (deps: {
         return c.json({ detail }, status);
       }
       return c.json({ ok: true, username: c.req.param('username').trim().toLowerCase() });
+    })
+
+    .get('/system/auth/sessions', async (c) => {
+      // Cuenta: the caller's own sessions only (compact-sidebar S7). Ids are opaque.
+      const sessions = await identity.listSessions(
+        c.get('identity').username,
+        c.get('sessionToken'),
+      );
+      return c.json({
+        sessions: sessions.map((s) => ({
+          id: s.id,
+          created_at: isoSeconds(s.createdAt),
+          expires_at: isoSeconds(s.expiresAt),
+          method: s.viaGoogle ? 'google' : 'password',
+          current: s.current,
+        })),
+      } satisfies SessionList);
+    })
+
+    .post('/system/auth/sessions/revoke-others', async (c) => {
+      const count = await identity.endOtherSessions(
+        c.get('identity'),
+        c.get('sessionToken'),
+        formatScope(c.get('scope')),
+      );
+      return c.json({ ok: true, count } satisfies SessionsRevoked);
+    })
+
+    .delete('/system/auth/sessions/:id', async (c) => {
+      const result = await identity.endSession(
+        c.get('identity'),
+        c.get('sessionToken'),
+        c.req.param('id'),
+        formatScope(c.get('scope')),
+      );
+      if (!result.ok) return c.json({ detail: 'Sesión inexistente' }, 404);
+      // Ending this device's session is a logout.
+      if (result.value.current) {
+        clearAuthCookie(c, SESSION_COOKIE, cookieSecure);
+        clearAuthCookie(c, SCOPE_COOKIE, cookieSecure);
+      }
+      return c.json({ ok: true, current: result.value.current } satisfies SessionEnded);
     })
 
     .post('/system/auth/totp/setup', async (c) => {

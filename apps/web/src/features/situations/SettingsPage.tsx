@@ -12,6 +12,7 @@ import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
+import { AccountSection } from './AccountSection.tsx';
 import { AppearanceSection } from './AppearanceSection.tsx';
 import { ExternalAiCard } from './ExternalAiCard.tsx';
 import { LocationCard } from './LocationCard.tsx';
@@ -41,12 +42,14 @@ type SettingsPageProps = FeatureContext & {
 
 /**
  * Configuración as one settings screen with a section list, like Claude's settings
- * (docs/adr/0018, docs/adr/0020): Apariencia, Proyecto, Privacidad y datos and Notificaciones.
- * One section shows at a time and each one has its own URL.
+ * (docs/adr/0018, docs/adr/0020): Cuenta, Apariencia, Proyecto, Privacidad y datos and
+ * Notificaciones. One section shows at a time and each one has its own URL.
  */
 export const SettingsPage = ({
   scope,
   role,
+  username,
+  fullName,
   section,
   onNavigate,
   notifications,
@@ -62,6 +65,9 @@ export const SettingsPage = ({
         onSection={(next) => (onNavigate ? onNavigate(settingsHref(next)) : setLocal(next))}
       />
       <div className={layout.content}>
+        {current === 'cuenta' ? (
+          <AccountSection scope={scope} username={username} fullName={fullName} role={role} />
+        ) : null}
         {current === 'apariencia' ? <AppearanceSection /> : null}
         {current === 'proyecto' || current === 'privacidad' ? (
           <ProjectSettingsSection

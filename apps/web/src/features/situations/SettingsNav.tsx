@@ -3,6 +3,7 @@ import { type SettingsSection, settingsHref } from './sections.ts';
 import styles from './SettingsPage.module.css';
 
 export const SECTION_LABELS: Readonly<Record<SettingsSection, string>> = {
+  cuenta: 'Cuenta',
   apariencia: 'Apariencia',
   proyecto: 'Proyecto',
   privacidad: 'Privacidad y datos',

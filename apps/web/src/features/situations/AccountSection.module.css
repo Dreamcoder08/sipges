@@ -1,0 +1,74 @@
+.identity {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.identity div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.identity dt {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.identity dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin: 0 0 var(--space-3);
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.sessions {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+/* Phone first: details above the action; side by side once there is room. */
+.session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+}
+
+.details {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title,
+.meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+
+.current {
+  display: inline-block;
+  margin-right: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-tint);
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
