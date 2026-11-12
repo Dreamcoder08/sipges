@@ -451,6 +451,18 @@
   font-weight: 700;
 }
 
+@media (pointer: coarse) {
+  .linkButton,
+  .sheetActions a {
+    min-height: var(--touch-target);
+  }
+
+  .sheetActions a {
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
 .evolution {
   display: grid;
   gap: var(--space-3);
