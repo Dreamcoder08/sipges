@@ -82,7 +82,8 @@
   font-variant-numeric: tabular-nums;
   opacity: 0.75;
 }
-/* One row: search, A–E, validation; density and the count at the right end. */
+/* One row: search and «Filtros»; density and the count at the right end. On a phone the search
+   shares its row with «Filtros» and density with the count: two rows before the list. */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -90,8 +91,8 @@
   gap: var(--space-3);
 }
 .search {
-  flex: 0 1 17rem;
-  min-width: min(12rem, 100%);
+  flex: 1 1 10rem;
+  max-width: 20rem;
 }
 .search label {
   position: absolute;
@@ -105,11 +106,6 @@
   width: 100%;
   border-radius: var(--radius-pill);
   padding-left: var(--space-4);
-}
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
 }
 .toolbarEnd {
   display: flex;
@@ -234,25 +230,6 @@
 .typeChip svg {
   font-size: var(--text-sm);
   color: var(--color-muted);
-}
-.status {
-  display: inline-block;
-  padding: var(--space-0) var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--tone-neutral-bg);
-  color: var(--tone-neutral-fg);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-  line-height: var(--leading-snug);
-  white-space: nowrap;
-}
-.status[data-validation='Validado'] {
-  background: var(--tone-positive-bg);
-  color: var(--tone-positive-fg);
-}
-.status[data-validation='En revisión'] {
-  background: var(--tone-warning-bg);
-  color: var(--tone-warning-fg);
 }
 .ver {
   display: inline-grid;

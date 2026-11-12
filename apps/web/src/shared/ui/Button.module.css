@@ -63,12 +63,12 @@
 
 .secondary {
   background: var(--color-surface);
-  border-color: var(--color-hairline-strong);
+  border-color: var(--color-control-border);
   color: var(--color-text);
 }
 
 .secondary:hover:not(:disabled) {
-  border-color: var(--color-hairline-strong);
+  border-color: var(--color-control-border);
   background: var(--color-fill);
 }
 

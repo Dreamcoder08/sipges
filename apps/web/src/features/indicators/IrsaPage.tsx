@@ -68,11 +68,6 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   <IrsaPendingBadge status={config.data?.status} />
                 </p>
               ) : null}
-              <Alert tone="info">{data.status}</Alert>
-              <p>Versión de configuración: {data.config_version}</p>
-              {data.notes.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
               <div className={styles.split}>
                 <div className={styles.radar}>
                   <RadarChart
@@ -109,10 +104,19 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   </table>
                 </div>
               </div>
-              <p>
-                La disponibilidad mide cuántos indicadores son calculables; no representa precisión
-                científica.
-              </p>
+              {/* The badge above is the one caveat; how the index is computed waits here. */}
+              <details>
+                <summary>Cómo se calcula</summary>
+                <p>{data.status}</p>
+                <p>Versión de configuración: {data.config_version}</p>
+                {data.notes.map((note) => (
+                  <p key={note}>{note}</p>
+                ))}
+                <p>
+                  La disponibilidad mide cuántos indicadores son calculables; no representa
+                  precisión científica.
+                </p>
+              </details>
               <details>
                 <summary>Factores que explican el índice</summary>
                 {data.drivers.length ? (

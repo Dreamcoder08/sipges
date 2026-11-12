@@ -103,17 +103,33 @@ const luminance = ([r, g, b]: Rgba) => {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 };
 
+/** Follows `var(--alias)` to the colour it names, so aliases are checked like their targets. */
+const resolve = (theme: Record<string, string>, name: string): string => {
+  const value = theme[name] ?? name;
+  const alias = /^var\((--[a-z0-9-]+)\)$/.exec(value);
+  return alias?.[1] ? resolve(theme, alias[1]) : value;
+};
+
 const contrast = (
   theme: Record<string, string>,
   fg: string,
   bg: string,
   base = '--color-surface',
 ) => {
-  const colour = (name: string) => parseColour(theme[name] ?? name);
+  const colour = (name: string) => parseColour(resolve(theme, name));
   const ground = over(colour(bg), colour(base));
   const ink = over(colour(fg), ground);
   const [hi, lo] = [luminance(ink), luminance(ground)].sort((a, b) => b - a) as [number, number];
   return (hi + 0.05) / (lo + 0.05);
+};
+
+/** The ratio, or NaN when a token is missing or unparsable, so the failure names the pair. */
+const ratio = (theme: Record<string, string>, fg: string, bg: string) => {
+  try {
+    return contrast(theme, fg, bg);
+  } catch {
+    return Number.NaN;
+  }
 };
 
 const light = values(block(/^:root \{([\s\S]*?)^\}/m));
@@ -157,8 +173,13 @@ const TEXT_PAIRS: [string, string][] = [
   ['--heat-orange-on', '--heat-orange'],
   ['--heat-red-on', '--heat-red'],
   ['--color-on-strong', '--level-red'],
+  ['--color-on-strong', '--dim-d'],
+  ['--color-success', '--color-success-soft'],
+  ['--tone-warning-fg', '--color-warning-soft'],
   ['--ink-strong', '--canvas'],
   ['--ink-soft', '--canvas'],
+  // The ground the artboards measured for faint diagram ink (#161618 in dark).
+  ['--ink-faint', '--color-surface-raised'],
 ];
 
 /** Interface marks (focus ring, accent, selected tab): 3:1 against the surface. */
@@ -168,7 +189,35 @@ const UI_PAIRS: [string, string][] = [
   ['--color-brand', '--color-surface'],
   ['--color-primary', '--color-bg'],
   ['--map-ink', '--map-land'],
+  // Edges of inputs, selects, textareas and secondary buttons, on the page and on fills.
+  ['--color-control-border', '--color-bg'],
+  ['--color-control-border', '--color-surface'],
+  ['--color-control-border', '--color-fill'],
+  ['--color-warning', '--color-surface'],
+  ['--level-yellow', '--color-surface'],
+  ['--viz-6', '--color-surface'],
 ];
+
+/** Literals that have a token: the pill radius, the touch target, stacking and spinner timing. */
+const RETIRED_LITERAL = /\b999px\b|\b44px\b|z-index:\s*\d{3}|animation:[^;]*\b\d*\.?\d+m?s\b/;
+
+const retiredLiteralOffenders = (entries: [string, string][]) =>
+  entries
+    .filter(([path]) => !RAW_COLOUR_ALLOWED.has(path))
+    .flatMap(([path, css]) =>
+      css
+        .split('\n')
+        .map((line, index) => ({ line, index }))
+        .filter(({ line }) => RETIRED_LITERAL.test(line) && !/^\s*(\/\*|\*)/.test(line))
+        .map(({ line, index }) => `${path}:${index + 1} ${line.trim()}`),
+    );
+
+/** The value a selector gives a property in a stylesheet, or undefined. */
+const declared = (css: string, selector: string, property: string) => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rule = new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]*)\\}`).exec(css)?.[1] ?? '';
+  return new RegExp(`(?:^|;|\\s)${property}:\\s*([^;]+);`).exec(rule)?.[1]?.trim();
+};
 
 describe('design tokens', () => {
   it('keeps raw colours out of modules', () => {
@@ -245,6 +294,58 @@ describe('design tokens', () => {
     expect(light['--touch-target']).toBe('2.75rem');
   });
 
+  it('defines the caption size, spinner and shimmer timing and the warning alias', () => {
+    expect(light['--text-caption']).toBe('0.75rem');
+    expect(light['--motion-spin']).toBe('800ms');
+    expect(light['--motion-shimmer']).toBe('1400ms');
+    expect(light['--color-warning']).toBe('var(--tone-warning-solid)');
+    expect(light['--color-warning-soft']).toBe('var(--tone-warning-bg)');
+    expect(resolve(dark, '--color-warning')).toBe('#c99a3a');
+  });
+
+  it('keeps the corrected mark colours: darker in light, unchanged in dark', () => {
+    expect(light['--dim-d']).toBe('#92600f');
+    expect([light['--level-yellow'], light['--viz-6']]).toEqual(['#a87a12', '#a87a12']);
+    expect([dark['--level-yellow'], dark['--viz-6']]).toEqual(['#d69e2e', '#d69e2e']);
+    expect([light['--color-control-border'], dark['--color-control-border']]).toEqual([
+      '#858585',
+      '#707075',
+    ]);
+    expect(dark['--ink-faint']).toBe('#8f8f8f');
+  });
+
+  it('edges form controls and secondary buttons with --color-control-border', () => {
+    const global = sheets['/app/styles/global.css'] ?? '';
+    const button = sheets['/shared/ui/Button.module.css'] ?? '';
+    expect(declared(global, 'input,\nselect,\ntextarea', 'border')).toBe(
+      '1px solid var(--color-control-border)',
+    );
+    expect(declared(button, '.secondary', 'border-color')).toBe('var(--color-control-border)');
+  });
+
+  it('stacks the confirmation dialog on tokens above sheets', () => {
+    const dialog = sheets['/shared/ui/ConfirmDialog.module.css'] ?? '';
+    expect(declared(dialog, '.backdrop', 'z-index')).toBe('var(--z-dialog)');
+    expect(declared(dialog, '.dialog', 'z-index')).toBe('calc(var(--z-dialog) + 1)');
+    expect(Number(light['--z-dialog'])).toBeGreaterThan(Number(light['--z-skip']));
+    expect(Number(light['--z-skip'])).toBeGreaterThan(Number(light['--z-modal']));
+  });
+
+  it('uses the token instead of 999px, 44px, three-digit z-index or literal animation timing', () => {
+    expect(retiredLiteralOffenders(Object.entries(sheets))).toEqual([]);
+    expect(
+      retiredLiteralOffenders([
+        ['/x.module.css', '.a { border-radius: 999px; }\n/* 44px target */\n.b { z-index: 100; }'],
+        ['/y.module.css', '.c { animation: spin 0.8s linear infinite; }\n.d { z-index: 2; }'],
+        ['/z.module.css', '.e { animation: spin var(--motion-spin) linear infinite; }'],
+      ]),
+    ).toEqual([
+      '/x.module.css:1 .a { border-radius: 999px; }',
+      '/x.module.css:3 .b { z-index: 100; }',
+      '/y.module.css:1 .c { animation: spin 0.8s linear infinite; }',
+    ]);
+  });
+
   it('only redefines tokens that exist in the light theme', () => {
     const unknown = Object.keys(values(darkPicked)).filter((name) => !(name in light));
     expect(unknown).toEqual([]);
@@ -255,15 +356,15 @@ describe('design tokens', () => {
     ['dark', dark],
   ] as const) {
     it(`keeps AA text contrast in the ${name} theme`, () => {
-      const failing = TEXT_PAIRS.map(([fg, bg]) => [fg, bg, contrast(theme, fg, bg)] as const)
-        .filter(([, , ratio]) => ratio < 4.5)
+      const failing = TEXT_PAIRS.map(([fg, bg]) => [fg, bg, ratio(theme, fg, bg)] as const)
+        .filter(([, , ratio]) => !(ratio >= 4.5))
         .map(([fg, bg, ratio]) => `${fg} on ${bg}: ${ratio.toFixed(2)}`);
       expect(failing).toEqual([]);
     });
 
     it(`keeps 3:1 contrast for interface marks in the ${name} theme`, () => {
-      const failing = UI_PAIRS.map(([fg, bg]) => [fg, bg, contrast(theme, fg, bg)] as const)
-        .filter(([, , ratio]) => ratio < 3)
+      const failing = UI_PAIRS.map(([fg, bg]) => [fg, bg, ratio(theme, fg, bg)] as const)
+        .filter(([, , ratio]) => !(ratio >= 3))
         .map(([fg, bg, ratio]) => `${fg} on ${bg}: ${ratio.toFixed(2)}`);
       expect(failing).toEqual([]);
     });

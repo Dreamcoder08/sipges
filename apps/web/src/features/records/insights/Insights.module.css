@@ -30,7 +30,7 @@
   padding: 0.4rem 0.8rem;
   background: var(--color-accent-tint);
   color: var(--color-brand-text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-base);
   font-weight: 700;
 }
@@ -322,7 +322,7 @@
 }
 .actorAside select {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--touch-target);
 }
 .actorList {
   max-height: 34rem;
@@ -345,7 +345,7 @@
 }
 .position {
   justify-self: start;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.25rem 0.65rem;
 }
 .favor {

@@ -180,7 +180,7 @@
 }
 
 .round {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 /* Narrative categories (trend chart). Lines take the stroke, dots and swatches the fill. */

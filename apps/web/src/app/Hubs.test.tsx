@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -376,6 +376,20 @@ describe('Inicio hub', () => {
     await user.type(composer, '   {Enter}');
     expect(screen.queryByRole('dialog')).toBeNull();
     await user.type(composer, 'agua{Enter}');
+    expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
+  });
+
+  it('does not send while an input method is still composing the question', async () => {
+    const user = await open();
+    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    await user.type(composer, 'agua');
+    // Chromium and Firefox flag the confirming Enter as composing; Safari reports keyCode 229.
+    for (const init of [{ isComposing: true }, { keyCode: 229 }]) {
+      expect(fireEvent.keyDown(composer, { key: 'Enter', ...init })).toBe(false);
+      expect(screen.queryByRole('dialog')).toBeNull();
+    }
+    expect(composer).toHaveValue('agua');
+    await user.type(composer, '{Enter}');
     expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
   });
 

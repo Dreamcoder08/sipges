@@ -1,9 +1,8 @@
 import type { ModuleRecord } from '@sipges/contracts';
+import { StatusBadge, type StatusTone } from '../../shared/ui/Badges.tsx';
 import { fieldValue, isCompactField } from './model.ts';
 import type { RecordField, RecordModule } from './modules.ts';
 import styles from './Records.module.css';
-
-type Tone = 'negative' | 'warning' | 'info' | 'positive' | 'neutral';
 
 /**
  * A request's progress is derived from its status, never stored, so it cannot drift from it.
@@ -19,7 +18,7 @@ const DEMAND_PROGRESS: Readonly<Record<string, number>> = {
 export const demandProgress = (status: string): number | undefined => DEMAND_PROGRESS[status];
 
 /** Colour of a priority or status pill; the text always carries the meaning. */
-const TONES: Readonly<Record<string, Tone>> = {
+const TONES: Readonly<Record<string, StatusTone>> = {
   Crítica: 'negative',
   Alta: 'warning',
   Media: 'info',
@@ -62,11 +61,7 @@ export const RecordCell = ({ module, row, field }: Props) => {
   const value = fieldValue(row, field);
   if (!value) return <>—</>;
   if (PILL_FIELDS.has(field.key))
-    return (
-      <span className={styles.pill} data-tone={TONES[value] ?? 'neutral'}>
-        {value}
-      </span>
-    );
+    return <StatusBadge tone={TONES[value] ?? 'neutral'}>{value}</StatusBadge>;
   return <>{value}</>;
 };
 
