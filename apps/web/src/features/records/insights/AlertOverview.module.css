@@ -135,7 +135,7 @@
 }
 .pill {
   padding: 0.15rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   font-weight: 700;
   background: var(--color-track);

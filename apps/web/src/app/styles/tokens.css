@@ -39,6 +39,8 @@
   --color-fill-hover: #ececec;
   --color-hairline: #ececec;
   --color-hairline-strong: #d9d9d9;
+  /* Edges of inputs, selects, textareas and secondary buttons: 3:1 on the page and on fills. */
+  --color-control-border: #858585;
   --color-scrim: rgb(0 0 0 / 0.35);
   --color-chrome: rgb(255 255 255 / 0.85);
   /* Scrollbar thumb on an invisible track: quiet at rest, firmer under the pointer. */
@@ -51,7 +53,7 @@
   --color-danger-soft: #fdecec;
   --color-info: #2b6cb0;
   --color-info-soft: #e8f1fb;
-  --color-success: #2f855a;
+  --color-success: #247b55;
   --color-success-soft: #e6f5ec;
 
   --tone-positive-bg: #d7ebdf;
@@ -66,6 +68,9 @@
   --tone-warning-bg: #f8ebc6;
   --tone-warning-fg: #6d4c0b;
   --tone-warning-solid: #8a6115;
+  /* One «aviso»: the warning mark and its background, aliases of the warning tone. */
+  --color-warning: var(--tone-warning-solid);
+  --color-warning-soft: var(--tone-warning-bg);
   --tone-neutral-bg: #e9edf3;
   --tone-neutral-fg: #485265;
   --tone-neutral-solid: #68758b;
@@ -75,7 +80,7 @@
 
   /* ---------- Risk levels (semáforo) ---------- */
   --level-green: #2f855a;
-  --level-yellow: #d69e2e;
+  --level-yellow: #a87a12;
   --level-orange: #dd6b20;
   --level-red: #c53030;
   --level-green-soft: #e6f5ec;
@@ -99,7 +104,7 @@
   /* ---------- Data visualisation ---------- */
   --dim-g: #2b6cb0;
   --dim-a: #6b46c1;
-  --dim-d: #b7791f;
+  --dim-d: #92600f;
   --dim-n: #c05621;
   --dim-e: #2f855a;
   --dim-i: #4a5568;
@@ -118,7 +123,7 @@
   --viz-3: #dd6b20;
   --viz-4: #805ad5;
   --viz-5: #c53030;
-  --viz-6: #d69e2e;
+  --viz-6: #a87a12;
   --viz-7: #319795;
   --viz-8: #5b6673;
   /* Diagram ink: strokes, labels and node fills drawn on a light canvas. */
@@ -195,6 +200,8 @@
 
   --text-2xs: 0.625rem;
   --text-xs: 0.6875rem;
+  /* Metadata under a row or a value. */
+  --text-caption: 0.75rem;
   --text-sm: 0.8125rem;
   --text-base: 0.875rem;
   --text-md: 0.9375rem;
@@ -238,6 +245,9 @@
   --motion-fast: 120ms;
   --motion-medium: 220ms;
   --motion-slow: 360ms;
+  /* Loading loops: one spinner turn and one skeleton sweep. */
+  --motion-spin: 800ms;
+  --motion-shimmer: 1400ms;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   /* The curve iOS uses for sheets: fast start, long soft landing, no overshoot. */
@@ -252,6 +262,8 @@
   --z-popover: 40;
   --z-modal: 60;
   --z-skip: 70;
+  /* A confirmation can open over a sheet, so it stacks above every other layer. */
+  --z-dialog: 80;
 
   --sidebar-width: 15.5rem;
 }
@@ -293,6 +305,7 @@
     --color-fill-hover: #1f1f22;
     --color-hairline: #1c1c1f;
     --color-hairline-strong: #323236;
+    --color-control-border: #707075;
     --color-scrim: rgb(0 0 0 / 0.7);
     --color-chrome: rgb(0 0 0 / 0.78);
     --color-scrollbar: rgb(255 255 255 / 0.16);
@@ -332,13 +345,15 @@
     --level-orange-text: #f8c29a;
     --level-red-text: #ffb4b8;
 
+    --level-yellow: #d69e2e;
+    --viz-6: #d69e2e;
     --viz-8: #8f8f8f;
     --trend-i: #a3a3a3;
 
     --ink-strong: #ececec;
     --ink: #d4d4d4;
     --ink-soft: #8f8f8f;
-    --ink-faint: #7a7a7a;
+    --ink-faint: #8f8f8f;
     --canvas: #050505;
     --canvas-node: #161618;
     --canvas-halo: #000000;
@@ -412,6 +427,7 @@
   --color-fill-hover: #1f1f22;
   --color-hairline: #1c1c1f;
   --color-hairline-strong: #323236;
+  --color-control-border: #707075;
   --color-scrim: rgb(0 0 0 / 0.7);
   --color-chrome: rgb(0 0 0 / 0.78);
   --color-scrollbar: rgb(255 255 255 / 0.16);
@@ -451,13 +467,15 @@
   --level-orange-text: #f8c29a;
   --level-red-text: #ffb4b8;
 
+  --level-yellow: #d69e2e;
+  --viz-6: #d69e2e;
   --viz-8: #8f8f8f;
   --trend-i: #a3a3a3;
 
   --ink-strong: #ececec;
   --ink: #d4d4d4;
   --ink-soft: #8f8f8f;
-  --ink-faint: #7a7a7a;
+  --ink-faint: #8f8f8f;
   --canvas: #050505;
   --canvas-node: #161618;
   --canvas-halo: #000000;

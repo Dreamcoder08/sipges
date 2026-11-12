@@ -519,7 +519,7 @@
 .handle span {
   width: 2.5rem;
   height: 0.3rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--color-border);
 }
 .sheetClose {
