@@ -97,7 +97,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await settled();
       if (href === '/territorio') {
-        await page.getByRole('button', { name: new RegExp(actorName) }).click();
+        await page
+          .getByRole('list', { name: 'Registros en el mapa' })
+          .getByRole('button', { name: new RegExp(actorName) })
+          .click();
         await expect(page.getByRole('link', { name: actorName, exact: true })).toBeVisible();
         await settled();
       }
