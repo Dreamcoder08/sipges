@@ -56,7 +56,7 @@ Phase 1, desktop (the nearest real use; does not depend on the cloud):
   verifier. Done: PR #401 (`rehearse.mjs e490339c` → no difference; rerun with the T27 commit).
 - T35 [x] — S6: shortcuts start the managed launcher; the halt reaches the user. Route: worker, then verifier.
   Done: PR #401 (Linux; Windows static only).
-- T34 [ ] — S6: the visit, by a written runbook. Route: owner on the laptop. Commit: pending (runbook).
+- T34 [x] — S6: the visit, by a written runbook. Route: owner on the laptop. Done: runbook docs/deployment/desktop-visit.es.md, PR #401 (91cdbc7c).
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
 
@@ -70,11 +70,10 @@ Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
 
 Phase 3, interface (no external blocker; fills gaps between the other phases):
 
-- T16 [ ] — S2: close Territorio and Análisis as tabbed views (workspace-architecture T5). Route: inline. Commit:
-  pending.
-- T17 [ ] — S2: reconcile Configuración by sections (compact-sidebar T4). Route: inline. Commit: pending.
+- T16 [x] — S2: close Territorio and Análisis as tabbed views (workspace-architecture T5). Route: inline. Done: PR #402.
+- T17 [x] — S2: reconcile Configuración by sections (compact-sidebar T4). Route: inline. Done: PR #402 (remainder: Cuenta section, owner decides).
 - T18 [ ] — S2: mobile visual pass and compact-sidebar T2. Route: inline. Commit: pending.
-- T19 [ ] — S2: one source for the IRSA pending-badge text. Route: inline. Commit: pending.
+- T19 [x] — S2: one source for the IRSA pending-badge text. Route: inline. Done: PR #402.
 
 Phase 4, real data and owner decisions:
 
@@ -601,3 +600,10 @@ Not chosen in S2. Each stays open in its own document.
   through `run-current.mjs` after the last boot change (the rehearsal started it through the launcher), the laptop
   commit (T27). Native review of PR #401 refused: the candidate exceeds the reviewer context budget
   (`lens_context_budget_exceeded`); it must be split into smaller PRs to be reviewed natively.
+- L9 — 2026-11-12. T16–T19 by a worker on `feat/interface-closure`, draft PR #402: tabs pinned by tests; old routes
+  stay deep links (decision: same as Registros and Bandeja, since a redirect changes headings, notification links and
+  e2e assertions); Configuración matches S7 except Cuenta (active sessions, sign out everywhere), which needs identity
+  API work; touch targets raised to 44 px on touch screens; one IRSA pending badge. Playwright ran locally with
+  synthetic data: chromium 89 passed, mobile 46 passed. T18 stays open until the owner reviews the 360 px screenshots
+  in `.worktrees/interface/.data/mobile-pass/after/`. T34 runbook written (453 lines); its ⚠ commands were never run on
+  Windows, and it needs the T27 answers.
