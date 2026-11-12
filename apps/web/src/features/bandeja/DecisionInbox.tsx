@@ -13,6 +13,7 @@ import {
 } from '../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
+import { StatusBadge, type StatusTone } from '../../shared/ui/Badges.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { Icon } from '../../shared/ui/Icon.tsx';
@@ -260,6 +261,13 @@ export const DecisionInbox = ({
       </div>
       <div className={styles.inbox} data-open={open}>
         <section className={styles.list} aria-label="Pendientes">
+          <p className={styles.columns} aria-hidden="true">
+            <span className={styles.colTitle}>Pendiente</span>
+            <span className={styles.colKind}>Tipo</span>
+            <span className={styles.colPlace}>Referencia</span>
+            <span className={styles.colAge}>Espera</span>
+            <span className={styles.colState}>Cuatro ojos</span>
+          </p>
           <div
             ref={listRef}
             className={styles.listbox}
@@ -333,6 +341,20 @@ export const DecisionInbox = ({
   );
 };
 
+/** The four-eyes state of a high-priority alert, from the same rule the detail explains. */
+const fourEyesBadge = (item: PendingItem): [string, StatusTone] | null => {
+  if (item.kind !== 'alerta' || !item.fourEyes.required) return null;
+  if (!item.fourEyes.firstValidator) return ['Cuatro ojos', 'info'];
+  return item.fourEyes.canDecide
+    ? ['Falta confirmar', 'warning']
+    : ['Primera validación tuya', 'neutral'];
+};
+
+/**
+ * One pending item. Below 1024 px two lines (title and wait; type, reference and four-eyes
+ * state), like the Registros phone rows; from 1024 px one 36 px row whose cells line up as
+ * columns (closure-roadmap T31, directions 01 and 02).
+ */
 const Option = ({
   id,
   item,
@@ -348,33 +370,22 @@ const Option = ({
 }) => {
   const kind = KIND_INFO[item.kind];
   const age = ageLabel(item.since, now);
-  const pill =
-    item.kind === 'alerta' && item.fourEyes.required
-      ? item.fourEyes.firstValidator
-        ? item.fourEyes.canDecide
-          ? 'Falta confirmar'
-          : 'Primera validación tuya'
-        : 'Cuatro ojos'
-      : null;
+  const badge = fourEyesBadge(item);
   return (
     // The listbox owns focus and keyboard; clicking is the pointer way to choose an option.
     <div id={id} role="option" aria-selected={selected} className={styles.item} onClick={onChoose}>
       <Icon name={kind.icon} />
       <span className={styles.title}>{item.title}</span>
-      <span className={styles.age}>{age ?? ''}</span>
       <span className={styles.meta}>
-        <span>{kind.singular}</span>
-        <span>
+        <span className={styles.colKind}>{kind.singular}</span>
+        <span className={styles.colPlace}>
           {item.ref}
           {item.where ? ` · ${item.where}` : ''}
         </span>
-        {pill ? (
-          <span
-            className={`${styles.pill} ${pill === 'Primera validación tuya' ? styles.pillMine : ''}`}
-          >
-            {pill}
-          </span>
-        ) : null}
+      </span>
+      <span className={styles.age}>{age ?? ''}</span>
+      <span className={styles.state}>
+        {badge ? <StatusBadge tone={badge[1]}>{badge[0]}</StatusBadge> : null}
       </span>
     </div>
   );
