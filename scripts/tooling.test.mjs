@@ -1641,15 +1641,98 @@ test('the Windows installer in managed mode takes a state folder and refuses a d
   assert.ok(install.includes('-State solo sirve con -Release'));
   assert.ok(
     install.includes(
-      'tiene una base de datos pero falta su data-key o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.',
+      'tiene una base de datos pero falta su $missing o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.',
     ),
   );
   // The check runs before the updater installs anything or a secret is created.
   const managed = install.slice(install.indexOf('function Install-Managed'));
-  const guard = managed.indexOf('Test-DatabaseWithoutKey');
+  const guard = managed.indexOf('Get-MissingSecret');
   assert.ok(guard > 0 && guard < managed.indexOf("update.mjs')"), 'guard before the install');
   assert.ok(guard < managed.indexOf('Initialize-State'), 'guard before any secret is created');
   assert.ok(install.includes('primer arranque la copia al lado'));
+});
+
+test('T33/T35: managed rerun refuses a different explicit state folder', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    assert.equal(exec(linuxInstaller, ['--managed', release]).status, 0);
+    const config = path.join(home, '.local/share/sipges-app/install.json');
+    const before = readFileSync(config, 'utf8');
+    const other = path.join(home, 'other-state');
+    const result = exec(linuxInstaller, ['--managed', release], { SIPGES_DESKTOP_STATE: other });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.equal(readFileSync(config, 'utf8'), before);
+    assert.equal(existsSync(other), false);
+    assert.ok(
+      result.stderr.includes(
+        `esta instalación usa la carpeta de datos ${realpathSync(state)}, no ${other}:`,
+      ),
+      result.stderr,
+    );
+    // The recorded folder, named again or left implicit, is still accepted.
+    for (const extra of [{}, { SIPGES_DESKTOP_STATE: state }]) {
+      const again = exec(linuxInstaller, ['--managed', release], extra);
+      assert.equal(again.status, 0, again.stderr);
+      assert.ok(again.stdout.includes(`${realpathSync(state)}/admin-password`), again.stdout);
+    }
+    assert.equal(readFileSync(config, 'utf8'), before);
+  }));
+
+test('T33: managed installer refuses a database without its admin-password', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    mkdirSync(path.join(state, 'pglite'), { recursive: true });
+    writeFileSync(path.join(state, 'pglite/PG_VERSION'), 'synthetic\n');
+    writeFileSync(path.join(state, 'data-key'), 'sentinel-key');
+    const before = readdirSync(state).sort();
+    for (const password of [null, ' \n']) {
+      if (password !== null) writeFileSync(path.join(state, 'admin-password'), password);
+      const expected = password === null ? before : [...before, 'admin-password'].sort();
+      const result = exec(linuxInstaller, ['--managed', release]);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.ok(
+        result.stderr.includes(
+          `la carpeta de datos ${state} tiene una base de datos pero falta su admin-password o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.`,
+        ),
+        result.stderr,
+      );
+      assert.deepEqual(readdirSync(state).sort(), expected);
+      assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+      if (password === null) assert.equal(existsSync(path.join(state, 'admin-password')), false);
+      else assert.equal(readFileSync(path.join(state, 'admin-password'), 'utf8'), password);
+      assert.equal(existsSync(path.join(home, '.local/share/sipges-app')), false);
+    }
+  }));
+
+test('T33/T35: the Windows installer refuses another state folder on a rerun and a database without its admin password', () => {
+  const install = readDesktop('windows/install.ps1');
+  const managed = install.slice(install.indexOf('function Install-Managed'));
+  // A database needs both secrets: the check names each missing one.
+  assert.ok(install.includes("foreach ($name in 'data-key', 'admin-password')"));
+  assert.ok(
+    install.includes(
+      'tiene una base de datos pero falta su $missing o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.',
+    ),
+  );
+  // A rerun reads the recorded folder and refuses another one given with -State.
+  assert.ok(install.includes("Join-Path $AppRoot 'install.json'"));
+  assert.ok(
+    install.includes(
+      'Esta instalación usa la carpeta de datos $recorded, no ${State}: vuelve a ejecutar el script sin -State o con -State $recorded; no se cambió nada.',
+    ),
+  );
+  const recordedCheck = managed.indexOf('Get-RecordedState');
+  const databaseCheck = managed.indexOf('Get-MissingSecret');
+  for (const [name, at] of [
+    ['recorded state', recordedCheck],
+    ['database secrets', databaseCheck],
+  ]) {
+    assert.ok(at > 0, `${name} check missing`);
+    assert.ok(at < managed.indexOf('New-Item -ItemType Directory -Path $AppRoot'), `${name} first`);
+    assert.ok(at < managed.indexOf("update.mjs')"), `${name} before the install`);
+    assert.ok(at < managed.indexOf('Initialize-State'), `${name} before any secret`);
+  }
+  assert.ok(recordedCheck < databaseCheck, 'the recorded folder is chosen before it is checked');
 });
 
 /** The managed launcher script copied into a root, as the installer leaves it. */

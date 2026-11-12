@@ -14,6 +14,7 @@ HERE=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 REPO=$(cd "$HERE/../../.." && pwd)
 LAUNCHER="$HERE/sipges-desktop.sh"
 UPDATER="$HERE/../updater"
+STATE_GIVEN=${SIPGES_DESKTOP_STATE:-}
 STATE=${SIPGES_DESKTOP_STATE:-$HOME/.local/share/sipges-local}
 DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 APP_ROOT=${SIPGES_DESKTOP_ROOT:-$DATA_HOME/sipges-app}
@@ -64,6 +65,16 @@ has_entries() {
   return 1
 }
 
+# True when the file exists and holds something besides blanks.
+has_text() {
+  [ -f "$1" ] && [ -n "$(tr -d ' \t\r\n' <"$1")" ]
+}
+
+# The folder's real path when it exists, otherwise the name as given.
+real_dir() {
+  if [ -d "$1" ]; then (cd "$1" && pwd -P); else printf '%s\n' "$1"; fi
+}
+
 # Managed mode. Nothing is written before every check passed; the state folder is never moved,
 # overwritten or deleted: only missing secrets are created, as in clone mode.
 install_managed() {
@@ -74,10 +85,24 @@ install_managed() {
   if curl -fsS --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
     die "SIPGES is running on this computer (port $PORT): close it, end its node process or restart, and run this script again."
   fi
+  # A rerun keeps the state folder the install recorded: another one would be prepared and named
+  # here while SIPGES keeps opening the recorded one.
+  if [ -f "$APP_ROOT/install.json" ]; then
+    recorded=$(node -p 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).stateDir' "$APP_ROOT/install.json") ||
+      die "no se pudo leer $APP_ROOT/install.json; no se cambió nada."
+    if [ -n "$STATE_GIVEN" ] && [ "$(real_dir "$STATE")" != "$recorded" ]; then
+      die "esta instalación usa la carpeta de datos $recorded, no $STATE: vuelve a ejecutar el script sin SIPGES_DESKTOP_STATE o con SIPGES_DESKTOP_STATE=$recorded; no se cambió nada."
+    fi
+    STATE=$recorded
+  fi
   # An existing database keeps its own key: a new one would leave its sealed values unreadable.
-  if has_entries "$STATE/pglite" &&
-    { [ ! -f "$STATE/data-key" ] || [ -z "$(tr -d ' \t\r\n' <"$STATE/data-key")" ]; }; then
+  if has_entries "$STATE/pglite" && ! has_text "$STATE/data-key"; then
     die "the state folder $STATE holds a database but its data-key is missing or empty: restore it from your backup of that folder and run this script again; nothing was changed."
+  fi
+  # Nor a new admin password: the database keeps the account made with the old one, so a new
+  # file would be printed as the password while it opens nothing.
+  if has_entries "$STATE/pglite" && ! has_text "$STATE/admin-password"; then
+    die "la carpeta de datos $STATE tiene una base de datos pero falta su admin-password o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada."
   fi
   had_state=no
   [ ! -e "$STATE" ] || had_state=yes

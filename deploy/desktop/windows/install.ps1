@@ -18,6 +18,7 @@ if ($State -and -not $Release) {
     Write-Host '-State solo sirve con -Release (instalación gestionada).' -ForegroundColor Red
     exit 1
 }
+$StateGiven = [bool]$State
 if (-not $State) { $State = Join-Path $env:LOCALAPPDATA 'SIPGES' }
 $State = [System.IO.Path]::GetFullPath($State)
 $AppRoot = Join-Path $env:LOCALAPPDATA 'SIPGES-app'
@@ -98,15 +99,28 @@ function Initialize-State {
     Save-Secret (Join-Path $State 'admin-password') $password
 }
 
-# An existing database keeps its own key: a new one would leave its sealed values unreadable.
-function Test-DatabaseWithoutKey {
+# The secret an existing database lacks (missing or blank), or $null. A new data key would leave
+# its sealed values unreadable; a new admin password would be named while the database keeps the
+# account made with the old one.
+function Get-MissingSecret {
     $pglite = Join-Path $State 'pglite'
-    if (-not (Test-Path -LiteralPath $pglite -PathType Container)) { return $false }
-    if (-not (Get-ChildItem -LiteralPath $pglite -Force | Select-Object -First 1)) { return $false }
-    $key = Join-Path $State 'data-key'
-    $value = $null
-    if (Test-Path -LiteralPath $key) { $value = Get-Content -LiteralPath $key -Raw }
-    return [string]::IsNullOrWhiteSpace($value)
+    if (-not (Test-Path -LiteralPath $pglite -PathType Container)) { return $null }
+    if (-not (Get-ChildItem -LiteralPath $pglite -Force | Select-Object -First 1)) { return $null }
+    foreach ($name in 'data-key', 'admin-password') {
+        $path = Join-Path $State $name
+        $value = $null
+        if (Test-Path -LiteralPath $path) { $value = Get-Content -LiteralPath $path -Raw }
+        if ([string]::IsNullOrWhiteSpace($value)) { return $name }
+    }
+    return $null
+}
+
+# The state folder an earlier managed install recorded (its real path), or $null.
+function Get-RecordedState {
+    $config = Join-Path $AppRoot 'install.json'
+    if (-not (Test-Path -LiteralPath $config)) { return $null }
+    try { return (Get-Content -LiteralPath $config -Raw | ConvertFrom-Json).stateDir }
+    catch { Stop-Install "No se pudo leer ${config}; no se cambió nada." }
 }
 
 function New-Shortcuts([string]$Start, [string]$WorkingDirectory, [string]$Icon) {
@@ -136,8 +150,22 @@ function Install-Managed {
     if (Test-Server) {
         Stop-Install 'SIPGES está abierto en este equipo: ciérralo (termina el proceso node o reinicia el equipo) y vuelve a ejecutar este script.'
     }
-    if (Test-DatabaseWithoutKey) {
-        Stop-Install "La carpeta de datos $State tiene una base de datos pero falta su data-key o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada."
+    # A rerun keeps the state folder the install recorded: another one would be prepared and
+    # named here while SIPGES keeps opening the recorded one.
+    $recorded = Get-RecordedState
+    if ($recorded) {
+        $given = $State
+        if (Test-Path -LiteralPath $State -PathType Container) {
+            $given = (& node -p "require('fs').realpathSync.native(process.argv[1])" $State) -join ''
+        }
+        if ($StateGiven -and ($given -ne $recorded)) {
+            Stop-Install "Esta instalación usa la carpeta de datos $recorded, no ${State}: vuelve a ejecutar el script sin -State o con -State $recorded; no se cambió nada."
+        }
+        $script:State = $recorded
+    }
+    $missing = Get-MissingSecret
+    if ($missing) {
+        Stop-Install "La carpeta de datos $State tiene una base de datos pero falta su $missing o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada."
     }
     $hadState = (Test-Path -LiteralPath $State) -and -not (Test-Path -LiteralPath (Join-Path $AppRoot 'first-start.json'))
     if (-not (Test-Path -LiteralPath $AppRoot)) { New-Item -ItemType Directory -Path $AppRoot | Out-Null }
