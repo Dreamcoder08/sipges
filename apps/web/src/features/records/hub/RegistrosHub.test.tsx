@@ -29,6 +29,10 @@ const rows = {
   ],
   [`${SCOPE}/actores`]: [{ _id: 'A-1', 'Nombre_Actor/Organizacion': 'Federación de Pescadores' }],
   [`${SCOPE}/demandas`]: [{ _id: 'D-1', Descripcion: 'Revisar la zona de exclusión' }],
+  // Compromisos live under the Demandas tab (its sub-toggle), not as a chip of their own.
+  [`${SCOPE}/compromisos`]: [
+    { _id: 'C-1', Descripcion: 'Instalar la mesa técnica', Demanda_Asociada: 'D-1' },
+  ],
 };
 
 const renderHub = (
@@ -572,6 +576,93 @@ describe('a type tab below 1024 px', () => {
     expect(sheet).toHaveAttribute('aria-modal', 'true');
     expect(await within(sheet).findByText('Mancha en la playa', { selector: 'dd' })).toBeVisible();
     expect(await typeList('eventos')).toBeInTheDocument();
+  });
+});
+
+/** Compromisos are a sub-list of the Demandas tab: they open as compromisos, not as demandas. */
+describe('a compromiso under the Demandas tab', () => {
+  const original = window.matchMedia;
+  const width = (phone: boolean) => {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes(phone ? 'width < 64rem' : 'min-width: 64rem'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+  };
+  afterEach(() => {
+    window.matchMedia = original;
+  });
+
+  it('opens its own record from «Ver» on desktop and names it in the URL', async () => {
+    width(false);
+    const user = userEvent.setup();
+    const onFicha = vi.fn();
+    renderHub('demandas', vi.fn(), 'admin', { onFicha });
+    await user.click(await screen.findByRole('button', { name: 'Compromisos' }));
+    await user.click(await screen.findByRole('button', { name: 'Ver C-1' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha C-1' });
+    expect(
+      await within(sheet).findByText('Instalar la mesa técnica', { selector: 'dd' }),
+    ).toBeVisible();
+    expect(within(sheet).getByRole('link', { name: 'Abrir ficha completa' })).toHaveAttribute(
+      'href',
+      '/objeto/compromisos/C-1',
+    );
+    expect(onFicha).toHaveBeenLastCalledWith('compromisos.C-1');
+  });
+
+  it('opens its own record from its two-line row on a phone', async () => {
+    width(true);
+    const user = userEvent.setup();
+    const onFicha = vi.fn();
+    renderHub('demandas', vi.fn(), 'admin', { onFicha });
+    await user.click(await screen.findByRole('button', { name: 'Compromisos' }));
+    const list = await screen.findByRole('list', {
+      name: 'Registros de compromisos del proyecto activo',
+    });
+    await user.click(within(list).getByRole('button', { name: /^Abrir C-1:/ }));
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha C-1' });
+    expect(
+      await within(sheet).findByText('Instalar la mesa técnica', { selector: 'dd' }),
+    ).toBeVisible();
+    expect(onFicha).toHaveBeenLastCalledWith('compromisos.C-1');
+  });
+
+  it('reopens the compromiso the URL names over the Compromisos sub-list, so a reload keeps it', async () => {
+    width(true);
+    renderHub('demandas', vi.fn(), 'admin', { ficha: 'compromisos.C-1' });
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha C-1' });
+    expect(
+      await within(sheet).findByText('Instalar la mesa técnica', { selector: 'dd' }),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Compromisos' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: /^Demandas/, pressed: true })).toBeInTheDocument();
+  });
+
+  it('still reopens a demanda the URL names as a demanda, on the Demandas sub-list', async () => {
+    width(true);
+    renderHub('demandas', vi.fn(), 'admin', { ficha: 'demandas.D-1' });
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha D-1' });
+    expect(
+      await within(sheet).findByText('Revisar la zona de exclusión', { selector: 'dd' }),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Compromisos' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('ignores a ficha whose type the hub does not show', async () => {
+    width(true);
+    renderHub('demandas', vi.fn(), 'admin', { ficha: 'acciones.C-1' });
+    expect(
+      await screen.findByRole('list', { name: 'Registros de demandas del proyecto activo' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
 

@@ -110,3 +110,37 @@ for (const colorScheme of ['light', 'dark'] as const) {
     }
   });
 }
+
+/** A compromiso under the Demandas tab: a row tap opens it as a compromiso and `?ficha=` keeps it. */
+test('Registros opens a compromiso row of the Demandas tab as its own record on a phone', async ({
+  page,
+  admin,
+}) => {
+  await page.setViewportSize({ width: WIDTHS[0], height: 800 });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  const stamp = Date.now();
+  const id = `C-T-${stamp}`;
+  const description = `Compromiso sintético de mesa técnica ${stamp}`;
+  const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+  const created = await page.request.post('/api/compromisos', {
+    headers,
+    data: { payload: { ID_Compromiso: id, Descripcion: description, Estado: 'Pendiente' } },
+  });
+  expect(created.status(), await created.text()).toBe(200);
+
+  await page.goto('/registros?tipo=demandas');
+  const compromisos = page.getByRole('button', { name: 'Compromisos', exact: true });
+  await compromisos.tap();
+  await search(page, stamp);
+  await page
+    .getByRole('list', { name: 'Registros de compromisos del proyecto activo' })
+    .getByRole('button', { name: new RegExp(`^Abrir ${id}: `) })
+    .tap();
+  const sheet = page.getByRole('dialog', { name: `Ficha ${id}` });
+  await expect(sheet.getByText(description).first()).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`tipo=demandas.*ficha=compromisos\\.${id}`));
+  await page.reload();
+  await expect(sheet.getByText(description).first()).toBeVisible();
+  await expect(compromisos).toHaveAttribute('aria-pressed', 'true');
+  await expectFits(page, 'Compromiso sheet at 360px');
+});
