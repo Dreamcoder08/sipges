@@ -102,6 +102,16 @@ versión de SIPGES», «Actualizar»).
   si se le da otra (`-State` o `SIPGES_DESKTOP_STATE`).
 - El registro es `launcher.log` en la raíz, no en la carpeta de estado: una actualización copia esa
   carpeta y puede moverla mientras SIPGES corre.
+- SIPGES nunca borra las copias al lado de la carpeta de estado (`.pre-update-…`, `.rehearsal-…`,
+  `.failed-…`). Cada arranque anota en `launcher.log` cuántas hay y cuánto ocupan
+  (`"stateCopies":{"count":…,"bytes":…}` en la línea `started`). Para verlas:
+  `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --copies`. Para borrar las
+  de más de 30 días (cualquier número entero de días):
+  `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --remove-copies-older-than 30`.
+  Nunca borra la copia previa a la actualización más reciente (lo dice con `Kept …`) y se niega
+  mientras una actualización quedó a medias (abajo). Respalda antes: lo borrado no vuelve.
+- Cerrar SIPGES (Ctrl+C o SIGTERM) espera hasta 15 s a que el servidor se detenga bien; un segundo
+  Ctrl+C o SIGTERM lo detiene en el acto (código de salida 1, `stop_forced` en `launcher.log`).
 
 ### Si una actualización se detiene a medias
 
