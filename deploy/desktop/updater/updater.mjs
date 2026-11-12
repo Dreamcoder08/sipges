@@ -11,18 +11,22 @@ import {
   appendFile,
   copyFile,
   cp,
+  link,
   lstat,
   mkdir,
   open,
   readFile,
   readdir,
   readlink,
+  realpath,
   rename,
   rm,
+  statfs as fsStatfs,
   symlink,
   writeFile,
 } from 'node:fs/promises';
-import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, posix, resolve } from 'node:path';
+import { clearInterval, setInterval } from 'node:timers';
 import { setTimeout as sleep } from 'node:timers/promises';
 import process from 'node:process';
 import {
@@ -61,6 +65,14 @@ const LOG = 'update.log';
 const VERSIONS = 'versions';
 // The state may already have been changed by the migration in these journal phases.
 const STATE_AT_RISK = new Set(['migrating', 'switched', 'restoring']);
+// A running update rewrites its lock this often; a lock not rewritten for LOCK_STALE_MS is
+// left by a process that is gone, even when its pid now belongs to another program.
+const LOCK_HEARTBEAT_MS = 10_000;
+const LOCK_STALE_MS = 120_000;
+// Files hashed at once when a release is checked before it is offered.
+const HASH_CONCURRENCY = 16;
+// Room counted per file or folder of the state on top of its bytes (file system blocks).
+const ENTRY_OVERHEAD_BYTES = 4096;
 
 async function exists(path) {
   try {
@@ -133,6 +145,9 @@ async function freeName(base) {
 
 /** A complete copy or nothing at the target name: copy under `.partial`, then rename. */
 async function copyTree(source, target) {
+  // Copying a link would copy the link, not the data: the "copy" would follow the live folder.
+  if (!(await lstat(source)).isDirectory())
+    throw refuse(`The state folder ${source} is a link; record the real folder instead`);
   const partial = `${target}.partial`;
   await rm(partial, { recursive: true, force: true });
   try {
@@ -168,29 +183,107 @@ const alive = (pid) => {
   }
 };
 
+async function readLock(path) {
+  try {
+    const [text, info] = await Promise.all([readFile(path, 'utf8'), lstat(path)]);
+    let held = null;
+    try {
+      held = JSON.parse(text);
+    } catch {
+      held = null;
+    }
+    return { text, held, mtimeMs: info.mtimeMs };
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+/**
+ * A lock is stale when its heartbeat (or, for an unreadable one, its file time) is older than
+ * LOCK_STALE_MS, whatever its pid, or when its process is gone.
+ */
+function lockIsStale({ held, mtimeMs }) {
+  const beat = Date.parse(held?.heartbeat ?? held?.time ?? '');
+  const last = Number.isFinite(beat) ? beat : mtimeMs;
+  if (Date.now() - last > LOCK_STALE_MS) return true;
+  return Boolean(held) && Number.isInteger(held.pid) && !alive(held.pid);
+}
+
+/** Moves a stale lock aside; if another process replaced it meanwhile, puts that one back. */
+async function takeOver(path, found) {
+  const aside = `${path}.stale-${randomUUID()}`;
+  try {
+    await renameRetry(path, aside);
+  } catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw error;
+  }
+  const moved = await readFile(aside, 'utf8').catch(() => null);
+  if (moved !== found.text) {
+    await link(aside, path).catch(() => {});
+    await rm(aside, { force: true });
+    throw new UpdateError('BUSY', 'Another update took the lock');
+  }
+  await rm(aside, { force: true });
+}
+
+/**
+ * The lock is created complete or not at all: the full content is written to a temp file and
+ * hard-linked to the lock name, which fails when the name exists. While held, a heartbeat
+ * rewrites it; release removes it only while it still carries this run's token.
+ */
 async function lock(root) {
   const path = join(root, LOCK);
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  const token = randomUUID();
+  const body = () =>
+    JSON.stringify({ format: 2, pid: process.pid, token, heartbeat: new Date().toISOString() });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const temporary = `${path}.${token}.tmp`;
+    await writeFile(temporary, body(), { flag: 'wx', mode: 0o600 });
+    let created = false;
     try {
-      const handle = await open(path, 'wx', 0o600);
-      try {
-        await handle.writeFile(
-          JSON.stringify({ pid: process.pid, time: new Date().toISOString() }),
-        );
-      } finally {
-        await handle.close();
-      }
-      return async () => rm(path, { force: true });
+      await link(temporary, path);
+      created = true;
     } catch (error) {
       if (error.code !== 'EEXIST') throw error;
-      const held = await readJson(path).catch(() => null);
-      if (held && alive(held.pid))
-        throw new UpdateError('BUSY', `Another update is running (process ${held.pid})`);
-      // The process that held it is gone: a crashed update. The journal decides what to undo.
-      await rm(path, { force: true });
+    } finally {
+      await rm(temporary, { force: true });
     }
+    if (created) return holdLock(path, token, body);
+    const found = await readLock(path);
+    if (!found) continue;
+    if (!lockIsStale(found))
+      throw new UpdateError(
+        'BUSY',
+        Number.isInteger(found.held?.pid)
+          ? `Another update is running (process ${found.held.pid})`
+          : 'Another update is starting',
+      );
+    // A crashed update: the journal decides what to undo.
+    await takeOver(path, found);
   }
   throw new UpdateError('BUSY', 'Could not take the update lock');
+}
+
+function holdLock(path, token, body) {
+  let beating = Promise.resolve();
+  const timer = setInterval(() => {
+    beating = (async () => {
+      const current = await readLock(path);
+      if (current?.held?.token !== token) return clearInterval(timer);
+      const temporary = `${path}.${randomUUID()}.tmp`;
+      await writeFile(temporary, body(), { flag: 'wx', mode: 0o600 });
+      await renameRetry(temporary, path);
+    })().catch(() => {});
+  }, LOCK_HEARTBEAT_MS);
+  timer.unref();
+  return async () => {
+    clearInterval(timer);
+    await beating;
+    const current = await readLock(path).catch(() => null);
+    if (current?.held?.token === token) await rm(path, { force: true });
+  };
 }
 
 function pointerDir(root, pointer) {
@@ -254,6 +347,66 @@ async function stateDirOf(root) {
   return config.stateDir;
 }
 
+/**
+ * The real path of a state folder: a link (or Windows junction) is resolved, so the pre-update
+ * copy holds the data and not a second way into the live folder. A folder not created yet (the
+ * launcher prepares it) is resolved through its parent.
+ */
+async function canonicalState(stateDir) {
+  try {
+    return await realpath(stateDir);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  try {
+    return join(await realpath(dirname(stateDir)), basename(stateDir));
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    return stateDir;
+  }
+}
+
+/**
+ * Refuses a state folder that cannot be copied faithfully (a link, or a link or special file
+ * inside) and an update without room beside it for the copies it takes: the pre-update copy,
+ * one restore and, for an adopted install, the rehearsal copy. Nothing is written.
+ */
+async function checkStateRoom(stateDir, copies, statfs) {
+  let info;
+  try {
+    info = await lstat(stateDir);
+  } catch (error) {
+    if (error.code === 'ENOENT') throw refuse(`The state folder does not exist: ${stateDir}`);
+    throw error;
+  }
+  if (info.isSymbolicLink())
+    throw refuse(`The state folder ${stateDir} is a link; record the real folder instead`);
+  if (!info.isDirectory()) throw refuse(`The state folder is not a folder: ${stateDir}`);
+  let bytes = 0;
+  let entries = 1;
+  const walk = async (dir, prefix) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const path = join(dir, entry.name);
+      entries += 1;
+      if (entry.isDirectory()) await walk(path, rel);
+      else if (entry.isFile()) bytes += (await lstat(path)).size;
+      else
+        throw refuse(
+          `The state folder holds a link or special file (${rel}); it cannot be copied safely`,
+        );
+    }
+  };
+  await walk(stateDir, '');
+  const needed = copies * (bytes + entries * ENTRY_OVERHEAD_BYTES);
+  const disk = await statfs(dirname(stateDir));
+  const free = Number(disk.bavail) * Number(disk.bsize);
+  if (free < needed)
+    throw refuse(
+      `Not enough free disk beside the state folder for the pre-update copy and one restore: ${needed} bytes needed, ${free} free`,
+    );
+}
+
 function checkStateDir(root, stateDir) {
   if (typeof stateDir !== 'string' || !isAbsolute(stateDir))
     throw refuse('The state folder must be an absolute path');
@@ -303,12 +456,63 @@ function checkTarget(current, manifest) {
     );
 }
 
+function compareLists(found, expected) {
+  const actual = [...found];
+  const wanted = new Set(expected);
+  for (const path of [...actual].sort())
+    if (!wanted.has(path))
+      throw refuse(`The release package does not match its manifest: unlisted ${path}`);
+  const present = new Set(actual);
+  for (const path of [...expected].sort())
+    if (!present.has(path))
+      throw refuse(`The release package does not match its manifest: missing ${path}`);
+}
+
+/** The package's file, link and folder lists equal the signed ones. Returns the scan. */
+async function checkPackageLists(source, manifest) {
+  try {
+    if (!(await lstat(source)).isDirectory()) throw refuse('The release package is not a folder');
+  } catch (error) {
+    if (error.code === 'ENOENT') throw refuse('The release has no package folder');
+    throw error;
+  }
+  const scan = await scanTree(source);
+  compareLists(scan.files.keys(), Object.keys(manifest.files));
+  compareLists(scan.links.keys(), Object.keys(manifest.links));
+  compareLists(scan.directories, manifest.directories);
+  return scan;
+}
+
+/** The version a package says it is must be the version that was signed. */
+async function checkMetadata(dir, manifest) {
+  const metadata = await readJson(join(dir, 'metadata.json')).catch(() => null);
+  if (metadata?.version !== manifest.version)
+    throw refuse(
+      `metadata.json says ${metadata?.version ?? 'nothing'} but the signed release is ${manifest.version}`,
+    );
+}
+
+/** Every file of the package hashed in place against the signed list, nothing copied. */
+async function checkPackage(releaseDir, manifest) {
+  const source = join(releaseDir, 'package');
+  const scan = await checkPackageLists(source, manifest);
+  const entries = Object.entries(manifest.files);
+  for (let i = 0; i < entries.length; i += HASH_CONCURRENCY)
+    await Promise.all(
+      entries.slice(i, i + HASH_CONCURRENCY).map(async ([rel, hash]) => {
+        if ((await hashFile(scan.files.get(rel))) !== hash)
+          throw refuse(`File does not match the signed release: ${rel}`);
+      }),
+    );
+  await checkMetadata(source, manifest);
+}
+
 /**
  * The newest release in `source` that `update` would accept, verified the same way (signature
- * with the installed key, newer version, minimum previous, platform) but without copying
- * anything: only `release.json` and `release.sig` are read. `source` is one release directory
- * or a directory of them. Refused candidates are listed in `skipped`; an install without an
- * update key is refused as a whole (updates disabled).
+ * with the installed key, newer version, minimum previous, platform, every file hash and the
+ * package version) but without copying anything. `source` is one release directory or a
+ * directory of them. Refused candidates are listed in `skipped`; an install without an update
+ * key is refused as a whole (updates disabled).
  */
 export async function findUpdate({ root, source }) {
   root = resolve(root);
@@ -328,6 +532,8 @@ export async function findUpdate({ root, source }) {
     try {
       const { manifest } = await readRelease(release, key);
       checkTarget(current, manifest);
+      if (available && compareVersions(manifest.version, available.version) <= 0) continue;
+      await checkPackage(release, manifest);
       if (!available || compareVersions(manifest.version, available.version) > 0)
         available = { version: manifest.version, notes: manifest.notes ?? null, release };
     } catch (error) {
@@ -347,21 +553,7 @@ async function stage(root, releaseDir, verified) {
   const final = join(versions, manifest.version);
   const source = join(releaseDir, 'package');
   try {
-    const scan = await scanTree(source);
-    const compare = (found, expected) => {
-      const actual = [...found];
-      const wanted = new Set(expected);
-      for (const path of [...actual].sort())
-        if (!wanted.has(path))
-          throw refuse(`The release package does not match its manifest: unlisted ${path}`);
-      const present = new Set(actual);
-      for (const path of [...expected].sort())
-        if (!present.has(path))
-          throw refuse(`The release package does not match its manifest: missing ${path}`);
-    };
-    compare(scan.files.keys(), Object.keys(manifest.files));
-    compare(scan.links.keys(), Object.keys(manifest.links));
-    compare(scan.directories, manifest.directories);
+    const scan = await checkPackageLists(source, manifest);
     await mkdir(staging, { mode: 0o700 });
     for (const directory of manifest.directories)
       await mkdir(join(staging, ...directory.split('/')), { recursive: true });
@@ -383,6 +575,7 @@ async function stage(root, releaseDir, verified) {
           throw refuse(`Link was not created as signed: ${rel}`);
       }
     }
+    await checkMetadata(staging, manifest);
     await writeFile(join(staging, MANIFEST), verified.bytes, { flag: 'wx' });
     await writeFile(join(staging, SIGNATURE), verified.signature, { flag: 'wx' });
     return { staging, final };
@@ -425,10 +618,33 @@ async function undo(root, journal) {
   await rm(join(root, JOURNAL), { force: true });
 }
 
+function rollbackIncomplete(message, preCopy) {
+  const error = new UpdateError(
+    'ROLLBACK_INCOMPLETE',
+    `${message}. Do not start SIPGES on this state folder: run --recover to retry, or restore it from the pre-update copy: ${preCopy}`,
+  );
+  error.preUpdateCopy = preCopy;
+  return error;
+}
+
 async function recoverLocked(root) {
   const journal = await readJson(join(root, JOURNAL));
   if (!journal) return false;
-  await undo(root, journal);
+  try {
+    await undo(root, journal);
+  } catch (undoError) {
+    await log(root, {
+      event: 'rollback-incomplete',
+      from: journal.to.version,
+      to: journal.from.version,
+      phase: journal.phase,
+      error: undoError.message,
+    }).catch(() => {});
+    throw rollbackIncomplete(
+      `An interrupted update to ${journal.to.version} could not be rolled back (${undoError.message})`,
+      journal.preCopy,
+    );
+  }
   await log(root, {
     event: 'recovered',
     from: journal.to.version,
@@ -460,6 +676,8 @@ export async function install({ root, release, stateDir, trustKey }) {
     if (await readCurrent(root)) throw refuse('A version is already installed; use update');
     if (trustKey === undefined) throw refuse('The first install needs --trust-key');
     checkStateDir(root, stateDir);
+    stateDir = await canonicalState(stateDir);
+    checkStateDir(root, stateDir);
     const verified = await readRelease(release, loadPublicKey(trustKey));
     checkTarget(null, verified.manifest);
     await commitStaging(root, await stage(root, release, verified), new Date());
@@ -473,7 +691,8 @@ export async function install({ root, release, stateDir, trustKey }) {
   }
 }
 
-async function adoptLegacy(root, { dir, stateDir }, trustKey) {
+/** Checks an old plain package for adoption; nothing is recorded until its release verified. */
+async function checkAdoption(root, { dir, stateDir }, trustKey) {
   dir = resolve(dir);
   const metadata = await readJson(join(dir, 'metadata.json')).catch(() => null);
   if (!isVersion(metadata?.version) || !(await exists(join(dir, 'start.mjs'))))
@@ -481,18 +700,38 @@ async function adoptLegacy(root, { dir, stateDir }, trustKey) {
   if (inside(join(root, VERSIONS), dir)) throw refuse('The old install must be outside versions/');
   checkStateDir(root, stateDir);
   if (!(await exists(stateDir))) throw refuse(`The state folder does not exist: ${stateDir}`);
+  stateDir = await canonicalState(stateDir);
+  checkStateDir(root, stateDir);
+  const existing = await readJson(join(root, INSTALL));
+  if (existing && existing.stateDir !== stateDir)
+    throw refuse(`This install already uses the state folder ${existing.stateDir}`);
   const key = await trustedKey(dir, trustKey);
+  return { current: { version: metadata.version, dir, adopted: true }, key, stateDir };
+}
+
+async function recordAdoption(root, { current, stateDir }) {
   await recordStateDir(root, stateDir);
-  await writePointer(root, metadata.version, dir, true);
-  await log(root, { event: 'adopted', to: metadata.version, dir });
-  return { current: await readCurrent(root), key };
+  await writePointer(root, current.version, current.dir, true);
+  await log(root, { event: 'adopted', to: current.version, dir: current.dir });
 }
 
 /**
  * Verifies a local release and switches to it. `migrate` and `ready` receive
  * `{ versionDir, stateDir, version }`; `adopt: { dir, stateDir }` takes over an old plain package.
+ * `expectVersion` refuses a release holding any other version; `statfs` is for tests.
  */
-export async function update({ root, release, migrate, ready, trustKey, adopt, onStep, now }) {
+export async function update({
+  root,
+  release,
+  migrate,
+  ready,
+  trustKey,
+  adopt,
+  onStep,
+  now,
+  expectVersion,
+  statfs = fsStatfs,
+}) {
   root = resolve(root);
   release = resolve(release);
   const clock = now ?? (() => new Date());
@@ -502,7 +741,7 @@ export async function update({ root, release, migrate, ready, trustKey, adopt, o
     throw refuse('No installed version here: install one first or adopt an old one');
   const unlock = await lock(root);
   let journal = null;
-  let at = 'verify';
+  let at = 'recover';
   const saveJournal = async (phase) => {
     journal = { ...journal, phase };
     await writeJsonAtomic(join(root, JOURNAL), journal);
@@ -510,19 +749,29 @@ export async function update({ root, release, migrate, ready, trustKey, adopt, o
   try {
     await step('locked');
     await recoverLocked(root);
+    at = 'verify';
     let current = await readCurrent(root);
     let key;
+    let stateDir;
+    let adoption = null;
     if (adopt) {
       if (current) throw refuse('This install already has a current version; adopt only once');
-      ({ current, key } = await adoptLegacy(root, adopt, trustKey));
-    } else key = await trustedKey(current.dir, trustKey);
-    const stateDir = await stateDirOf(root);
+      adoption = await checkAdoption(root, adopt, trustKey);
+      ({ current, key, stateDir } = adoption);
+    } else {
+      key = await trustedKey(current.dir, trustKey);
+      stateDir = await stateDirOf(root);
+    }
     const verified = await readRelease(release, key);
     const { manifest } = verified;
+    if (expectVersion !== undefined && manifest.version !== expectVersion)
+      throw refuse(`The release holds ${manifest.version}, not the requested ${expectVersion}`);
     checkTarget(current, manifest);
-    if (!(await exists(stateDir))) throw refuse(`The state folder does not exist: ${stateDir}`);
+    await checkStateRoom(stateDir, current.adopted ? 3 : 2, statfs);
     await step('verified');
+    at = 'stage';
     const staged = await stage(root, release, verified);
+    if (adoption) await recordAdoption(root, adoption);
     await step('staged');
     const date = clock();
     await commitStaging(root, staged, date);
@@ -582,11 +831,23 @@ export async function update({ root, release, migrate, ready, trustKey, adopt, o
     await log(root, { event: 'updated', from, to, preUpdateCopy });
     return { from, to, preUpdateCopy };
   } catch (error) {
-    if (error.code === 'REFUSED' || error.code === 'BUSY' || error.code === 'CORRUPT') {
+    // A refusal after the journal exists (the state folder became a link before its copy)
+    // still has to be undone like any other failure.
+    if (!journal && ['REFUSED', 'BUSY', 'CORRUPT'].includes(error.code)) {
       await log(root, { event: 'refused', release, reason: error.message }).catch(() => {});
       throw error;
     }
-    if (!journal) throw error;
+    if (!journal) {
+      // Nothing to undo (a full disk while staging): the install is unchanged, say why.
+      await log(root, {
+        event: 'failed',
+        release,
+        step: at,
+        code: error.code ?? null,
+        reason: error.message,
+      }).catch(() => {});
+      throw error;
+    }
     const reason = error.message;
     const { from, to } = { from: journal.from.version, to: journal.to.version };
     try {
@@ -600,9 +861,9 @@ export async function update({ root, release, migrate, ready, trustKey, adopt, o
         reason,
         error: undoError.message,
       }).catch(() => {});
-      throw new UpdateError(
-        'ROLLBACK_INCOMPLETE',
-        `Update to ${to} failed at ${at} and the rollback did not finish (${undoError.message}); run --recover. Pre-update copy: ${journal.preCopy}`,
+      throw rollbackIncomplete(
+        `Update to ${to} failed at ${at} and the rollback did not finish (${undoError.message})`,
+        journal.preCopy,
       );
     }
     await log(root, { event: 'rolled-back', from, to, step: at, reason });

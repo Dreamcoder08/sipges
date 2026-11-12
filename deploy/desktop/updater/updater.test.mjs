@@ -4,17 +4,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
-import { createHash, generateKeyPairSync } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import {
+  chmod,
   lstat,
   mkdir,
   mkdtemp,
   readFile,
   readdir,
   readlink,
+  rename,
   rm,
   stat,
   symlink,
+  utimes,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -22,7 +25,15 @@ import { basename, dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRelease } from './release.mjs';
-import { STEPS, inspectInstall, install, readCurrent, recover, update } from './updater.mjs';
+import {
+  STEPS,
+  findUpdate,
+  inspectInstall,
+  install,
+  readCurrent,
+  recover,
+  update,
+} from './updater.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const updateCli = join(here, 'update.mjs');
@@ -722,4 +733,268 @@ test('release notes: optional signed text shown by the update notice', () =>
     );
     assert.deepEqual([cli.status, cli.stderr], [0, '']);
     assert.equal((await readRelease(out, key)).manifest.notes, 'Nota.');
+  }));
+
+test('rule 6: a state folder reached through a link is refused or really copied and restored', () =>
+  withTemp(async (dir) => {
+    const { pair, releaseOf } = await fixture(dir);
+    const real = join(dir, 'real-state');
+    await makeState(real);
+    const link = join(dir, 'linked-state');
+    await symlink(real, link, 'dir');
+    const root = join(dir, 'install-linked');
+    const before = await snapshot(real);
+    try {
+      await install({
+        root,
+        release: await releaseOf('1.0.0'),
+        stateDir: link,
+        trustKey: publicPem(pair),
+      });
+    } catch (error) {
+      assert.equal(error.code, 'REFUSED', error.message);
+      return;
+    }
+    await assert.rejects(
+      update({
+        root,
+        release: await releaseOf('1.1.0'),
+        migrate: async ({ stateDir }) => {
+          await writeFile(join(stateDir, 'pglite', 'PG_VERSION'), 'broken');
+          throw new Error('synthetic migration failure');
+        },
+        ready: noop,
+      }),
+      rolledBack(/failed at migrate/),
+    );
+    assert.deepEqual(await snapshot(real), before);
+    for (const name of await siblings(link))
+      assert.equal((await lstat(join(dir, name))).isDirectory(), true, `${name} is not a copy`);
+  }));
+
+test('rule 6: a state folder that became a link, or holds one, is refused before any copy', () =>
+  withTemp(async (dir) => {
+    for (const shape of ['replaced by a link', 'link inside']) {
+      const work = join(dir, shape.replace(/ /g, '-'));
+      const { root, state, releaseOf } = await fixture(work);
+      if (shape === 'replaced by a link') {
+        await rename(state, join(work, 'moved-state'));
+        await symlink(join(work, 'moved-state'), state, 'dir');
+      } else await symlink(join(work, 'outside'), join(state, 'uploads', 'elsewhere'), 'dir');
+      const release = await releaseOf('1.1.0');
+      const before = await snapshot(work);
+      const calls = [];
+      await assert.rejects(
+        update({
+          root,
+          release,
+          migrate: async () => calls.push('migrate'),
+          ready: noop,
+        }),
+        refused(
+          shape === 'replaced by a link'
+            ? /^The state folder .* is a link; record the real folder instead$/
+            : /^The state folder holds a link or special file \(uploads\/elsewhere\); it cannot be copied safely$/,
+        ),
+      );
+      assert.deepEqual(calls, [], shape);
+      const after = await snapshot(work);
+      delete after['install/update.log'];
+      delete before['install/update.log'];
+      assert.deepEqual(after, before, shape);
+    }
+  }));
+
+test('rule 6: an update without room for the pre-update copy and one restore is refused before any change', () =>
+  withTemp(async (dir) => {
+    const { root, state, releaseOf } = await fixture(dir);
+    const before = await snapshot(state);
+    const pointer = await readFile(join(root, 'current.json'));
+    const asked = [];
+    const calls = [];
+    await assert.rejects(
+      update({
+        root,
+        release: await releaseOf('1.1.0'),
+        migrate: async () => calls.push('migrate'),
+        ready: noop,
+        statfs: async (path) => {
+          asked.push(path);
+          return { bavail: 2, bsize: 4096 };
+        },
+      }),
+      refused(
+        /^Not enough free disk beside the state folder for the pre-update copy and one restore: \d+ bytes needed, 8192 free$/,
+      ),
+    );
+    assert.deepEqual(calls, []);
+    assert.deepEqual(asked, [dirname(state)]);
+    assert.deepEqual(await snapshot(state), before);
+    assert.deepEqual(await siblings(state), []);
+    assert.deepEqual(await readdir(join(root, 'versions')), ['1.0.0']);
+    assert.deepEqual(await readFile(join(root, 'current.json')), pointer);
+    const roomy = await update({
+      root,
+      release: await releaseOf('1.1.0'),
+      migrate: noop,
+      ready: noop,
+      statfs: async () => ({ bavail: 1 << 30, bsize: 4096 }),
+    });
+    assert.equal(roomy.to, '1.1.0');
+  }));
+
+test('a lock left by a crashed update is taken over when its pid belongs to another program', () =>
+  withTemp(async (dir) => {
+    const { root } = await fixture(dir);
+    await writeFile(
+      join(root, 'update.lock'),
+      JSON.stringify({ pid: process.ppid, time: '2026-01-01T00:00:00.000Z' }),
+    );
+    assert.equal((await recover({ root })).version, '1.0.0');
+    // An empty or unreadable lock is someone writing it right now, unless it is old.
+    await writeFile(join(root, 'update.lock'), '');
+    await assert.rejects(recover({ root }), (error) => error.code === 'BUSY');
+    const old = new Date('2026-01-01T00:00:00.000Z');
+    await utimes(join(root, 'update.lock'), old, old);
+    assert.equal((await recover({ root })).version, '1.0.0');
+    assert.deepEqual((await readdir(root)).sort(), [
+      'current.json',
+      'install.json',
+      'update.log',
+      'versions',
+    ]);
+  }));
+
+test('a running update keeps its lock: another run is BUSY until it ends', () =>
+  withTemp(async (dir) => {
+    const { root, releaseOf } = await fixture(dir);
+    let open;
+    const gate = new Promise((resolve) => (open = resolve));
+    let entered;
+    const migrating = new Promise((resolve) => (entered = resolve));
+    const running = update({
+      root,
+      release: await releaseOf('1.1.0'),
+      migrate: async () => {
+        entered();
+        await gate;
+      },
+      ready: noop,
+    });
+    await migrating;
+    await assert.rejects(recover({ root }), (error) => error.code === 'BUSY');
+    // A fresh lock of a live process in the old format is respected too.
+    open();
+    assert.equal((await running).to, '1.1.0');
+    await writeFile(
+      join(root, 'update.lock'),
+      JSON.stringify({ pid: process.ppid, time: new Date().toISOString() }),
+    );
+    await assert.rejects(recover({ root }), (error) => error.code === 'BUSY');
+  }));
+
+test('rule 1: a signed release whose metadata.json names another version is refused', () =>
+  withTemp(async (dir) => {
+    const { root, pair, releaseOf } = await fixture(dir);
+    const release = await releaseOf('1.1.0');
+    const metaPath = join(release, 'package', 'metadata.json');
+    const metadata = JSON.parse(await readFile(metaPath, 'utf8'));
+    await writeFile(metaPath, `${JSON.stringify({ ...metadata, version: '1.2.0' }, null, 2)}\n`);
+    const manifest = JSON.parse(await readFile(join(release, 'release.json'), 'utf8'));
+    manifest.files['metadata.json'] = createHash('sha256')
+      .update(await readFile(metaPath))
+      .digest('hex');
+    const bytes = Buffer.from(`${JSON.stringify(manifest, null, 2)}\n`);
+    await writeFile(join(release, 'release.json'), bytes);
+    await writeFile(
+      join(release, 'release.sig'),
+      `${sign(null, bytes, pair.privateKey).toString('base64')}\n`,
+    );
+    const reason = /^metadata\.json says 1\.2\.0 but the signed release is 1\.1\.0$/;
+    const found = await findUpdate({ root, source: release });
+    assert.equal(found.available, null);
+    assert.match(found.skipped[0]?.reason ?? '', reason);
+    await assert.rejects(update({ root, release, migrate: noop, ready: noop }), refused(reason));
+    assert.deepEqual(await readdir(join(root, 'versions')), ['1.0.0']);
+  }));
+
+test('rule 7: an adoption whose release is refused records nothing', () =>
+  withTemp(async (dir) => {
+    const pair = keys();
+    const legacy = join(dir, 'old-install');
+    const state = join(dir, 'state');
+    await makePackage(legacy, '0.9.0');
+    await makeState(state);
+    const release = join(dir, 'release-1.0.0');
+    await makePackage(join(dir, 'pkg-1.0.0'), '1.0.0');
+    await createRelease({
+      packageDir: join(dir, 'pkg-1.0.0'),
+      releaseDir: release,
+      privateKey: keys().privateKey,
+    });
+    const root = join(dir, 'install');
+    await assert.rejects(
+      update({
+        root,
+        release,
+        adopt: { dir: legacy, stateDir: state },
+        trustKey: publicPem(pair),
+        migrate: noop,
+        ready: noop,
+      }),
+      refused(/signature does not match/),
+    );
+    assert.equal(await readCurrent(root), null);
+    const names = await readdir(root);
+    assert.equal(names.includes('install.json'), false, String(names));
+    assert.equal(names.includes('current.json'), false, String(names));
+  }));
+
+test(
+  'a failure while staging (a full disk) is logged and leaves the install unchanged',
+  { skip: process.platform === 'win32' || process.getuid?.() === 0 },
+  () =>
+    withTemp(async (dir) => {
+      const { root, releaseOf } = await fixture(dir);
+      const release = await releaseOf('1.1.0');
+      await chmod(join(root, 'versions'), 0o500);
+      try {
+        await assert.rejects(
+          update({ root, release, migrate: noop, ready: noop }),
+          (error) => error.code === 'EACCES',
+        );
+      } finally {
+        await chmod(join(root, 'versions'), 0o700);
+      }
+      const last = (await logLines(root)).at(-1);
+      assert.deepEqual([last.event, last.step, last.code], ['failed', 'stage', 'EACCES']);
+      assert.match(last.reason, /EACCES/);
+      assert.deepEqual(await readdir(join(root, 'versions')), ['1.0.0']);
+      assert.equal((await readCurrent(root)).version, '1.0.0');
+    }),
+);
+
+test('rule 6: a state folder swapped for a link just before the copy rolls back cleanly', () =>
+  withTemp(async (dir) => {
+    const { root, state, releaseOf } = await fixture(dir);
+    const before = await snapshot(state);
+    const moved = join(dir, 'moved-state');
+    await assert.rejects(
+      update({
+        root,
+        release: await releaseOf('1.1.0'),
+        migrate: noop,
+        ready: noop,
+        onStep: async (step) => {
+          if (step !== 'installed') return;
+          await rename(state, moved);
+          await symlink(moved, state, 'dir');
+        },
+      }),
+      rolledBack(/failed at state copy .*is a link/),
+    );
+    assert.equal((await readCurrent(root)).version, '1.0.0');
+    assert.deepEqual(await snapshot(moved), before);
+    assert.equal((await readdir(root)).includes('update-journal.json'), false);
+    assert.equal((await recover({ root })).recovered, false);
   }));
