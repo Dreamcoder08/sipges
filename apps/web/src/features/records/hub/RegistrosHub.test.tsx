@@ -1,6 +1,6 @@
 import type { Role } from '@sipges/contracts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../../../test/records-api.ts';
@@ -31,7 +31,12 @@ const rows = {
   [`${SCOPE}/demandas`]: [{ _id: 'D-1', Descripcion: 'Revisar la zona de exclusión' }],
 };
 
-const renderHub = (tipo: string | undefined, onTipo = vi.fn(), role: Role = 'admin') =>
+const renderHub = (
+  tipo: string | undefined,
+  onTipo = vi.fn(),
+  role: Role = 'admin',
+  url: { ficha?: string; onFicha?: (ficha: string | undefined) => void } = {},
+) =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -43,6 +48,7 @@ const renderHub = (tipo: string | undefined, onTipo = vi.fn(), role: Role = 'adm
         projectId="P1"
         projectLabel="Proyecto Uno"
         role={role}
+        {...url}
       />
     </QueryClientProvider>,
   );
@@ -84,7 +90,9 @@ it('reads Todos and every count from one summary request, not one list per type'
 
 it('lists every type together under Todos, with verification and validation as chips', async () => {
   renderHub('todos');
-  const table = await screen.findByRole('table');
+  const table = await screen.findByRole('grid', {
+    name: 'Registros de todos los tipos del proyecto activo',
+  });
   expect(await within(table).findByText('Bloqueo del muelle')).toBeInTheDocument();
   expect(within(table).getByText('Federación de Pescadores')).toBeInTheDocument();
   const bayovar = within(table).getByRole('row', { name: /E-1/ });
@@ -303,16 +311,16 @@ it('offers Importar and Nuevo registro on Todos through a type picker, reusing t
 
 it('hides the Todos write actions from read-only roles', async () => {
   renderHub('todos', vi.fn(), 'consulta');
-  await screen.findByRole('table');
+  await screen.findByRole('grid');
   expect(screen.queryByRole('button', { name: 'Nuevo registro' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument();
 });
 
-describe('at 1280 px or wider', () => {
+describe('at 1024 px or wider', () => {
   const original = window.matchMedia;
   beforeEach(() => {
     window.matchMedia = ((query: string) => ({
-      matches: query.includes('min-width: 80rem'),
+      matches: query.includes('min-width: 64rem'),
       media: query,
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
@@ -337,6 +345,70 @@ describe('at 1280 px or wider', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Abrir E-2/ })).toHaveFocus();
+  });
+
+  it('shows Todos as a dense table: Compacta by default and the A–E letter with its word', async () => {
+    renderHub('todos');
+    const density = await screen.findByRole('group', { name: 'Densidad de filas' });
+    expect(within(density).getByRole('button', { name: 'Compacta' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    const row = await screen.findByRole('row', { name: /E-1/ });
+    expect(within(row).getByText('Corroborada')).toBeInTheDocument();
+    expect(within(row).getByText('Validado')).toHaveAttribute('data-tone', 'positive');
+  });
+
+  it('opens the record beside the table from a click anywhere on its row and puts it in the URL', async () => {
+    const user = userEvent.setup();
+    const onFicha = vi.fn();
+    renderHub('todos', vi.fn(), 'admin', { onFicha });
+    await user.click(await screen.findByText('Bayóvar'));
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha E-1' });
+    expect(sheet).toHaveAttribute('aria-modal', 'false');
+    expect(onFicha).toHaveBeenLastCalledWith('eventos.E-1');
+    expect(screen.getByRole('row', { name: /E-1/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('row', { name: /E-2/ })).toHaveAttribute('aria-selected', 'false');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onFicha).toHaveBeenLastCalledWith(undefined);
+    expect(screen.getByRole('button', { name: /Abrir E-1/ })).toHaveFocus();
+  });
+
+  it('opens the record the URL names, so a reload or a shared link keeps it', async () => {
+    renderHub('todos', vi.fn(), 'admin', { ficha: 'eventos.E-2' });
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-2' })).toBeInTheDocument();
+    expect(await screen.findByRole('row', { name: /E-2/ })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    // No row opened it, yet Escape still lands on its row instead of the page.
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Abrir E-2/ })).toHaveFocus();
+  });
+
+  it('moves the selection with the arrows, Home and End, keeping one tab stop in the table', async () => {
+    const user = userEvent.setup();
+    const onFicha = vi.fn();
+    renderHub('todos', vi.fn(), 'admin', { onFicha });
+    const grid = await screen.findByRole('grid');
+    const openers = await within(grid).findAllByRole('button', { name: /^Abrir / });
+    expect(openers.filter((button) => button.tabIndex === 0)).toEqual([openers[0]]);
+    openers[0]?.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(openers[1]).toHaveFocus();
+    expect(openers.filter((button) => button.tabIndex === 0)).toEqual([openers[1]]);
+    expect(screen.getByRole('row', { name: /E-2/ })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-2' })).toBeInTheDocument();
+    expect(onFicha).toHaveBeenLastCalledWith('eventos.E-2');
+    await user.keyboard('{End}');
+    expect(openers.at(-1)).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(openers[0]).toHaveFocus();
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-1' })).toBeInTheDocument();
+    // At the first row ArrowUp has nowhere to go: the page keeps its own scrolling.
+    expect(fireEvent.keyDown(openers[0] as HTMLElement, { key: 'ArrowUp' })).toBe(true);
   });
 });
 

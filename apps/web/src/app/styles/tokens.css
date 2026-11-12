@@ -257,6 +257,9 @@
   --control-sm: 2rem;
   --control-md: 2.5rem;
   --touch-target: 2.75rem;
+  /* Table rows on desktop: Compacta and Cómoda (Registros › Todos, closure-roadmap T31). */
+  --row-height: 2.25rem;
+  --row-height-cozy: 2.75rem;
   --focus-ring: 3px solid var(--color-focus);
   --z-sticky: 20;
   --z-popover: 40;

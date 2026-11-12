@@ -275,6 +275,39 @@ describe('Registros hub', () => {
     expect(pressed(await chips()).map(label)).toEqual(['Todos']);
   });
 
+  it('keeps the open record in the URL: a link opens it, choosing and closing update it', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/eventos': [
+        { _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' },
+        { _id: 'E-2', Descripcion_Hecho: 'Otro hecho sintético' },
+      ],
+    });
+    at('/registros?tipo=todos&ficha=eventos.E-1');
+    render(<App />);
+    const user = userEvent.setup();
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha E-1' });
+    await user.click(within(sheet).getByRole('button', { name: 'Cerrar' }));
+    await waitFor(() =>
+      expect(window.location.pathname + window.location.search).toBe('/registros?tipo=todos'),
+    );
+    await user.click(await screen.findByRole('button', { name: /Abrir E-2/ }));
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-2' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe('?tipo=todos&ficha=eventos.E-2'));
+  });
+
+  it('keeps the type screen when a record opens from it', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/eventos': [{ _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' }],
+    });
+    at('/registros?tipo=eventos');
+    render(<App />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Ver E-1' }));
+    expect(await screen.findByRole('dialog', { name: 'Ficha E-1' })).toBeInTheDocument();
+    await waitFor(() => expect(window.location.search).toBe('?tipo=eventos&ficha=eventos.E-1'));
+    expect(pressed(await chips()).map(label)).toEqual(['Eventos']);
+  });
+
   it('puts the chosen type in the URL, and back/forward restore it', async () => {
     installRecordsApi({
       'DEMO/PRJ-DEMO/eventos': [{ _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' }],

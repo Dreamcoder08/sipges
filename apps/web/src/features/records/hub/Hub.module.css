@@ -59,7 +59,7 @@
 .menuItem:focus-visible {
   outline-offset: -3px;
 }
-/* The list and, from 1280 px, the docked sheet beside it. */
+/* The list and, from 1024 px, the docked sheet beside it (22rem, direction 02). */
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -68,7 +68,7 @@
   min-width: 0;
 }
 .layout[data-docked='true'] {
-  grid-template-columns: minmax(0, 1fr) 27rem;
+  grid-template-columns: minmax(0, 1fr) 22rem;
 }
 /* Same clamp as .hub: with rows loaded, an auto track grows to the table's min-content. */
 .main {
@@ -188,10 +188,6 @@
   white-space: nowrap;
   color: var(--color-muted);
 }
-/* A docked sheet needs the room: the optional columns give way to it. */
-.tableWrap[data-narrow='true'] .optional {
-  display: none;
-}
 .open {
   all: unset;
   cursor: pointer;
@@ -258,6 +254,22 @@
   background: var(--tone-negative-bg);
   color: var(--tone-negative-fg);
 }
+/* The A–E letter and its word; below 1024 px the table keeps the letter alone. */
+.verification {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+.verWord {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+}
+@media (width < 64rem) {
+  .tableWrap .verWord {
+    display: none;
+  }
+}
 .sheetBody {
   display: grid;
   gap: var(--space-4);
@@ -270,8 +282,10 @@
   gap: var(--space-3);
   margin: 0;
 }
-/* Docked record sheet (≥ 1280 px): sticky beside the list, scrolls on its own. */
+/* Docked record sheet (≥ 1024 px): sticky beside the list, scrolls on its own. Contained, so
+   swapping the record while the arrows move the selection does not lay out the table again. */
 .dock {
+  contain: content;
   position: sticky;
   top: var(--space-4);
   display: grid;
@@ -319,4 +333,107 @@
 .density[data-density='compact'] :global(td),
 .density[data-density='compact'] :global(th) {
   padding-block: var(--space-1);
+}
+
+/* Row heights of the desktop table: Cómoda 44 px, Compacta 36 px. */
+.density {
+  --table-row: var(--row-height-cozy);
+}
+.density[data-density='compact'] {
+  --table-row: var(--row-height);
+}
+
+/* Desktop table (closure-roadmap T31, direction 02): one-line rows, a header that stays while the
+   table scrolls on its own, fixed columns, and the optional ones give way as the table narrows
+   (the docked sheet takes 22rem). Selection is a tint and a 3 px bar, unlike the focus ring. */
+@media (width >= 64rem) {
+  .tableWrap {
+    container-type: inline-size;
+    max-block-size: max(20rem, calc(100dvh - 11rem));
+    overflow: auto;
+  }
+  .tableWrap .table {
+    table-layout: fixed;
+  }
+  .tableWrap .table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: var(--control-sm);
+    padding: 0 var(--space-2);
+    border-bottom: 0;
+    background: var(--color-surface-alt);
+    box-shadow: inset 0 -1px 0 var(--color-hairline);
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+  }
+  .tableWrap .table td {
+    height: var(--table-row);
+    padding: 0 var(--space-2);
+    border-bottom-color: var(--color-hairline);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tableWrap .id {
+    display: none;
+  }
+  /* A button shrinks to its text even as a block: the full width lets the ellipsis show. */
+  .tableWrap .open {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--weight-medium);
+  }
+  /* The cell clips overflow, so the ring sits inside the button. */
+  .tableWrap .open:focus-visible {
+    outline-offset: -2px;
+  }
+  .tableWrap tbody tr {
+    cursor: pointer;
+  }
+  .tableWrap tbody tr[aria-selected='true'] td {
+    background: var(--color-accent-tint);
+  }
+  .tableWrap tbody tr[aria-selected='true'] .title {
+    box-shadow: inset 3px 0 0 var(--color-accent);
+  }
+  .colType {
+    width: 8rem;
+  }
+  .colPlace {
+    width: 9rem;
+  }
+  .colDate {
+    width: 6rem;
+  }
+  .colVerification {
+    width: 8.5rem;
+  }
+  .colState {
+    width: 8rem;
+  }
+  @container (width < 56rem) {
+    .colPlace {
+      display: none;
+    }
+  }
+  @container (width < 46rem) {
+    .colDate {
+      display: none;
+    }
+  }
+  @container (width < 36rem) {
+    .colType {
+      display: none;
+    }
+    .colVerification {
+      width: 3rem;
+    }
+    .verWord {
+      display: none;
+    }
+  }
 }

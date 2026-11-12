@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
-/** From 1280 px the record sheet docks beside the list; below it stays a modal sheet. */
-const DOCK_QUERY = '(min-width: 80rem)';
+/** From 1024 px the record sheet docks beside the list; below it stays a modal sheet. */
+const DOCK_QUERY = '(min-width: 64rem)';
 
 const query = () =>
   typeof window.matchMedia === 'function' ? window.matchMedia(DOCK_QUERY) : null;
