@@ -38,11 +38,13 @@ async function secret(stateDir, name) {
 
 /**
  * The environment a managed version runs with: secrets from the state folder, loopback only,
- * plain-HTTP cookies, data under the state folder and the web app inside the version.
+ * plain-HTTP cookies, data under the state folder and the web app inside the version. No
+ * inherited SIPGES_* setting reaches it: only the ones set here (and the launcher's update
+ * channel), so the server and the migration boot see the same configuration.
  */
 export async function managedEnv({ versionDir, stateDir, port, base = process.env }) {
   return {
-    ...base,
+    ...Object.fromEntries(Object.entries(base).filter(([key]) => !key.startsWith('SIPGES_'))),
     SIPGES_DATA_KEY: await secret(stateDir, 'data-key'),
     SIPGES_ADMIN_PASSWORD: await secret(stateDir, 'admin-password'),
     SIPGES_COOKIE_SECURE: '0',
@@ -60,14 +62,7 @@ export { freePort, status as httpStatus };
 export function bootCheck({ logFile, timeoutMs = 120_000 }) {
   return async ({ versionDir, stateDir }) => {
     const port = await freePort();
-    const env = await managedEnv({
-      versionDir,
-      stateDir,
-      port,
-      base: Object.fromEntries(
-        Object.entries(process.env).filter(([k]) => !k.startsWith('SIPGES_')),
-      ),
-    });
+    const env = await managedEnv({ versionDir, stateDir, port });
     const output = await open(logFile, 'a', 0o600);
     const child = spawn(process.execPath, [join(versionDir, 'start.mjs')], {
       cwd: versionDir,

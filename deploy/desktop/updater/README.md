@@ -35,16 +35,30 @@ node deploy/desktop/updater/update.mjs --install <new root> --release <dir> --ad
 node deploy/desktop/updater/update.mjs --install <root> --recover
 ```
 
-Exit codes: 0 done, 1 refused or invalid, 2 failed and rolled back, 3 rollback incomplete (run
-`--recover`; the pre-update copy is named in the message).
+Exit codes: 0 done, 1 refused or invalid, 2 failed and rolled back, 3 rollback incomplete (do
+not start SIPGES; run `--recover` to retry, or restore the pre-update copy named in the message).
 
 Layout of `<root>`: `versions/<version>/` (verified copies; files are copied, never hardlinked),
 `current.json` (the pointer, replaced by one atomic rename), `install.json` (state folder),
-`update.log` (JSON lines), and while an update runs `update.lock` and `update-journal.json`.
+`update.log` (JSON lines: `installed`, `adopted`, `updated`, `refused`, `failed` for an error
+before any change such as a full disk while staging, `rolled-back`, `rollback-incomplete`,
+`recovered`), and while an update runs `update.lock` and `update-journal.json`.
+
+The lock is created complete in one step (a hard link of a fully written file) and holds the
+process id, a random token and a heartbeat rewritten every 10 s. A lock whose heartbeat is older
+than 2 minutes, or whose process is gone, was left by a crash and is taken over, even if its
+process id now belongs to another program; an empty or unreadable lock counts by its file time.
+
+The state folder is recorded by its real path at install or adoption: a state folder given
+through a link (or a Windows junction) records the folder it points to, so the pre-update copy
+holds the data. An update refuses a state folder that is a link, or that holds a link or a special
+file, and one without room beside it for the pre-update copy plus one restore (plus the rehearsal
+copy for an adopted install); refusals change nothing.
 
 An update refuses a bad signature, any file that differs from the signed list, an unlisted or
-missing file, a version that is not newer, a release that needs a newer installed version and
-another platform. Then it copies the state folder beside itself as
+missing file, a `metadata.json` whose version differs from the signed one, a version that is not
+newer, a release that needs a newer installed version and another platform. An adoption is
+recorded only after its release passed these checks. Then it copies the state folder beside itself as
 `<state>.pre-update-<UTC time>-<from>-to-<to>`, migrates (the CLI boots the new `start.mjs` on a
 free loopback port; the API migrates at boot), switches the pointer and checks readiness
 (`/health/ready` and the web shell). A failed migration or readiness check switches back and
@@ -68,17 +82,30 @@ node <root>/versions/<version>/updater/launcher.mjs --install <root> --releases 
    `data-key` or `admin-password` once, never rewrites one) and starts the current version on
    `127.0.0.1`.
 2. Beside it, never delaying it, it checks the release source once: one release directory or a
-   folder of them. Only `release.json` and `release.sig` are read; a release counts when its
-   signature matches the key of the installed version and it is newer (minimum previous version
-   and platform as for an update). The result is one JSON line, `update_check` or
-   `update_check_failed` (missing folder, a check slower than 10 s, no update key).
+   folder of them. A release counts when its signature matches the key of the installed version,
+   it is newer (minimum previous version and platform as for an update) and every file of its
+   package matches the signed hashes, so a damaged or half-copied release is never offered
+   (hashing a 7700-file package took about 0.3 to 1 s here). The result is one JSON line,
+   `update_check` or `update_check_failed` (missing folder, a check slower than 10 s, no update
+   key).
 3. The app shows administrators «Nueva versión de SIPGES», the release notes, «Actualizar» and
    «Ahora no». «Ahora no» hides it until the next start. Nothing is copied or installed before
    «Actualizar».
-4. After the click the launcher stops SIPGES, runs the same update as `update.mjs` (verified
-   again, pre-update copy of the state folder, migration, readiness, rollback on failure) and
-   starts the resulting version on the same port. The page reloads itself, or says the update
-   failed and which version is still running.
+4. After the click the launcher first checks the release folder again (signature, every hash,
+   and that it still holds exactly the version it offered; otherwise it logs
+   `update_request_refused`, withdraws the offer and keeps SIPGES running). Then it stops
+   SIPGES, runs the same update as `update.mjs` for that exact version (verified again,
+   pre-update copy of the state folder, migration, readiness, rollback on failure) and starts the
+   resulting version on the same port. The page reloads itself, or says the update failed and
+   which version is still running.
+5. If the rollback itself does not finish (`ROLLBACK_INCOMPLETE`), no version is started on that
+   state folder, neither then nor at the next start: the launcher logs one line
+   (`update_failed` or `start_refused`, with an `action`), prints «SIPGES no se inició: …
+   Restaure la copia de seguridad … o contacte con soporte.» and exits with code 3.
+
+The server and the migration boot get the same environment: no inherited `SIPGES_*` variable
+reaches them, only the ones the launcher sets (secrets and folders from the state folder,
+loopback host and port, plain-HTTP cookies, the web folder and the update channel).
 
 The launcher and the API share `<root>/update-channel/` (`SIPGES_DESKTOP_UPDATE_DIR`):
 `status.json` (written by the launcher) and `request.json` (written by the API after the
@@ -90,7 +117,9 @@ packaged web app (marked `<meta name="sipges-desktop">` by the builder) asks for
 Backups: every update leaves `<state>.pre-update-<time>-<from>-to-<to>` beside the state folder;
 copy the state folder yourself before the first update, as in `deploy/desktop/README.md`.
 Failure: a failed update rolls back by itself and the previous version starts again; after a
-power cut the next start (or `update.mjs --recover`) finishes the rollback.
+power cut the next start (or `update.mjs --recover`) finishes the rollback. If even that cannot
+finish, SIPGES stays stopped (exit code 3) until the state folder is restored from the
+pre-update copy.
 
 ## Limits
 

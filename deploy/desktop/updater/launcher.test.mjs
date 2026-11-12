@@ -7,12 +7,16 @@ import process from 'node:process';
 import { generateKeyPairSync } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { createRelease, readRelease, loadPublicKey } from './release.mjs';
 import { install, readCurrent } from './updater.mjs';
 import { freePort } from './boot.mjs';
 import { CHANNEL, launch } from './launcher.mjs';
+
+const launcherCli = join(dirname(fileURLToPath(import.meta.url)), 'launcher.mjs');
 
 async function withTemp(fn) {
   const dir = await mkdtemp(join(tmpdir(), 'sipges-launcher-'));
@@ -32,6 +36,8 @@ const APP = (version) => `import { createServer } from 'node:http';
 const server = createServer((req, res) => {
   res.setHeader('content-type', 'application/json');
   if (req.url === '/health/ready') return res.end('{"status":"ready"}');
+  if (req.url === '/env')
+    return res.end(JSON.stringify(Object.fromEntries(Object.entries(process.env).filter(([k]) => k.startsWith('SIPGES_')).sort())));
   if (req.url === '/about')
     return res.end(JSON.stringify({ version: '${version}', channel: process.env.SIPGES_DESKTOP_UPDATE_DIR ?? null }));
   res.statusCode = 404;
@@ -330,6 +336,162 @@ test('a failed update rolls back and starts the previous version again', () =>
           checkedAt: undefined,
         },
       );
+    } finally {
+      await app.stop();
+    }
+  }));
+
+test('a rollback that did not finish never starts a version on the unrestored state', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    await releaseOf('1.1.0');
+    const run = await started({
+      root,
+      source,
+      migrate: async ({ stateDir }) => {
+        await writeFile(join(stateDir, 'half-migrated'), 'synthetic');
+        for (const name of await readdir(dirname(stateDir)))
+          if (name.includes('.pre-update-'))
+            await rm(join(dirname(stateDir), name), { recursive: true });
+        throw new Error('synthetic migration failure');
+      },
+    });
+    try {
+      await run.checked;
+      await run.about();
+      await request(root, '1.1.0');
+      await Promise.race([run.done, sleep(3000)]);
+      const failed = run.lines.find((l) => l.event === 'update_failed');
+      assert.equal(failed?.code, 'ROLLBACK_INCOMPLETE');
+      assert.equal(run.lines.filter((l) => l.event === 'started').length, 1, 'started again');
+    } finally {
+      await run.stop();
+    }
+  }));
+
+test('after a rollback that did not finish, the launcher exits with code 3, a clear message and no server', () =>
+  withTemp(async (dir) => {
+    const { root, state, source, releaseOf } = await fixture(dir);
+    await releaseOf('1.1.0');
+    const run = await started({
+      root,
+      source,
+      migrate: async ({ stateDir }) => {
+        for (const name of await readdir(dirname(stateDir)))
+          if (name.includes('.pre-update-'))
+            await rm(join(dirname(stateDir), name), { recursive: true });
+        throw new Error('synthetic migration failure');
+      },
+    });
+    try {
+      await run.checked;
+      await request(root, '1.1.0');
+      assert.equal(await Promise.race([run.done, sleep(3000).then(() => 'still running')]), 3);
+      const failed = run.lines.find((l) => l.event === 'update_failed');
+      assert.match(failed.action, /copia de seguridad/);
+    } finally {
+      await run.stop();
+    }
+    const port = await freePort();
+    const cli = spawnSync(process.execPath, [launcherCli, '--install', root, '--port', `${port}`], {
+      encoding: 'utf8',
+      timeout: 5_000,
+    });
+    assert.equal(cli.status, 3, cli.stderr);
+    const events = cli.stdout
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line));
+    assert.deepEqual(
+      events.map((e) => [e.event, e.code]),
+      [['start_refused', 'ROLLBACK_INCOMPLETE']],
+    );
+    assert.match(
+      cli.stderr,
+      /^SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar\. No borre nada\. Restaure la copia de seguridad .*state\.pre-update-.* o contacte con soporte\.\n/,
+    );
+    await assert.rejects(globalThis.fetch(`http://127.0.0.1:${port}/about`));
+    assert.equal((await readdir(dirname(state))).includes('state'), true);
+  }));
+
+test('a release whose package differs from its signed manifest is never offered', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    const release = await releaseOf('1.1.0');
+    await writeFile(join(release, 'package', 'start.mjs'), '// changed after signing\n');
+    const run = await started({ root, source });
+    try {
+      await run.checked;
+      await run.about();
+      assert.equal((await status(root)).available, null);
+    } finally {
+      await run.stop();
+    }
+  }));
+
+test('the click re-verifies the release: a folder that no longer holds that version installs nothing', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    const release = await releaseOf('1.1.0');
+    const app = await started({ root, source });
+    try {
+      await app.checked;
+      await app.about();
+      assert.equal((await status(root)).available.version, '1.1.0');
+      await rm(release, { recursive: true });
+      await releaseOf('1.2.0', { name: basename(release) });
+      await request(root, '1.1.0');
+      for (
+        let i = 0;
+        i < 200 && !app.lines.some((l) => l.event === 'update_request_refused');
+        i += 1
+      )
+        await sleep(10);
+      const refusedLine = app.lines.find((l) => l.event === 'update_request_refused');
+      assert.deepEqual(refusedLine, {
+        event: 'update_request_refused',
+        version: '1.1.0',
+        reason: `The release folder no longer holds the verified version 1.1.0: ${release}`,
+      });
+      assert.deepEqual(
+        app.lines.map((l) => l.event),
+        ['started', 'update_check', 'update_request_refused'],
+      );
+      assert.equal((await status(root)).available, null);
+      assert.deepEqual(await readdir(join(root, 'versions')), ['1.0.0']);
+      assert.equal((await app.about()).version, '1.0.0');
+    } finally {
+      await app.stop();
+    }
+  }));
+
+test('the server gets only the SIPGES settings the launcher sets, never inherited ones', () =>
+  withTemp(async (dir) => {
+    const { root } = await fixture(dir);
+    const app = await started({
+      root,
+      baseEnv: {
+        ...process.env,
+        SIPGES_DATABASE_URL: 'postgres://synthetic.invalid/none',
+        SIPGES_REQUIRE_MFA: '0',
+        SIPGES_PGLITE_DIR: join(dir, 'elsewhere'),
+      },
+    });
+    try {
+      await app.about();
+      const env = await (await globalThis.fetch(`http://127.0.0.1:${app.port}/env`)).json();
+      assert.deepEqual(Object.keys(env), [
+        'SIPGES_ADMIN_PASSWORD',
+        'SIPGES_COOKIE_SECURE',
+        'SIPGES_DATA_KEY',
+        'SIPGES_DESKTOP_UPDATE_DIR',
+        'SIPGES_HOST',
+        'SIPGES_PGLITE_DIR',
+        'SIPGES_PORT',
+        'SIPGES_UPLOAD_DIR',
+        'SIPGES_WEB_DIR',
+      ]);
+      assert.equal(env.SIPGES_PGLITE_DIR, join(dir, 'state', 'pglite'));
     } finally {
       await app.stop();
     }

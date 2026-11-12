@@ -20,6 +20,9 @@ import { bootCheck, managedEnv } from './boot.mjs';
 import { findUpdate, readCurrent, readStateDir, recover, update } from './updater.mjs';
 
 export const CHANNEL = 'update-channel';
+/** Exit code when an update could not be rolled back: nothing is started on that state. */
+export const ROLLBACK_INCOMPLETE_EXIT = 3;
+const ROLLBACK_INCOMPLETE = 'ROLLBACK_INCOMPLETE';
 const STATUS = 'status.json';
 const REQUEST = 'request.json';
 const STOP_GRACE_MS = 15_000;
@@ -61,6 +64,10 @@ export async function prepareState(stateDir) {
   }
 }
 
+/** What the person reads in the console or shortcut window when SIPGES must not start. */
+export const haltNotice = (preUpdateCopy) =>
+  `SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad ${preUpdateCopy ?? 'previa a la actualización (junto a la carpeta de datos)'} o contacte con soporte.`;
+
 const withTimeout = (work, ms) => {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -88,7 +95,19 @@ export async function launch({
   baseEnv = process.env,
 }) {
   root = resolve(root);
-  const recovered = await recover({ root });
+  let recovered;
+  try {
+    recovered = await recover({ root });
+  } catch (error) {
+    // The state may be half-migrated: starting any version on it would write on top of it.
+    if (error.code === ROLLBACK_INCOMPLETE)
+      log('start_refused', {
+        code: error.code,
+        reason: error.message,
+        action: haltNotice(error.preUpdateCopy),
+      });
+    throw error;
+  }
   if (recovered.recovered) log('update_recovered', { version: recovered.version });
   const stateDir = await readStateDir(root);
   await prepareState(stateDir);
@@ -101,6 +120,7 @@ export async function launch({
   ready ??= check;
 
   let verified = null;
+  let halted = null;
   let poller;
   let child = null;
   let stopping = false;
@@ -150,17 +170,43 @@ export async function launch({
     }
   };
 
+  /** The release folder must still hold exactly the version verified at startup. */
+  const stillVerified = async (version, release) => {
+    try {
+      const again = await withTimeout(find({ root, source: release }), checkTimeoutMs);
+      if (again.available?.version === version && again.available.release === release) return null;
+    } catch (error) {
+      return error.message;
+    }
+    return `The release folder no longer holds the verified version ${version}: ${release}`;
+  };
+
   const apply = async (version) => {
-    updating = true;
     const release = verified.release;
+    const refused = await stillVerified(version, release);
+    if (refused) {
+      verified = null;
+      await publish((await readCurrent(root)).version);
+      log('update_request_refused', { version, reason: refused });
+      return;
+    }
+    updating = true;
     log('update_started', { version });
     await stopChild();
     child = null;
     try {
-      const result = await update({ root, release, migrate, ready });
+      const result = await update({ root, release, migrate, ready, expectVersion: version });
       log('updated', { from: result.from, to: result.to, preUpdateCopy: result.preUpdateCopy });
     } catch (error) {
-      log('update_failed', { version, code: error.code ?? null, reason: error.message });
+      const fields = { version, code: error.code ?? null, reason: error.message };
+      if (error.code === ROLLBACK_INCOMPLETE) {
+        // Never start a version on a state folder that was not restored.
+        halted = haltNotice(error.preUpdateCopy);
+        log('update_failed', { ...fields, action: halted });
+        clearInterval(poller);
+        return finish(ROLLBACK_INCOMPLETE_EXIT);
+      }
+      log('update_failed', fields);
     }
     verified = null;
     const current = await readCurrent(root);
@@ -236,14 +282,16 @@ export async function launch({
     return done;
   };
 
-  return { done, stop, checked };
+  return { done, stop, checked, halted: () => halted };
 }
 
 const USAGE = `Usage: node <version>/updater/launcher.mjs --install <root> [--releases <dir>] [--port <port>]
 
 Starts the current version of a managed install on 127.0.0.1 (default port 8000), checks
 <dir> for a newer signed release at startup and offers it in the app. Updates run only after
-an administrator clicks «Actualizar». Without --releases no check is made.`;
+an administrator clicks «Actualizar». Without --releases no check is made.
+Exit codes: 0 stopped, 3 an update could not be rolled back and nothing was started (restore
+the pre-update copy named in the message), otherwise the server's own exit code or 1.`;
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
@@ -269,10 +317,17 @@ async function main(args) {
   });
   for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => void running.stop());
   process.exitCode = await running.done;
+  if (running.halted()) console.error(running.halted());
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main(process.argv.slice(2)).catch((error) => {
+    if (error.code === ROLLBACK_INCOMPLETE) {
+      console.error(haltNotice(error.preUpdateCopy));
+      console.error(`Detalle: ${error.message}`);
+      process.exitCode = ROLLBACK_INCOMPLETE_EXIT;
+      return;
+    }
     console.error(`Error: ${error.message}`);
     process.exitCode = 1;
   });
