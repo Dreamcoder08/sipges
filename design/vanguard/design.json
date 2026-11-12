@@ -1,0 +1,28 @@
+{
+  "title": "SIPGES de vanguardia: armazón, Inicio y Registros",
+  "brief": "S5: «tamien mejorar el sistem desing and diseño ui & Ux de vanguardia». Tres direcciones estructuralmente distintas para el armazón compartido, Inicio y Registros (escritorio 1440 × 900 y teléfono 360 px), con cinco destinos más Integraciones y Configuración, reglas de integridad visibles (verificación A–E, auditoría, aprobaciones en Bandeja, IRSA provisional), uso diario sin conexión en una laptop Windows, y los hallazgos de la auditoría T28/T29 resueltos: hoja única de filtros, vacío con acción, una familia de estados, un aviso IRSA, bordes de control 3:1 e Inicio móvil sin franjas vacías.",
+  "feature": "odd/tasks/closure-roadmap.md",
+  "artboards": [
+    {
+      "file": "01-calma-conversacional.html",
+      "title": "Calma conversacional",
+      "tradeoff": "Una columna, compositor primero y una lista corta de lo urgente: la lectura más tranquila y el menor coste (≈ 3 cortes). A cambio muestra menos registros por pantalla (7 frente a 16) y el valor de Inicio depende de que el resumen y la búsqueda local respondan bien.",
+      "width": 1440,
+      "height": 3791
+    },
+    {
+      "file": "02-mesa-de-operaciones.html",
+      "title": "Mesa de operaciones",
+      "tradeoff": "Denso, dividido y con teclado primero; la paleta Ctrl K navega y filtra con una sola gramática, con auditoría y cuatro ojos siempre visibles. A cambio exige aprender atajos, cansa en sesiones largas, pierde su ventaja en teléfono y cuesta ≈ 6 cortes.",
+      "width": 1440,
+      "height": 3832
+    },
+    {
+      "file": "03-mapa-vivo.html",
+      "title": "Mapa vivo",
+      "tradeoff": "El territorio es el lienzo y registros, alertas y conversación son capas numeradas encima. Es la más distintiva y espacial, pero la más cara y frágil (≈ 9 cortes): necesita mapa base sin conexión, 38 de 214 registros no tienen coordenadas y la lectura larga pide salir a «Solo tabla».",
+      "width": 1440,
+      "height": 3854
+    }
+  ]
+}

@@ -1,0 +1,985 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>02 · Mesa de operaciones · SIPGES vanguard</title>
+<style>
+/* TOKENS:BEGIN — copia literal de apps/web/src/app/styles/tokens.css (main a5825d36) */
+/*
+ * Design tokens (docs/adr/0018). Two layers:
+ * - Primitive scales (space, type, radius, motion, z-index, control sizes) never change by theme.
+ * - Semantic colours describe a role (surface, text, tone), never a hue, and are redefined for
+ *   the dark theme below. Modules use semantic tokens only; a unit test rejects raw colours.
+ * Light is neutral paper; dark is true OLED black with neutral greys (docs/adr/0019).
+ */
+:root {
+  color-scheme: light;
+
+  /* ---------- Brand and text ---------- */
+  --color-brand: #17365d;
+  --color-brand-strong: #0f2541;
+  --color-brand-text: #17365d;
+  --color-on-brand: #ffffff;
+  /* Primary actions are monochrome (ChatGPT, Claude): ink on paper, inverted in the dark. */
+  --color-primary: #0d0d0d;
+  --color-primary-hover: #333333;
+  --color-on-primary: #ffffff;
+  --color-text: #0d0d0d;
+  --color-muted: #5d5d5d;
+  --color-subtle: #6b6b6b;
+
+  /* ---------- Surfaces ---------- */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9f9f9;
+  --color-surface-raised: #ffffff;
+  --color-sidebar: #f9f9f9;
+  --color-border: #e3e3e3;
+  --color-track: #ececec;
+  --color-focus: #0b62d6;
+
+  /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
+  --color-accent: #0b62d6;
+  --color-accent-tint: #e8f0fd;
+  --color-accent-text: #0a4aa3;
+  --color-fill: #f4f4f4;
+  --color-fill-hover: #ececec;
+  --color-hairline: #ececec;
+  --color-hairline-strong: #d9d9d9;
+  --color-scrim: rgb(0 0 0 / 0.35);
+  --color-chrome: rgb(255 255 255 / 0.85);
+  /* Scrollbar thumb on an invisible track: quiet at rest, firmer under the pointer. */
+  --color-scrollbar: rgb(0 0 0 / 0.18);
+  --color-scrollbar-hover: rgb(0 0 0 / 0.32);
+
+  /* ---------- Tones: soft background, readable text, solid mark ---------- */
+  --color-danger: #c53030;
+  --color-danger-strong: #8a1f1f;
+  --color-danger-soft: #fdecec;
+  --color-info: #2b6cb0;
+  --color-info-soft: #e8f1fb;
+  --color-success: #2f855a;
+  --color-success-soft: #e6f5ec;
+
+  --tone-positive-bg: #d7ebdf;
+  --tone-positive-fg: #195238;
+  --tone-positive-solid: #247b55;
+  --tone-negative-bg: #f7dde0;
+  --tone-negative-fg: #832434;
+  --tone-negative-solid: #b03546;
+  --tone-info-bg: #dce7f6;
+  --tone-info-fg: #244e86;
+  --tone-info-solid: #3567aa;
+  --tone-warning-bg: #f8ebc6;
+  --tone-warning-fg: #6d4c0b;
+  --tone-warning-solid: #8a6115;
+  --tone-neutral-bg: #e9edf3;
+  --tone-neutral-fg: #485265;
+  --tone-neutral-solid: #68758b;
+  --tone-on-solid: #ffffff;
+  /* White on strong fills that keep their hue in both themes (risk red, dimension badges). */
+  --color-on-strong: #ffffff;
+
+  /* ---------- Risk levels (semáforo) ---------- */
+  --level-green: #2f855a;
+  --level-yellow: #d69e2e;
+  --level-orange: #dd6b20;
+  --level-red: #c53030;
+  --level-green-soft: #e6f5ec;
+  --level-yellow-soft: #fdf6e3;
+  --level-orange-soft: #fdeee2;
+  --level-red-soft: #fdecec;
+  --level-green-text: #1f5c3e;
+  --level-yellow-text: #7a5410;
+  --level-orange-text: #8a3f0d;
+  --level-red-text: #8a1f1f;
+  /* Heat-map cells: a strong fill with the text colour that passes AA on it. */
+  --heat-green: #6fc28f;
+  --heat-green-on: #0d3520;
+  --heat-yellow: #f6d55c;
+  --heat-yellow-on: #3d2e05;
+  --heat-orange: #f4a259;
+  --heat-orange-on: #3d1a05;
+  --heat-red: #c4343d;
+  --heat-red-on: #ffffff;
+
+  /* ---------- Data visualisation ---------- */
+  --dim-g: #2b6cb0;
+  --dim-a: #6b46c1;
+  --dim-d: #b7791f;
+  --dim-n: #c05621;
+  --dim-e: #2f855a;
+  --dim-i: #4a5568;
+
+  /* Narrative trend lines: one clearly distinct hue per category. */
+  --trend-e: #2f9e44;
+  --trend-g: #6741d9;
+  --trend-d: #f08c00;
+  --trend-a: #1c7ed6;
+  --trend-n: #d6336c;
+  --trend-i: #495057;
+
+  /* Categorical series for graphs (entity kinds). */
+  --viz-1: #2b6cb0;
+  --viz-2: #2f855a;
+  --viz-3: #dd6b20;
+  --viz-4: #805ad5;
+  --viz-5: #c53030;
+  --viz-6: #d69e2e;
+  --viz-7: #319795;
+  --viz-8: #5b6673;
+  /* Diagram ink: strokes, labels and node fills drawn on a light canvas. */
+  --ink-strong: #14243a;
+  --ink: #1d2b3f;
+  --ink-soft: #5b6b84;
+  --ink-faint: #68758b;
+  --canvas: #fcfcfc;
+  --canvas-node: #f4f4f4;
+  --canvas-halo: #ffffff;
+
+  /* ---------- Cartography: map paint for both renderers ---------- */
+  --map-bg: #e9eef3;
+  --map-sea: #d6e8f3;
+  --map-land: #f6f3ea;
+  --map-line: #9aa8b4;
+  --map-label-sea: #335a73;
+  --map-label-area: #8a7d5c;
+  --map-ink: #243b53;
+  --map-text: #17212b;
+  --map-halo: rgb(255 255 255 / 0.85);
+  --map-point: #ffffff;
+  --map-concession: #669bb5;
+  --map-selected: #e6b54a;
+  --map-alert: #c34040;
+  --map-heat-1: #fde7c4;
+  --map-heat-2: #f8c27a;
+  --map-heat-3: #ee8f44;
+  --map-heat-4: #cf5a2a;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #0f2541;
+  --map-district-line: #17365d;
+  --map-point-halo: #ffffff;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #eef0e2;
+  --map-relief-2: #d6e2b8;
+  --map-relief-3: #e3d39c;
+  --map-relief-4: #c9a477;
+  --map-relief-5: #94714f;
+  /* Raster tiles: streets are inverted for the dark theme, imagery only dimmed. */
+  --map-filter-streets: none;
+  --map-filter-satellite: none;
+  /* Theme-invariant map paint, defined only here so both dark blocks inherit it unchanged. */
+  /* Cadastre legend mirrors the GEOCATMIN raster tiles, which do not follow the theme. */
+  --map-cadastre-1: #2f5fd0;
+  --map-cadastre-2: #3a9d3a;
+  --map-cadastre-3: #222222;
+  /* District outlines drawn over satellite imagery, which is always dark ground. */
+  --map-outline-imagery: #fffaf0;
+  /* Record markers: white ring and label on the marker fill, dark ring when active. */
+  --map-marker-on: #ffffff;
+  --map-marker-active: #17212b;
+  /* Concession polygons: resting, active and keyboard-focused fills. */
+  --map-concession-fill: rgb(23 54 93 / 0.08);
+  --map-concession-fill-active: rgb(23 54 93 / 0.28);
+  --map-concession-fill-focus: rgb(43 108 176 / 0.3);
+
+  /* ---------- Spacing: 4-pt scale ---------- */
+  --space-0: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* ---------- Type: system faces (SF Pro on Apple, Segoe on Windows, Roboto on Android) ---------- */
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  --text-2xs: 0.625rem;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-body: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  /* Display sizes scale with the viewport between phone and desktop. */
+  --text-2xl: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.625rem);
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+  --tracking-caps: 0.06em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  /* ---------- Shape ---------- */
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.35rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.18);
+  --shadow-raised: 0 -1px 0 rgb(0 0 0 / 0.03), 0 16px 48px rgb(0 0 0 / 0.16);
+  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.12);
+  /* The search field reads as a composer: a soft lift instead of a border. */
+  --shadow-composer: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 12px rgb(0 0 0 / 0.06);
+
+  /* ---------- Motion: short, eased, and off under prefers-reduced-motion ---------- */
+  --motion-fast: 120ms;
+  --motion-medium: 220ms;
+  --motion-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The curve iOS uses for sheets: fast start, long soft landing, no overshoot. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ---------- Controls and layers ---------- */
+  --control-sm: 2rem;
+  --control-md: 2.5rem;
+  --touch-target: 2.75rem;
+  --focus-ring: 3px solid var(--color-focus);
+  --z-sticky: 20;
+  --z-popover: 40;
+  --z-modal: 60;
+  --z-skip: 70;
+
+  --sidebar-width: 15.5rem;
+}
+
+/*
+ * Dark theme: OLED black. Pure #000 behind everything lets OLED screens switch pixels off;
+ * surfaces step up in neutral greys and separate by hairlines instead of shadows. It follows the
+ * device unless the person picks a theme in Cuenta (shared/lib/theme.ts sets data-theme on
+ * <html>). Both selectors carry the same values.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --color-brand: #2f6bd6;
+    --color-brand-strong: #2559b8;
+    --color-brand-text: #9cc0ff;
+    --color-on-brand: #ffffff;
+    --color-primary: #f4f4f5;
+    --color-primary-hover: #d4d4d8;
+    --color-on-primary: #0d0d0d;
+    --color-text: #ececec;
+    --color-muted: #a3a3a3;
+    --color-subtle: #8f8f8f;
+
+    --color-bg: #000000;
+    --color-surface: #0c0c0d;
+    --color-surface-alt: #111113;
+    --color-surface-raised: #161618;
+    --color-sidebar: #000000;
+    --color-border: #2a2a2d;
+    --color-track: #232326;
+    --color-focus: #7cacf8;
+
+    --color-accent: #7cacf8;
+    --color-accent-tint: rgb(124 172 248 / 0.16);
+    --color-accent-text: #b5d0ff;
+    --color-fill: #161618;
+    --color-fill-hover: #1f1f22;
+    --color-hairline: #1c1c1f;
+    --color-hairline-strong: #323236;
+    --color-scrim: rgb(0 0 0 / 0.7);
+    --color-chrome: rgb(0 0 0 / 0.78);
+    --color-scrollbar: rgb(255 255 255 / 0.16);
+    --color-scrollbar-hover: rgb(255 255 255 / 0.3);
+
+    --color-danger: #f07178;
+    --color-danger-strong: #ffb4b8;
+    --color-danger-soft: rgb(240 113 120 / 0.14);
+    --color-info: #7cacf8;
+    --color-info-soft: rgb(124 172 248 / 0.14);
+    --color-success: #5fd39a;
+    --color-success-soft: rgb(95 211 154 / 0.14);
+
+    --tone-positive-bg: rgb(95 211 154 / 0.16);
+    --tone-positive-fg: #9ee6c0;
+    --tone-positive-solid: #3fae7a;
+    --tone-negative-bg: rgb(240 113 120 / 0.16);
+    --tone-negative-fg: #ffb4b8;
+    --tone-negative-solid: #e0606a;
+    --tone-info-bg: rgb(124 172 248 / 0.16);
+    --tone-info-fg: #b5d0ff;
+    --tone-info-solid: #5f93e6;
+    --tone-warning-bg: rgb(240 190 90 / 0.16);
+    --tone-warning-fg: #f3d58f;
+    --tone-warning-solid: #c99a3a;
+    --tone-neutral-bg: rgb(163 163 163 / 0.14);
+    --tone-neutral-fg: #d4d4d4;
+    --tone-neutral-solid: #8f8f8f;
+    --tone-on-solid: #000000;
+
+    --level-green-soft: rgb(95 211 154 / 0.16);
+    --level-yellow-soft: rgb(240 190 90 / 0.16);
+    --level-orange-soft: rgb(240 150 90 / 0.16);
+    --level-red-soft: rgb(240 113 120 / 0.16);
+    --level-green-text: #9ee6c0;
+    --level-yellow-text: #f3d58f;
+    --level-orange-text: #f8c29a;
+    --level-red-text: #ffb4b8;
+
+    --viz-8: #8f8f8f;
+    --trend-i: #a3a3a3;
+
+    --ink-strong: #ececec;
+    --ink: #d4d4d4;
+    --ink-soft: #8f8f8f;
+    --ink-faint: #7a7a7a;
+    --canvas: #050505;
+    --canvas-node: #161618;
+    --canvas-halo: #000000;
+
+    --map-bg: #0b0d10;
+    --map-sea: #0d1822;
+    --map-land: #16181b;
+    --map-line: #3d4652;
+    --map-label-sea: #7fa3bd;
+    --map-label-area: #ab9f80;
+    --map-ink: #c9d4df;
+    --map-text: #ececec;
+    --map-halo: rgb(0 0 0 / 0.8);
+    --map-point: #16181b;
+    --map-concession: #4f8db0;
+    --map-selected: #e6b54a;
+    --map-alert: #f07178;
+    --map-heat-1: #3a2a14;
+    --map-heat-2: #6b4518;
+    --map-heat-3: #a35a22;
+    --map-heat-4: #d0612c;
+    /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+    --map-outline-selected: #ffffff;
+    --map-district-line: #c9d4df;
+    --map-point-halo: #000000;
+    /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+    --map-relief-1: #14211a;
+    --map-relief-2: #27402c;
+    --map-relief-3: #4a4a2c;
+    --map-relief-4: #5e4630;
+    --map-relief-5: #7a5c44;
+    --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+    --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+    --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+    --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+    --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+    --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-brand: #2f6bd6;
+  --color-brand-strong: #2559b8;
+  --color-brand-text: #9cc0ff;
+  --color-on-brand: #ffffff;
+  --color-primary: #f4f4f5;
+  --color-primary-hover: #d4d4d8;
+  --color-on-primary: #0d0d0d;
+  --color-text: #ececec;
+  --color-muted: #a3a3a3;
+  --color-subtle: #8f8f8f;
+
+  --color-bg: #000000;
+  --color-surface: #0c0c0d;
+  --color-surface-alt: #111113;
+  --color-surface-raised: #161618;
+  --color-sidebar: #000000;
+  --color-border: #2a2a2d;
+  --color-track: #232326;
+  --color-focus: #7cacf8;
+
+  --color-accent: #7cacf8;
+  --color-accent-tint: rgb(124 172 248 / 0.16);
+  --color-accent-text: #b5d0ff;
+  --color-fill: #161618;
+  --color-fill-hover: #1f1f22;
+  --color-hairline: #1c1c1f;
+  --color-hairline-strong: #323236;
+  --color-scrim: rgb(0 0 0 / 0.7);
+  --color-chrome: rgb(0 0 0 / 0.78);
+  --color-scrollbar: rgb(255 255 255 / 0.16);
+  --color-scrollbar-hover: rgb(255 255 255 / 0.3);
+
+  --color-danger: #f07178;
+  --color-danger-strong: #ffb4b8;
+  --color-danger-soft: rgb(240 113 120 / 0.14);
+  --color-info: #7cacf8;
+  --color-info-soft: rgb(124 172 248 / 0.14);
+  --color-success: #5fd39a;
+  --color-success-soft: rgb(95 211 154 / 0.14);
+
+  --tone-positive-bg: rgb(95 211 154 / 0.16);
+  --tone-positive-fg: #9ee6c0;
+  --tone-positive-solid: #3fae7a;
+  --tone-negative-bg: rgb(240 113 120 / 0.16);
+  --tone-negative-fg: #ffb4b8;
+  --tone-negative-solid: #e0606a;
+  --tone-info-bg: rgb(124 172 248 / 0.16);
+  --tone-info-fg: #b5d0ff;
+  --tone-info-solid: #5f93e6;
+  --tone-warning-bg: rgb(240 190 90 / 0.16);
+  --tone-warning-fg: #f3d58f;
+  --tone-warning-solid: #c99a3a;
+  --tone-neutral-bg: rgb(163 163 163 / 0.14);
+  --tone-neutral-fg: #d4d4d4;
+  --tone-neutral-solid: #8f8f8f;
+  --tone-on-solid: #000000;
+
+  --level-green-soft: rgb(95 211 154 / 0.16);
+  --level-yellow-soft: rgb(240 190 90 / 0.16);
+  --level-orange-soft: rgb(240 150 90 / 0.16);
+  --level-red-soft: rgb(240 113 120 / 0.16);
+  --level-green-text: #9ee6c0;
+  --level-yellow-text: #f3d58f;
+  --level-orange-text: #f8c29a;
+  --level-red-text: #ffb4b8;
+
+  --viz-8: #8f8f8f;
+  --trend-i: #a3a3a3;
+
+  --ink-strong: #ececec;
+  --ink: #d4d4d4;
+  --ink-soft: #8f8f8f;
+  --ink-faint: #7a7a7a;
+  --canvas: #050505;
+  --canvas-node: #161618;
+  --canvas-halo: #000000;
+
+  --map-bg: #0b0d10;
+  --map-sea: #0d1822;
+  --map-land: #16181b;
+  --map-line: #3d4652;
+  --map-label-sea: #7fa3bd;
+  --map-label-area: #ab9f80;
+  --map-ink: #c9d4df;
+  --map-text: #ececec;
+  --map-halo: rgb(0 0 0 / 0.8);
+  --map-point: #16181b;
+  --map-concession: #4f8db0;
+  --map-selected: #e6b54a;
+  --map-alert: #f07178;
+  --map-heat-1: #3a2a14;
+  --map-heat-2: #6b4518;
+  --map-heat-3: #a35a22;
+  --map-heat-4: #d0612c;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #ffffff;
+  --map-district-line: #c9d4df;
+  --map-point-halo: #000000;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #14211a;
+  --map-relief-2: #27402c;
+  --map-relief-3: #4a4a2c;
+  --map-relief-4: #5e4630;
+  --map-relief-5: #7a5c44;
+  --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+  --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+  --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+  --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+/* TOKENS NUEVOS y valores corregidos: propuesta de este artboard, no están en tokens.css */
+:root {
+  --color-control-border: #858585;
+  --color-warning: var(--tone-warning-solid);
+  --color-warning-soft: var(--tone-warning-bg);
+  --text-caption: 0.75rem;
+  --motion-spin: 800ms;
+  --motion-shimmer: 1400ms;
+  --dim-d: #92600f;
+  --level-yellow: #a87a12;
+  --viz-6: #a87a12;
+  --row-height: 2.25rem;
+  --rail-width: 5rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-control-border: #707075;
+    --ink-faint: #8f8f8f;
+    --level-yellow: #d69e2e;
+    --viz-6: #d69e2e;
+
+  }
+}
+:root[data-theme='dark'] {
+  --color-control-border: #707075;
+  --ink-faint: #8f8f8f;
+  --level-yellow: #d69e2e;
+  --viz-6: #d69e2e;
+
+}
+/* TOKENS:END */
+
+*,*::before,*::after{box-sizing:border-box}
+html{font-family:var(--font-sans);color:var(--color-text);background:var(--color-surface-alt);line-height:var(--leading-normal);-webkit-font-smoothing:antialiased}
+body{margin:0}
+h1,h2,h3,h4{text-wrap:balance;margin:0}
+p{margin:0;text-wrap:pretty}
+ul,ol{list-style:none;margin:0;padding:0}
+table,time,data{font-variant-numeric:tabular-nums}
+code,kbd{font-family:var(--font-mono)}
+button,input,textarea,select{font:inherit;color:inherit}
+fieldset{min-width:0}
+a{color:var(--color-brand-text);text-underline-offset:0.18em}
+:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.ico{flex:none;display:inline-block;vertical-align:-0.125em}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* ---------- Artboard chrome (herramienta de diseño, no producto) ---------- */
+.board{width:1440px;margin:0 auto;padding:var(--space-8) var(--space-12) var(--space-12)}
+.anno{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-8);padding:var(--space-8);background:var(--color-surface);border:1px solid var(--color-hairline);border-radius:var(--radius-lg)}
+.anno-k{font-size:var(--text-xs);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold)}
+.anno h1{font-size:var(--text-3xl);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight);margin-top:var(--space-1)}
+.anno .trade{margin-top:var(--space-3);font-size:var(--text-body);max-width:46rem}
+.anno .trade b{font-weight:var(--weight-semibold)}
+.changes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3) var(--space-6);margin-top:var(--space-5)}
+.changes dt{font-weight:var(--weight-semibold);font-size:var(--text-sm)}
+.changes dd{margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--color-muted)}
+.cost{margin-top:var(--space-5);padding-top:var(--space-4);border-top:1px solid var(--color-hairline);font-size:var(--text-sm)}
+.cost b{font-weight:var(--weight-semibold)}
+.anno-side{display:grid;gap:var(--space-5);align-content:start}
+.tok{border:1px solid var(--color-hairline);border-left:3px solid var(--color-warning);border-radius:var(--radius-md);padding:var(--space-4);background:var(--color-surface-alt)}
+.tok h2{color:var(--tone-warning-fg)}
+.tok h2{font-size:var(--text-md);display:flex;justify-content:space-between;align-items:center;gap:var(--space-3)}
+.tok table{width:100%;border-collapse:collapse;margin-top:var(--space-2);font-size:var(--text-caption)}
+.tok th{text-align:left;font-weight:var(--weight-semibold);padding:var(--space-1) var(--space-2) var(--space-1) 0;border-bottom:1px solid var(--color-control-border)}
+.tok td{padding:var(--space-1) var(--space-2) var(--space-1) 0;vertical-align:top;border-bottom:1px solid var(--color-hairline)}
+.tok td:first-child{font-family:var(--font-mono);white-space:nowrap}
+.tok .sub{margin-top:var(--space-3);font-weight:var(--weight-semibold);font-size:var(--text-sm)}
+.resolves{font-size:var(--text-sm);margin-top:var(--space-6)}
+.resolves h2{font-size:var(--text-md);margin-bottom:var(--space-2)}
+.resolves li{display:grid;grid-template-columns:1.25rem 1fr;gap:var(--space-2);padding:var(--space-1) 0;border-bottom:1px solid var(--color-hairline)}
+.resolves li .ico{color:var(--tone-positive-solid);margin-top:0.2em}
+.resolves li span{color:var(--color-muted)}
+.resolves li b{color:var(--color-text);font-weight:var(--weight-semibold)}
+.themebtn{display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--control-sm);padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);border:1px solid var(--color-control-border);background:var(--color-surface);font-size:var(--text-sm);font-weight:var(--weight-semibold);cursor:pointer}
+.cap{display:flex;justify-content:space-between;align-items:baseline;margin:var(--space-8) 0 var(--space-3);font-size:var(--text-sm);color:var(--color-muted)}
+.cap b{color:var(--color-text);font-weight:var(--weight-semibold);font-size:var(--text-md)}
+.frame{position:relative;width:1344px;height:840px;overflow:hidden;border:1px solid var(--color-hairline-strong);border-radius:var(--radius-lg);background:var(--color-bg);box-shadow:var(--shadow-md)}
+.frame.desk{width:1440px;height:900px;margin-left:calc(-1 * var(--space-12))}
+.bottom{display:grid;grid-template-columns:360px 360px minmax(0,1fr);gap:var(--space-6);align-items:start}
+.phone{position:relative;width:360px;height:780px;overflow:hidden;border:1px solid var(--color-hairline-strong);border-radius:var(--radius-xl);background:var(--color-bg);box-shadow:var(--shadow-md)}
+.ruler{position:absolute;left:0;right:0;border-bottom:1px dashed var(--color-danger);transform:translateY(-100%);font-size:var(--text-2xs);color:var(--color-danger);text-align:right;padding-right:var(--space-2);pointer-events:none;line-height:1.4}
+.specs{display:grid;gap:var(--space-4)}
+.spec{border:1px solid var(--color-hairline);border-radius:var(--radius-lg);background:var(--color-bg);padding:var(--space-4)}
+.spec>h3{font-size:var(--text-xs);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold);margin-bottom:var(--space-3)}
+
+/* ---------- Shared product family (one per role, used by all three directions) ---------- */
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control-md);padding:var(--space-2) var(--space-4);border-radius:var(--radius-pill);border:1px solid transparent;font-size:var(--text-base);font-weight:var(--weight-semibold);line-height:var(--leading-tight);cursor:pointer;white-space:nowrap;transition:background var(--motion-fast) var(--ease-out),border-color var(--motion-fast) var(--ease-out)}
+.btn.s{min-height:var(--control-sm);padding:var(--space-1) var(--space-3);font-size:var(--text-sm)}
+.btn.pri{background:var(--color-primary);color:var(--color-on-primary)}
+.btn.pri:hover{background:var(--color-primary-hover)}
+.btn.sec{background:var(--color-surface);border-color:var(--color-control-border);color:var(--color-text)}
+.btn.sec:hover{background:var(--color-fill)}
+.btn.gh{background:transparent;color:var(--color-brand-text)}
+.btn.gh:hover{background:var(--color-fill)}
+.count{display:inline-grid;place-items:center;min-width:1.25rem;padding:0 var(--space-1);border-radius:var(--radius-pill);background:var(--color-primary);color:var(--color-on-primary);font-size:var(--text-xs);font-weight:var(--weight-bold);line-height:1.25rem}
+.field{display:flex;align-items:center;gap:var(--space-2);min-height:var(--control-md);padding:0 var(--space-3);border:1px solid var(--color-control-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-muted);font-size:var(--text-base)}
+.field input{all:unset;flex:1;min-width:0;width:100%;color:var(--color-text)}
+.field input::placeholder{color:var(--color-subtle)}
+kbd{display:inline-block;padding:0 var(--space-1);border:1px solid var(--color-control-border);border-radius:var(--radius-sm);font-size:var(--text-xs);color:var(--color-muted);line-height:1.4;background:var(--color-surface)}
+/* Estado: one badge family; shape + word, never colour alone. */
+.st{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-0) var(--space-2);border-radius:var(--radius-pill);font-size:var(--text-caption);font-weight:var(--weight-semibold);line-height:var(--leading-snug);white-space:nowrap}
+.st::before{content:'';width:0.5rem;height:0.5rem;border-radius:50%;flex:none}
+.st.pre{background:var(--tone-neutral-bg);color:var(--tone-neutral-fg)}
+.st.pre::before{border:1.5px solid currentColor}
+.st.rev{background:var(--tone-info-bg);color:var(--tone-info-fg)}
+.st.rev::before{background:linear-gradient(90deg,currentColor 50%,transparent 50%);border:1.5px solid currentColor}
+.st.val{background:var(--tone-positive-bg);color:var(--tone-positive-fg)}
+.st.val::before{background:currentColor}
+.st.apr{background:var(--tone-warning-bg);color:var(--tone-warning-fg)}
+.st.apr::before{border-radius:1px;transform:rotate(45deg);background:currentColor;width:0.45rem;height:0.45rem}
+/* Nivel de riesgo: the existing LevelPill. */
+.lv{display:inline-block;padding:var(--space-0) var(--space-2);border-radius:var(--radius-pill);font-weight:var(--weight-bold);font-size:var(--text-caption);line-height:var(--leading-snug);white-space:nowrap}
+.lv.g{background:var(--level-green-soft);color:var(--level-green-text)}
+.lv.y{background:var(--level-yellow-soft);color:var(--level-yellow-text)}
+.lv.o{background:var(--level-orange-soft);color:var(--level-orange-text)}
+.lv.r{background:var(--level-red-soft);color:var(--level-red-text)}
+/* Verificación A–E: letter + five-step meter + word. */
+.vf{display:inline-flex;align-items:center;gap:var(--space-1);font-size:var(--text-caption);color:var(--color-muted);white-space:nowrap}
+.vf b{display:inline-grid;place-items:center;width:1.125rem;height:1.125rem;border-radius:var(--radius-xs);border:1px solid var(--color-control-border);color:var(--color-text);font-family:var(--font-mono);font-size:var(--text-xs);font-weight:var(--weight-bold)}
+.vf i{display:inline-flex;gap:1px}
+.vf i::before,.vf i::after{content:none}
+.vf s{display:block;width:0.25rem;height:0.625rem;border-radius:1px;background:var(--color-track)}
+.vf s.on{background:var(--color-text)}
+/* Dimension badge (existing), --dim-d corrected. */
+.dm{display:inline-grid;place-items:center;width:1.375rem;height:1.375rem;border-radius:var(--radius-sm);color:var(--color-on-strong);font-weight:var(--weight-heavy);font-size:var(--text-xs);text-decoration:none;flex:none}
+.dm.G{background:var(--dim-g)}.dm.A{background:var(--dim-a)}.dm.D{background:var(--dim-d)}.dm.N{background:var(--dim-n)}.dm.E{background:var(--dim-e)}.dm.I{background:var(--dim-i)}
+/* IRSA: one caveat, same words everywhere. */
+.irsa{display:inline-flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
+.prov{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-0) var(--space-2);border:1px dashed var(--color-warning);border-radius:var(--radius-pill);background:var(--color-warning-soft);color:var(--tone-warning-fg);font-size:var(--text-caption);font-weight:var(--weight-semibold);white-space:nowrap}
+.offline{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--text-caption);color:var(--color-muted)}
+.offline::before{content:'';width:0.5rem;height:0.5rem;border-radius:50%;border:1.5px solid var(--color-muted)}
+.chipx{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--control-sm);padding:0 var(--space-1) 0 var(--space-3);border-radius:var(--radius-pill);background:var(--color-accent-tint);color:var(--color-accent-text);font-size:var(--text-sm);font-weight:var(--weight-medium);white-space:nowrap}
+.chipx button{display:grid;place-items:center;width:1.5rem;height:1.5rem;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer}
+.chipx button:hover{background:var(--color-surface)}
+.empty{display:grid;justify-items:center;gap:var(--space-2);padding:var(--space-6) var(--space-4);border:1px dashed var(--color-control-border);border-radius:var(--radius-lg);text-align:center}
+.empty .ei{display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);border-radius:50%;background:var(--color-accent-tint);color:var(--color-accent);font-size:var(--text-xl)}
+.empty p{color:var(--color-muted);font-size:var(--text-base);max-width:28rem}
+.empty b{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.alert{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3);border-radius:var(--radius-md);border:1px solid var(--tone-negative-solid);background:var(--tone-negative-bg);color:var(--tone-negative-fg);font-size:var(--text-base)}
+.alert .grow{flex:1}
+.spin{display:inline-block;width:1rem;height:1rem;border:2px solid var(--color-track);border-top-color:var(--color-accent);border-radius:50%;animation:spin var(--motion-spin) linear infinite;vertical-align:-0.2em}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skl{display:block;height:0.875rem;border-radius:var(--radius-xs);background:linear-gradient(90deg,transparent 0%,var(--color-surface) 50%,transparent 100%) 0 0/40% 100% no-repeat,var(--color-fill);animation:shimmer var(--motion-shimmer) var(--ease-in-out) infinite}
+@keyframes shimmer{from{background-position:-40% 0,0 0}to{background-position:140% 0,0 0}}
+.muted{color:var(--color-muted)}
+.cap-t{font-size:var(--text-caption);color:var(--color-muted)}
+
+
+/* ===== 02 Mesa de operaciones ===== */
+.app{display:grid;grid-template-columns:var(--rail-width) minmax(0,1fr);grid-template-rows:3.25rem minmax(0,1fr);height:100%}
+.rail{grid-row:1 / span 2;display:flex;flex-direction:column;align-items:stretch;gap:var(--space-1);padding:var(--space-3) var(--space-2);background:var(--color-sidebar);border-right:1px solid var(--color-hairline)}
+.mark{display:grid;place-items:center;width:2rem;height:2rem;margin:0 auto var(--space-3);border-radius:var(--radius-md);background:var(--color-primary);color:var(--color-on-primary);font-weight:var(--weight-heavy)}
+.rail a{position:relative;display:grid;justify-items:center;gap:var(--space-0);padding:var(--space-2) 0;border-radius:var(--radius-md);color:var(--color-muted);font-size:var(--text-xs);font-weight:var(--weight-medium);text-decoration:none}
+.rail a .ico{font-size:var(--text-xl)}
+.rail a:hover{background:var(--color-fill);color:var(--color-text)}
+.rail a[aria-current='page']{background:var(--color-accent-tint);color:var(--color-accent-text);font-weight:var(--weight-semibold)}
+.rail a .count{position:absolute;top:var(--space-1);right:var(--space-2)}
+.rail hr{width:100%;border:0;border-top:1px solid var(--color-hairline);margin:var(--space-2) 0}
+.rail .end{margin-top:auto}
+.top{display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-4);border-bottom:1px solid var(--color-hairline);background:var(--color-chrome)}
+.proj{display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--control-sm);padding:0 var(--space-3);border-radius:var(--radius-md);border:1px solid var(--color-control-border);background:var(--color-surface);font-size:var(--text-sm);font-weight:var(--weight-semibold);cursor:pointer}
+.crumb{font-size:var(--text-sm);color:var(--color-muted)}
+.crumb b{color:var(--color-text);font-weight:var(--weight-semibold)}
+.cmd{display:flex;align-items:center;gap:var(--space-2);width:36rem;margin:0 auto;min-height:var(--control-sm);padding:0 var(--space-3);border-radius:var(--radius-md);border:1px solid var(--color-control-border);background:var(--color-surface);color:var(--color-muted);font-size:var(--text-sm);cursor:text}
+.cmd span{flex:1;text-align:left}
+.av{display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:var(--color-accent-tint);color:var(--color-accent-text);font-size:var(--text-xs);font-weight:var(--weight-bold);border:0;cursor:pointer}
+.main{overflow:hidden;background:var(--color-bg);min-height:0}
+.ph{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-6) var(--space-3)}
+.ph h1{font-size:var(--text-xl);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-tight)}
+.ph p{font-size:var(--text-sm);color:var(--color-muted)}
+.seg{display:inline-grid;grid-auto-flow:column;gap:var(--space-0);padding:var(--space-0);border-radius:var(--radius-md);background:var(--color-fill);margin-left:auto}
+.seg button{min-height:var(--control-sm);padding:0 var(--space-3);border:0;border-radius:calc(var(--radius-md) - var(--space-0));background:transparent;color:var(--color-muted);font-size:var(--text-sm);cursor:pointer}
+.seg button[aria-pressed='true']{background:var(--color-surface-raised);color:var(--color-text);font-weight:var(--weight-semibold);box-shadow:var(--shadow-sm)}
+/* Inicio: actionable numbers, queue, audit. */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 var(--space-6);border:1px solid var(--color-hairline);border-radius:var(--radius-md)}
+.kpis li{display:grid;border-right:1px solid var(--color-hairline)}
+.kpis li:last-child{border-right:0}
+.kpis a{display:grid;gap:var(--space-0);padding:var(--space-3) var(--space-4);border-right:1px solid var(--color-hairline);color:var(--color-text);text-decoration:none}
+.kpis a:last-child{border-right:0}
+.kpis a:hover{background:var(--color-fill)}
+.kpis span{font-size:var(--text-sm);color:var(--color-muted);display:flex;justify-content:space-between}
+.kpis data{font-size:var(--text-2xl);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight)}
+.kpis small{font-size:var(--text-caption);color:var(--color-muted)}
+.split{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:var(--space-4);padding:var(--space-4) var(--space-6)}
+.panel{border:1px solid var(--color-hairline);border-radius:var(--radius-md);overflow:hidden;min-width:0}
+.panel>header{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-hairline);background:var(--color-surface-alt)}
+.panel>header h2{font-size:var(--text-sm);font-weight:var(--weight-semibold)}
+.panel>header .muted{font-size:var(--text-caption)}
+.panel>header a,.panel>header .kh{margin-left:auto;font-size:var(--text-caption)}
+table.t{width:100%;border-collapse:collapse;font-size:var(--text-sm);table-layout:fixed}
+.t th{position:sticky;top:0;text-align:left;font-weight:var(--weight-semibold);font-size:var(--text-caption);color:var(--color-muted);padding:0 var(--space-2);height:var(--control-sm);border-bottom:1px solid var(--color-hairline);background:var(--color-surface-alt);white-space:nowrap}
+.t td{height:var(--row-height);padding:0 var(--space-2);border-bottom:1px solid var(--color-hairline);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t tr:hover td{background:var(--color-fill)}
+.t tr[aria-selected='true'] td{background:var(--color-accent-tint)}
+.t tr[aria-selected='true'] td:first-child{box-shadow:inset 3px 0 0 var(--color-accent)}
+
+.t input{width:1rem;height:1rem;accent-color:var(--color-accent);vertical-align:middle}
+.t .tt span{display:block;overflow:hidden;text-overflow:ellipsis}
+.audit li{display:grid;grid-template-columns:3.5rem minmax(0,1fr);gap:var(--space-2);padding:var(--space-2) var(--space-3);border-bottom:1px solid var(--color-hairline);font-size:var(--text-sm)}
+.audit time{font-size:var(--text-caption);color:var(--color-muted)}
+.audit b{font-weight:var(--weight-semibold)}
+.audit em{font-style:normal;color:var(--color-muted)}
+.terr td{height:var(--row-height)}
+.panel .irsabox{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3);padding:var(--space-3);border-top:1px solid var(--color-hairline);font-size:var(--text-sm)}
+.kh{display:inline-flex;gap:var(--space-1);align-items:center;color:var(--color-muted)}
+@media (hover: none), (pointer: coarse){.kh{display:none}}
+/* Registros: views, filter grammar, table + detail. */
+.views{display:flex;gap:var(--space-1);padding:0 var(--space-6)}
+.views button{display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--control-sm);padding:0 var(--space-3);border-radius:var(--radius-pill);border:0;background:transparent;color:var(--color-muted);font-size:var(--text-sm);cursor:pointer}
+.views button small{font-size:var(--text-caption)}
+.views button[aria-pressed='true']{background:var(--color-accent-tint);color:var(--color-accent-text);font-weight:var(--weight-semibold)}
+.views .add{margin-left:auto;color:var(--color-brand-text)}
+.fbar{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2);margin:var(--space-3) var(--space-6) 0;padding:var(--space-2);border:1px solid var(--color-control-border);border-radius:var(--radius-md);background:var(--color-surface)}
+.fbar .tok2{display:inline-flex;align-items:center;gap:var(--space-1);min-height:1.75rem;padding:0 var(--space-1) 0 var(--space-2);border-radius:var(--radius-sm);background:var(--color-fill);font-size:var(--text-sm)}
+.fbar .tok2 b{font-weight:var(--weight-semibold)}
+.fbar .tok2 button{display:grid;place-items:center;width:1.5rem;height:1.5rem;border:0;border-radius:var(--radius-xs);background:transparent;color:var(--color-muted);cursor:pointer}
+.fbar .tok2 button:hover{background:var(--color-fill-hover);color:var(--color-text)}
+.fbar input{all:unset;flex:1;min-width:10rem;font-size:var(--text-sm);color:var(--color-text)}
+.fbar .r{margin-left:auto;display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-sm);color:var(--color-muted)}
+.work{display:grid;grid-template-columns:minmax(0,1fr) 22rem;gap:0;margin:var(--space-3) 0 0;border-top:1px solid var(--color-hairline);height:calc(100% - 9.75rem)}
+.tablewrap{overflow:hidden;min-width:0;display:flex;flex-direction:column}
+.tablewrap .scroll{flex:1;overflow:hidden}
+.tfoot{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-2) var(--space-6);border-top:1px solid var(--color-hairline);font-size:var(--text-sm);color:var(--color-muted)}
+.tfoot .pg{display:flex;gap:var(--space-1);margin-left:auto}
+.ib{display:grid;place-items:center;width:var(--control-sm);height:var(--control-sm);border:1px solid var(--color-control-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-text);cursor:pointer}
+.detail{border-left:1px solid var(--color-hairline);background:var(--color-surface);overflow:hidden;display:flex;flex-direction:column}
+.dh{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4) 0}
+.dh .x{margin-left:auto}
+.detail h2{padding:var(--space-2) var(--space-4) 0;font-size:var(--text-lg);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-tight);line-height:var(--leading-snug)}
+.kv{display:grid;grid-template-columns:7rem minmax(0,1fr);gap:var(--space-1) var(--space-3);padding:var(--space-3) var(--space-4);font-size:var(--text-sm)}
+.kv dt{color:var(--color-muted)}
+.kv dd{margin:0}
+.dsec{padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-hairline);font-size:var(--text-sm)}
+.dsec h3{font-size:var(--text-caption);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold);margin-bottom:var(--space-2);display:flex;align-items:center;gap:var(--space-2)}
+.dsec li{display:flex;gap:var(--space-2);align-items:baseline;padding:var(--space-1) 0}
+.dsec li time{flex:none;width:4.5rem;font-size:var(--text-caption);color:var(--color-muted)}
+.four{display:flex;gap:var(--space-2);align-items:flex-start;padding:var(--space-2) var(--space-3);border-radius:var(--radius-md);background:var(--tone-warning-bg);color:var(--tone-warning-fg)}
+.dact{display:flex;gap:var(--space-2);margin-top:auto;padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-hairline)}
+/* Phone */
+.pbar{display:flex;align-items:center;gap:var(--space-2);height:3.5rem;padding:0 var(--space-2);border-bottom:1px solid var(--color-hairline);background:var(--color-chrome)}
+.tib{display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);border:0;border-radius:50%;background:transparent;color:var(--color-text);font-size:var(--text-xl);cursor:pointer;flex:none}
+.pcmd{flex:1;display:flex;align-items:center;gap:var(--space-2);min-height:var(--touch-target);padding:0 var(--space-3);border-radius:var(--radius-md);border:1px solid var(--color-control-border);background:var(--color-surface);color:var(--color-muted);font-size:var(--text-md)}
+.pk{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:var(--space-3);border:1px solid var(--color-hairline);border-radius:var(--radius-md);overflow:hidden;background:var(--color-hairline)}
+.pk li{display:grid}
+.pk a{display:grid;gap:var(--space-0);padding:var(--space-3);background:var(--color-bg);color:var(--color-text);text-decoration:none;min-height:var(--touch-target)}
+.pk span{font-size:var(--text-sm);color:var(--color-muted)}
+.pk data{font-size:var(--text-xl);font-weight:var(--weight-semibold);line-height:var(--leading-tight)}
+.pk small{font-size:var(--text-caption);color:var(--color-muted)}
+.plist{margin:0 var(--space-3)}
+.plist h2{font-size:var(--text-sm);font-weight:var(--weight-semibold);padding:var(--space-2) 0;display:flex;gap:var(--space-2);align-items:baseline}
+.plist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2);align-items:center;min-height:var(--touch-target);padding:var(--space-2) 0;border-top:1px solid var(--color-hairline)}
+.plist .t{font-size:var(--text-md);line-height:var(--leading-snug);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.plist .m{display:flex;flex-wrap:wrap;gap:var(--space-1);margin-top:var(--space-1);align-items:center}
+.scrim{position:absolute;inset:0;background:var(--color-scrim)}
+.psheet{position:absolute;inset:auto 0 0;height:80%;display:flex;flex-direction:column;background:var(--color-surface-raised);border-radius:var(--radius-xl) var(--radius-xl) 0 0;box-shadow:var(--shadow-raised)}
+.grab{align-self:center;width:2.25rem;height:0.3125rem;margin-top:var(--space-2);border-radius:var(--radius-pill);background:var(--color-control-border)}
+.psh{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-2) var(--space-2) var(--space-4)}
+.psh h2{font-size:var(--text-lg);font-weight:var(--weight-semibold);display:flex;gap:var(--space-2);align-items:center}
+.x{display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);border:0;border-radius:50%;background:var(--color-fill);color:var(--color-muted);font-size:var(--text-lg);cursor:pointer}
+.dh .x{width:var(--control-sm);height:var(--control-sm);font-size:var(--text-md)}
+.drill{margin:var(--space-2) var(--space-4) 0;border:1px solid var(--color-hairline);border-radius:var(--radius-md);overflow:hidden}
+.drill li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:var(--space-2);align-items:center;min-height:var(--touch-target);padding:0 var(--space-3);border-top:1px solid var(--color-hairline);font-size:var(--text-md)}
+.drill li:first-child{border-top:0}
+.drill li small{font-size:var(--text-sm);color:var(--color-accent-text);font-weight:var(--weight-semibold)}
+.drill li .ico{color:var(--color-muted)}
+.drill li .none{color:var(--color-muted);font-weight:var(--weight-regular)}
+.psf{display:flex;gap:var(--space-2);margin-top:auto;padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-hairline)}
+.psf .btn{min-height:var(--touch-target)}
+.psf .pri{flex:1}
+.ptoks{display:flex;flex-wrap:wrap;gap:var(--space-2);padding:0 var(--space-4)}
+/* Palette specimen */
+.pal{border:1px solid var(--color-hairline);border-radius:var(--radius-xl);background:var(--color-surface-raised);box-shadow:var(--shadow-raised);overflow:hidden}
+.pal .in{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4);border-bottom:1px solid var(--color-hairline);font-size:var(--text-lg)}
+.pal .in code{font-size:var(--text-md);color:var(--color-accent-text);background:var(--color-accent-tint);padding:0 var(--space-1);border-radius:var(--radius-xs)}
+.pal .grp{padding:var(--space-2) var(--space-2) 0}
+.pal .grp p{padding:var(--space-1) var(--space-2);font-size:var(--text-caption);color:var(--color-muted);font-weight:var(--weight-semibold)}
+.pal .opt{display:flex;align-items:center;gap:var(--space-3);min-height:var(--control-md);padding:0 var(--space-2);border-radius:var(--radius-md);font-size:var(--text-sm)}
+.pal .opt[aria-selected='true']{background:var(--color-accent-tint);color:var(--color-accent-text)}
+.pal .opt .k{margin-left:auto;display:flex;gap:var(--space-1)}
+.pal .opt .ico{font-size:var(--text-lg);color:var(--color-muted)}
+.pal .opt[aria-selected='true'] .ico{color:inherit}
+.pal footer{display:flex;gap:var(--space-4);padding:var(--space-2) var(--space-4);margin-top:var(--space-2);border-top:1px solid var(--color-hairline);font-size:var(--text-caption);color:var(--color-muted)}
+.fam{display:grid;gap:var(--space-2);font-size:var(--text-sm)}
+.fam div{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
+.fam span.k{width:6.5rem;color:var(--color-muted);font-size:var(--text-caption)}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)}
+.mini .empty{padding:var(--space-4) var(--space-3)}
+
+</style>
+</head>
+<body>
+<main class="board">
+
+<header class="anno" aria-labelledby="dir-title">
+  <div>
+    <p class="anno-k">Dirección 02 · design/vanguard · T30</p>
+    <h1 id="dir-title">Mesa de operaciones</h1>
+    <p class="trade"><b>Denso, dividido y con teclado primero: la paleta Ctrl K es la navegación principal y la gramática de filtros.</b> Tabla de filas de 36 px con detalle al lado, auditoría y regla de cuatro ojos siempre visibles; 16 registros por pantalla. A cambio exige aprender atajos y gramática, cansa más en sesiones largas y en teléfono pierde su ventaja: allí se convierte en lista con hoja de filtros.</p>
+    <dl class="changes">
+      <div><dt>Tokens</dt><dd>Añade <code>--row-height</code> 36 px y <code>--rail-width</code> 80 px; columnas de ancho fijo. Selección: tinte + barra de 3 px <code>--color-accent</code>, distinta del foco.</dd></div><div><dt>Densidad</dt><dd>Alta. Filas de una línea, encabezado fijo, detalle de 22rem; Inicio con 4 cifras que llevan a una acción, no decorativas.</dd></div><div><dt>Tipo</dt><dd>Base 13–14 px (<code>--text-sm</code>/<code>--text-base</code>); títulos <code>--text-xl</code>; cifras <code>--text-2xl</code> tabulares; <code>--text-caption</code> en encabezados de tabla.</dd></div><div><dt>Movimiento</dt><dd>Casi nulo: la paleta aparece sin desplazamiento (<code>--motion-fast</code>), el detalle cambia sin animar. Atajos ocultos con puntero táctil.</dd></div>
+    </dl>
+    <p class="cost"><b>Coste: medio–alto (≈ 6 cortes).</b> Gramática de filtros compartida por Registros y Bandeja (parser + URL), modelo de teclado y foco (J/K, roving tabindex), tabla con paginación en servidor y vistas guardadas, ampliación de SearchPalette. Riesgo: pruebas de teclado y lectores de pantalla en la tabla.</p>
+    <section class="resolves" aria-labelledby="res-h">
+      <h2 id="res-h">Cómo resuelve la auditoría</h2>
+      <ul><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Hoja única de filtros</b> — barra de filtros con fichas quitables (F) en escritorio; en teléfono una hoja con contador y lista de grupos</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Vacío con acción</b> — Integraciones deja de ser callejón: «Conectar carpeta»</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Una familia de estados</b> — misma insignia en Inicio, tabla, detalle y teléfono</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Un aviso IRSA</b> — en «Territorio esta semana» y en la cola del teléfono, mismo texto</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Bordes 3:1</b> — comando, barra de filtros, proyecto, paginación y botones con <code>--color-control-border</code></span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Inicio a 360 px sin franjas</b> — las cuatro cifras empiezan bajo la barra (medido en el marco C)</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Además</b> — atajos solo con teclado físico (lo que hoy falla en Bandeja), una sola selección (tinte), detalle con fuentes, cuatro ojos e historial</span></li></ul>
+    </section>
+  </div>
+  <div class="anno-side">
+    <div style="display:flex;justify-content:flex-end"><button type="button" class="themebtn" id="theme" aria-pressed="false"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M16.2 7.8l-2.1 6.3-6.3 2.1 2.1-6.3z"/></svg><span>Ver en oscuro</span></button></div>
+    <section class="tok" aria-labelledby="tok-h">
+      <h2 id="tok-h">Tokens nuevos <span class="cap-t" style="color:inherit">propuesta, no están en tokens.css</span></h2>
+      <table>
+        <thead><tr><th scope="col">Token</th><th scope="col">Claro / oscuro</th><th scope="col">Contraste</th><th scope="col">Para</th></tr></thead>
+        <tbody>
+          <tr><td>--color-control-border</td><td>#858585 / #707075</td><td>3,69:1 sobre blanco · 3,35:1 sobre --color-fill · oscuro 3,97:1 sobre #0c0c0d</td><td>Borde de input, select y botón secundario (hoy 1,28:1)</td></tr><tr><td>--color-warning</td><td>= --tone-warning-solid (#8a6115) / #c99a3a</td><td>5,52:1 sobre blanco · oscuro 7,60:1</td><td>Alias que faltaba; un solo «aviso»</td></tr><tr><td>--color-warning-soft</td><td>= --tone-warning-bg</td><td>fondo; texto --tone-warning-fg 6,58:1</td><td>Fondo de la nota provisional</td></tr><tr><td>--text-caption</td><td>0.75rem · 12 px</td><td>—</td><td>Absorbe 10,5/12 px sueltos (metadatos)</td></tr><tr><td>--motion-spin</td><td>800ms</td><td>—</td><td>Hoy literal 0.8s en QueryState</td></tr><tr><td>--motion-shimmer</td><td>1400ms</td><td>—</td><td>Hoy literal 1.4s en Skeleton</td></tr><tr><td>--row-height</td><td>2.25rem · 36 px</td><td>—</td><td>Fila compacta de tabla</td></tr><tr><td>--rail-width</td><td>5rem · 80 px</td><td>—</td><td>Riel de destinos con etiqueta</td></tr>
+        </tbody>
+      </table>
+      <p class="sub">Valores corregidos (mismo nombre)</p>
+      <table><tbody><tr><td>--dim-d</td><td>#b7791f → #92600f</td><td colspan="2">blanco encima 3,64 → 5,38:1</td></tr><tr><td>--level-yellow</td><td>#d69e2e → #a87a12 (oscuro #d69e2e)</td><td colspan="2">marca sobre blanco 2,39 → 3,85:1 · oscuro 8,18:1</td></tr><tr><td>--viz-6</td><td>#d69e2e → #a87a12 (oscuro #d69e2e)</td><td colspan="2">2,39 → 3,85:1</td></tr><tr><td>--ink-faint (oscuro)</td><td>#7a7a7a → #8f8f8f</td><td colspan="2">sobre #161618 4,21 → 5,59:1</td></tr></tbody></table>
+      <p class="cap-t" style="color:inherit;margin-top:var(--space-2)">Retirar: z-index 100 → <code>--z-modal</code>; 999px → <code>--radius-pill</code>; texto de peligro solo <code>--color-danger</code>, marcas solo <code>--tone-negative-solid</code>.</p>
+    </section>
+  </div>
+</header>
+<p class="cap"><b>A · Escritorio 1440 × 900 · Inicio («Turno de hoy»)</b><span>Riel de 5 destinos + Integraciones; Configuración y Cuenta en «Ajustes» y en el avatar</span></p>
+<div class="frame desk" role="region" aria-label="Escritorio, Inicio"><div class="app"><nav class="rail" aria-label="Destinos (Inicio)"><span class="mark" aria-hidden="true">S</span><a href="#" aria-keyshortcuts="G+I" aria-current="page"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a><a href="#" aria-keyshortcuts="G+R" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Registros</a><a href="#" aria-keyshortcuts="G+T" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>Territorio</a><a href="#" aria-keyshortcuts="G+B" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg>Bandeja<span class="count" aria-label="3 pendientes">3</span></a><a href="#" aria-keyshortcuts="G+A" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg>Análisis</a><hr /><a href="#"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg>Integrar</a><a href="#" class="end"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ajustes</a></nav><header class="top"><button type="button" class="proj" aria-haspopup="listbox" aria-label="Proyecto: Sechura">Sechura <svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><span class="crumb"><b>Inicio</b></span>
+  <button type="button" class="cmd" aria-haspopup="dialog" aria-keyshortcuts="Control+K"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Ir a, buscar o filtrar…</span><kbd>Ctrl K</kbd></button>
+  <span class="offline" role="status">Sin internet · local</span><button type="button" class="av" aria-label="AP, cuenta de Ana Prueba">AP</button></header>
+<div class="main">
+  <div class="ph"><div><h1>Turno de hoy</h1><p>Jueves 12 nov · Sechura · actualizado 08:40</p></div>
+    <div class="seg" role="group" aria-label="Periodo"><button type="button" aria-pressed="true">Hoy</button><button type="button" aria-pressed="false">7 días</button><button type="button" aria-pressed="false">30 días</button></div></div>
+  <ul class="kpis">
+    <li><a href="#"><span>Por aprobar <kbd class="kh">G B</kbd></span><data value="3">3</data><small>2 alertas · 1 validación · cuatro ojos</small></a></li>
+    <li><a href="#"><span>Alertas activas</span><data value="5">5</data><small>2 Naranja · 3 Amarillo</small></a></li>
+    <li><a href="#"><span>Compromisos por vencer</span><data value="2">2</data><small>en los próximos 30 días</small></a></li>
+    <li><a href="#"><span>Sin verificar (E)</span><data value="18">18</data><small>sin fuente adjunta</small></a></li>
+  </ul>
+  <div class="split">
+    <section class="panel" aria-labelledby="cola-h"><header><h2 id="cola-h">Cola de hoy</h2><span class="muted">10</span><span class="kh"><kbd>J</kbd><kbd>K</kbd> mover · <kbd>Enter</kbd> abrir · <kbd>A</kbd> aprobar</span></header>
+      <table class="t"><colgroup><col style="width:4rem" /><col /><col style="width:5.5rem" /><col style="width:3.75rem" /><col style="width:9.75rem" /></colgroup><thead><tr><th class="w" scope="col">Hora</th><th scope="col">Qué</th><th class="w" scope="col">Nivel</th><th class="w" scope="col">Verif.</th><th class="w" scope="col">Estado</th></tr></thead><tbody>
+      <tr aria-selected="true"><td class="w">07:52</td><td class="tt"><span>Alerta propuesta: posible bloqueo de la vía de acceso Km 14 (ronda de Pampa Blanca)</span></td><td><span class="lv o">Naranja</span></td><td><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td><span class="st apr">Espera aprobación</span></td></tr><tr ><td class="w">07:30</td><td class="tt"><span>Validar: acta de la asamblea comunal de Santa Rita de Huayal</span></td><td><span class="lv g">Verde</span></td><td><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></td><td><span class="st apr">Espera aprobación</span></td></tr><tr ><td class="w">Ayer</td><td class="tt"><span>Compromiso: reparación del reservorio comunal vence el 30 nov</span></td><td><span class="lv o">Naranja</span></td><td><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td><span class="st rev">En revisión</span></td></tr><tr ><td class="w">Ayer</td><td class="tt"><span>Comité de regantes reclama el turno de agua del canal La Tuna</span></td><td><span class="lv y">Amarillo</span></td><td><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td><span class="st rev">En revisión</span></td></tr><tr ><td class="w">10 nov</td><td class="tt"><span>Publicación en redes sobre un supuesto derrame, sin fuente</span></td><td><span class="lv y">Amarillo</span></td><td><span class="vf" title="Verificación E · No verificada" aria-label="Verificación E, No verificada"><b>E</b><i aria-hidden="true"><s class="on"></s><s class=""></s><s class=""></s><s class=""></s><s class=""></s></i></span></td><td><span class="st pre">Preliminar</span></td></tr><tr ><td class="w">10 nov</td><td class="tt"><span>Pescadores de Punta Arena piden monitoreo participativo del agua</span></td><td><span class="lv y">Amarillo</span></td><td><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></td><td><span class="st val">Validado</span></td></tr><tr ><td class="w">09 nov</td><td class="tt"><span>Nota de campo: volquetes de noche por la trocha a Nuevo Horizonte</span></td><td><span class="lv y">Amarillo</span></td><td><span class="vf" title="Verificación D · Referencial" aria-label="Verificación D, Referencial"><b>D</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s><s class=""></s></i></span></td><td><span class="st pre">Preliminar</span></td></tr><tr ><td class="w">08 nov</td><td class="tt"><span>Visita de fiscalización ambiental programada en la quebrada Los Faiques</span></td><td><span class="lv g">Verde</span></td><td><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td><span class="st val">Validado</span></td></tr><tr ><td class="w">06 nov</td><td class="tt"><span>Asociación de mototaxistas de Arenal Chico pide señalización en la vía</span></td><td><span class="lv g">Verde</span></td><td><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td><span class="st pre">Preliminar</span></td></tr><tr ><td class="w">04 nov</td><td class="tt"><span>Presidente de la ronda de Pampa Blanca (cargo) pide reunión con la empresa</span></td><td><span class="lv y">Amarillo</span></td><td><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td><span class="st val">Validado</span></td></tr>
+      </tbody></table></section>
+    <div style="display:grid;gap:var(--space-4);align-content:start;min-width:0">
+      <section class="panel" aria-labelledby="terr-h"><header><h2 id="terr-h">Territorio esta semana</h2><a href="#">Abrir mapa</a></header>
+        <table class="t terr"><colgroup><col /><col style="width:4.5rem" /><col style="width:6rem" /></colgroup><thead><tr><th scope="col">Localidad</th><th class="w" scope="col">Eventos</th><th class="w" scope="col">Nivel</th></tr></thead><tbody>
+          <tr><td class="tt">Pampa Blanca</td><td class="w"><data value="4">4</data></td><td class="w"><span class="lv o">Naranja</span></td></tr>
+          <tr><td class="tt">Santa Rita de Huayal</td><td class="w"><data value="3">3</data></td><td class="w"><span class="lv y">Amarillo</span></td></tr>
+          <tr><td class="tt">Nuevo Horizonte</td><td class="w"><data value="2">2</data></td><td class="w"><span class="lv y">Amarillo</span></td></tr>
+        </tbody></table>
+        <div class="irsabox"><span class="irsa"><span>IRSA <strong>2,7</strong></span><span class="lv o">Naranja</span><span class="prov" title="Pesos y umbrales del IRSA son provisionales hasta su validación metodológica."><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg> Provisional · metodología sin validar</span></span><a href="#">Qué lo mueve</a></div></section>
+      <section class="panel" aria-labelledby="aud-h"><header><h2 id="aud-h">Auditoría reciente</h2><a href="#">Ver todo</a></header>
+        <ul class="audit">
+          <li><time>08:31</time><span><b>Ana Prueba</b> subió la verificación de C a B <em>· Mesa de diálogo con Santa Rita</em></span></li>
+          <li><time>07:52</time><span><b>Ana Prueba</b> propuso una alerta Naranja <em>· espera a otra persona</em></span></li>
+          <li><time>Ayer</time><span><b>Revisor Dos</b> aprobó la validación <em>· Pescadores de Punta Arena</em></span></li>
+        </ul></section>
+      <section class="panel" aria-labelledby="ag-h"><header><h2 id="ag-h">Próximos 30 días</h2><a href="#">Ver agenda</a></header>
+        <ul class="audit">
+          <li><time>18 nov</time><span><b>Mesa técnica de agua</b> <em>· convoca la gobernación · Sechura</em></span></li>
+          <li><time>30 nov</time><span><b>Vence compromiso</b> <em>· reservorio comunal de Santa Rita</em></span></li>
+        </ul></section>
+    </div>
+  </div>
+</div></div></div>
+<p class="cap"><b>B · Escritorio 1440 × 900 · Registros con tabla y detalle</b><span>La paleta y la barra comparten la gramática <code>tipo: nivel: verif: lugar:</code></span></p>
+<div class="frame desk" role="region" aria-label="Escritorio, Registros"><div class="app"><nav class="rail" aria-label="Destinos (Registros)"><span class="mark" aria-hidden="true">S</span><a href="#" aria-keyshortcuts="G+I" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a><a href="#" aria-keyshortcuts="G+R" aria-current="page"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Registros</a><a href="#" aria-keyshortcuts="G+T" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>Territorio</a><a href="#" aria-keyshortcuts="G+B" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg>Bandeja<span class="count" aria-label="3 pendientes">3</span></a><a href="#" aria-keyshortcuts="G+A" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg>Análisis</a><hr /><a href="#"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg>Integrar</a><a href="#" class="end"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ajustes</a></nav><header class="top"><button type="button" class="proj" aria-haspopup="listbox" aria-label="Proyecto: Sechura">Sechura <svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><span class="crumb"><b>Registros</b> › Todos</span>
+  <button type="button" class="cmd" aria-haspopup="dialog" aria-keyshortcuts="Control+K"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Ir a, buscar o filtrar…</span><kbd>Ctrl K</kbd></button>
+  <span class="offline" role="status">Sin internet · local</span><button type="button" class="av" aria-label="AP, cuenta de Ana Prueba">AP</button></header>
+<div class="main">
+  <div class="ph" style="padding-bottom:var(--space-2)"><div><h1>Registros</h1></div><button type="button" class="btn pri s" style="margin-left:auto"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Nuevo <kbd class="kh" style="border-color:currentColor;color:inherit;background:transparent">N</kbd></button></div>
+  <div class="views" role="group" aria-label="Vistas guardadas"><button type="button" aria-pressed="true">Todos <small>1.284</small></button><button type="button" aria-pressed="false">Sin verificar <small>18</small></button><button type="button" aria-pressed="false">Mis borradores <small>4</small></button><button type="button" aria-pressed="false">Alertas Sechura <small>23</small></button><button type="button" class="add"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Guardar vista</button></div>
+  <div class="fbar" role="search" aria-label="Filtros de Registros"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>
+    <span class="tok2">Tipo <b>Evento, Demanda</b><button type="button" aria-label="Quitar filtro de tipo"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+    <span class="tok2">Verificación <b>A–C</b><button type="button" aria-label="Quitar filtro de verificación"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+    <span class="tok2">Desde <b>1 oct</b><button type="button" aria-label="Quitar filtro de fecha"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+    <input aria-label="Añadir filtro o buscar" placeholder="Añadir filtro o buscar…  (tipo:, nivel:, verif:, lugar:)" />
+    <span class="r"><span><b style="color:var(--color-text)">214</b> resultados</span><kbd class="kh">F</kbd><button type="button" class="btn sec s">Columnas</button><button type="button" class="btn sec s">Exportar</button></span>
+  </div>
+  <div class="work">
+    <div class="tablewrap"><div class="scroll"><table class="t" aria-label="Registros filtrados" aria-rowcount="214"><colgroup><col style="width:2.5rem" /><col style="width:4.5rem" /><col /><col style="width:5.25rem" /><col style="width:8rem" /><col style="width:2.75rem" /><col style="width:5.5rem" /><col style="width:3.75rem" /><col style="width:9.75rem" /></colgroup><thead><tr><th class="w"><span class="vh">Seleccionar</span></th><th class="w" scope="col">Fecha ↓</th><th scope="col">Título</th><th class="w" scope="col">Tipo</th><th scope="col">Territorio</th><th class="w" scope="col">Dim.</th><th class="w" scope="col">Nivel</th><th class="w" scope="col">Verif.</th><th class="w" scope="col">Estado</th></tr></thead><tbody><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">11 nov</td><td class="tt"><span>Mesa de diálogo con la C.C. Santa Rita de Huayal: acta pendiente de firma</span></td><td class="w">Evento</td><td>Santa Rita de Huayal</td><td class="w"><abbr class="dm G" title="Gobernanza">G</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td class="w"><span class="st rev">En revisión</span></td></tr><tr aria-selected="true"><td class="w"><input type="checkbox" aria-label="Seleccionar" checked /></td><td class="w">10 nov</td><td class="tt"><span>Ronda campesina de Pampa Blanca anuncia vigilia frente a la concesión Médanos Norte 07</span></td><td class="w">Evento</td><td>Pampa Blanca</td><td class="w"><abbr class="dm A" title="Actores">A</abbr></td><td class="w"><span class="lv o">Naranja</span></td><td class="w"><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st apr">Espera aprobación</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">10 nov</td><td class="tt"><span>Pescadores artesanales de Punta Arena piden monitoreo participativo del agua</span></td><td class="w">Demanda</td><td>Punta Arena</td><td class="w"><abbr class="dm D" title="Demandas">D</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">09 nov</td><td class="tt"><span>Publicación en redes sobre un supuesto derrame, sin fuente identificada</span></td><td class="w">Narrativa</td><td>Sechura (distrito)</td><td class="w"><abbr class="dm N" title="Narrativas">N</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación E · No verificada" aria-label="Verificación E, No verificada"><b>E</b><i aria-hidden="true"><s class="on"></s><s class=""></s><s class=""></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st pre">Preliminar</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">08 nov</td><td class="tt"><span>Visita de fiscalización ambiental programada en la quebrada Los Faiques</span></td><td class="w">Evento</td><td>Quebrada Los Faiques</td><td class="w"><abbr class="dm E" title="Ambiental-territorial">E</abbr></td><td class="w"><span class="lv g">Verde</span></td><td class="w"><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">07 nov</td><td class="tt"><span>Municipalidad distrital convoca reunión informativa sobre la vía de acceso</span></td><td class="w">Evento</td><td>Nuevo Horizonte</td><td class="w"><abbr class="dm I" title="Institucional">I</abbr></td><td class="w"><span class="lv g">Verde</span></td><td class="w"><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">06 nov</td><td class="tt"><span>Comité de regantes reclama el turno de agua del canal La Tuna</span></td><td class="w">Demanda</td><td>Caserío La Tuna</td><td class="w"><abbr class="dm D" title="Demandas">D</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st rev">En revisión</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">05 nov</td><td class="tt"><span>Compromiso: reparación del reservorio comunal, vence el 30 de noviembre</span></td><td class="w">Demanda</td><td>Santa Rita de Huayal</td><td class="w"><abbr class="dm D" title="Demandas">D</abbr></td><td class="w"><span class="lv o">Naranja</span></td><td class="w"><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td class="w"><span class="st rev">En revisión</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">04 nov</td><td class="tt"><span>Presidente de la ronda de Pampa Blanca (cargo) pide reunión con la empresa</span></td><td class="w">Actor</td><td>Pampa Blanca</td><td class="w"><abbr class="dm A" title="Actores">A</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">03 nov</td><td class="tt"><span>Nota de campo: tránsito de volquetes de noche por la trocha a Nuevo Horizonte</span></td><td class="w">Fuente</td><td>Nuevo Horizonte</td><td class="w"><abbr class="dm E" title="Ambiental-territorial">E</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación D · Referencial" aria-label="Verificación D, Referencial"><b>D</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st pre">Preliminar</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">02 nov</td><td class="tt"><span>Asociación de mototaxistas de Arenal Chico pide señalización en la vía</span></td><td class="w">Demanda</td><td>Arenal Chico</td><td class="w"><abbr class="dm D" title="Demandas">D</abbr></td><td class="w"><span class="lv g">Verde</span></td><td class="w"><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st pre">Preliminar</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">31 oct</td><td class="tt"><span>Acta de la asamblea comunal de Santa Rita de Huayal (PDF, 4 páginas)</span></td><td class="w">Fuente</td><td>Santa Rita de Huayal</td><td class="w"><abbr class="dm G" title="Gobernanza">G</abbr></td><td class="w"><span class="lv g">Verde</span></td><td class="w"><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">30 oct</td><td class="tt"><span>Radio local difunde mensaje contra el proyecto; tono moderado</span></td><td class="w">Narrativa</td><td>Sechura (distrito)</td><td class="w"><abbr class="dm N" title="Narrativas">N</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st rev">En revisión</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">29 oct</td><td class="tt"><span>Buzón: vecina de La Tuna pregunta por el empleo local temporal</span></td><td class="w">Buzón</td><td>Caserío La Tuna</td><td class="w"><abbr class="dm D" title="Demandas">D</abbr></td><td class="w"><span class="lv g">Verde</span></td><td class="w"><span class="vf" title="Verificación D · Referencial" aria-label="Verificación D, Referencial"><b>D</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s><s class=""></s></i></span></td><td class="w"><span class="st pre">Preliminar</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">28 oct</td><td class="tt"><span>Gobernación convoca a la mesa técnica de agua del 18 de noviembre</span></td><td class="w">Evento</td><td>Sechura (distrito)</td><td class="w"><abbr class="dm I" title="Institucional">I</abbr></td><td class="w"><span class="lv g">Verde</span></td><td class="w"><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr><tr ><td class="w"><input type="checkbox" aria-label="Seleccionar"  /></td><td class="w">27 oct</td><td class="tt"><span>Ronda de Pampa Blanca levanta la vigilia tras reunión con la gobernación</span></td><td class="w">Evento</td><td>Pampa Blanca</td><td class="w"><abbr class="dm A" title="Actores">A</abbr></td><td class="w"><span class="lv y">Amarillo</span></td><td class="w"><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></td><td class="w"><span class="st val">Validado</span></td></tr></tbody></table></div>
+      <div class="tfoot"><span>1–50 de 214 · pedidas al servidor de 50 en 50</span><span class="kh"><kbd>J</kbd><kbd>K</kbd> mover · <kbd>Enter</kbd> abrir · <kbd>X</kbd> marcar · <kbd>/</kbd> buscar · <kbd>Esc</kbd> cerrar</span><span class="pg"><button class="ib" type="button" aria-label="Página anterior" disabled><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 18l-6-6 6-6"/></svg></button><button class="ib" type="button" aria-label="Página siguiente"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></button></span></div></div>
+    <aside class="detail" aria-labelledby="det-h">
+      <div class="dh"><abbr class="dm A" title="Actores">A</abbr><span class="cap-t">Evento · 10 nov 2026</span><span class="st apr">Espera aprobación</span><button type="button" class="x" aria-label="Cerrar detalle"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+      <h2 id="det-h">Ronda campesina de Pampa Blanca anuncia vigilia frente a la concesión Médanos Norte 07</h2>
+      <dl class="kv"><dt>Territorio</dt><dd>Caserío Pampa Blanca</dd><dt>Actores</dt><dd>Ronda campesina de Pampa Blanca</dd><dt>Nivel</dt><dd><span class="lv o">Naranja</span></dd><dt>Verificación</dt><dd><span class="vf" title="Verificación C · Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i><span>Parcial</span></span></dd></dl>
+      <div class="dsec"><h3>Fuentes · 1 de 2 con copia</h3><ul><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8zM14 3v5h5M9 13h6M9 17h6"/></svg><span>Nota de campo, 10 nov (Ana Prueba)</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="muted">Mensaje en radio local · sin copia guardada</span></li></ul><button type="button" class="btn gh s" style="margin-top:var(--space-1);padding-left:0"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Añadir fuente</button></div>
+      <div class="dsec"><div class="four"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg><span>Alerta propuesta por ti. La aprueba otra persona (regla de cuatro ojos).</span></div></div>
+      <div class="dsec"><h3>Historial <svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 6v6l4 2"/></svg></h3><ul><li><time>Hoy 07:52</time><span>Ana Prueba propuso alerta Naranja</span></li><li><time>10 nov 18:04</time><span>Ana Prueba creó el registro</span></li></ul></div>
+      <div class="dact"><button type="button" class="btn sec s">Editar <kbd class="kh">E</kbd></button><button type="button" class="btn gh s">Abrir completo</button></div>
+    </aside>
+  </div>
+</div></div></div>
+<p class="cap"><b>C · Teléfono 360 px · Inicio y Registros</b><span>En táctil no hay atajos ni división: lista y hoja</span></p>
+<div class="bottom">
+  <div class="phone" role="region" aria-label="Teléfono, Inicio"><div class="pbar"><button class="tib" type="button" aria-label="Abrir menú"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><button type="button" class="pcmd" aria-haspopup="dialog"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Ir a o buscar</span></button></div>
+<p class="cap-t" style="padding:var(--space-2) var(--space-3) 0">Sechura · jue 12 nov · sin internet</p>
+<ul class="pk" data-first>
+  <li><a href="#"><span>Por aprobar</span><data value="3">3</data><small>cuatro ojos</small></a></li>
+  <li><a href="#"><span>Alertas activas</span><data value="5">5</data><small>2 Naranja</small></a></li>
+  <li><a href="#"><span>Por vencer</span><data value="2">2</data><small>compromisos, 30 días</small></a></li>
+  <li><a href="#"><span>Sin verificar</span><data value="18">18</data><small>nivel E</small></a></li>
+</ul>
+<section class="plist" aria-label="Cola de hoy, teléfono"><h2>Cola de hoy <span class="cap-t">10</span></h2><ul>
+  <li><div><p class="t">Alerta propuesta: posible bloqueo de la vía de acceso Km 14</p><p class="m"><span class="st apr">Espera aprobación</span><span class="lv o">Naranja</span><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></p></div><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+  <li><div><p class="t">Validar: acta de la asamblea comunal de Santa Rita de Huayal</p><p class="m"><span class="st apr">Espera aprobación</span><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></p></div><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+  <li><div><p class="t">Compromiso: reparación del reservorio vence el 30 nov</p><p class="m"><span class="st rev">En revisión</span><span class="lv o">Naranja</span></p></div><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+  <li><div><p class="t">IRSA de la semana</p><p class="m"><span class="irsa"><span>IRSA <strong>2,7</strong></span><span class="lv o">Naranja</span><span class="prov" title="Pesos y umbrales del IRSA son provisionales hasta su validación metodológica."><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg> Provisional</span></span></p></div><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+</ul></section>
+<span class="ruler" data-before="490 px" aria-hidden="true"></span></div>
+  <div class="phone" role="region" aria-label="Teléfono, Registros con filtros"><div class="pbar"><button class="tib" type="button" aria-label="Abrir menú"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><button type="button" class="pcmd"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span>Buscar en Registros</span></button></div>
+<div style="display:flex;gap:var(--space-2);padding:var(--space-2) var(--space-3)"><button type="button" class="btn sec" style="min-height:var(--touch-target)"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg> Filtros <span class="count">3</span></button><button type="button" class="btn sec" style="min-height:var(--touch-target)">Todos <svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button></div>
+<div class="scrim" aria-hidden="true"></div>
+<div class="psheet" role="dialog" aria-modal="true" aria-labelledby="pf-h"><span class="grab" aria-hidden="true"></span>
+  <div class="psh"><h2 id="pf-h">Filtros <span class="count">3</span></h2><button type="button" class="x" aria-label="Cerrar filtros"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="ptoks"><span class="chipx">Evento, Demanda<button type="button" aria-label="Quitar tipo"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span><span class="chipx">A–C<button type="button" aria-label="Quitar verificación"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span><span class="chipx">Desde 1 oct<button type="button" aria-label="Quitar fecha"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
+  <ul class="drill">
+    <li>Tipo<small>2</small><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+    <li>Verificación<small>A–C</small><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+    <li>Nivel<small class="none">Todos</small><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+    <li>Fecha<small>Desde 1 oct</small><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+    <li>Territorio<small class="none">Todos</small><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+    <li>Estado<small class="none">Todos</small><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 18l6-6-6-6"/></svg></li>
+  </ul>
+  <p class="cap-t" style="padding:var(--space-2) var(--space-4)">Los mismos filtros que <kbd>F</kbd> y <kbd>Ctrl K</kbd> en el escritorio.</p>
+  <div class="psf"><button type="button" class="btn gh">Limpiar</button><button type="button" class="btn pri">Ver 214 registros</button></div>
+</div></div>
+  <div class="specs">
+  <section class="spec" aria-labelledby="sp0"><h3 id="sp0">Paleta Ctrl K: navegación y filtros en un solo lugar</h3>
+    <div class="pal" role="dialog" aria-label="Paleta de comandos (muestra)">
+      <div class="in"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><span><code>nivel:naranja</code> <code>verif:a-c</code> vigilia</span></div>
+      <div class="grp" role="listbox" aria-label="Resultados de la paleta">
+        <div role="group" aria-labelledby="pg1"><p id="pg1">Filtrar Registros</p>
+        <div class="opt" role="option" aria-selected="true"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Nivel Naranja · Verificación A–C · «vigilia» — 3 registros<span class="k"><kbd>Enter</kbd></span></div></div>
+        <div role="group" aria-labelledby="pg2"><p id="pg2">Ir a</p>
+        <div class="opt" role="option" aria-selected="false"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg>Bandeja › Pendientes (3)<span class="k"><kbd>G</kbd><kbd>B</kbd></span></div>
+        <div class="opt" role="option" aria-selected="false"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>Territorio › Mapa<span class="k"><kbd>G</kbd><kbd>T</kbd></span></div></div>
+        <div role="group" aria-labelledby="pg3"><p id="pg3">Acciones</p>
+        <div class="opt" role="option" aria-selected="false"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg>Nuevo evento<span class="k"><kbd>N</kbd></span></div></div></div>
+      <footer><span><kbd>↑</kbd><kbd>↓</kbd> moverse</span><span><kbd>Tab</kbd> completar filtro</span><span><kbd>Esc</kbd> cerrar</span></footer>
+    </div></section>
+  <section class="spec" aria-labelledby="sp1"><h3 id="sp1">Familia de estados (una sola)</h3><div class="fam">
+    <div><span class="k">Estado</span><span class="st pre">Preliminar</span><span class="st rev">En revisión</span><span class="st apr">Espera aprobación</span><span class="st val">Validado</span></div>
+    <div><span class="k">Verificación</span><span class="vf" title="Verificación A · Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i><span>Confirmada</span></span><span class="vf" title="Verificación C · Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i><span>Parcial</span></span><span class="vf" title="Verificación E · No verificada"><b>E</b><i aria-hidden="true"><s class="on"></s><s class=""></s><s class=""></s><s class=""></s><s class=""></s></i><span>No verificada</span></span></div>
+    <div><span class="k">IRSA</span><span class="irsa"><span>IRSA <strong>2,7</strong></span><span class="lv o">Naranja</span><span class="prov" title="Pesos y umbrales del IRSA son provisionales hasta su validación metodológica."><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg> Provisional · metodología sin validar</span></span></div>
+  </div></section>
+  <section class="spec" aria-labelledby="sp2"><h3 id="sp2">Vacío con acción · error con reintento</h3><div class="mini">
+    <div class="empty"><span class="ei"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg></span><b>Sin integraciones todavía</b><p>Conecta una carpeta de documentos para que lleguen a Fuentes.</p><button class="btn pri s" type="button">Conectar carpeta</button></div>
+    <div style="display:grid;gap:var(--space-2);align-content:start"><div class="alert" role="alert"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg><span class="grow">No se pudo cargar la página 2. La 1 sigue a mano.</span></div><button class="btn sec s" type="button" style="justify-self:start">Reintentar</button><p style="font-size:var(--text-sm)">0 registros con «derrame» y 3 filtros. <a href="#">Quitar filtros</a></p></div>
+  </div></section>
+</div>
+</div>
+</main>
+<script>
+(() => {
+  // Rulers: measure where the first data starts inside each phone frame (no hard-coded claim).
+  for (const phone of document.querySelectorAll('.phone')) {
+    const first = phone.querySelector('[data-first]');
+    const ruler = phone.querySelector('.ruler');
+    if (!first || !ruler) continue;
+    const top = Math.round(first.getBoundingClientRect().top - phone.getBoundingClientRect().top);
+    ruler.style.top = top + 'px';
+    ruler.textContent = 'primer dato a ' + top + ' px' + (ruler.dataset.before ? ' (hoy ≈ ' + ruler.dataset.before + ')' : '');
+  }
+  const btn = document.getElementById('theme');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+    btn.setAttribute('aria-pressed', String(!dark));
+    btn.lastChild.textContent = dark ? 'Ver en oscuro' : 'Ver en claro';
+  });
+})();
+</script>
+</body>
+</html>

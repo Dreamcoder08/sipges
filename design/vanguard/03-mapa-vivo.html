@@ -1,0 +1,1053 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>03 · Mapa vivo · SIPGES vanguard</title>
+<style>
+/* TOKENS:BEGIN — copia literal de apps/web/src/app/styles/tokens.css (main a5825d36) */
+/*
+ * Design tokens (docs/adr/0018). Two layers:
+ * - Primitive scales (space, type, radius, motion, z-index, control sizes) never change by theme.
+ * - Semantic colours describe a role (surface, text, tone), never a hue, and are redefined for
+ *   the dark theme below. Modules use semantic tokens only; a unit test rejects raw colours.
+ * Light is neutral paper; dark is true OLED black with neutral greys (docs/adr/0019).
+ */
+:root {
+  color-scheme: light;
+
+  /* ---------- Brand and text ---------- */
+  --color-brand: #17365d;
+  --color-brand-strong: #0f2541;
+  --color-brand-text: #17365d;
+  --color-on-brand: #ffffff;
+  /* Primary actions are monochrome (ChatGPT, Claude): ink on paper, inverted in the dark. */
+  --color-primary: #0d0d0d;
+  --color-primary-hover: #333333;
+  --color-on-primary: #ffffff;
+  --color-text: #0d0d0d;
+  --color-muted: #5d5d5d;
+  --color-subtle: #6b6b6b;
+
+  /* ---------- Surfaces ---------- */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f9f9f9;
+  --color-surface-raised: #ffffff;
+  --color-sidebar: #f9f9f9;
+  --color-border: #e3e3e3;
+  --color-track: #ececec;
+  --color-focus: #0b62d6;
+
+  /* Shell system (docs/adr/0015): quiet neutrals, one accent tint, hairlines over fills. */
+  --color-accent: #0b62d6;
+  --color-accent-tint: #e8f0fd;
+  --color-accent-text: #0a4aa3;
+  --color-fill: #f4f4f4;
+  --color-fill-hover: #ececec;
+  --color-hairline: #ececec;
+  --color-hairline-strong: #d9d9d9;
+  --color-scrim: rgb(0 0 0 / 0.35);
+  --color-chrome: rgb(255 255 255 / 0.85);
+  /* Scrollbar thumb on an invisible track: quiet at rest, firmer under the pointer. */
+  --color-scrollbar: rgb(0 0 0 / 0.18);
+  --color-scrollbar-hover: rgb(0 0 0 / 0.32);
+
+  /* ---------- Tones: soft background, readable text, solid mark ---------- */
+  --color-danger: #c53030;
+  --color-danger-strong: #8a1f1f;
+  --color-danger-soft: #fdecec;
+  --color-info: #2b6cb0;
+  --color-info-soft: #e8f1fb;
+  --color-success: #2f855a;
+  --color-success-soft: #e6f5ec;
+
+  --tone-positive-bg: #d7ebdf;
+  --tone-positive-fg: #195238;
+  --tone-positive-solid: #247b55;
+  --tone-negative-bg: #f7dde0;
+  --tone-negative-fg: #832434;
+  --tone-negative-solid: #b03546;
+  --tone-info-bg: #dce7f6;
+  --tone-info-fg: #244e86;
+  --tone-info-solid: #3567aa;
+  --tone-warning-bg: #f8ebc6;
+  --tone-warning-fg: #6d4c0b;
+  --tone-warning-solid: #8a6115;
+  --tone-neutral-bg: #e9edf3;
+  --tone-neutral-fg: #485265;
+  --tone-neutral-solid: #68758b;
+  --tone-on-solid: #ffffff;
+  /* White on strong fills that keep their hue in both themes (risk red, dimension badges). */
+  --color-on-strong: #ffffff;
+
+  /* ---------- Risk levels (semáforo) ---------- */
+  --level-green: #2f855a;
+  --level-yellow: #d69e2e;
+  --level-orange: #dd6b20;
+  --level-red: #c53030;
+  --level-green-soft: #e6f5ec;
+  --level-yellow-soft: #fdf6e3;
+  --level-orange-soft: #fdeee2;
+  --level-red-soft: #fdecec;
+  --level-green-text: #1f5c3e;
+  --level-yellow-text: #7a5410;
+  --level-orange-text: #8a3f0d;
+  --level-red-text: #8a1f1f;
+  /* Heat-map cells: a strong fill with the text colour that passes AA on it. */
+  --heat-green: #6fc28f;
+  --heat-green-on: #0d3520;
+  --heat-yellow: #f6d55c;
+  --heat-yellow-on: #3d2e05;
+  --heat-orange: #f4a259;
+  --heat-orange-on: #3d1a05;
+  --heat-red: #c4343d;
+  --heat-red-on: #ffffff;
+
+  /* ---------- Data visualisation ---------- */
+  --dim-g: #2b6cb0;
+  --dim-a: #6b46c1;
+  --dim-d: #b7791f;
+  --dim-n: #c05621;
+  --dim-e: #2f855a;
+  --dim-i: #4a5568;
+
+  /* Narrative trend lines: one clearly distinct hue per category. */
+  --trend-e: #2f9e44;
+  --trend-g: #6741d9;
+  --trend-d: #f08c00;
+  --trend-a: #1c7ed6;
+  --trend-n: #d6336c;
+  --trend-i: #495057;
+
+  /* Categorical series for graphs (entity kinds). */
+  --viz-1: #2b6cb0;
+  --viz-2: #2f855a;
+  --viz-3: #dd6b20;
+  --viz-4: #805ad5;
+  --viz-5: #c53030;
+  --viz-6: #d69e2e;
+  --viz-7: #319795;
+  --viz-8: #5b6673;
+  /* Diagram ink: strokes, labels and node fills drawn on a light canvas. */
+  --ink-strong: #14243a;
+  --ink: #1d2b3f;
+  --ink-soft: #5b6b84;
+  --ink-faint: #68758b;
+  --canvas: #fcfcfc;
+  --canvas-node: #f4f4f4;
+  --canvas-halo: #ffffff;
+
+  /* ---------- Cartography: map paint for both renderers ---------- */
+  --map-bg: #e9eef3;
+  --map-sea: #d6e8f3;
+  --map-land: #f6f3ea;
+  --map-line: #9aa8b4;
+  --map-label-sea: #335a73;
+  --map-label-area: #8a7d5c;
+  --map-ink: #243b53;
+  --map-text: #17212b;
+  --map-halo: rgb(255 255 255 / 0.85);
+  --map-point: #ffffff;
+  --map-concession: #669bb5;
+  --map-selected: #e6b54a;
+  --map-alert: #c34040;
+  --map-heat-1: #fde7c4;
+  --map-heat-2: #f8c27a;
+  --map-heat-3: #ee8f44;
+  --map-heat-4: #cf5a2a;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #0f2541;
+  --map-district-line: #17365d;
+  --map-point-halo: #ffffff;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #eef0e2;
+  --map-relief-2: #d6e2b8;
+  --map-relief-3: #e3d39c;
+  --map-relief-4: #c9a477;
+  --map-relief-5: #94714f;
+  /* Raster tiles: streets are inverted for the dark theme, imagery only dimmed. */
+  --map-filter-streets: none;
+  --map-filter-satellite: none;
+  /* Theme-invariant map paint, defined only here so both dark blocks inherit it unchanged. */
+  /* Cadastre legend mirrors the GEOCATMIN raster tiles, which do not follow the theme. */
+  --map-cadastre-1: #2f5fd0;
+  --map-cadastre-2: #3a9d3a;
+  --map-cadastre-3: #222222;
+  /* District outlines drawn over satellite imagery, which is always dark ground. */
+  --map-outline-imagery: #fffaf0;
+  /* Record markers: white ring and label on the marker fill, dark ring when active. */
+  --map-marker-on: #ffffff;
+  --map-marker-active: #17212b;
+  /* Concession polygons: resting, active and keyboard-focused fills. */
+  --map-concession-fill: rgb(23 54 93 / 0.08);
+  --map-concession-fill-active: rgb(23 54 93 / 0.28);
+  --map-concession-fill-focus: rgb(43 108 176 / 0.3);
+
+  /* ---------- Spacing: 4-pt scale ---------- */
+  --space-0: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* ---------- Type: system faces (SF Pro on Apple, Segoe on Windows, Roboto on Android) ---------- */
+  --font-sans:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Roboto Mono', Menlo, monospace;
+
+  --text-2xs: 0.625rem;
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9375rem;
+  --text-body: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  /* Display sizes scale with the viewport between phone and desktop. */
+  --text-2xl: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.5rem + 1.6vw, 2.625rem);
+
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.015em;
+  --tracking-caps: 0.06em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  /* ---------- Shape ---------- */
+  --radius-xs: 0.1875rem;
+  --radius-sm: 0.35rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 999px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.18);
+  --shadow-raised: 0 -1px 0 rgb(0 0 0 / 0.03), 0 16px 48px rgb(0 0 0 / 0.16);
+  --shadow-chip: 0 1px 3px rgb(0 0 0 / 0.12);
+  /* The search field reads as a composer: a soft lift instead of a border. */
+  --shadow-composer: 0 0 0 1px rgb(0 0 0 / 0.06), 0 2px 12px rgb(0 0 0 / 0.06);
+
+  /* ---------- Motion: short, eased, and off under prefers-reduced-motion ---------- */
+  --motion-fast: 120ms;
+  --motion-medium: 220ms;
+  --motion-slow: 360ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  /* The curve iOS uses for sheets: fast start, long soft landing, no overshoot. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* ---------- Controls and layers ---------- */
+  --control-sm: 2rem;
+  --control-md: 2.5rem;
+  --touch-target: 2.75rem;
+  --focus-ring: 3px solid var(--color-focus);
+  --z-sticky: 20;
+  --z-popover: 40;
+  --z-modal: 60;
+  --z-skip: 70;
+
+  --sidebar-width: 15.5rem;
+}
+
+/*
+ * Dark theme: OLED black. Pure #000 behind everything lets OLED screens switch pixels off;
+ * surfaces step up in neutral greys and separate by hairlines instead of shadows. It follows the
+ * device unless the person picks a theme in Cuenta (shared/lib/theme.ts sets data-theme on
+ * <html>). Both selectors carry the same values.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --color-brand: #2f6bd6;
+    --color-brand-strong: #2559b8;
+    --color-brand-text: #9cc0ff;
+    --color-on-brand: #ffffff;
+    --color-primary: #f4f4f5;
+    --color-primary-hover: #d4d4d8;
+    --color-on-primary: #0d0d0d;
+    --color-text: #ececec;
+    --color-muted: #a3a3a3;
+    --color-subtle: #8f8f8f;
+
+    --color-bg: #000000;
+    --color-surface: #0c0c0d;
+    --color-surface-alt: #111113;
+    --color-surface-raised: #161618;
+    --color-sidebar: #000000;
+    --color-border: #2a2a2d;
+    --color-track: #232326;
+    --color-focus: #7cacf8;
+
+    --color-accent: #7cacf8;
+    --color-accent-tint: rgb(124 172 248 / 0.16);
+    --color-accent-text: #b5d0ff;
+    --color-fill: #161618;
+    --color-fill-hover: #1f1f22;
+    --color-hairline: #1c1c1f;
+    --color-hairline-strong: #323236;
+    --color-scrim: rgb(0 0 0 / 0.7);
+    --color-chrome: rgb(0 0 0 / 0.78);
+    --color-scrollbar: rgb(255 255 255 / 0.16);
+    --color-scrollbar-hover: rgb(255 255 255 / 0.3);
+
+    --color-danger: #f07178;
+    --color-danger-strong: #ffb4b8;
+    --color-danger-soft: rgb(240 113 120 / 0.14);
+    --color-info: #7cacf8;
+    --color-info-soft: rgb(124 172 248 / 0.14);
+    --color-success: #5fd39a;
+    --color-success-soft: rgb(95 211 154 / 0.14);
+
+    --tone-positive-bg: rgb(95 211 154 / 0.16);
+    --tone-positive-fg: #9ee6c0;
+    --tone-positive-solid: #3fae7a;
+    --tone-negative-bg: rgb(240 113 120 / 0.16);
+    --tone-negative-fg: #ffb4b8;
+    --tone-negative-solid: #e0606a;
+    --tone-info-bg: rgb(124 172 248 / 0.16);
+    --tone-info-fg: #b5d0ff;
+    --tone-info-solid: #5f93e6;
+    --tone-warning-bg: rgb(240 190 90 / 0.16);
+    --tone-warning-fg: #f3d58f;
+    --tone-warning-solid: #c99a3a;
+    --tone-neutral-bg: rgb(163 163 163 / 0.14);
+    --tone-neutral-fg: #d4d4d4;
+    --tone-neutral-solid: #8f8f8f;
+    --tone-on-solid: #000000;
+
+    --level-green-soft: rgb(95 211 154 / 0.16);
+    --level-yellow-soft: rgb(240 190 90 / 0.16);
+    --level-orange-soft: rgb(240 150 90 / 0.16);
+    --level-red-soft: rgb(240 113 120 / 0.16);
+    --level-green-text: #9ee6c0;
+    --level-yellow-text: #f3d58f;
+    --level-orange-text: #f8c29a;
+    --level-red-text: #ffb4b8;
+
+    --viz-8: #8f8f8f;
+    --trend-i: #a3a3a3;
+
+    --ink-strong: #ececec;
+    --ink: #d4d4d4;
+    --ink-soft: #8f8f8f;
+    --ink-faint: #7a7a7a;
+    --canvas: #050505;
+    --canvas-node: #161618;
+    --canvas-halo: #000000;
+
+    --map-bg: #0b0d10;
+    --map-sea: #0d1822;
+    --map-land: #16181b;
+    --map-line: #3d4652;
+    --map-label-sea: #7fa3bd;
+    --map-label-area: #ab9f80;
+    --map-ink: #c9d4df;
+    --map-text: #ececec;
+    --map-halo: rgb(0 0 0 / 0.8);
+    --map-point: #16181b;
+    --map-concession: #4f8db0;
+    --map-selected: #e6b54a;
+    --map-alert: #f07178;
+    --map-heat-1: #3a2a14;
+    --map-heat-2: #6b4518;
+    --map-heat-3: #a35a22;
+    --map-heat-4: #d0612c;
+    /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+    --map-outline-selected: #ffffff;
+    --map-district-line: #c9d4df;
+    --map-point-halo: #000000;
+    /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+    --map-relief-1: #14211a;
+    --map-relief-2: #27402c;
+    --map-relief-3: #4a4a2c;
+    --map-relief-4: #5e4630;
+    --map-relief-5: #7a5c44;
+    --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+    --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+    --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+    --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+    --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+    --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+    --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+    --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-brand: #2f6bd6;
+  --color-brand-strong: #2559b8;
+  --color-brand-text: #9cc0ff;
+  --color-on-brand: #ffffff;
+  --color-primary: #f4f4f5;
+  --color-primary-hover: #d4d4d8;
+  --color-on-primary: #0d0d0d;
+  --color-text: #ececec;
+  --color-muted: #a3a3a3;
+  --color-subtle: #8f8f8f;
+
+  --color-bg: #000000;
+  --color-surface: #0c0c0d;
+  --color-surface-alt: #111113;
+  --color-surface-raised: #161618;
+  --color-sidebar: #000000;
+  --color-border: #2a2a2d;
+  --color-track: #232326;
+  --color-focus: #7cacf8;
+
+  --color-accent: #7cacf8;
+  --color-accent-tint: rgb(124 172 248 / 0.16);
+  --color-accent-text: #b5d0ff;
+  --color-fill: #161618;
+  --color-fill-hover: #1f1f22;
+  --color-hairline: #1c1c1f;
+  --color-hairline-strong: #323236;
+  --color-scrim: rgb(0 0 0 / 0.7);
+  --color-chrome: rgb(0 0 0 / 0.78);
+  --color-scrollbar: rgb(255 255 255 / 0.16);
+  --color-scrollbar-hover: rgb(255 255 255 / 0.3);
+
+  --color-danger: #f07178;
+  --color-danger-strong: #ffb4b8;
+  --color-danger-soft: rgb(240 113 120 / 0.14);
+  --color-info: #7cacf8;
+  --color-info-soft: rgb(124 172 248 / 0.14);
+  --color-success: #5fd39a;
+  --color-success-soft: rgb(95 211 154 / 0.14);
+
+  --tone-positive-bg: rgb(95 211 154 / 0.16);
+  --tone-positive-fg: #9ee6c0;
+  --tone-positive-solid: #3fae7a;
+  --tone-negative-bg: rgb(240 113 120 / 0.16);
+  --tone-negative-fg: #ffb4b8;
+  --tone-negative-solid: #e0606a;
+  --tone-info-bg: rgb(124 172 248 / 0.16);
+  --tone-info-fg: #b5d0ff;
+  --tone-info-solid: #5f93e6;
+  --tone-warning-bg: rgb(240 190 90 / 0.16);
+  --tone-warning-fg: #f3d58f;
+  --tone-warning-solid: #c99a3a;
+  --tone-neutral-bg: rgb(163 163 163 / 0.14);
+  --tone-neutral-fg: #d4d4d4;
+  --tone-neutral-solid: #8f8f8f;
+  --tone-on-solid: #000000;
+
+  --level-green-soft: rgb(95 211 154 / 0.16);
+  --level-yellow-soft: rgb(240 190 90 / 0.16);
+  --level-orange-soft: rgb(240 150 90 / 0.16);
+  --level-red-soft: rgb(240 113 120 / 0.16);
+  --level-green-text: #9ee6c0;
+  --level-yellow-text: #f3d58f;
+  --level-orange-text: #f8c29a;
+  --level-red-text: #ffb4b8;
+
+  --viz-8: #8f8f8f;
+  --trend-i: #a3a3a3;
+
+  --ink-strong: #ececec;
+  --ink: #d4d4d4;
+  --ink-soft: #8f8f8f;
+  --ink-faint: #7a7a7a;
+  --canvas: #050505;
+  --canvas-node: #161618;
+  --canvas-halo: #000000;
+
+  --map-bg: #0b0d10;
+  --map-sea: #0d1822;
+  --map-land: #16181b;
+  --map-line: #3d4652;
+  --map-label-sea: #7fa3bd;
+  --map-label-area: #ab9f80;
+  --map-ink: #c9d4df;
+  --map-text: #ececec;
+  --map-halo: rgb(0 0 0 / 0.8);
+  --map-point: #16181b;
+  --map-concession: #4f8db0;
+  --map-selected: #e6b54a;
+  --map-alert: #f07178;
+  --map-heat-1: #3a2a14;
+  --map-heat-2: #6b4518;
+  --map-heat-3: #a35a22;
+  --map-heat-4: #d0612c;
+  /* Paint for the 3D and WebGL canvases (read by engine/paint.ts): selection and point outlines, district lines. */
+  --map-outline-selected: #ffffff;
+  --map-district-line: #c9d4df;
+  --map-point-halo: #000000;
+  /* Height ramp of the 3D globe when no basemap is shown, low ground to summit. */
+  --map-relief-1: #14211a;
+  --map-relief-2: #27402c;
+  --map-relief-3: #4a4a2c;
+  --map-relief-4: #5e4630;
+  --map-relief-5: #7a5c44;
+  --map-filter-streets: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
+  --map-filter-satellite: brightness(0.8) saturate(0.9);
+
+  --shadow-sm: 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow-md: 0 8px 24px rgb(0 0 0 / 0.6);
+  --shadow-lg: 0 20px 48px rgb(0 0 0 / 0.8);
+  --shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.06), 0 -12px 40px rgb(0 0 0 / 0.8);
+  --shadow-chip: 0 0 0 1px rgb(255 255 255 / 0.08);
+  --shadow-composer: 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+/* TOKENS NUEVOS y valores corregidos: propuesta de este artboard, no están en tokens.css */
+:root {
+  --color-control-border: #858585;
+  --color-warning: var(--tone-warning-solid);
+  --color-warning-soft: var(--tone-warning-bg);
+  --text-caption: 0.75rem;
+  --motion-spin: 800ms;
+  --motion-shimmer: 1400ms;
+  --dim-d: #92600f;
+  --level-yellow: #a87a12;
+  --viz-6: #a87a12;
+  --map-concession-edge: #4f7f99;
+  --panel-width: 26rem;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-control-border: #707075;
+    --ink-faint: #8f8f8f;
+    --level-yellow: #d69e2e;
+    --viz-6: #d69e2e;
+    --map-concession-edge: #4f8db0;
+  }
+}
+:root[data-theme='dark'] {
+  --color-control-border: #707075;
+  --ink-faint: #8f8f8f;
+  --level-yellow: #d69e2e;
+  --viz-6: #d69e2e;
+    --map-concession-edge: #4f8db0;
+}
+/* TOKENS:END */
+
+*,*::before,*::after{box-sizing:border-box}
+html{font-family:var(--font-sans);color:var(--color-text);background:var(--color-surface-alt);line-height:var(--leading-normal);-webkit-font-smoothing:antialiased}
+body{margin:0}
+h1,h2,h3,h4{text-wrap:balance;margin:0}
+p{margin:0;text-wrap:pretty}
+ul,ol{list-style:none;margin:0;padding:0}
+table,time,data{font-variant-numeric:tabular-nums}
+code,kbd{font-family:var(--font-mono)}
+button,input,textarea,select{font:inherit;color:inherit}
+fieldset{min-width:0}
+a{color:var(--color-brand-text);text-underline-offset:0.18em}
+:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.ico{flex:none;display:inline-block;vertical-align:-0.125em}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+/* ---------- Artboard chrome (herramienta de diseño, no producto) ---------- */
+.board{width:1440px;margin:0 auto;padding:var(--space-8) var(--space-12) var(--space-12)}
+.anno{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--space-8);padding:var(--space-8);background:var(--color-surface);border:1px solid var(--color-hairline);border-radius:var(--radius-lg)}
+.anno-k{font-size:var(--text-xs);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold)}
+.anno h1{font-size:var(--text-3xl);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight);margin-top:var(--space-1)}
+.anno .trade{margin-top:var(--space-3);font-size:var(--text-body);max-width:46rem}
+.anno .trade b{font-weight:var(--weight-semibold)}
+.changes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-3) var(--space-6);margin-top:var(--space-5)}
+.changes dt{font-weight:var(--weight-semibold);font-size:var(--text-sm)}
+.changes dd{margin:var(--space-1) 0 0;font-size:var(--text-sm);color:var(--color-muted)}
+.cost{margin-top:var(--space-5);padding-top:var(--space-4);border-top:1px solid var(--color-hairline);font-size:var(--text-sm)}
+.cost b{font-weight:var(--weight-semibold)}
+.anno-side{display:grid;gap:var(--space-5);align-content:start}
+.tok{border:1px solid var(--color-hairline);border-left:3px solid var(--color-warning);border-radius:var(--radius-md);padding:var(--space-4);background:var(--color-surface-alt)}
+.tok h2{color:var(--tone-warning-fg)}
+.tok h2{font-size:var(--text-md);display:flex;justify-content:space-between;align-items:center;gap:var(--space-3)}
+.tok table{width:100%;border-collapse:collapse;margin-top:var(--space-2);font-size:var(--text-caption)}
+.tok th{text-align:left;font-weight:var(--weight-semibold);padding:var(--space-1) var(--space-2) var(--space-1) 0;border-bottom:1px solid var(--color-control-border)}
+.tok td{padding:var(--space-1) var(--space-2) var(--space-1) 0;vertical-align:top;border-bottom:1px solid var(--color-hairline)}
+.tok td:first-child{font-family:var(--font-mono);white-space:nowrap}
+.tok .sub{margin-top:var(--space-3);font-weight:var(--weight-semibold);font-size:var(--text-sm)}
+.resolves{font-size:var(--text-sm);margin-top:var(--space-6)}
+.resolves h2{font-size:var(--text-md);margin-bottom:var(--space-2)}
+.resolves li{display:grid;grid-template-columns:1.25rem 1fr;gap:var(--space-2);padding:var(--space-1) 0;border-bottom:1px solid var(--color-hairline)}
+.resolves li .ico{color:var(--tone-positive-solid);margin-top:0.2em}
+.resolves li span{color:var(--color-muted)}
+.resolves li b{color:var(--color-text);font-weight:var(--weight-semibold)}
+.themebtn{display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--control-sm);padding:var(--space-1) var(--space-3);border-radius:var(--radius-pill);border:1px solid var(--color-control-border);background:var(--color-surface);font-size:var(--text-sm);font-weight:var(--weight-semibold);cursor:pointer}
+.cap{display:flex;justify-content:space-between;align-items:baseline;margin:var(--space-8) 0 var(--space-3);font-size:var(--text-sm);color:var(--color-muted)}
+.cap b{color:var(--color-text);font-weight:var(--weight-semibold);font-size:var(--text-md)}
+.frame{position:relative;width:1344px;height:840px;overflow:hidden;border:1px solid var(--color-hairline-strong);border-radius:var(--radius-lg);background:var(--color-bg);box-shadow:var(--shadow-md)}
+.frame.desk{width:1440px;height:900px;margin-left:calc(-1 * var(--space-12))}
+.bottom{display:grid;grid-template-columns:360px 360px minmax(0,1fr);gap:var(--space-6);align-items:start}
+.phone{position:relative;width:360px;height:780px;overflow:hidden;border:1px solid var(--color-hairline-strong);border-radius:var(--radius-xl);background:var(--color-bg);box-shadow:var(--shadow-md)}
+.ruler{position:absolute;left:0;right:0;border-bottom:1px dashed var(--color-danger);transform:translateY(-100%);font-size:var(--text-2xs);color:var(--color-danger);text-align:right;padding-right:var(--space-2);pointer-events:none;line-height:1.4}
+.specs{display:grid;gap:var(--space-4)}
+.spec{border:1px solid var(--color-hairline);border-radius:var(--radius-lg);background:var(--color-bg);padding:var(--space-4)}
+.spec>h3{font-size:var(--text-xs);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold);margin-bottom:var(--space-3)}
+
+/* ---------- Shared product family (one per role, used by all three directions) ---------- */
+.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--control-md);padding:var(--space-2) var(--space-4);border-radius:var(--radius-pill);border:1px solid transparent;font-size:var(--text-base);font-weight:var(--weight-semibold);line-height:var(--leading-tight);cursor:pointer;white-space:nowrap;transition:background var(--motion-fast) var(--ease-out),border-color var(--motion-fast) var(--ease-out)}
+.btn.s{min-height:var(--control-sm);padding:var(--space-1) var(--space-3);font-size:var(--text-sm)}
+.btn.pri{background:var(--color-primary);color:var(--color-on-primary)}
+.btn.pri:hover{background:var(--color-primary-hover)}
+.btn.sec{background:var(--color-surface);border-color:var(--color-control-border);color:var(--color-text)}
+.btn.sec:hover{background:var(--color-fill)}
+.btn.gh{background:transparent;color:var(--color-brand-text)}
+.btn.gh:hover{background:var(--color-fill)}
+.count{display:inline-grid;place-items:center;min-width:1.25rem;padding:0 var(--space-1);border-radius:var(--radius-pill);background:var(--color-primary);color:var(--color-on-primary);font-size:var(--text-xs);font-weight:var(--weight-bold);line-height:1.25rem}
+.field{display:flex;align-items:center;gap:var(--space-2);min-height:var(--control-md);padding:0 var(--space-3);border:1px solid var(--color-control-border);border-radius:var(--radius-md);background:var(--color-surface);color:var(--color-muted);font-size:var(--text-base)}
+.field input{all:unset;flex:1;min-width:0;width:100%;color:var(--color-text)}
+.field input::placeholder{color:var(--color-subtle)}
+kbd{display:inline-block;padding:0 var(--space-1);border:1px solid var(--color-control-border);border-radius:var(--radius-sm);font-size:var(--text-xs);color:var(--color-muted);line-height:1.4;background:var(--color-surface)}
+/* Estado: one badge family; shape + word, never colour alone. */
+.st{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-0) var(--space-2);border-radius:var(--radius-pill);font-size:var(--text-caption);font-weight:var(--weight-semibold);line-height:var(--leading-snug);white-space:nowrap}
+.st::before{content:'';width:0.5rem;height:0.5rem;border-radius:50%;flex:none}
+.st.pre{background:var(--tone-neutral-bg);color:var(--tone-neutral-fg)}
+.st.pre::before{border:1.5px solid currentColor}
+.st.rev{background:var(--tone-info-bg);color:var(--tone-info-fg)}
+.st.rev::before{background:linear-gradient(90deg,currentColor 50%,transparent 50%);border:1.5px solid currentColor}
+.st.val{background:var(--tone-positive-bg);color:var(--tone-positive-fg)}
+.st.val::before{background:currentColor}
+.st.apr{background:var(--tone-warning-bg);color:var(--tone-warning-fg)}
+.st.apr::before{border-radius:1px;transform:rotate(45deg);background:currentColor;width:0.45rem;height:0.45rem}
+/* Nivel de riesgo: the existing LevelPill. */
+.lv{display:inline-block;padding:var(--space-0) var(--space-2);border-radius:var(--radius-pill);font-weight:var(--weight-bold);font-size:var(--text-caption);line-height:var(--leading-snug);white-space:nowrap}
+.lv.g{background:var(--level-green-soft);color:var(--level-green-text)}
+.lv.y{background:var(--level-yellow-soft);color:var(--level-yellow-text)}
+.lv.o{background:var(--level-orange-soft);color:var(--level-orange-text)}
+.lv.r{background:var(--level-red-soft);color:var(--level-red-text)}
+/* Verificación A–E: letter + five-step meter + word. */
+.vf{display:inline-flex;align-items:center;gap:var(--space-1);font-size:var(--text-caption);color:var(--color-muted);white-space:nowrap}
+.vf b{display:inline-grid;place-items:center;width:1.125rem;height:1.125rem;border-radius:var(--radius-xs);border:1px solid var(--color-control-border);color:var(--color-text);font-family:var(--font-mono);font-size:var(--text-xs);font-weight:var(--weight-bold)}
+.vf i{display:inline-flex;gap:1px}
+.vf i::before,.vf i::after{content:none}
+.vf s{display:block;width:0.25rem;height:0.625rem;border-radius:1px;background:var(--color-track)}
+.vf s.on{background:var(--color-text)}
+/* Dimension badge (existing), --dim-d corrected. */
+.dm{display:inline-grid;place-items:center;width:1.375rem;height:1.375rem;border-radius:var(--radius-sm);color:var(--color-on-strong);font-weight:var(--weight-heavy);font-size:var(--text-xs);text-decoration:none;flex:none}
+.dm.G{background:var(--dim-g)}.dm.A{background:var(--dim-a)}.dm.D{background:var(--dim-d)}.dm.N{background:var(--dim-n)}.dm.E{background:var(--dim-e)}.dm.I{background:var(--dim-i)}
+/* IRSA: one caveat, same words everywhere. */
+.irsa{display:inline-flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
+.prov{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-0) var(--space-2);border:1px dashed var(--color-warning);border-radius:var(--radius-pill);background:var(--color-warning-soft);color:var(--tone-warning-fg);font-size:var(--text-caption);font-weight:var(--weight-semibold);white-space:nowrap}
+.offline{display:inline-flex;align-items:center;gap:var(--space-2);font-size:var(--text-caption);color:var(--color-muted)}
+.offline::before{content:'';width:0.5rem;height:0.5rem;border-radius:50%;border:1.5px solid var(--color-muted)}
+.chipx{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--control-sm);padding:0 var(--space-1) 0 var(--space-3);border-radius:var(--radius-pill);background:var(--color-accent-tint);color:var(--color-accent-text);font-size:var(--text-sm);font-weight:var(--weight-medium);white-space:nowrap}
+.chipx button{display:grid;place-items:center;width:1.5rem;height:1.5rem;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer}
+.chipx button:hover{background:var(--color-surface)}
+.empty{display:grid;justify-items:center;gap:var(--space-2);padding:var(--space-6) var(--space-4);border:1px dashed var(--color-control-border);border-radius:var(--radius-lg);text-align:center}
+.empty .ei{display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);border-radius:50%;background:var(--color-accent-tint);color:var(--color-accent);font-size:var(--text-xl)}
+.empty p{color:var(--color-muted);font-size:var(--text-base);max-width:28rem}
+.empty b{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.alert{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3);border-radius:var(--radius-md);border:1px solid var(--tone-negative-solid);background:var(--tone-negative-bg);color:var(--tone-negative-fg);font-size:var(--text-base)}
+.alert .grow{flex:1}
+.spin{display:inline-block;width:1rem;height:1rem;border:2px solid var(--color-track);border-top-color:var(--color-accent);border-radius:50%;animation:spin var(--motion-spin) linear infinite;vertical-align:-0.2em}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skl{display:block;height:0.875rem;border-radius:var(--radius-xs);background:linear-gradient(90deg,transparent 0%,var(--color-surface) 50%,transparent 100%) 0 0/40% 100% no-repeat,var(--color-fill);animation:shimmer var(--motion-shimmer) var(--ease-in-out) infinite}
+@keyframes shimmer{from{background-position:-40% 0,0 0}to{background-position:140% 0,0 0}}
+.muted{color:var(--color-muted)}
+.cap-t{font-size:var(--text-caption);color:var(--color-muted)}
+
+
+/* ===== 03 Mapa vivo ===== */
+.stage{position:relative;width:100%;height:100%;overflow:hidden;background:var(--map-bg)}
+.map{position:absolute;inset:0;width:100%;height:100%;display:block}
+.map.ph .m-tlabel{font-size:16px}
+.map.ph .m-clabel{font-size:15px}
+.map.ph .m-km{font-size:14px}
+.map.ph .mk text{font-size:16px}
+.map.ph .mk circle.ring{r:19px}
+.map.ph .cl circle{r:18px}
+.map.ph .cl text{font-size:15px}
+.m-tlabel.end{text-anchor:end}
+.m-land{fill:var(--map-land)}
+.m-sea{fill:var(--map-sea)}
+.m-dist{fill:none;stroke:var(--map-district-line);stroke-width:1.25;stroke-dasharray:6 5;opacity:0.55}
+.m-road{fill:none;stroke:var(--map-line);stroke-width:3;stroke-linecap:round}
+.m-road2{fill:none;stroke:var(--map-line);stroke-width:1.5;stroke-dasharray:2 4;stroke-linecap:round}
+.m-conc{fill:var(--map-concession-fill);stroke:var(--map-concession-edge);stroke-width:1.5}
+.m-conc.on{fill:var(--map-concession-fill-active);stroke:var(--map-outline-selected);stroke-width:2.5}
+.m-clabel{fill:var(--map-ink);font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--map-halo);stroke-width:3px}
+.m-town{fill:var(--map-point);stroke:var(--map-ink);stroke-width:1.5}
+.m-tlabel{fill:var(--map-text);font-size:13px;font-weight:600;paint-order:stroke;stroke:var(--map-halo);stroke-width:3.5px}
+.m-sealabel{fill:var(--map-label-sea);font-size:13px;font-style:italic;letter-spacing:0.08em}
+.m-km{fill:var(--map-ink);font-size:11px;font-weight:700;paint-order:stroke;stroke:var(--map-halo);stroke-width:3px}
+.mk circle.ring{fill:var(--map-marker-on);stroke-width:4}
+.mk.o circle.ring{stroke:var(--level-orange)}
+.mk.y circle.ring{stroke:var(--level-yellow)}
+.mk.r circle.ring{stroke:var(--level-red)}
+.mk text{fill:var(--map-marker-active);font-size:13px;font-weight:800;text-anchor:middle;dominant-baseline:central}
+.mk.sel circle.halo{fill:none;stroke:var(--map-marker-active);stroke-width:2}
+.cl circle{fill:var(--map-point);stroke:var(--map-ink);stroke-width:1.5}
+.cl text{fill:var(--map-text);font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+.dot{stroke:var(--map-marker-on);stroke-width:1.5}
+.dot.o{fill:var(--level-orange)}.dot.y{fill:var(--level-yellow)}.dot.g{fill:var(--level-green)}
+.float{position:absolute;background:var(--color-surface-raised);border:1px solid var(--color-hairline);border-radius:var(--radius-lg);box-shadow:var(--shadow-raised)}
+.rail{left:var(--space-3);top:var(--space-3);bottom:var(--space-3);width:4.5rem;display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-3) var(--space-1)}
+.mark{display:grid;place-items:center;width:2rem;height:2rem;margin:0 auto var(--space-2);border-radius:var(--radius-md);background:var(--color-primary);color:var(--color-on-primary);font-weight:var(--weight-heavy)}
+.rail a{position:relative;display:grid;justify-items:center;gap:var(--space-0);padding:var(--space-2) 0;border-radius:var(--radius-md);color:var(--color-muted);font-size:var(--text-xs);font-weight:var(--weight-medium);text-decoration:none}
+.rail a .ico{font-size:var(--text-xl)}
+.rail a:hover{background:var(--color-fill);color:var(--color-text)}
+.rail a[aria-current='page']{background:var(--color-accent-tint);color:var(--color-accent-text);font-weight:var(--weight-semibold)}
+.rail a .count{position:absolute;top:var(--space-1);right:var(--space-1)}
+.rail hr{width:100%;border:0;border-top:1px solid var(--color-hairline);margin:var(--space-1) 0}
+.rail .end{margin-top:auto}
+.panel{left:calc(var(--space-3) + 4.5rem + var(--space-3));top:var(--space-3);bottom:var(--space-3);width:var(--panel-width);display:flex;flex-direction:column;overflow:hidden}
+.panel.wide{width:calc(var(--panel-width) + 4rem)}
+.panel.wide .pbody{flex:none}
+.panel.wide .rlist{flex:1;overflow:hidden}
+.pmap{position:absolute;left:0;right:0;top:0;height:350px}
+.phead{display:flex;align-items:center;gap:var(--space-2);padding:var(--space-3) var(--space-4) 0}
+.proj{display:inline-flex;align-items:center;gap:var(--space-2);min-height:var(--control-sm);padding:0 var(--space-3);border-radius:var(--radius-md);border:1px solid var(--color-control-border);background:var(--color-surface);font-size:var(--text-sm);font-weight:var(--weight-semibold);cursor:pointer}
+.phead .offline{margin-left:auto}
+.pbody{flex:1;overflow:hidden;padding:var(--space-3) var(--space-4) var(--space-4);display:grid;gap:var(--space-4);align-content:start}
+.eyebrow{font-size:var(--text-caption);color:var(--color-muted)}
+.hello{font-size:var(--text-xl);font-weight:var(--weight-semibold);letter-spacing:var(--tracking-tight);line-height:var(--leading-tight)}
+.ask{display:flex;align-items:center;gap:var(--space-2);min-height:var(--control-md);padding:0 var(--space-1) 0 var(--space-3);border:1px solid var(--color-control-border);border-radius:var(--radius-pill);background:var(--color-surface)}
+.ask:focus-within{outline:var(--focus-ring);outline-offset:2px}
+.ask input{all:unset;flex:1;min-width:0;font-size:var(--text-base);color:var(--color-text)}
+.ask input::placeholder{color:var(--color-subtle)}
+.send{display:grid;place-items:center;width:var(--control-sm);height:var(--control-sm);border-radius:50%;border:0;background:var(--color-primary);color:var(--color-on-primary);cursor:pointer;flex:none}
+.askhint{font-size:var(--text-caption);color:var(--color-muted);margin-top:calc(-1 * var(--space-3))}
+.sh{display:flex;align-items:baseline;gap:var(--space-2)}
+.sh h2{font-size:var(--text-md);font-weight:var(--weight-semibold)}
+.sh a{margin-left:auto;font-size:var(--text-sm)}
+.pins li{display:grid;grid-template-columns:1.75rem minmax(0,1fr);gap:var(--space-3);align-items:start;padding:var(--space-3) 0;border-top:1px solid var(--color-hairline)}
+.pin{display:grid;place-items:center;width:1.75rem;height:1.75rem;border-radius:50%;background:var(--map-marker-on);color:var(--map-marker-active);border:3px solid var(--color-muted);font-size:var(--text-sm);font-weight:var(--weight-heavy)}
+.pin.o{border-color:var(--level-orange)}.pin.y{border-color:var(--level-yellow)}
+.pins .t{font-size:var(--text-base);font-weight:var(--weight-medium);line-height:var(--leading-snug)}
+.pins .m{display:flex;flex-wrap:wrap;gap:var(--space-1) var(--space-2);align-items:center;margin-top:var(--space-1);font-size:var(--text-caption);color:var(--color-muted)}
+.pins li[aria-current='true']{background:var(--color-accent-tint);margin:0 calc(-1 * var(--space-4));padding-inline:var(--space-4);box-shadow:inset 3px 0 0 var(--color-accent)}
+.week{font-size:var(--text-base)}
+.week a{font-weight:var(--weight-semibold)}
+.tools{right:var(--space-3);top:var(--space-3);display:flex;align-items:center;gap:var(--space-2);padding:var(--space-1) var(--space-1) var(--space-1) var(--space-3)}
+.av{display:grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:var(--color-accent-tint);color:var(--color-accent-text);font-size:var(--text-xs);font-weight:var(--weight-bold);border:0;cursor:pointer}
+.zoom{right:var(--space-3);top:5.5rem;display:grid;overflow:hidden}
+.zoom button{display:grid;place-items:center;width:var(--control-md);height:var(--control-md);border:0;background:transparent;color:var(--color-text);font-size:var(--text-lg);cursor:pointer}
+.zoom button+button{border-top:1px solid var(--color-hairline)}
+.legend{right:var(--space-3);bottom:var(--space-3);width:17.5rem;padding:var(--space-3) var(--space-4);font-size:var(--text-sm)}
+.legend h2{font-size:var(--text-caption);letter-spacing:var(--tracking-caps);text-transform:uppercase;color:var(--color-muted);font-weight:var(--weight-semibold);margin-bottom:var(--space-2)}
+.legend li{display:flex;align-items:center;gap:var(--space-2);min-height:1.75rem}
+.legend li label{display:flex;align-items:center;gap:var(--space-2);flex:1}
+.legend input{width:1rem;height:1rem;accent-color:var(--color-accent)}
+.sw{width:1.25rem;height:0.875rem;border-radius:var(--radius-xs);flex:none}
+.sw.conc{background:var(--map-concession-fill);border:1.5px solid var(--map-concession-edge)}
+.sw.alrt{width:0.875rem;height:0.875rem;border-radius:50%;background:var(--map-marker-on);border:3px solid var(--level-orange)}
+.sw.clu{width:0.875rem;height:0.875rem;border-radius:50%;background:var(--map-point);border:1.5px solid var(--map-ink)}
+.legend .nol{margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid var(--color-hairline);font-size:var(--text-sm)}
+.time{left:calc(var(--space-3) + 4.5rem + var(--space-3) + var(--panel-width) + var(--space-3));right:calc(17.5rem + var(--space-6));bottom:var(--space-3);padding:var(--space-2) var(--space-4) var(--space-3)}
+.time .hd{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--text-sm)}
+.time .hd span{color:var(--color-muted);font-size:var(--text-caption)}
+.bars{display:flex;align-items:flex-end;gap:2px;height:2.75rem;margin-top:var(--space-2)}
+.bars i{flex:1;background:var(--color-control-border);border-radius:1px 1px 0 0}
+.bars i.on{background:var(--color-brand)}
+.axis{display:flex;justify-content:space-between;font-size:var(--text-caption);color:var(--color-muted);margin-top:var(--space-1)}
+.scale{position:absolute;right:calc(17.5rem + var(--space-6));bottom:7.5rem;font-size:var(--text-caption);color:var(--map-ink);display:grid;gap:2px;justify-items:end}
+.scale i{display:block;width:6rem;height:0.375rem;border:1.5px solid var(--map-ink);border-top:0}
+/* Registros panel */
+.ptools{display:flex;gap:var(--space-2)}
+.ptools .field{flex:1}
+.btn[aria-pressed='true']{background:var(--color-accent-tint);border-color:var(--color-accent);color:var(--color-accent-text)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
+.chips a{font-size:var(--text-sm)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:var(--space-0);padding:var(--space-0);border-radius:var(--radius-md);background:var(--color-fill)}
+.seg button{min-height:var(--control-sm);border:0;border-radius:calc(var(--radius-md) - var(--space-0));background:transparent;color:var(--color-muted);font-size:var(--text-sm);cursor:pointer}
+.seg button[aria-pressed='true']{background:var(--color-surface);color:var(--color-text);font-weight:var(--weight-semibold);box-shadow:var(--shadow-sm)}
+.rlist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:var(--space-3);align-items:start;padding:var(--space-2) var(--space-4);border-top:1px solid var(--color-hairline)}
+.rlist li[aria-current='true']{background:var(--color-accent-tint);box-shadow:inset 3px 0 0 var(--color-accent)}
+.rlist .t{font-size:var(--text-sm);font-weight:var(--weight-medium);line-height:var(--leading-snug)}
+.rlist .m{font-size:var(--text-caption);color:var(--color-muted);margin-top:var(--space-0)}
+.rlist .r{display:grid;justify-items:end;gap:var(--space-1)}
+.pfoot{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-4);border-top:1px solid var(--color-hairline);font-size:var(--text-sm);color:var(--color-muted)}
+.callout{width:20rem;padding:var(--space-3) var(--space-4);display:grid;gap:var(--space-2)}
+.callout h2{font-size:var(--text-md);font-weight:var(--weight-semibold);line-height:var(--leading-snug)}
+.callout .m{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center}
+.callout .a{display:flex;gap:var(--space-2)}
+.callout .aud{font-size:var(--text-caption);color:var(--color-muted)}
+/* Phone */
+.ptop{position:absolute;left:var(--space-2);right:var(--space-2);top:var(--space-2);display:flex;align-items:center;gap:var(--space-1);padding:var(--space-1);border-radius:var(--radius-pill)}
+.ib{display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);border:0;border-radius:50%;background:transparent;color:var(--color-text);font-size:var(--text-xl);cursor:pointer;flex:none}
+.ptop .pj{flex:1;font-size:var(--text-md);font-weight:var(--weight-semibold);display:flex;align-items:center;gap:var(--space-1)}
+.psheet{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;background:var(--color-surface-raised);border-radius:var(--radius-xl) var(--radius-xl) 0 0;box-shadow:var(--shadow-raised)}
+.grab{align-self:center;width:2.25rem;height:0.3125rem;margin-top:var(--space-2);border-radius:var(--radius-pill);background:var(--color-control-border)}
+.psheet .pbody{padding:var(--space-2) var(--space-4) var(--space-3);gap:var(--space-3)}
+.psheet .ask{min-height:var(--touch-target)}
+.psheet .send{width:2.25rem;height:2.25rem}
+.psheet .pins .t{font-size:var(--text-md)}
+.scrim{position:absolute;inset:0;background:var(--color-scrim)}
+.fsh{display:flex;align-items:center;justify-content:space-between;padding:var(--space-2) var(--space-2) var(--space-1) var(--space-4)}
+.fsh h2{font-size:var(--text-lg);font-weight:var(--weight-semibold);display:flex;gap:var(--space-2);align-items:center}
+.x{display:grid;place-items:center;width:var(--touch-target);height:var(--touch-target);border:0;border-radius:50%;background:var(--color-fill);color:var(--color-muted);font-size:var(--text-lg);cursor:pointer}
+.fg{border:0;margin:0;padding:0}
+.fg legend{font-size:var(--text-sm);font-weight:var(--weight-semibold);margin-bottom:var(--space-2);padding:0}
+.tg{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.tg button{display:inline-flex;align-items:center;gap:var(--space-1);min-height:var(--touch-target);padding:0 var(--space-3);border-radius:var(--radius-pill);border:1px solid var(--color-control-border);background:var(--color-surface);font-size:var(--text-sm);cursor:pointer}
+.tg button[aria-pressed='true']{background:var(--color-accent-tint);border-color:var(--color-accent);color:var(--color-accent-text);font-weight:var(--weight-semibold)}
+.psf{display:flex;gap:var(--space-2);padding:var(--space-3) var(--space-4);border-top:1px solid var(--color-hairline);margin-top:auto}
+.psf .btn{min-height:var(--touch-target)}
+.psf .pri{flex:1}
+.fam{display:grid;gap:var(--space-2);font-size:var(--text-sm)}
+.fam div{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2)}
+.fam span.k{width:6.5rem;color:var(--color-muted);font-size:var(--text-caption)}
+.stale{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-3);border-radius:var(--radius-md);border:1px solid var(--color-warning);background:var(--color-warning-soft);color:var(--tone-warning-fg);font-size:var(--text-sm)}
+.stale .grow{flex:1}
+
+</style>
+</head>
+<body>
+<main class="board">
+
+<header class="anno" aria-labelledby="dir-title">
+  <div>
+    <p class="anno-k">Dirección 03 · design/vanguard · T30</p>
+    <h1 id="dir-title">Mapa vivo</h1>
+    <p class="trade"><b>El territorio es el lienzo; registros, alertas y la conversación son capas encima.</b> Cada urgencia tiene su lugar y su número en el mapa, y el filtro de Registros pinta los puntos al momento. A cambio es la más cara y la más frágil: depende de un mapa base guardado en el equipo, 38 de 214 registros no tienen coordenadas, los paneles tapan parte del mapa a 1440 px y la lectura larga o la comparación de muchas filas pide salir a «Solo tabla».</p>
+    <dl class="changes">
+      <div><dt>Tokens</dt><dd>Usa la cartografía de tokens.css; añade <code>--map-concession-edge</code> (borde 3:1) y <code>--panel-width</code>. Paneles opacos (<code>--color-surface-raised</code> + <code>--shadow-raised</code>), sin vidrio.</dd></div><div><dt>Densidad</dt><dd>Media: la lista vive en un panel de 30rem (filas de ~56 px); el resto de la pantalla es mapa. La tabla completa existe como modo aparte.</dd></div><div><dt>Tipo</dt><dd>Base 14 px (<code>--text-base</code>); títulos <code>--text-xl</code>; rótulos del mapa 12–13 px con halo <code>--map-halo</code>; cifras tabulares.</dd></div><div><dt>Movimiento</dt><dd>El que más usa: paneles que entran con <code>--ease-sheet</code>, el mapa se desplaza al marcador elegido (instantáneo con movimiento reducido), sin animar marcadores.</dd></div>
+    </dl>
+    <p class="cost"><b>Coste: alto (≈ 9 cortes).</b> Mapa como armazón de toda la app, sincronía lista↔marcador↔URL, mapa base sin conexión (vector local o teselas empaquetadas), agrupación de puntos, pruebas de rendimiento en la laptop y de teclado sobre el mapa. Reutiliza los motores de Territorio, pero cambia el armazón entero.</p>
+    <section class="resolves" aria-labelledby="res-h">
+      <h2 id="res-h">Cómo resuelve la auditoría</h2>
+      <ul><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Hoja única de filtros</b> — botón «Filtros 3» + fichas en el panel; en teléfono la hoja suma «con / sin ubicación»</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Vacío con acción</b> — «38 registros no tienen ubicación»: ubicar o ver en lista</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Una familia de estados</b> — la misma insignia en panel, globo y teléfono; marcadores con número, no solo color</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Un aviso IRSA</b> — en «Esta semana», mismo texto</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Bordes 3:1</b> — búsqueda, campos y botones con <code>--color-control-border</code>; bordes de concesión con el token nuevo</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Inicio a 360 px sin franjas</b> — el mapa con marcadores es el primer dato (medido en el marco C); la hoja empieza a 330 px</span></li><li><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M8 12l3 3 5-6"/></svg><span><b>Además</b> — datos viejos dichos con fecha (capa del 3 nov), Enter con pista, «Reintentar» en capas y resumen</span></li></ul>
+    </section>
+  </div>
+  <div class="anno-side">
+    <div style="display:flex;justify-content:flex-end"><button type="button" class="themebtn" id="theme" aria-pressed="false"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M16.2 7.8l-2.1 6.3-6.3 2.1 2.1-6.3z"/></svg><span>Ver en oscuro</span></button></div>
+    <section class="tok" aria-labelledby="tok-h">
+      <h2 id="tok-h">Tokens nuevos <span class="cap-t" style="color:inherit">propuesta, no están en tokens.css</span></h2>
+      <table>
+        <thead><tr><th scope="col">Token</th><th scope="col">Claro / oscuro</th><th scope="col">Contraste</th><th scope="col">Para</th></tr></thead>
+        <tbody>
+          <tr><td>--color-control-border</td><td>#858585 / #707075</td><td>3,69:1 sobre blanco · 3,35:1 sobre --color-fill · oscuro 3,97:1 sobre #0c0c0d</td><td>Borde de input, select y botón secundario (hoy 1,28:1)</td></tr><tr><td>--color-warning</td><td>= --tone-warning-solid (#8a6115) / #c99a3a</td><td>5,52:1 sobre blanco · oscuro 7,60:1</td><td>Alias que faltaba; un solo «aviso»</td></tr><tr><td>--color-warning-soft</td><td>= --tone-warning-bg</td><td>fondo; texto --tone-warning-fg 6,58:1</td><td>Fondo de la nota provisional</td></tr><tr><td>--text-caption</td><td>0.75rem · 12 px</td><td>—</td><td>Absorbe 10,5/12 px sueltos (metadatos)</td></tr><tr><td>--motion-spin</td><td>800ms</td><td>—</td><td>Hoy literal 0.8s en QueryState</td></tr><tr><td>--motion-shimmer</td><td>1400ms</td><td>—</td><td>Hoy literal 1.4s en Skeleton</td></tr><tr><td>--map-concession-edge</td><td>#4f7f99 / #4f8db0</td><td>3,92:1 sobre --map-land · 3,73:1 sobre --map-bg · oscuro 4,89:1</td><td>Borde de concesión (hoy 2,73:1)</td></tr><tr><td>--panel-width</td><td>26rem · 416 px</td><td>—</td><td>Panel flotante sobre el mapa</td></tr>
+        </tbody>
+      </table>
+      <p class="sub">Valores corregidos (mismo nombre)</p>
+      <table><tbody><tr><td>--dim-d</td><td>#b7791f → #92600f</td><td colspan="2">blanco encima 3,64 → 5,38:1</td></tr><tr><td>--level-yellow</td><td>#d69e2e → #a87a12 (oscuro #d69e2e)</td><td colspan="2">marca sobre blanco 2,39 → 3,85:1 · oscuro 8,18:1</td></tr><tr><td>--viz-6</td><td>#d69e2e → #a87a12 (oscuro #d69e2e)</td><td colspan="2">2,39 → 3,85:1</td></tr><tr><td>--ink-faint (oscuro)</td><td>#7a7a7a → #8f8f8f</td><td colspan="2">sobre #161618 4,21 → 5,59:1</td></tr></tbody></table>
+      <p class="cap-t" style="color:inherit;margin-top:var(--space-2)">Retirar: z-index 100 → <code>--z-modal</code>; 999px → <code>--radius-pill</code>; texto de peligro solo <code>--color-danger</code>, marcas solo <code>--tone-negative-solid</code>.</p>
+    </section>
+  </div>
+</header>
+<p class="cap"><b>A · Escritorio 1440 × 900 · Inicio sobre el mapa</b><span>Riel flotante: 5 destinos + Integraciones; Ajustes y Cuenta abajo y en el avatar</span></p>
+<div class="frame desk" role="region" aria-label="Escritorio, Inicio"><div class="stage"><svg class="map " viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa del proyecto Sechura">
+  <rect class="m-land" x="-200" y="-200" width="1900" height="1400" />
+  <path class="m-sea" d="M-200 -200 H430 C400 120 470 210 430 300 C390 390 330 430 360 520 C390 610 300 700 320 1100 H-200 Z" />
+  <ellipse class="m-sea" cx="575" cy="660" rx="70" ry="26" />
+  <text class="m-sealabel" x="150" y="380">Océano Pacífico</text>
+  <path class="m-dist" d="M700 -50 C720 200 680 400 760 560 S 900 800 880 1000" />
+  <path class="m-dist" d="M430 300 C600 320 800 280 1600 340" />
+  <path class="m-conc " d="M820 170 L1060 150 L1100 330 L860 360 Z" />
+  <path class="m-conc" d="M1085 190 L1300 180 L1325 375 L1115 350 Z" />
+  <path class="m-conc" d="M700 600 L900 585 L930 760 L720 780 Z" />
+  <text class="m-clabel" x="875" y="200">Médanos Norte 07</text>
+  <text class="m-clabel" x="1130" y="215">Médanos Norte 08</text>
+  <text class="m-clabel" x="735" y="625">Lomas Sur 03</text>
+  <path class="m-road" d="M380 470 C600 470 760 430 1000 520 S 1300 600 1600 580" />
+  <path class="m-road2" d="M820 -50 C840 200 900 300 1000 520" />
+  <path class="m-road2" d="M1000 520 C1030 600 1040 650 1050 720" />
+  <text class="m-km" x="870" y="500">Km 14</text>
+  <circle class="m-town" cx="700" cy="505" r="5" /><text class="m-tlabel " x="640" y="529">Nuevo Horizonte</text><circle class="m-town" cx="935" cy="425" r="5" /><text class="m-tlabel " x="949" y="415">Pampa Blanca</text><circle class="m-town" cx="1175" cy="525" r="5" /><text class="m-tlabel " x="1189" y="529">Santa Rita de Huayal</text><circle class="m-town" cx="1060" cy="715" r="5" /><text class="m-tlabel " x="1074" y="719">La Tuna</text><circle class="m-town" cx="640" cy="300" r="5" /><text class="m-tlabel " x="652" y="292">Arenal Chico</text><circle class="m-town" cx="470" cy="610" r="5" /><text class="m-tlabel " x="482" y="614">Punta Arena</text>
+  <g class="cl"><circle cx="760" cy="560" r="15" /><text x="760" y="560">6</text></g><g class="cl"><circle cx="1010" cy="300" r="15" /><text x="1010" y="300">4</text></g><g class="cl"><circle cx="660" cy="340" r="15" /><text x="660" y="340">3</text></g><g class="cl"><circle cx="1245" cy="650" r="15" /><text x="1245" y="650">2</text></g>
+  
+  <g data-first>
+  <g class="mk o sel"><circle class="halo" cx="905" cy="470" r="22" /><circle class="ring" cx="905" cy="470" r="15" /><text x="905" y="470">1</text></g><g class="mk o "><circle class="ring" cx="1195" cy="498" r="15" /><text x="1195" y="498">2</text></g><g class="mk y "><circle class="ring" cx="1080" cy="690" r="15" /><text x="1080" y="690">3</text></g>
+  </g>
+</svg>
+<nav class="float rail" aria-label="Destinos (Inicio)"><span class="mark" aria-hidden="true">S</span><a href="#" aria-current="page"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Registros</a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>Territorio</a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg>Bandeja<span class="count" aria-label="3 pendientes">3</span></a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg>Análisis</a><hr /><a href="#"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg>Integrar</a><a href="#" class="end"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ajustes</a></nav>
+<section class="float panel" aria-labelledby="hoy-d">
+  <div class="phead"><button type="button" class="proj" aria-haspopup="listbox">Sechura <svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="btn sec s" aria-haspopup="dialog" aria-keyshortcuts="Control+K" style="margin-left:auto"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg> Buscar <kbd>Ctrl K</kbd></button></div>
+  <div class="pbody">
+    <div><p class="eyebrow">Jueves 12 de noviembre</p><h1 class="hello" id="hoy-d">Buenos días, Ana</h1></div>
+    <form class="ask" onsubmit="return false"><label class="vh" for="ask-d">Pregunta a SIPGES</label><input id="ask-d" placeholder="Pregunta o busca en tus registros…" aria-describedby="askh-d" /><button class="send" type="submit" aria-label="Enviar pregunta"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></form>
+    <p class="askhint" id="askh-d"><kbd>Enter</kbd> envía · responde con tus registros, sin IA externa</p>
+    <section aria-labelledby="att-d"><div class="sh"><h2 id="att-d">En el mapa, por atender</h2><span class="muted">3</span><a href="#">Abrir Bandeja</a></div><ul class="pins">
+  <li aria-current="true"><span class="pin o" aria-label="Marcador 1">1</span><div><p class="t">Alerta propuesta: posible bloqueo de la vía de acceso Km 14</p><p class="m"><span class="st apr">Espera aprobación</span><span class="lv o">Naranja</span><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></p></div></li>
+  <li><span class="pin o" aria-label="Marcador 2">2</span><div><p class="t">Compromiso del reservorio de Santa Rita vence en 18 días</p><p class="m"><span class="st rev">En revisión</span><span class="lv o">Naranja</span></p></div></li>
+  <li><span class="pin y" aria-label="Marcador 3">3</span><div><p class="t">Comité de regantes reclama el turno de agua en La Tuna</p><p class="m"><span class="st rev">En revisión</span><span class="lv y">Amarillo</span><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></p></div></li>
+</ul></section>
+    <section aria-labelledby="wk-d"><div class="sh"><h2 id="wk-d">Esta semana</h2><span class="muted">5–11 nov</span></div><p class="week" style="margin-top:var(--space-2)"><a href="#">12 eventos</a> y <a href="#">3 demandas</a>; Pampa Blanca concentra 4.</p><div style="margin-top:var(--space-2)"><span class="irsa"><span>IRSA <strong>2,7</strong></span><span class="lv o">Naranja</span><span class="prov" title="Pesos y umbrales del IRSA son provisionales hasta su validación metodológica."><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg> Provisional · metodología sin validar</span></span></div></section>
+    <section aria-labelledby="ag-d"><div class="sh"><h2 id="ag-d">Próximos 30 días</h2><a href="#">Agenda</a></div><ul class="pins"><li><span class="pin" aria-hidden="true"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 6v6l4 2"/></svg></span><div><p class="t">18 nov · Mesa técnica de agua</p><p class="m">Convoca la gobernación · Sechura (distrito), sin punto en el mapa</p></div></li></ul></section>
+  </div>
+</section>
+<div class="float tools"><span class="offline" role="status">Sin internet · mapa guardado en este equipo</span><button type="button" class="btn sec s"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Capas</button><button type="button" class="av" aria-label="AP, cuenta de Ana Prueba">AP</button></div>
+<div class="float zoom" role="group" aria-label="Zoom"><button type="button" aria-label="Acercar"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" aria-label="Alejar"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg></button></div>
+<section class="float time" aria-labelledby="tl-d"><div class="hd"><b id="tl-d">Últimos 30 días</b><span>Semana 5–11 nov seleccionada · 23 eventos</span></div><div class="bars" role="img" aria-label="Eventos por día, últimos 30 días"><i class="" style="height:30%"></i><i class="" style="height:50%"></i><i class="" style="height:20%"></i><i class="" style="height:40%"></i><i class="" style="height:60%"></i><i class="" style="height:30%"></i><i class="" style="height:20%"></i><i class="" style="height:50%"></i><i class="" style="height:70%"></i><i class="" style="height:40%"></i><i class="" style="height:30%"></i><i class="" style="height:20%"></i><i class="" style="height:60%"></i><i class="" style="height:80%"></i><i class="" style="height:50%"></i><i class="" style="height:40%"></i><i class="" style="height:30%"></i><i class="" style="height:50%"></i><i class="" style="height:60%"></i><i class="" style="height:40%"></i><i class="" style="height:20%"></i><i class="" style="height:30%"></i><i class="" style="height:90%"></i><i class="on" style="height:70%"></i><i class="on" style="height:60%"></i><i class="on" style="height:80%"></i><i class="on" style="height:100%"></i><i class="on" style="height:70%"></i><i class="on" style="height:50%"></i><i class="on" style="height:60%"></i></div><div class="axis"><span>13 oct</span><span>27 oct</span><span>11 nov</span></div></section>
+<div class="scale" aria-hidden="true">5 km<i></i></div>
+<section class="float legend" aria-label="Capas visibles en Inicio"><h2>Capas visibles</h2><ul>
+  <li><label><input type="checkbox" checked /><span class="sw conc" aria-hidden="true"></span>Concesiones (copia del 3 nov)</label></li>
+  <li><label><input type="checkbox" checked /><span class="sw alrt" aria-hidden="true"></span>Alertas y compromisos</label></li>
+  <li><label><input type="checkbox" checked /><span class="sw clu" aria-hidden="true"></span>Registros agrupados</label></li>
+</ul><p class="nol"><b>38</b> registros sin ubicación. <a href="#">Ver en lista</a></p></section>
+</div></div>
+<p class="cap"><b>B · Escritorio 1440 × 900 · Registros como capa</b><span>Elegir una fila centra su marcador y abre el globo</span></p>
+<div class="frame desk" role="region" aria-label="Escritorio, Registros"><div class="stage"><svg class="map " viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa con los registros filtrados">
+  <rect class="m-land" x="-200" y="-200" width="1900" height="1400" />
+  <path class="m-sea" d="M-200 -200 H430 C400 120 470 210 430 300 C390 390 330 430 360 520 C390 610 300 700 320 1100 H-200 Z" />
+  <ellipse class="m-sea" cx="575" cy="660" rx="70" ry="26" />
+  <text class="m-sealabel" x="150" y="380">Océano Pacífico</text>
+  <path class="m-dist" d="M700 -50 C720 200 680 400 760 560 S 900 800 880 1000" />
+  <path class="m-dist" d="M430 300 C600 320 800 280 1600 340" />
+  <path class="m-conc " d="M820 170 L1060 150 L1100 330 L860 360 Z" />
+  <path class="m-conc" d="M1085 190 L1300 180 L1325 375 L1115 350 Z" />
+  <path class="m-conc" d="M700 600 L900 585 L930 760 L720 780 Z" />
+  <text class="m-clabel" x="875" y="200">Médanos Norte 07</text>
+  <text class="m-clabel" x="1130" y="215">Médanos Norte 08</text>
+  <text class="m-clabel" x="735" y="625">Lomas Sur 03</text>
+  <path class="m-road" d="M380 470 C600 470 760 430 1000 520 S 1300 600 1600 580" />
+  <path class="m-road2" d="M820 -50 C840 200 900 300 1000 520" />
+  <path class="m-road2" d="M1000 520 C1030 600 1040 650 1050 720" />
+  <text class="m-km" x="870" y="500">Km 14</text>
+  <circle class="m-town" cx="700" cy="505" r="5" /><text class="m-tlabel " x="640" y="529">Nuevo Horizonte</text><circle class="m-town" cx="935" cy="425" r="5" /><text class="m-tlabel " x="949" y="415">Pampa Blanca</text><circle class="m-town" cx="1175" cy="525" r="5" /><text class="m-tlabel " x="1189" y="529">Santa Rita de Huayal</text><circle class="m-town" cx="1060" cy="715" r="5" /><text class="m-tlabel " x="1074" y="719">La Tuna</text><circle class="m-town" cx="640" cy="300" r="5" /><text class="m-tlabel " x="652" y="292">Arenal Chico</text><circle class="m-town" cx="470" cy="610" r="5" /><text class="m-tlabel " x="482" y="614">Punta Arena</text>
+  <g class="cl"><circle cx="760" cy="560" r="15" /><text x="760" y="560">6</text></g><g class="cl"><circle cx="1010" cy="300" r="15" /><text x="1010" y="300">4</text></g><g class="cl"><circle cx="660" cy="340" r="15" /><text x="660" y="340">3</text></g><g class="cl"><circle cx="1245" cy="650" r="15" /><text x="1245" y="650">2</text></g>
+  <circle class="dot o" cx="880" cy="455" r="6" /><circle class="dot y" cx="960" cy="470" r="6" /><circle class="dot y" cx="1120" cy="560" r="6" /><circle class="dot g" cx="1210" cy="560" r="6" /><circle class="dot g" cx="780" cy="470" r="6" /><circle class="dot y" cx="1020" cy="680" r="6" /><circle class="dot y" cx="690" cy="455" r="6" /><circle class="dot o" cx="1150" cy="470" r="6" /><circle class="dot g" cx="600" cy="430" r="6" /><circle class="dot y" cx="990" cy="360" r="6" />
+  <g data-first>
+  <g class="mk o "><circle class="ring" cx="905" cy="470" r="15" /><text x="905" y="470">1</text></g><g class="mk o sel"><circle class="halo" cx="1195" cy="498" r="22" /><circle class="ring" cx="1195" cy="498" r="15" /><text x="1195" y="498">2</text></g><g class="mk y "><circle class="ring" cx="1080" cy="690" r="15" /><text x="1080" y="690">3</text></g>
+  </g>
+</svg>
+<nav class="float rail" aria-label="Destinos (Registros)"><span class="mark" aria-hidden="true">S</span><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a><a href="#" aria-current="page"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Registros</a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>Territorio</a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-6z"/></svg>Bandeja<span class="count" aria-label="3 pendientes">3</span></a><a href="#" ><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 3v18h18M7 16v-4M12 16V8M17 16v-7"/></svg>Análisis</a><hr /><a href="#"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 2v6M15 2v6M6 8h12v3a6 6 0 0 1-12 0zM12 17v5"/></svg>Integrar</a><a href="#" class="end"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Ajustes</a></nav>
+<section class="float panel wide" aria-labelledby="reg-d">
+  <div class="phead"><h1 id="reg-d" class="hello">Registros</h1><button type="button" class="btn pri s" style="margin-left:auto"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> Nuevo</button></div>
+  <div class="pbody" style="gap:var(--space-3);padding-bottom:var(--space-2)">
+    <div class="ptools" role="search"><label class="field"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg><input placeholder="Buscar en títulos, actores y lugares" aria-label="Buscar registros" /></label><button type="button" class="btn sec" aria-pressed="false" aria-haspopup="dialog"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg> Filtros <span class="count">3</span></button></div>
+    <div class="chips" aria-label="Filtros activos"><span class="chipx">Evento, Demanda<button type="button" aria-label="Quitar tipo"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span><span class="chipx">Verificación A–C<button type="button" aria-label="Quitar verificación"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span><span class="chipx">Desde 1 oct<button type="button" aria-label="Quitar fecha"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span></div>
+    <div class="seg" role="group" aria-label="Qué mostrar"><button type="button" aria-pressed="true">Mapa y lista · 214</button><button type="button" aria-pressed="false">Solo tabla</button></div>
+  </div>
+  <ul class="rlist" aria-label="Resultados" style="flex:1;overflow:hidden"><li ><abbr class="dm G" title="Gobernanza">G</abbr><div><p class="t">Mesa de diálogo con la C.C. Santa Rita de Huayal: acta pendiente de firma</p><p class="m">Evento · 11 nov · Santa Rita de Huayal</p></div><div class="r"><span class="lv y">Amarillo</span><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></div></li><li ><abbr class="dm A" title="Actores">A</abbr><div><p class="t">Ronda campesina de Pampa Blanca anuncia vigilia frente a la concesión Médanos Norte 07</p><p class="m">Evento · 10 nov · Pampa Blanca</p></div><div class="r"><span class="lv o">Naranja</span><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></div></li><li ><abbr class="dm D" title="Demandas">D</abbr><div><p class="t">Pescadores artesanales de Punta Arena piden monitoreo participativo del agua</p><p class="m">Demanda · 10 nov · Punta Arena</p></div><div class="r"><span class="lv y">Amarillo</span><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></div></li><li ><abbr class="dm N" title="Narrativas">N</abbr><div><p class="t">Publicación en redes sobre un supuesto derrame, sin fuente identificada</p><p class="m">Narrativa · 09 nov · Sechura (distrito) · <b>sin ubicación</b></p></div><div class="r"><span class="lv y">Amarillo</span><span class="vf" title="Verificación E · No verificada" aria-label="Verificación E, No verificada"><b>E</b><i aria-hidden="true"><s class="on"></s><s class=""></s><s class=""></s><s class=""></s><s class=""></s></i></span></div></li><li ><abbr class="dm E" title="Ambiental-territorial">E</abbr><div><p class="t">Visita de fiscalización ambiental programada en la quebrada Los Faiques</p><p class="m">Evento · 08 nov · Quebrada Los Faiques</p></div><div class="r"><span class="lv g">Verde</span><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></div></li><li ><abbr class="dm I" title="Institucional">I</abbr><div><p class="t">Municipalidad distrital convoca reunión informativa sobre la vía de acceso</p><p class="m">Evento · 07 nov · Nuevo Horizonte</p></div><div class="r"><span class="lv g">Verde</span><span class="vf" title="Verificación A · Confirmada" aria-label="Verificación A, Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i></span></div></li><li ><abbr class="dm D" title="Demandas">D</abbr><div><p class="t">Comité de regantes reclama el turno de agua del canal La Tuna</p><p class="m">Demanda · 06 nov · Caserío La Tuna</p></div><div class="r"><span class="lv y">Amarillo</span><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></div></li><li aria-current="true"><abbr class="dm D" title="Demandas">D</abbr><div><p class="t">Compromiso: reparación del reservorio comunal, vence el 30 de noviembre</p><p class="m">Demanda · 05 nov · Santa Rita de Huayal</p></div><div class="r"><span class="lv o">Naranja</span><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></div></li><li ><abbr class="dm A" title="Actores">A</abbr><div><p class="t">Presidente de la ronda de Pampa Blanca (cargo) pide reunión con la empresa</p><p class="m">Actor · 04 nov · Pampa Blanca</p></div><div class="r"><span class="lv y">Amarillo</span><span class="vf" title="Verificación B · Corroborada" aria-label="Verificación B, Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i></span></div></li></ul>
+  <div class="pfoot" style="margin-top:auto"><span>1–25 de 214 · del servidor</span><button class="btn sec s" type="button">Siguientes 25</button></div>
+</section>
+<div class="float tools"><span class="offline" role="status">Sin internet · mapa guardado en este equipo</span><button type="button" class="btn sec s"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> Capas</button><button type="button" class="av" aria-label="AP, cuenta de Ana Prueba">AP</button></div>
+<div class="float zoom" role="group" aria-label="Zoom"><button type="button" aria-label="Acercar"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" aria-label="Alejar"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/></svg></button></div>
+<section class="float callout" style="left:1075px;top:205px" aria-labelledby="co-h">
+  <div class="m"><abbr class="dm D" title="Demandas">D</abbr><span class="cap-t">Demanda · 05 nov · Santa Rita de Huayal</span></div>
+  <h2 id="co-h">Compromiso: reparación del reservorio comunal, vence el 30 de noviembre</h2>
+  <div class="m"><span class="st rev">En revisión</span><span class="lv o">Naranja</span><span class="vf" title="Verificación B · Corroborada"><b>B</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s></i><span>Corroborada</span></span></div>
+  <p class="aud"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M12 6v6l4 2"/></svg> Editado por Ana Prueba hoy 08:31 · <a href="#">Historial</a></p>
+  <div class="a"><button type="button" class="btn pri s">Abrir</button><button type="button" class="btn sec s">Ver en Bandeja</button></div>
+</section>
+<section class="float legend" aria-label="Capas visibles en Registros"><h2>Capas visibles</h2><ul>
+  <li><label><input type="checkbox" checked /><span class="sw conc" aria-hidden="true"></span>Concesiones (copia del 3 nov)</label></li>
+  <li><label><input type="checkbox" checked /><span class="sw alrt" aria-hidden="true"></span>Alertas y compromisos</label></li>
+  <li><label><input type="checkbox" checked /><span class="sw clu" aria-hidden="true"></span>Registros agrupados</label></li>
+</ul><p class="nol"><b>38</b> de 214 sin ubicación. <a href="#">Ver en lista</a></p></section>
+</div></div>
+<p class="cap"><b>C · Teléfono 360 px · Inicio y Registros</b><span>Mapa arriba, hoja abajo; la hoja de filtros se apila encima</span></p>
+<div class="bottom">
+  <div class="phone" role="region" aria-label="Teléfono, Inicio"><div class="stage"><div class="pmap"><svg class="map ph" viewBox="845 350 450 437" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa del proyecto Sechura, teléfono">
+  <rect class="m-land" x="-200" y="-200" width="1900" height="1400" />
+  <path class="m-sea" d="M-200 -200 H430 C400 120 470 210 430 300 C390 390 330 430 360 520 C390 610 300 700 320 1100 H-200 Z" />
+  <ellipse class="m-sea" cx="575" cy="660" rx="70" ry="26" />
+  <text class="m-sealabel" x="150" y="380">Océano Pacífico</text>
+  <path class="m-dist" d="M700 -50 C720 200 680 400 760 560 S 900 800 880 1000" />
+  <path class="m-dist" d="M430 300 C600 320 800 280 1600 340" />
+  <path class="m-conc " d="M820 170 L1060 150 L1100 330 L860 360 Z" />
+  <path class="m-conc" d="M1085 190 L1300 180 L1325 375 L1115 350 Z" />
+  <path class="m-conc" d="M700 600 L900 585 L930 760 L720 780 Z" />
+  <text class="m-clabel" x="875" y="200">Médanos Norte 07</text>
+  <text class="m-clabel" x="1130" y="215">Médanos Norte 08</text>
+  <text class="m-clabel" x="735" y="625">Lomas Sur 03</text>
+  <path class="m-road" d="M380 470 C600 470 760 430 1000 520 S 1300 600 1600 580" />
+  <path class="m-road2" d="M820 -50 C840 200 900 300 1000 520" />
+  <path class="m-road2" d="M1000 520 C1030 600 1040 650 1050 720" />
+  <text class="m-km" x="870" y="500">Km 14</text>
+  <circle class="m-town" cx="700" cy="505" r="5" /><text class="m-tlabel " x="640" y="529">Nuevo Horizonte</text><circle class="m-town" cx="935" cy="425" r="5" /><text class="m-tlabel " x="949" y="415">Pampa Blanca</text><circle class="m-town" cx="1175" cy="525" r="5" /><text class="m-tlabel end" x="1163" y="559">Santa Rita de Huayal</text><circle class="m-town" cx="1060" cy="715" r="5" /><text class="m-tlabel " x="1074" y="719">La Tuna</text><circle class="m-town" cx="640" cy="300" r="5" /><text class="m-tlabel " x="652" y="292">Arenal Chico</text><circle class="m-town" cx="470" cy="610" r="5" /><text class="m-tlabel " x="482" y="614">Punta Arena</text>
+  <g class="cl"><circle cx="760" cy="560" r="15" /><text x="760" y="560">6</text></g><g class="cl"><circle cx="1010" cy="300" r="15" /><text x="1010" y="300">4</text></g><g class="cl"><circle cx="660" cy="340" r="15" /><text x="660" y="340">3</text></g><g class="cl"><circle cx="1245" cy="650" r="15" /><text x="1245" y="650">2</text></g>
+  
+  <g data-first>
+  <g class="mk o "><circle class="ring" cx="905" cy="470" r="15" /><text x="905" y="470">1</text></g><g class="mk o "><circle class="ring" cx="1195" cy="498" r="15" /><text x="1195" y="498">2</text></g><g class="mk y "><circle class="ring" cx="1080" cy="690" r="15" /><text x="1080" y="690">3</text></g>
+  </g>
+</svg></div>
+<div class="float ptop"><button class="ib" type="button" aria-label="Abrir menú"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><span class="pj">Sechura <svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg></span><button class="ib" type="button" aria-label="Buscar"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg></button></div>
+<section class="psheet" style="top:330px" aria-labelledby="hoy-p"><span class="grab" aria-hidden="true"></span>
+  <div class="pbody">
+    <div class="sh"><h2 id="hoy-p">Hoy en Sechura</h2><span class="offline">sin internet</span></div>
+    <form class="ask" onsubmit="return false"><label class="vh" for="ask-p">Pregunta a SIPGES</label><input id="ask-p" placeholder="Pregunta o busca…" /><button class="send" type="submit" aria-label="Enviar pregunta"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></form>
+    <ul class="pins">
+  <li ><span class="pin o" aria-label="Marcador 1">1</span><div><p class="t">Alerta propuesta: posible bloqueo de la vía de acceso Km 14</p><p class="m"><span class="st apr">Espera aprobación</span><span class="lv o">Naranja</span><span class="vf" title="Verificación C · Parcial" aria-label="Verificación C, Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i></span></p></div></li>
+  <li><span class="pin o" aria-label="Marcador 2">2</span><div><p class="t">Compromiso del reservorio de Santa Rita vence en 18 días</p><p class="m"><span class="st rev">En revisión</span><span class="lv o">Naranja</span></p></div></li>
+  <li><span class="pin y" aria-label="Marcador 3">3</span><div><p class="t">Comité de regantes reclama el turno de agua en La Tuna</p><p class="m"><span class="st rev">En revisión</span><span class="lv y">Amarillo</span></p></div></li>
+</ul>
+    <div><span class="irsa"><span>IRSA <strong>2,7</strong></span><span class="lv o">Naranja</span><span class="prov" title="Pesos y umbrales del IRSA son provisionales hasta su validación metodológica."><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg> Provisional</span></span></div>
+  </div>
+</section>
+<span class="ruler" data-before="490 px" aria-hidden="true"></span>
+</div></div>
+  <div class="phone" role="region" aria-label="Teléfono, Registros con filtros"><div class="stage"><div class="pmap"><svg class="map ph" viewBox="845 350 450 437" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Mapa de registros, teléfono">
+  <rect class="m-land" x="-200" y="-200" width="1900" height="1400" />
+  <path class="m-sea" d="M-200 -200 H430 C400 120 470 210 430 300 C390 390 330 430 360 520 C390 610 300 700 320 1100 H-200 Z" />
+  <ellipse class="m-sea" cx="575" cy="660" rx="70" ry="26" />
+  <text class="m-sealabel" x="150" y="380">Océano Pacífico</text>
+  <path class="m-dist" d="M700 -50 C720 200 680 400 760 560 S 900 800 880 1000" />
+  <path class="m-dist" d="M430 300 C600 320 800 280 1600 340" />
+  <path class="m-conc " d="M820 170 L1060 150 L1100 330 L860 360 Z" />
+  <path class="m-conc" d="M1085 190 L1300 180 L1325 375 L1115 350 Z" />
+  <path class="m-conc" d="M700 600 L900 585 L930 760 L720 780 Z" />
+  <text class="m-clabel" x="875" y="200">Médanos Norte 07</text>
+  <text class="m-clabel" x="1130" y="215">Médanos Norte 08</text>
+  <text class="m-clabel" x="735" y="625">Lomas Sur 03</text>
+  <path class="m-road" d="M380 470 C600 470 760 430 1000 520 S 1300 600 1600 580" />
+  <path class="m-road2" d="M820 -50 C840 200 900 300 1000 520" />
+  <path class="m-road2" d="M1000 520 C1030 600 1040 650 1050 720" />
+  <text class="m-km" x="870" y="500">Km 14</text>
+  <circle class="m-town" cx="700" cy="505" r="5" /><text class="m-tlabel " x="640" y="529">Nuevo Horizonte</text><circle class="m-town" cx="935" cy="425" r="5" /><text class="m-tlabel " x="949" y="415">Pampa Blanca</text><circle class="m-town" cx="1175" cy="525" r="5" /><text class="m-tlabel end" x="1163" y="559">Santa Rita de Huayal</text><circle class="m-town" cx="1060" cy="715" r="5" /><text class="m-tlabel " x="1074" y="719">La Tuna</text><circle class="m-town" cx="640" cy="300" r="5" /><text class="m-tlabel " x="652" y="292">Arenal Chico</text><circle class="m-town" cx="470" cy="610" r="5" /><text class="m-tlabel " x="482" y="614">Punta Arena</text>
+  <g class="cl"><circle cx="760" cy="560" r="15" /><text x="760" y="560">6</text></g><g class="cl"><circle cx="1010" cy="300" r="15" /><text x="1010" y="300">4</text></g><g class="cl"><circle cx="660" cy="340" r="15" /><text x="660" y="340">3</text></g><g class="cl"><circle cx="1245" cy="650" r="15" /><text x="1245" y="650">2</text></g>
+  <circle class="dot o" cx="880" cy="455" r="6" /><circle class="dot y" cx="960" cy="470" r="6" /><circle class="dot y" cx="1120" cy="560" r="6" /><circle class="dot g" cx="1210" cy="560" r="6" /><circle class="dot g" cx="780" cy="470" r="6" /><circle class="dot y" cx="1020" cy="680" r="6" /><circle class="dot y" cx="690" cy="455" r="6" /><circle class="dot o" cx="1150" cy="470" r="6" /><circle class="dot g" cx="600" cy="430" r="6" /><circle class="dot y" cx="990" cy="360" r="6" />
+  <g data-first>
+  <g class="mk o "><circle class="ring" cx="905" cy="470" r="15" /><text x="905" y="470">1</text></g><g class="mk o "><circle class="ring" cx="1195" cy="498" r="15" /><text x="1195" y="498">2</text></g><g class="mk y "><circle class="ring" cx="1080" cy="690" r="15" /><text x="1080" y="690">3</text></g>
+  </g>
+</svg></div>
+<div class="float ptop"><button class="ib" type="button" aria-label="Abrir menú"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button><span class="pj">Registros</span><button class="ib" type="button" aria-label="Buscar"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16M21 21l-4.3-4.3"/></svg></button></div>
+<div class="scrim" aria-hidden="true"></div>
+<section class="psheet" style="top:150px" role="dialog" aria-modal="true" aria-labelledby="fp-h"><span class="grab" aria-hidden="true"></span>
+  <div class="fsh"><h2 id="fp-h">Filtros <span class="count">3</span></h2><button type="button" class="x" aria-label="Cerrar filtros"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="pbody">
+    <fieldset class="fg"><legend>Tipo</legend><div class="tg"><button type="button" aria-pressed="true">Eventos</button><button type="button" aria-pressed="true">Demandas</button><button type="button" aria-pressed="false">Actores</button><button type="button" aria-pressed="false">Narrativas</button><button type="button" aria-pressed="false">Más…</button></div></fieldset>
+    <fieldset class="fg"><legend>Verificación</legend><div class="tg"><button type="button" aria-pressed="true" aria-label="Verificación A">A</button><button type="button" aria-pressed="true" aria-label="Verificación B">B</button><button type="button" aria-pressed="true" aria-label="Verificación C">C</button><button type="button" aria-pressed="false" aria-label="Verificación D">D</button><button type="button" aria-pressed="false" aria-label="Verificación E">E</button></div></fieldset>
+    <fieldset class="fg"><legend>En el mapa</legend><div class="tg"><button type="button" aria-pressed="true">Con ubicación · 176</button><button type="button" aria-pressed="true">Sin ubicación · 38</button></div></fieldset>
+  </div>
+  <div class="psf"><button type="button" class="btn gh">Limpiar</button><button type="button" class="btn pri">Ver 214 registros</button></div>
+</section>
+</div></div>
+  <div class="specs">
+  <section class="spec" aria-labelledby="sp1"><h3 id="sp1">Familia de estados y marcadores</h3><div class="fam">
+    <div><span class="k">Estado</span><span class="st pre">Preliminar</span><span class="st rev">En revisión</span><span class="st apr">Espera aprobación</span><span class="st val">Validado</span></div>
+    <div><span class="k">Verificación</span><span class="vf" title="Verificación A · Confirmada"><b>A</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s><s class="on"></s></i><span>Confirmada</span></span><span class="vf" title="Verificación C · Parcial"><b>C</b><i aria-hidden="true"><s class="on"></s><s class="on"></s><s class="on"></s><s class=""></s><s class=""></s></i><span>Parcial</span></span><span class="vf" title="Verificación E · No verificada"><b>E</b><i aria-hidden="true"><s class="on"></s><s class=""></s><s class=""></s><s class=""></s><s class=""></s></i><span>No verificada</span></span></div>
+    <div><span class="k">Marcador</span><span class="pin o" aria-label="Naranja">1</span><span class="cap-t">aro del nivel (3,05:1 sobre el terreno) + número oscuro sobre blanco 16:1</span></div>
+    <div><span class="k">IRSA</span><span class="irsa"><span>IRSA <strong>2,7</strong></span><span class="lv o">Naranja</span><span class="prov" title="Pesos y umbrales del IRSA son provisionales hasta su validación metodológica."><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg> Provisional · metodología sin validar</span></span></div>
+  </div></section>
+  <section class="spec" aria-labelledby="sp2"><h3 id="sp2">Datos viejos, sin ubicación y error</h3>
+    <div class="stale" role="status"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 2 20h20zM12 10v4M12 17.5h.01"/></svg><span class="grow">Capa de concesiones: copia del 3 nov. GEOCATMIN no responde sin internet; los polígonos pueden haber cambiado.</span><button class="btn sec s" type="button">Reintentar</button></div>
+    <div class="empty" style="margin-top:var(--space-3)"><span class="ei"><svg class="ico " viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/></svg></span><b>38 registros no tienen ubicación</b><p>No aparecen en el mapa. Ubícalos o revísalos en la lista.</p><div style="display:flex;gap:var(--space-2)"><button class="btn pri s" type="button">Ubicar en el mapa</button><button class="btn sec s" type="button">Ver en lista</button></div></div>
+  </section>
+</div>
+</div>
+</main>
+<script>
+(() => {
+  // Rulers: measure where the first data starts inside each phone frame (no hard-coded claim).
+  for (const phone of document.querySelectorAll('.phone')) {
+    const first = phone.querySelector('[data-first]');
+    const ruler = phone.querySelector('.ruler');
+    if (!first || !ruler) continue;
+    const top = Math.round(first.getBoundingClientRect().top - phone.getBoundingClientRect().top);
+    ruler.style.top = top + 'px';
+    ruler.textContent = 'primer dato a ' + top + ' px' + (ruler.dataset.before ? ' (hoy ≈ ' + ruler.dataset.before + ')' : '');
+  }
+  const btn = document.getElementById('theme');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+    btn.setAttribute('aria-pressed', String(!dark));
+    btn.lastChild.textContent = dark ? 'Ver en oscuro' : 'Ver en claro';
+  });
+})();
+</script>
+</body>
+</html>
