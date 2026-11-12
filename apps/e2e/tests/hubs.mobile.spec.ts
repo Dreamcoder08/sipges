@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator, Page } from '@playwright/test';
 import { DESTINATIONS, hubHref, titleFor } from '../../web/src/app/navigation.ts';
@@ -248,13 +249,35 @@ for (const colorScheme of SCHEMES) {
       page,
       async () => {
         await page.goto('/bandeja');
-        await page
+        const first = page
           .getByRole('listbox', { name: 'Pendientes de decisión' })
           .getByRole('option')
-          .first()
-          .tap();
+          .first();
+        // Two-line rows of at least 44 px; no keyboard hint on a touch screen (T31 audit L10).
+        await expect(first).toBeVisible();
+        expect((await first.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(43.5);
+        await expect(page.getByLabel('Atajos de teclado')).toBeHidden();
+        if (process.env.SIPGES_SCREENSHOT_DIR) {
+          await page.screenshot({
+            path: path.join(
+              process.env.SIPGES_SCREENSHOT_DIR,
+              `bandeja-${page.viewportSize()?.width}-${colorScheme}-list.png`,
+            ),
+            animations: 'disabled',
+          });
+        }
+        await first.tap();
         await expect(back).toBeVisible();
         await settled();
+        if (process.env.SIPGES_SCREENSHOT_DIR) {
+          await page.screenshot({
+            path: path.join(
+              process.env.SIPGES_SCREENSHOT_DIR,
+              `bandeja-${page.viewportSize()?.width}-${colorScheme}-detail.png`,
+            ),
+            animations: 'disabled',
+          });
+        }
       },
       (width, where) => expectReachable(back, width, `${where}: back`),
       `the pending detail (${colorScheme})`,
