@@ -83,7 +83,7 @@ The seven original files passed 48/48 with default concurrency and with `--maxWo
 cd apps/api && env -i PATH="$PATH" HOME="$HOME" LANG=C.UTF-8 ./node_modules/.bin/vitest run test/platform/test-app-lifecycle.test.ts test/platform/verify-failed-setup.test.ts
 ```
 
-These five tests keep cleanup between tests, account isolation and the closing of clones whose setup fails; the `afterAll` checks also observe the closing of the last clone. Original hooks, a single worker and the 20-second limits stay. Data is synthetic and PGlite runs in memory. Node's warning about `localStorage` without `--localstorage-file` can appear in a passing run; it is not the context error. These focused checks do not replace the serial full gate of T5 in [the integration ODD](../odd/tasks/integration-consolidation.md).
+These five tests keep cleanup between tests, account isolation and the closing of clones whose setup fails; the `afterAll` checks also observe the closing of the last clone. Original hooks, a single worker and the 20-second limits stay. Data is synthetic and PGlite runs in memory. Node's warning about `localStorage` without `--localstorage-file` can appear in a passing run; it is not the context error. These focused checks do not replace the serial full gate of T5 in [the integration ODD](../odd/archive/integration-consolidation.md).
 
 ## Report the outcome
 

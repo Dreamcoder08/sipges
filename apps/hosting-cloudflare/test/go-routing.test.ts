@@ -257,6 +257,8 @@ describe('Wrangler configuration', () => {
     // The id is set at deploy, by go-trial-config.mjs, which refuses production's.
     expect(go.hyperdrive).toBeUndefined();
     expect(go.triggers).toBeUndefined();
-    expect(go.vars.SIPGES_ALLOWED_HOSTS).not.toBe(production.vars.SIPGES_ALLOWED_HOSTS);
+    // Both hosts are local placeholders; the deploy writes each from its own variable
+    // (SIPGES_PUBLIC_HOST, SIPGES_GO_PUBLIC_HOST), see go-trial-config.test.ts.
+    expect(go.vars.SIPGES_ALLOWED_HOSTS).toBe('localhost');
   });
 });

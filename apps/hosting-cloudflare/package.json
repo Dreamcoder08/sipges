@@ -9,7 +9,7 @@
     "migrate": "node migrate.mjs",
     "dev": "wrangler dev",
     "config:go": "node go-trial-config.mjs",
-    "deploy:worker": "wrangler hyperdrive update 9eae2c5e3d614feca42b525fc82e10e1 --caching-disabled true && wrangler deploy",
+    "deploy:worker": "node deploy-config.mjs && wrangler hyperdrive update \"$SIPGES_HYPERDRIVE_ID\" --caching-disabled true && wrangler deploy -c wrangler.deploy.jsonc",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

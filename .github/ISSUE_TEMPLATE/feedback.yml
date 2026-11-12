@@ -1,0 +1,54 @@
+name: Crítica o problema
+description: Algo no funciona, confunde o se ve mal en SIPGES.
+title: '[Feedback] '
+labels: [feedback]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por tomarte el tiempo. No pegues datos reales del proyecto (nombres de personas,
+        comunidades, documentos ni capturas con información sensible): describe el caso con datos
+        inventados o tapa lo sensible en la captura.
+  - type: input
+    id: screen
+    attributes:
+      label: Pantalla
+      description: Dónde pasó, por ejemplo «Inicio», «Registros › Demandas» o «Territorio».
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Qué pasó
+      description: Si hay un mensaje de error, cópialo tal cual.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Cómo reproducirlo
+      placeholder: |
+        1. Entré a …
+        2. Hice clic en …
+        3. …
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Captura o video
+      description: Arrastra la imagen aquí, sin datos reales visibles.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Dónde lo usas
+      options:
+        - Instancia de referencia (web)
+        - Mi propia instancia en la nube
+        - Mi laptop (lanzador de escritorio)
+    validations:
+      required: true

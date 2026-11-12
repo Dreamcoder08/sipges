@@ -22,7 +22,7 @@ El mapa de concesiones usa SVG y geometrías WGS 84 de `data/project_coordinates
 
 ## Visualizaciones solicitadas el 15 de octubre
 
-Referencias: captura del Centro de alertas, mapa circular de actores y ejemplo de matriz por comunidad suministrados por el usuario. Implementación en `apps/web/src/features/records/insights/` y especificación en `odd/tasks/alert-heatmap-actor-map.md`.
+Referencias: captura del Centro de alertas, mapa circular de actores y ejemplo de matriz por comunidad suministrados por el usuario. Implementación en `apps/web/src/features/records/insights/` y especificación en `odd/archive/alert-heatmap-actor-map.md`.
 
 - **Alertas:** matriz de dimensión SIPGES por territorio, conteos y máximo nivel registrado de las alertas activas. Una celda vacía no equivale a riesgo bajo. Los niveles desconocidos y territorios ausentes quedan explícitos. Solo se utiliza territorio propio o un evento enlazado por identificador exacto y sin ambigüedad; nunca se extrae una ubicación de la narrativa. Seleccionar una celda permite abrir sus fichas.
 - **Actores:** sectores según `Tipo_Actor`, cinco anillos ordinales según `Influencia`, color según `Posicion_Proyecto`. Nodos agrupados permiten consultar y abrir todos sus actores; los valores sin clasificación permanecen en la lista. No representa coordenadas, vínculos ni intensidad cuantitativa inexistentes. Se ofrecen controles de teclado y selector alternativo.

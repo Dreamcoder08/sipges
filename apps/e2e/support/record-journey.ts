@@ -4,7 +4,7 @@ import { expect } from './fixtures.ts';
 
 /**
  * Where each record module lives in the SPA: its screen and, when the screen hosts several
- * modules, the toggle that selects it (docs: odd/tasks/full-functionality.md S2).
+ * modules, the toggle that selects it (docs: odd/archive/full-functionality.md S2).
  */
 export const RECORD_SCREENS: ReadonlyArray<{
   module: RecordModule;

@@ -24,7 +24,7 @@ El usuario solicitó explícitamente instalar `neon` y `neon-postgres` con `npx 
 | `sipges-adr` | ADR 0028 (#84), 0029 (#115), 0030 (#130), 0031 (#161) y 0032 (#202) |
 | `sipges-e2e-stabilize` | Carreras e2e corregidas esperando estado en lugar de leer una vez: #62, #84, #89, #124, #130, #171 y #204 |
 
-El usuario pidió también adoptar Gentle AI (2026-10-19). Las skills `chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript` y `zod-4` son instrucciones de proveedor de [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) v4.2.0 y [Gentleman-Skills](https://github.com/Gentleman-Programming/Gentleman-Skills), sin modificar; `computedHash` es el sha256 de su `SKILL.md`. Ver [gentle-ai.md](gentle-ai.md).
+El usuario pidió también adoptar Gentle AI (2026-10-19). Sus skills genéricas (`chained-pr`, `work-unit-commits`, `cognitive-doc-design`, `judgment-day`, `skill-creator`, `skill-improver`, `typescript`, `zod-4`) se copiaron primero en el repositorio y se quitaron en noviembre de 2026: llegan con la instalación global de Gentle AI o Gentle Shell y las copias solo las duplicaban. Ver [gentle-ai.md](gentle-ai.md).
 
 Benchmarks conserva su [procedimiento](../benchmarks/README.md) y comparador existentes. Solo se archivan dos ejecuciones independientes (baseline/after); no se crea una skill de benchmark hasta demostrar una tercera necesidad independiente. Tampoco se crean skills específicas de migración o despliegue por una sola fase T13/T14.
 
