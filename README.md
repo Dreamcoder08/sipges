@@ -4,6 +4,8 @@ Gestión y análisis territorial con TypeScript, Go, Rust y arquitectura hexagon
 
 SIPGES es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobre PostgreSQL con aislamiento por proyecto. Reúne registros territoriales, mapas, inteligencia de redes, IRSA y automatizaciones en una sola aplicación. La versión publicada es **v1.1.0** ([CHANGELOG](CHANGELOG.md)).
 
+![Dashboard de SIPGES: monitoreo preventivo de riesgo socioambiental con resumen operativo, alertas por nivel y eventos por dimensión](docs/screenshots/dashboard.webp)
+
 ## Inicio rápido
 
 Requiere Node.js 22 o posterior (la CI usa 22) y pnpm, en la versión fijada en `packageManager` de `package.json`.

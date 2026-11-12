@@ -25,7 +25,7 @@ ring = { version = "=0.17.14", default-features = false, features = ["std"] }
 # migrate-legacy: the legacy SQLite files, read only, with SQLite built in rather than from the
 # host; and the S3 calls of object storage, over the same rustls and ring as PostgreSQL.
 rusqlite = { version = "=0.41.1", default-features = false, features = ["bundled"] }
-ureq = { version = "=3.5.0", default-features = false, features = ["rustls"] }
+ureq = { version = "=3.5.1", default-features = false, features = ["rustls"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
