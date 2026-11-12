@@ -12,10 +12,25 @@
 # Read deploy\desktop\README.md first.
 param([string]$Release, [string]$State)
 $ErrorActionPreference = 'Stop'
+# Accents as typed for whoever reads this output through a pipe (the Windows drill, a log):
+# Windows PowerShell 5.1 would write it in the console's OEM code page. It also decodes as UTF-8
+# what node prints when its output is captured here (a folder named after the account). A console
+# window shows the same either way; the previous encoding is put back when the script ends.
+$PreviousOutputEncoding = $null
+try {
+    $PreviousOutputEncoding = [Console]::OutputEncoding
+    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+} catch { }
+function Restore-OutputEncoding {
+    if ($PreviousOutputEncoding) { try { [Console]::OutputEncoding = $PreviousOutputEncoding } catch { } }
+}
+# Every way out puts it back: Stop-Install, the two ends, and an error that stops the script.
+trap { Restore-OutputEncoding; break }
 
 $Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 if ($State -and -not $Release) {
     Write-Host '-State solo sirve con -Release (instalación gestionada).' -ForegroundColor Red
+    Restore-OutputEncoding
     exit 1
 }
 $StateGiven = [bool]$State
@@ -28,6 +43,7 @@ $Identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 
 function Stop-Install([string]$Message) {
     Write-Host $Message -ForegroundColor Red
+    Restore-OutputEncoding
     exit 1
 }
 
@@ -119,7 +135,7 @@ function Get-MissingSecret {
 function Get-RecordedState {
     $config = Join-Path $AppRoot 'install.json'
     if (-not (Test-Path -LiteralPath $config)) { return $null }
-    try { return (Get-Content -LiteralPath $config -Raw | ConvertFrom-Json).stateDir }
+    try { return (Get-Content -LiteralPath $config -Raw -Encoding UTF8 | ConvertFrom-Json).stateDir }
     catch { Stop-Install "No se pudo leer ${config}; no se cambió nada." }
 }
 
@@ -204,6 +220,7 @@ if ($major -lt 24) {
 
 if ($Release) {
     Install-Managed
+    Restore-OutputEncoding
     exit 0
 }
 
@@ -219,3 +236,4 @@ Write-Host ''
 Write-Host 'SIPGES está instalado. Ábrelo desde el menú Inicio o el escritorio.'
 Write-Host "Usuario administrador: admin. Contraseña: $State\admin-password"
 Write-Host "Respalda la carpeta completa $State (contiene tus datos y su clave)."
+Restore-OutputEncoding

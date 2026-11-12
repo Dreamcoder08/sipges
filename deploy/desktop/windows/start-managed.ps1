@@ -7,6 +7,14 @@
 # SIPGES_DESKTOP_NO_UI=1 (the Windows drill, deploy\desktop\windows\drill.mjs): every message
 # goes to stdout instead of a message box and Edge is not opened; exit codes stay the same.
 $ErrorActionPreference = 'Stop'
+# Accents as typed for whoever reads this output through a pipe (SIPGES_DESKTOP_NO_UI=1 under the
+# drill): Windows PowerShell 5.1 would write it in the console's OEM code page. A console window
+# shows the same either way; the previous encoding is put back when the script ends.
+$PreviousOutputEncoding = $null
+try {
+    $PreviousOutputEncoding = [Console]::OutputEncoding
+    [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+} catch { }
 Add-Type -AssemblyName System.Windows.Forms
 
 $Root = $PSScriptRoot
@@ -113,4 +121,6 @@ try {
     if ($launcher.ExitCode -eq $HaltExitCode) { Show-Halt }
 } catch {
     Show-Failure "SIPGES no pudo abrirse: $($_.Exception.Message)"
+} finally {
+    if ($PreviousOutputEncoding) { try { [Console]::OutputEncoding = $PreviousOutputEncoding } catch { } }
 }

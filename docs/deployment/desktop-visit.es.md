@@ -14,29 +14,35 @@ Referencias: [deploy/desktop/README.es.md](../../deploy/desktop/README.es.md),
 
 ## Antes de empezar: qué no se probó en Windows
 
-Todo lo de Windows se revisó solo leyendo los scripts. El traslado, la actualización, la detención y el
-respaldo se probaron de punta a punta **solo en Linux** con datos inventados. El ensayo de la sección 1 es
-la primera prueba en Windows de todo esto. Lo marcado con ⚠ además no está en ningún README: lo agrega este
-runbook y no se ejecutó en ningún sistema.
+El traslado, la actualización, la detención y el respaldo se probaron de punta a punta en Linux con
+datos inventados. En Windows, el [ensayo automático](#ensayo-en-otra-pc-con-windows) pasó una vez en
+`windows-latest` (PR #419: clon de `e490339c` con el instalador de `6d867050`), también con datos
+inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runbook.
 
-| Qué | Estado |
+| Qué | Estado en Windows |
 | --- | --- |
-| `install.ps1 -Release … -State …`, `start-managed.ps1`, el cuadro de mensaje de detención | Solo revisión estática |
-| `update.mjs --first-start` sobre NTFS, `snapshot.mjs` y `compare.mjs` en PowerShell 5.1 | Solo Linux |
-| `builder.mjs` y `release.mjs` en Windows | Nunca ejecutados en Windows |
-| ⚠ Llevar los scripts como `.zip` (`git archive`, `Expand-Archive`) | No probado |
-| ⚠ Guardar y devolver los accesos directos (`.lnk`) | No probado |
-| ⚠ Calcular la huella de la clave, crear la clave, contar archivos con `-Force`, comprobar «SIPGES cerrado» | No probado en Windows |
+| `install.ps1 -Release … -State …`, `start-managed.ps1` | Ensayo automático (PR #419) |
+| El cuadro de mensaje de detención | Solo revisión estática (el ensayo lo escribe en la terminal) |
+| `update.mjs --first-start` sobre NTFS, `snapshot.mjs` y `compare.mjs` | Ensayo automático (PR #419), lanzados desde Node |
+| `builder.mjs` y `release.mjs` | Ensayo automático (PR #419) |
+| `visit-kit.mjs` y la instalación desde su carpeta | Job «visit-kit» de la misma ejecución (anotá el resultado) |
+| El kit armado en un segundo clon al lado de una instalación por clon, sus negativas (clon viejo, SIPGES abierto), el clon viejo intacto y la instalación desde el kit | Job «laptop-kit» de la misma ejecución (anotá el resultado) |
+| ⚠ Las negativas por Node, pnpm y espacio libre | Solo pruebas en Linux con sondas simuladas |
+| ⚠ Llevar los scripts como `.zip` (`git archive`, `Expand-Archive`) | Ensayo automático (PR #419) |
+| ⚠ Guardar y devolver los accesos directos (`.lnk`) | Solo el destino se comprobó; la copia y la devolución no se probaron |
+| ⚠ Crear la clave, calcular la huella, contar archivos con `-Force` | Ensayo automático (PR #419) |
+| ⚠ Comprobar «SIPGES cerrado», la memoria USB, la huella anotada a mano | No probado |
 
-El [ensayo automático](#ensayo-en-otra-pc-con-windows) (`deploy\desktop\windows\drill.mjs`, también en
-GitHub Actions) recorre casi todas estas filas en un Windows real con datos inventados; la tabla cambia
-recién cuando una ejecución pasa y queda anotada en «Datos de esta visita». No cubre la memoria USB,
-la huella anotada a mano ni «SIPGES cerrado».
+El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
+laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
+T27, anotada en «Datos de esta visita».
 
 ## Datos de esta visita
 
-En los comandos, `E:` es el disco externo del respaldo, `F:` es el USB de la visita y `K:` el USB de la
-clave. Si Windows les da otras letras, cambialas en cada comando.
+En los comandos, `E:` es el disco externo del respaldo, `K:` el USB de la clave y `F:` el USB de la
+visita. Con un solo USB (el de la clave), el kit queda en la laptop, en `C:\SIPGES-kit-salida`: donde
+dice `F:\SIPGES-visita`, usá `C:\SIPGES-kit-salida\SIPGES-visita` (el `LEEME.txt` del kit ya trae la
+ruta correcta). Si Windows les da otras letras, cambialas en cada comando.
 
 | Dato | Valor |
 | --- | --- |
@@ -45,7 +51,10 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
 | Commit definitivo (`git log --oneline -1` al construir) | |
 | Huella SHA-256 de la clave (anotada en casa) | |
 | Commit de la instalación vieja (respuesta T27 y paso 2) | |
-| Carpeta del clon viejo (`<clon>`, paso 0) | |
+| Carpeta del clon viejo (`<clon>`, paso K) | |
+| Clon viejo antes del kit: `git log --oneline -1` y si `status` imprimió algo (paso K) | |
+| Kit en `F:\SIPGES-visita` o en `C:\SIPGES-kit-salida\SIPGES-visita` | |
+| Job «laptop-kit»: `LAPTOP KIT REHEARSAL PASSED`, tiempo y espacio medidos (sección 1) | |
 | Respaldo en `E:`: archivos / bytes (paso 1) | |
 | `%LOCALAPPDATA%\SIPGES` al cerrar SIPGES: archivos / bytes (paso 3) | |
 | Fecha del ensayo en otro Windows (sección 1) | |
@@ -69,54 +78,31 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
   los mismos scripts que viajan en el USB (formato de instantánea 3): un ensayo hecho con scripts
   anteriores no cuenta. Si lo cortás con Ctrl+C, detiene y espera cada proceso que arrancó y sale con
   `130`; repetilo entero.
-- [ ] **Clave de firma.** Es un archivo Ed25519 (PKCS#8 PEM) en el USB `K:`, con una segunda copia guardada
-  en otro lugar: la clave que firma esta versión es la única con la que la laptop aceptará
-  actualizaciones; si se pierde, no hay más actualizaciones sin reinstalar. Nunca va al repositorio,
-  al USB de la visita ni a la laptop. Si todavía no existe ninguna (⚠ no está en los README y no se
-  probó; no la crees si ya firmaste algo con una):
-
-  ```powershell
-  node -e "const c=require('crypto');require('fs').writeFileSync(process.argv[1],c.generateKeyPairSync('ed25519').privateKey.export({type:'pkcs8',format:'pem'}),{flag:'wx'})" K:\sipges-clave-actualizaciones.pem
-  ```
-
-- [ ] **Construir y firmar en Windows** (otro equipo o tu propio Windows, nunca la laptop). `builder.mjs`
-  se niega a construir para otro sistema (`Cross-builds are not supported`), así que se hace en Windows.
-  En PowerShell, dentro del checkout definitivo:
-
-  ```powershell
-  git status --short
-  git log --oneline -1
-  pnpm install --frozen-lockfile
-  New-Item -ItemType Directory F:\SIPGES-visita
-  node deploy\desktop\package\builder.mjs --version <versión> --out .data\desktop-packages\sipges-<versión>
-  node deploy\desktop\updater\release.mjs --package .data\desktop-packages\sipges-<versión> --out F:\SIPGES-visita\release-<versión> --key K:\sipges-clave-actualizaciones.pem --notes "Versión definitiva"
-  ```
-
-  `git status --short` no imprime nada (el paquete sale exactamente del commit). `release.mjs` termina
-  con `Release <versión> signed: F:\SIPGES-visita\release-<versión>`. **Retirá el USB `K:` enseguida.**
-  El paquete puede tener enlaces de carpeta; por eso la carpeta firmada se escribe directo en el USB, que
-  conviene que esté formateado en NTFS (⚠ supuesto no probado), y en la laptop se instala desde el USB sin
-  copiarla antes.
-- [ ] **Huella de la clave** (⚠ calcula lo mismo que imprime el instalador; probado solo en Linux).
-  Anotala en «Datos de esta visita»:
-
-  ```powershell
-  node -e "const c=require('crypto');console.log(c.createHash('sha256').update(c.createPublicKey(require('fs').readFileSync(process.argv[1])).export({type:'spki',format:'der'})).digest('hex'))" F:\SIPGES-visita\release-<versión>\package\update-public-key.pem
-  ```
-
-- [ ] **Scripts del mismo commit en el USB** (⚠). El instalador, `snapshot.mjs` y `compare.mjs` solo
-  necesitan Node; viajan como un `.zip` de `deploy/desktop`, sin el resto del repositorio:
-
-  ```powershell
-  git archive --format=zip -o F:\SIPGES-visita\sipges-scripts.zip HEAD deploy/desktop
-  ```
-
-  El USB queda con `F:\SIPGES-visita\release-<versión>\` (`release.json`, `release.sig`, `package\`) y
-  `F:\SIPGES-visita\sipges-scripts.zip`. No contiene datos ni secretos. `snapshot.mjs` (paso 2) y
-  `compare.mjs` (paso 5) tienen que salir de este mismo `.zip`: `compare.mjs` rechaza, antes de pedir la
-  contraseña, una instantánea hecha con scripts anteriores (`… was made by an older snapshot.mjs …`).
-- [ ] **Ensayo completo en otra cuenta de Windows o en otro equipo**, nunca en la laptop, con el mismo USB y
-  datos inventados. Fecha: ____________
+- [ ] **Qué llevar para armar el kit en la laptop** (el kit se arma allí, en el [paso K](#paso-k--armar-el-kit-en-la-laptop),
+  no en casa):
+  - El commit definitivo y la versión, anotados en «Datos de esta visita».
+  - El USB de la clave `K:`. Si ya firmaste algo con una clave, llevala en ese USB como
+    `K:\sipges-clave-actualizaciones.pem`: el kit la reutiliza. Si no, el kit la crea ahí.
+  - Para el kit, **un segundo USB** `F:` (mejor formateado en NTFS) **o ninguno**: con un solo USB, el
+    kit queda en la laptop, en `C:\SIPGES-kit-salida`, fuera del clon viejo y de
+    `%LOCALAPPDATA%\SIPGES*`.
+  - El disco externo `E:` del respaldo (más abajo). La clave nunca va en él.
+  - **Red** en la casa para `git clone` y `pnpm install` (Wi-Fi, o tu teléfono como punto de acceso;
+    no el de la usuaria, que hace falta para el MFA).
+  - **Tiempo**: el job «laptop-kit» de Actions mide el clon, la instalación de dependencias y el kit
+    (`measures.txt` en sus registros y el resumen del job); anotalo en «Datos de esta visita». En
+    `windows-latest`, con caché, `pnpm install` tardó 10 s y el kit 22 s (PR #420); en la laptop,
+    que descarga las dependencias y es más lenta, reservá **una hora** para el respaldo y el paso K
+    (estimación, no medida en la laptop).
+  - **Espacio**: el paso K pide **5 GB libres** en `C:` antes de clonar, además de lo que pide el paso 0.
+- [ ] **Job «laptop-kit»** del commit definitivo en verde: termina en `LAPTOP KIT REHEARSAL PASSED`.
+  Ensaya el paso K al lado de una instalación por clon, con datos inventados: el kit se niega con
+  `--out` dentro del clon viejo y con SIPGES abierto, se arma con SIPGES cerrado, el clon viejo queda
+  igual byte a byte, sus accesos directos lo siguen abriendo hasta la instalación del paso 3, y la
+  instalación desde el kit compara `RESULT: no difference`. Sin ese verde, el kit no se arma en la
+  laptop.
+- [ ] **Ensayo completo en otra cuenta de Windows o en otro equipo**, nunca en la laptop, con datos
+  inventados y un kit armado allí con el paso K (una clave de ensayo, no la de la laptop). Fecha: ____________
   1. T10 líneas 1–3: `node --version` dice 24 o más; clon del repositorio en el **commit de T27**;
      `powershell -ExecutionPolicy Bypass -File deploy\desktop\windows\install.ps1`. Abrí SIPGES y creá
      algunos registros y un archivo subido (inventados).
@@ -127,8 +113,26 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
      (aviso, actualización, detención forzada y salida). Sacá una foto del aviso «Nueva versión de
      SIPGES» para el paso 8.
   4. Cualquier «falla»: no hay visita hasta corregirla con su prueba.
-- [ ] **Ensayo automático** con el commit de T27: `DRILL PASSED` en GitHub Actions o en otra PC
-  ([abajo](#ensayo-en-otra-pc-con-windows)). Anotalo en «Datos de esta visita».
+- [ ] **Ensayo automático por commit candidato.** Todavía no se sabe qué commit tiene la laptop, así que
+  GitHub Actions («Windows desktop drill») corre el ensayo una vez por cada commit que pudo haberse
+  instalado por clon; uno que falla no detiene los demás. Anotá el resultado de la ejecución sobre el
+  commit definitivo (pestaña Actions); el que decide es el del commit de T27:
+
+  | Commit | Qué es | `DRILL PASSED` (fecha, ejecución) |
+  | --- | --- | --- |
+  | `e490339c` con el instalador de `6d867050` | Primer ensayo (PR #419) | Pasó |
+  | `6d867050` | Primer instalador por clon (2026-11-07) | |
+  | `228daf43` | Integración local (2026-11-09) | |
+  | `a73f831a` | `main` dentro de `feat/desktop-launchers` (2026-11-11) | |
+  | `dc7abde0` | #391 en `main` (2026-11-11) | |
+  | `main` | El `main` de esa ejecución | |
+
+  Si el commit de T27 no está en la tabla: Actions, «Windows desktop drill», «Run workflow», con
+  `old_commit` igual a ese commit (corre solo ese), o en otra PC
+  ([abajo](#ensayo-en-otra-pc-con-windows)). La misma ejecución arma un kit con `visit-kit.mjs` en
+  una carpeta temporal e instala desde ella (`VISIT KIT INSTALLED`) y ensaya el paso K desde
+  `dc7abde0` (o desde `old_commit`) en el job «laptop-kit». Sin `DRILL PASSED` para el commit de
+  T27 no hay visita. Anotalo en «Datos de esta visita».
 - [ ] **Disco externo** con espacio libre para dos copias de `%LOCALAPPDATA%\SIPGES` (tamaño de T27). Nunca
   una carpeta compartida ni sincronizada con la nube (OneDrive, Drive).
 - [ ] **Este runbook impreso**, una birome y el cargador de la laptop.
@@ -137,7 +141,7 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
 ### Ensayo en otra PC con Windows
 
 El mismo ensayo que corre GitHub Actions en `windows-latest` (`.github/workflows/windows-desktop.yml`,
-se lanza a mano desde la pestaña Actions) se puede correr en otra PC o cuenta de Windows, **nunca en
+uno por commit candidato; a mano desde la pestaña Actions, con `old_commit` para uno solo) se puede correr en otra PC o cuenta de Windows, **nunca en
 la laptop**. Solo usa datos inventados y una clave de firma descartable que crea y borra él mismo. En
 orden: instala el clon viejo con `LOCALAPPDATA` en una carpeta temporal y lo abre con su `start.ps1`,
 carga datos por la API y toma `snapshot.mjs`; construye y firma la versión N; hace el paso 3 de este
@@ -175,17 +179,120 @@ try { Invoke-WebRequest -Uri http://127.0.0.1:8000/health -UseBasicParsing -Time
 
 Tiene que decir `SIPGES cerrado`.
 
+### Paso K — Armar el kit en la laptop
+
+El kit se construye y se firma en la laptop, desde un **segundo clon** en `C:\SIPGES-kit`. El clon
+viejo (`<clon>`, el que abren los accesos directos) y `%LOCALAPPDATA%\SIPGES*` no se tocan: el kit se
+niega a escribir ahí. Con la red de la casa.
+
+- [ ] **Primero el respaldo**: hacé ahora el [paso 1](#paso-1--respaldo-en-el-disco-externo-t26) (no
+  necesita el kit) y volvé acá. Si algo llena el disco mientras se arma el kit, los datos ya están a
+  salvo.
+- [ ] SIPGES cerrado (`SIPGES cerrado`, arriba) y la usuaria no lo está usando: el kit no se arma
+  mientras ella trabaja.
+- [ ] Carpeta del clon viejo: clic derecho en el acceso directo «SIPGES» del escritorio, Propiedades,
+  Destino. Lo que va antes de `\deploy\desktop\windows\start.ps1` es `<clon>`; anotalo.
+- [ ] Herramientas y espacio:
+
+  ```powershell
+  node --version
+  pnpm --version
+  git --version
+  Get-PSDrive C | Format-List Free
+  Test-Path C:\SIPGES-kit
+  ```
+
+  Node `v24` o más; pnpm `12.…`; git responde; `Free` con al menos 5 GB libres más lo que pide el
+  paso 0 (cuatro veces `%LOCALAPPDATA%\SIPGES` más 2 GB); `Test-Path` dice `False`. Con Node menor que
+  24 no hay visita (sección 1). Sin pnpm 12: `npm install -g pnpm@12.11.2` y una terminal nueva.
+- [ ] El clon viejo **antes** del kit (anotá las dos salidas; `--no-optional-locks` evita que `git`
+  escriba en él):
+
+  ```powershell
+  git -C "<clon>" log --oneline -1
+  git -C "<clon>" --no-optional-locks status --short
+  ```
+
+- [ ] Segundo clon del commit definitivo, en su propia carpeta, y sus dependencias:
+
+  ```powershell
+  git clone https://github.com/Dreamcoder08/sipges.git C:\SIPGES-kit
+  cd C:\SIPGES-kit
+  git checkout --detach <commit definitivo>
+  git status --short
+  git log --oneline -1
+  pnpm install --frozen-lockfile
+  ```
+
+  `git status --short` no imprime nada y `git log` muestra el commit definitivo. Si `git clone` o
+  `pnpm install` fallan por la red, reintentá una vez; si vuelven a fallar, regla de corte del kit
+  (abajo).
+- [ ] Conectá el USB de la clave `K:` y armá el kit, todavía en `C:\SIPGES-kit`. Con dos USB (el kit
+  a `F:`):
+
+  ```powershell
+  node deploy\desktop\windows\visit-kit.mjs --version <versión> --key K:\sipges-clave-actualizaciones.pem --out F:\
+  $LASTEXITCODE
+  ```
+
+  Con un solo USB (el kit queda en la laptop, en una carpeta aparte):
+
+  ```powershell
+  New-Item -ItemType Directory C:\SIPGES-kit-salida
+  node deploy\desktop\windows\visit-kit.mjs --version <versión> --key K:\sipges-clave-actualizaciones.pem --out C:\SIPGES-kit-salida
+  $LASTEXITCODE
+  ```
+
+  Construye el paquete, crea la clave en `K:` si no existe (o la reutiliza), firma la versión (notas
+  «Versión definitiva de la visita») y escribe `SIPGES-visita\` con `release-<versión>\`,
+  `sipges-scripts.zip`, `fingerprint.txt` y `LEEME.txt`. Tenés que ver `Release <versión> signed: …`,
+  `Kit listo: …\SIPGES-visita`, la lista final y `0`.
+
+  Antes de construir, se niega con `Error: …` y `1`, sin escribir nada:
+
+  | Empieza con | Qué hacer |
+  | --- | --- |
+  | `Node.js … es anterior a 24` | No hay visita (sección 1); la versión vieja sigue como está. |
+  | `Falta pnpm` / `pnpm … no sirve` | `npm install -g pnpm@12.11.2`, terminal nueva, repetí. |
+  | `SIPGES está abierto` | Cerralo por completo (`SIPGES cerrado`) y repetí. |
+  | `Falta espacio en …` | Usá `--out F:\` si estabas en la laptop, o liberá espacio (nunca en `%LOCALAPPDATA%\SIPGES*` ni en `<clon>`). |
+  | `Los accesos directos «SIPGES» abren este clon` / `… dentro del clon viejo …` | Estás en el clon viejo o dentro: `cd C:\SIPGES-kit`. |
+  | `… is inside the repository …` / `… overlap …` / `… SIPGES folder of %LOCALAPPDATA% …` | La clave o el kit apuntan a un lugar prohibido: usá exactamente los comandos de arriba. |
+  | `this checkout has uncommitted changes` | En `C:\SIPGES-kit`, `git status --short` imprimió algo: regla de corte del kit. |
+  | `… already exists; move it away first` | Ya hay un `SIPGES-visita` en `--out`: movelo a otro lado y repetí. |
+
+  Si falla más tarde (al construir o firmar), mové `SIPGES-visita` a otro lado antes de repetir.
+- [ ] **La clave** (Ed25519, PKCS#8 PEM) es la única con la que la laptop aceptará actualizaciones; si
+  se pierde, no hay más actualizaciones sin reinstalar. Si el kit dice «La clave se creó ahora», hacé
+  una segunda copia apenas puedas, en otro USB o en tu equipo al volver; nunca en la laptop, en el
+  repositorio ni en la carpeta del kit. **Retirá el USB `K:` ahora.**
+- [ ] **La huella**: anotá en «Datos de esta visita» la de `SIPGES-visita\fingerprint.txt` (la misma
+  que imprimen el kit y, en el paso 3, el instalador).
+- [ ] El clon viejo **después** del kit: los dos comandos de antes dan exactamente lo mismo que
+  anotaste. Si no, regla de corte del kit.
+- [ ] El kit no tiene datos ni secretos. Los pasos 0, 2, 3, 4 y 5 usan sus rutas (`LEEME.txt` las trae
+  con la carpeta real); `snapshot.mjs` y `compare.mjs` salen de su `sipges-scripts.zip`. El paquete
+  puede tener enlaces de carpeta: la versión se instala desde `release-<versión>` donde quedó, sin
+  copiarla antes (en un USB, ⚠ NTFS no probado).
+
+**Regla de corte del kit.** Si una negativa no se resuelve con lo que dice la tabla, si `git clone` o
+`pnpm install` fallan dos veces, si el clon viejo cambió, o si una hora después de empezar el paso K
+no viste `Kit listo`: **hoy no se instala nada**. La versión vieja sigue en uso tal como estaba (el
+kit no tocó `<clon>` ni `%LOCALAPPDATA%\SIPGES`); el respaldo de `E:` queda guardado. `C:\SIPGES-kit`
+y `C:\SIPGES-kit-salida` no tienen datos: pueden quedar y se borran en otra visita. Llevate la salida
+del comando que falló (sección 4).
+
 ### Paso 0 — Preparar (no toca datos)
 
 - [ ] `node --version` dice `v24` o más.
 - [ ] `Test-Path "$env:LOCALAPPDATA\SIPGES-app"` y `Test-Path "$env:LOCALAPPDATA\SIPGES-datos"` dicen
   `False` los dos. Si alguno dice `True`, alguien ya instaló algo: no sigas, la laptop queda como estaba.
-- [ ] Carpeta del clon: clic derecho en el acceso directo «SIPGES» del escritorio, Propiedades, Destino.
-  Lo que va antes de `\deploy\desktop\windows\start.ps1` es `<clon>`; anotalo.
+- [ ] `<clon>` es la carpeta anotada en el paso K.
 - [ ] Espacio libre: `Get-PSDrive C | Format-List Free` tiene que superar cuatro veces el tamaño de
   `%LOCALAPPDATA%\SIPGES` más 2 GB (la copia de trabajo, las dos copias del primer arranque y el
   programa; es una estimación).
-- [ ] Conectá el USB `F:` y descomprimí los scripts en la laptop (⚠). La carpeta firmada se queda en el USB:
+- [ ] Conectá el USB `F:` (si el kit está en él) y descomprimí los scripts en la laptop (⚠). La carpeta
+  firmada se queda donde está:
 
   ```powershell
   New-Item -ItemType Directory "$env:LOCALAPPDATA\SIPGES-visita"
@@ -196,9 +303,13 @@ Tiene que decir `SIPGES cerrado`.
 
   Tiene que decir `True`. Dejá el USB conectado hasta terminar el paso 3.
 
+  Para descomprimir y para el resto, el kit en `C:\SIPGES-kit-salida` funciona igual: cambiá `F:\SIPGES-visita`
+  por `C:\SIPGES-kit-salida\SIPGES-visita`.
+
 ### Paso 1 — Respaldo en el disco externo (T26)
 
-Si la usuaria ya hizo hoy un respaldo comprobado, marcá este paso y anotá sus números.
+Se hace antes del paso K. Si la usuaria ya hizo hoy un respaldo comprobado, marcá este paso y anotá
+sus números.
 
 - [ ] Cerrá SIPGES por completo (arriba): `SIPGES cerrado`.
 - [ ] Conectá el disco externo y copiá la carpeta completa:
@@ -224,7 +335,7 @@ Si la usuaria ya hizo hoy un respaldo comprobado, marcá este paso y anotá sus 
   ```powershell
   cd "<clon>"
   git log --oneline -1
-  git status --short
+  git --no-optional-locks status --short
   ```
 
   El commit tiene que ser el de T27 (el que se ensayó con `rehearse.mjs`). Si es otro, no sigas: el
@@ -292,7 +403,8 @@ Si la usuaria ya hizo hoy un respaldo comprobado, marcá este paso y anotá sus 
   `… no es una versión firmada …`, `La carpeta de datos … tiene una base de datos pero falta su …`,
   `Esta instalación usa la carpeta de datos …` o `Falló: …`: regla de corte.
 - [ ] `Get-Content "$env:LOCALAPPDATA\SIPGES-app\install.json"` muestra `stateDir` terminado en
-  `SIPGES-datos`. Retirá el USB `F:` (la versión ya se copió dentro de `SIPGES-app\versions`).
+  `SIPGES-datos`. Retirá el USB `F:` si lo usaste (la versión ya se copió dentro de
+  `SIPGES-app\versions`).
 
 ### Paso 4 — Primer arranque sobre la copia (traslado T33)
 
@@ -470,8 +582,8 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
 
 **Qué llevarse para revisar en casa**
 
-- [ ] Solo los registros, copiados al USB `F:` conectado de nuevo (los que no existan dan un error que
-  podés ignorar):
+- [ ] Solo los registros, copiados al USB `F:` conectado de nuevo, o sin él a una carpeta aparte del USB
+  `K:` (cambiá `F:` por `K:`). Los que no existan dan un error que podés ignorar:
 
   ```powershell
   New-Item -ItemType Directory "F:\registros-<fecha>" | Out-Null
@@ -487,7 +599,8 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
 ## 5. Después de la visita
 
 - **30 días**: se conservan el respaldo de `E:`, `%LOCALAPPDATA%\SIPGES` con `<clon>` (la versión vieja),
-  `SIPGES-visita` y las copias al lado de `SIPGES-datos`. Ninguna se borra sola; pasado ese plazo se decide
+  `SIPGES-visita` y las copias al lado de `SIPGES-datos`. `C:\SIPGES-kit` y `C:\SIPGES-kit-salida` no
+  tienen datos ni la clave. Ninguna se borra sola; pasado ese plazo se decide
   qué guardar. Todas contienen los datos y la clave: se tratan como un respaldo. Cada arranque anota en
   `SIPGES-app\launcher.log` cuántas copias hay y cuánto ocupan (`"stateCopies"` en la línea `started`).
   Para verlas y, después de un respaldo, borrar las de más de 30 días (nunca borra la copia previa a la
@@ -498,12 +611,17 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
   node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --remove-copies-older-than 30
   ```
 - **Cómo llegan las actualizaciones**: se construye y firma en Windows una versión mayor con **la misma
-  clave** (los comandos de la sección 1 con otro `<versión>` y notas en `--notes`) y su carpeta se copia
-  dentro de `%LOCALAPPDATA%\SIPGES-app\releases`. En el siguiente arranque la usuaria (administradora) ve
+  clave** y sus propias notas, y su carpeta se copia dentro de `%LOCALAPPDATA%\SIPGES-app\releases`. En el siguiente arranque la usuaria (administradora) ve
   «Nueva versión de SIPGES». Nada se descarga ni se instala sin su clic en «Actualizar». Una carpeta dañada,
   incompleta o firmada con otra clave no se ofrece. Cada actualización deja
   `SIPGES-datos.pre-update-<hora>-<de>-to-<a>` al lado de la carpeta. Cómo viaja la carpeta firmada hasta la
-  laptop (USB u otro medio) está por decidir; no tiene secretos.
+  laptop (USB u otro medio) está por decidir; no tiene secretos. En PowerShell, dentro de un clon limpio
+  del commit nuevo (el kit del paso K es solo para la visita):
+
+  ```powershell
+  node deploy\desktop\package\builder.mjs --version <versión> --out .data\desktop-packages\sipges-<versión>
+  node deploy\desktop\updater\release.mjs --package .data\desktop-packages\sipges-<versión> --out F:\release-<versión> --key K:\sipges-clave-actualizaciones.pem --notes "<qué cambió>"
+  ```
 - **Respaldo**: el del paso 8, siempre antes de pulsar «Actualizar» y con la frecuencia que acuerden.
   Nunca en una carpeta compartida o sincronizada con la nube. Para restaurar:
   [Respaldar y restaurar](../../deploy/desktop/README.es.md#respaldar-y-restaurar), pasos 5 a 8 (la carpeta

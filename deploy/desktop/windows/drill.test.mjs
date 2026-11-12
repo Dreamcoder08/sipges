@@ -5,11 +5,18 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { childEnv, listeners, parseOptions } from './drill.mjs';
+import {
+  HALT_LINE,
+  INSTALLED_LINE,
+  childEnv,
+  listeners,
+  packScripts,
+  parseOptions,
+} from './drill.mjs';
 
 const drill = join(dirname(fileURLToPath(import.meta.url)), 'drill.mjs');
 const NOW = new Date('2026-11-14T09:08:07.000Z');
@@ -53,6 +60,50 @@ test('options: each one is taken once, unknown ones are refused', () => {
       () => parseOptions(args, { now: NOW, tmp: 'C:\\Temp' }),
       /Invalid options; use --help/,
     );
+});
+
+test('options: an old or launcher commit is a commit or ref name, never an option or a range', () => {
+  for (const commit of ['6d867050', 'dc7abde0', 'origin/main', 'v1.0.0', 'feat/desktop-launchers'])
+    assert.equal(parseOptions(['--old-commit', commit], { now: NOW }).oldCommit, commit);
+  for (const commit of ['-x', '-c=core.pager', 'a..b', 'a b', 'a;b', '/main', 'x'.repeat(101)]) {
+    assert.throws(() => parseOptions(['--old-commit', commit], { now: NOW }), {
+      message: `Invalid commit: ${commit}`,
+    });
+    assert.throws(() => parseOptions(['--launcher-commit', commit], { now: NOW }), {
+      message: `Invalid commit: ${commit}`,
+    });
+  }
+});
+
+test('the accented lines the drill checks are the ones the Windows scripts print', async () => {
+  const read = (file) => readFile(join(dirname(drill), file), 'utf8');
+  assert.ok((await read('install.ps1')).includes(`Write-Host '${INSTALLED_LINE}'`));
+  assert.equal(
+    INSTALLED_LINE,
+    'SIPGES está instalado. Ábrelo desde el menú Inicio o el escritorio.',
+  );
+  assert.ok((await read('start-managed.ps1')).includes(`'${HALT_LINE}*'`));
+});
+
+test('the scripts travel as the runbook packs them: deploy/desktop of HEAD in a zip', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-drill-test-'));
+  try {
+    const zip = join(dir, 'sipges-scripts.zip');
+    packScripts(zip);
+    const bytes = await readFile(zip);
+    assert.equal(bytes.readUInt32LE(0), 0x04034b50, 'a zip file');
+    for (const name of [
+      'deploy/desktop/windows/install.ps1',
+      'deploy/desktop/windows/start-managed.ps1',
+      'deploy/desktop/updater/update.mjs',
+      'deploy/desktop/migration/snapshot.mjs',
+      'deploy/desktop/migration/compare.mjs',
+    ])
+      assert.ok(bytes.includes(name), `the zip lacks ${name}`);
+    assert.equal(bytes.includes('apps/api/'), false, 'only deploy/desktop travels');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
 
 test('children get no SIPGES_* variable, no inherited PowerShell 7 module path and their own LOCALAPPDATA', () => {
