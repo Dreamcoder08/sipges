@@ -640,3 +640,11 @@ Not chosen in S2. Each stays open in its own document.
   responsive table columns, `:user-invalid` field feedback, IME-safe Enter in SearchPalette. T17 remainder (Cuenta)
   built in draft PR #416: own sessions list, end one, end all others, in TS and Go with parity (2589/2589, 0 unproved
   write routes); independent verifier found no blockers, its advisories fixed test-first; ADR 0004 addendum.
+- L13 — 2026-11-12 (Thursday). Owner: «tenemos que seguir avanzando la visita a la casa con la laptop de crystell es
+  hasta el sabado o domingo y hoy estamos jueves» and «lo armamos en la laptop de crystell el sabado». All draft PRs
+  merged (#399, #400, #402 with #414/#415/#418, #403 with #404–#413, #416, #419). The Windows drill (#419) passed on
+  windows-latest: clone install of the old version, managed install over a copy, first start, compare «RESULT: no
+  difference», original folder byte-identical, update N→N+1, halt exit 3. #420 adds the drill over the five candidate
+  laptop commits, the one-command `visit-kit.mjs` and UTF-8 installer output. Decision: the kit is built and signed
+  on the laptop itself on Saturday, from a second clone in a separate folder (never the old clone), with the signing
+  key on its own USB.
