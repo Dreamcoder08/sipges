@@ -214,7 +214,28 @@ it('searches names and descriptions without caring about accents', async () => {
   expect(screen.queryByRole('button', { name: 'Medios RSS' })).toBeNull();
   await user.clear(screen.getByRole('searchbox', { name: 'Buscar integraciones' }));
   await user.type(screen.getByRole('searchbox', { name: 'Buscar integraciones' }), 'zzz');
-  expect(screen.getByText('Nada para mostrar con este filtro.')).toBeVisible();
+  expect(screen.getByText('Ninguna integración coincide con estos filtros.')).toBeVisible();
+});
+
+it('offers to clear the search and the type filter when nothing matches', async () => {
+  const user = userEvent.setup();
+  useApi();
+  renderPage();
+  await cardNamed('Medios RSS');
+  await user.click(
+    within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', {
+      name: /^Programadas/,
+    }),
+  );
+  await user.type(screen.getByRole('searchbox', { name: 'Buscar integraciones' }), 'zzz');
+  await user.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
+  expect(screen.getByRole('searchbox', { name: 'Buscar integraciones' })).toHaveValue('');
+  expect(
+    within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', {
+      name: /^Todos/,
+    }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: 'Medios RSS' })).toBeVisible();
 });
 
 it('moves what is not configured yet to Descubrir, and nothing the code cannot enable', async () => {

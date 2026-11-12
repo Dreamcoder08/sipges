@@ -10,6 +10,8 @@ import {
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
 import { StatusBadge, type StatusTone } from '../../../shared/ui/Badges.tsx';
 import { Alert } from '../../../shared/ui/Alert.tsx';
+import { Button } from '../../../shared/ui/Button.tsx';
+import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import type { IconName } from '../../../shared/ui/icons.ts';
 import { apiKeysQuery, overviewQuery, runtimeQuery } from '../api.ts';
@@ -391,11 +393,35 @@ export const IntegrationsPage = ({
           </section>
         );
       })}
-      {shown.length === 0 ? (
-        <p className={styles.empty} role={pending ? 'status' : undefined}>
-          {pending ? 'Cargando integraciones…' : 'Nada para mostrar con este filtro.'}
+      {shown.length > 0 ? null : pending ? (
+        <p className={styles.empty} role="status">
+          Cargando integraciones…
         </p>
-      ) : null}
+      ) : filter !== 'all' || needle ? (
+        <EmptyState
+          title="Ninguna integración coincide con estos filtros."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSearch('');
+                setFilter('all');
+              }}
+            >
+              Limpiar filtros
+            </Button>
+          }
+        />
+      ) : (
+        <EmptyState
+          title={mine ? 'Aún no hay integraciones activas.' : 'No queda nada por descubrir.'}
+          action={
+            <Button variant="secondary" onClick={() => setMine(!mine)}>
+              {mine ? 'Descubrir integraciones' : 'Ver tus integraciones'}
+            </Button>
+          }
+        />
+      )}
     </div>
   );
 };

@@ -119,7 +119,13 @@ test('the geospatial view frames a concession and the directory lists contacts',
   });
   expect(created.ok()).toBe(true);
   await page.goto('/directorio');
-  await page.getByLabel('Territorio / ciudad').selectOption(`Ciudad E2E ${stamp}`);
+  // The place filter lives in the one «Filtros» sheet (closure-roadmap T31).
+  await page.getByRole('button', { name: 'Filtros' }).click();
+  await page
+    .getByRole('dialog', { name: 'Filtros' })
+    .getByLabel('Territorio / ciudad')
+    .selectOption(`Ciudad E2E ${stamp}`);
+  await page.keyboard.press('Escape');
   const row = page.getByRole('row').filter({ hasText: `Contacto E2E ${stamp}` });
   await expect(row).toContainText('Teniente gobernador');
   await expect(row).toContainText('900 000 000');
