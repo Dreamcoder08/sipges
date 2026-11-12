@@ -1512,7 +1512,9 @@ const signedRelease = (dir, version) => {
 const managedFakes =
   ({ running = false } = {}) =>
   (calls) => ({
-    node: `echo "node $*" >> '${calls}'; exec '${process.execPath}' "$@"`,
+    // CI runs Node 22; the installer requires 24, so the version probe answers 24 and every other
+    // call runs the real Node.
+    node: `echo "node $*" >> '${calls}'; case "$*" in *process.versions*) echo 24; exit 0;; esac; exec '${process.execPath}' "$@"`,
     curl: running ? `echo "curl $*" >> '${calls}'` : `echo "curl $*" >> '${calls}'; exit 22`,
     pnpm: `echo "pnpm $*" >> '${calls}'`,
   });
