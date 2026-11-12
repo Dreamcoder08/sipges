@@ -1,13 +1,12 @@
 // CLI: install, update or recover a managed desktop install from a local signed release.
 // Stop SIPGES before running it: the state folder must not change while it is copied.
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
 import { bootCheck } from './boot.mjs';
-import { PUBLIC_KEY, loadPublicKey } from './release.mjs';
+import { PUBLIC_KEY, keyFingerprint, loadPublicKey } from './release.mjs';
 import {
   acceptRestoredState,
   firstStart,
@@ -83,9 +82,8 @@ function parse(args) {
 /** The public key shipped inside the release, with the fingerprint the operator can compare. */
 async function releaseKey(release) {
   const pem = await readFile(join(release, 'package', PUBLIC_KEY), 'utf8');
-  const der = loadPublicKey(pem).export({ type: 'spki', format: 'der' });
   console.log(
-    `Trusting the update key that signed this release (SHA-256 ${createHash('sha256').update(der).digest('hex')}).`,
+    `Trusting the update key that signed this release (SHA-256 ${keyFingerprint(loadPublicKey(pem))}).`,
   );
   return pem;
 }

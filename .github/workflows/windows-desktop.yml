@@ -4,9 +4,20 @@ name: Windows desktop drill
 # clone install of an old commit, the data move into the managed version, an update N -> N+1 and
 # the halt. deploy/desktop/windows/drill.mjs runs every step, so the owner can run the same drill
 # by hand on another Windows computer (docs/deployment/desktop-visit.es.md). Not a required check.
-# No secrets: the signing key is made inside the job, used for the throwaway releases and deleted.
+# The laptop's installed commit is not known yet, so the drill runs once per candidate: every
+# clone-mode installer from 6d867050 (the first one) to main. A manual run with `old_commit`
+# drills only that commit. The visit-kit job builds the visit USB with
+# deploy/desktop/windows/visit-kit.mjs into a temporary folder and installs from it.
+# No secrets: every signing key is made inside its job, used for throwaway releases and deleted
+# with the runner.
 on:
   workflow_dispatch:
+    inputs:
+      old_commit:
+        description: 'Drill only this old commit (empty: every candidate)'
+        required: false
+        default: ''
+        type: string
   pull_request:
     paths:
       - 'deploy/desktop/**'
@@ -32,13 +43,21 @@ permissions:
 
 jobs:
   drill:
-    name: Windows desktop drill (clone install, data move, update, halt)
+    name: Windows drill from ${{ matrix.label }} (clone install, data move, update, halt)
     runs-on: windows-latest
     timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      # The candidates the laptop could have installed (clone mode exists from 6d867050 on):
+      # 6d867050 feat/desktop-launchers (2026-11-07), 228daf43 the local integration
+      # (2026-11-09, on feat/desktop-updates), a73f831a and dc7abde0 (#391 merged, 2026-11-11),
+      # and main. Each has its own install.ps1, so no launcher is taken from another commit.
+      matrix:
+        include: ${{ fromJSON(inputs.old_commit && format('[{{"commit":"{0}","label":"{0}"}}]', inputs.old_commit) || '[{"commit":"6d867050","label":"6d867050"},{"commit":"228daf43","label":"228daf43"},{"commit":"a73f831a","label":"a73f831a"},{"commit":"dc7abde0","label":"dc7abde0"},{"commit":"origin/main","label":"main"}]') }}
     steps:
       - uses: actions/checkout@v4
         with:
-          # The drill clones the old commits (e490339c and 6d867050) from this checkout.
+          # The drill clones the old commit from this checkout: every branch, so 228daf43 is there.
           fetch-depth: 0
           persist-credentials: false
       # pnpm 12.11.2 from packageManager, the version install.ps1 installs.
@@ -58,13 +77,68 @@ jobs:
       - name: Drill unit tests
         run: node --test deploy/desktop/windows/drill.test.mjs
       - name: Drill (synthetic data only)
-        run: node deploy/desktop/windows/drill.mjs --work "$env:RUNNER_TEMP\d" --logs "$env:RUNNER_TEMP\drill-logs"
+        env:
+          OLD_COMMIT: ${{ matrix.commit }}
+        run: node deploy/desktop/windows/drill.mjs --old-commit "$env:OLD_COMMIT" --work "$env:RUNNER_TEMP\d" --logs "$env:RUNNER_TEMP\drill-logs"
       # Logs and command outputs only: never a state folder, a snapshot or the key.
       - name: Upload the drill logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: windows-desktop-drill-logs
+          name: windows-desktop-drill-logs-${{ strategy.job-index }}-${{ matrix.label == 'main' && 'main' || 'commit' }}
           path: ${{ runner.temp }}/drill-logs
           if-no-files-found: warn
           retention-days: 14
+
+  visit-kit:
+    name: Visit kit (build, sign, install from the USB folder)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install this checkout
+        run: pnpm install --frozen-lockfile
+      - name: Visit kit unit tests
+        run: node --test deploy/desktop/windows/visit-kit.test.mjs
+      # A throwaway key on a «key USB» folder and the kit on a «visit USB» folder, as at home.
+      - name: Visit kit into a temporary USB folder
+        run: |
+          New-Item -ItemType Directory "$env:RUNNER_TEMP\key-usb", "$env:RUNNER_TEMP\usb" | Out-Null
+          node deploy/desktop/windows/visit-kit.mjs --version "0.0.8-kit.$env:GITHUB_RUN_NUMBER" --key "$env:RUNNER_TEMP\key-usb\sipges-clave-actualizaciones.pem" --out "$env:RUNNER_TEMP\usb"
+          if ($LASTEXITCODE -ne 0) { throw "visit-kit.mjs exit $LASTEXITCODE" }
+          Get-ChildItem "$env:RUNNER_TEMP\usb\SIPGES-visita" | Format-Table Name, Length
+          Get-Content -Encoding UTF8 "$env:RUNNER_TEMP\usb\SIPGES-visita\LEEME.txt"
+      # The laptop's side, in Windows PowerShell 5.1 as at the visit: the scripts unpacked from
+      # the zip with Expand-Archive and install.ps1 -Release from the USB folder, on a scratch
+      # LOCALAPPDATA. ASCII only here: the accented line is built from its code point.
+      - name: Install from the USB folder
+        shell: powershell
+        run: |
+          [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false
+          $usb = Join-Path $env:RUNNER_TEMP 'usb\SIPGES-visita'
+          $release = Get-ChildItem -LiteralPath $usb -Directory -Filter 'release-*' | Select-Object -First 1
+          $version = $release.Name.Substring('release-'.Length)
+          $laptop = Join-Path $env:RUNNER_TEMP 'laptop'
+          Expand-Archive -LiteralPath (Join-Path $usb 'sipges-scripts.zip') -DestinationPath (Join-Path $laptop 'scripts')
+          $env:LOCALAPPDATA = Join-Path $laptop 'LocalAppData'
+          New-Item -ItemType Directory $env:LOCALAPPDATA | Out-Null
+          $installer = Join-Path $laptop 'scripts\deploy\desktop\windows\install.ps1'
+          $output = (& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installer -Release $release.FullName) -join "`n"
+          $code = $LASTEXITCODE
+          $output
+          if ($code -ne 0) { throw "install.ps1 exit $code" }
+          $fingerprint = (Get-Content -LiteralPath (Join-Path $usb 'fingerprint.txt') -TotalCount 1).Trim()
+          if (-not $output.Contains("Trusting the update key that signed this release (SHA-256 $fingerprint).")) { throw 'the installer did not print the fingerprint of fingerprint.txt' }
+          if (-not $output.Contains("Installed $version")) { throw "the installer did not install $version" }
+          $installed = 'SIPGES est' + [char]0x00E1 + ' instalado.'
+          if (-not $output.Contains($installed)) { throw 'the installer accents did not arrive as UTF-8' }
+          $current = Get-Content -Raw -LiteralPath (Join-Path $env:LOCALAPPDATA 'SIPGES-app\current.json') | ConvertFrom-Json
+          if ($current.version -ne $version) { throw "current.json says $($current.version), expected $version" }
+          'VISIT KIT INSTALLED'
