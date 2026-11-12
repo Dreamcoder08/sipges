@@ -13,6 +13,7 @@ This folder holds the proof that it does, and the scripts to check it on the rea
 | `rehearse.mjs`       | The whole move with synthetic data, from any older commit to this checkout, on Linux.                  |
 | `client.mjs`         | Sign-in, TOTP, keyed hashes; shared by the three.                                                      |
 | `migration.test.mjs` | Tests of the two scripts against a fake API full of recognisable synthetic values.                     |
+| `rehearse.test.mjs`  | Tests that every process the rehearsal starts is stopped and awaited, also on SIGINT and SIGTERM.      |
 
 The scripts need only Node.js 24 or later; nothing to install. They never print or store a record,
 a name, a file or a password.
@@ -77,6 +78,13 @@ T27; `e490339c` until it is known). It takes about 2 minutes plus the package bu
    stop, copy the state folder, check files and bytes, delete it, restore it from the copy,
    start, `compare.mjs`, second account.
 
+Every process the rehearsal starts (the old API, the managed launcher, the snapshot and compare
+runs) is tracked until it ends. On any way out (the end, a failed check, a start that never gets
+ready, SIGINT or SIGTERM) each one is stopped (SIGTERM, then SIGKILL after 30 s) and awaited
+before the clean-up; an interrupted run exits with code 130, and a second signal kills them at
+once. The second account's check compares what it opens: the same number of projects (at least
+one) before and after the move, with status 200.
+
 At the end the scratch worktree is removed with `git worktree remove --force` and the signed
 release copy is deleted; the state folders, `before.json` and the logs stay under
 `.data/migration-rehearsal/<run>` (ignored by Git). The package stays under
@@ -84,7 +92,9 @@ release copy is deleted; the state folders, `before.json` and the logs stay unde
 
 ## Reading the comparison
 
-From the rehearsal of `e490339c` (2026-11-12, run `20261112T033655Z`), first start:
+From the rehearsal of `e490339c` (2026-11-12, run `20261112T033655Z`), first start. That run used
+snapshot format 2; since format 3 the upload lines say `content <keyed hash>… identical` instead
+of the plain `sha256`, shown below as `<keyed>` (not rerun since):
 
 ```text
 Sign-in: ok (password and MFA code)
@@ -96,7 +106,7 @@ project 1 [008e7c91]
   eventos: 3 -> 3, every field identical
   fuentes: 1 -> 1, every field identical
   links: 4 -> 4, identical
-  uploads: 2 -> 2, sha256 7eaf7bd1cee9… identical
+  uploads: 2 -> 2, content <keyed>… identical
   export attachments: 2 -> 2, identical
   export record_links: 4 -> 4, identical
   export record_versions: 12 -> 12, identical
@@ -106,7 +116,7 @@ project 2 [5d82d28a]
   demandas: 1 -> 1, every field identical
   eventos: 2 -> 2, every field identical
   links: 1 -> 1, identical
-  uploads: 1 -> 1, sha256 92c915f91e39… identical
+  uploads: 1 -> 1, content <keyed>… identical
   export attachments: 1 -> 1, identical
   export record_links: 1 -> 1, identical
   export record_versions: 5 -> 5, identical
@@ -130,8 +140,15 @@ failed`.
   (each value is hashed with its JSON type, so the text `"12"` and the number `12` differ)
   or the problems: `record [hash] missing`, `record [hash] new`, `record [hash] field [hash]
 differs`, `missing`, `new`, `record [hash] update time differs`.
-- `links`, `uploads` (content SHA-256 of every file, downloaded by its id: the upload list shows
-  at most 500, and the export's attachment rows name the rest), `export <table>` (the other
+- Every module list is read page after page until an empty page (a version that answers fewer
+  rows than asked is still read to the end), and the ids read are checked against the records of
+  the project export. `records: not fully checked (…)` names why a list could not be proved
+  complete: it repeated rows (its offset is not honoured), or some records of the export were
+  never listed (`N records in the project export not read through the lists`: a module these
+  scripts do not know, or a list that stopped). The comparison then fails.
+- `links`, `uploads` (every file downloaded by its id and its content hashed with the snapshot's
+  key, never a plain SHA-256 that would confirm a known document; the upload list shows at most
+  500, and the export's attachment rows name the rest), `export <table>` (the other
   tables of the project export, `GET /system/export`, as sets of row hashes: attachment rows,
   record links, record history versions, document and alert reviews, preventive actions).
 - `audit`: every entry of the trail with its whole content (time, module, record, action,
@@ -146,6 +163,10 @@ differs`, `missing`, `new`, `record [hash] update time differs`.
 - `uploads: not fully checked` or `audit: not fully checked`: the project export could not be
   read and there were more uploads than the list shows (500) or more audit entries than one page
   (500). What was read is still compared, but the comparison fails.
+- `export: not checked (…)` (the project export is not readable on either side) and
+  `Accounts: not checked (…)` (not readable on either side): nothing could be compared for that
+  part; each counts as a part not fully checked and fails the comparison. Nothing is skipped
+  without a line.
 - `RESULT`: `no difference`, the number of differences, or `not fully checked (N parts, listed
 above)`; exit code 0 only for `no difference`, otherwise 1.
 
@@ -155,9 +176,10 @@ data all the same: with the salt, a guessed value can be confirmed.
 
 Not compared: notifications, automation rules and channels (a channel's
 sealed settings can only be read back by sending to its public HTTPS address), sessions and push
-subscriptions. A snapshot from an earlier `snapshot.mjs` (format version 1, which hashed `"12"`
-and `12` alike and read only the newest 500 uploads and audit details) is refused by
-`compare.mjs`: take it again before the move.
+subscriptions. A snapshot from an earlier `snapshot.mjs` is refused by `compare.mjs` before it
+signs in: format version 1 hashed `"12"` and `12` alike and read only the newest 500 uploads and
+audit details; version 2 stored each upload's plain SHA-256 and could stop a record list early.
+Take it again, with the scripts that will run the comparison, before the move.
 
 ## On the visit (Windows)
 

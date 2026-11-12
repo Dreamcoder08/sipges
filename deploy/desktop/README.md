@@ -100,6 +100,16 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   another one is given (`-State` or `SIPGES_DESKTOP_STATE`).
 - The log is `launcher.log` in the install root, not in the state folder: an update copies that
   folder and may move it while SIPGES runs.
+- Copies beside the state folder (`.pre-update-…`, `.rehearsal-…`, `.failed-…`) are never deleted
+  by SIPGES. Each start writes how many there are and their total size in `launcher.log`
+  (`"stateCopies":{"count":…,"bytes":…}` on the `started` line). To list them:
+  `node <root>/versions/<version>/updater/update.mjs --install <root> --copies`. To remove those
+  older than 30 days (any number of whole days):
+  `node <root>/versions/<version>/updater/update.mjs --install <root> --remove-copies-older-than 30`.
+  It never removes the newest pre-update copy (it says `Kept …`), and it refuses while an update is
+  halfway (below). Back up first: removed copies are gone.
+- Closing SIPGES (Ctrl+C or SIGTERM) waits up to 15 s for the server to stop cleanly; a second
+  Ctrl+C or SIGTERM kills it at once (exit code 1, `stop_forced` in `launcher.log`).
 
 ### If an update stops halfway
 

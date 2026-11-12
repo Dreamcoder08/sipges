@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
-import { createHmac, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
@@ -15,6 +15,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { URL, URLSearchParams, fileURLToPath } from 'node:url';
+import { clearTimeout, setTimeout } from 'node:timers';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const snapshotCli = join(here, 'snapshot.mjs');
@@ -129,6 +130,11 @@ async function fakeApi(
     leak = false,
     leakShared = false,
     noExport = false,
+    noAccounts = false,
+    // Rows a list answers at most, whatever limit is asked (an older or stricter version).
+    listCap = Infinity,
+    // A version that ignores ?offset= and answers the first page again.
+    ignoreOffset = false,
   } = {},
 ) {
   const sessions = new Set();
@@ -166,6 +172,8 @@ async function fakeApi(
     const scopeName = req.headers['x-sipges-scope'];
     const scope = data.scopes[scopeName];
     if (!scope) return json(403, { detail: 'Seleccione un proyecto' });
+    if (url.pathname === '/system/auth/accounts' && noAccounts)
+      return json(403, { detail: 'Requiere rol administrador' });
     if (url.pathname === '/system/auth/accounts')
       return json(
         200,
@@ -196,8 +204,8 @@ async function fakeApi(
         ...r,
         _updated_at: '2026-01-03T00:00:00Z',
       }));
-      const offset = Number(url.searchParams.get('offset') ?? 0);
-      const limit = Number(url.searchParams.get('limit') ?? 200);
+      const offset = ignoreOffset ? 0 : Number(url.searchParams.get('offset') ?? 0);
+      const limit = Math.min(Number(url.searchParams.get('limit') ?? 200), listCap);
       return json(200, rows.slice(offset, offset + limit));
     }
     if (url.pathname === '/system/links') {
@@ -258,7 +266,15 @@ async function fakeApi(
         version: 1,
         exported_at: new Date().toISOString(),
         data: {
-          module_records: Object.values(scope.records).flat(),
+          // As stored: module, id and payload of every record, in every module.
+          module_records: Object.entries(scope.records).flatMap(([slug, rows]) =>
+            rows.map(({ _id, ...payload }) => ({
+              tenant_id: scopeName,
+              module: slug,
+              id: _id,
+              payload,
+            })),
+          ),
           audit: audit[scopeName] ?? [],
           // The stored row: a file changed on disk leaves it as it was.
           attachments: scope.uploads.map((u) => ({ id: u.id, original_name: u.name })),
@@ -297,13 +313,18 @@ async function fakeApi(
   };
 }
 
-function run(script, args) {
+/** Runs a script; one still running after `timeoutMs` is killed and reported with status null. */
+function run(script, args, { timeoutMs = 60_000 } = {}) {
   const child = spawn(process.execPath, [script, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
   let stdout = '';
   let stderr = '';
   child.stdout.on('data', (d) => (stdout += d));
   child.stderr.on('data', (d) => (stderr += d));
-  return once(child, 'exit').then(([status]) => ({ status, stdout, stderr }));
+  const timer = setTimeout(() => child.kill('SIGKILL'), timeoutMs);
+  return once(child, 'exit').then(([status]) => {
+    clearTimeout(timer);
+    return { status, stdout, stderr };
+  });
 }
 
 async function withTemp(fn) {
@@ -342,11 +363,13 @@ async function snapshotThenCompare(parent, before, after = before, beforeOptions
   const first = await fakeApi(before, beforeOptions);
   let taken;
   try {
-    taken = await run(snapshotCli, ['--url', first.url, ...login, '--out', out]);
+    taken = await run(snapshotCli, ['--url', first.url, ...login, '--out', out], {
+      timeoutMs: 20_000,
+    });
   } finally {
     first.close();
   }
-  assert.equal(taken.status, 0, taken.stderr);
+  assert.equal(taken.status, 0, `snapshot: ${taken.status} ${taken.stderr}`);
   const second = await fakeApi(after, afterOptions);
   try {
     const compared = await run(compareCli, ['--before', out, '--url', second.url, ...login]);
@@ -381,7 +404,8 @@ test('snapshot and compare print and store only counts and hashes, never a field
     assert.match(compared.stdout, /^RESULT: no difference$/m);
     // Counts per project and module, and upload content hashes, are what is printed.
     assert.match(compared.stdout, /^ {2}eventos: 3 -> 3, every field identical$/m);
-    assert.match(compared.stdout, /^ {2}uploads: 1 -> 1, sha256 [0-9a-f]{12}… identical$/m);
+    // Keyed like every other value: a known file's SHA-256 never shows.
+    assert.match(compared.stdout, /^ {2}uploads: 1 -> 1, content [0-9a-f]{12}… identical$/m);
     // Other tables of the project export: row hashes; the audit is compared entry by entry.
     assert.match(compared.stdout, /^ {2}export document_review: 1 -> 1, identical$/m);
     assert.doesNotMatch(compared.stdout, /export (audit|module_records|preventive_actions)/);
@@ -592,4 +616,139 @@ test('T33: a long audit trail without the export is not fully checked', () =>
     assert.equal(compared.status, 1, compared.stdout);
     assert.match(compared.stdout, /^ {2}audit: not fully checked/m);
     assert.match(compared.stdout, /^RESULT: not fully checked/m);
+  }));
+
+const ALFA = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+const manyEvents = (n) =>
+  Array.from({ length: n }, (_, i) => ({
+    _id: `EV-MUCHOS-${String(i).padStart(4, '0')}`,
+    Titulo: `TITULO-SINTETICO-${i}`,
+  }));
+
+test('T33 follow-up: a list that answers fewer rows than asked is read to the end', () =>
+  withTemp(async (dir) => {
+    const before = fixture();
+    before.scopes[ALFA].records.eventos = manyEvents(450);
+    const after = structuredClone(before);
+    after.scopes[ALFA].records.eventos[300].Titulo = 'TITULO-CAMBIADO';
+    const capped = { listCap: 200 };
+    const { taken, compared } = await snapshotThenCompare(dir, before, after, capped, capped);
+    assert.match(
+      taken.stdout,
+      /^project 1 \[[0-9a-f]{8}\]: records 451 \(actores 1, eventos 450\),/m,
+    );
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(
+      compared.stdout,
+      /^ {2}eventos: 450 -> 450, record \[[0-9a-f]{8}\] field \[[0-9a-f]{8}\] differs$/m,
+    );
+    assert.match(compared.stdout, /^RESULT: 1 difference$/m);
+  }));
+
+test('T33 follow-up: a list that ignores the offset is not fully checked', () =>
+  withTemp(async (dir) => {
+    const data = fixture();
+    data.scopes[ALFA].records.eventos = manyEvents(600);
+    const stuck = { ignoreOffset: true };
+    const { taken, compared } = await snapshotThenCompare(dir, data, data, stuck, stuck);
+    assert.match(
+      taken.stdout,
+      /^project 1 \[[0-9a-f]{8}\]: records \d+ \([^)]*\) \(not fully checked\),/m,
+    );
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(compared.stdout, /^ {2}records: not fully checked \(/m);
+    assert.match(compared.stdout, /^RESULT: not fully checked \(1 part, listed above\)$/m);
+    absent(compared.stdout + compared.stderr, data, 'compare output');
+  }));
+
+test('T33 follow-up: records the export holds but no list shows are not fully checked', () =>
+  withTemp(async (dir) => {
+    const data = fixture();
+    // A module the lists of this version do not answer (404), present in the export.
+    data.scopes[ALFA].records.narrativas = [{ _id: 'N-ALFA-0001', Texto: 'NARRATIVA-SECRETA' }];
+    const { taken, compared } = await snapshotThenCompare(dir, data);
+    assert.match(taken.stdout, /records 4 \(actores 1, eventos 3\) \(not fully checked\)/);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(
+      compared.stdout,
+      /^ {2}records: not fully checked \(1 record in the project export not read through the lists\)$/m,
+    );
+    assert.match(compared.stdout, /^RESULT: not fully checked/m);
+    absent(compared.stdout + compared.stderr, data, 'compare output');
+  }));
+
+test('T33 follow-up: an export readable on neither side is printed and fails the comparison', () =>
+  withTemp(async (dir) => {
+    const data = fixture();
+    const none = { noExport: true };
+    const { compared } = await snapshotThenCompare(dir, data, data, none, none);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(
+      compared.stdout,
+      /^ {2}export: not checked \(the project export is not readable on either side\)$/m,
+    );
+    assert.match(compared.stdout, /^RESULT: not fully checked \(2 parts, listed above\)$/m);
+    assert.doesNotMatch(compared.stdout, /RESULT: no difference/);
+  }));
+
+test('T33 follow-up: accounts readable on neither side are printed and fail the comparison', () =>
+  withTemp(async (dir) => {
+    const data = fixture();
+    const none = { noAccounts: true };
+    const { taken, compared } = await snapshotThenCompare(dir, data, data, none, none);
+    assert.match(taken.stdout, /^Accounts: not readable$/m);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(compared.stdout, /^Accounts: not checked \(not readable on either side\)$/m);
+    assert.match(compared.stdout, /^RESULT: not fully checked \(1 part, listed above\)$/m);
+  }));
+
+test('T33 follow-up: the snapshot never holds the plain SHA-256 of an upload; changed bytes still differ', () =>
+  withTemp(async (dir) => {
+    const before = fixture();
+    const after = structuredClone(before);
+    after.scopes[ALFA].uploads[0].bytes = 'CONTENIDO-CAMBIADO\n';
+    const { taken, compared, file } = await snapshotThenCompare(dir, before, after);
+    for (const scope of Object.values(before.scopes))
+      for (const upload of scope.uploads) {
+        const plain = createHash('sha256').update(upload.bytes).digest('hex');
+        for (const [label, text] of [
+          ['snapshot file', file],
+          ['snapshot output', taken.stdout],
+          ['compare output', compared.stdout],
+        ])
+          for (const piece of [plain, plain.slice(0, 12)])
+            assert.ok(!text.includes(piece), `${label} holds the plain SHA-256 of an upload`);
+      }
+    assert.equal(JSON.parse(file).version, 3);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(compared.stdout, /^ {2}uploads: 1 -> 1, upload \[[0-9a-f]{8}\] content differs$/m);
+  }));
+
+test('T33 follow-up: compare refuses a snapshot of an older format before signing in', () =>
+  withTemp(async (dir) => {
+    const api = await fakeApi(fixture());
+    try {
+      const login = await credentials(dir);
+      for (const version of [1, 2]) {
+        const old = join(dir, `old-${version}.json`);
+        await writeFile(
+          old,
+          JSON.stringify({
+            format: 'sipges.migration-snapshot',
+            version,
+            salt: '00',
+            projects: [],
+          }),
+        );
+        const compared = await run(compareCli, ['--before', old, '--url', api.url, ...login]);
+        assert.equal(compared.status, 1, `version ${version}`);
+        assert.equal(compared.stdout, '');
+        assert.match(
+          compared.stderr,
+          /^Error: .+ was made by an older snapshot\.mjs; take it again with this one before the move\n$/,
+        );
+      }
+    } finally {
+      api.close();
+    }
   }));
