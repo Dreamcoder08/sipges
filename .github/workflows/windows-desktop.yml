@@ -7,7 +7,12 @@ name: Windows desktop drill
 # The laptop's installed commit is not known yet, so the drill runs once per candidate: every
 # clone-mode installer from 6d867050 (the first one) to main. A manual run with `old_commit`
 # drills only that commit. The visit-kit job builds the visit USB with
-# deploy/desktop/windows/visit-kit.mjs into a temporary folder and installs from it.
+# deploy/desktop/windows/visit-kit.mjs into a temporary folder and installs from it. The
+# laptop-kit job rehearses building the kit on the laptop itself
+# (deploy/desktop/windows/laptop-kit.mjs): a clone install of an old commit, a second clone of
+# this commit with its own pnpm install, the kit's refusals (old clone, SIPGES open), the kit,
+# then the managed install from it; the old clone stays byte-identical. It also measures the time
+# and disk space the runbook quotes.
 # No secrets: every signing key is made inside its job, used for throwaway releases and deleted
 # with the runner.
 on:
@@ -142,3 +147,36 @@ jobs:
           $current = Get-Content -Raw -LiteralPath (Join-Path $env:LOCALAPPDATA 'SIPGES-app\current.json') | ConvertFrom-Json
           if ($current.version -ne $version) { throw "current.json says $($current.version), expected $version" }
           'VISIT KIT INSTALLED'
+
+  laptop-kit:
+    name: Kit built on the laptop (second clone, refusals, install from the kit)
+    runs-on: windows-latest
+    # Measured in its first runs; the hard cap only stops a hung run.
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The old clone is checked out from this checkout: every branch.
+          fetch-depth: 0
+          persist-credentials: false
+      # pnpm 12.11.2 from packageManager. No pnpm install here: the rehearsal installs its own
+      # second clone, with LOCALAPPDATA in a scratch folder like the laptop's single account.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Laptop-kit unit tests
+        run: node --test deploy/desktop/windows/laptop-kit.test.mjs
+      - name: Kit built on the laptop (synthetic data only)
+        env:
+          OLD_COMMIT: ${{ inputs.old_commit || 'dc7abde0' }}
+        run: node deploy/desktop/windows/laptop-kit.mjs --old-commit "$env:OLD_COMMIT" --work "$env:RUNNER_TEMP\l" --logs "$env:RUNNER_TEMP\laptop-kit-logs"
+      # Logs, command outputs and measures.txt only: never a state folder, a snapshot or the key.
+      - name: Upload the rehearsal logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-laptop-kit-logs
+          path: ${{ runner.temp }}/laptop-kit-logs
+          if-no-files-found: warn
+          retention-days: 14

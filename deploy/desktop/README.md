@@ -162,7 +162,14 @@ The visit USB itself is one command, on Windows, from a clean checkout of the de
 `node deploy\desktop\windows\visit-kit.mjs --version <semver> --key K:\<key>.pem --out F:\` builds,
 creates or reuses the signing key, signs, and writes `F:\SIPGES-visita` (the signed release,
 `sipges-scripts.zip`, `fingerprint.txt`, `LEEME.txt`). The runbook
-([desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md)) says when.
+([desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md)) says when: at the visit it runs
+on the laptop itself, from a second clone (`C:\SIPGES-kit`), with `--out F:\` or, with a single
+USB, `--out C:\SIPGES-kit-salida`. Before building it refuses, writing nothing, when Node is older
+than 24, pnpm 12 is missing, the checkout, key or kit falls inside the old clone or
+`%LOCALAPPDATA%\SIPGES*`, SIPGES answers on port 8000, or free space is short. The workflow's
+laptop-kit job rehearses it (`deploy/desktop/windows/laptop-kit.mjs`): a clone install of an old
+commit, a second clone with its own `pnpm install`, the refusals, the kit, the install from the kit
+and the comparison; the old clone stays byte-identical, and time and space are measured.
 
 ## Back up and restore
 
