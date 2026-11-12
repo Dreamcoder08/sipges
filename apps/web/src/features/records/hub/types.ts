@@ -1,4 +1,4 @@
-import type { RecordModule } from '../modules.ts';
+import { MODULES, type RecordModule } from '../modules.ts';
 
 /** The record types the hub lists, in the order of the chips. */
 export const HUB_TYPES = [
@@ -10,3 +10,7 @@ export const HUB_TYPES = [
   ['fuentes', 'Fuentes'],
   ['buzon', 'Buzón'],
 ] as const satisfies readonly (readonly [RecordModule, string])[];
+
+/** The name the hub gives a record type: its chip label, else the module's own label. */
+export const typeLabel = (module: RecordModule): string =>
+  HUB_TYPES.find(([type]) => type === module)?.[1] ?? MODULES[module].label;

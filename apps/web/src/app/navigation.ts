@@ -139,6 +139,8 @@ export const DESTINATIONS = [
     label: 'Registros',
     icon: 'layers',
     param: 'tipo',
+    // Opens on «Todos», the cross-type list, which is not one of the type tabs.
+    home: 'todos',
     tabs: tabs(
       ['eventos', '/eventos'],
       ['actores', '/actores'],
@@ -191,6 +193,8 @@ export const DESTINATIONS = [
   label: string;
   icon: IconName;
   param: string;
+  /** The view at the bare path when it is not the first tab. */
+  home?: string;
   tabs: Tabs;
 }[];
 
@@ -202,8 +206,11 @@ export type Destination = (typeof DESTINATIONS)[number];
 export const destinationFor = (path: string): Destination | undefined =>
   DESTINATIONS.find((hub) => hub.path === path || hub.tabs.some((tab) => tab.screen === path));
 
+/** The view a hub shows at its bare path: its first tab, or its own `home` (Registros › Todos). */
+const homeOf = (hub: Destination): string => ('home' in hub ? hub.home : hub.tabs[0].value);
+
 export const hubHref = (hub: Destination, value: string) =>
-  value === hub.tabs[0].value ? hub.path : `${hub.path}?${hub.param}=${value}`;
+  value === homeOf(hub) ? hub.path : `${hub.path}?${hub.param}=${value}`;
 
 /** What the «Recientes» list stores for a screen or hub tab; null for routes outside the menu. */
 export const visitFor = (path: string, search: string): { href: string; label: string } | null => {
@@ -218,9 +225,9 @@ export const visitFor = (path: string, search: string): { href: string; label: s
       : null;
   }
   const asked = new URLSearchParams(search).get(hub.param);
-  const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
-  // A hub's own page (Inicio, where sign-in lands) already has its sidebar link.
-  if (tab.label === hub.label) return null;
+  const tab = hub.tabs.find((item) => item.value === asked) ?? ('home' in hub ? null : hub.tabs[0]);
+  // A hub's own page (Inicio, where sign-in lands; Registros › Todos) already has its sidebar link.
+  if (!tab || tab.label === hub.label) return null;
   return {
     href: hubHref(hub, tab.value),
     label: tab.label === hub.label ? hub.label : `${hub.label} · ${tab.label}`,
