@@ -502,3 +502,95 @@ it('keeps write actions off the type screen for read-only roles', async () => {
   expect(screen.queryByRole('button', { name: 'Nuevo registro' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Editar E-1' })).not.toBeInTheDocument();
 });
+
+/**
+ * Type tabs below 1024 px (closure-roadmap T31, direction 01): the same two-line rows as Todos
+ * instead of the type's wide table. jsdom has no `matchMedia`, so the width is stubbed.
+ */
+describe('a type tab below 1024 px', () => {
+  const original = window.matchMedia;
+  beforeEach(() => {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('width < 64rem'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+  });
+  afterEach(() => {
+    window.matchMedia = original;
+  });
+  const typeList = (label: string) =>
+    screen.findByRole('list', { name: `Registros de ${label} del proyecto activo` });
+
+  it('lists Eventos as two-line rows, each one button, with place, date, A–E and status', async () => {
+    renderHub('eventos');
+    const list = await typeList('eventos');
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Densidad de filas' })).not.toBeInTheDocument();
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+    const row = within(list).getByRole('button', { name: /^Abrir E-1: Bloqueo del muelle/ });
+    expect(within(row.closest('li') as HTMLElement).getAllByRole('button')).toEqual([row]);
+    expect(within(row).getByText('Bloqueo del muelle')).toHaveAttribute('data-line', 'title');
+    expect(within(row).getByText('Validado')).toHaveAttribute('data-tone', 'positive');
+    expect(row.querySelector('[data-line="meta"]')).toHaveTextContent(
+      /^Eventos · Bayóvar · 2026-10-28\s*Verificación B$/,
+    );
+    // The type screen keeps its own actions and search above the rows.
+    expect(screen.getByRole('button', { name: 'Nuevo registro' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Buscar registros')).toBeInTheDocument();
+  });
+
+  it('shows on an Actores row only what the record has: no A–E, status or dashes', async () => {
+    renderHub('actores');
+    const row = within(await typeList('actores')).getByRole('button', {
+      name: /^Abrir A-1: Federación de Pescadores/,
+    });
+    expect(row.querySelector('[data-line="meta"]')).toHaveTextContent(/^Actores$/);
+    expect(row.querySelector('[data-verification]')).toBeNull();
+    expect(row.querySelector('[data-tone]')).toBeNull();
+    expect(within(row).queryByText('—')).not.toBeInTheDocument();
+  });
+
+  it('opens a Demandas row in the modal sheet, names it in the URL and returns to the row', async () => {
+    const user = userEvent.setup();
+    const onFicha = vi.fn();
+    renderHub('demandas', vi.fn(), 'admin', { onFicha });
+    const row = within(await typeList('demandas')).getByRole('button', { name: /^Abrir D-1:/ });
+    await user.click(row);
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha D-1' });
+    expect(sheet).toHaveAttribute('aria-modal', 'true');
+    expect(onFicha).toHaveBeenLastCalledWith('demandas.D-1');
+    await user.keyboard('{Escape}');
+    expect(onFicha).toHaveBeenLastCalledWith(undefined);
+    expect(row).toHaveFocus();
+  });
+
+  it('reopens the record the URL names over the type rows, so a reload keeps it', async () => {
+    renderHub('eventos', vi.fn(), 'admin', { ficha: 'eventos.E-2' });
+    const sheet = await screen.findByRole('dialog', { name: 'Ficha E-2' });
+    expect(sheet).toHaveAttribute('aria-modal', 'true');
+    expect(await within(sheet).findByText('Mancha en la playa', { selector: 'dd' })).toBeVisible();
+    expect(await typeList('eventos')).toBeInTheDocument();
+  });
+});
+
+it('keeps the type table with its row actions at 1024 px or wider', async () => {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes('min-width: 64rem'),
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  })) as unknown as typeof window.matchMedia;
+  try {
+    renderHub('eventos');
+    expect(await screen.findByRole('button', { name: 'Ver E-1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Editar E-1' })).toBeInTheDocument();
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Densidad de filas' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: /^Registros de eventos/ })).not.toBeInTheDocument();
+  } finally {
+    window.matchMedia = original;
+  }
+});

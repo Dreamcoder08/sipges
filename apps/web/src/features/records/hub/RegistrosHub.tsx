@@ -9,7 +9,7 @@ import { canWriteRecords } from '../model.ts';
 import type { RecordModule } from '../modules.ts';
 import { RecordsPage } from '../RecordsPage.tsx';
 import { type Density, useDensity } from './density.ts';
-import { useDocked } from './dock.ts';
+import { useDocked, useTypeRows } from './dock.ts';
 import styles from './Hub.module.css';
 import { HUB_TYPES } from './types.ts';
 import { type OpenRecord, type OpenWay, RecordSheet } from './RecordSheet.tsx';
@@ -212,6 +212,7 @@ const Workspace = ({
     selected,
     docked && selected === 'todos' ? 'compact' : 'cozy',
   );
+  const typeRows = useTypeRows() && selected !== 'todos';
   // The intent only opens the type screen once; later remounts must not reopen the form.
   useEffect(() => {
     if (start) onStarted();
@@ -232,7 +233,7 @@ const Workspace = ({
   );
   return (
     <>
-      {selected === 'todos' ? null : <div className={styles.densityRow}>{control}</div>}
+      {selected === 'todos' || typeRows ? null : <div className={styles.densityRow}>{control}</div>}
       <div className={styles.density} data-density={density}>
         {selected === 'todos' ? (
           <QueryState query={everything} label="los registros">
@@ -252,6 +253,7 @@ const Workspace = ({
           <RecordsPage
             module={selected}
             onView={(id) => onOpen({ module: selected, id })}
+            twoLineRows={typeRows}
             start={start}
             {...context}
           />
