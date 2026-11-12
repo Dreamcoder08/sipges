@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { generateKeyPairSync } from 'node:crypto';
+import { createHash, generateKeyPairSync } from 'node:crypto';
 import {
   chmodSync,
   copyFileSync,
@@ -68,12 +68,13 @@ const sipgesSkills = [
   'sipges-task-pr',
   'sipges-verify',
 ];
-test('Codex discovers the recurring SIPGES skills and the explicitly requested Neon skills', () => {
+test('Codex discovers the recurring SIPGES skills and the explicitly requested vendor skills', () => {
   const dir = path.join(root, '.agents/skills');
   const expected = sipgesSkills;
   const vendor = ['neon', 'neon-postgres'];
+  const google = 'modern-web-guidance';
   // Gentle AI skills come from the global `gentle-ai install`; repo copies only shadowed them.
-  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor].sort());
+  assert.deepEqual(readdirSync(dir).sort(), [...expected, ...vendor, google].sort());
   assert.equal(existsSync(path.join(root, '.pi/settings.json')), false);
   for (const name of expected) {
     const text = readFileSync(path.join(dir, name, 'SKILL.md'), 'utf8');
@@ -95,7 +96,35 @@ test('Codex discovers the recurring SIPGES skills and the explicitly requested N
     assert.equal(lock.skills[name].skillPath, `skills/${name}/SKILL.md`);
     assert.match(lock.skills[name].computedHash, /^[a-f0-9]{64}$/);
   }
-  assert.deepEqual(Object.keys(lock.skills).sort(), vendor);
+  // Same folder hash as the installer's entries: SHA-256 of each relative path, then its bytes.
+  const folderHash = (folder) => {
+    const files = readdirSync(folder, { recursive: true })
+      .filter((file) => statSync(path.join(folder, file)).isFile())
+      .map((file) => file.split(path.sep).join('/'))
+      .sort((a, b) => a.localeCompare(b));
+    const hash = createHash('sha256');
+    for (const file of files) hash.update(file).update(readFileSync(path.join(folder, file)));
+    return hash.digest('hex');
+  };
+  for (const name of [...vendor, google])
+    assert.equal(folderHash(path.join(dir, name)), lock.skills[name].computedHash, name);
+  assert.deepEqual(readdirSync(path.join(dir, google)), ['SKILL.md']);
+  assert.match(
+    readFileSync(path.join(dir, google, 'SKILL.md'), 'utf8'),
+    new RegExp(`^---\\nname: ${google}\\n`),
+  );
+  assert.deepEqual(lock.skills[google], {
+    source: 'GoogleChrome/modern-web-guidance',
+    sourceType: 'github',
+    skillPath: `skills/${google}/SKILL.md`,
+    computedHash: lock.skills[google].computedHash,
+  });
+  assert.ok(readFileSync(path.join(root, 'docs/agents/skills.md'), 'utf8').includes(google));
+  assert.match(
+    readFileSync(path.join(root, 'AGENTS.md'), 'utf8'),
+    /pnpx modern-web-guidance@latest/,
+  );
+  assert.deepEqual(Object.keys(lock.skills).sort(), [...vendor, google].sort());
 });
 test('verification never starts a service or guesses a database connection and propagates failures', () =>
   fixture((dir) => {
@@ -790,9 +819,9 @@ test('Claude Code and Codex start Engram through the wrapper and deny real data 
   assert.ok(manifest.chunks.length > 0);
 });
 
-test('Claude Code discovers the SIPGES and Neon skills through links to .agents/skills', () => {
+test('Claude Code discovers the SIPGES and vendor skills through links to .agents/skills', () => {
   const dir = path.join(root, '.claude/skills');
-  const linked = [...sipgesSkills, 'neon', 'neon-postgres'];
+  const linked = [...sipgesSkills, 'neon', 'neon-postgres', 'modern-web-guidance'];
   assert.deepEqual(readdirSync(dir).sort(), [...linked].sort());
   for (const name of linked) {
     assert.equal(readlinkSync(path.join(dir, name)), `../../.agents/skills/${name}`);

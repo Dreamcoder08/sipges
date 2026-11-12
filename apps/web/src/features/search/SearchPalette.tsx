@@ -56,6 +56,9 @@ const Results = ({
       setActive(Math.max(0, current - 1));
     } else if (event.key === 'Enter') {
       event.preventDefault();
+      // The Enter that confirms an IME candidate must not open a result: Safari reports it as
+      // keyCode 229 with isComposing already false (modern-web-guidance ime-safe-enter-submit).
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
       open(current);
     }
   };

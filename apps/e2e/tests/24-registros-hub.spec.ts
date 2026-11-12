@@ -55,8 +55,9 @@ test('Registros lists a new record, opens it in a side sheet and keeps density i
 });
 
 /**
- * Visual fidelity to design/workspace-architecture/03-registros-unificado.html: the filters are
- * one toolbar row, the table sits on the page, and the sheet docks to the right of the list.
+ * Visual fidelity to design/workspace-architecture/03-registros-unificado.html: search, «Filtros»
+ * (A–E and validation open in one panel, closure-roadmap T31), density and the count are one
+ * toolbar row, the table sits on the page, and the sheet docks to the right of the list.
  * With SIPGES_SCREENSHOT=<file>.png the list and the docked sheet are saved as 1440×900
  * screenshots (<file>.png and <file>-sheet.png).
  */
@@ -85,8 +86,7 @@ test('Registros keeps its filters in one toolbar row and docks the sheet at 1440
   const centres = await Promise.all(
     [
       toolbar.getByRole('searchbox', { name: 'Buscar en registros' }),
-      toolbar.getByRole('group', { name: 'Verificación A a E' }),
-      toolbar.getByRole('group', { name: 'Validación' }),
+      toolbar.getByRole('button', { name: /^Filtros/ }),
       toolbar.getByRole('group', { name: 'Densidad de filas' }),
       toolbar.getByRole('status'),
     ].map(async (item) => {

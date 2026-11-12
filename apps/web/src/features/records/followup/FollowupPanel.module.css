@@ -36,7 +36,7 @@
   gap: 0.5rem;
 }
 .filters button {
-  min-height: 44px;
+  min-height: var(--touch-target);
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -78,7 +78,7 @@
 }
 .badge {
   justify-self: start;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0.2rem 0.65rem;
 }
 .overdue {

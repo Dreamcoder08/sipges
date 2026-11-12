@@ -1,5 +1,4 @@
-.noData,
-.pending {
+.noData {
   display: inline-block;
   padding: var(--space-0) var(--space-3);
   border-radius: var(--radius-pill);
@@ -8,10 +7,6 @@
   line-height: var(--leading-snug);
   background: var(--color-track);
   color: var(--color-muted);
-}
-
-.pending {
-  font-weight: var(--weight-regular);
 }
 
 .hint {

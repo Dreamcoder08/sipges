@@ -21,6 +21,7 @@ import { isPendingActorIdentity } from './insights/actor-identity.ts';
 import { ActorMap } from './insights/ActorMap.tsx';
 import { NarrativeTrend } from './NarrativeTrend.tsx';
 import { ConfirmDelete } from './ConfirmDelete.tsx';
+import { type ActiveFilter, ActiveFilters, FilterSheet } from './FilterSheet.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordCell, isCompactCell } from './RecordCell.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
@@ -109,6 +110,7 @@ const RecordsWorkspace = ({
   // Where focus returns when a record panel closes (the row's own «Ver»/«Editar» button).
   const returnTo = useRef<string | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const filtersButton = useRef<HTMLButtonElement>(null);
   const client = useQueryClient();
   const rows = useQuery(recordsQuery(module, scope, search));
   const selectedId = panel.kind === 'view' || panel.kind === 'edit' ? panel.id : '';
@@ -181,6 +183,21 @@ const RecordsWorkspace = ({
   });
   const busy = save.isPending || remove.isPending || uploadBusy;
   const moduleFacets = FACETS[module] ?? [];
+  const setFacet = (key: string, value: string) => {
+    setFacets((current) => ({ ...current, [key]: value }));
+    setPageIndex(0);
+  };
+  const clearFacets = () => {
+    setFacets({});
+    setPageIndex(0);
+  };
+  const activeFacets: ActiveFilter[] = moduleFacets
+    .filter(({ key }) => facets[key])
+    .map(({ key, label }) => ({
+      id: key,
+      label: `${label}: ${facets[key]}`,
+      remove: () => setFacet(key, ''),
+    }));
 
   if (panel.kind !== 'list') {
     const title =
@@ -395,31 +412,42 @@ const RecordsWorkspace = ({
                 ) : null}
                 {moduleFacets.length ? (
                   <div className={styles.filters}>
-                    {moduleFacets.map(({ key, label }) => {
-                      const options = [...new Set(data.map((row) => facetValue(row, module, key)))]
-                        .filter(Boolean)
-                        .sort((a, b) => a.localeCompare(b, 'es'));
-                      return (
-                        <div className={styles.field} key={key}>
-                          <label htmlFor={`facet-${module}-${key}`}>{label}</label>
-                          <select
-                            id={`facet-${module}-${key}`}
-                            value={facets[key] ?? ''}
-                            onChange={(event) => {
-                              setFacets((current) => ({ ...current, [key]: event.target.value }));
-                              setPageIndex(0);
-                            }}
-                          >
-                            <option value="">Todos</option>
-                            {options.map((option) => (
-                              <option key={option} value={option}>
-                                {option}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      );
-                    })}
+                    <FilterSheet
+                      active={activeFacets}
+                      shown={visible.length}
+                      onClear={clearFacets}
+                      buttonRef={filtersButton}
+                    >
+                      {moduleFacets.map(({ key, label }) => {
+                        const options = [
+                          ...new Set(data.map((row) => facetValue(row, module, key))),
+                        ]
+                          .filter(Boolean)
+                          .sort((a, b) => a.localeCompare(b, 'es'));
+                        return (
+                          <div className={styles.field} key={key}>
+                            <label htmlFor={`facet-${module}-${key}`}>{label}</label>
+                            <select
+                              id={`facet-${module}-${key}`}
+                              value={facets[key] ?? ''}
+                              onChange={(event) => setFacet(key, event.target.value)}
+                            >
+                              <option value="">Todos</option>
+                              {options.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </FilterSheet>
+                    <ActiveFilters
+                      active={activeFacets}
+                      onClear={clearFacets}
+                      fallback={filtersButton}
+                    />
                   </div>
                 ) : null}
                 <p className={styles.muted} role="status">

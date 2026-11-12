@@ -1,11 +1,11 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi, server } from '../test/server.ts';
 import { App } from './App.tsx';
-import { DESTINATIONS } from './navigation.ts';
+import { DESTINATIONS, hubHref, titleFor } from './navigation.ts';
 
 beforeEach(() =>
   resetApi({ me: { username: 'demo', full_name: 'Persona de prueba', role: 'admin' } }),
@@ -41,6 +41,83 @@ describe('destination hubs', () => {
     await waitFor(() => expect(screen.getByText('Hecho sintético')).toBeVisible());
   });
 });
+
+/**
+ * Territorio and Análisis as tabbed views (workspace-architecture T5): every view opens from
+ * `?vista=`, survives a reload, is reachable from the keyboard, and its old route stays a working
+ * deep link that the sidebar files under the same destination (no redirect, like T3 and T4).
+ */
+describe.each(DESTINATIONS.filter((hub) => ['/territorio', '/analisis'].includes(hub.path)))(
+  '$label tabbed views',
+  (hub) => {
+    const sidebar = () => screen.getByRole('navigation', { name: 'Secciones' });
+
+    it.each(hub.tabs.map((tab) => ({ ...tab, href: hubHref(hub, tab.value) })))(
+      'opens $label from $href and keeps it after a reload',
+      { timeout: 20_000 },
+      async ({ label, href }) => {
+        installRecordsApi();
+        at(href);
+        const first = render(<App />);
+        expect(await screen.findByRole('heading', { level: 1, name: hub.label })).toBeVisible();
+        expect(pressed(await screen.findByRole('group', { name: hub.label }))).toEqual([label]);
+        first.unmount();
+
+        // A reload starts the app again from the same address.
+        expect(window.location.pathname + window.location.search).toBe(href);
+        render(<App />);
+        expect(pressed(await screen.findByRole('group', { name: hub.label }))).toEqual([label]);
+      },
+    );
+
+    it.each(hub.tabs.map((tab) => ({ ...tab, title: titleFor(tab.screen) })))(
+      'keeps the old route $screen as a deep link filed under its destination',
+      { timeout: 20_000 },
+      async ({ screen: path, title }) => {
+        installRecordsApi();
+        at(path);
+        render(<App />);
+        expect(await screen.findByRole('heading', { level: 1, name: title })).toBeVisible();
+        expect(window.location.pathname).toBe(path);
+        const link = within(sidebar()).getByRole('link', { name: hub.label });
+        expect(link).toHaveAttribute('aria-current', 'page');
+        expect(link).toHaveAttribute('href', hub.path);
+      },
+    );
+
+    it(
+      'reaches every tab with Tab and opens it with Enter, in the URL',
+      { timeout: 30_000 },
+      async () => {
+        installRecordsApi();
+        at(hub.path);
+        render(<App />);
+        const user = userEvent.setup();
+        const group = await screen.findByRole('group', { name: hub.label });
+        const buttons = within(group).getAllByRole('button');
+        expect(buttons.map((button) => button.textContent)).toEqual(hub.tabs.map((t) => t.label));
+        buttons[0]?.focus();
+        for (const [index, tab] of hub.tabs.entries()) {
+          const current = within(await screen.findByRole('group', { name: hub.label })).getByRole(
+            'button',
+            { name: tab.label },
+          );
+          if (index > 0) await user.tab();
+          expect(current).toHaveFocus();
+        }
+        const last = hub.tabs[hub.tabs.length - 1];
+        if (!last) throw new Error('hub without tabs');
+        await user.keyboard('{Enter}');
+        await waitFor(() =>
+          expect(window.location.pathname + window.location.search).toBe(hubHref(hub, last.value)),
+        );
+        expect(pressed(await screen.findByRole('group', { name: hub.label }))).toEqual([
+          last.label,
+        ]);
+      },
+    );
+  },
+);
 
 describe('Riesgo de conflicto', () => {
   // Synthetic localities only.
@@ -299,6 +376,20 @@ describe('Inicio hub', () => {
     await user.type(composer, '   {Enter}');
     expect(screen.queryByRole('dialog')).toBeNull();
     await user.type(composer, 'agua{Enter}');
+    expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
+  });
+
+  it('does not send while an input method is still composing the question', async () => {
+    const user = await open();
+    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    await user.type(composer, 'agua');
+    // Chromium and Firefox flag the confirming Enter as composing; Safari reports keyCode 229.
+    for (const init of [{ isComposing: true }, { keyCode: 229 }]) {
+      expect(fireEvent.keyDown(composer, { key: 'Enter', ...init })).toBe(false);
+      expect(screen.queryByRole('dialog')).toBeNull();
+    }
+    expect(composer).toHaveValue('agua');
+    await user.type(composer, '{Enter}');
     expect(await screen.findByRole('dialog', { name: 'Búsqueda global' })).toBeVisible();
   });
 

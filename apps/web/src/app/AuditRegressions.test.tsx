@@ -207,9 +207,19 @@ describe('error 07: the directory shows its contacts and filters', () => {
     // Phones and short choices stay on one line instead of splitting in two.
     expect(within(first).getByText('900 000 001')).toHaveClass(/compact/);
     expect(screen.getByRole('columnheader', { name: 'Territorio / ciudad' })).toBeVisible();
-    await userEvent.setup().selectOptions(screen.getByLabelText('Territorio / ciudad'), 'Bernal');
+    // The place, type and priority selects live in the one «Filtros» sheet, not on the page.
+    expect(screen.queryByLabelText('Territorio / ciudad')).toBeNull();
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Filtros' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Filtros' });
+    await user.selectOptions(within(sheet).getByLabelText('Territorio / ciudad'), 'Bernal');
+    await user.keyboard('{Escape}');
     expect(screen.queryByText('Contacto uno')).toBeNull();
     expect(screen.getByText('Contacto dos')).toBeVisible();
+    const chip = screen.getByRole('button', { name: 'Quitar filtro Territorio / ciudad: Bernal' });
+    expect(screen.getByRole('button', { name: 'Filtros 1' })).toBeVisible();
+    await user.click(chip);
+    expect(screen.getByText('Contacto uno')).toBeVisible();
   });
 });
 
