@@ -10,10 +10,19 @@ export const hasNoEvidence = (irsa: IrsaSummary) => irsa.insufficient_data === t
 
 /**
  * What stands in for the level pill: the level itself, or neutral text without a risk colour
- * when there is no evidence; plus the badge while the methodology is still unvalidated.
+ * when there is no evidence; plus the badge while the methodology is still unvalidated, unless
+ * the screen already shows that caveat elsewhere (`caveat={false}`).
  */
-export const IrsaStatus = ({ scope, irsa }: { scope: string; irsa: IrsaSummary }) => {
-  const config = useQuery(irsaConfigQuery(scope));
+export const IrsaStatus = ({
+  scope,
+  irsa,
+  caveat = true,
+}: {
+  scope: string;
+  irsa: IrsaSummary;
+  caveat?: boolean;
+}) => {
+  const config = useQuery({ ...irsaConfigQuery(scope), enabled: caveat });
   return (
     <>
       {hasNoEvidence(irsa) ? (
@@ -21,7 +30,7 @@ export const IrsaStatus = ({ scope, irsa }: { scope: string; irsa: IrsaSummary }
       ) : (
         <LevelPill level={irsa.level} />
       )}
-      <IrsaPendingBadge status={config.data?.status} />
+      {caveat ? <IrsaPendingBadge status={config.data?.status} /> : null}
     </>
   );
 };

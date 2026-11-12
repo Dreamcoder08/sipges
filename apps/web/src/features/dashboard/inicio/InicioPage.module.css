@@ -37,6 +37,38 @@
   gap: var(--space-2);
 }
 
+/* What to know before trusting the page; items wrap instead of clipping on a phone. */
+.state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: var(--space-1);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+}
+
+/* The offline live region stays mounted while empty; only filled items take room. */
+.state > :not(:empty) {
+  margin-inline-end: var(--space-3);
+}
+
+.offline:not(:empty) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.offline:not(:empty)::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+}
+
 .attention,
 .compose {
   display: grid;
@@ -117,9 +149,13 @@
   border-color: var(--color-focus);
 }
 
+/* Grows with the question where field-sizing exists (modern-web-guidance
+   form-fields-automatically-fit-contents); elsewhere it keeps two rows and scrolls. */
 .ask textarea {
+  field-sizing: content;
   width: 100%;
   min-height: var(--control-sm);
+  max-block-size: 8lh;
   resize: none;
   border: 0;
   padding: 0;

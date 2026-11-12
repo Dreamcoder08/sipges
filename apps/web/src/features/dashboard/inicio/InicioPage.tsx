@@ -2,12 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'react';
 import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
+import { useOnline } from '../../../shared/lib/online.ts';
+import { useProjectSettings } from '../../../shared/lib/project-settings.tsx';
 import { useScrollHints } from '../../../shared/lib/scroll-hints.ts';
 import { LevelPill } from '../../../shared/ui/Badges.tsx';
 import { EmptyState } from '../../../shared/ui/EmptyState.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
+import { IrsaPendingBadge } from '../../../shared/ui/IrsaPendingBadge.tsx';
 import { QueryState } from '../../../shared/ui/QueryState.tsx';
-import { irsaQuery, moduleRecordsQuery } from '../api.ts';
+import { irsaConfigQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
 import { IrsaStatus, hasNoEvidence } from '../IrsaStatus.tsx';
 import { criticalAlerts, eventsThisWeek } from '../model.ts';
 import { attentionItems } from './attention.ts';
@@ -56,7 +59,13 @@ const Card = ({
   );
 };
 
-/** Inicio puts actionable pending work first; the existing composer still opens global search. */
+/**
+ * Inicio (closure-roadmap T31, design/vanguard/01 as chosen in L11): what needs attention first,
+ * then the composer, then the week. The composer names what it does: while external AI is off it
+ * searches the project's records; when on it is labelled «Preguntar, con citas», but no cited
+ * answer exists yet, so it says so and still opens the existing global search (`onAsk`). A status
+ * line states what the reader should know before trusting the page: offline, AI, IRSA caveat.
+ */
 export const InicioPage = ({
   scope,
   projectId,
@@ -75,10 +84,13 @@ export const InicioPage = ({
   const suggestId = useId();
   const chips = useRef<HTMLUListElement>(null);
   useScrollHints(chips);
+  const online = useOnline();
+  const aiOn = useProjectSettings()?.external_ai?.enabled ?? false;
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const digital = useQuery(territorialAlertsQuery(scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
   const irsa = useQuery(irsaQuery(scope));
+  const irsaConfig = useQuery(irsaConfigQuery(scope));
 
   const firstName = fullName.trim().split(/\s+/)[0] ?? '';
   const project = projectLabel || projectId;
@@ -126,6 +138,13 @@ export const InicioPage = ({
           {project ? ` · ${project}` : ''}
         </p>
         <h2 className={styles.title}>Hola{firstName ? `, ${firstName}` : ''}</h2>
+        <p className={styles.state}>
+          <span role="status" className={styles.offline}>
+            {online ? null : 'Sin conexión · lo que ves puede no estar al día'}
+          </span>
+          <span>{aiOn ? 'IA externa activada' : 'IA externa desactivada'}</span>
+          <IrsaPendingBadge status={irsaConfig.data?.status} />
+        </p>
       </header>
 
       <section className={styles.attention} aria-labelledby={`${fieldId}-att`}>
@@ -165,27 +184,37 @@ export const InicioPage = ({
       </section>
 
       <div className={styles.compose}>
-        <form className={styles.ask} onSubmit={onSubmit}>
-          <label className="visually-hidden" htmlFor={fieldId}>
-            Pregunta a SIPGES
-          </label>
+        <form className={styles.ask} data-ai={aiOn ? 'on' : 'off'} onSubmit={onSubmit}>
           <textarea
             id={fieldId}
             rows={2}
             value={question}
-            placeholder="Pregunta por eventos, actores, demandas o compromisos…"
+            aria-describedby={`${fieldId}-hint`}
+            placeholder={
+              aiOn
+                ? 'Pregunta por eventos, actores, demandas o compromisos…'
+                : 'Palabras de eventos, actores, demandas o compromisos…'
+            }
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={onKeyDown}
           />
           <div className={styles.bar}>
-            <span className={styles.scope}>
-              <Icon name="layers" />
-              Registros de {project || 'este proyecto'}
+            <label htmlFor={fieldId} className={styles.scope}>
+              <Icon name={aiOn ? 'message' : 'search'} />
+              {aiOn
+                ? 'Preguntar, con citas'
+                : `Buscar en registros de ${project || 'este proyecto'}`}
+            </label>
+            <span id={`${fieldId}-hint`} className={styles.hint}>
+              {aiOn
+                ? 'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.'
+                : 'Enter busca · Mayús+Enter, nueva línea'}
             </span>
-            <span className={styles.hint}>
-              <span>Enviar abre la búsqueda con tu pregunta</span>
-            </span>
-            <button type="submit" className={styles.send} aria-label="Enviar pregunta">
+            <button
+              type="submit"
+              className={styles.send}
+              aria-label={aiOn ? 'Enviar pregunta' : 'Buscar en registros'}
+            >
               <Icon name="arrowUp" />
             </button>
           </div>
@@ -242,7 +271,8 @@ export const InicioPage = ({
               <p className={styles.risk}>
                 IRSA{' '}
                 {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}{' '}
-                <IrsaStatus scope={scope} irsa={irsa.data} />
+                {/* The provisional caveat sits once, in the status line above. */}
+                <IrsaStatus scope={scope} irsa={irsa.data} caveat={false} />
               </p>
               {drivers.length ? (
                 <ul className={styles.list}>
