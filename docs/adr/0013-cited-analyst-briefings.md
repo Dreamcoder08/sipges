@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-14
-- Task: `odd/tasks/ontology-intelligence-platform.md` T9
+- Task: `odd/archive/ontology-intelligence-platform.md` T9
 
 ## Context
 

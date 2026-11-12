@@ -348,6 +348,55 @@ describe('Inicio hub', () => {
     ).toHaveAttribute('href', '/analisis?vista=riesgo');
   });
 
+  it('shows «Sin datos suficientes» instead of a level when the IRSA has no evidence (S3)', async () => {
+    server.use(
+      http.get('/system/irsa', () =>
+        HttpResponse.json({
+          irsa: 5.55,
+          level: 'Verde',
+          scores: { G: 0, A: 0, D: 0, N: 0, E: 0, I: 33.33 },
+          drivers: [],
+          config_version: '0.4-indicators',
+          coverage: { G: 0, A: 0, D: 0, N: 0, E: 0, I: 0 },
+          insufficient_data: true,
+        }),
+      ),
+    );
+    await open();
+    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
+    expect(await within(territory).findByText('Sin datos suficientes')).toBeVisible();
+    expect(
+      within(territory).getByText('Carga registros del proyecto para calcular el IRSA.'),
+    ).toBeVisible();
+    expect(within(territory).queryByText(/Verde|Amarillo|Naranja|Rojo/)).toBeNull();
+    expect(within(territory).queryByText('5.6')).toBeNull();
+  });
+
+  it('badges the IRSA as pending methodological validation when the config says so (S3)', async () => {
+    await open();
+    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
+    expect(await within(territory).findByText('Metodología pendiente de validación')).toBeVisible();
+    expect(within(territory).getByText(/^Amarillo/)).toBeVisible();
+    expect(within(territory).queryByText('Sin datos suficientes')).toBeNull();
+  });
+
+  it('shows no pending badge once the methodology is validated (S3)', async () => {
+    server.use(
+      http.get('/system/irsa/config', () =>
+        HttpResponse.json({
+          status: 'VALIDADO',
+          weights: { G: 0.2, A: 0.2, D: 0.2, N: 0.1, E: 0.1, I: 0.2 },
+          thresholds: { Verde: [0, 100] },
+          contributions: {},
+        }),
+      ),
+    );
+    await open();
+    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
+    expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
+    expect(within(territory).queryByText('Metodología pendiente de validación')).toBeNull();
+  });
+
   it('hides the card whose source fails instead of inventing numbers', async () => {
     await open();
     server.use(

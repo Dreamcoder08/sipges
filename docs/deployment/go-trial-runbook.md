@@ -123,8 +123,13 @@ Nothing starts the container while `GO_ROUTES` is empty, and `main` keeps it emp
 `wrangler.go.jsonc` declares no Hyperdrive on purpose. This writes `wrangler.go.deploy.jsonc`, which git ignores, and refuses the production id, the old all-zero placeholder and anything that is not an id:
 
 ```bash
-SIPGES_GO_HYPERDRIVE_ID=<id> pnpm config:go
+SIPGES_GO_HYPERDRIVE_ID=<id> SIPGES_GO_PUBLIC_HOST=<trial-host> \
+  SIPGES_HYPERDRIVE_ID=<production-id> pnpm config:go
 ```
+
+`SIPGES_HYPERDRIVE_ID` is production's id (the repository variable of the same name); the command
+needs it to refuse a trial that points at production. `SIPGES_GO_PUBLIC_HOST` is the trial Worker's
+bare host name, for example `sipges-go.<your-subdomain>.workers.dev`.
 
 Already set in the config and in code: `instance_type: "basic"`, `regions: ["ENAM"]`, `sleepAfter: 10m`. The image embeds `pdf-text.wasm` and `pdfjs.qbc`; CI's `Go image` job builds it whenever Go changes.
 
@@ -237,7 +242,8 @@ Outside the Worker:
 | --- | --- | --- |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Shell, GitHub `production` | Deploys |
 | `SIPGES_MIGRATION_DATABASE_URL` | Shell, GitHub `production` | `migrate` |
-| `SIPGES_GO_HYPERDRIVE_ID` | Shell | `pnpm config:go`, trial only |
+| `SIPGES_GO_HYPERDRIVE_ID`, `SIPGES_GO_PUBLIC_HOST` | Shell | `pnpm config:go`, trial only |
+| `SIPGES_PUBLIC_HOST`, `SIPGES_HYPERDRIVE_ID` | GitHub repository variables; shell for a manual deploy or `pnpm config:go` | `deploy-config.mjs`, `deploy:worker`, `pnpm config:go` |
 | `SIPGES_SMOKE_URL` | Shell, `deploy-workers.yml` | `smoke-go.mjs` |
 | `SIPGES_LOAD_BASE_URL`, `SIPGES_LOAD_USER`, `SIPGES_LOAD_PASSWORD`, `SIPGES_LOAD_TOTP`, `SIPGES_LOAD_SCOPE` | `~/.config/sipges-carga.env` | The benchmark |
 

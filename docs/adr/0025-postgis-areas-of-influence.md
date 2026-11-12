@@ -2,7 +2,7 @@
 
 - Estado: aceptada
 - Fecha: 2026-10-19
-- ODD: `odd/tasks/geospatial-analysis.md`
+- ODD: `odd/archive/geospatial-analysis.md`
 - Amplía ADR 0017 (motor cartográfico) y ADR 0022 (expediente operacional); conserva ADR 0003.
 - Numeración: 0023 y 0024 corresponden a otros PR abiertos.
 

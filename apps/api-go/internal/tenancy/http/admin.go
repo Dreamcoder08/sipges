@@ -108,7 +108,7 @@ func readJSON(w http.ResponseWriter, r *http.Request, s schema) ([]string, bool)
 		httpx.WriteError(w, http.StatusUnprocessableEntity, jsonInvalid)
 		return nil, false
 	}
-	parsed, ok := parseJSONBody(body)
+	parsed, ok := httpx.ParseJSONBody(body)
 	if !ok {
 		httpx.WriteError(w, http.StatusUnprocessableEntity, jsonInvalid)
 		return nil, false

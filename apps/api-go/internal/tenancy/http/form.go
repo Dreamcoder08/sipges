@@ -18,8 +18,8 @@ var errFormBody = errors.New("invalid form body")
 // parseFormBody is Hono's c.req.parseBody() as parseForm uses it: an urlencoded or multipart
 // body (by the lower-cased media type) becomes its last value per name, files left out; any
 // other media type reads as no fields.
-func parseFormBody(r *http.Request) (jsValue, error) {
-	empty := jsValue{kind: kindObject, fields: map[string]jsValue{}}
+func parseFormBody(r *http.Request) (httpx.JSONValue, error) {
+	empty := httpx.JSONValue{Kind: httpx.JSONObject, Fields: map[string]httpx.JSONValue{}}
 	contentType, _ := httpx.Header(r, "Content-Type")
 	mediaType, _, _ := strings.Cut(contentType, ";")
 	switch strings.ToLower(strings.TrimSpace(mediaType)) {
@@ -38,14 +38,14 @@ func parseFormBody(r *http.Request) (jsValue, error) {
 // urlencoded is the WHATWG application/x-www-form-urlencoded parser (URLSearchParams): only
 // '&' separates, '+' is a space, invalid percent escapes stay as written, and names and values
 // are UTF-8 decoded with replacement.
-func urlencoded(body []byte) jsValue {
-	v := jsValue{kind: kindObject, fields: map[string]jsValue{}}
+func urlencoded(body []byte) httpx.JSONValue {
+	v := httpx.JSONValue{Kind: httpx.JSONObject, Fields: map[string]httpx.JSONValue{}}
 	for _, sequence := range bytes.Split(body, []byte("&")) {
 		if len(sequence) == 0 {
 			continue
 		}
 		name, value, _ := bytes.Cut(sequence, []byte("="))
-		v.fields[formText(name)] = jsValue{kind: kindString, text: formText(value)}
+		v.Fields[formText(name)] = httpx.JSONValue{Kind: httpx.JSONString, Text: formText(value)}
 	}
 	return v
 }
@@ -63,7 +63,7 @@ func formText(b []byte) string {
 			out = append(out, c)
 		}
 	}
-	return decodeUTF8(out, false)
+	return httpx.DecodeUTF8(out, false)
 }
 
 func isHex(c byte) bool {
@@ -83,8 +83,8 @@ func unhex(c byte) byte {
 // multipartForm reads a multipart body as undici's formData() does: a part with a filename
 // is a file (left out by parseForm, yet it still replaces an earlier value of its name); a
 // body that does not parse is errFormBody.
-func multipartForm(body io.Reader, contentType string) (jsValue, error) {
-	v := jsValue{kind: kindObject, fields: map[string]jsValue{}}
+func multipartForm(body io.Reader, contentType string) (httpx.JSONValue, error) {
+	v := httpx.JSONValue{Kind: httpx.JSONObject, Fields: map[string]httpx.JSONValue{}}
 	_, params, err := mime.ParseMediaType(contentType)
 	if err != nil || params["boundary"] == "" {
 		return v, errFormBody
@@ -113,9 +113,9 @@ func multipartForm(body io.Reader, contentType string) (jsValue, error) {
 			return v, errFormBody
 		}
 		if _, file := disposition["filename"]; file {
-			delete(v.fields, name)
+			delete(v.Fields, name)
 			continue
 		}
-		v.fields[name] = jsValue{kind: kindString, text: decodeUTF8(data, false)}
+		v.Fields[name] = httpx.JSONValue{Kind: httpx.JSONString, Text: httpx.DecodeUTF8(data, false)}
 	}
 }

@@ -16,6 +16,8 @@ import { configQuery, historyQuery, irsaQuery } from './api.ts';
 import { IndicatorTable } from './IndicatorTable.tsx';
 import styles from './Indicators.module.css';
 
+/** IRSA configuration status while the weights and thresholds lack expert validation. */
+const PENDING_STATUS = 'PENDIENTE_DE_VALIDACION_METODOLOGICA';
 const dimensions = ['G', 'A', 'D', 'N', 'E', 'I'] as const;
 export const IrsaPage = (context: FeatureContext) => (
   <IrsaWorkspace key={context.scope} {...context} />
@@ -52,9 +54,21 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
         <QueryState query={report} label="IRSA">
           {(data) => (
             <>
-              <p className={styles.score}>
-                {data.irsa.toFixed(2)} / 100 · {withMeaning(data.level)}
-              </p>
+              {data.insufficient_data ? (
+                <>
+                  <p className={styles.score}>Sin datos suficientes</p>
+                  <p>Carga registros del proyecto para calcular el IRSA.</p>
+                </>
+              ) : (
+                <p className={styles.score}>
+                  {data.irsa.toFixed(2)} / 100 · {withMeaning(data.level)}
+                </p>
+              )}
+              {config.data?.status === PENDING_STATUS ? (
+                <p>
+                  <span className={styles.pending}>Metodología pendiente de validación</span>
+                </p>
+              ) : null}
               <Alert tone="info">{data.status}</Alert>
               <p>Versión de configuración: {data.config_version}</p>
               {data.notes.map((note) => (

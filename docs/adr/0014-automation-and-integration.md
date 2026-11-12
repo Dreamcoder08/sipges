@@ -4,7 +4,7 @@
 
 - Status: Accepted
 - Date: 2026-10-14
-- Task: `odd/tasks/automation-integration-platform.md` T1
+- Task: `odd/archive/automation-integration-platform.md` T1
 
 ## Context
 

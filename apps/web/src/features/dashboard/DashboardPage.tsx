@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { DIMENSIONS, DIMENSION_NAMES, LEVELS } from '../../shared/lib/text.ts';
-import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
+import { DimensionBadge } from '../../shared/ui/Badges.tsx';
 import { BarList } from '../../shared/ui/BarList.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { ColumnChart, DonutChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { dashboardQuery, irsaQuery, modelStatusQuery, moduleRecordsQuery } from './api.ts';
+import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from './IrsaStatus.tsx';
 import { alertsByLevel, eventsByDimension, eventsByMonth } from './model.ts';
 import { TodayView } from './TodayView.tsx';
 import styles from './DashboardPage.module.css';
@@ -158,8 +159,10 @@ export const DashboardPage = ({
             {(data) => (
               <>
                 <p className={styles.irsa}>
-                  <strong>{data.irsa.toFixed(1)}</strong> <LevelPill level={data.level} />
+                  {hasNoEvidence(data) ? null : <strong>{data.irsa.toFixed(1)}</strong>}{' '}
+                  <IrsaStatus scope={scope} irsa={data} />
                 </p>
+                <IrsaNoDataHint irsa={data} />
                 <div className={styles.radar}>
                   <RadarChart
                     caption="Puntaje IRSA por dimensión (0 a 100)"

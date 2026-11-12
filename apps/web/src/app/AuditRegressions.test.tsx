@@ -7,7 +7,7 @@ import { resetApi, server } from '../test/server.ts';
 import { App } from './App.tsx';
 
 /**
- * Regression tests for the functional audit (odd/tasks/functional-audit-correction.md).
+ * Regression tests for the functional audit (odd/archive/functional-audit-correction.md).
  * Every record here is synthetic.
  */
 beforeEach(() =>
