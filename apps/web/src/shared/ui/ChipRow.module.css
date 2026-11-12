@@ -5,6 +5,14 @@
   margin-bottom: var(--space-3);
 }
 
+/* Filter/view selection uses the same tint family as selected records and pending rows. */
+.row > button[aria-pressed='true'],
+.row > button[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--color-accent-tint);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
 @media (max-width: 40rem) {
   .row {
     flex-wrap: nowrap;

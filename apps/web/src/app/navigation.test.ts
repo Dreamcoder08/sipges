@@ -5,6 +5,7 @@ import {
   SCREENS,
   SYSTEM_PATHS,
   destinationFor,
+  filterCommandsFor,
   hubHref,
   safeRedirect,
   titleFor,
@@ -107,6 +108,32 @@ describe('navigation', () => {
     });
     expect(visitFor('/objeto/eventos/EV-1', '')).toBeNull();
     expect(visitFor('/integraciones', '')).toBeNull();
+  });
+
+  it('offers «Filtrar» commands only where a screen reads the filter from the URL', () => {
+    const bandeja = [
+      { label: 'Filtrar Bandeja: todo', href: '/bandeja' },
+      { label: 'Filtrar Bandeja: alertas', href: '/bandeja?clase=alerta' },
+      { label: 'Filtrar Bandeja: calidad de datos', href: '/bandeja?clase=calidad' },
+      { label: 'Filtrar Bandeja: situaciones', href: '/bandeja?clase=situacion' },
+    ];
+    expect(filterCommandsFor('/bandeja', '')).toEqual(bandeja);
+    expect(filterCommandsFor('/bandeja', '?vista=pendientes&clase=calidad')).toEqual(bandeja);
+    const registros = ['A', 'B', 'C', 'D', 'E'].map((letter) => ({
+      label: `Filtrar Registros: verificación ${letter}`,
+      href: `/registros?verificacion=${letter}`,
+    }));
+    expect(filterCommandsFor('/registros', '')).toEqual(registros);
+    expect(filterCommandsFor('/registros', '?tipo=todos&ficha=eventos.E-1')).toEqual(registros);
+    // Tabs and screens that do not read these filters get none, so no command is a dead link.
+    for (const [path, search] of [
+      ['/bandeja', '?vista=avisos'],
+      ['/registros', '?tipo=eventos'],
+      ['/pendientes', ''],
+      ['/inicio', ''],
+      ['/territorio', ''],
+    ] as const)
+      expect(filterCommandsFor(path, search)).toEqual([]);
   });
 
   it('gives every screen an icon', () => {

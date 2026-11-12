@@ -35,7 +35,12 @@ const renderHub = (
   tipo: string | undefined,
   onTipo = vi.fn(),
   role: Role = 'admin',
-  url: { ficha?: string; onFicha?: (ficha: string | undefined) => void } = {},
+  url: {
+    ficha?: string;
+    onFicha?: (ficha: string | undefined) => void;
+    verificacion?: string;
+    onVerificacion?: (letter: string | undefined) => void;
+  } = {},
 ) =>
   render(
     <QueryClientProvider
@@ -208,6 +213,27 @@ it('shows each active filter as a chip that removes it, and «Limpiar filtros» 
   expect(screen.queryByRole('group', { name: 'Filtros activos' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Filtros' })).toHaveFocus();
   expect(screen.getByText('Bloqueo del muelle')).toBeInTheDocument();
+});
+
+it('reads the verification letter from the URL and writes a change back to it', async () => {
+  const user = userEvent.setup();
+  const onVerificacion = vi.fn();
+  renderHub('todos', vi.fn(), 'admin', { verificacion: 'E', onVerificacion });
+  expect(await screen.findByText('Mancha en la playa')).toBeInTheDocument();
+  expect(screen.queryByText('Bloqueo del muelle')).not.toBeInTheDocument();
+  const chips = screen.getByRole('group', { name: 'Filtros activos' });
+  await user.click(within(chips).getByRole('button', { name: 'Quitar filtro Verificación E' }));
+  expect(onVerificacion).toHaveBeenLastCalledWith(undefined);
+  const sheet = await openFilters(user);
+  await user.click(within(sheet).getByRole('button', { name: 'B' }));
+  expect(onVerificacion).toHaveBeenLastCalledWith('B');
+});
+
+it('ignores a verification value in the URL that is not A to E', async () => {
+  renderHub('todos', vi.fn(), 'admin', { verificacion: 'Z', onVerificacion: vi.fn() });
+  expect(await screen.findByText('Mancha en la playa')).toBeInTheDocument();
+  expect(screen.getByText('Bloqueo del muelle')).toBeInTheDocument();
+  expect(screen.queryByRole('group', { name: 'Filtros activos' })).not.toBeInTheDocument();
 });
 
 it('offers to show every record when nothing matches the search and filters', async () => {

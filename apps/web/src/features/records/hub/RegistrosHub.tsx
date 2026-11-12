@@ -13,7 +13,7 @@ import { useDocked } from './dock.ts';
 import styles from './Hub.module.css';
 import { HUB_TYPES } from './types.ts';
 import { type OpenRecord, type OpenWay, RecordSheet } from './RecordSheet.tsx';
-import type { RecordSummary } from './summary.ts';
+import { type RecordSummary, VERIFICATION_LETTERS, type VerificationLetter } from './summary.ts';
 import { TodosList } from './TodosList.tsx';
 import { TypePicker } from './TypePicker.tsx';
 
@@ -37,6 +37,9 @@ type Props = {
   /** `?ficha=`: the record open in the sheet; `onFicha` writes it back to the URL. */
   ficha?: string | undefined;
   onFicha?: (ficha: string | undefined) => void;
+  /** `?verificacion=`: the A–E filter of Todos; `onVerificacion` writes a change back. */
+  verificacion?: string | undefined;
+  onVerificacion?: (letter: VerificationLetter | undefined) => void;
   scope: string;
   projectId: string;
   projectLabel: string;
@@ -53,7 +56,18 @@ const DENSITIES: readonly (readonly [Density, string])[] = [
  * with counts, one cross-type list, and the type screens unchanged underneath. Counts and the
  * cross-type list come from one request, GET /api/registros/summary.
  */
-export const RegistrosHub = ({ tipo, onTipo, ficha, onFicha, ...context }: Props) => {
+const asLetter = (value: string | undefined): VerificationLetter | null =>
+  VERIFICATION_LETTERS.find((letter) => letter === value) ?? null;
+
+export const RegistrosHub = ({
+  tipo,
+  onTipo,
+  ficha,
+  onFicha,
+  verificacion,
+  onVerificacion,
+  ...context
+}: Props) => {
   const selected: 'todos' | RecordModule = isType(tipo) ? tipo : 'todos';
   const summary = useQuery(recordsSummaryQuery(context.scope));
   const pending = summary.isError ? '—' : '…';
@@ -82,9 +96,15 @@ export const RegistrosHub = ({ tipo, onTipo, ficha, onFicha, ...context }: Props
   const [intent, setIntent] = useState<{ module: RecordModule; kind: 'create' | 'import' } | null>(
     null,
   );
+  // The A–E filter lives in the URL when the router supplies it, so Ctrl K can set it.
+  const [ownLetter, setOwnLetter] = useState<VerificationLetter | null>(null);
+  const letter = onVerificacion ? asLetter(verificacion) : ownLetter;
+  const setLetter = (next: VerificationLetter | null) =>
+    onVerificacion ? onVerificacion(next ?? undefined) : setOwnLetter(next);
   const docked = useDocked();
   const choose = (next: string) => {
     setIntent(null);
+    setOwnLetter(null);
     onTipo(next);
   };
   const begin = (kind: 'create' | 'import') => (module: RecordModule) => {
@@ -147,6 +167,8 @@ export const RegistrosHub = ({ tipo, onTipo, ficha, onFicha, ...context }: Props
             docked={docked}
             start={intent?.module === selected ? intent.kind : undefined}
             onStarted={() => setIntent(null)}
+            letter={letter}
+            onLetter={setLetter}
             {...context}
           />
         </div>
@@ -171,8 +193,12 @@ const Workspace = ({
   docked,
   start,
   onStarted,
+  letter,
+  onLetter,
   ...context
-}: Omit<Props, 'tipo' | 'onTipo'> & {
+}: Omit<Props, 'tipo' | 'onTipo' | 'verificacion' | 'onVerificacion'> & {
+  letter: VerificationLetter | null;
+  onLetter: (letter: VerificationLetter | null) => void;
   selected: 'todos' | RecordModule;
   everything: Parameters<typeof QueryState<readonly RecordSummary[]>>[0]['query'];
   onOpen: (record: OpenRecord, way?: OpenWay) => void;
@@ -217,6 +243,8 @@ const Workspace = ({
                 density={docked ? control : null}
                 selected={open}
                 docked={docked}
+                letter={letter}
+                onLetter={onLetter}
               />
             )}
           </QueryState>

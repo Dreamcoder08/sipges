@@ -23,13 +23,25 @@ const SEARCH_EVENT = 'sipges:search';
 export const openSearch = (text: string) =>
   document.dispatchEvent(new CustomEvent<string>(SEARCH_EVENT, { detail: text }));
 
+/** A command of the current screen: «Filtrar Bandeja: alertas» and where it leads. */
+export type PaletteCommand = { label: string; href: string };
+
+/** Case- and accent-insensitive, so «situacion» finds «situaciones». */
+const fold = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase();
+
 const Results = ({
   scope,
   initialText,
+  commands,
   onClose,
 }: {
   scope: string;
   initialText: string;
+  commands: readonly PaletteCommand[];
   onClose: () => void;
 }) => {
   const navigate = useInternalNavigate();
@@ -40,17 +52,22 @@ const Results = ({
   const results = useQuery({ ...searchQuery(scope, q), placeholderData: keepPreviousData });
   const embedder = useQuery(embedderStatusQuery(scope));
   const hits = q ? (results.data?.hits ?? []) : [];
-  const current = Math.min(active, Math.max(0, hits.length - 1));
+  const typed = fold(text.trim());
+  const shown = commands.filter((command) => fold(command.label).includes(typed));
+  // One list for the arrows: the screen's commands first, then the search results.
+  const count = shown.length + hits.length;
+  const current = Math.min(active, Math.max(0, count - 1));
   const open = (index: number) => {
-    const hit = hits[index];
-    if (!hit) return;
+    const command = shown[index];
+    const hit = hits[index - shown.length];
+    if (!command && !hit) return;
     onClose();
-    navigate(objectHref(hit.module, hit.id));
+    navigate(command ? command.href : objectHref(hit?.module ?? '', hit?.id ?? ''));
   };
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setActive(Math.min(hits.length - 1, current + 1));
+      setActive(Math.min(count - 1, current + 1));
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       setActive(Math.max(0, current - 1));
@@ -69,10 +86,10 @@ const Results = ({
         className={styles.input}
         role="combobox"
         aria-label="Buscar en todo el proyecto"
-        aria-expanded={hits.length > 0}
+        aria-expanded={count > 0}
         aria-controls={listId}
         aria-autocomplete="list"
-        {...(hits.length ? { 'aria-activedescendant': optionId(current) } : {})}
+        {...(count ? { 'aria-activedescendant': optionId(current) } : {})}
         placeholder="Buscar actor, demanda, evento, alerta…"
         autoFocus
         value={text}
@@ -100,32 +117,63 @@ const Results = ({
         </p>
       )}
       <ul id={listId} role="listbox" aria-label="Resultados" className={styles.list}>
-        {hits.map((hit, index) => (
-          <li
-            key={`${hit.module}/${hit.id}`}
-            id={optionId(index)}
-            role="option"
-            aria-selected={index === current}
-            className={styles.option}
-            onMouseEnter={() => setActive(index)}
-            onClick={() => open(index)}
-          >
-            <span className={styles.type}>{hit.type_label}</span>
-            <strong>{hit.title}</strong>
-            {hit.match && hit.match.excerpt !== hit.title ? (
-              <small>{hit.match.excerpt}</small>
-            ) : hit.semantic ? (
-              <small>Relacionado por significado</small>
-            ) : null}
+        {shown.length ? (
+          <li role="presentation">
+            <ul role="group" aria-label="Filtrar" className={styles.group}>
+              {shown.map((command, index) => (
+                <li
+                  key={command.href}
+                  id={optionId(index)}
+                  role="option"
+                  aria-selected={index === current}
+                  className={styles.option}
+                  onMouseEnter={() => setActive(index)}
+                  onClick={() => open(index)}
+                >
+                  {command.label}
+                </li>
+              ))}
+            </ul>
           </li>
-        ))}
+        ) : null}
+        {hits.map((hit, at) => {
+          const index = shown.length + at;
+          return (
+            <li
+              key={`${hit.module}/${hit.id}`}
+              id={optionId(index)}
+              role="option"
+              aria-selected={index === current}
+              className={styles.option}
+              onMouseEnter={() => setActive(index)}
+              onClick={() => open(index)}
+            >
+              <span className={styles.type}>{hit.type_label}</span>
+              <strong>{hit.title}</strong>
+              {hit.match && hit.match.excerpt !== hit.title ? (
+                <small>{hit.match.excerpt}</small>
+              ) : hit.semantic ? (
+                <small>Relacionado por significado</small>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </>
   );
 };
 
-/** Global search across every object type, opened with Ctrl/⌘+K (docs/adr/0011 §5). */
-export const SearchPalette = ({ scope }: { scope: string }) => {
+/**
+ * Global search across every object type, opened with Ctrl/⌘+K (docs/adr/0011 §5). `commands`
+ * are the current screen's «Filtrar» commands, listed before the results (closure-roadmap T31).
+ */
+export const SearchPalette = ({
+  scope,
+  commands = [],
+}: {
+  scope: string;
+  commands?: readonly PaletteCommand[];
+}) => {
   const [open, setOpen] = useState(false);
   const [seed, setSeed] = useState('');
   useEffect(() => {
@@ -168,7 +216,12 @@ export const SearchPalette = ({ scope }: { scope: string }) => {
         aria-describedby={undefined}
       >
         <DialogTitle className="visually-hidden">Búsqueda global</DialogTitle>
-        <Results scope={scope} initialText={seed} onClose={() => setOpen(false)} />
+        <Results
+          scope={scope}
+          initialText={seed}
+          commands={commands}
+          onClose={() => setOpen(false)}
+        />
       </DialogContent>
     </Dialog>
   );

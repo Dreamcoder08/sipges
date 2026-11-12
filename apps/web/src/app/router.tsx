@@ -56,6 +56,7 @@ import {
   type Destination,
   SCREENS,
   type ScreenPath,
+  filterCommandsFor,
   hubHref,
   HOME_PATH,
   safeRedirect,
@@ -314,6 +315,10 @@ const appRoute = createRoute({
     const unread = useUnreadNotifications(scope.scope);
     // Colour meanings of the project; until known the labels use their plain names.
     const settings = useQuery(projectSettingsQuery(scope.scope)).data ?? null;
+    // Ctrl K offers the filters the current screen reads from its URL.
+    const pathname = useLocation({ select: (location) => location.pathname });
+    const searchStr = useLocation({ select: (location) => location.searchStr });
+    const commands = filterCommandsFor(pathname, searchStr);
     usePreloadScreens();
     return (
       <ProjectSettingsProvider value={settings}>
@@ -321,7 +326,7 @@ const appRoute = createRoute({
           <AppShell
             projectLabel={projectLabel}
             projectKey={scope.scope}
-            search={<SearchPalette scope={scope.scope} />}
+            search={<SearchPalette scope={scope.scope} commands={commands} />}
             unread={unread}
             live={<LiveUpdates scope={scope.scope} />}
             projectSwitcher={
@@ -567,8 +572,8 @@ const withFicha = (href: string, ficha: string | undefined) => withSearch(href, 
 
 /** What a hub keeps in the URL besides its tab (closure-roadmap T31). */
 const HUB_SEARCH: Readonly<Record<string, readonly string[]>> = {
-  // Registros: the record open in its sheet.
-  '/registros': ['ficha'],
+  // Registros: the record open in its sheet and the A–E filter of Todos.
+  '/registros': ['ficha', 'verificacion'],
   // Bandeja › Pendientes: the chosen item and the type filter.
   '/bandeja': ['pendiente', 'clase'],
 };
@@ -597,16 +602,23 @@ const hubRoute = (hub: Destination) => {
         return (
           <RegistrosHub
             key={context.scope}
-            {...context}
             tipo={asked}
             onTipo={(tipo) => void navigate({ href: withFicha(hubHref(hub, tipo), search.ficha) })}
             ficha={search.ficha}
             onFicha={(ficha) =>
               void navigate({
-                href: withFicha(here, ficha),
+                href: withSearch(here, { ficha, verificacion: search.verificacion }),
                 replace: true,
               })
             }
+            verificacion={search.verificacion}
+            onVerificacion={(verificacion) =>
+              void navigate({
+                href: withSearch(here, { ficha: search.ficha, verificacion }),
+                replace: true,
+              })
+            }
+            {...context}
           />
         );
       const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];

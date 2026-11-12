@@ -290,3 +290,35 @@ export const HOME_PATH = '/inicio';
  */
 export const safeRedirect = (value: unknown) =>
   typeof value === 'string' && value !== '/' && /^\/(?![/\\])/.test(value) ? value : HOME_PATH;
+
+/** A Ctrl K command that applies a filter of the current screen by navigating to its URL. */
+export type FilterCommand = { label: string; href: string };
+
+const BANDEJA_FILTERS: readonly (readonly [label: string, clase: string | null])[] = [
+  ['todo', null],
+  ['alertas', 'alerta'],
+  ['calidad de datos', 'calidad'],
+  ['situaciones', 'situacion'],
+];
+const VERIFICATION = ['A', 'B', 'C', 'D', 'E'] as const;
+
+/**
+ * The «Filtrar» group of the search palette (closure-roadmap T31): only the filters a screen
+ * reads from its URL, Bandeja › Pendientes `?clase=` and Registros › Todos `?verificacion=`, so
+ * every command lands on the filtered view and none is a dead link.
+ */
+export const filterCommandsFor = (path: string, search: string): FilterCommand[] => {
+  const params = new URLSearchParams(search);
+  const tab = (param: string, home: string) => (params.get(param) ?? home) === home;
+  if (path === '/bandeja' && tab('vista', 'pendientes'))
+    return BANDEJA_FILTERS.map(([label, clase]) => ({
+      label: `Filtrar Bandeja: ${label}`,
+      href: clase ? `/bandeja?clase=${clase}` : '/bandeja',
+    }));
+  if (path === '/registros' && tab('tipo', 'todos'))
+    return VERIFICATION.map((letter) => ({
+      label: `Filtrar Registros: verificación ${letter}`,
+      href: `/registros?verificacion=${letter}`,
+    }));
+  return [];
+};
