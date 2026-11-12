@@ -174,6 +174,30 @@ texto del cuadro de mensaje, y detente. `<raíz>` es `%LOCALAPPDATA%\SIPGES-app`
     fallar con código 3; el paso 4 imprime `Accepted the restored state folder`. Abre SIPGES: arranca.
 14. Ejecuta de nuevo el instalador del paso 7: dice que ya está instalado y no cambia la versión.
 
+### Ensayo automático en Windows
+
+`deploy/desktop/windows/drill.mjs` hace el traslado de la visita, una actualización y una detención
+en un Windows real, solo con datos inventados: la instalación por clon de un commit viejo (por
+defecto `e490339c` con el instalador por clon de `6d867050`; `--old-commit` toma el commit de la
+laptop), datos cargados por la API pública, `snapshot.mjs`; el paquete construido y firmado con una
+clave descartable; `install.ps1 -Release … -State <copia>`, `update.mjs --first-start`, el
+`start.ps1` instalado, `compare.mjs` (`RESULT: no difference`) y la carpeta original sin cambios;
+N+1 firmada en `<raíz>\releases`, ofrecida, pedida con `POST /system/desktop/update` y comparada
+otra vez; y una detención (código 3 y el mensaje). GitHub Actions lo corre en `windows-latest`
+(`.github/workflows/windows-desktop.yml`) y sube los registros. A mano, en otro equipo o cuenta de
+Windows, nunca en la laptop, con el puerto 8000 libre:
+
+```powershell
+pnpm install --frozen-lockfile
+node deploy\desktop\windows\drill.mjs [--old-commit <commit>] [--work <carpeta nueva>] [--logs <carpeta>]
+```
+
+Termina con `DRILL PASSED` (código 0) o `DRILL FAILED: …` (código 1). Mientras corre cambia los
+accesos directos «SIPGES» de esa cuenta y al final los devuelve, y el `start.ps1` viejo abre Edge una
+vez. Los scripts salen de `git archive HEAD`, como en el USB de la visita: lo que no tiene commit no
+se ensaya. Con `SIPGES_DESKTOP_NO_UI=1` el `start.ps1` instalado escribe sus mensajes en la terminal
+en vez de mostrar un cuadro y no abre Edge; el ensayo lo usa.
+
 ## Respaldar y restaurar
 
 La carpeta de estado es todo: la base de datos no sirve sin `data-key`. Es

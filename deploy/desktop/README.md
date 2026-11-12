@@ -129,6 +129,30 @@ in `current.json` of the install root.
    update becomes current again and nothing in or beside the state folder is touched.
 5. Open SIPGES.
 
+### Windows drill (automatic)
+
+`deploy/desktop/windows/drill.mjs` runs the visit's data move, an update and a halt on a real
+Windows machine with synthetic data only: the clone install of an old commit (default `e490339c`,
+with the clone-mode installer of `6d867050`; `--old-commit` takes the laptop's commit), seeded
+through the public API, `snapshot.mjs`; the package built and signed with a throwaway key;
+`install.ps1 -Release … -State <copy>`, `update.mjs --first-start`, the installed `start.ps1`,
+`compare.mjs` (`RESULT: no difference`) and the original folder unchanged; N+1 signed into
+`<root>\releases`, offered, asked for through `POST /system/desktop/update`, compared again; and a
+halt (exit code 3 and the notice). GitHub Actions runs it on `windows-latest`
+(`.github/workflows/windows-desktop.yml`) and uploads the logs. By hand, on another Windows
+computer or account, never the laptop, with port 8000 free:
+
+```powershell
+pnpm install --frozen-lockfile
+node deploy\desktop\windows\drill.mjs [--old-commit <commit>] [--work <new folder>] [--logs <folder>]
+```
+
+It ends with `DRILL PASSED` (exit 0) or `DRILL FAILED: …` (exit 1). While it runs it rewrites the
+SIPGES shortcuts of that account and puts them back at the end, and the old `start.ps1` opens Edge
+once. The scripts come from `git archive HEAD`, as on the visit USB, so uncommitted changes are not
+drilled. `SIPGES_DESKTOP_NO_UI=1` makes the installed `start.ps1` print its messages instead of
+showing a message box and skip Edge; the drill sets it.
+
 ## Back up and restore
 
 The state folder is everything: the database is useless without `data-key`. It is

@@ -188,3 +188,16 @@ test('desktop runtime: the package carries the updater and marks its web app as 
     await assert.rejects(addDesktopRuntime(dir), /^Error: web\/index\.html has no <head> to mark$/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('pnpm runs through cmd.exe on Windows, where it is a .cmd shim Node cannot start directly', async () => {
+  const { commandFor } = await import('./builder.mjs');
+  const args = ['--filter', '@sipges/api', 'deploy', '--prod', '--legacy', 'C:\\Users\\Ana María\\sipges\\.data\\desktop-packages\\sipges-1.0.0\\api'];
+  assert.deepEqual(commandFor('pnpm', args, 'linux', undefined), { file: 'pnpm', args, options: {} });
+  assert.deepEqual(commandFor('pnpm', args, 'win32', 'C:\\Windows\\system32\\cmd.exe'), {
+    file: 'C:\\Windows\\system32\\cmd.exe',
+    args: ['/d', '/s', '/c', '"pnpm --filter @sipges/api deploy --prod --legacy "C:\\Users\\Ana María\\sipges\\.data\\desktop-packages\\sipges-1.0.0\\api""'],
+    options: { windowsVerbatimArguments: true },
+  });
+  assert.equal(commandFor('pnpm', ['build'], 'win32', undefined).file, 'cmd.exe');
+  for (const unsafe of ['C:\\a"b', 'C:\\100%\\x']) assert.throws(() => commandFor('pnpm', [unsafe], 'win32', 'cmd.exe'), /^Error: Cannot pass .+ to cmd\.exe$/);
+});

@@ -4,6 +4,8 @@
 # run-current.mjs (the launcher of the current version, which checks the releases folder for
 # updates), opens Microsoft Edge in app mode and stays with the launcher: if an update cannot be
 # rolled back (exit code 3) a message box names the copy to restore. Read deploy\desktop\README.md.
+# SIPGES_DESKTOP_NO_UI=1 (the Windows drill, deploy\desktop\windows\drill.mjs): every message
+# goes to stdout instead of a message box and Edge is not opened; exit codes stay the same.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 
@@ -18,10 +20,21 @@ $Log = Join-Path $Root 'launcher.log'
 $HaltExitCode = 3
 $HaltPrefix = 'SIPGES no se inició*'
 $HaltFallback = 'SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad previa a la actualización (la carpeta SIPGES.pre-update-… junto a %LOCALAPPDATA%\SIPGES) o contacte con soporte.'
+$NoUi = $env:SIPGES_DESKTOP_NO_UI -eq '1'
+
+function Show-Message([string]$Message) {
+    if ($NoUi) { Write-Output $Message; return }
+    [System.Windows.Forms.MessageBox]::Show($Message, 'SIPGES', 'OK', 'Error') | Out-Null
+}
 
 function Show-Failure([string]$Message) {
-    [System.Windows.Forms.MessageBox]::Show($Message, 'SIPGES', 'OK', 'Error') | Out-Null
+    Show-Message $Message
     exit 1
+}
+
+function Open-App {
+    if ($NoUi) { Write-Output "SIPGES: $Url"; return }
+    Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
 }
 
 # The launcher's own notice (the last one in the log) names the pre-update copy to restore.
@@ -32,7 +45,7 @@ function Show-Halt {
             Where-Object { $_ -like $HaltPrefix } | Select-Object -Last 1
     }
     if ([string]::IsNullOrWhiteSpace($notice)) { $notice = $HaltFallback }
-    [System.Windows.Forms.MessageBox]::Show($notice, 'SIPGES', 'OK', 'Error') | Out-Null
+    Show-Message $notice
     exit $HaltExitCode
 }
 
@@ -64,7 +77,7 @@ function Wait-Server([int]$Seconds) {
 
 try {
     if (Test-Server) {
-        Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
+        Open-App
         exit 0
     }
     # Held while this launcher runs: a click while it starts, or restarts for an update, only
@@ -73,7 +86,7 @@ try {
     $booting = New-Object System.Threading.Mutex($true, 'Local\SIPGES-start', [ref]$created)
     if (-not $created) {
         Wait-Server $WaitSeconds
-        Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
+        Open-App
         exit 0
     }
     $launcher = Start-Launcher
@@ -93,7 +106,7 @@ try {
         }
         Start-Sleep -Seconds 1
     }
-    Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
+    Open-App
     # Stay with the launcher: an update after the click can still end in a halt.
     $launcher.WaitForExit()
     $booting.ReleaseMutex()

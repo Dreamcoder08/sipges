@@ -1,0 +1,70 @@
+name: Windows desktop drill
+
+# The visit drill (closure-roadmap T33–T35) on a real Windows runner, synthetic data only: the
+# clone install of an old commit, the data move into the managed version, an update N -> N+1 and
+# the halt. deploy/desktop/windows/drill.mjs runs every step, so the owner can run the same drill
+# by hand on another Windows computer (docs/deployment/desktop-visit.es.md). Not a required check.
+# No secrets: the signing key is made inside the job, used for the throwaway releases and deleted.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'deploy/desktop/**'
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/**'
+      - '.github/workflows/windows-desktop.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'deploy/desktop/**'
+      - 'apps/api/**'
+      - 'apps/web/**'
+      - 'packages/**'
+      - '.github/workflows/windows-desktop.yml'
+
+concurrency:
+  group: windows-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  drill:
+    name: Windows desktop drill (clone install, data move, update, halt)
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The drill clones the old commits (e490339c and 6d867050) from this checkout.
+          fetch-depth: 0
+          persist-credentials: false
+      # pnpm 12.11.2 from packageManager, the version install.ps1 installs.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Tool versions
+        run: |
+          node --version
+          $pnpm = (pnpm --version)
+          if ($pnpm -ne '12.11.2') { throw "pnpm $pnpm, expected 12.11.2" }
+          powershell.exe -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+      - name: Install this checkout
+        run: pnpm install --frozen-lockfile
+      - name: Drill unit tests
+        run: node --test deploy/desktop/windows/drill.test.mjs
+      - name: Drill (synthetic data only)
+        run: node deploy/desktop/windows/drill.mjs --work "$env:RUNNER_TEMP\d" --logs "$env:RUNNER_TEMP\drill-logs"
+      # Logs and command outputs only: never a state folder, a snapshot or the key.
+      - name: Upload the drill logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-desktop-drill-logs
+          path: ${{ runner.temp }}/drill-logs
+          if-no-files-found: warn
+          retention-days: 14
