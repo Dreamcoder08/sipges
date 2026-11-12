@@ -648,3 +648,10 @@ Not chosen in S2. Each stays open in its own document.
   laptop commits, the one-command `visit-kit.mjs` and UTF-8 installer output. Decision: the kit is built and signed
   on the laptop itself on Saturday, from a second clone in a separate folder (never the old clone), with the signing
   key on its own USB.
+- L14 — 2026-11-12. Visit readiness on `main`: #420 (Windows drill over the five candidate laptop commits 6d867050,
+  228daf43, a73f831a, dc7abde0 and main, all DRILL PASSED; one-command `visit-kit.mjs`; installer output with correct
+  accents) and #421 (kit built on the laptop from a second clone: refusals for Node/pnpm, SIPGES open, disk space,
+  paths inside the old clone or LOCALAPPDATA SIPGES; Windows rehearsal LAPTOP KIT REHEARSAL PASSED, old clone
+  byte-identical; measured on the runner: 867 MB, under half a minute with a warm network; runbook «Paso K»). Still
+  owner-side: confirm the laptop commit with `git log --oneline -1`, take the backup, bring two USB drives (or one
+  plus `C:\SIPGES-kit-salida`) and network.
