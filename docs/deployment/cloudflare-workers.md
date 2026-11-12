@@ -1,7 +1,7 @@
 # Deploying SIPGES on Cloudflare Workers
 
 How to publish SIPGES with the Workers adapter (`apps/hosting-cloudflare`, ADR 0028). Every
-step below needs the owner's Cloudflare account and explicit go-ahead. The local verification it relies on is in `odd/tasks/cloudflare-workers.md`
+step below needs the owner's Cloudflare account and explicit go-ahead. The local verification it relies on is in `odd/archive/cloudflare-workers.md`
 (L17, L20).
 
 ## Before you start

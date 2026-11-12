@@ -1,7 +1,7 @@
 # 0012 — Observability and classification markings
 
 ## Context
-Before real users arrive, operators need to follow a request end to end and see latency and error rates; until now the API only wrote `console.error`. The ontology (ADR 0011) also makes sensitive records easier to find, so read access must be finer than four URL-prefix roles ([ODD](../../odd/tasks/ontology-intelligence-platform.md) T6–T7).
+Before real users arrive, operators need to follow a request end to end and see latency and error rates; until now the API only wrote `console.error`. The ontology (ADR 0011) also makes sensitive records easier to find, so read access must be finer than four URL-prefix roles ([ODD](../../odd/archive/ontology-intelligence-platform.md) T6–T7).
 
 ## Decision
 1. **Request context.** An `AsyncLocalStorage` context opened per request carries the request id, the actor and the clearance. `X-Request-Id` is echoed when it matches `[A-Za-z0-9._-]{8,64}`, otherwise a UUID is generated.

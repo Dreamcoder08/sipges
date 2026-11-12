@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Summarises every ODD feature document: title, closed/total tasks and the open tasks, so resuming
- * work ("continúa con ODD") does not mean reading each file. Accepts both task styles in use:
- * `- T2 [ ] …` and `- [ ] P3 …`.
+ * work ("continúa con ODD") does not mean reading each file. Accepts every task style in use:
+ * `- T2 [ ] …`, `- [ ] P3 …`, `- T2 [done|dropped|pending…] …` and `- T2 — … Done: …` (a dash-style
+ * task is closed once it records `Done:` or `Status: done`).
  *
  *   node scripts/odd-status.mjs [--dir odd/tasks] [--all] [--json]
  */
@@ -19,11 +20,22 @@ const { values } = parseArgs({
 });
 
 const task = /^\s*- (?:([A-Z]+\d+[a-z]?) \[([ x])\]|\[([ x])\] ([A-Z]+\d+[a-z]?))\s*(.*)$/;
+const worded = /^\s*- (T\d+[a-z]?) \[([a-z][^\]]*)\]\s*(.*)$/;
+const dashed = /^\s*- (T\d+[a-z]?) — (.*)$/;
+const parse = (line) => {
+  let m = task.exec(line);
+  if (m) return { id: m[1] ?? m[4], done: (m[2] ?? m[3]) === 'x', rest: m[5] };
+  m = worded.exec(line);
+  if (m) return { id: m[1], done: /^(done|dropped)\b/.test(m[2]), rest: m[3] };
+  m = dashed.exec(line);
+  if (m) return { id: m[1], done: /(^|\s)Done:|Status: done\b/.test(m[2]), rest: m[2] };
+  return undefined;
+};
 const summary = (rest) => {
   const text = rest
     .replace(/^[—:]\s*/, '')
     .replace(/;\s*(route|commit):.*$/, '')
-    .replace(/\s*commit:.*$/, '');
+    .replace(/\s*commit:.*$/i, '');
   return text.length > 90 ? `${text.slice(0, 89)}…` : text;
 };
 
@@ -38,8 +50,8 @@ const features = readdirSync(values.dir)
         ?.slice(2)
         .trim() ?? file;
     const tasks = lines.flatMap((line) => {
-      const m = task.exec(line);
-      return m ? [{ id: m[1] ?? m[4], done: (m[2] ?? m[3]) === 'x', text: summary(m[5]) }] : [];
+      const t = parse(line);
+      return t ? [{ id: t.id, done: t.done, text: summary(t.rest) }] : [];
     });
     const open = tasks.filter((t) => !t.done).map(({ id, text }) => ({ id, text }));
     return { file, title, done: tasks.length - open.length, total: tasks.length, open };

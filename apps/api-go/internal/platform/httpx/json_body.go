@@ -34,7 +34,7 @@ type JSONValue struct {
 // JSON.parse. ok is false where JSON.parse throws. Nesting has no limit, as in V8: nested
 // values are walked with an explicit stack.
 func ParseJSONBody(body []byte) (JSONValue, bool) {
-	p := jsonParser{s: decodeUTF8(body, true)}
+	p := jsonParser{s: DecodeUTF8(body, true)}
 	p.space()
 	v, ok := p.value(true)
 	if !ok {

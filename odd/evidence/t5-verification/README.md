@@ -17,7 +17,7 @@ The implementation is commit `6299b81fa6adfc1584a203aa4966dc04a6599b5d`.
 
 Raw logs and exit files are local retained execution artifacts, not part of the code-review slice.
 The feature document records the historical failures, commands, measurements and limitations:
-[`integration-consolidation.md`](../../tasks/integration-consolidation.md).
+[`integration-consolidation.md`](../../archive/integration-consolidation.md).
 
 Independent review found no severe static issue in S6/S7 and inspected component evidence.
 Earlier independent runner regressions and hosting checks passed. The final independent push

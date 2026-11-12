@@ -1,7 +1,7 @@
 # 0011 — Ontology, links and provenance
 
 ## Context
-Every territorial record is an untyped `payload jsonb` row in `module_records` (ADR 0003). Records cannot point at each other, an edit overwrites the previous payload, and the audit trail keeps only a sentence. Analysis platforms such as Palantir Foundry are built on an *ontology*: typed objects, typed links between them and a history of who changed what. The owner asked for that level ([ODD](../../odd/tasks/ontology-intelligence-platform.md)).
+Every territorial record is an untyped `payload jsonb` row in `module_records` (ADR 0003). Records cannot point at each other, an edit overwrites the previous payload, and the audit trail keeps only a sentence. Analysis platforms such as Palantir Foundry are built on an *ontology*: typed objects, typed links between them and a history of who changed what. The owner asked for that level ([ODD](../../odd/archive/ontology-intelligence-platform.md)).
 
 ## Decision
 1. **Object types are the existing modules.** The server owns one catalog (`contexts/ontology/domain/catalog.ts`) with each type's label, title field and summary fields, served at `GET /system/ontology`. Payloads stay `jsonb`; the catalog describes them without forcing a schema migration of legacy data.

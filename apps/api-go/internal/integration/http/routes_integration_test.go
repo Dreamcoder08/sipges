@@ -6,18 +6,15 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app/apitest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
 )
@@ -144,24 +141,7 @@ func seed(ctx context.Context, dsn string) error {
 
 func start(t *testing.T) string {
 	t.Helper()
-	if scratch == nil {
-		t.Skip(dbtest.EnvAdminURL + " is not set")
-	}
-	pool, err := pgxpool.New(t.Context(), scratch.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(pool.Close)
-	h, err := app.NewHandler(pool, app.Options{
-		Logger: slog.New(slog.DiscardHandler),
-		Now:    func() time.Time { return t0 },
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	srv := httptest.NewServer(h)
-	t.Cleanup(srv.Close)
-	return srv.URL
+	return apitest.Start(t, scratch, t0)
 }
 
 func get(t *testing.T, base, path, user string, headers map[string]string) (int, string) {
@@ -192,12 +172,7 @@ func get(t *testing.T, base, path, user string, headers map[string]string) (int,
 	return res.StatusCode, body
 }
 
-func expect(t *testing.T, gotStatus int, gotBody string, status int, body string) {
-	t.Helper()
-	if gotStatus != status || gotBody != body {
-		t.Fatalf("got  %d %s\nwant %d %s", gotStatus, gotBody, status, body)
-	}
-}
+var expect = apitest.Expect
 
 const (
 	keysSechura = `[` +
