@@ -1,10 +1,9 @@
 import type { IrsaSummary } from '@sipges/contracts';
 import { useQuery } from '@tanstack/react-query';
 import { LevelPill } from '../../shared/ui/Badges.tsx';
+import { IrsaPendingBadge } from '../../shared/ui/IrsaPendingBadge.tsx';
 import { irsaConfigQuery } from './api.ts';
 import styles from './IrsaStatus.module.css';
-
-const PENDING_STATUS = 'PENDIENTE_DE_VALIDACION_METODOLOGICA';
 
 /** With no evidence in G, A, D, N or E the level says nothing about risk (insufficient_data). */
 export const hasNoEvidence = (irsa: IrsaSummary) => irsa.insufficient_data === true;
@@ -22,9 +21,7 @@ export const IrsaStatus = ({ scope, irsa }: { scope: string; irsa: IrsaSummary }
       ) : (
         <LevelPill level={irsa.level} />
       )}
-      {config.data?.status === PENDING_STATUS ? (
-        <span className={styles.pending}>Metodología pendiente de validación</span>
-      ) : null}
+      <IrsaPendingBadge status={config.data?.status} />
     </>
   );
 };

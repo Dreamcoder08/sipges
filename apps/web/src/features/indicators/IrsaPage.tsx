@@ -8,6 +8,7 @@ import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
+import { IrsaPendingBadge, isIrsaPending } from '../../shared/ui/IrsaPendingBadge.tsx';
 import { useLevelLabel } from '../../shared/lib/project-settings.tsx';
 import { LEVELS } from '../../shared/lib/text.ts';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
@@ -16,8 +17,6 @@ import { configQuery, historyQuery, irsaQuery } from './api.ts';
 import { IndicatorTable } from './IndicatorTable.tsx';
 import styles from './Indicators.module.css';
 
-/** IRSA configuration status while the weights and thresholds lack expert validation. */
-const PENDING_STATUS = 'PENDIENTE_DE_VALIDACION_METODOLOGICA';
 const dimensions = ['G', 'A', 'D', 'N', 'E', 'I'] as const;
 export const IrsaPage = (context: FeatureContext) => (
   <IrsaWorkspace key={context.scope} {...context} />
@@ -64,9 +63,9 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   {data.irsa.toFixed(2)} / 100 · {withMeaning(data.level)}
                 </p>
               )}
-              {config.data?.status === PENDING_STATUS ? (
+              {isIrsaPending(config.data?.status) ? (
                 <p>
-                  <span className={styles.pending}>Metodología pendiente de validación</span>
+                  <IrsaPendingBadge status={config.data?.status} />
                 </p>
               ) : null}
               <Alert tone="info">{data.status}</Alert>
