@@ -1,11 +1,13 @@
 // Real migration and readiness for the CLI: boot the version's start.mjs against a state folder
 // on a free loopback port, wait for /health/ready and the web shell, then stop it. The API
-// applies forward migrations at boot, so the first boot is the migration. Tests never use this.
+// applies forward migrations at boot, so the first boot is the migration. The update and launcher
+// tests inject their own migration and readiness; boot.test.mjs runs this with a synthetic version.
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { open, readFile } from 'node:fs/promises';
+import { open, readFile, stat } from 'node:fs/promises';
 import { get } from 'node:http';
 import { createServer } from 'node:net';
+import { Buffer } from 'node:buffer';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import process from 'node:process';
@@ -98,17 +100,52 @@ export const PARENT_WATCH = `data:text/javascript,${encodeURIComponent(
 
 const stopped = () => Object.assign(new Error('SIPGES was stopped'), { code: 'STOPPED' });
 
+/** Ports tried in one boot: the free port is released before the version binds it. */
+const PORT_ATTEMPTS = 5;
+const portTaken = (port) =>
+  Object.assign(new Error(`the port ${port} was in use when the new version started`), {
+    code: 'EADDRINUSE',
+  });
+
+/** Whether the boot child's own output (from `offset` on in the log) says its port was taken. */
+async function reportsPortInUse(logFile, offset) {
+  const bytes = await readFile(logFile).catch(() => Buffer.alloc(0));
+  return bytes.subarray(offset).toString('utf8').includes('EADDRINUSE');
+}
+
 /**
  * Returns `({ versionDir, stateDir }) => Promise<void>` that boots, checks and stops. `signal`
  * (an AbortSignal) stops a running boot: the child is ended and awaited before the returned
- * promise rejects with code STOPPED, so nothing writes the state folder after that.
+ * promise rejects with code STOPPED, so nothing writes the state folder after that. The free port
+ * is closed again before the version binds it, so another program can take it in between: a
+ * version that ends with EADDRINUSE is booted again on another port, at most PORT_ATTEMPTS times.
+ * `pickPort` is for tests.
  */
-export function bootCheck({ logFile, timeoutMs = 120_000, signal }) {
-  return async ({ versionDir, stateDir }) => {
+export function bootCheck({ logFile, timeoutMs = 120_000, signal, pickPort = freePort }) {
+  const boot = bootOnce({ logFile, timeoutMs, signal });
+  return async (target) => {
+    let port;
+    for (let attempt = 1; attempt <= PORT_ATTEMPTS; attempt += 1) {
+      if (signal?.aborted) throw stopped();
+      port = await pickPort();
+      try {
+        return await boot(target, port);
+      } catch (error) {
+        if (error.code !== 'EADDRINUSE') throw error;
+      }
+    }
+    throw new Error(
+      `the port ${port} was in use at each of ${PORT_ATTEMPTS} attempts to start the new version; see ${logFile}`,
+    );
+  };
+}
+
+function bootOnce({ logFile, timeoutMs, signal }) {
+  return async ({ versionDir, stateDir }, port) => {
     if (signal?.aborted) throw stopped();
-    const port = await freePort();
     const env = await managedEnv({ versionDir, stateDir, port });
     const output = await open(logFile, 'a', 0o600);
+    const offset = (await stat(logFile)).size;
     const child = spawn(
       process.execPath,
       ['--import', PARENT_WATCH, join(versionDir, 'start.mjs')],
@@ -131,10 +168,12 @@ export function bootCheck({ logFile, timeoutMs = 120_000, signal }) {
       const base = `http://127.0.0.1:${port}`;
       while (Date.now() < deadline) {
         if (signal?.aborted) throw stopped();
-        if (exited)
+        if (exited) {
+          if (await reportsPortInUse(logFile, offset)) throw portTaken(port);
           throw new Error(
             `the new version stopped while starting (code ${exited.code}); see ${logFile}`,
           );
+        }
         if ((await status(`${base}/health/ready`)) === 200) {
           if ((await status(`${base}/`, { accept: 'text/html' })) !== 200)
             throw new Error('the new version is ready but does not serve the web app');
