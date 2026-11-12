@@ -248,18 +248,32 @@ describe('Pendientes: aggregation and grouping', () => {
     install({
       alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')],
       actors: [{ _id: 'AC-1', Nombre: 'Actor sin territorio' }],
+      situations: [situation('rojo', 'Rojo')],
     });
     mount();
     const box = await list();
     const user = userEvent.setup();
-    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(3));
-    const chips = screen.getByRole('group', { name: 'Tipo de pendiente' });
-    expect(within(chips).getByRole('button', { name: /Todo/ })).toHaveTextContent('3');
-    expect(within(chips).getByRole('button', { name: /Alertas/ })).toHaveTextContent('2');
-    expect(within(chips).queryByRole('button', { name: /Validaciones/ })).toBeNull();
-    await user.click(within(chips).getByRole('button', { name: /Calidad/ }));
+    await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(4));
+    const filter = screen.getByRole('combobox', { name: 'Filtrar pendientes' });
+    expect(
+      within(filter)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Todo (4)', 'Alertas (2)', 'Calidad de datos (1)', 'Situaciones (1)']);
+    expect(
+      screen.queryByRole('button', { name: /^(Todo|Alertas|Calidad de datos|Situaciones)/ }),
+    ).toBeNull();
+    await user.selectOptions(filter, 'alerta');
+    expect(within(box).getAllByRole('option')).toHaveLength(2);
+    expect(within(box).getByRole('option', { name: /ALT-1/ })).toBeVisible();
+    await user.selectOptions(filter, 'calidad');
     expect(within(box).getAllByRole('option')).toHaveLength(1);
     expect(within(box).getByText(/AC-1/)).toBeVisible();
+    await user.selectOptions(filter, 'situacion');
+    expect(within(box).getAllByRole('option')).toHaveLength(1);
+    expect(within(box).getByText('Situación rojo')).toBeVisible();
+    await user.selectOptions(filter, 'todo');
+    expect(within(box).getAllByRole('option')).toHaveLength(4);
   });
 
   it('never lists the expert-validation template, so the inbox can be clear', async () => {
@@ -268,7 +282,7 @@ describe('Pendientes: aggregation and grouping', () => {
     mount();
     expect(await screen.findByText('Nada pendiente. Bandeja al día.')).toBeVisible();
     expect(screen.queryByText(/Validación de indicadores/)).toBeNull();
-    expect(screen.queryByRole('option')).toBeNull();
+    expect(within(await list()).queryByRole('option')).toBeNull();
   });
 
   it('shows the empty state only when every source answered and nothing is pending', async () => {
