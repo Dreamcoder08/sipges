@@ -1,7 +1,7 @@
 // Snapshot of a running SIPGES through its public HTTP API, for the data move to the managed
 // version (closure-roadmap T33). Safe on real data: the file and the output hold only counts and
-// keyed hashes (HMAC-SHA256 with a random salt kept in the file), never a record, a name or a
-// file. Read deploy/desktop/migration/README.md.
+// keyed hashes (HMAC-SHA256 with a random salt kept in the file), never a record, a name, a file
+// or a file's plain SHA-256. Read deploy/desktop/migration/README.md.
 //
 //   node deploy/desktop/migration/snapshot.mjs --url http://127.0.0.1:8000 --out <file.json>
 //        [--user admin] [--password-file <file>] [--otp <code>]
@@ -19,16 +19,20 @@ import {
   credentials,
   getJson,
   keyed,
+  keyedBytes,
   parseArgs,
-  sha256,
   short,
   signIn,
 } from './client.mjs';
 
 export const FORMAT = 'sipges.migration-snapshot';
 // 2: values hashed with their JSON type; every upload and audit entry, or marked incomplete.
-export const FORMAT_VERSION = 2;
+// 3: upload contents keyed like every other value; records read to an empty page and checked
+// against the export, or marked incomplete.
+export const FORMAT_VERSION = 3;
 const PAGE = 500;
+// A list longer than this many pages is not read further (and marked incomplete).
+const MAX_PAGES = 10_000;
 const AUDIT_PAGE = 500;
 // The upload list answers at most this many; the rest come from the export's attachment rows.
 const UPLOAD_LIST_CAP = 500;
@@ -48,16 +52,55 @@ export const contentHash = (h, row) =>
       .sort(([a], [b]) => (a < b ? -1 : 1)),
   );
 
-/** Every row of one module, page by page; null when this version has no such module. */
+/**
+ * Every row of one module, page by page: `{ rows, problem }`, or null when this version has no
+ * such module. A page may hold fewer rows than asked (a version with a lower cap), so the next
+ * offset is the number read so far and only an empty page ends the list. A page that repeats a
+ * row already read means the offset is not honoured: the list stops there and `problem` says
+ * why it is not fully checked.
+ */
 async function moduleRows(session, scope, slug) {
   const rows = [];
-  for (let offset = 0; ; offset += PAGE) {
+  const seen = new Set();
+  for (let pages = 0; pages < MAX_PAGES; pages += 1) {
+    const offset = rows.length;
     const page = await getJson(session, `/api/${slug}?limit=${PAGE}&offset=${offset}`, scope);
     if (page.status === 404 && offset === 0) return null;
     if (page.status !== 200) throw failed(`/api/${slug}`, page.status);
-    rows.push(...page.body);
-    if (page.body.length < PAGE) return rows;
+    if (page.body.length === 0) return { rows, problem: null };
+    for (const row of page.body) {
+      const id = String(row._id);
+      if (seen.has(id))
+        return { rows, problem: `${slug}: the list repeated rows, its offset is not honoured` };
+      seen.add(id);
+      rows.push(row);
+    }
   }
+  return { rows, problem: `${slug}: more than ${MAX_PAGES} pages` };
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/**
+ * The export's stored records not read through any list (a module this script does not know,
+ * or a list that stopped early); null when the export cannot be read. By id when its rows carry
+ * one, otherwise by count.
+ */
+function unreadExportRecords(exported, ids) {
+  const stored = exported?.module_records;
+  if (!Array.isArray(stored)) return null;
+  const read = Object.values(ids).flat();
+  if (stored.some((row) => row?.id === undefined || row?.id === null))
+    return Math.max(0, stored.length - read.length);
+  const left = new Map();
+  for (const id of read) left.set(id, (left.get(id) ?? 0) + 1);
+  let unread = 0;
+  for (const row of stored) {
+    const n = left.get(String(row.id)) ?? 0;
+    if (n > 0) left.set(String(row.id), n - 1);
+    else unread += 1;
+  }
+  return unread;
 }
 
 /**
@@ -151,6 +194,7 @@ async function uploadIdsOf(session, scope, exported) {
  */
 export async function takeSnapshot(session, { salt = randomBytes(16).toString('hex') } = {}) {
   const h = keyed(salt);
+  const hb = keyedBytes(salt);
   const scopes = await getJson(session, '/system/auth/scopes');
   if (scopes.status !== 200) throw failed('/system/auth/scopes', scopes.status);
   const names = scopes.body.map((s) => `${s.company_id}/${s.project_id}`).sort();
@@ -166,9 +210,12 @@ export async function takeSnapshot(session, { salt = randomBytes(16).toString('h
     const project = { key: h(scope), modules: {}, links: {}, uploads: {}, audit: {} };
     const ids = {};
     const contents = {};
+    const unchecked = [];
     for (const slug of MODULE_SLUGS) {
-      const rows = await moduleRows(session, scope, slug);
-      if (rows === null) continue;
+      const listed = await moduleRows(session, scope, slug);
+      if (listed === null) continue;
+      const { rows, problem } = listed;
+      if (problem) unchecked.push(problem);
       ids[slug] = rows.map((row) => String(row._id));
       contents[slug] = Object.fromEntries(
         rows.map((row) => [String(row._id), contentHash(h, row)]),
@@ -208,6 +255,14 @@ export async function takeSnapshot(session, { salt = randomBytes(16).toString('h
             .map(([table, rows]) => [table, rows.map((row) => h(row)).sort()]),
         )
       : null;
+    // The export proves the lists complete when every stored record was read; then a list that
+    // could not prove its own end is complete all the same. Otherwise both reasons are kept.
+    const unread = unreadExportRecords(exported, ids);
+    if (unread)
+      unchecked.push(
+        `${plural(unread, 'record')} in the project export not read through the lists`,
+      );
+    project.recordsUnchecked = unread === 0 ? [] : unchecked;
     // Every upload by its id: metadata and the downloaded content's SHA-256.
     const { ids: uploadIds, complete: uploadsComplete } = await uploadIdsOf(
       session,
@@ -225,7 +280,7 @@ export async function takeSnapshot(session, { salt = randomBytes(16).toString('h
       const meta = Object.fromEntries(
         Object.entries(upload.body).filter(([k]) => k !== 'download_url'),
       );
-      project.uploads[h(id)] = { sha256: sha256(bytes), meta: h(meta) };
+      project.uploads[h(id)] = { content: hb(bytes), meta: h(meta) };
     }
     const audit = await auditOf(session, scope, h, exported);
     project.audit = {
@@ -261,7 +316,7 @@ export function summary(snapshot) {
     lines.push(
       `project ${index + 1} [${short(project.key)}]: records ${recordCount(project)}${
         modules.length ? ` (${modules.join(', ')})` : ''
-      }, links ${Object.keys(project.links).length}, uploads ${
+      }${project.recordsUnchecked.length ? ' (not fully checked)' : ''}, links ${Object.keys(project.links).length}, uploads ${
         Object.keys(project.uploads).length
       }${project.uploadsComplete ? '' : ' (not fully checked)'}, audit ${
         Object.keys(project.audit.entries).length
@@ -278,8 +333,9 @@ const USAGE = `Usage: node deploy/desktop/migration/snapshot.mjs --url <base> --
        [--user admin] [--password-file <file>] [--otp <code> | --totp-secret-file <file> [--totp-state <file>]]
 
 Signs in as an administrator and writes counts and keyed hashes of every project the account can
-open: records per module (each field hashed), links, uploads (content SHA-256), the audit trail
-and the accounts. Prints counts and short hashes only. Without --password-file the password comes
+open: records per module (each field hashed; every list read to its end and checked against the
+project export), links, uploads (content hashed with the same key), the audit trail and the
+accounts. Prints counts and short hashes only. Without --password-file the password comes
 from SIPGES_MIGRATION_PASSWORD or a prompt; without --otp the MFA code is asked for.`;
 
 async function main(args) {

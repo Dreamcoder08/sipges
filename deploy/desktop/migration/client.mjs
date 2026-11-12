@@ -100,6 +100,13 @@ export const keyed = (salt) => (value) =>
     .update(JSON.stringify(canonical(value)) ?? 'undefined')
     .digest('hex');
 
+/**
+ * A keyed hash of raw bytes (an upload's content), with the same salt: a plain SHA-256 would let
+ * anyone holding a known document confirm it is in the snapshot.
+ */
+export const keyedBytes = (salt) => (bytes) =>
+  createHmac('sha256', Buffer.from(salt, 'hex')).update(bytes).digest('hex');
+
 export const short = (hash) => hash.slice(0, 8);
 export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
