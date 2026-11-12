@@ -1,0 +1,200 @@
+// Shared by snapshot.mjs, compare.mjs and rehearse.mjs: sign-in over the public HTTP API of a
+// running SIPGES, project-scoped requests and keyed hashes. Plain Node 24, no dependency, so the
+// scripts can be copied to the laptop as they are. Nothing here prints a value it reads.
+/* global fetch */
+import { Buffer } from 'node:buffer';
+import { createHash, createHmac } from 'node:crypto';
+import { readFile, writeFile } from 'node:fs/promises';
+import { createInterface } from 'node:readline/promises';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { URLSearchParams } from 'node:url';
+import process from 'node:process';
+
+/** Record modules of the API (`/api/<slug>`); one missing in an older version answers 404. */
+export const MODULE_SLUGS = Object.freeze([
+  'eventos',
+  'actores',
+  'demandas',
+  'compromisos',
+  'narrativas',
+  'fuentes',
+  'indicadores',
+  'alertas',
+  'acciones',
+  'directorio',
+  'priorizados',
+  'usuarios',
+  'roles',
+  'proyectos',
+  'intereses',
+  'dialogos',
+  'oportunidades',
+  'hechos',
+  'aarc',
+  'buzon',
+  'lecciones',
+]);
+
+const BASE32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const STEP_MS = 30_000;
+
+function base32(text) {
+  let bits = '';
+  for (const char of text.replace(/[\s=]/g, '').toUpperCase()) {
+    const value = BASE32.indexOf(char);
+    if (value < 0) throw new Error('The TOTP secret is not base32');
+    bits += value.toString(2).padStart(5, '0');
+  }
+  return Buffer.from((bits.match(/.{8}/g) ?? []).map((byte) => parseInt(byte, 2)));
+}
+
+export const stepNow = () => Math.floor(Date.now() / STEP_MS);
+
+/** RFC 6238 code (SHA-1, 30 s, 6 digits), as authenticator apps compute it. */
+export function totp(secret, step = stepNow()) {
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(step));
+  const mac = createHmac('sha1', base32(secret)).update(counter).digest();
+  const at = mac[19] & 15;
+  return String((mac.readUInt32BE(at) & 0x7fffffff) % 1_000_000).padStart(6, '0');
+}
+
+/**
+ * The next step a code may use: the server refuses a step at or before the last one it
+ * accepted and takes one step ahead. `stateFile` (synthetic rehearsals only) remembers the last
+ * step across processes; the wait is at most one step.
+ */
+export async function nextStep(stateFile) {
+  let last = -1;
+  if (stateFile) {
+    try {
+      last = Number(JSON.parse(await readFile(stateFile, 'utf8')).lastStep);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+  const step = Math.max(stepNow(), last + 1);
+  while (step > stepNow() + 1) await sleep(1000);
+  if (stateFile) await writeFile(stateFile, JSON.stringify({ lastStep: step }), { mode: 0o600 });
+  return step;
+}
+
+/** A keyed hash: the same value gives the same hash only with the snapshot's own salt. */
+export const keyed = (salt) => (value) =>
+  createHmac('sha256', Buffer.from(salt, 'hex'))
+    .update(typeof value === 'string' ? value : JSON.stringify(value))
+    .digest('hex');
+
+export const short = (hash) => hash.slice(0, 8);
+export const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+export class SignInError extends Error {
+  constructor(status) {
+    super(`Sign-in failed (status ${status})`);
+    this.status = status;
+  }
+}
+
+/**
+ * Signs in like the login page (`POST /login`) and returns a session: `call(path, options)`
+ * with `scope` sending X-SIPGES-Scope. Codes come from `otp`, or from `totpSecret` (synthetic
+ * rehearsals). Throws SignInError when the server refuses.
+ */
+export async function signIn({ base, username, password, otp, totpSecret, totpState }) {
+  base = base.replace(/\/+$/, '');
+  let cookie = '';
+  const call = async (path, { scope, headers = {}, ...init } = {}) => {
+    const response = await fetch(base + path, {
+      ...init,
+      headers: {
+        Origin: base,
+        Accept: 'application/json',
+        ...(cookie ? { Cookie: cookie } : {}),
+        ...(scope ? { 'X-SIPGES-Scope': scope } : {}),
+        ...headers,
+      },
+    });
+    const set = response.headers.getSetCookie?.() ?? [];
+    const session = set.map((c) => c.split(';')[0]).filter((c) => c.startsWith('sipges_session='));
+    if (session.length) cookie = session.at(-1);
+    return response;
+  };
+  const code = otp ?? (totpSecret ? totp(totpSecret, await nextStep(totpState)) : '');
+  const response = await call('/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ username, password, otp: code }),
+    redirect: 'manual',
+  });
+  await response.arrayBuffer();
+  if (response.status !== 200 || !cookie) throw new SignInError(response.status);
+  return { call, withCode: code !== '' };
+}
+
+/** GET returning parsed JSON, or `{ status }` when the answer is not 200. */
+export async function getJson(session, path, scope) {
+  const response = await session.call(path, { scope });
+  if (response.status !== 200) {
+    await response.arrayBuffer();
+    return { status: response.status };
+  }
+  return { status: 200, body: await response.json() };
+}
+
+const VALUED = new Set([
+  '--url',
+  '--user',
+  '--password-file',
+  '--otp',
+  '--totp-secret-file',
+  '--totp-state',
+  '--out',
+  '--before',
+  '--probe-limit',
+]);
+
+/** `--name value` pairs, each at most once; `allowed` lists the names a script takes. */
+export function parseArgs(args, allowed) {
+  const options = {};
+  for (let i = 0; i < args.length; i += 2) {
+    const [key, value] = [args[i], args[i + 1]];
+    if (!VALUED.has(key) || !allowed.includes(key) || value === undefined || options[key])
+      throw new Error(`Invalid option ${key ?? ''}; use --help`);
+    options[key] = value;
+  }
+  return options;
+}
+
+async function ask(question) {
+  if (!process.stdin.isTTY) return '';
+  const rl = createInterface({ input: process.stdin, output: process.stderr });
+  try {
+    return (await rl.question(question)).trim();
+  } finally {
+    rl.close();
+  }
+}
+
+/**
+ * Credentials from the options: the password from `--password-file` (for example the state
+ * folder's `admin-password`) or SIPGES_MIGRATION_PASSWORD or a prompt; the MFA code from
+ * `--otp`, `--totp-secret-file` (synthetic rehearsals) or a prompt (empty for no MFA).
+ */
+export async function credentials(options) {
+  const password = options['--password-file']
+    ? (await readFile(options['--password-file'], 'utf8')).trim()
+    : (process.env.SIPGES_MIGRATION_PASSWORD ?? (await ask('Contraseña: ')));
+  const totpSecret = options['--totp-secret-file']
+    ? (await readFile(options['--totp-secret-file'], 'utf8')).trim()
+    : undefined;
+  const otp =
+    options['--otp'] ?? (totpSecret ? undefined : await ask('Código MFA (vacío si no tiene): '));
+  return {
+    base: options['--url'],
+    username: options['--user'] ?? 'admin',
+    password,
+    otp: otp || undefined,
+    totpSecret,
+    totpState: options['--totp-state'],
+  };
+}
