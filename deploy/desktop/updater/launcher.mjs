@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
 import { bootCheck, managedEnv } from './boot.mjs';
-import { findUpdate, readCurrent, readStateDir, recover, update } from './updater.mjs';
+import { findUpdate, firstStart, readCurrent, readStateDir, recover, update } from './updater.mjs';
 
 export const CHANNEL = 'update-channel';
 /** Exit code when an update could not be rolled back: nothing is started on that state. */
@@ -68,6 +68,16 @@ export async function prepareState(stateDir) {
 export const haltNotice = (preUpdateCopy) =>
   `SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad ${preUpdateCopy ?? 'previa a la actualización (junto a la carpeta de datos)'} o contacte con soporte.`;
 
+/**
+ * What the person reads when the first start over existing data was refused or failed. Only a
+ * rollback that did not finish (ROLLBACK_INCOMPLETE) needs a restore; otherwise the data folder
+ * is as it was and the old version can keep using it.
+ */
+export const firstStartNotice = (error) =>
+  error.code === ROLLBACK_INCOMPLETE
+    ? haltNotice(error.preUpdateCopy)
+    : `SIPGES no se inició: la versión nueva no pudo abrir los datos existentes. Sus datos no se tocaron. No borre nada y contacte con soporte (detalle en launcher.log).`;
+
 const withTimeout = (work, ms) => {
   let timer;
   const timeout = new Promise((_, reject) => {
@@ -109,15 +119,30 @@ export async function launch({
     throw error;
   }
   if (recovered.recovered) log('update_recovered', { version: recovered.version });
+  const check = bootCheck({ logFile: join(root, 'update-boot.log') });
+  migrate ??= check;
+  ready ??= check;
+  // Existing data (an older install's state folder) opens only through a copy and a rehearsal,
+  // and before anything below could create a secret in that folder.
+  try {
+    const first = await firstStart({ root, migrate });
+    // One line only when existing data was carried; a fresh state folder needs no copy.
+    if (first.preUpdateCopy)
+      log('first_start', { version: first.version, preUpdateCopy: first.preUpdateCopy });
+  } catch (error) {
+    log('start_refused', {
+      code: error.code ?? null,
+      reason: error.message,
+      action: firstStartNotice(error),
+    });
+    throw Object.assign(error, { firstStart: true });
+  }
   const stateDir = await readStateDir(root);
   await prepareState(stateDir);
   const channel = join(root, CHANNEL);
   await mkdir(channel, { recursive: true, mode: 0o700 });
   // A click from an earlier run never updates on this start.
   await rm(join(channel, REQUEST), { force: true });
-  const check = bootCheck({ logFile: join(root, 'update-boot.log') });
-  migrate ??= check;
-  ready ??= check;
 
   let verified = null;
   let halted = null;
@@ -340,6 +365,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       process.exitCode = ROLLBACK_INCOMPLETE_EXIT;
       return;
     }
+    if (error.firstStart) console.error(firstStartNotice(error));
     console.error(`Error: ${error.message}`);
     process.exitCode = 1;
   });

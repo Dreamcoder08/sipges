@@ -37,7 +37,26 @@ node deploy/desktop/updater/update.mjs --install <new root> --release <dir> --ad
 node deploy/desktop/updater/update.mjs --install <root> --recover
 # Way out of a halt (exit code 3), after you restored the state folder from your own backup.
 node deploy/desktop/updater/update.mjs --install <root> --recover --accept-restored-state
+# The first start over existing data, in a terminal (the launcher does the same at its start).
+node deploy/desktop/updater/update.mjs --install <root> --first-start
 ```
+
+### The first start over existing data
+
+The first start of an install (`firstStart` in `updater.mjs`; the launcher runs it before
+anything else, `--first-start` runs it in a terminal) looks at the state folder once. A fresh
+folder needs nothing. A folder that already holds a database, such as the one of a clone-based
+install, is refused while its `data-key` or `admin-password` is missing or empty (nothing written);
+otherwise it is copied beside itself as `<state>.pre-update-<UTC time>-first-start-<version>`,
+the version boots once on a second copy `<state>.rehearsal-<time>-<version>` (the migration),
+and only then on the state folder. A failure on the rehearsal leaves the state folder untouched;
+a failure on the folder restores it from the dated copy (the changed one is kept as
+`<state>.failed-<time>-<version>`); a crash in between is rolled back by the journal like an
+update. Either way SIPGES does not start: the launcher logs `start_refused` with «SIPGES no se
+inició: la versión nueva no pudo abrir los datos existentes. Sus datos no se tocaron. …» and
+exits with code 1. When it succeeds, `first-start.json` in the install root records it and the
+launcher logs `first_start` with the copy; later starts change nothing. Carrying an older
+install's data, with its rehearsal and comparison scripts: [../migration/README.md](../migration/README.md).
 
 `--accept-restored-state` refuses while the state folder is missing, empty or a link. Otherwise it
 makes the version from before the interrupted update current again, clears the journal and logs
@@ -49,9 +68,11 @@ not start SIPGES; run `--recover` to retry, or restore the pre-update copy named
 
 Layout of `<root>`: `versions/<version>/` (verified copies; files are copied, never hardlinked),
 `current.json` (the pointer, replaced by one atomic rename), `install.json` (state folder),
-`update.log` (JSON lines: `installed`, `adopted`, `updated`, `refused`, `failed` for an error
-before any change such as a full disk while staging, `rolled-back`, `rollback-incomplete`,
-`recovered`, `restored-state-accepted`), and while an update runs `update.lock` and `update-journal.json`.
+`first-start.json` (written once by the first start), `update.log` (JSON lines: `installed`,
+`adopted`, `updated`, `refused`, `failed` for an error before any change such as a full disk
+while staging, `rolled-back`, `rollback-incomplete`, `recovered`, `restored-state-accepted`,
+`first-start`, `first-start-failed`), and while an update or the first start runs `update.lock`
+and `update-journal.json`.
 
 The lock is created complete in one step (a hard link of a fully written file) and holds the
 process id, a random token and a heartbeat rewritten every 10 s. A lock whose heartbeat is older
@@ -155,5 +176,6 @@ pre-update copy.
 - `update.mjs` does not detect a running SIPGES; stop it first. The launcher stops its own
   server before an update. The installers refuse while something answers on port 8000.
 - The launcher was run end to end on Linux only; on Windows stopping the server is a hard stop.
-- An old install that is a Git clone (no `metadata.json`) cannot be adopted; carrying its data is
-  closure-roadmap T33.
+- An old install that is a Git clone (no `metadata.json`) cannot be adopted; its state folder is
+  carried instead: a managed install on that folder or on a copy of it, and the first start above
+  ([../migration/README.md](../migration/README.md), rehearsed on Linux only).

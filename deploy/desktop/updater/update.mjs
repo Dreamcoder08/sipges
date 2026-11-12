@@ -8,10 +8,18 @@ import process from 'node:process';
 import console from 'node:console';
 import { bootCheck } from './boot.mjs';
 import { PUBLIC_KEY, loadPublicKey } from './release.mjs';
-import { acceptRestoredState, install, readCurrent, recover, update } from './updater.mjs';
+import {
+  acceptRestoredState,
+  firstStart,
+  install,
+  readCurrent,
+  recover,
+  update,
+} from './updater.mjs';
 
 const USAGE = `Usage: node deploy/desktop/updater/update.mjs --install <root> --release <dir> [--state <dir>] [--adopt <old package dir>] [--trust-key <public.pem> | --trust-release-key]
        node deploy/desktop/updater/update.mjs --install <root> --recover [--accept-restored-state]
+       node deploy/desktop/updater/update.mjs --install <root> --first-start
 
 First install: --state and a trust key are required: --trust-key names the public key file, or
 --trust-release-key trusts the key that signed this release and prints its SHA-256 fingerprint.
@@ -20,6 +28,9 @@ update rehearses on a copy of the state.
 --recover finishes an interrupted update. When it cannot (exit code 3), restore the state folder
 from your own backup, then --recover --accept-restored-state makes the version from before the
 update current again without touching the state folder (refused while it is missing or empty).
+--first-start does now, in this terminal, what the launcher does at the first start: a state
+folder that already holds a database gets a dated pre-update copy, the migration runs on a
+second copy and only then on the state folder. Done once; later runs change nothing.
 Exit codes: 0 done, 1 refused or invalid, 2 failed and rolled back, 3 rollback incomplete.`;
 
 const VALUED = ['--install', '--release', '--state', '--adopt', '--trust-key'];
@@ -27,6 +38,7 @@ const FLAGS = {
   '--recover': 'recover',
   '--accept-restored-state': 'accept',
   '--trust-release-key': 'trustRelease',
+  '--first-start': 'firstStart',
 };
 
 function parse(args) {
@@ -66,6 +78,21 @@ async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
   const options = parse(args);
   const root = resolve(options['--install']);
+  if (options.firstStart) {
+    if (Object.keys(options).length !== 2) throw new Error('--first-start takes only --install');
+    const result = await firstStart({
+      root,
+      migrate: bootCheck({ logFile: join(root, 'update-boot.log') }),
+    });
+    console.log(
+      !result.done
+        ? `First start already done for ${result.version}; nothing changed.`
+        : result.preUpdateCopy
+          ? `First start of ${result.version} done. Pre-update copy: ${result.preUpdateCopy}`
+          : `First start of ${result.version} recorded; no existing database.`,
+    );
+    return;
+  }
   if (options.recover) {
     if (Object.keys(options).length !== (options.accept ? 3 : 2))
       throw new Error('--recover takes only --install and --accept-restored-state');

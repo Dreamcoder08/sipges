@@ -24,7 +24,14 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { LAUNCHER_ENV, freePort, managedEnv } from './boot.mjs';
 import { CHANNEL, launch } from './launcher.mjs';
-import { findUpdate, inspectInstall, install, readCurrent, update } from './updater.mjs';
+import {
+  findUpdate,
+  firstStart,
+  inspectInstall,
+  install,
+  readCurrent,
+  update,
+} from './updater.mjs';
 import {
   makeState,
   newPair,
@@ -77,7 +84,6 @@ async function fixture(dir) {
   const state = join(dir, 'data', 'state');
   const source = join(dir, 'releases');
   await mkdir(source);
-  await makeState(state);
   const rel = releases(dir, pair, { make: appPackage, parent: source });
   await install({
     root,
@@ -85,6 +91,10 @@ async function fixture(dir) {
     stateDir: state,
     trustKey: publicPem(pair),
   });
+  // An install whose first start already happened on a fresh folder, then gathered data: these
+  // tests are about updates (the first start over existing data is first-start.test.mjs).
+  await firstStart({ root, migrate: async () => {} });
+  await makeState(state);
   return { root, state, source, pair, rel };
 }
 async function answers(port) {

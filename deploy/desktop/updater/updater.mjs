@@ -934,3 +934,141 @@ export async function update({
     await unlock();
   }
 }
+
+const FIRST_START = 'first-start.json';
+const SECRETS = ['data-key', 'admin-password'];
+
+async function hasContent(path) {
+  try {
+    return (await readFile(path, 'utf8')).trim() !== '';
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+/** Whether the state folder already holds a database (an older install's data). */
+async function holdsDatabase(stateDir) {
+  try {
+    return (await readdir(join(stateDir, 'pglite'))).length > 0;
+  } catch (error) {
+    if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return false;
+    throw error;
+  }
+}
+
+/**
+ * The first start of a managed install (closure-roadmap T33). A state folder that already holds
+ * a database, such as the one of a clone-based install, is never migrated in place first: it is
+ * copied beside itself as `<state>.pre-update-<UTC time>-first-start-<version>` (kept, never
+ * deleted), the migration runs on a second copy `<state>.rehearsal-<time>-<version>`, and only
+ * then on the state folder; a failure there restores it from the dated copy. A failure on the
+ * rehearsal leaves the state folder untouched. Without its data key or admin password the
+ * database is refused before anything is written: a new key would make its sealed values
+ * unreadable. Done once per install (`first-start.json`); later calls change nothing.
+ * `migrate` receives `{ versionDir, stateDir, version }`; `statfs` is for tests.
+ */
+export async function firstStart({ root, migrate, now, statfs = fsStatfs }) {
+  root = resolve(root);
+  const clock = now ?? (() => new Date());
+  const unlock = await lock(root);
+  let journal = null;
+  let version;
+  try {
+    await recoverLocked(root);
+    const current = await readCurrent(root);
+    if (!current) throw new UpdateError('CORRUPT', 'No installed version here');
+    version = current.version;
+    if (await readJson(join(root, FIRST_START)))
+      return { done: false, version, preUpdateCopy: null };
+    const stateDir = await stateDirOf(root);
+    const record = async (preUpdateCopy) => {
+      await writeJsonAtomic(join(root, FIRST_START), {
+        format: 1,
+        version,
+        stateDir,
+        preUpdateCopy,
+        at: clock().toISOString(),
+      });
+      await log(root, { event: 'first-start', version, preUpdateCopy });
+      return { done: true, version, preUpdateCopy };
+    };
+    if (!(await holdsDatabase(stateDir))) return await record(null);
+    for (const name of SECRETS)
+      if (!(await hasContent(join(stateDir, name))))
+        throw refuse(
+          `The state folder holds a database but ${join(stateDir, name)} is missing or empty; restore it from the backup of this state folder before starting SIPGES`,
+        );
+    await checkStateRoom(stateDir, 3, statfs);
+    const when = stamp(clock());
+    const path = current.adopted ? current.dir : `${VERSIONS}/${version}`;
+    journal = {
+      kind: 'first-start',
+      from: { version, path, adopted: current.adopted },
+      to: { version, path },
+      stateDir,
+      preCopy: await freeName(`${stateDir}.pre-update-${when}-first-start-${version}`),
+      failedAside: await freeName(`${stateDir}.failed-${when}-${version}`),
+      restoring: `${stateDir}.restoring-${when}-${randomUUID()}`,
+      phase: 'copying',
+    };
+    await writeJsonAtomic(join(root, JOURNAL), journal);
+    await copyTree(stateDir, journal.preCopy);
+    const rehearsal = await freeName(`${stateDir}.rehearsal-${when}-${version}`);
+    await copyTree(stateDir, rehearsal);
+    try {
+      await migrate({ versionDir: current.dir, stateDir: rehearsal, version });
+    } catch (error) {
+      // Only copies were handed to the migration: nothing to undo.
+      await rm(join(root, JOURNAL), { force: true });
+      journal = null;
+      throw new UpdateError(
+        'ROLLED_BACK',
+        `The first start of ${version} failed on a copy of the state folder; the state folder was not touched: ${error.message}`,
+      );
+    }
+    journal = { ...journal, phase: 'migrating' };
+    await writeJsonAtomic(join(root, JOURNAL), journal);
+    await migrate({ versionDir: current.dir, stateDir, version });
+    const preUpdateCopy = journal.preCopy;
+    await rm(join(root, JOURNAL), { force: true });
+    journal = null;
+    return await record(preUpdateCopy);
+  } catch (failure) {
+    let error = failure;
+    if (journal) {
+      try {
+        await undo(root, journal);
+      } catch (undoError) {
+        await log(root, {
+          event: 'rollback-incomplete',
+          from: version,
+          to: version,
+          step: 'first-start',
+          reason: error.message,
+          error: undoError.message,
+        }).catch(() => {});
+        throw rollbackIncomplete(
+          `The first start of ${version} failed and the state folder could not be restored (${undoError.message})`,
+          journal.preCopy,
+        );
+      }
+      error = new UpdateError(
+        'ROLLED_BACK',
+        STATE_AT_RISK.has(journal.phase)
+          ? `The first start of ${version} failed and the state folder was restored from ${journal.preCopy}: ${error.message}`
+          : `The first start of ${version} failed before any migration; the state folder was not touched: ${error.message}`,
+      );
+    }
+    if (version !== undefined)
+      await log(root, {
+        event: 'first-start-failed',
+        version,
+        code: error.code ?? null,
+        reason: error.message,
+      }).catch(() => {});
+    throw error;
+  } finally {
+    await unlock();
+  }
+}
