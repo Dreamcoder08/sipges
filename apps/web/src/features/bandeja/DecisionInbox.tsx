@@ -13,6 +13,7 @@ import {
 } from '../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
+import { StatusBadge, type StatusTone } from '../../shared/ui/Badges.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { Icon } from '../../shared/ui/Icon.tsx';
@@ -34,6 +35,11 @@ import {
 
 const noQuality: UseQuality = () => ({ state: 'ready', observations: [] });
 
+/** What Pendientes keeps in the URL: `?pendiente=` the chosen item, `?clase=` the type filter. */
+export type InboxUrl = { pendiente?: string | undefined; clase?: string | undefined };
+const asKind = (value: string | undefined): Kind | 'todo' =>
+  KINDS.find((item) => item.value === value)?.value ?? 'todo';
+
 type Selection = { key: string; index: number };
 type Decision = { id: string; status: string; note: string; verb: 'aprobada' | 'rechazada' };
 
@@ -54,7 +60,16 @@ export const DecisionInbox = ({
   role,
   username,
   useQuality = noQuality,
-}: FeatureContext & { useQuality?: UseQuality }) => {
+  pendiente,
+  clase,
+  onUrl,
+}: FeatureContext & {
+  useQuality?: UseQuality;
+  /** From the URL; with `onUrl` the item and the filter survive a reload and can be linked. */
+  pendiente?: string | undefined;
+  clase?: string | undefined;
+  onUrl?: (next: InboxUrl) => void;
+}) => {
   const client = useQueryClient();
   const ids = useId();
   const writable = role !== 'consulta';
@@ -63,9 +78,19 @@ export const DecisionInbox = ({
   const raised = useQuery(situationAlertsQuery(scope));
   const quality: QualityReview = useQuality(scope);
   const [now] = useState(() => Date.now());
-  const [kind, setKind] = useState<Kind | 'todo'>('todo');
-  const [selection, setSelection] = useState<Selection>({ key: '', index: 0 });
-  const [open, setOpen] = useState(false);
+  const [ownKind, setOwnKind] = useState<Kind | 'todo'>('todo');
+  const kind = onUrl ? asKind(clase) : ownKind;
+  const [selection, setSelection] = useState<Selection>({ key: pendiente ?? '', index: 0 });
+  const [open, setOpen] = useState(Boolean(pendiente));
+  // A link to another item while the inbox is open (the URL changed, not this component).
+  const [linked, setLinked] = useState(pendiente);
+  if (pendiente !== linked) {
+    setLinked(pendiente);
+    setOpen(Boolean(pendiente));
+    if (pendiente && pendiente !== selection.key) {
+      setSelection({ key: pendiente, index: 0 });
+    }
+  }
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [reasonMissing, setReasonMissing] = useState(false);
@@ -117,6 +142,7 @@ export const DecisionInbox = ({
     ...(quality.state === 'ready' ? qualityItems(quality.observations) : []),
   ]);
   const visible = kind === 'todo' ? all : all.filter((item) => item.kind === kind);
+  const optionId = (item: PendingItem) => `${ids}-${visible.indexOf(item)}`;
   const current =
     visible.find((item) => item.key === selection.key) ??
     visible[Math.min(selection.index, visible.length - 1)];
@@ -128,10 +154,14 @@ export const DecisionInbox = ({
     if (!item) return;
     setSelection({ key: item.key, index: visible.indexOf(item) });
     setRejecting(null);
+    onUrl?.({ pendiente: item.key });
   };
   const move = (delta: number) => {
     const at = current ? visible.indexOf(current) : -1;
-    select(visible[Math.max(0, Math.min(visible.length - 1, at + delta))]);
+    const next = visible[Math.max(0, Math.min(visible.length - 1, at + delta))];
+    if (!next || next === current) return;
+    select(next);
+    document.getElementById(optionId(next))?.scrollIntoView?.({ block: 'nearest' });
   };
   const approve = () => {
     if (current?.kind !== 'alerta' || !current.fourEyes.canDecide || decide.isPending) return;
@@ -169,6 +199,7 @@ export const DecisionInbox = ({
   const closeDetail = () => {
     setOpen(false);
     setRejecting(null);
+    onUrl?.({ pendiente: undefined });
     listRef.current?.focus();
   };
 
@@ -187,6 +218,7 @@ export const DecisionInbox = ({
       else if (key === 'a' && canDecide) approve();
       else if (key === 'r' && canDecide) startReject();
       else if (key === 'Enter' && !isControl(event.target) && current) {
+        select(current);
         setOpen(true);
         headingRef.current?.focus();
       } else if (key === 'Escape' && (open || rejecting)) closeDetail();
@@ -200,7 +232,6 @@ export const DecisionInbox = ({
   const groups = groupItems(visible);
   const countOf = (value: Kind | 'todo') =>
     value === 'todo' ? all.length : all.filter((item) => item.kind === value).length;
-  const optionId = (item: PendingItem) => `${ids}-${visible.indexOf(item)}`;
 
   return (
     <div className={styles.page}>
@@ -210,7 +241,9 @@ export const DecisionInbox = ({
           <select
             value={kind}
             onChange={(event) => {
-              setKind(event.target.value as Kind | 'todo');
+              const next = asKind(event.target.value);
+              if (onUrl) onUrl({ clase: next === 'todo' ? undefined : next, pendiente: undefined });
+              else setOwnKind(next);
               setSelection({ key: '', index: 0 });
               setRejecting(null);
             }}
@@ -260,6 +293,13 @@ export const DecisionInbox = ({
       </div>
       <div className={styles.inbox} data-open={open}>
         <section className={styles.list} aria-label="Pendientes">
+          <p className={styles.columns} aria-hidden="true">
+            <span className={styles.colTitle}>Pendiente</span>
+            <span className={styles.colKind}>Tipo</span>
+            <span className={styles.colPlace}>Referencia</span>
+            <span className={styles.colAge}>Espera</span>
+            <span className={styles.colState}>Cuatro ojos</span>
+          </p>
           <div
             ref={listRef}
             className={styles.listbox}
@@ -333,6 +373,20 @@ export const DecisionInbox = ({
   );
 };
 
+/** The four-eyes state of a high-priority alert, from the same rule the detail explains. */
+const fourEyesBadge = (item: PendingItem): [string, StatusTone] | null => {
+  if (item.kind !== 'alerta' || !item.fourEyes.required) return null;
+  if (!item.fourEyes.firstValidator) return ['Cuatro ojos', 'info'];
+  return item.fourEyes.canDecide
+    ? ['Falta confirmar', 'warning']
+    : ['Primera validación tuya', 'neutral'];
+};
+
+/**
+ * One pending item. Below 1024 px two lines (title and wait; type, reference and four-eyes
+ * state), like the Registros phone rows; from 1024 px one 36 px row whose cells line up as
+ * columns (closure-roadmap T31, directions 01 and 02).
+ */
 const Option = ({
   id,
   item,
@@ -348,33 +402,22 @@ const Option = ({
 }) => {
   const kind = KIND_INFO[item.kind];
   const age = ageLabel(item.since, now);
-  const pill =
-    item.kind === 'alerta' && item.fourEyes.required
-      ? item.fourEyes.firstValidator
-        ? item.fourEyes.canDecide
-          ? 'Falta confirmar'
-          : 'Primera validación tuya'
-        : 'Cuatro ojos'
-      : null;
+  const badge = fourEyesBadge(item);
   return (
     // The listbox owns focus and keyboard; clicking is the pointer way to choose an option.
     <div id={id} role="option" aria-selected={selected} className={styles.item} onClick={onChoose}>
       <Icon name={kind.icon} />
       <span className={styles.title}>{item.title}</span>
-      <span className={styles.age}>{age ?? ''}</span>
       <span className={styles.meta}>
-        <span>{kind.singular}</span>
-        <span>
+        <span className={styles.colKind}>{kind.singular}</span>
+        <span className={styles.colPlace}>
           {item.ref}
           {item.where ? ` · ${item.where}` : ''}
         </span>
-        {pill ? (
-          <span
-            className={`${styles.pill} ${pill === 'Primera validación tuya' ? styles.pillMine : ''}`}
-          >
-            {pill}
-          </span>
-        ) : null}
+      </span>
+      <span className={styles.age}>{age ?? ''}</span>
+      <span className={styles.state}>
+        {badge ? <StatusBadge tone={badge[1]}>{badge[0]}</StatusBadge> : null}
       </span>
     </div>
   );

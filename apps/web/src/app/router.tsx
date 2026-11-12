@@ -555,9 +555,23 @@ const screenFor = (path: ScreenPath): ((context: FeatureContext) => ReactNode) =
   return featurePages[path as keyof typeof featurePages];
 };
 
+/** Adds the given search params, those with a value, to a hub href (`ficha=`, `pendiente=`…). */
+const withSearch = (href: string, params: Readonly<Record<string, string | undefined>>) =>
+  Object.entries(params).reduce(
+    (out, [key, value]) =>
+      value ? `${out}${out.includes('?') ? '&' : '?'}${key}=${encodeURIComponent(value)}` : out,
+    href,
+  );
 /** Adds `ficha=` (the record open in the Registros sheet) to a hub href. */
-const withFicha = (href: string, ficha: string | undefined) =>
-  ficha ? `${href}${href.includes('?') ? '&' : '?'}ficha=${encodeURIComponent(ficha)}` : href;
+const withFicha = (href: string, ficha: string | undefined) => withSearch(href, { ficha });
+
+/** What a hub keeps in the URL besides its tab (closure-roadmap T31). */
+const HUB_SEARCH: Readonly<Record<string, readonly string[]>> = {
+  // Registros: the record open in its sheet.
+  '/registros': ['ficha'],
+  // Bandeja › Pendientes: the chosen item and the type filter.
+  '/bandeja': ['pendiente', 'clase'],
+};
 
 /** A destination: tabs in the URL search (`?vista=`), each tab one of today's screens. */
 const hubRoute = (hub: Destination) => {
@@ -566,8 +580,9 @@ const hubRoute = (hub: Destination) => {
     path: hub.path,
     validateSearch: z.object({
       [hub.param]: z.string().optional().catch(undefined),
-      // Registros keeps the record open in its sheet in the URL (closure-roadmap T31).
-      ...(hub.path === '/registros' ? { ficha: z.string().optional().catch(undefined) } : {}),
+      ...Object.fromEntries(
+        (HUB_SEARCH[hub.path] ?? []).map((key) => [key, z.string().optional().catch(undefined)]),
+      ),
     }),
     component: function HubRoute() {
       const context = useFeatureContext();
@@ -576,24 +591,22 @@ const hubRoute = (hub: Destination) => {
       const asked = search[hub.param];
       // Riesgo de conflicto reads `?localidad=` on mount; a new one remounts it (ADR 0031).
       const searchStr = useLocation({ select: (location) => location.searchStr });
+      // The tab as written, so `?tipo=todos` stays in the address it came from.
+      const here = asked ? `${hub.path}?${hub.param}=${encodeURIComponent(asked)}` : hub.path;
       if (hub.path === '/registros')
         return (
           <RegistrosHub
             key={context.scope}
+            {...context}
             tipo={asked}
             onTipo={(tipo) => void navigate({ href: withFicha(hubHref(hub, tipo), search.ficha) })}
             ficha={search.ficha}
             onFicha={(ficha) =>
               void navigate({
-                // The type as written, so `?tipo=todos` stays in the address it came from.
-                href: withFicha(
-                  asked ? `${hub.path}?${hub.param}=${encodeURIComponent(asked)}` : hub.path,
-                  ficha,
-                ),
+                href: withFicha(here, ficha),
                 replace: true,
               })
             }
-            {...context}
           />
         );
       const tab = hub.tabs.find((item) => item.value === asked) ?? hub.tabs[0];
@@ -612,10 +625,30 @@ const hubRoute = (hub: Destination) => {
               </Button>
             ))}
           </ChipRow>
-          <Screen
-            key={`${context.scope}/${tab.value}${tab.value === 'riesgo' ? searchStr : ''}`}
-            {...context}
-          />
+          {hub.path === '/bandeja' && tab.value === 'pendientes' ? (
+            <DecisionInbox
+              key={`${context.scope}/${tab.value}`}
+              {...context}
+              useQuality={useQualityReview}
+              pendiente={search.pendiente}
+              clase={search.clase}
+              onUrl={(next) =>
+                void navigate({
+                  href: withSearch(here, {
+                    clase: search.clase,
+                    pendiente: search.pendiente,
+                    ...next,
+                  }),
+                  replace: true,
+                })
+              }
+            />
+          ) : (
+            <Screen
+              key={`${context.scope}/${tab.value}${tab.value === 'riesgo' ? searchStr : ''}`}
+              {...context}
+            />
+          )}
         </>
       );
     },
