@@ -1,5 +1,6 @@
 import { useRouterState } from '@tanstack/react-router';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { DesktopUpdateNotice } from '../../features/desktop-update/index.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
 import { Icon } from '../../shared/ui/Icon.tsx';
 import { Sheet } from '../../shared/ui/Sheet.tsx';
@@ -136,6 +137,8 @@ export const AppShell = ({
           h1
         )}
         {live}
+        {/* Desktop app only: the notice renders nothing in the cloud and development builds. */}
+        <DesktopUpdateNotice scope={projectKey} />
         <main id="contenido" className={styles.main} tabIndex={-1}>
           {children}
         </main>

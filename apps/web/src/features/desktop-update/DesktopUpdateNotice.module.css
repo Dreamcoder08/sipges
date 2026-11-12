@@ -1,0 +1,57 @@
+/* Update notice of the desktop app: an info-toned card above the screen content. */
+.slot {
+  padding: var(--space-4) var(--space-6) 0;
+}
+
+.notice {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--tone-info-solid);
+  background: var(--tone-info-bg);
+  color: var(--color-text);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+  color: var(--tone-info-fg);
+}
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+}
+
+.text,
+.notes {
+  margin: 0;
+  line-height: var(--leading-snug);
+}
+
+/* Release notes keep the line breaks the release author wrote. */
+.notes {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+@media (max-width: 40rem) {
+  .slot {
+    padding: var(--space-3) var(--space-4) 0;
+  }
+
+  .notice {
+    padding: var(--space-4);
+  }
+}
