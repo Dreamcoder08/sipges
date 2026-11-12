@@ -511,7 +511,9 @@ async function checkPackage(releaseDir, manifest) {
  * The newest release in `source` that `update` would accept, verified the same way (signature
  * with the installed key, newer version, minimum previous, platform, every file hash and the
  * package version) but without copying anything. `source` is one release directory or a
- * directory of them. Refused candidates are listed in `skipped`; an install without an update
+ * directory of them. Signed manifests are checked first; packages are then hashed newest first
+ * and the search stops at the first that verifies, so keeping old releases costs no time.
+ * Refused candidates that were examined are listed in `skipped`; an install without an update
  * key is refused as a whole (updates disabled).
  */
 export async function findUpdate({ root, source }) {
@@ -526,22 +528,34 @@ export async function findUpdate({ root, source }) {
         .filter((entry) => entry.isDirectory())
         .map((entry) => join(source, entry.name))
         .sort();
-  let available = null;
   const skipped = [];
+  const signed = [];
   for (const release of candidates) {
     try {
       const { manifest } = await readRelease(release, key);
       checkTarget(current, manifest);
-      if (available && compareVersions(manifest.version, available.version) <= 0) continue;
-      await checkPackage(release, manifest);
-      if (!available || compareVersions(manifest.version, available.version) > 0)
-        available = { version: manifest.version, notes: manifest.notes ?? null, release };
+      signed.push({ release, manifest });
     } catch (error) {
       if (error.code !== 'REFUSED') throw error;
       skipped.push({ release, reason: error.message });
     }
   }
-  return { installed: current.version, available, skipped };
+  // Newest first; the same version in two folders is tried in name order.
+  signed.sort(
+    (a, b) =>
+      compareVersions(b.manifest.version, a.manifest.version) || (a.release < b.release ? -1 : 1),
+  );
+  for (const { release, manifest } of signed) {
+    try {
+      await checkPackage(release, manifest);
+      const available = { version: manifest.version, notes: manifest.notes ?? null, release };
+      return { installed: current.version, available, skipped };
+    } catch (error) {
+      if (error.code !== 'REFUSED') throw error;
+      skipped.push({ release, reason: error.message });
+    }
+  }
+  return { installed: current.version, available: null, skipped };
 }
 
 /** Copies exactly the signed files into a staging folder, hashing the copy, not the source. */
@@ -661,6 +675,46 @@ export async function recover({ root }) {
   try {
     const recovered = await recoverLocked(root);
     return { ...(await readCurrent(root)), recovered };
+  } finally {
+    await unlock();
+  }
+}
+
+/**
+ * The way out of a halted update (ROLLBACK_INCOMPLETE) after the person put their own backup
+ * back in the state folder: the version from before the update becomes current again and the
+ * pending journal is cleared. Nothing in or beside the state folder is copied, moved or deleted.
+ * Refused while the state folder is missing, empty or not a real folder.
+ */
+export async function acceptRestoredState({ root }) {
+  root = resolve(root);
+  const unlock = await lock(root);
+  try {
+    const journal = await readJson(join(root, JOURNAL));
+    if (!journal) return { ...(await readCurrent(root)), accepted: false };
+    const { stateDir } = journal;
+    const restoreFirst = (problem) =>
+      refuse(`The state folder ${stateDir} ${problem}: restore your backup there first`);
+    let info;
+    try {
+      info = await lstat(stateDir);
+    } catch (error) {
+      if (error.code === 'ENOENT') throw restoreFirst('does not exist');
+      throw error;
+    }
+    if (info.isSymbolicLink() || !info.isDirectory()) throw restoreFirst('is not a folder');
+    if ((await readdir(stateDir)).length === 0) throw restoreFirst('is empty');
+    if ((await readCurrent(root))?.version !== journal.from.version)
+      await writePointer(root, journal.from.version, journal.from.path, journal.from.adopted);
+    await rm(join(root, JOURNAL), { force: true });
+    await log(root, {
+      event: 'restored-state-accepted',
+      from: journal.to.version,
+      to: journal.from.version,
+      phase: journal.phase,
+      stateDir,
+    });
+    return { ...(await readCurrent(root)), accepted: true };
   } finally {
     await unlock();
   }

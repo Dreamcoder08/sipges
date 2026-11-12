@@ -7,6 +7,7 @@ import { Buffer } from 'node:buffer';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import {
   chmod,
+  cp,
   lstat,
   mkdir,
   mkdtemp,
@@ -997,4 +998,116 @@ test('rule 6: a state folder swapped for a link just before the copy rolls back 
     assert.deepEqual(await snapshot(moved), before);
     assert.equal((await readdir(root)).includes('update-journal.json'), false);
     assert.equal((await recover({ root })).recovered, false);
+  }));
+
+test("way out of a halt: after restoring one's own backup, --accept-restored-state clears the update", () =>
+  withTemp(async (dir) => {
+    const { root, state, releaseOf } = await fixture(dir);
+    const backup = join(dir, 'own-backup');
+    await cp(state, backup, { recursive: true, preserveTimestamps: true });
+    const wreck = async ({ stateDir }) => {
+      await writeFile(join(stateDir, 'pglite/PG_VERSION'), 'half migrated\n');
+      for (const name of await readdir(dirname(stateDir)))
+        if (name.includes('.pre-update-'))
+          await rm(join(dirname(stateDir), name), { recursive: true });
+      throw new Error('synthetic migration failure');
+    };
+    await assert.rejects(
+      update({ root, release: await releaseOf('1.1.0'), migrate: wreck, ready: noop }),
+      (error) => error.code === 'ROLLBACK_INCOMPLETE',
+    );
+    const journal = join(root, 'update-journal.json');
+    const pending = await readFile(journal, 'utf8');
+    const accept = () => node(updateCli, '--install', root, '--recover', '--accept-restored-state');
+    assert.equal(node(updateCli, '--install', root, '--recover').status, 3, 'still halted');
+
+    // Refused while the state folder is missing or empty; nothing changes.
+    await rename(state, join(dir, 'half-migrated-aside'));
+    const missing = accept();
+    assert.deepEqual([missing.status, missing.stdout], [1, '']);
+    assert.match(
+      missing.stderr,
+      /^Error: The state folder .+ does not exist: restore your backup there first\n$/,
+    );
+    await mkdir(state);
+    const empty = accept();
+    assert.deepEqual([empty.status, empty.stdout], [1, '']);
+    assert.match(
+      empty.stderr,
+      /^Error: The state folder .+ is empty: restore your backup there first\n$/,
+    );
+    assert.equal(await readFile(journal, 'utf8'), pending);
+
+    // The person put their own backup back: accepted as it is, never copied over or moved.
+    await rm(state, { recursive: true });
+    await cp(backup, state, { recursive: true, preserveTimestamps: true });
+    const restored = await snapshot(state);
+    const besides = await siblings(state);
+    const done = accept();
+    assert.deepEqual(
+      [done.status, done.stdout, done.stderr],
+      [0, 'Accepted the restored state folder; current version 1.0.0.\n', ''],
+    );
+    assert.deepEqual(await snapshot(state), restored);
+    assert.deepEqual(await siblings(state), besides);
+    assert.equal((await readdir(root)).includes('update-journal.json'), false);
+    assert.equal((await readCurrent(root)).version, '1.0.0');
+    const last = (await logLines(root)).at(-1);
+    assert.deepEqual(
+      [last.event, last.from, last.to, last.stateDir],
+      ['restored-state-accepted', '1.1.0', '1.0.0', state],
+    );
+    assert.deepEqual(
+      [accept().stdout, node(updateCli, '--install', root, '--recover').stdout],
+      [
+        'Nothing to recover; current version 1.0.0.\n',
+        'Nothing to recover; current version 1.0.0.\n',
+      ],
+    );
+    const alone = node(updateCli, '--install', root, '--accept-restored-state');
+    assert.deepEqual(
+      [alone.status, alone.stderr],
+      [1, 'Error: --accept-restored-state goes with --recover\n'],
+    );
+  }));
+
+test('CLI: a first install can trust the key that signed the release, and prints its fingerprint', () =>
+  withTemp(async (dir) => {
+    const { pair, releaseOf } = await fixture(dir);
+    const fresh = join(dir, 'fresh');
+    const state = join(dir, 'fresh-state');
+    await makeState(state);
+    const release = await releaseOf('2.0.0');
+    const fingerprint = createHash('sha256')
+      .update(pair.publicKey.export({ type: 'spki', format: 'der' }))
+      .digest('hex');
+    const args = ['--install', fresh, '--release', release, '--state', state];
+    const both = node(updateCli, ...args, '--trust-release-key', '--trust-key', release);
+    assert.deepEqual(
+      [both.status, both.stdout, both.stderr],
+      [1, '', 'Error: Use either --trust-key or --trust-release-key\n'],
+    );
+    const done = node(updateCli, ...args, '--trust-release-key');
+    assert.deepEqual(
+      [done.status, done.stdout, done.stderr],
+      [
+        0,
+        `Trusting the update key that signed this release (SHA-256 ${fingerprint}).\nInstalled 2.0.0\n`,
+        '',
+      ],
+    );
+    assert.equal((await inspectInstall(fresh)).complete, true);
+    const later = node(
+      updateCli,
+      '--install',
+      fresh,
+      '--release',
+      await releaseOf('2.1.0'),
+      '--trust-release-key',
+    );
+    assert.deepEqual(
+      [later.status, later.stderr],
+      [1, 'Error: --trust-release-key is only for a first install\n'],
+    );
+    assert.equal((await readCurrent(fresh)).version, '2.0.0');
   }));

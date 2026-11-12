@@ -8,12 +8,13 @@ import { generateKeyPairSync } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
+import { once } from 'node:events';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { createRelease, readRelease, loadPublicKey } from './release.mjs';
-import { install, readCurrent } from './updater.mjs';
-import { freePort } from './boot.mjs';
+import { findUpdate, install, readCurrent } from './updater.mjs';
+import * as boot from './boot.mjs';
 import { CHANNEL, launch } from './launcher.mjs';
 
 const launcherCli = join(dirname(fileURLToPath(import.meta.url)), 'launcher.mjs');
@@ -91,7 +92,7 @@ async function fixture(dir) {
 
 /** Starts the launcher and waits until the synthetic app answers. */
 async function started(options) {
-  const port = await freePort();
+  const port = await boot.freePort();
   const lines = [];
   const running = await launch({
     port,
@@ -392,7 +393,7 @@ test('after a rollback that did not finish, the launcher exits with code 3, a cl
     } finally {
       await run.stop();
     }
-    const port = await freePort();
+    const port = await boot.freePort();
     const cli = spawnSync(process.execPath, [launcherCli, '--install', root, '--port', `${port}`], {
       encoding: 'utf8',
       timeout: 5_000,
@@ -488,6 +489,7 @@ test('the server gets only the SIPGES settings the launcher sets, never inherite
         'SIPGES_HOST',
         'SIPGES_PGLITE_DIR',
         'SIPGES_PORT',
+        'SIPGES_REFERENCE_DIR',
         'SIPGES_UPLOAD_DIR',
         'SIPGES_WEB_DIR',
       ]);
@@ -495,4 +497,114 @@ test('the server gets only the SIPGES settings the launcher sets, never inherite
     } finally {
       await app.stop();
     }
+  }));
+
+test("SIPGES_REFERENCE_DIR reaches the server: the version's own references folder, from the allow-list", () =>
+  withTemp(async (dir) => {
+    const { root, state } = await fixture(dir);
+    const versionDir = join(root, 'versions', '1.0.0');
+    const base = {
+      ...process.env,
+      SIPGES_REFERENCE_DIR: join(dir, 'elsewhere'),
+      sipges_require_mfa: '0',
+    };
+    const app = await started({ root, baseEnv: base });
+    try {
+      await app.about();
+      const seen = await (await globalThis.fetch(`http://127.0.0.1:${app.port}/env`)).json();
+      assert.equal(seen.SIPGES_REFERENCE_DIR, join(versionDir, 'references'));
+      assert.deepEqual(Object.keys(seen), [...boot.LAUNCHER_ENV].sort());
+      const env = await boot.managedEnv({ versionDir, stateDir: state, port: 4321, base });
+      assert.equal(env.SIPGES_REFERENCE_DIR, join(versionDir, 'references'));
+      assert.equal(
+        'sipges_require_mfa' in env,
+        false,
+        'a lower-case SIPGES_ name is the same on Windows',
+      );
+      assert.deepEqual(
+        Object.keys(env)
+          .filter((key) => key.toUpperCase().startsWith('SIPGES_'))
+          .sort(),
+        boot.LAUNCHER_ENV.filter((key) => key !== 'SIPGES_DESKTOP_UPDATE_DIR'),
+      );
+    } finally {
+      await app.stop();
+    }
+  }));
+
+test('the check tries the newest release first and stops at the first that verifies', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    const oldest = await releaseOf('1.1.0');
+    const middle = await releaseOf('1.2.0');
+    const newest = await releaseOf('1.3.0');
+    // Damaged after signing: the newest is tried and skipped, the oldest is never read.
+    await writeFile(join(oldest, 'package', 'start.mjs'), '// changed after signing\n');
+    await writeFile(join(newest, 'package', 'start.mjs'), '// changed after signing\n');
+    const found = await findUpdate({ root, source });
+    assert.deepEqual(found.available, { version: '1.2.0', notes: null, release: middle });
+    assert.deepEqual(
+      found.skipped.map((s) => [s.release, s.reason]),
+      [[newest, 'File does not match the signed release: start.mjs']],
+    );
+  }));
+
+test('stopping SIPGES during the re-check at the click cancels the update', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    await releaseOf('1.1.0');
+    let calls = 0;
+    let open;
+    const gate = new Promise((resolveGate) => (open = resolveGate));
+    const find = async (args) => {
+      calls += 1;
+      if (calls === 2) await gate;
+      return findUpdate(args);
+    };
+    const app = await started({ root, source, find });
+    let stopped;
+    try {
+      await app.checked;
+      await app.about();
+      await request(root, '1.1.0');
+      while (calls < 2) await sleep(10);
+      stopped = app.stop();
+      assert.equal(await stopped, 0);
+    } finally {
+      open();
+      await app.stop();
+    }
+    for (let i = 0; i < 100 && !app.lines.some((l) => l.event === 'update_cancelled'); i += 1)
+      await sleep(10);
+    assert.deepEqual(
+      app.lines.map((l) => l.event),
+      ['started', 'update_check', 'update_cancelled'],
+    );
+    assert.deepEqual(app.lines.at(-1), { event: 'update_cancelled', version: '1.1.0' });
+    assert.deepEqual(await readdir(join(root, 'versions')), ['1.0.0']);
+    assert.equal((await readCurrent(root)).version, '1.0.0');
+    await assert.rejects(globalThis.fetch(`http://127.0.0.1:${app.port}/about`));
+  }));
+
+test('the launcher process ends as soon as SIPGES stops, without waiting out the stop grace time', () =>
+  withTemp(async (dir) => {
+    const { root } = await fixture(dir);
+    const port = await boot.freePort();
+    const child = spawn(process.execPath, [launcherCli, '--install', root, '--port', `${port}`], {
+      stdio: 'ignore',
+    });
+    const exited = once(child, 'exit');
+    for (let i = 0; i < 200; i += 1) {
+      const up = await globalThis
+        .fetch(`http://127.0.0.1:${port}/about`)
+        .then((res) => res.ok)
+        .catch(() => false);
+      if (up) break;
+      await sleep(25);
+    }
+    const stoppedAt = Date.now();
+    child.kill('SIGTERM');
+    const [code] = await exited;
+    assert.equal(code, 0);
+    assert.ok(Date.now() - stoppedAt < 5_000, `took ${Date.now() - stoppedAt} ms`);
   }));

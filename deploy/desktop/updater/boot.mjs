@@ -37,14 +37,31 @@ async function secret(stateDir, name) {
 }
 
 /**
- * The environment a managed version runs with: secrets from the state folder, loopback only,
- * plain-HTTP cookies, data under the state folder and the web app inside the version. No
- * inherited SIPGES_* setting reaches it: only the ones set here (and the launcher's update
- * channel), so the server and the migration boot see the same configuration.
+ * The only SIPGES_* variables a managed server sees: the allow-list of what the launcher owns.
+ * SIPGES_DESKTOP_UPDATE_DIR is set only by the running launcher, not by the migration boot.
  */
-export async function managedEnv({ versionDir, stateDir, port, base = process.env }) {
-  return {
-    ...Object.fromEntries(Object.entries(base).filter(([key]) => !key.startsWith('SIPGES_'))),
+export const LAUNCHER_ENV = Object.freeze([
+  'SIPGES_ADMIN_PASSWORD',
+  'SIPGES_COOKIE_SECURE',
+  'SIPGES_DATA_KEY',
+  'SIPGES_DESKTOP_UPDATE_DIR',
+  'SIPGES_HOST',
+  'SIPGES_PGLITE_DIR',
+  'SIPGES_PORT',
+  'SIPGES_REFERENCE_DIR',
+  'SIPGES_UPLOAD_DIR',
+  'SIPGES_WEB_DIR',
+]);
+
+/**
+ * The environment a managed version runs with: secrets from the state folder, loopback only,
+ * plain-HTTP cookies, data under the state folder, and the web app and reference files inside
+ * the version (the folder the package's start.mjs defaults to). No inherited SIPGES_* setting
+ * reaches it, in any letter case (Windows names are case-insensitive): only LAUNCHER_ENV, so the
+ * server and the migration boot see the same configuration.
+ */
+export async function managedEnv({ versionDir, stateDir, port, channel, base = process.env }) {
+  const owned = {
     SIPGES_DATA_KEY: await secret(stateDir, 'data-key'),
     SIPGES_ADMIN_PASSWORD: await secret(stateDir, 'admin-password'),
     SIPGES_COOKIE_SECURE: '0',
@@ -53,7 +70,15 @@ export async function managedEnv({ versionDir, stateDir, port, base = process.en
     SIPGES_PGLITE_DIR: join(stateDir, 'pglite'),
     SIPGES_UPLOAD_DIR: join(stateDir, 'uploads'),
     SIPGES_WEB_DIR: join(versionDir, 'web'),
+    SIPGES_REFERENCE_DIR: join(versionDir, 'references'),
+    ...(channel ? { SIPGES_DESKTOP_UPDATE_DIR: channel } : {}),
   };
+  for (const key of Object.keys(owned))
+    if (!LAUNCHER_ENV.includes(key)) throw new Error(`${key} is not a launcher variable`);
+  const inherited = Object.entries(base).filter(
+    ([key]) => !key.toUpperCase().startsWith('SIPGES_'),
+  );
+  return { ...Object.fromEntries(inherited), ...owned };
 }
 
 export { freePort, status as httpStatus };
@@ -91,7 +116,8 @@ export function bootCheck({ logFile, timeoutMs = 120_000 }) {
     } finally {
       if (!exited) {
         child.kill('SIGTERM');
-        await Promise.race([once(child, 'exit'), sleep(15_000)]);
+        // Unreferenced: the grace timer must not keep the process alive after the child exited.
+        await Promise.race([once(child, 'exit'), sleep(15_000, undefined, { ref: false })]);
         if (!exited) child.kill('SIGKILL');
       }
       await output.close();

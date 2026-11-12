@@ -138,8 +138,13 @@ export async function launch({
 
   const start = async () => {
     const current = await readCurrent(root);
-    const env = await managedEnv({ versionDir: current.dir, stateDir, port, base: baseEnv });
-    env.SIPGES_DESKTOP_UPDATE_DIR = channel;
+    const env = await managedEnv({
+      versionDir: current.dir,
+      stateDir,
+      port,
+      channel,
+      base: baseEnv,
+    });
     const started = spawn(process.execPath, [join(current.dir, 'start.mjs')], {
       cwd: current.dir,
       env,
@@ -164,7 +169,9 @@ export async function launch({
     if (!running) return;
     const exited = once(running, 'exit');
     running.kill('SIGTERM');
-    if ((await Promise.race([exited.then(() => true), sleep(STOP_GRACE_MS)])) !== true) {
+    // Unreferenced: the grace timer must not keep the launcher alive after the server exited.
+    const grace = sleep(STOP_GRACE_MS, undefined, { ref: false });
+    if ((await Promise.race([exited.then(() => true), grace])) !== true) {
       running.kill('SIGKILL');
       await exited;
     }
@@ -184,6 +191,11 @@ export async function launch({
   const apply = async (version) => {
     const release = verified.release;
     const refused = await stillVerified(version, release);
+    // SIPGES was stopped during the re-check: the click no longer counts.
+    if (stopping) {
+      log('update_cancelled', { version });
+      return;
+    }
     if (refused) {
       verified = null;
       await publish((await readCurrent(root)).version);
