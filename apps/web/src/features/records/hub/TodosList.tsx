@@ -45,6 +45,8 @@ export const TodosList = ({
   density,
   selected,
   docked,
+  letter,
+  onLetter: setLetter,
 }: {
   rows: readonly RecordSummary[];
   onOpen: (record: OpenRecord, way: OpenWay) => void;
@@ -54,11 +56,13 @@ export const TodosList = ({
   selected: OpenRecord | null;
   /** The sheet docks beside the table (desktop): moving the selection opens the next record. */
   docked: boolean;
+  /** The A–E filter, owned by the hub so the URL can carry it. */
+  letter: VerificationLetter | null;
+  onLetter: (letter: VerificationLetter | null) => void;
 }) => {
   const captionId = useId();
   const [focused, setFocused] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [letter, setLetter] = useState<VerificationLetter | null>(null);
   const [validation, setValidation] = useState<string | null>(null);
   const visible = rows.filter(
     (row) =>

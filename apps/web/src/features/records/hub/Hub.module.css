@@ -80,7 +80,6 @@
 .count {
   margin-left: var(--space-1);
   font-variant-numeric: tabular-nums;
-  opacity: 0.75;
 }
 /* One row: search and «Filtros»; density and the count at the right end. On a phone the search
    shares its row with «Filtros» and density with the count: two rows before the list. */

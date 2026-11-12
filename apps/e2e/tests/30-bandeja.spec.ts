@@ -25,7 +25,7 @@ const seed = async (page: Page, stamp: number) => {
 /**
  * Bandeja › Pendientes at 1440 px (closure-roadmap T31 slice 6, direction 02): one 36 px row
  * per item under a sticky header, the item beside the list and named in the URL, a reload that
- * keeps it, Escape back to the list, and category filters read from `?clase=`.
+ * keeps it, Escape back to the list, and Ctrl K filters that land on `?clase=`.
  */
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`Bandeja at 1440 px: dense rows, linkable detail, Escape back to the list (${colorScheme})`, async ({
@@ -38,10 +38,30 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await signInToProject(page, admin, DEFAULT_SCOPE);
     const [, second] = await seed(page, stamp);
 
-    // A shared filter URL opens the matching pending category.
-    await page.goto('/bandeja?clase=calidad');
+    // Ctrl K: the «Filtrar» commands of Bandeja navigate to the filtered URL.
+    await page.goto('/bandeja');
     const box = page.getByRole('listbox', { name: 'Pendientes de decisión' });
     await expect(box.getByRole('option').first()).toBeVisible();
+    const selectedChip = page
+      .getByRole('group', { name: 'Bandeja', exact: true })
+      .getByRole('button', { pressed: true });
+    const colors = await selectedChip.evaluate((node) => {
+      const probe = document.createElement('span');
+      probe.style.backgroundColor = 'var(--color-accent-tint)';
+      document.body.append(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { actual: getComputedStyle(node).backgroundColor, expected };
+    });
+    expect(colors.actual).toBe(colors.expected);
+    await page.keyboard.press('Control+k');
+    const palette = page.getByRole('dialog', { name: 'Búsqueda global' });
+    await palette
+      .getByRole('group', { name: 'Filtrar' })
+      .getByRole('option', { name: 'Filtrar Bandeja: calidad de datos' })
+      .click();
+    await expect(palette).toBeHidden();
+    await expect(page).toHaveURL(/\/bandeja\?clase=calidad$/);
     await expect(page.getByRole('combobox', { name: 'Filtrar pendientes' })).toHaveValue('calidad');
 
     const row = box.getByRole('option', { name: new RegExp(second ?? '') });
