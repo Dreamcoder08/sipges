@@ -101,12 +101,15 @@ export type IdentityStore = {
     audit: SessionAudit & { readonly detail: string },
   ): Promise<boolean>;
   /**
-   * Deletes every session of `username` except `keepTokenHash` and appends the audit row, whose
-   * detail depends on the count, atomically. Returns the count.
+   * Deletes every session of `username` still active at `at` except `keepTokenHash`, the ones
+   * listSessions shows, and appends the audit row, whose detail depends on the count, atomically.
+   * Expired rows are left to purgeExpiredSessions. No audit row when the count is 0. Returns the
+   * count.
    */
   endOtherSessions(
     username: string,
     keepTokenHash: string,
+    at: Date,
     tenantId: string,
     audit: SessionAudit & { readonly detail: (count: number) => string },
   ): Promise<number>;

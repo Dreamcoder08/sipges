@@ -41,14 +41,19 @@ func (s Store) EndSession(ctx context.Context, username, tokenHash, tenantID str
 	})
 }
 
-// EndOtherSessions deletes every session of username but keepTokenHash and audits the count.
-func (s Store) EndOtherSessions(ctx context.Context, username, keepTokenHash, tenantID string, audit func(int) application.SessionAudit) (int, error) {
+// EndOtherSessions deletes every session of username still active at `at` but keepTokenHash
+// and audits the count; expired rows wait for the purge, and ending none audits nothing.
+func (s Store) EndOtherSessions(ctx context.Context, username, keepTokenHash string, at time.Time, tenantID string, audit func(int) application.SessionAudit) (int, error) {
 	return transaction(ctx, s.DB, func(tx pgx.Tx) (int, error) {
-		tag, err := tx.Exec(ctx, `DELETE FROM sessions WHERE username = $1 AND token_hash <> $2`, username, keepTokenHash)
+		tag, err := tx.Exec(ctx, `DELETE FROM sessions
+		  WHERE username = $1 AND token_hash <> $2 AND expires_at > $3::timestamptz`, username, keepTokenHash, at)
 		if err != nil {
 			return 0, fmt.Errorf("end other sessions: %w", err)
 		}
 		count := int(tag.RowsAffected())
+		if count == 0 {
+			return 0, nil
+		}
 		return count, auditSessions(ctx, tx, tenantID, audit(count))
 	})
 }

@@ -331,13 +331,18 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
     });
   },
 
-  async endOtherSessions(username, keepTokenHash, tenantId, audit) {
+  async endOtherSessions(username, keepTokenHash, at, tenantId, audit) {
     return sql.transaction(async (tx) => {
+      // Only the active sessions listSessions shows; expired rows wait for the purge.
       const deleted = await tx.query(
-        'DELETE FROM sessions WHERE username = $1 AND token_hash <> $2 RETURNING 1',
-        [username, keepTokenHash],
+        `DELETE FROM sessions
+          WHERE username = $1 AND token_hash <> $2 AND expires_at > $3::timestamptz
+          RETURNING 1`,
+        [username, keepTokenHash, at],
       );
-      await auditSessions(tx, tenantId, audit, audit.detail(deleted.length));
+      if (deleted.length > 0) {
+        await auditSessions(tx, tenantId, audit, audit.detail(deleted.length));
+      }
       return deleted.length;
     });
   },

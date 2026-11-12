@@ -47,11 +47,17 @@ func (m *memorySessions) EndSession(_ context.Context, username, tokenHash, _ st
 	return true, nil
 }
 
-func (m *memorySessions) EndOtherSessions(_ context.Context, username, keep, _ string, audit func(int) application.SessionAudit) (int, error) {
+// EndOtherSessions keeps the store's contract: only sessions active at `at` end, expired rows
+// wait for the purge, and ending none appends no audit row.
+func (m *memorySessions) EndOtherSessions(_ context.Context, username, keep string, at time.Time, _ string, audit func(int) application.SessionAudit) (int, error) {
 	before := len(m.rows)
-	m.rows = slices.DeleteFunc(m.rows, func(s session) bool { return s.username == username && s.TokenHash != keep })
+	m.rows = slices.DeleteFunc(m.rows, func(s session) bool {
+		return s.username == username && s.TokenHash != keep && s.ExpiresAt.After(at)
+	})
 	count := before - len(m.rows)
-	m.audit = append(m.audit, audit(count))
+	if count > 0 {
+		m.audit = append(m.audit, audit(count))
+	}
 	return count, nil
 }
 
@@ -180,9 +186,29 @@ func TestEndOtherSessionsKeepsThisOne(t *testing.T) {
 	if count != 0 {
 		t.Fatalf("second count = %d", count)
 	}
-	details := []string{store.audit[0].Detail, store.audit[1].Detail}
-	want := []string{"2 sesiones cerradas en otros dispositivos por admin", "0 sesiones cerradas en otros dispositivos por admin"}
-	if !reflect.DeepEqual(details, want) || store.audit[0].Action != "SESSIONS_END_OTHERS" {
+	// Ending none writes no audit row (A1).
+	if len(store.audit) != 1 || store.audit[0].Action != "SESSIONS_END_OTHERS" ||
+		store.audit[0].Detail != "2 sesiones cerradas en otros dispositivos por admin" {
 		t.Fatalf("audit = %+v", store.audit)
+	}
+}
+
+// The count is of active sessions only, as the list shows them (A2): the service hands the
+// store its clock, so a session expired but not yet purged is neither ended nor counted.
+func TestEndOtherSessionsCountsOnlyActiveOnes(t *testing.T) {
+	service, store := fixture()
+	expired := tokens{}.Hash("expired")
+	store.rows = append(store.rows, session{"admin", application.StoredSession{
+		TokenHash: expired, CreatedAt: now.Add(-9 * time.Hour), ExpiresAt: now.Add(-time.Hour),
+	}})
+	count, err := service.EndOtherSessions(t.Context(), admin, tokenA1, "SIPGES/PRJ")
+	if err != nil || count != 2 {
+		t.Fatalf("count=%d err=%v", count, err)
+	}
+	if !slices.ContainsFunc(store.rows, func(s session) bool { return s.TokenHash == expired }) {
+		t.Fatal("an expired session was ended")
+	}
+	if got := store.audit[0].Detail; got != "2 sesiones cerradas en otros dispositivos por admin" {
+		t.Fatalf("detail = %q", got)
 	}
 }

@@ -42,9 +42,10 @@ type SessionStore interface {
 	// EndSession deletes one session only if it belongs to username and appends the audit row
 	// to tenantID's trail, in one transaction. False when nothing was deleted (no audit row).
 	EndSession(ctx context.Context, username, tokenHash, tenantID string, audit SessionAudit) (bool, error)
-	// EndOtherSessions deletes every session of username except keepTokenHash and appends the
-	// audit row for the count, atomically.
-	EndOtherSessions(ctx context.Context, username, keepTokenHash, tenantID string, audit func(count int) SessionAudit) (int, error)
+	// EndOtherSessions deletes every session of username still active at `at` except
+	// keepTokenHash, the ones ListSessions shows, and appends the audit row for the count,
+	// atomically. Expired rows are left to the purge. No audit row when the count is 0.
+	EndOtherSessions(ctx context.Context, username, keepTokenHash string, at time.Time, tenantID string, audit func(count int) SessionAudit) (int, error)
 }
 
 // sessionID is the shape of SessionTokens.PublicID; anything else cannot name a session.
@@ -103,10 +104,11 @@ func (s *Service) EndSession(ctx context.Context, actor *domain.Principal, curre
 }
 
 // EndOtherSessions is endOtherSessions («cerrar sesión en todos los demás dispositivos»): keeps
-// only the requesting session and returns how many ended.
+// only the requesting session and returns how many active ones ended, as the list shows them.
+// Ending none writes no audit row, so any role repeating it cannot fill the trail.
 func (s *Service) EndOtherSessions(ctx context.Context, actor *domain.Principal, currentToken, tenantID string) (int, error) {
 	at := s.now()
-	return s.deps.Sessions.EndOtherSessions(ctx, actor.Username, s.deps.Tokens.Hash(currentToken), tenantID,
+	return s.deps.Sessions.EndOtherSessions(ctx, actor.Username, s.deps.Tokens.Hash(currentToken), at, tenantID,
 		func(count int) SessionAudit {
 			noun := "sesiones cerradas"
 			if count == 1 {

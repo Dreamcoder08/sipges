@@ -280,18 +280,23 @@ export const createIdentityService = ({
       return ended ? ok({ current }) : err('missing');
     },
 
-    /** «Cerrar sesión en todos los demás dispositivos»: keeps only the requesting session. */
+    /**
+     * «Cerrar sesión en todos los demás dispositivos»: keeps only the requesting session and
+     * counts the active ones it ended, as the list shows them. Ending none writes no audit row,
+     * so any role repeating it cannot fill the trail.
+     */
     async endOtherSessions(
       actor: Identity,
       currentToken: string,
       tenantId: string,
     ): Promise<number> {
-      return store.endOtherSessions(actor.username, tokens.hash(currentToken), tenantId, {
+      const now = clock.now();
+      return store.endOtherSessions(actor.username, tokens.hash(currentToken), now, tenantId, {
         action: 'SESSIONS_END_OTHERS',
         recordId: actor.username,
         detail: (count) =>
           `${count} ${count === 1 ? 'sesión cerrada' : 'sesiones cerradas'} en otros dispositivos por ${actor.username}`,
-        at: clock.now(),
+        at: now,
       });
     },
 
