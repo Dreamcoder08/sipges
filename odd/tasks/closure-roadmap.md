@@ -632,3 +632,11 @@ Not chosen in S2. Each stays open in its own document.
   dense small type, palette shortcuts shown in place (Linear, Raycast). Decision taken by the parent under the owner's
   delegation: build that mix in seven slices; slice 1 is tokens and states, common to every direction. Also: #401
   split into the stack #403 → #413; native review approved slices 04 and 09 with advisories, fixed in #413.
+- L12 — 2026-11-12. Owner: «implementa esto , https://github.com/GoogleChrome/modern-web-guidance». Done in draft PR
+  #415 (stacked on #414): the `modern-web-guidance` skill vendored byte-identical (upstream 4dd96834, Apache-2.0) with
+  provenance in `skills-lock.json`; `legacy-scan apps/web/src` went from 1 finding to 0 (map sheet animates its height
+  with `interpolate-size`); guides `ime-safe-enter-submit` and `scrollability-affordance-hints` applied on Inicio.
+  Checked and left as follow-ups: native `<dialog>` for ConfirmDialog and Sheet, interest-triggered tooltips,
+  responsive table columns, `:user-invalid` field feedback, IME-safe Enter in SearchPalette. T17 remainder (Cuenta)
+  built in draft PR #416: own sessions list, end one, end all others, in TS and Go with parity (2589/2589, 0 unproved
+  write routes); independent verifier found no blockers, its advisories fixed test-first; ADR 0004 addendum.
