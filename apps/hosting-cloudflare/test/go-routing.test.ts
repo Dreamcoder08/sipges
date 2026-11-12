@@ -135,6 +135,8 @@ describe('Go container', () => {
       'SIPGES_SEMANTIC_SEARCH',
       'SIPGES_ANALYST_PROVIDER',
       'SIPGES_ANALYST_MODEL',
+      'SIPGES_ANALYST_BASE_URL',
+      'SIPGES_ANALYST_API_KEY',
       'ANTHROPIC_BASE_URL',
       'ANTHROPIC_API_KEY',
       'ANTHROPIC_AUTH_TOKEN',
@@ -257,6 +259,8 @@ describe('Wrangler configuration', () => {
     // The id is set at deploy, by go-trial-config.mjs, which refuses production's.
     expect(go.hyperdrive).toBeUndefined();
     expect(go.triggers).toBeUndefined();
-    expect(go.vars.SIPGES_ALLOWED_HOSTS).not.toBe(production.vars.SIPGES_ALLOWED_HOSTS);
+    // Both hosts are local placeholders; the deploy writes each from its own variable
+    // (SIPGES_PUBLIC_HOST, SIPGES_GO_PUBLIC_HOST), see go-trial-config.test.ts.
+    expect(go.vars.SIPGES_ALLOWED_HOSTS).toBe('localhost');
   });
 });

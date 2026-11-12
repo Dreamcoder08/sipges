@@ -44,6 +44,7 @@ import {
 } from './contexts/analyst/application/index.ts';
 import {
   createClaudeNarrator,
+  createOpenAiCompatibleNarrator,
   createSqlProposalStore,
 } from './contexts/analyst/infrastructure/index.ts';
 import {
@@ -384,9 +385,11 @@ export const buildContainer = async (deps: {
     narrator:
       deps.narrator !== undefined
         ? deps.narrator
-        : deps.config.analyst
+        : deps.config.analyst?.provider === 'anthropic'
           ? createClaudeNarrator({ model: deps.config.analyst.model })
-          : null,
+          : deps.config.analyst?.provider === 'openai-compatible'
+            ? createOpenAiCompatibleNarrator(deps.config.analyst)
+            : null,
     egress,
     clock: deps.clock,
   });

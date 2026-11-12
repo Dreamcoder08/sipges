@@ -32,6 +32,9 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # Repository variables of whoever owns this fork (docs/deployment/own-instance.md).
+      SIPGES_PUBLIC_HOST: ${{ vars.SIPGES_PUBLIC_HOST }}
+      SIPGES_HYPERDRIVE_ID: ${{ vars.SIPGES_HYPERDRIVE_ID }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +45,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+      # Stops before building when a repository variable is missing.
+      - name: Check deploy variables
+        run: node apps/hosting-cloudflare/deploy-config.mjs --check
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @sipges/hosting-cloudflare build
       # Before the new code goes live: migrations are additive, so the running version keeps working.
@@ -49,7 +55,7 @@ jobs:
         run: pnpm --filter @sipges/hosting-cloudflare migrate
         env:
           SIPGES_MIGRATION_DATABASE_URL: ${{ secrets.SIPGES_MIGRATION_DATABASE_URL }}
-      # deploy:worker also re-asserts Hyperdrive query caching off (see the deployment guide).
+      # deploy:worker renders the Worker config from the variables and re-asserts Hyperdrive query caching off (see the deployment guide).
       - name: Deploy the Worker
         run: pnpm --filter @sipges/hosting-cloudflare run deploy:worker
       # /health/ready runs SELECT 1 through Hyperdrive (5 s timeout). Like /health, it fails
@@ -59,7 +65,7 @@ jobs:
         id: smoke
         run: |
           for attempt in 1 2 3 4 5 6; do
-            if curl -fsS --max-time 20 https://sipges.dreamcoder-dev08.workers.dev/health/ready; then
+            if curl -fsS --max-time 20 "https://${SIPGES_PUBLIC_HOST}/health/ready"; then
               exit 0
             fi
             echo "Attempt $attempt failed; retrying in 10 s"
@@ -73,7 +79,7 @@ jobs:
         id: smoke_go
         run: node apps/hosting-cloudflare/smoke-go.mjs
         env:
-          SIPGES_SMOKE_URL: https://sipges.dreamcoder-dev08.workers.dev
+          SIPGES_SMOKE_URL: https://${{ vars.SIPGES_PUBLIC_HOST }}
       # A failed deploy must not stay live. Rollback restores the previous Worker version only:
       # migrations are additive and stay applied (docs/deployment/cloudflare-workers.md).
       - name: Roll back the Worker

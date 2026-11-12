@@ -24,7 +24,7 @@ Cloudflare Workers is the only SIPGES host (ADR 0028; the Vercel host was retire
 plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
 verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
 Hyperdrive connection and migrations already passed after a binding-only TLS correction.
-The Worker runs at `https://sipges.dreamcoder-dev08.workers.dev` against a Neon database through
+The reference instance, the repository owner's own deployment, runs at `https://sipges.dreamcoder-dev08.workers.dev`; a fork deploys its own with its own accounts ([own-instance guide](own-instance.md)). It runs against a Neon database through
 Hyperdrive and holds no real data (ODD L22). The end-to-end suite against `wrangler dev`
 (T4) passes locally (93 passed, 1 optional skip; L20) and the steps are in the
 [Workers deployment guide](cloudflare-workers.md).
@@ -142,7 +142,7 @@ Names only. Values live in the host's secret store or a root-only env file, neve
 | `SIPGES_S3_ENDPOINT` / `SIPGES_S3_REGION` / `SIPGES_S3_BUCKET` | config | `s3` | HTTPS endpoint |
 | `SIPGES_S3_ACCESS_KEY_ID` / `SIPGES_S3_SECRET_ACCESS_KEY` | **secret** | `s3` | Key scoped to this bucket only |
 | `SIPGES_OLLAMA_URL` / `SIPGES_OLLAMA_EMBED_MODEL` | config | no | Semantic analysis. Without it, automatic mode falls back to rules. |
-| `SIPGES_ANALYST_PROVIDER` / `SIPGES_ANALYST_MODEL` / `ANTHROPIC_API_KEY` | config + secret | no | Optional prose for analyst briefings (ADR 0013). Off by default; sends non-restricted briefing text to Anthropic, so enable only with the data owner's approval. Without it, briefings stay extractive. |
+| `SIPGES_ANALYST_PROVIDER` / `SIPGES_ANALYST_MODEL` / `ANTHROPIC_API_KEY`, or `SIPGES_ANALYST_BASE_URL` / `SIPGES_ANALYST_API_KEY` with `openai-compatible` | config + secret | no | Optional prose for analyst briefings (ADR 0013). Off by default; sends non-restricted briefing text to the configured provider (Anthropic or any OpenAI-compatible endpoint such as DeepSeek, OpenAI or a local Ollama), so enable an external provider only with the data owner's approval. Without it, briefings stay extractive. |
 | `NODE_ENV` | config | yes | `production` |
 
 ADR 0009 está integrado: configura `SIPGES_ALLOWED_HOSTS` con el host público. `SIPGES_REQUIRE_MFA` está activado por defecto; el administrador puede inscribir el autenticador en el primer acceso. Cada escritura exige `Origin` o `Referer`. La suite de paridad/cookies usa explícitamente MFA opcional; `03-mfa-required` comprueba por separado el alta obligatoria y el siguiente inicio de sesión.

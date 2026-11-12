@@ -1,0 +1,38 @@
+name: Idea o mejora
+description: Algo que SIPGES debería hacer o hacer mejor.
+title: '[Idea] '
+labels: [idea]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cuenta el problema antes que la solución: qué intentas lograr y qué te lo impide hoy.
+        No incluyas datos reales del proyecto; usa ejemplos inventados.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué necesitas lograr
+      description: El objetivo de trabajo, con tus palabras.
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: Qué te lo impide hoy
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Cómo te imaginas la solución
+      description: Opcional. Una referencia de otra app o un boceto ayudan.
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Cuánto te afecta
+      options:
+        - Me bloquea
+        - Me hace perder tiempo
+        - Sería bueno tenerlo
+    validations:
+      required: true

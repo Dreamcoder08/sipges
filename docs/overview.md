@@ -20,7 +20,7 @@ Las enmiendas de los ADRs sustituyeron Drizzle por SQL explícito y descartaron 
 
 ## Estado
 
-Versión publicada: **v1.1.0** (ver [CHANGELOG](../CHANGELOG.md) y las releases de GitHub). La aplicación se publica en Cloudflare Workers (Hyperdrive + Neon, R2), el único host de SIPGES: <https://sipges.dreamcoder-dev08.workers.dev>. La demo anterior en Vercel se retiró ([ADR 0029](adr/0029-retire-vercel-host.md)).
+Versión publicada: **v1.1.0** (ver [CHANGELOG](../CHANGELOG.md) y las releases de GitHub). La aplicación se publica en Cloudflare Workers (Hyperdrive + Neon, R2), el único host de SIPGES. <https://sipges.dreamcoder-dev08.workers.dev> es la instancia de referencia del propietario del repositorio; quien hace un fork despliega la suya, con sus propias cuentas, siguiendo la [guía de instancia propia](deployment/own-instance.es.md). La demo anterior en Vercel se retiró ([ADR 0029](adr/0029-retire-vercel-host.md)).
 
 - 14 módulos de registros (eventos, actores, directorio, demandas y compromisos, narrativas, fuentes, alertas y acciones, intereses, diálogos, oportunidades, hechos y AARC) con alta, búsqueda, ficha, edición, eliminación, importación CSV, evidencias, vínculos e historial.
 - Dashboard y vista «Hoy», centro gerencial, inteligencia de redes, mapa territorial y ubicación geoespacial con mapa satelital, cronología, análisis situacional, inteligencia estratégica, IRSA, validación, automatizaciones e integración.
