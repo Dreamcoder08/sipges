@@ -5,8 +5,8 @@ import { typeLabel } from './types.ts';
 import { ValidationChip } from './VerificationChip.tsx';
 
 /**
- * Todos below 1024 px (closure-roadmap T31, direction 01): one two-line row per record instead
- * of a table squeezed into a phone. Line 1 is the title on one line and the validation status;
+ * Todos and the type tabs below 1024 px (closure-roadmap T31, direction 01): one two-line row
+ * per record instead of a table squeezed into a phone. Line 1 is the title on one line and the validation status;
  * line 2 the type, place, date and the A–E letter. The whole row is one button that opens the
  * record sheet; what a record lacks is left out rather than shown as a dash.
  */

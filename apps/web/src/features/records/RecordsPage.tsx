@@ -24,6 +24,8 @@ import { ConfirmDelete } from './ConfirmDelete.tsx';
 import { type ActiveFilter, ActiveFilters, FilterSheet } from './FilterSheet.tsx';
 import { RecordDetail } from './RecordDetail.tsx';
 import { RecordCell, isCompactCell } from './RecordCell.tsx';
+import { RecordRows } from './hub/RecordRows.tsx';
+import { summarize } from './hub/summary.ts';
 import { RecordEditor } from './RecordEditor.tsx';
 import { canWriteRecords, fieldValue } from './model.ts';
 import { FACETS, MODULES, type RecordModule } from './modules.ts';
@@ -39,6 +41,8 @@ type Props = {
   onView?: (id: string) => void;
   /** Open with the new-record form or the CSV import already showing (the hub's «Nuevo registro» / «Importar»). */
   start?: 'create' | 'import' | undefined;
+  /** With `onView`: two-line rows that open the hub's sheet instead of the table (below 1024 px). */
+  twoLineRows?: boolean;
 };
 const message = (error: unknown) =>
   !error
@@ -94,6 +98,7 @@ const RecordsWorkspace = ({
   role,
   onView,
   start,
+  twoLineRows,
 }: Props) => {
   const [pendingActors, setPendingActors] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -475,7 +480,13 @@ const RecordsWorkspace = ({
                     </Button>
                   </nav>
                 ) : null}
-                {visible.length ? (
+                {visible.length && twoLineRows && onView ? (
+                  <RecordRows
+                    rows={pageRows.map((row) => summarize(module, row))}
+                    label={`Registros de ${definition.label.toLowerCase()} del proyecto activo`}
+                    onOpen={({ id }) => onView(id)}
+                  />
+                ) : visible.length ? (
                   <div
                     className={styles.tableWrap}
                     tabIndex={0}
