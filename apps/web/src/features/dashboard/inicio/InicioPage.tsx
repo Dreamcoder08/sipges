@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useState } from 'react';
+import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'react';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
+import { useScrollHints } from '../../../shared/lib/scroll-hints.ts';
 import { LevelPill } from '../../../shared/ui/Badges.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import { dashboardQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
@@ -73,6 +74,8 @@ export const InicioPage = ({
   const [question, setQuestion] = useState('');
   const fieldId = useId();
   const suggestId = useId();
+  const chips = useRef<HTMLUListElement>(null);
+  useScrollHints(chips);
   const summary = useQuery(dashboardQuery(scope));
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
   const events = useQuery(moduleRecordsQuery('eventos', scope));
@@ -89,8 +92,11 @@ export const InicioPage = ({
     ask();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+    if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
+    // The Enter that confirms an IME candidate must not send: Safari reports it as keyCode 229
+    // with isComposing already false (modern-web-guidance ime-safe-enter-submit).
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
     ask();
   };
 
@@ -137,7 +143,8 @@ export const InicioPage = ({
           <p id={suggestId} className={styles.suggestLabel}>
             Prueba con
           </p>
-          <ul className={styles.chips} aria-labelledby={suggestId}>
+          <ul ref={chips} className={styles.chips} aria-labelledby={suggestId}>
+            <li className={styles.edge} aria-hidden="true" />
             {SUGGESTIONS.map((text) => (
               <li key={text}>
                 <button type="button" className={styles.chip} onClick={() => setQuestion(text)}>
@@ -145,6 +152,7 @@ export const InicioPage = ({
                 </button>
               </li>
             ))}
+            <li className={styles.edge} aria-hidden="true" />
           </ul>
         </div>
       </section>

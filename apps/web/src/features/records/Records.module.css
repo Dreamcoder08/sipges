@@ -409,15 +409,13 @@
 .panelHeader h3 {
   margin: 0;
 }
+/* «Filtros» and the chips of the facets in force; the selects themselves live in the sheet. */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
   margin-bottom: var(--space-3);
-}
-.filters > .field {
-  min-width: min(12rem, 100%);
-  flex: 1;
 }
 .viewer {
   flex-basis: 100%;
