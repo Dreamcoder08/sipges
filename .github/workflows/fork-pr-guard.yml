@@ -1,0 +1,33 @@
+name: Fork PR guard
+
+# Engram memory chunks (.engram/) can carry context from a fork owner's real data. They travel
+# from this repository to forks, never back: a pull request from a fork that touches .engram/
+# fails here. Uses pull_request (not pull_request_target), so fork code runs without secrets.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  memory:
+    name: No Engram memory from forks
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Refuse .engram/ changes
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE_SHA...$HEAD_SHA" | grep -E '^\.engram/' || true)
+          if [ -n "$changed" ]; then
+            echo "::error::Pull requests from forks must not change .engram/ (memory may hold real-data context). Remove these files from the branch:"
+            echo "$changed"
+            exit 1
+          fi
+          echo "No .engram/ changes."
