@@ -1,5 +1,5 @@
 import { MapboxOverlay } from '@deck.gl/mapbox';
-import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { GeoJsonLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import {
   type LngLatBoundsLike,
   Map as MapLibreMap,
@@ -99,7 +99,8 @@ const DISTRICTS = {
 const EMPTY = { type: 'FeatureCollection' as const, features: [] };
 
 const ALPHA = { observado: 235, estimado: 120, escenario: 0 } as const;
-const RADIUS = { current: 10, normal: 7, dim: 5 } as const;
+// Wide enough for the list number the marker carries (up to three digits).
+const RADIUS = { current: 13, normal: 11, dim: 9 } as const;
 
 /**
  * MapLibre GL JS basemap with a deck.gl overlay (ODD geospatial-timeline T2, ADR 0017): smooth
@@ -283,7 +284,7 @@ const GeoCanvas = ({
           radiusUnits: 'pixels',
           lineWidthUnits: 'pixels',
           getPosition: (p) => [p.at[0], p.at[1]],
-          getRadius: (p) => (p.id === selectedPoint ? 12 : RADIUS[p.emphasis]),
+          getRadius: (p) => (p.id === selectedPoint ? 14 : RADIUS[p.emphasis]),
           getFillColor: (p) => [...p.color, p.emphasis === 'dim' ? 70 : ALPHA[p.evidence]],
           getLineColor: (p) =>
             p.id === selectedPoint
@@ -300,6 +301,21 @@ const GeoCanvas = ({
           onClick: ({ object }) => {
             if (object) handlers.current.onSelectPoint(object.id);
           },
+        }),
+        // The number of the record's row in the list, drawn over its point.
+        new TextLayer<CanvasPoint>({
+          id: 'numeros',
+          data: points.filter((p) => p.label),
+          getPosition: (p) => [p.at[0], p.at[1]],
+          getText: (p) => p.label ?? '',
+          characterSet: '0123456789',
+          getSize: (p) => ((p.label?.length ?? 0) > 2 ? 10 : 12),
+          fontWeight: 800,
+          fontSettings: { sdf: true },
+          getColor: [...paint.selected],
+          outlineWidth: 3,
+          outlineColor: [...paint.halo, 255],
+          updateTriggers: { getColor: theme },
         }),
       ],
     });

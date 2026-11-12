@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { localityOf } from './localities.ts';
-import { atCursor, filterPoints, mapPoints, monthlyCounts, monthsOf } from './territorial-model.ts';
+import {
+  atCursor,
+  filterPoints,
+  mapPoints,
+  monthlyCounts,
+  monthsOf,
+  numbered,
+} from './territorial-model.ts';
 
 describe('territorial map model', () => {
   it('finds the locality named in a free-text territory, longest name first', () => {
@@ -28,7 +35,8 @@ describe('territorial map model', () => {
       Demandas: [{ _id: 'D-1', Territorio: 'x', Latitud: '-5.6', Longitud: '-80.9' }],
       Actores: [],
     });
-    expect(unlocated).toBe(1);
+    // Not dropped: kept with what the «Sin ubicación» group needs to send the reader to it.
+    expect(unlocated).toEqual([{ id: 'E-3', layer: 'Eventos', title: 'E-3' }]);
     expect(points.map((p) => [p.id, p.dimension, p.locality])).toEqual([
       ['E-1', 'N', 'Vice'],
       ['E-2', 'G', 'Vice'],
@@ -123,6 +131,25 @@ describe('timeline playback', () => {
     const filters = { layer: '', dimension: '', locality: '', from: '', to: '' };
     expect(filterPoints(points, { ...filters, evidence: ['observado'] }).map((p) => p.id)).toEqual([
       'E-1',
+    ]);
+  });
+});
+
+describe('map list', () => {
+  it('numbers the records on the map newest first, undated last, one number per marker', () => {
+    const { points } = mapPoints({
+      Eventos: [
+        { _id: 'E-1', Territorio: 'Vice', Fecha: '2026-08-02' },
+        { _id: 'E-2', Territorio: 'Vice' },
+        { _id: 'E-3', Territorio: 'Vice', Fecha: '2026-10-01' },
+      ],
+      Demandas: [],
+      Actores: [],
+    });
+    expect(numbered(atCursor(points, '')).map((d) => [d.n, d.point.id])).toEqual([
+      [1, 'E-3'],
+      [2, 'E-1'],
+      [3, 'E-2'],
     ]);
   });
 });

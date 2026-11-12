@@ -446,3 +446,55 @@ it('reads every page of each layer instead of one capped request', async () => {
   expect(within(list).getByText('Observado')).toBeVisible();
   expect(asked).toEqual(['?limit=500&offset=0&q=', '?limit=500&offset=500&q=']);
 });
+
+// closure-roadmap T31 (direction 03, inside Territorio): list ↔ numbered marker.
+it('numbers each listed record like its marker and keeps the selection in step', async () => {
+  serve();
+  renderPage();
+  const list = await screen.findByRole('list', { name: 'Registros en el mapa' });
+  const rows = within(list).getAllByRole('button');
+  // Newest first: EV-2 (September) is 1, EV-1 (August) is 2, on the row and on the marker.
+  expect(rows.map((row) => row.textContent)).toEqual([
+    expect.stringMatching(/^1Escenario de bloqueo de prueba/),
+    expect.stringMatching(/^2Asamblea comunal sintética/),
+  ]);
+  const marker = (n: number, title: string) =>
+    screen.getByRole('button', {
+      name: `${n}. Eventos: ${title} (${n === 1 ? 'Bayóvar' : 'Vice'})`,
+    });
+  expect(marker(1, 'Escenario de bloqueo de prueba')).toHaveTextContent('1');
+  expect(marker(2, 'Asamblea comunal sintética')).toHaveTextContent('2');
+  // Row → marker.
+  await userEvent.click(rows[1] as HTMLElement);
+  expect(marker(2, 'Asamblea comunal sintética')).toHaveAttribute('aria-pressed', 'true');
+  expect(rows[1]).toHaveAttribute('aria-pressed', 'true');
+  // Marker → row, by keyboard.
+  marker(1, 'Escenario de bloqueo de prueba').focus();
+  await userEvent.keyboard('{Enter}');
+  expect(rows[0]).toHaveAttribute('aria-pressed', 'true');
+  expect(rows[1]).toHaveAttribute('aria-pressed', 'false');
+  expect(marker(2, 'Asamblea comunal sintética')).toHaveAttribute('aria-pressed', 'false');
+});
+
+it('groups records without a place under «Sin ubicación» with a way to complete them', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/eventos',
+      records([
+        ...EVENTS,
+        { _id: 'EV-3', Territorio: 'Lugar sintético', Descripcion_Hecho: 'Reunión sin lugar' },
+      ]),
+    ),
+  );
+  renderPage();
+  const group = await screen.findByRole('group', { name: '1 registro(s) sin ubicación' });
+  expect(within(group).getByText(/^No aparecen en el mapa.*use «Editar»/)).toBeInTheDocument();
+  expect(within(group).getByRole('link', { name: /Reunión sin lugar/ })).toHaveAttribute(
+    'href',
+    '/registros?tipo=eventos&ficha=eventos.EV-3',
+  );
+  // Never drawn or listed as if it had a place.
+  const list = screen.getByRole('list', { name: 'Registros en el mapa' });
+  expect(within(list).queryByText('Reunión sin lugar')).toBeNull();
+});
