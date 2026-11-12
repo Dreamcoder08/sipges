@@ -63,6 +63,7 @@ export const WRITE_ROUTES: readonly WriteRoute[] = [
     why: 'The transport keeps no session',
   },
   { method: 'DELETE', path: '/system/auth/grants', rows: 'domain' },
+  { method: 'DELETE', path: '/system/auth/sessions/:id', rows: ['sessions'] },
   { method: 'DELETE', path: '/system/automations/channels/:id', rows: 'domain' },
   { method: 'DELETE', path: '/system/automations/rules/:id', rows: 'domain' },
   { method: 'DELETE', path: '/system/integrations/api-keys/:id', rows: 'domain' },
@@ -84,6 +85,7 @@ export const WRITE_ROUTES: readonly WriteRoute[] = [
   { method: 'POST', path: '/system/auth/accounts/:username/reset-mfa', rows: 'domain' },
   { method: 'POST', path: '/system/auth/grants', rows: 'domain' },
   { method: 'POST', path: '/system/auth/scopes', rows: 'domain' },
+  { method: 'POST', path: '/system/auth/sessions/revoke-others', rows: ['sessions'] },
   {
     method: 'POST',
     path: '/system/auth/totp/enable',

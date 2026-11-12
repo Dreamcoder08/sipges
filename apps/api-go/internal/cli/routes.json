@@ -167,6 +167,27 @@
     "summary": "Create a project"
   },
   {
+    "method": "GET",
+    "path": "/system/auth/sessions",
+    "access": "session",
+    "command": "sessions list",
+    "summary": "Your own active sessions"
+  },
+  {
+    "method": "DELETE",
+    "path": "/system/auth/sessions/{id}",
+    "access": "session",
+    "command": "sessions end",
+    "summary": "End one of your sessions"
+  },
+  {
+    "method": "POST",
+    "path": "/system/auth/sessions/revoke-others",
+    "access": "session",
+    "command": "sessions end-others",
+    "summary": "End your other sessions"
+  },
+  {
     "method": "POST",
     "path": "/system/auth/totp/enable",
     "access": "session",

@@ -73,6 +73,8 @@ type PasswordHasher interface {
 type SessionTokens interface {
 	NewToken() (string, error)
 	Hash(token string) string
+	// PublicID is the opaque id a session is shown and ended by.
+	PublicID(tokenHash string) string
 }
 
 // TOTPService is TotpService of ports.ts. Verify's error is a stored secret that cannot be
@@ -94,6 +96,7 @@ type Deps struct {
 	Store    Store
 	Accounts AccountStore
 	Google   GoogleStore
+	Sessions SessionStore
 	Hasher   PasswordHasher
 	Tokens   SessionTokens
 	TOTP     TOTPService

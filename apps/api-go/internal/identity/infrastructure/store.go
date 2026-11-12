@@ -210,3 +210,12 @@ func (Tokens) NewToken() (string, error) {
 
 // Hash is HashToken.
 func (Tokens) Hash(token string) string { return HashToken(token) }
+
+// publicIDPrefix separates a session id from every other hash SIPGES stores.
+const publicIDPrefix = "sipges-session-id:"
+
+// PublicID is session-tokens.ts publicId: 32 hex characters derived one-way from the stored
+// hash, so the id a session is shown and ended by can neither sign in nor match the hash column.
+func (Tokens) PublicID(tokenHash string) string {
+	return HashToken(publicIDPrefix + tokenHash)[:32]
+}
