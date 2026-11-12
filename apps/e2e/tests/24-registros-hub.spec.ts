@@ -29,7 +29,8 @@ test('Registros lists a new record, opens it in a side sheet and keeps density i
 
   // The cross-type list shows it, and the sheet opens beside the list.
   await types.getByRole('button', { name: /^Todos/ }).click();
-  await expect(page).toHaveURL(/tipo=todos/);
+  // Todos is the hub's own page: the bare path, while each type keeps `?tipo=`.
+  await expect(page).toHaveURL(/\/registros$/);
   const opener = page.getByRole('button', { name: new RegExp(`Abrir ${id}`) });
   await opener.click();
   const sheet = page.getByRole('dialog', { name: `Ficha ${id}` });

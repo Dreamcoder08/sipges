@@ -88,16 +88,57 @@ it('reads Todos and every count from one summary request, not one list per type'
   ]);
 });
 
-it('lists every type together under Todos, with verification and validation as chips', async () => {
+/** Below 1024 px Todos is a list of two-line rows: no table squeezed into the width. */
+const recordList = () =>
+  screen.findByRole('list', { name: 'Registros de todos los tipos del proyecto activo' });
+
+it('lists every type together under Todos as two-line rows, each one button', async () => {
   renderHub('todos');
-  const table = await screen.findByRole('grid', {
-    name: 'Registros de todos los tipos del proyecto activo',
-  });
-  expect(await within(table).findByText('Bloqueo del muelle')).toBeInTheDocument();
-  expect(within(table).getByText('Federación de Pescadores')).toBeInTheDocument();
-  const bayovar = within(table).getByRole('row', { name: /E-1/ });
-  expect(within(bayovar).getByText('B', { selector: '[data-verification]' })).toBeInTheDocument();
-  expect(within(bayovar).getByText('Validado')).toBeInTheDocument();
+  const list = await recordList();
+  expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Tabla de registros' })).not.toBeInTheDocument();
+  expect(within(list).getAllByRole('listitem')).toHaveLength(4);
+  expect(within(list).getByText('Federación de Pescadores')).toBeInTheDocument();
+  const row = within(list).getByRole('button', { name: /^Abrir E-1: Bloqueo del muelle/ });
+  // The whole row is the one target of its list item.
+  const item = row.closest('li') as HTMLElement;
+  expect(within(item).getAllByRole('button')).toEqual([row]);
+  // Line 1: the title and the shared status badge. Line 2: type · place · date and A–E.
+  expect(within(row).getByText('Bloqueo del muelle')).toHaveAttribute('data-line', 'title');
+  expect(within(row).getByText('Validado')).toHaveAttribute('data-tone', 'positive');
+  expect(row.querySelector('[data-line="meta"]')).toHaveTextContent(
+    /^Eventos · Bayóvar · 2026-10-28\s*Verificación B$/,
+  );
+  expect(within(row).getByText('B', { selector: '[data-verification]' })).toBeInTheDocument();
+});
+
+it('leaves out what a row does not have instead of dashes', async () => {
+  renderHub('todos');
+  const actor = within(await recordList()).getByRole('button', { name: /^Abrir A-1:/ });
+  expect(actor.querySelector('[data-line="meta"]')).toHaveTextContent(/^Actores$/);
+  expect(actor.querySelector('[data-tone]')).toBeNull();
+  expect(within(actor).queryByText('—')).not.toBeInTheDocument();
+});
+
+it('opens the record from its row in the modal sheet and names it in the URL', async () => {
+  const user = userEvent.setup();
+  const onFicha = vi.fn();
+  renderHub('todos', vi.fn(), 'admin', { onFicha });
+  const row = within(await recordList()).getByRole('button', { name: /^Abrir E-2:/ });
+  await user.click(row);
+  const sheet = await screen.findByRole('dialog', { name: 'Ficha E-2' });
+  expect(sheet).toHaveAttribute('aria-modal', 'true');
+  expect(onFicha).toHaveBeenLastCalledWith('eventos.E-2');
+  await user.keyboard('{Escape}');
+  expect(onFicha).toHaveBeenLastCalledWith(undefined);
+  expect(row).toHaveFocus();
+});
+
+it('reopens the record the URL names on a phone, so a reload keeps it', async () => {
+  renderHub('todos', vi.fn(), 'admin', { ficha: 'eventos.E-1' });
+  const sheet = await screen.findByRole('dialog', { name: 'Ficha E-1' });
+  expect(sheet).toHaveAttribute('aria-modal', 'true');
+  expect(await within(sheet).findByText('Bloqueo del muelle', { selector: 'dd' })).toBeVisible();
 });
 
 /** Opens the one filter sheet from the «Filtros» button and returns it. */
@@ -229,59 +270,15 @@ it('opens «Ver» of a type screen in the sheet instead of replacing the list', 
   expect(screen.getByRole('table')).toBeInTheDocument();
 });
 
-it('keeps density per tab in sessionStorage and nothing in localStorage', async () => {
-  const user = userEvent.setup();
-  localStorage.clear();
-  const first = renderHub('todos');
-  const density = await screen.findByRole('group', { name: 'Densidad de filas' });
-  expect(within(density).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await user.click(within(density).getByRole('button', { name: 'Compacta' }));
-  expect(within(density).getByRole('button', { name: 'Compacta' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  expect(sessionStorage.length).toBe(1);
-  expect(localStorage.length).toBe(0);
-  first.unmount();
-  const second = renderHub('eventos');
-  const other = await screen.findByRole('group', { name: 'Densidad de filas' });
-  expect(within(other).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  second.unmount();
-  renderHub('todos');
-  const again = await screen.findByRole('group', { name: 'Densidad de filas' });
-  expect(within(again).getByRole('button', { name: 'Compacta' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-});
-
-it('puts search, the «Filtros» button, density and the count in one toolbar, with no card around the table', async () => {
+it('puts search, «Filtros» and the count in one toolbar; the phone list has no density', async () => {
   renderHub('todos');
   const toolbar = await screen.findByRole('group', { name: 'Filtros de registros' });
   expect(within(toolbar).getByRole('searchbox', { name: 'Buscar en registros' })).toBeVisible();
   expect(within(toolbar).getByRole('button', { name: 'Filtros' })).toBeVisible();
-  expect(within(toolbar).getByRole('group', { name: 'Densidad de filas' })).toBeVisible();
+  // Two-line rows have one height: Cómoda and Compacta belong to the desktop table.
+  expect(within(toolbar).queryByRole('group', { name: 'Densidad de filas' })).toBeNull();
   expect(await within(toolbar).findByRole('status')).toHaveTextContent('4 de 4 registros');
   expect(screen.queryByRole('heading', { name: 'Todos los registros' })).not.toBeInTheDocument();
-});
-
-it('shows the type with its icon, verification as a toned letter and validation as a status chip', async () => {
-  renderHub('todos');
-  const event = await screen.findByRole('row', { name: /E-2/ });
-  const type = within(event).getByText('Eventos', { selector: '[data-type-chip]' });
-  expect(type.querySelector('svg')).not.toBeNull();
-  expect(within(event).getByText('E', { selector: '[data-verification="E"]' })).toBeInTheDocument();
-  // The shared status family: Preliminar is the neutral tone, shape plus word.
-  expect(within(event).getByText('Preliminar')).toHaveAttribute('data-tone', 'neutral');
-  const actor = screen.getByRole('row', { name: /A-1/ });
-  expect(within(actor).getAllByText('—').length).toBeGreaterThanOrEqual(3);
-  expect(actor.querySelector('[data-tone]')).toBeNull();
 });
 
 it('offers Importar and Nuevo registro on Todos through a type picker, reusing the type screen', async () => {
@@ -311,7 +308,7 @@ it('offers Importar and Nuevo registro on Todos through a type picker, reusing t
 
 it('hides the Todos write actions from read-only roles', async () => {
   renderHub('todos', vi.fn(), 'consulta');
-  await screen.findByRole('grid');
+  await recordList();
   expect(screen.queryByRole('button', { name: 'Nuevo registro' })).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: 'Importar' })).not.toBeInTheDocument();
 });
@@ -328,6 +325,67 @@ describe('at 1024 px or wider', () => {
   });
   afterEach(() => {
     window.matchMedia = original;
+  });
+
+  it('lists every type together in a grid, with verification and validation as chips', async () => {
+    renderHub('todos');
+    const table = await screen.findByRole('grid', {
+      name: 'Registros de todos los tipos del proyecto activo',
+    });
+    expect(screen.queryByRole('list', { name: /Registros de todos/ })).not.toBeInTheDocument();
+    expect(await within(table).findByText('Bloqueo del muelle')).toBeInTheDocument();
+    expect(within(table).getByText('Federación de Pescadores')).toBeInTheDocument();
+    const bayovar = within(table).getByRole('row', { name: /E-1/ });
+    expect(within(bayovar).getByText('B', { selector: '[data-verification]' })).toBeInTheDocument();
+    expect(within(bayovar).getByText('Validado')).toBeInTheDocument();
+  });
+
+  it('keeps the toolbar with density and nothing in localStorage, per tab in sessionStorage', async () => {
+    const user = userEvent.setup();
+    localStorage.clear();
+    const first = renderHub('todos');
+    const toolbar = await screen.findByRole('group', { name: 'Filtros de registros' });
+    const density = within(toolbar).getByRole('group', { name: 'Densidad de filas' });
+    expect(within(density).getByRole('button', { name: 'Compacta' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await user.click(within(density).getByRole('button', { name: 'Cómoda' }));
+    expect(within(density).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(sessionStorage.length).toBe(1);
+    expect(localStorage.length).toBe(0);
+    first.unmount();
+    const second = renderHub('eventos');
+    const other = await screen.findByRole('group', { name: 'Densidad de filas' });
+    expect(within(other).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    second.unmount();
+    renderHub('todos');
+    const again = await screen.findByRole('group', { name: 'Densidad de filas' });
+    expect(within(again).getByRole('button', { name: 'Cómoda' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+
+  it('shows the type with its icon, verification as a toned letter and validation as a status chip', async () => {
+    renderHub('todos');
+    const event = await screen.findByRole('row', { name: /E-2/ });
+    const type = within(event).getByText('Eventos', { selector: '[data-type-chip]' });
+    expect(type.querySelector('svg')).not.toBeNull();
+    expect(
+      within(event).getByText('E', { selector: '[data-verification="E"]' }),
+    ).toBeInTheDocument();
+    // The shared status family: Preliminar is the neutral tone, shape plus word.
+    expect(within(event).getByText('Preliminar')).toHaveAttribute('data-tone', 'neutral');
+    const actor = screen.getByRole('row', { name: /A-1/ });
+    expect(within(actor).getAllByText('—').length).toBeGreaterThanOrEqual(3);
+    expect(actor.querySelector('[data-tone]')).toBeNull();
   });
 
   it('docks the record sheet beside a list that stays usable; Esc closes and returns focus', async () => {
