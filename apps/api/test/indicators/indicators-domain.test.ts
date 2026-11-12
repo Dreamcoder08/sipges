@@ -178,6 +178,66 @@ describe('computeIrsa', () => {
     expect(result.drivers.map((d) => d.id).slice(0, 2)).toEqual(['I5', 'I6']);
     expect(result.notes).toHaveLength(3);
   });
+
+  describe('coverage and insufficient_data', () => {
+    const irsaOf = (records: Partial<ModuleRecords>) =>
+      computeIrsa(DEFAULT_IRSA_CONFIG, computeIndicators({ ...EMPTY, ...records }));
+
+    it('flags an empty project as insufficient without changing irsa, level or scores', () => {
+      const result = irsaOf({});
+      expect(result.coverage).toEqual({ G: 0, A: 0, D: 0, N: 0, E: 0, I: 0 });
+      expect(result.insufficient_data).toBe(true);
+      expect(result).toMatchObject({
+        irsa: 5.55,
+        level: 'Verde',
+        scores: { G: 0, A: 0, D: 0, N: 0, E: 0, I: 33.33 },
+      });
+    });
+
+    it('is not insufficient with one record feeding one evidence dimension', () => {
+      const result = irsaOf({ Demandas: [{ Estado: 'Abierta', Tema: 'Empleo' }] });
+      expect(result.coverage.D).toBeGreaterThan(0);
+      expect(result.insufficient_data).toBe(false);
+    });
+
+    it('stays insufficient when only dimension I has data', () => {
+      const result = irsaOf({ Alertas: [{ ID_Alerta: 'AL-1', Estado: 'Abierta' }] });
+      expect(result.coverage.I).toBeGreaterThan(0);
+      expect([result.coverage.G, result.coverage.A, result.coverage.D]).toEqual([0, 0, 0]);
+      expect([result.coverage.N, result.coverage.E]).toEqual([0, 0]);
+      expect(result.insufficient_data).toBe(true);
+    });
+
+    it('treats territorial-directory-only data as insufficient', () => {
+      expect(irsaOf({ Directorio_Territorial: [{ Ambito: 'Sector 1' }] }).insufficient_data).toBe(
+        true,
+      );
+    });
+
+    it('ignores the evidence count of unscored indicators', () => {
+      const report = computeIndicators({
+        ...EMPTY,
+        Demandas: [{ Estado: 'Abierta', Tema: 'Empleo' }],
+      });
+      const D = report.dimensions.D.map((x) => ({ ...x, score: null, evidence_count: 5 }));
+      const result = computeIrsa(DEFAULT_IRSA_CONFIG, {
+        ...report,
+        dimensions: { ...report.dimensions, D },
+      });
+      expect(result.coverage.D).toBe(0);
+    });
+
+    it('places the new fields between availability and indicators', () => {
+      const keys = Object.keys(irsaOf({}));
+      const at = keys.indexOf('availability');
+      expect(keys.slice(at, at + 4)).toEqual([
+        'availability',
+        'coverage',
+        'insufficient_data',
+        'indicators',
+      ]);
+    });
+  });
 });
 
 describe('applyIrsaConfigPatch', () => {

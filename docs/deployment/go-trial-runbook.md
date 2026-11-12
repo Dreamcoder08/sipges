@@ -123,8 +123,13 @@ Nothing starts the container while `GO_ROUTES` is empty, and `main` keeps it emp
 `wrangler.go.jsonc` declares no Hyperdrive on purpose. This writes `wrangler.go.deploy.jsonc`, which git ignores, and refuses the production id, the old all-zero placeholder and anything that is not an id:
 
 ```bash
-SIPGES_GO_HYPERDRIVE_ID=<id> pnpm config:go
+SIPGES_GO_HYPERDRIVE_ID=<id> SIPGES_GO_PUBLIC_HOST=<trial-host> \
+  SIPGES_HYPERDRIVE_ID=<production-id> pnpm config:go
 ```
+
+`SIPGES_HYPERDRIVE_ID` is production's id (the repository variable of the same name); the command
+needs it to refuse a trial that points at production. `SIPGES_GO_PUBLIC_HOST` is the trial Worker's
+bare host name, for example `sipges-go.<your-subdomain>.workers.dev`.
 
 Already set in the config and in code: `instance_type: "basic"`, `regions: ["ENAM"]`, `sleepAfter: 10m`. The image embeds `pdf-text.wasm` and `pdfjs.qbc`; CI's `Go image` job builds it whenever Go changes.
 
@@ -224,6 +229,7 @@ For step 6 of the order of work. "Passed" means `goContainerEnv` forwards it tod
 | `SIPGES_VAPID_PRIVATE_KEY` | secret | yes, when set | Push |
 | `SIPGES_OLLAMA_URL`, `SIPGES_OLLAMA_EMBED_MODEL`, `SIPGES_SEMANTIC_SEARCH` | var | yes, when set | Semantic analysis |
 | `SIPGES_ANALYST_PROVIDER`, `SIPGES_ANALYST_MODEL`, `ANTHROPIC_BASE_URL` | var | yes, when set | Analyst prose |
+| `SIPGES_ANALYST_BASE_URL`, `SIPGES_ANALYST_API_KEY` | var, secret | yes, when set | Analyst prose through an OpenAI-compatible provider |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` | secret | yes, when set | Analyst prose |
 | `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | var | no, not enabled | OCR, see above |
 | `SIPGES_ACCESS_LOG` | var | yes, when set | Go's request log. TypeScript reads it too |
@@ -236,7 +242,8 @@ Outside the Worker:
 | --- | --- | --- |
 | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` | Shell, GitHub `production` | Deploys |
 | `SIPGES_MIGRATION_DATABASE_URL` | Shell, GitHub `production` | `migrate` |
-| `SIPGES_GO_HYPERDRIVE_ID` | Shell | `pnpm config:go`, trial only |
+| `SIPGES_GO_HYPERDRIVE_ID`, `SIPGES_GO_PUBLIC_HOST` | Shell | `pnpm config:go`, trial only |
+| `SIPGES_PUBLIC_HOST`, `SIPGES_HYPERDRIVE_ID` | GitHub repository variables; shell for a manual deploy or `pnpm config:go` | `deploy-config.mjs`, `deploy:worker`, `pnpm config:go` |
 | `SIPGES_SMOKE_URL` | Shell, `deploy-workers.yml` | `smoke-go.mjs` |
 | `SIPGES_LOAD_BASE_URL`, `SIPGES_LOAD_USER`, `SIPGES_LOAD_PASSWORD`, `SIPGES_LOAD_TOTP`, `SIPGES_LOAD_SCOPE` | `~/.config/sipges-carga.env` | The benchmark |
 

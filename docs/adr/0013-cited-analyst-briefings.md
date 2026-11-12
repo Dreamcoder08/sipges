@@ -43,3 +43,31 @@ territorial data to an external service is a decision for the data owner, not a 
   needing the data owner's approval.
 - Signals are heuristics over free-form fields (`Estado`, `Nivel_Preliminar`, `Plazo`, …); they
   point to records for review and never change data.
+
+## Addendum — provider choice (model-agnostic narrator)
+
+Task: `odd/tasks/model-agnostic-analyst.md`. The owner asked for the Inicio analyst to work with
+models other than Claude (Codex, DeepSeek and more), so the `Narrator` port gets a second
+adapter, `SIPGES_ANALYST_PROVIDER=openai-compatible`. It speaks the OpenAI Chat Completions
+protocol (`POST {base}/v1/chat/completions`, or `/chat/completions` when the base URL already
+ends in `/v1`), which OpenAI, DeepSeek, Ollama, OpenRouter, Groq and vLLM share.
+
+- **Variables.** `SIPGES_ANALYST_BASE_URL` (required; `https`, or `http` on a loopback host),
+  `SIPGES_ANALYST_API_KEY` (required unless the host is loopback; sent as a bearer token) and
+  `SIPGES_ANALYST_MODEL` (required; no default, ids of 1–128 characters from
+  `A-Z a-z 0-9 . _ : / -`).
+- **Same behaviour.** The same system prompt (one shared module), the same `<informe>` wrapping,
+  `max_tokens` 4000, one retry and the 20 s budget. `finish_reason` `length` fails as truncated,
+  `content_filter` as declined, and empty text fails; the citation check of decision 5 runs on
+  its output unchanged.
+- **Same egress rules.** The adapter only receives what the guard of ADR 0030 cleared and only
+  contacts the configured base URL: redirects fail the call. Errors are fixed texts, so the key,
+  the URL and the briefing never reach a log.
+- **Why one adapter and no SDK.** One small `fetch` call covers every provider that matters
+  here. A general SDK such as the Vercel AI SDK or LangChain would add a dependency tree, its
+  own retry, telemetry and redirect behaviour on a path that carries territorial data, and a
+  release cadence to track, for a single non-streaming request. Providers that do not speak
+  this protocol can still get their own adapter behind the same port.
+- **Data.** Pointing this at a real provider sends non-restricted briefing text outside the
+  platform; that stays the data owner's decision
+  (`odd/tasks/functional-closure.md` T5), exactly as with Anthropic.

@@ -18,11 +18,15 @@
     "html_handling": "none",
     "not_found_handling": "none",
   },
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "9eae2c5e3d614feca42b525fc82e10e1" }],
+  // Local placeholder: deploy-config.mjs writes wrangler.deploy.jsonc with the id of the owner's
+  // Hyperdrive (GitHub variable SIPGES_HYPERDRIVE_ID). `wrangler dev` reads the database from
+  // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE instead.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" }],
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "sipges-evidence" }],
   "triggers": { "crons": ["*/15 * * * *"] },
-  // Not secret: the public host. Secrets go through `wrangler secret put` (deployment guide).
-  "vars": { "SIPGES_ALLOWED_HOSTS": "sipges.dreamcoder-dev08.workers.dev" },
+  // Not private: the public host. `localhost` serves `wrangler dev`; the deploy writes the owner's
+  // (GitHub variable SIPGES_PUBLIC_HOST). Private values go through `wrangler secret put` (deployment guide).
+  "vars": { "SIPGES_ALLOWED_HOSTS": "localhost" },
   "limits": { "cpu_ms": 30000 },
   "observability": { "enabled": true },
 }

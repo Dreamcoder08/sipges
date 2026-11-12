@@ -141,6 +141,17 @@ export const handlers = [
       }),
     ),
   ),
+  http.get('/system/irsa/config', () =>
+    signedIn(() =>
+      HttpResponse.json({
+        version: '0.4-indicators',
+        status: 'PENDIENTE_DE_VALIDACION_METODOLOGICA',
+        weights: { G: 0.2, A: 0.2, D: 0.2, N: 0.1, E: 0.1, I: 0.2 },
+        thresholds: { Verde: [0, 100] },
+        contributions: {},
+      }),
+    ),
+  ),
   http.get('/system/model-status', () =>
     signedIn(() =>
       HttpResponse.json({

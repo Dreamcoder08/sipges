@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import { DimensionBadge, LevelPill } from '../../shared/ui/Badges.tsx';
+import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from './IrsaStatus.tsx';
 import { dashboardQuery, irsaQuery, moduleRecordsQuery } from './api.ts';
 import { criticalAlerts, recentEvents } from './model.ts';
 import styles from './TodayView.module.css';
@@ -56,15 +57,19 @@ export const TodayView = ({
         <p className={styles.date}>Hoy · {today()}</p>
         <h2 id="hoy-titulo">Resumen del proyecto</h2>
         {irsa.data ? (
-          <p className={styles.risk}>
-            {renderLink(
-              '/irsa',
-              <>
-                Riesgo IRSA <strong>{irsa.data.irsa.toFixed(1)}</strong>
-              </>,
-            )}{' '}
-            <LevelPill level={irsa.data.level} />
-          </p>
+          <>
+            <p className={styles.risk}>
+              {renderLink(
+                '/irsa',
+                <>
+                  Riesgo IRSA{' '}
+                  {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}
+                </>,
+              )}{' '}
+              <IrsaStatus scope={scope} irsa={irsa.data} />
+            </p>
+            <IrsaNoDataHint irsa={irsa.data} />
+          </>
         ) : null}
       </section>
 

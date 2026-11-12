@@ -38,9 +38,18 @@ export type AppConfig = {
   readonly semanticSearch: boolean;
   /**
    * Language model that rewrites extractive briefings (docs/adr/0013). Off unless
-   * SIPGES_ANALYST_PROVIDER=anthropic; the key comes from ANTHROPIC_API_KEY at the SDK.
+   * SIPGES_ANALYST_PROVIDER=anthropic (the key comes from ANTHROPIC_API_KEY at the SDK) or
+   * openai-compatible (any Chat Completions provider; the key is optional on a loopback host).
    */
-  readonly analyst: { readonly provider: 'anthropic'; readonly model: string } | undefined;
+  readonly analyst:
+    | { readonly provider: 'anthropic'; readonly model: string }
+    | {
+        readonly provider: 'openai-compatible';
+        readonly baseUrl: string;
+        readonly apiKey: string | undefined;
+        readonly model: string;
+      }
+    | undefined;
   /** Built web app to serve (SIPGES_WEB_DIR, e.g. apps/web/dist); unset serves the API only. */
   readonly webDir: string | undefined;
   /**
@@ -186,11 +195,42 @@ const parseOllama = (env: Env) => {
 
 const MODEL_ID = /^[a-z0-9][a-z0-9.-]{1,63}$/;
 
+const OPENAI_MODEL_ID = /^[A-Za-z0-9._:/-]{1,128}$/;
+
+const isLoopbackHost = (hostname: string): boolean =>
+  hostname === 'localhost' || hostname === '[::1]' || /^127(\.\d{1,3}){3}$/.test(hostname);
+
+const parseOpenAiCompatible = (env: Env): AppConfig['analyst'] => {
+  const baseUrl = (env.SIPGES_ANALYST_BASE_URL ?? '').trim();
+  if (!baseUrl)
+    throw new Error('SIPGES_ANALYST_PROVIDER=openai-compatible requires SIPGES_ANALYST_BASE_URL');
+  const urlError = new Error('SIPGES_ANALYST_BASE_URL must be https, or http on a loopback host');
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    throw urlError;
+  }
+  const loopback = url.protocol === 'http:' && isLoopbackHost(url.hostname);
+  if (url.protocol !== 'https:' && !loopback) throw urlError;
+  const apiKey = env.SIPGES_ANALYST_API_KEY?.trim() || undefined;
+  if (!apiKey && !isLoopbackHost(url.hostname))
+    throw new Error('SIPGES_ANALYST_PROVIDER=openai-compatible requires SIPGES_ANALYST_API_KEY');
+  const model = env.SIPGES_ANALYST_MODEL ?? '';
+  if (!model)
+    throw new Error('SIPGES_ANALYST_PROVIDER=openai-compatible requires SIPGES_ANALYST_MODEL');
+  if (!OPENAI_MODEL_ID.test(model)) throw new Error('SIPGES_ANALYST_MODEL is not a valid model id');
+  return { provider: 'openai-compatible', baseUrl, apiKey, model };
+};
+
 const parseAnalyst = (env: Env): AppConfig['analyst'] => {
   const provider = env.SIPGES_ANALYST_PROVIDER ?? '';
   if (provider === '' || provider === 'none') return undefined;
+  if (provider === 'openai-compatible') return parseOpenAiCompatible(env);
   if (provider !== 'anthropic')
-    throw new Error("SIPGES_ANALYST_PROVIDER must be unset, 'none' or 'anthropic'");
+    throw new Error(
+      "SIPGES_ANALYST_PROVIDER must be unset, 'none', 'anthropic' or 'openai-compatible'",
+    );
   if (!env.ANTHROPIC_API_KEY && !env.ANTHROPIC_AUTH_TOKEN)
     throw new Error('SIPGES_ANALYST_PROVIDER=anthropic requires ANTHROPIC_API_KEY');
   const model = env.SIPGES_ANALYST_MODEL || 'claude-opus-5-5';

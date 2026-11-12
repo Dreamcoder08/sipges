@@ -238,7 +238,7 @@ Otros clientes (Claude Desktop, VS Code, Cursor) aceptan la misma URL y la cabec
 
 ### Privacidad: qué sale hacia una IA externa
 
-Un agente MCP, el resumen asistido (`SIPGES_ANALYST_PROVIDER=anthropic`) y unos embeddings en
+Un agente MCP, el resumen asistido (`SIPGES_ANALYST_PROVIDER=anthropic` u `openai-compatible`) y unos embeddings en
 una URL que no sea de esta máquina son **IA externa**. Pasan por una sola guarda
 ([ADR 0030](../adr/0030-external-ai-egress-guard.md)); es apoyo técnico para cumplir la
 Ley 29733, no una decisión legal.

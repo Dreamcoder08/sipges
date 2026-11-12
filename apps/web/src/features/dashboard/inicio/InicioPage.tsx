@@ -4,6 +4,7 @@ import { InternalLink } from '../../../shared/lib/navigation.tsx';
 import { LevelPill } from '../../../shared/ui/Badges.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import { dashboardQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
+import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from '../IrsaStatus.tsx';
 import { criticalAlerts, eventsThisWeek } from '../model.ts';
 import styles from './InicioPage.module.css';
 
@@ -208,9 +209,11 @@ export const InicioPage = ({
           {irsa.data ? (
             <Card title="Riesgo del territorio" to="/analisis" action="Abrir IRSA">
               <p className={styles.risk}>
-                IRSA <strong>{irsa.data.irsa.toFixed(1)}</strong>{' '}
-                <LevelPill level={irsa.data.level} />
+                IRSA{' '}
+                {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}{' '}
+                <IrsaStatus scope={scope} irsa={irsa.data} />
               </p>
+              <IrsaNoDataHint irsa={irsa.data} />
               {drivers.length ? (
                 <ul className={styles.list}>
                   {drivers.map((driver) => (
