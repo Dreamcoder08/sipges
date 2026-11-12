@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, delay, http } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi, server } from '../test/server.ts';
@@ -364,10 +364,36 @@ describe('Inicio hub', () => {
     directorio: 4,
     priorizados: 5,
   };
-  const open = async () => {
+  const digitalAlert = (id: string, status: string) => ({
+    id,
+    project_id: 'PRJ-DEMO',
+    created_at: '2026-11-01T10:00:00Z',
+    source_url: 'https://example.invalid/nota',
+    source_type: 'web',
+    excerpt: `Nota sintética ${id}`,
+    sha256: 'x',
+    level: 'Media',
+    score: 40,
+    method: 'reglas',
+    semantic_active: false,
+    status,
+    analyst_note: '',
+    reviewer_note: null,
+    reviewed_at: null,
+    themes: [],
+    signals: [],
+    suggestions: [],
+  });
+  const PENDING = [
+    digitalAlert('TA-1', 'Pendiente de verificación'),
+    digitalAlert('TA-2', 'Pendiente de verificación'),
+    digitalAlert('TA-3', 'Corroborado'),
+  ];
+  const open = async (digital: unknown[] = PENDING) => {
     searched.length = 0;
     server.use(
       http.get('/api/dashboard', () => HttpResponse.json({ ...counters, niveles: {} })),
+      http.get('/system/intelligence/territorial-alerts', () => HttpResponse.json(digital)),
       http.get('/api/eventos', () =>
         HttpResponse.json([
           { _id: 'E-1', Descripcion_Hecho: 'Hecho de hoy', Fecha: day(0), Proyecto_ID: 'PRJ-DEMO' },
@@ -392,6 +418,8 @@ describe('Inicio hub', () => {
     render(<App />);
     return userEvent.setup();
   };
+  const SEARCH = 'Pregunta a SIPGES';
+  const attention = () => screen.findByRole('region', { name: /Necesita tu atención/ });
 
   it('opens on the Inicio tab with Dashboard and Centro gerencial next to it', async () => {
     await open();
@@ -413,6 +441,54 @@ describe('Inicio hub', () => {
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
   });
 
+  it('lists what needs attention first, each row with a direct link, and the composer below', async () => {
+    await open();
+    const list = await attention();
+    const decisions = await within(list).findByRole('link', { name: 'Revisar en Bandeja' });
+    expect(decisions).toHaveAttribute('href', '/bandeja');
+    expect(within(list).getByText('2 alertas digitales esperan verificación')).toBeVisible();
+    const alert = await within(list).findByRole('link', { name: 'Abrir alerta' });
+    expect(alert).toHaveAttribute('href', '/objeto/alertas/AL-1');
+    expect(within(list).getByRole('link', { name: 'Abrir Bandeja' })).toHaveAttribute(
+      'href',
+      '/bandeja',
+    );
+    const rows = within(within(list).getByRole('list')).getAllByRole('listitem');
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    expect(rows.length).toBeLessThanOrEqual(5);
+    const composer = screen.getByRole('textbox', { name: SEARCH });
+    expect(list.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('says calmly that nothing needs attention when no source has pending work', async () => {
+    server.use(
+      http.get('/api/alertas', () =>
+        HttpResponse.json([{ _id: 'AL-9', Estado: 'Cerrada', Nivel: 'Rojo' }]),
+      ),
+    );
+    await open([]);
+    const list = await attention();
+    expect(await within(list).findByText('Nada necesita tu atención ahora.')).toBeVisible();
+    expect(within(list).queryByRole('list')).toBeNull();
+  });
+
+  it('offers a retry when the alerts behind the attention list fail', async () => {
+    let fail = true;
+    server.use(
+      http.get('/api/alertas', () =>
+        fail
+          ? HttpResponse.json({ detail: 'Alertas no disponibles' }, { status: 400 })
+          : HttpResponse.json([{ _id: 'AL-1', Estado: 'Abierta', Nivel: 'Rojo', Causa: 'Corte' }]),
+      ),
+    );
+    const user = await open();
+    const list = await attention();
+    expect(await within(list).findByText('Alertas no disponibles')).toBeVisible();
+    fail = false;
+    await user.click(within(list).getByRole('button', { name: 'Reintentar' }));
+    expect(await within(list).findByText('Corte')).toBeVisible();
+  });
+
   it('searches the typed question in the existing palette without calling a model', async () => {
     const user = await open();
     const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
@@ -424,9 +500,39 @@ describe('Inicio hub', () => {
     expect(localStorage.length).toBe(0);
   });
 
+  it('does not call the list empty while a source behind it is still loading', async () => {
+    server.use(http.get('/api/alertas', () => HttpResponse.json([])));
+    await open();
+    // Registered after open(), so it overrides the handler open() adds.
+    server.use(http.get('/system/intelligence/territorial-alerts', () => delay('infinite')));
+    const list = await attention();
+    await screen.findByRole('region', { name: /Registros nuevos/ });
+    expect(within(list).queryByText('Nada necesita tu atención ahora.')).toBeNull();
+    expect(within(list).getByRole('status')).toHaveTextContent(/Cargando/);
+  });
+
+  it('offers a retry instead of an empty list when the pending decisions fail', async () => {
+    let fail = true;
+    server.use(http.get('/api/alertas', () => HttpResponse.json([])));
+    const user = await open();
+    server.use(
+      http.get('/system/intelligence/territorial-alerts', () =>
+        fail
+          ? HttpResponse.json({ detail: 'Bandeja no disponible' }, { status: 400 })
+          : HttpResponse.json([digitalAlert('TA-7', 'Pendiente de verificación')]),
+      ),
+    );
+    const list = await attention();
+    expect(await within(list).findByText('Bandeja no disponible')).toBeVisible();
+    expect(within(list).queryByText('Nada necesita tu atención ahora.')).toBeNull();
+    fail = false;
+    await user.click(within(list).getByRole('button', { name: 'Reintentar' }));
+    expect(await within(list).findByText('1 alerta digital espera verificación')).toBeVisible();
+  });
+
   it('submits with Enter and ignores an empty question', async () => {
     const user = await open();
-    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    const composer = await screen.findByRole('textbox', { name: SEARCH });
     await user.type(composer, '   {Enter}');
     expect(screen.queryByRole('dialog')).toBeNull();
     await user.type(composer, 'agua{Enter}');
@@ -435,7 +541,7 @@ describe('Inicio hub', () => {
 
   it('does not send while an input method is still composing the question', async () => {
     const user = await open();
-    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    const composer = await screen.findByRole('textbox', { name: SEARCH });
     await user.type(composer, 'agua');
     // Chromium and Firefox flag the confirming Enter as composing; Safari reports keyCode 229.
     for (const init of [{ isComposing: true }, { keyCode: 229 }]) {
@@ -455,24 +561,12 @@ describe('Inicio hub', () => {
     expect(buttons.length).toBeLessThanOrEqual(4);
     const text = buttons[0]?.textContent ?? '';
     await user.click(buttons[0] as HTMLElement);
-    expect(screen.getByRole('textbox', { name: 'Pregunta a SIPGES' })).toHaveValue(text);
+    expect(screen.getByRole('textbox', { name: SEARCH })).toHaveValue(text);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('says that sending opens the search with the question', async () => {
+  it('briefs the week from existing data and links to Registros and the IRSA tab of Análisis', async () => {
     await open();
-    expect(await screen.findByText('Enviar abre la búsqueda con tu pregunta')).toBeVisible();
-    expect(screen.queryByText(/citas llegan pronto/)).toBeNull();
-  });
-
-  it('briefs from existing data and links to Bandeja, Registros and the IRSA tab of Análisis', async () => {
-    await open();
-    const decision = await screen.findByRole('region', { name: /Alertas activas/ });
-    expect(within(decision).getByText('4')).toBeVisible();
-    expect(within(decision).getByRole('link', { name: /Abrir Bandeja/ })).toHaveAttribute(
-      'href',
-      '/bandeja',
-    );
     const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
     await waitFor(() => expect(within(fresh).getByText('3')).toBeVisible());
     expect(within(fresh).getByText('Hecho de hoy')).toBeVisible();
@@ -493,7 +587,7 @@ describe('Inicio hub', () => {
     ).toHaveAttribute('href', '/analisis?vista=riesgo');
   });
 
-  it('shows «Sin datos suficientes» instead of a level when the IRSA has no evidence (S3)', async () => {
+  it('shows «Sin datos suficientes» and asks for records when the IRSA has no evidence (S3)', async () => {
     server.use(
       http.get('/system/irsa', () =>
         HttpResponse.json({
@@ -510,18 +604,27 @@ describe('Inicio hub', () => {
     await open();
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
     expect(await within(territory).findByText('Sin datos suficientes')).toBeVisible();
-    expect(
-      within(territory).getByText('Carga registros del proyecto para calcular el IRSA.'),
-    ).toBeVisible();
     expect(within(territory).queryByText(/Verde|Amarillo|Naranja|Rojo/)).toBeNull();
     expect(within(territory).queryByText('5.6')).toBeNull();
+    const list = await attention();
+    expect(
+      within(list).getByText('Carga registros del proyecto para calcular el IRSA.'),
+    ).toBeVisible();
+    expect(within(list).getByRole('link', { name: 'Ir a Registros' })).toHaveAttribute(
+      'href',
+      '/registros',
+    );
+    expect(screen.getAllByText('Carga registros del proyecto para calcular el IRSA.')).toHaveLength(
+      1,
+    );
   });
 
-  it('badges the IRSA as pending methodological validation when the config says so (S3)', async () => {
+  it('shows the provisional IRSA caveat once, in the status line (S3)', async () => {
     await open();
+    expect(await screen.findByText('Metodología pendiente de validación')).toBeVisible();
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
-    expect(await within(territory).findByText('Metodología pendiente de validación')).toBeVisible();
-    expect(within(territory).getByText(/^Amarillo/)).toBeVisible();
+    expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
+    expect(screen.getAllByText('Metodología pendiente de validación')).toHaveLength(1);
     expect(within(territory).queryByText('Sin datos suficientes')).toBeNull();
   });
 
@@ -539,7 +642,7 @@ describe('Inicio hub', () => {
     await open();
     const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
     expect(await within(territory).findByText(/^Amarillo/)).toBeVisible();
-    expect(within(territory).queryByText('Metodología pendiente de validación')).toBeNull();
+    expect(screen.queryByText('Metodología pendiente de validación')).toBeNull();
   });
 
   it('hides the card whose source fails instead of inventing numbers', async () => {
@@ -548,7 +651,7 @@ describe('Inicio hub', () => {
       http.get('/api/eventos', () => HttpResponse.json({ detail: 'caído' }, { status: 500 })),
       http.get('/system/irsa', () => HttpResponse.json({ detail: 'caído' }, { status: 500 })),
     );
-    await screen.findByRole('region', { name: /Alertas activas/ });
+    await attention();
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: /Registros nuevos/ })).toBeNull(),
     );

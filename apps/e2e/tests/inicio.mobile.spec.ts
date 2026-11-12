@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { analyzeAccessibility } from '../support/accessibility.ts';
 import type { Locator } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
@@ -29,6 +30,27 @@ test('each briefing row on a 360 px phone is one line with one link', async ({ p
     const title = await box(card.getByRole('heading', { level: 3 }));
     expect(title.height, 'the row title stays on one line').toBeLessThanOrEqual(40);
   }
+});
+
+test('the first attention row is visible on a 360 px phone without scrolling', async ({
+  page,
+  admin,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/inicio');
+  const attention = page.getByRole('region', { name: 'Necesita tu atención' });
+  const first = attention
+    .getByRole('listitem')
+    .or(attention.getByText('Nada necesita tu atención ahora.'))
+    .first();
+  await expect(first).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  const row = await box(first);
+  expect(row.y + row.height).toBeLessThanOrEqual(780);
+  const dir = process.env.SIPGES_SCREENSHOT_DIR;
+  if (dir) await page.screenshot({ path: path.join(dir, '01-implemented-360.png') });
 });
 
 /**
