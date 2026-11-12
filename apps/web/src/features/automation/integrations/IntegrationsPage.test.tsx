@@ -169,10 +169,13 @@ it('lists what the project has, one section per kind, with trust label and statu
   const media = await cardNamed('Medios RSS');
   expect(media.getByText('Integrado')).toBeVisible();
   expect(media.getByText('Conectado')).toBeVisible();
+  // Status is the shared badge family: the word plus a tone that picks colour and shape.
+  expect(media.getByText('Conectado')).toHaveAttribute('data-tone', 'positive');
   const channel = await cardNamed('Equipo social');
   expect(channel.getByText('Personalizado')).toBeVisible();
   const paused = await cardNamed('Control de calidad');
   expect(paused.getByText('Pausada')).toBeVisible();
+  expect(paused.getByText('Pausada')).toHaveAttribute('data-tone', 'neutral');
   const active = await cardNamed('Alertas altas');
   expect(active.getByText('Activa')).toBeVisible();
   expect(screen.queryByText(/Power BI/)).toBeNull();

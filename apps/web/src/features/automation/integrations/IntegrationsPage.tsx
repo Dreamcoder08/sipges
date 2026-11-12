@@ -8,6 +8,7 @@ import {
   pushConfigQuery,
 } from '../../../shared/api/integrations.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
+import { StatusBadge, type StatusTone } from '../../../shared/ui/Badges.tsx';
 import { Alert } from '../../../shared/ui/Alert.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
 import type { IconName } from '../../../shared/ui/icons.ts';
@@ -58,10 +59,16 @@ const Trust = ({ entry }: { entry: Entry }) => (
   </span>
 );
 
+const STATUS_TONES: Record<Entry['status'], StatusTone> = {
+  ok: 'positive',
+  pause: 'neutral',
+  available: 'neutral',
+  auth: 'warning',
+  down: 'negative',
+};
+
 const Status = ({ entry }: { entry: Entry }) => (
-  <span className={styles.status} data-status={entry.status}>
-    {statusLabel(entry)}
-  </span>
+  <StatusBadge tone={STATUS_TONES[entry.status]}>{statusLabel(entry)}</StatusBadge>
 );
 
 const actionName = (entry: Entry) =>

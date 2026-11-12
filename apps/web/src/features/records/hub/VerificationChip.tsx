@@ -1,3 +1,4 @@
+import { StatusBadge, type StatusTone } from '../../../shared/ui/Badges.tsx';
 import styles from './Hub.module.css';
 import type { VerificationLetter } from './summary.ts';
 
@@ -15,12 +16,15 @@ export const VerificationChip = ({ letter }: { letter: VerificationLetter | null
     <span className={styles.muted}>—</span>
   );
 
+const VALIDATION_TONES: Readonly<Record<string, StatusTone>> = {
+  Validado: 'positive',
+  'En revisión': 'warning',
+};
+
 /** The status text is the meaning; the tone only helps. Unknown wordings stay neutral. */
 export const ValidationChip = ({ state }: { state: string }) =>
   state ? (
-    <span className={styles.status} data-validation={state}>
-      {state}
-    </span>
+    <StatusBadge tone={VALIDATION_TONES[state]}>{state}</StatusBadge>
   ) : (
     <span className={styles.muted}>—</span>
   );

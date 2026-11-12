@@ -210,10 +210,11 @@ it('shows the type with its icon, verification as a toned letter and validation 
   const type = within(event).getByText('Eventos', { selector: '[data-type-chip]' });
   expect(type.querySelector('svg')).not.toBeNull();
   expect(within(event).getByText('E', { selector: '[data-verification="E"]' })).toBeInTheDocument();
-  expect(within(event).getByText('Preliminar')).toHaveAttribute('data-validation', 'Preliminar');
+  // The shared status family: Preliminar is the neutral tone, shape plus word.
+  expect(within(event).getByText('Preliminar')).toHaveAttribute('data-tone', 'neutral');
   const actor = screen.getByRole('row', { name: /A-1/ });
   expect(within(actor).getAllByText('—').length).toBeGreaterThanOrEqual(3);
-  expect(actor.querySelector('[data-validation]')).toBeNull();
+  expect(actor.querySelector('[data-tone]')).toBeNull();
 });
 
 it('offers Importar and Nuevo registro on Todos through a type picker, reusing the type screen', async () => {
