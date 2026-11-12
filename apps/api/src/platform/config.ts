@@ -1,4 +1,14 @@
+import { isAbsolute } from 'node:path';
+
 export type AppConfig = {
+  /** Optional managed reference directory; unset keeps repository references. */
+  readonly referenceDir?: string | undefined;
+  /**
+   * Folder shared with the managed desktop launcher (SIPGES_DESKTOP_UPDATE_DIR, absolute). Set
+   * only by deploy/desktop/updater/launcher.mjs; unset (cloud, development) the update notice
+   * routes do not exist.
+   */
+  readonly desktopUpdateDir?: string | undefined;
   readonly cookieSecure: boolean;
   readonly host: string;
   readonly port: number;
@@ -309,6 +319,18 @@ const parseOcr = (env: Env): AppConfig['ocr'] => {
   return { languages };
 };
 
+const parseReferenceDir = (value: string | undefined): string | undefined => {
+  if (value === undefined) return undefined;
+  if (!isAbsolute(value)) throw new Error('SIPGES_REFERENCE_DIR must be an absolute path');
+  return value;
+};
+
+const parseDesktopUpdateDir = (value: string | undefined): string | undefined => {
+  if (value === undefined) return undefined;
+  if (!isAbsolute(value)) throw new Error('SIPGES_DESKTOP_UPDATE_DIR must be an absolute path');
+  return value;
+};
+
 /** Validates the whole environment once, before any resource is created. */
 export const loadConfig = (env: Env): AppConfig => ({
   cookieSecure: parseSwitch('SIPGES_COOKIE_SECURE', env.SIPGES_COOKIE_SECURE, true),
@@ -330,6 +352,8 @@ export const loadConfig = (env: Env): AppConfig => ({
   semanticSearch: parseSwitch('SIPGES_SEMANTIC_SEARCH', env.SIPGES_SEMANTIC_SEARCH, false),
   analyst: parseAnalyst(env),
   webDir: env.SIPGES_WEB_DIR || undefined,
+  referenceDir: parseReferenceDir(env.SIPGES_REFERENCE_DIR),
+  desktopUpdateDir: parseDesktopUpdateDir(env.SIPGES_DESKTOP_UPDATE_DIR),
   requireMfa: parseSwitch('SIPGES_REQUIRE_MFA', env.SIPGES_REQUIRE_MFA, true),
   accessLog: parseSwitch('SIPGES_ACCESS_LOG', env.SIPGES_ACCESS_LOG, true),
   allowedHosts: parseAllowedHosts(env.SIPGES_ALLOWED_HOSTS),

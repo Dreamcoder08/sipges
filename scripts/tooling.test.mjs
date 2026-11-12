@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, generateKeyPairSync } from 'node:crypto';
 import {
   chmodSync,
+  copyFileSync,
   existsSync,
   mkdtempSync,
   mkdirSync,
@@ -18,6 +19,7 @@ import {
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { PUBLIC_KEY } from '../deploy/desktop/updater/release.mjs';
 const root = process.cwd();
 test('API app-local Vitest registers shared cleanup hooks in the active runner', () => {
   const result = spawnSync('./node_modules/.bin/vitest', ['run', 'test/config.test.ts'], {
@@ -1086,6 +1088,7 @@ test('fork collaboration: issue forms, fork PR memory guard and the upstream flo
 const desktop = path.join(root, 'deploy/desktop');
 const launcher = path.join(desktop, 'linux/sipges-desktop.sh');
 const linuxInstaller = path.join(desktop, 'linux/install.sh');
+const managedLauncher = path.join(desktop, 'linux/sipges-managed.sh');
 const readDesktop = (file) => readFileSync(path.join(desktop, file), 'utf8');
 const nodeMessage =
   'Node.js 24 o posterior es necesario: instálalo con `winget install OpenJS.NodeJS.LTS` y vuelve a ejecutar este script.';
@@ -1098,6 +1101,9 @@ test('desktop launchers ship every file, the icon sizes and the docs', () => {
     'windows/start.ps1',
     'linux/install.sh',
     'linux/sipges-desktop.sh',
+    'linux/sipges-managed.sh',
+    'windows/start-managed.ps1',
+    'updater/run-current.mjs',
     'sipges.ico',
     'sipges.png',
     'sipges.svg',
@@ -1105,7 +1111,7 @@ test('desktop launchers ship every file, the icon sizes and the docs', () => {
     'README.es.md',
   ])
     assert.ok(existsSync(path.join(desktop, file)), `${file} is missing`);
-  for (const file of ['linux/install.sh', 'linux/sipges-desktop.sh'])
+  for (const file of ['linux/install.sh', 'linux/sipges-desktop.sh', 'linux/sipges-managed.sh'])
     assert.ok(statSync(path.join(desktop, file)).mode & 0o100, `${file} is not executable`);
 
   const ico = readFileSync(path.join(desktop, 'sipges.ico'));
@@ -1206,8 +1212,11 @@ test('no desktop file hard-codes a user path or depends on Corepack', () => {
   for (const file of [
     'windows/install.ps1',
     'windows/start.ps1',
+    'windows/start-managed.ps1',
     'linux/install.sh',
     'linux/sipges-desktop.sh',
+    'linux/sipges-managed.sh',
+    'updater/run-current.mjs',
   ]) {
     const text = readDesktop(file);
     assert.doesNotMatch(text, /\/home\/|C:\\Users\\/);
@@ -1216,7 +1225,7 @@ test('no desktop file hard-codes a user path or depends on Corepack', () => {
 });
 
 test('the Linux desktop scripts are valid POSIX shell', () => {
-  for (const script of [launcher, linuxInstaller]) {
+  for (const script of [launcher, linuxInstaller, managedLauncher]) {
     const result = spawnSync('sh', ['-n', script], { encoding: 'utf8' });
     assert.equal(result.status, 0, result.stderr);
   }
@@ -1261,9 +1270,9 @@ const desktopSandbox = (makeFakes, run, { omit = [] } = {}) =>
       PATH: `${bin}:${tools}`,
       SIPGES_DESKTOP_WAIT: '1',
     };
-    const exec = (script, args = []) => {
+    const exec = (script, args = [], extraEnv = {}) => {
       const result = spawnSync(path.join(tools, 'sh'), [script, ...args], {
-        env,
+        env: { ...env, ...extraEnv },
         encoding: 'utf8',
       });
       const log = existsSync(calls) ? readFileSync(calls, 'utf8') : '';
@@ -1494,6 +1503,447 @@ test('the Linux installer names a missing curl or openssl before building', () =
     { omit: ['openssl'] },
   );
 });
+// Managed mode: the installed app runs a signed release through the updater's launcher, from an
+// install root beside the state folder; the shortcut points at a stable script in that root.
+const haltNotice =
+  'SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad /synthetic/state.pre-update-20261111T000000Z-1.0.0-to-1.1.0 o contacte con soporte.';
+
+/** A signed synthetic release made with the release CLI and a throwaway signing key. */
+const signedRelease = (dir, version) => {
+  const pkg = path.join(dir, `package-${version}`);
+  mkdirSync(path.join(pkg, 'web'), { recursive: true });
+  const metadata = { version, platform: process.platform, arch: process.arch };
+  writeFileSync(path.join(pkg, 'metadata.json'), `${JSON.stringify(metadata)}\n`);
+  writeFileSync(path.join(pkg, 'start.mjs'), '// synthetic\n');
+  writeFileSync(path.join(pkg, 'web/index.html'), '<!doctype html>\n');
+  const signingKey = path.join(dir, `signing-key-${version}`);
+  const { privateKey } = generateKeyPairSync('ed25519');
+  writeFileSync(signingKey, privateKey.export({ type: 'pkcs8', format: 'pem' }), { mode: 0o600 });
+  const release = path.join(dir, `release-${version}`);
+  const made = spawnSync(
+    process.execPath,
+    [
+      path.join(desktop, 'updater/release.mjs'),
+      '--package',
+      pkg,
+      '--out',
+      release,
+      '--key',
+      signingKey,
+    ],
+    { encoding: 'utf8' },
+  );
+  assert.equal(made.status, 0, made.stderr);
+  rmSync(signingKey);
+  return release;
+};
+
+const managedFakes =
+  ({ running = false } = {}) =>
+  (calls) => ({
+    // CI runs Node 22; the installer requires 24, so the version probe answers 24 and every other
+    // call runs the real Node.
+    node: `echo "node $*" >> '${calls}'; case "$*" in *process.versions*) echo 24; exit 0;; esac; exec '${process.execPath}' "$@"`,
+    curl: running ? `echo "curl $*" >> '${calls}'` : `echo "curl $*" >> '${calls}'; exit 22`,
+    pnpm: `echo "pnpm $*" >> '${calls}'`,
+  });
+
+test('the Linux installer in managed mode installs a signed release beside the kept state folder', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    mkdirSync(path.join(state, 'pglite'), { recursive: true });
+    writeFileSync(path.join(state, 'pglite/PG_VERSION'), 'synthetic\n');
+    writeFileSync(path.join(state, 'data-key'), 'sentinel-key');
+    writeFileSync(path.join(state, 'admin-password'), 'sentinel-password');
+    const first = exec(linuxInstaller, ['--managed', release]);
+    assert.equal(first.status, 0, first.stderr);
+    assert.doesNotMatch(first.log, /^pnpm /m);
+    assert.match(first.log, /^curl .*http:\/\/127\.0\.0\.1:8000\/health$/m);
+    const data = path.join(home, '.local/share');
+    const app = path.join(data, 'sipges-app');
+    const json = (file) => JSON.parse(readFileSync(path.join(app, file), 'utf8'));
+    assert.deepEqual(
+      [json('current.json').version, json('current.json').path],
+      ['1.0.0', 'versions/1.0.0'],
+    );
+    assert.equal(json('install.json').stateDir, realpathSync(state));
+    assert.equal(
+      readFileSync(path.join(app, 'versions/1.0.0', PUBLIC_KEY), 'utf8'),
+      readFileSync(path.join(release, 'package', PUBLIC_KEY), 'utf8'),
+    );
+    assert.match(first.stdout, /update key that signed this release \(SHA-256 [0-9a-f]{64}\)/);
+    assert.equal(
+      readFileSync(path.join(app, 'run-current.mjs'), 'utf8'),
+      readDesktop('updater/run-current.mjs'),
+    );
+    assert.equal(
+      readFileSync(path.join(app, 'sipges-desktop.sh'), 'utf8'),
+      readDesktop('linux/sipges-managed.sh'),
+    );
+    assert.ok(statSync(path.join(app, 'sipges-desktop.sh')).mode & 0o100);
+    assert.ok(statSync(path.join(app, 'releases')).isDirectory());
+    const entry = readFileSync(path.join(data, 'applications/sipges.desktop'), 'utf8');
+    assert.ok(entry.includes(`Exec="${app}/sipges-desktop.sh"`), entry);
+    assert.match(entry, /^Icon=sipges$/m);
+    assert.ok(first.stdout.includes(`${state}/admin-password`), first.stdout);
+    // The state folder is kept as it was: nothing overwritten, nothing removed.
+    assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+    assert.equal(readFileSync(path.join(state, 'admin-password'), 'utf8'), 'sentinel-password');
+    assert.equal(readFileSync(path.join(state, 'pglite/PG_VERSION'), 'utf8'), 'synthetic\n');
+    assert.deepEqual(readdirSync(state).sort(), [
+      'admin-password',
+      'data-key',
+      'pglite',
+      'uploads',
+    ]);
+    // A second run keeps the installed version and refreshes only the entry and the scripts.
+    const second = exec(linuxInstaller, ['--managed', signedRelease(home, '2.0.0')]);
+    assert.equal(second.status, 0, second.stderr);
+    assert.match(second.stdout, /already installed: 1\.0\.0/);
+    assert.deepEqual(readdirSync(path.join(app, 'versions')), ['1.0.0']);
+    assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+  }));
+
+test('the Linux installer in managed mode refuses while SIPGES runs, or without a signed release', () => {
+  desktopSandbox(managedFakes({ running: true }), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    const result = exec(linuxInstaller, ['--managed', release]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /SIPGES is running on this computer \(port 8000\)/);
+    assert.equal(existsSync(state), false);
+    assert.equal(existsSync(path.join(home, '.local/share/sipges-app')), false);
+  });
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const unsigned = path.join(home, 'unsigned');
+    mkdirSync(path.join(unsigned, 'package'), { recursive: true });
+    for (const args of [['--managed', unsigned], ['--managed'], ['--bogus']]) {
+      const result = exec(linuxInstaller, args);
+      assert.equal(result.status, 1, args.join(' '));
+      assert.match(result.stderr, /not a signed release|Usage: install\.sh/);
+    }
+    assert.equal(existsSync(state), false);
+    assert.equal(existsSync(path.join(home, '.local/share/sipges-app')), false);
+    assert.equal(existsSync(path.join(home, '.local/share/applications/sipges.desktop')), false);
+  });
+});
+
+// Closure-roadmap T33: an older install's database must keep its own data key. A new key would
+// make its sealed values (MFA secrets) unreadable, so the installer stops before writing.
+test('the Linux installer in managed mode refuses a database without its data key, then keeps it', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    mkdirSync(path.join(state, 'pglite'), { recursive: true });
+    writeFileSync(path.join(state, 'pglite/PG_VERSION'), 'synthetic\n');
+    writeFileSync(path.join(state, 'admin-password'), 'sentinel-password');
+    for (const key of [null, ' \n']) {
+      if (key !== null) writeFileSync(path.join(state, 'data-key'), key);
+      const refused = exec(linuxInstaller, ['--managed', release]);
+      assert.equal(refused.status, 1);
+      assert.ok(
+        refused.stderr.includes(
+          `the state folder ${state} holds a database but its data-key is missing or empty: restore it from your backup of that folder and run this script again; nothing was changed.`,
+        ),
+        refused.stderr,
+      );
+      assert.equal(existsSync(path.join(home, '.local/share/sipges-app')), false);
+      assert.equal(existsSync(path.join(home, '.local/share/applications/sipges.desktop')), false);
+      assert.deepEqual(
+        readdirSync(state).sort(),
+        key === null ? ['admin-password', 'pglite'] : ['admin-password', 'data-key', 'pglite'],
+      );
+      if (key !== null) assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), key);
+    }
+    writeFileSync(path.join(state, 'data-key'), 'sentinel-key');
+    const kept = exec(linuxInstaller, ['--managed', release]);
+    assert.equal(kept.status, 0, kept.stderr);
+    assert.ok(
+      kept.stdout.includes(
+        `The existing state folder ${state} was kept as it is. Its first start copies it beside itself (${state}.pre-update-<time>-first-start-1.0.0), migrates a second copy and only then the folder.`,
+      ),
+      kept.stdout,
+    );
+    assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+  }));
+
+test('the Windows installer in managed mode takes a state folder and refuses a database without its data key', () => {
+  const install = readDesktop('windows/install.ps1');
+  assert.match(install, /^param\(\[string\]\$Release, \[string\]\$State\)$/m);
+  assert.ok(install.includes("if (-not $State) { $State = Join-Path $env:LOCALAPPDATA 'SIPGES' }"));
+  assert.ok(install.includes('-State solo sirve con -Release'));
+  assert.ok(
+    install.includes(
+      'tiene una base de datos pero falta su $missing o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.',
+    ),
+  );
+  // The check runs before the updater installs anything or a secret is created.
+  const managed = install.slice(install.indexOf('function Install-Managed'));
+  const guard = managed.indexOf('Get-MissingSecret');
+  assert.ok(guard > 0 && guard < managed.indexOf("update.mjs')"), 'guard before the install');
+  assert.ok(guard < managed.indexOf('Initialize-State'), 'guard before any secret is created');
+  assert.ok(install.includes('primer arranque la copia al lado'));
+});
+
+test('T33/T35: managed rerun refuses a different explicit state folder', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    assert.equal(exec(linuxInstaller, ['--managed', release]).status, 0);
+    const config = path.join(home, '.local/share/sipges-app/install.json');
+    const before = readFileSync(config, 'utf8');
+    const other = path.join(home, 'other-state');
+    const result = exec(linuxInstaller, ['--managed', release], { SIPGES_DESKTOP_STATE: other });
+    assert.equal(result.status, 1, result.stdout + result.stderr);
+    assert.equal(readFileSync(config, 'utf8'), before);
+    assert.equal(existsSync(other), false);
+    assert.ok(
+      result.stderr.includes(
+        `esta instalación usa la carpeta de datos ${realpathSync(state)}, no ${other}:`,
+      ),
+      result.stderr,
+    );
+    // The recorded folder, named again or left implicit, is still accepted.
+    for (const extra of [{}, { SIPGES_DESKTOP_STATE: state }]) {
+      const again = exec(linuxInstaller, ['--managed', release], extra);
+      assert.equal(again.status, 0, again.stderr);
+      assert.ok(again.stdout.includes(`${realpathSync(state)}/admin-password`), again.stdout);
+    }
+    assert.equal(readFileSync(config, 'utf8'), before);
+  }));
+
+test('T33: managed installer refuses a database without its admin-password', () =>
+  desktopSandbox(managedFakes(), ({ home, state, exec }) => {
+    const release = signedRelease(home, '1.0.0');
+    mkdirSync(path.join(state, 'pglite'), { recursive: true });
+    writeFileSync(path.join(state, 'pglite/PG_VERSION'), 'synthetic\n');
+    writeFileSync(path.join(state, 'data-key'), 'sentinel-key');
+    const before = readdirSync(state).sort();
+    for (const password of [null, ' \n']) {
+      if (password !== null) writeFileSync(path.join(state, 'admin-password'), password);
+      const expected = password === null ? before : [...before, 'admin-password'].sort();
+      const result = exec(linuxInstaller, ['--managed', release]);
+      assert.equal(result.status, 1, result.stdout + result.stderr);
+      assert.ok(
+        result.stderr.includes(
+          `la carpeta de datos ${state} tiene una base de datos pero falta su admin-password o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.`,
+        ),
+        result.stderr,
+      );
+      assert.deepEqual(readdirSync(state).sort(), expected);
+      assert.equal(readFileSync(path.join(state, 'data-key'), 'utf8'), 'sentinel-key');
+      if (password === null) assert.equal(existsSync(path.join(state, 'admin-password')), false);
+      else assert.equal(readFileSync(path.join(state, 'admin-password'), 'utf8'), password);
+      assert.equal(existsSync(path.join(home, '.local/share/sipges-app')), false);
+    }
+  }));
+
+test('T33/T35: the Windows installer refuses another state folder on a rerun and a database without its admin password', () => {
+  const install = readDesktop('windows/install.ps1');
+  const managed = install.slice(install.indexOf('function Install-Managed'));
+  // A database needs both secrets: the check names each missing one.
+  assert.ok(install.includes("foreach ($name in 'data-key', 'admin-password')"));
+  assert.ok(
+    install.includes(
+      'tiene una base de datos pero falta su $missing o está vacía: restáurala desde tu respaldo de esa carpeta y vuelve a ejecutar este script; no se cambió nada.',
+    ),
+  );
+  // A rerun reads the recorded folder and refuses another one given with -State.
+  assert.ok(install.includes("Join-Path $AppRoot 'install.json'"));
+  assert.ok(
+    install.includes(
+      'Esta instalación usa la carpeta de datos $recorded, no ${State}: vuelve a ejecutar el script sin -State o con -State $recorded; no se cambió nada.',
+    ),
+  );
+  const recordedCheck = managed.indexOf('Get-RecordedState');
+  const databaseCheck = managed.indexOf('Get-MissingSecret');
+  for (const [name, at] of [
+    ['recorded state', recordedCheck],
+    ['database secrets', databaseCheck],
+  ]) {
+    assert.ok(at > 0, `${name} check missing`);
+    assert.ok(at < managed.indexOf('New-Item -ItemType Directory -Path $AppRoot'), `${name} first`);
+    assert.ok(at < managed.indexOf("update.mjs')"), `${name} before the install`);
+    assert.ok(at < managed.indexOf('Initialize-State'), `${name} before any secret`);
+  }
+  assert.ok(recordedCheck < databaseCheck, 'the recorded folder is chosen before it is checked');
+});
+
+/** The managed launcher script copied into a root, as the installer leaves it. */
+const managedRoot = (home) => {
+  const app = path.join(home, 'app');
+  mkdirSync(app);
+  copyFileSync(managedLauncher, path.join(app, 'sipges-desktop.sh'));
+  return app;
+};
+
+test('the managed Linux launcher starts the stable entry and opens its own browser profile', () =>
+  desktopSandbox(
+    (calls) => ({
+      curl: `echo "curl $*" >> '${calls}'; [ "$(cat '${calls}.up' 2>/dev/null)" = up ]`,
+      node: `echo "node $*" >> '${calls}'; echo up > '${calls}.up'; sleep 3; echo down > '${calls}.up'`,
+      'google-chrome-stable': browserFake(calls),
+      'notify-send': `echo "notify $*" >> '${calls}'`,
+    }),
+    ({ home, exec }) => {
+      const app = managedRoot(home);
+      const result = exec(path.join(app, 'sipges-desktop.sh'));
+      assert.equal(result.status, 0, result.stderr);
+      assert.ok(
+        result.log.includes(`node ${app}/run-current.mjs --releases ${app}/releases --port 8000\n`),
+        result.log,
+      );
+      assert.ok(
+        result.log.includes(
+          `browser --app=http://localhost:8000 --class=SIPGES --user-data-dir=${app}/browser\n`,
+        ),
+        result.log,
+      );
+      assert.doesNotMatch(result.log, /notify/);
+    },
+  ));
+
+test('the managed Linux launcher shows the halt notice when the launcher exits with code 3', () => {
+  const halting = (extra) => (calls) => ({
+    curl: 'exit 22',
+    node: `echo '${haltNotice}' >&2; exit 3`,
+    'google-chrome-stable': browserFake(calls),
+    ...extra(calls),
+  });
+  desktopSandbox(
+    halting((calls) => ({ 'notify-send': `echo "notify $*" >> '${calls}'` })),
+    ({ home, exec }) => {
+      const app = managedRoot(home);
+      const result = exec(path.join(app, 'sipges-desktop.sh'));
+      assert.equal(result.status, 3);
+      assert.equal(result.stderr, `${haltNotice}\n`);
+      assert.equal(result.log, `notify --urgency=critical SIPGES ${haltNotice}\n`);
+      assert.ok(readFileSync(path.join(app, 'launcher.log'), 'utf8').includes(haltNotice));
+    },
+  );
+  desktopSandbox(
+    halting((calls) => ({ zenity: `echo "zenity $*" >> '${calls}'` })),
+    ({ home, exec }) => {
+      const result = exec(path.join(managedRoot(home), 'sipges-desktop.sh'));
+      assert.equal(result.status, 3);
+      assert.equal(result.log, `zenity --error --title=SIPGES --text=${haltNotice}\n`);
+    },
+  );
+});
+
+test('the managed Linux launcher names the pre-update copy even without a notice in its log', () =>
+  desktopSandbox(
+    (calls) => ({
+      curl: 'exit 22',
+      node: 'exit 3',
+      'notify-send': `echo "notify $*" >> '${calls}'`,
+    }),
+    ({ home, exec }) => {
+      const result = exec(path.join(managedRoot(home), 'sipges-desktop.sh'));
+      assert.equal(result.status, 3);
+      assert.match(
+        result.stderr,
+        /^SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar\. No borre nada\. Restaure la copia de seguridad previa a la actualización \(la carpeta <carpeta de datos>\.pre-update-… junto a la carpeta de datos\) o contacte con soporte\.\n$/,
+      );
+      assert.match(result.log, /^notify --urgency=critical SIPGES SIPGES no se inició/);
+    },
+  ));
+
+test('the managed Linux launcher stays with SIPGES and reports a halt after the click', () =>
+  desktopSandbox(
+    (calls) => ({
+      curl: `[ "$(cat '${calls}.up' 2>/dev/null)" = up ]`,
+      node: `echo up > '${calls}.up'; sleep 3; echo down > '${calls}.up'; echo '${haltNotice}' >&2; exit 3`,
+      'google-chrome-stable': browserFake(calls),
+      'notify-send': `echo "notify $*" >> '${calls}'`,
+    }),
+    ({ home, exec }) => {
+      const app = managedRoot(home);
+      const result = exec(path.join(app, 'sipges-desktop.sh'));
+      assert.equal(result.status, 3);
+      assert.equal(result.stderr, `${haltNotice}\n`);
+      const lines = result.log.trim().split('\n');
+      assert.match(lines[0], /^browser --app=http:\/\/localhost:8000 /);
+      assert.equal(lines[1], `notify --urgency=critical SIPGES ${haltNotice}`);
+    },
+  ));
+
+test('the managed Linux launcher reuses a running SIPGES and honours SIPGES_DESKTOP_PORT', () =>
+  desktopSandbox(
+    (calls) => ({
+      curl: `echo "curl $*" >> '${calls}'`,
+      node: `echo "node $*" >> '${calls}'`,
+      'google-chrome-stable': browserFake(calls),
+    }),
+    ({ home, exec }) => {
+      const app = managedRoot(home);
+      const result = exec(path.join(app, 'sipges-desktop.sh'), [], {
+        SIPGES_DESKTOP_PORT: '41234',
+      });
+      assert.equal(result.status, 0, result.stderr);
+      const lines = result.log.trim().split('\n');
+      assert.match(lines[0], /^curl .*http:\/\/127\.0\.0\.1:41234\/health$/);
+      assert.equal(
+        lines[1],
+        `browser --app=http://localhost:41234 --class=SIPGES --user-data-dir=${app}/browser`,
+      );
+      assert.equal(lines.length, 2);
+    },
+  ));
+
+test('the Windows installer has a managed mode that installs a signed release and points the shortcut at the root', () => {
+  const install = readDesktop('windows/install.ps1');
+  for (const needle of [
+    'param(',
+    '[string]$Release',
+    "Join-Path $env:LOCALAPPDATA 'SIPGES-app'",
+    'update.mjs',
+    '--trust-release-key',
+    'current.json',
+    'run-current.mjs',
+    'start-managed.ps1',
+    "'releases'",
+    "$Probe = 'http://127.0.0.1:8000/health'",
+    'SIPGES está abierto en este equipo',
+    'no es una versión firmada',
+  ])
+    assert.ok(install.includes(needle), `install.ps1 lacks ${needle}`);
+  // The managed branch ends before pnpm or the web build run.
+  const managed = install.indexOf('if ($Release)');
+  assert.ok(
+    managed > 0 && managed < install.indexOf('\nInstall-Pnpm'),
+    'managed mode must skip pnpm',
+  );
+  // The shortcut of the managed install points at the copy in the root, not at the clone.
+  assert.match(install, /New-Shortcuts \(Join-Path \$AppRoot 'start\.ps1'\) \$AppRoot/);
+});
+
+test('the managed Windows launcher waits for the launcher and shows its halt notice in a message box', () => {
+  const start = readDesktop('windows/start-managed.ps1');
+  assert.ok(start.startsWith('﻿'), 'accents need a UTF-8 BOM in Windows PowerShell 5.1');
+  for (const needle of [
+    '$Root = $PSScriptRoot',
+    "Join-Path $Root 'run-current.mjs'",
+    "Join-Path $Root 'releases'",
+    "Join-Path $Root 'launcher.log'",
+    "$Probe = 'http://127.0.0.1:8000/health'",
+    "$Url = 'http://localhost:8000'",
+    '$HaltExitCode = 3',
+    "'SIPGES no se inició*'",
+    '-Encoding UTF8',
+    'MessageBox',
+    'System.Threading.Mutex',
+    'msedge.exe',
+    '--app=$Url',
+    '$null = $launcher.Handle',
+    '$launcher.WaitForExit()',
+    'Show-Halt',
+  ])
+    assert.ok(start.includes(needle), `start-managed.ps1 lacks ${needle}`);
+  assert.doesNotMatch(start, /SIPGES_DATA_KEY|SIPGES_ADMIN_PASSWORD|apps\\api/);
+  // A halt is reported both while starting and after Edge opened (an update after the click).
+  const halts = start.match(/ExitCode -eq \$HaltExitCode/g) ?? [];
+  assert.equal(halts.length, 2, 'both waits must check for the halt');
+  assert.ok(start.lastIndexOf('Show-Halt') > start.indexOf("Start-Process -FilePath 'msedge.exe'"));
+});
+
 test('start.ps1 releases the boot mutex before showing a boot failure', () => {
   const script = readDesktop('windows/start.ps1');
   for (const reason of ['se cerró al arrancar', 'no arrancó en'])
