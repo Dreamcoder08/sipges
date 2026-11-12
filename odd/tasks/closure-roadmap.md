@@ -91,8 +91,8 @@ Phase 4, real data and owner decisions:
 
 Phase 5, design system and interface (S5):
 
-- T28 [ ] — S5: audit the design system against the running app. Route: inline. Commit: pending.
-- T29 [ ] — S5: UX audit of the seven destinations. Route: one explorer, then inline. Commit: pending.
+- T28 [x] — S5: audit the design system against the running app. Route: inline. Done: design/vanguard branch 1cd53f6d (system.md re-synced; audit in L10).
+- T29 [x] — S5: UX audit of the seven destinations. Route: one explorer, then inline. Done: audit in L10.
 - T30 [ ] — S5: design directions on the canvas, owner picks. Route: gentle-design. Commit: pending.
 - T31 [ ] — S5: build the chosen direction in slices. Route: inline per slice. Commit: pending.
 - T32 [ ] — S5: accessibility and speed budgets enforced in CI. Route: inline. Commit: pending.
@@ -607,3 +607,14 @@ Not chosen in S2. Each stays open in its own document.
   synthetic data: chromium 89 passed, mobile 46 passed. T18 stays open until the owner reviews the 360 px screenshots
   in `.worktrees/interface/.data/mobile-pass/after/`. T34 runbook written (453 lines); its ⚠ commands were never run on
   Windows, and it needs the T27 answers.
+- L10 — 2026-11-12. Root checkout moved to `main` (its branch `design/compact-sidebar` had no commits outside `main`;
+  one untracked screenshot identical to the tracked copy was removed). T28/T29 read-only audit: colours fully
+  tokenised in modules; duplicates (7 empty states, ~8 chip styles, 8 status badges, 4 alerts, 4 dialogs, 9 tables);
+  contrast failures (input and button borders 1.3–1.6:1, `--dim-d` 3.6:1, `--level-yellow` 2.4:1 as a fill, dark
+  `--ink-faint` 4.1:1); ten UX problems (Inicio blank bands and clipped chips at 360 px, no retry on a failed summary,
+  Registros filter stack and client-side loading of every row, Bandeja hints on touch, IRSA caveat shown twice,
+  Integraciones dead-end empty state, no Cuenta). T30: `design/system.md` re-synced and three directions in
+  `design/vanguard/` (branch `design/vanguard`, 1cd53f6d): 01 Calma conversacional (≈3 slices), 02 Mesa de operaciones
+  (≈6), 03 Mapa vivo (≈9). Shared proposed tokens: `--color-control-border`, `--color-warning(-soft)`,
+  `--text-caption`, `--motion-spin`, `--motion-shimmer`; corrected `--dim-d`, `--level-yellow`/`--viz-6` light, dark
+  `--ink-faint`. axe: 0 violations in both themes. Waiting for the owner to pick a direction.
