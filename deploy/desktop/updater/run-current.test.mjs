@@ -7,7 +7,7 @@ import process from 'node:process';
 import { generateKeyPairSync } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
-import { copyFile, mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,15 +46,15 @@ async function put(path, content) {
   await writeFile(path, content);
 }
 
-async function fixture(dir) {
+async function fixture(dir, options = {}) {
   const pair = generateKeyPairSync('ed25519');
   let serial = 0;
-  const releaseOf = async (version) => {
+  const releaseOf = async (version, start = APP(version)) => {
     serial += 1;
     const pkg = join(dir, `package-${serial}`);
     const metadata = { version, platform: process.platform, arch: process.arch };
     await put(join(pkg, 'metadata.json'), `${JSON.stringify(metadata, null, 2)}\n`);
-    await put(join(pkg, 'start.mjs'), APP(version));
+    await put(join(pkg, 'start.mjs'), start);
     await put(join(pkg, 'web/index.html'), '<!doctype html>\n');
     await mkdir(join(pkg, 'updater'));
     for (const name of RUNTIME) await copyFile(join(here, name), join(pkg, 'updater', name));
@@ -66,7 +66,7 @@ async function fixture(dir) {
   const state = join(dir, 'state');
   await install({
     root,
-    release: await releaseOf('1.0.0'),
+    release: await releaseOf('1.0.0', options.start),
     stateDir: state,
     trustKey: pair.publicKey.export({ type: 'spki', format: 'pem' }),
   });
@@ -164,3 +164,60 @@ test('the stable entry says in Spanish that nothing is installed', () =>
       /^SIPGES no está instalado en .+empty: falta current\.json\. Vuelva a ejecutar el instalador\.\n$/,
     );
   }));
+
+// A server that does not stop on SIGTERM (a long write, a stuck shutdown), recording its pid.
+const STUBBORN = `import { createServer } from 'node:http';
+import { writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+writeFileSync(join(dirname(process.env.SIPGES_PGLITE_DIR), 'server.pid'), String(process.pid));
+createServer((req, res) => {
+  res.setHeader('content-type', 'application/json');
+  if (req.url === '/about') return res.end(JSON.stringify({ version: 'stubborn' }));
+  res.statusCode = 404;
+  res.end('{}');
+}).listen(Number(process.env.SIPGES_PORT), '127.0.0.1');
+process.on('SIGTERM', () => {});
+`;
+
+const alive = (pid) => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if (error.code !== 'ESRCH') throw error;
+    return false;
+  }
+};
+
+for (const signal of ['SIGTERM', 'SIGINT'])
+  test(`a second ${signal} during a graceful stop force-stops the server and leaves no process behind`, () =>
+    withTemp(async (dir) => {
+      const { root, state } = await fixture(dir, { start: STUBBORN });
+      const port = await freePort();
+      const started = run(root, ['--port', `${port}`]);
+      let pid;
+      try {
+        assert.deepEqual(await about(port), { version: 'stubborn' });
+        pid = Number(await readFile(join(state, 'server.pid'), 'utf8'));
+        started.child.kill(signal);
+        // The first signal starts the graceful stop; the server ignores it.
+        await sleep(300);
+        assert.equal(alive(pid), true);
+        started.child.kill(signal);
+        const code = await Promise.race([
+          started.exit,
+          sleep(5000, undefined, { ref: false }).then(() => 'still running'),
+        ]);
+        assert.equal(code, 1, started.stderr);
+        for (let i = 0; i < 100 && alive(pid); i += 1) await sleep(30);
+        assert.equal(alive(pid), false, 'the server outlived the forced stop');
+        const events = started.stdout
+          .trim()
+          .split('\n')
+          .map((line) => JSON.parse(line).event);
+        assert.deepEqual(events, ['started', 'stop_forced']);
+      } finally {
+        started.child.kill('SIGKILL');
+        if (pid && alive(pid)) process.kill(pid, 'SIGKILL');
+      }
+    }));

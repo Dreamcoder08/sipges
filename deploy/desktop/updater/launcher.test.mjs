@@ -608,3 +608,51 @@ test('the launcher process ends as soon as SIPGES stops, without waiting out the
     assert.equal(code, 0);
     assert.ok(Date.now() - stoppedAt < 5_000, `took ${Date.now() - stoppedAt} ms`);
   }));
+
+test('after an update, a version that cannot start ends the launcher instead of leaving it idle', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    await releaseOf('1.1.0');
+    // Readiness passes, then the state folder loses its data key: the restart cannot start.
+    const app = await started({
+      root,
+      source,
+      ready: async ({ stateDir }) => writeFile(join(stateDir, 'data-key'), ''),
+    });
+    try {
+      await app.checked;
+      await app.about();
+      await request(root, '1.1.0');
+      const ended = await Promise.race([app.done, sleep(5000).then(() => 'still running')]);
+      assert.equal(ended, 1, JSON.stringify(app.lines.map((l) => l.event)));
+      const failed = app.lines.find((l) => l.event === 'start_failed');
+      assert.match(failed?.reason ?? '', /data-key is empty/);
+      assert.equal(failed.version, '1.1.0');
+    } finally {
+      await Promise.race([app.stop(), sleep(3000)]);
+    }
+  }));
+
+test('after an update, a status file that cannot be written never keeps SIPGES from starting or stopping', () =>
+  withTemp(async (dir) => {
+    const { root, source, releaseOf } = await fixture(dir);
+    await releaseOf('1.1.0');
+    const app = await started({
+      root,
+      source,
+      ready: async () => rm(join(root, CHANNEL), { recursive: true }),
+    });
+    let stopped;
+    try {
+      await app.checked;
+      await app.about();
+      await request(root, '1.1.0');
+      for (let i = 0; i < 400 && !app.lines.some((l) => l.event === 'updated'); i += 1)
+        await sleep(10);
+      assert.equal((await app.about()).version, '1.1.0');
+      assert.ok(app.lines.some((l) => l.event === 'status_write_failed'));
+    } finally {
+      stopped = await Promise.race([app.stop(), sleep(3000).then(() => 'stop hung')]);
+    }
+    assert.equal(stopped, 0);
+  }));
