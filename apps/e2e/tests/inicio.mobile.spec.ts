@@ -32,6 +32,11 @@ test('each briefing row on a 360 px phone is one line with one link', async ({ p
   }
 });
 
+/**
+ * The first thing that needs attention (or the calm empty state) is on screen at 360 × 780 without
+ * scrolling (closure-roadmap L10: a ~490 px blank band pushed it down), and the status line wraps
+ * instead of clipping its items.
+ */
 test('the first attention row is visible on a 360 px phone without scrolling', async ({
   page,
   admin,
@@ -49,6 +54,18 @@ test('the first attention row is visible on a 360 px phone without scrolling', a
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   const row = await box(first);
   expect(row.y + row.height).toBeLessThanOrEqual(780);
+  const status = page.getByText('IA externa desactivada');
+  await expect(status).toBeVisible();
+  const clipped = await status
+    .locator('xpath=..')
+    .evaluate((line) =>
+      [...line.children].some(
+        (item) =>
+          item.scrollWidth > item.clientWidth + 1 ||
+          item.getBoundingClientRect().right > document.documentElement.clientWidth,
+      ),
+    );
+  expect(clipped, 'no status item is clipped or pushed off screen').toBe(false);
   const dir = process.env.SIPGES_SCREENSHOT_DIR;
   if (dir) await page.screenshot({ path: path.join(dir, '01-implemented-360.png') });
 });
@@ -82,9 +99,8 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
 }
 
 /**
- * Inicio on a phone reads like a chat app (ChatGPT, Claude): the greeting centred in the free
- * space, the briefing as one-line rows, the suggestions in one swipeable strip and the composer
- * resting at the bottom of the screen.
+ * Inicio on a phone: greeting and status line, what needs attention, the week as one-line rows,
+ * the suggestions in one swipeable strip and the composer resting at the bottom of the screen.
  */
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`Inicio on a phone is a chat-style home (${colorScheme})`, async ({ page, admin }) => {
@@ -92,7 +108,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await signInToProject(page, admin, DEFAULT_SCOPE);
     await page.goto('/inicio');
 
-    const composer = page.locator('form').filter({ has: page.getByLabel('Pregunta a SIPGES') });
+    const field = page.getByRole('textbox', { name: /^Buscar en registros de / });
+    const composer = page.locator('form').filter({ has: field });
     await expect(composer).toBeVisible();
     await expect(page.getByRole('heading', { name: /^Hola/ })).toBeVisible();
 
@@ -128,21 +145,28 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // The narrowest supported phone (360 px) keeps the composer, its send button included, inside the width.
     // A long project name stands in for wider fonts (CI renders with DejaVu Sans).
     await page.setViewportSize({ width: 360, height: 780 });
-    await composer.getByText(/^Registros de /).evaluate((node) => {
+    if (process.env.SIPGES_SCREENSHOT_DIR) {
+      await page.screenshot({
+        path: path.join(process.env.SIPGES_SCREENSHOT_DIR, `inicio-360-${colorScheme}.png`),
+        animations: 'disabled',
+      });
+    }
+    await composer.getByText(/^Buscar en registros de /).evaluate((node) => {
       if (node.lastChild)
-        node.lastChild.textContent = 'Registros de Proyecto con un nombre muy largo (migración)';
+        node.lastChild.textContent =
+          'Buscar en registros de Proyecto con un nombre muy largo (migración)';
     });
     const narrow = await page.evaluate(() => ({
       scroll: document.documentElement.scrollWidth,
       view: document.documentElement.clientWidth,
     }));
     expect(narrow.scroll).toBeLessThanOrEqual(narrow.view);
-    const send = await box(page.getByRole('button', { name: 'Enviar pregunta' }));
+    const send = await box(page.getByRole('button', { name: 'Buscar en registros' }));
     expect(send.x + send.width).toBeLessThanOrEqual(360);
 
     // A suggestion still fills the composer.
     await chips.first().tap();
-    await expect(page.getByLabel('Pregunta a SIPGES')).toHaveValue(/\S/);
+    await expect(field).toHaveValue(/\S/);
 
     const result = await analyzeAccessibility(page);
     expect(result.violations.map((v) => v.id)).toEqual([]);

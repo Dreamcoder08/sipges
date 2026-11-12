@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, delay, http } from 'msw';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi, server } from '../test/server.ts';
 import { App } from './App.tsx';
@@ -384,6 +384,28 @@ describe('Inicio hub', () => {
     signals: [],
     suggestions: [],
   });
+  const withExternalAi = (enabled: boolean) =>
+    server.use(
+      http.get('/system/v4/settings', () =>
+        HttpResponse.json({
+          level_meanings: {
+            Verde: 'Estable',
+            Amarillo: 'Atención',
+            Naranja: 'Intervención',
+            Rojo: 'Crítica',
+          },
+          window_days: 90,
+          half_life_days: 14,
+          thresholds: { Amarillo: 2, Naranja: 4, Rojo: 7 },
+          recommendations: [],
+          phase: null,
+          phases: [],
+          external_ai: { enabled },
+          updated_by: '',
+          updated_at: null,
+        }),
+      ),
+    );
   const PENDING = [
     digitalAlert('TA-1', 'Pendiente de verificación'),
     digitalAlert('TA-2', 'Pendiente de verificación'),
@@ -418,7 +440,7 @@ describe('Inicio hub', () => {
     render(<App />);
     return userEvent.setup();
   };
-  const SEARCH = 'Pregunta a SIPGES';
+  const SEARCH = 'Buscar en registros de Proyecto Demo';
   const attention = () => screen.findByRole('region', { name: /Necesita tu atención/ });
 
   it('opens on the Inicio tab with Dashboard and Centro gerencial next to it', async () => {
@@ -489,15 +511,54 @@ describe('Inicio hub', () => {
     expect(await within(list).findByText('Corte')).toBeVisible();
   });
 
-  it('searches the typed question in the existing palette without calling a model', async () => {
+  it('labels the composer «Buscar en registros» while external AI is off and searches with Enter', async () => {
     const user = await open();
-    const composer = await screen.findByRole('textbox', { name: 'Pregunta a SIPGES' });
+    const composer = await screen.findByRole('textbox', { name: SEARCH });
+    expect(await screen.findByText('IA externa desactivada')).toBeVisible();
+    expect(screen.getByText('Enter busca · Mayús+Enter, nueva línea')).toBeVisible();
     await user.type(composer, 'demandas abiertas en Vice');
-    await user.click(screen.getByRole('button', { name: 'Enviar pregunta' }));
+    await user.click(screen.getByRole('button', { name: 'Buscar en registros' }));
     const palette = await screen.findByRole('dialog', { name: 'Búsqueda global' });
     expect(within(palette).getByRole('combobox')).toHaveValue('demandas abiertas en Vice');
     await waitFor(() => expect(searched).toContain('demandas abiertas en Vice'));
     expect(localStorage.length).toBe(0);
+  });
+
+  it('labels the composer «Preguntar, con citas» when external AI is on and says answers are not there yet', async () => {
+    withExternalAi(true);
+    const user = await open();
+    const composer = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
+    expect(await screen.findByText('IA externa activada')).toBeVisible();
+    expect(
+      screen.getByText(
+        'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.',
+      ),
+    ).toBeVisible();
+    expect(composer).toHaveAccessibleDescription(
+      'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.',
+    );
+    await user.type(composer, 'agua{Enter}');
+    const palette = await screen.findByRole('dialog', { name: 'Búsqueda global' });
+    expect(within(palette).getByRole('combobox')).toHaveValue('agua');
+  });
+
+  it('says so while the device is offline and clears it when the connection returns', async () => {
+    const online = vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false);
+    try {
+      await open();
+      await screen.findByRole('textbox', { name: SEARCH });
+      expect(screen.getByText('Sin conexión · lo que ves puede no estar al día')).toBeVisible();
+      online.mockReturnValue(true);
+      act(() => void window.dispatchEvent(new Event('online')));
+      expect(screen.queryByText(/Sin conexión/)).toBeNull();
+      online.mockReturnValue(false);
+      act(() => void window.dispatchEvent(new Event('offline')));
+      expect(screen.getByText('Sin conexión · lo que ves puede no estar al día')).toBeVisible();
+    } finally {
+      online.mockRestore();
+      // TanStack Query pauses every query after `offline` (one onlineManager per module): end online.
+      act(() => void window.dispatchEvent(new Event('online')));
+    }
   });
 
   it('does not call the list empty while a source behind it is still loading', async () => {
