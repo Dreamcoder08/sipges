@@ -33,27 +33,29 @@ First, before anything else (S5: real data already lives on one laptop with no p
 
 Phase 0, integration (nothing else is safe to build until `main` holds the verified units):
 
-- T1 [ ] — S2: merge train #391 → #392 → #394 → #393 → #395. Route: owner authorises each merge. Commit: pending.
-- T2 [ ] — S2: land the local-integration leftovers (Bandeja fix, Settings shortcuts). Route: inline. Commit: pending.
-- T3 [ ] — S2: triage the other open PRs (#397, #381, #338). Route: inline, owner decides #338. Commit: n/a.
-- T4 [ ] — S2: Go integration tests skip without a database instead of panicking. Route: inline. Commit: pending.
+- T1 [x] — S2: merge train #391 → #392 → #394 → #393 → #395. Route: owner authorises each merge. Done: #391, #392, #394, #393, #395 merged (main a5825d36).
+- T2 [x] — S2: land the local-integration leftovers (Bandeja fix, Settings shortcuts). Route: inline. Done: PR #400 (draft).
+- T3 [x] — S2: triage the other open PRs (#397, #381, #338). Route: inline, owner decides #338. Done: #381 merged; #397 superseded by #398 (owner closes); #338 owner.
+- T4 [x] — S2: Go integration tests skip without a database instead of panicking. Route: inline. Done: PR #399 (draft).
 - T5 [ ] — S2: bring the root checkout to `main` and retire finished worktrees. Route: owner confirms each removal.
   Commit: n/a.
 
 Phase 1, desktop (the nearest real use; does not depend on the cloud):
 
-- T6 [ ] — S2: finish the managed package (desktop-updates T1). Route: one worker. Commit: pending.
-- T7 [ ] — S2: signed release check and recoverable update transaction (desktop-updates T2). Route: worker, then
-  verifier. Commit: pending.
-- T8 [ ] — S2: update notice and approval at startup (desktop-updates T3). Route: inline. Commit: pending.
-- T9 [ ] — S2: independent verification of update, refusal and recovery (desktop-updates T4). Route:
-  gentle-ai-verify. Commit: n/a.
+- T6 [x] — S2: finish the managed package (desktop-updates T1). Route: one worker. Done: feat/desktop-updates a1aabaf4..e3ae3347.
+- T7 [x] — S2: signed release check and recoverable update transaction (desktop-updates T2). Route: worker, then
+  verifier. Done: feat/desktop-updates, T2 commits plus correction round 4f1d7fee.
+- T8 [x] — S2: update notice and approval at startup (desktop-updates T3). Route: inline. Done: feat/desktop-updates 544e9283..9738a024.
+- T9 [x] — S2: independent verification of update, refusal and recovery (desktop-updates T4). Route:
+  gentle-ai-verify. Done: two verifier passes, see L7.
 - T10 [ ] — S2, S5: check the existing Windows install without risking its data. Route: owner on the laptop, parent
   reads the evidence. Commit: pending (fixes only).
 - T11 [ ] — S2: local backup and restore drill for the desktop state folder. Route: inline. Commit: pending.
 
 - T33 [ ] — S6: carry an existing install's data into the definitive version, rehearsed. Route: worker, then
   verifier. Commit: pending.
+- T35 [ ] — S6: shortcuts start the managed launcher; the halt reaches the user. Route: worker, then verifier.
+  Commit: pending.
 - T34 [ ] — S6: the visit, by a written runbook. Route: owner on the laptop. Commit: pending (runbook).
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
@@ -324,6 +326,26 @@ Every task that changes code follows the repository rules: synthetic data only, 
 - Risk: items 1 and 2. Own commit, independent verifier.
 - Depends on: T27 (only the commit hash is needed, it can be sent by message), T6.
 
+### T35 — Shortcuts and the halt message
+
+- Source: second verifier pass on the updater (L7). The update works, but the Windows and Linux shortcuts still start
+  the clone-based launcher, and a halted update (exit 3 after `ROLLBACK_INCOMPLETE`) only writes to stderr: the
+  browser shows «Actualizando…» and then «SIPGES no respondió».
+- Steps, test first:
+  1. Both installers create the managed install (`versions/`, `current.json`, state folder) and point the shortcut at
+     `updater/launcher.mjs`.
+  2. A halted start shows a Spanish message the user sees (Windows message box, Linux notification or page), naming
+     the backup to restore.
+  3. A documented way out of the halt after restoring one's own backup, without deleting files by hand.
+  4. Update check: try the newest release first and stop at the first that verifies (check time no longer grows with
+     each release kept).
+  5. Stopping during the click re-check cancels the update.
+  6. `SIPGES_REFERENCE_DIR` set by the package still reaches the server.
+- Verifier probes kept under `.worktrees/desktop-updates/.data/verifier2-probes/` (ignored); add the useful ones as
+  tests, with the race test at three processes.
+- Done when: the six steps pass on Linux and the Windows steps are written for T34's rehearsal.
+- Risk: items 1 and 5.
+
 ### T34 — The visit
 
 - A printed runbook, `docs/deployment/desktop-visit.es.md`, in Spanish, with a box to tick per step:
@@ -560,3 +582,13 @@ Not chosen in S2. Each stays open in its own document.
   document is one slice; these changes are the second.
 - L6 — S6 verbatim, 2026-11-11. Effect: the visit is the milestone; T33 and T34 added; T26 becomes step 1 of the
   visit unless the user can do it earlier by herself; phases 2 and 4 no longer block the milestone.
+- L7 — Execution, 2026-11-12. T1: #391, #392, #394, #393 and #395 merged after merging `main` into each and green
+  CI (conflicts in `scripts/tooling.test.mjs` and `.gitignore` kept both sides; #393's install drill failed once on
+  the live Defensoría preview, 502, and passed on rerun). Every merge triggered `deploy-workers.yml`, which failed as
+  expected: production answers 503 until Neon resets (T12). T4: helpers that touched the scratch database now skip,
+  `go test ./...` exits 0 without a database (73 packages). T6–T8 by workers on `feat/desktop-updates`, all local:
+  managed package booted outside the checkout; signed updater (38 tests); click-to-update E2E N→N+1 on Linux in
+  5.5 s. T9: first verifier found two blockers (launcher restarted after an incomplete rollback; a linked state
+  folder got no real backup) and two medium defects (stale lock with a reused pid; damaged package offered); one
+  correction round fixed all, and a second verifier confirmed them on Linux with six advisories, carried into T35.
+  Not run anywhere: Windows. A stash `engram manifest before merge` was left in `.worktrees/irsa-coverage`.
