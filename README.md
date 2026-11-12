@@ -1,5 +1,8 @@
 # SIPGES — Sistema Inteligente de Predicción y GEStión Social
 
+<img width="1883" height="982" alt="image" src="https://github.com/user-attachments/assets/8d9406ac-c484-4259-8698-bb47acf43ec5" />
+
+
 Gestión y análisis territorial con TypeScript, Go, Rust y arquitectura hexagonal.
 
 SIPGES es un monorepo (API Hono, SPA React/Vite, contratos Zod compartidos) sobre PostgreSQL con aislamiento por proyecto. Reúne registros territoriales, mapas, inteligencia de redes, IRSA y automatizaciones en una sola aplicación. La versión publicada es **v1.1.0** ([CHANGELOG](CHANGELOG.md)).
