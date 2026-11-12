@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
 /** Sections of Configuración, deep-linked as `?seccion=` (docs/adr/0006). */
-export const SettingsSection = z.enum(['apariencia', 'proyecto', 'privacidad', 'notificaciones']);
+export const SettingsSection = z.enum([
+  'cuenta',
+  'apariencia',
+  'proyecto',
+  'privacidad',
+  'notificaciones',
+]);
 export type SettingsSection = z.infer<typeof SettingsSection>;
 
 /** Search of `/version-4`: an unknown or missing section opens Apariencia. */

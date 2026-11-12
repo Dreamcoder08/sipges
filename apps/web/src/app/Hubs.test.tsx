@@ -427,7 +427,7 @@ describe('Configuración', () => {
     expect(await screen.findByRole('heading', { name: 'Notificaciones' })).toBeVisible();
     page.unmount();
 
-    at('/version-4?seccion=cuenta');
+    at('/version-4?seccion=facturacion');
     render(<App />);
     expect(await screen.findByRole('group', { name: 'Tema' })).toBeInTheDocument();
     expect(

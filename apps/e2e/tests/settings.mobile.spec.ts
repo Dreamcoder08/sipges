@@ -2,6 +2,7 @@ import { analyzeAccessibility } from '../support/accessibility.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 const SECTIONS = [
+  ['cuenta', 'Cuenta', 'Sesiones activas'],
   ['apariencia', 'Apariencia', 'Apariencia'],
   ['proyecto', 'Proyecto', 'SIPGES'],
   ['privacidad', 'Privacidad y datos', 'IA externa'],
