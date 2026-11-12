@@ -59,7 +59,10 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
   node deploy/desktop/migration/rehearse.mjs <commit de T27>
   ```
 
-  Tenés que ver `REHEARSAL PASSED` y `RESULT: no difference` en cada comparación.
+  Tenés que ver `REHEARSAL PASSED` y `RESULT: no difference` en cada comparación. Tiene que correrse con
+  los mismos scripts que viajan en el USB (formato de instantánea 3): un ensayo hecho con scripts
+  anteriores no cuenta. Si lo cortás con Ctrl+C, detiene y espera cada proceso que arrancó y sale con
+  `130`; repetilo entero.
 - [ ] **Clave de firma.** Es un archivo Ed25519 (PKCS#8 PEM) en el USB `K:`, con una segunda copia guardada
   en otro lugar: la clave que firma esta versión es la única con la que la laptop aceptará
   actualizaciones; si se pierde, no hay más actualizaciones sin reinstalar. Nunca va al repositorio,
@@ -103,7 +106,9 @@ clave. Si Windows les da otras letras, cambialas en cada comando.
   ```
 
   El USB queda con `F:\SIPGES-visita\release-<versión>\` (`release.json`, `release.sig`, `package\`) y
-  `F:\SIPGES-visita\sipges-scripts.zip`. No contiene datos ni secretos.
+  `F:\SIPGES-visita\sipges-scripts.zip`. No contiene datos ni secretos. `snapshot.mjs` (paso 2) y
+  `compare.mjs` (paso 5) tienen que salir de este mismo `.zip`: `compare.mjs` rechaza, antes de pedir la
+  contraseña, una instantánea hecha con scripts anteriores (`… was made by an older snapshot.mjs …`).
 - [ ] **Ensayo completo en otra cuenta de Windows o en otro equipo**, nunca en la laptop, con el mismo USB y
   datos inventados. Fecha: ____________
   1. T10 líneas 1–3: `node --version` dice 24 o más; clon del repositorio en el **commit de T27**;
@@ -200,7 +205,8 @@ Si la usuaria ya hizo hoy un respaldo comprobado, marcá este paso y anotá sus 
 
   Tenés que ver `SIPGES snapshot at …`, `Projects: N`, una línea `project N [hash]: records …, links
   …, uploads …, audit …` por proyecto, `Accounts: N` y `Written: …\sipges-antes.json`. Solo números y
-  hashes cortos. Si una línea dice `(not fully checked)` o sale `Error: …`, no sigas.
+  hashes cortos. Si una línea dice `(not fully checked)` (en `records`, `uploads` o `audit`) o sale
+  `Error: …`, no sigas.
   Solo si `admin` nunca cambió su contraseña, `--password-file "$env:LOCALAPPDATA\SIPGES\admin-password"`
   evita escribirla. (El README de migración guarda este archivo en el Escritorio; aquí va a
   `SIPGES-visita` porque el Escritorio puede estar sincronizado con OneDrive.)
@@ -286,7 +292,9 @@ Se hace en la terminal para no depender de la espera de 90 segundos del acceso d
   `every field identical`, `links … identical`, `uploads … identical`, `audit … kept unchanged`;
   `Accounts: … identical`; `Isolation: … no record or upload of one project visible in another`;
   al final `RESULT: no difference` (puede seguir `(N audit entries added, listed above)`: las líneas
-  `added: …` no son diferencias) y `0`. Cómo leer cada línea:
+  `added: …` no son diferencias) y `0`. Ninguna línea puede decir `not fully checked` ni `not checked`
+  (por ejemplo `records: not fully checked (…)`, `export: not checked (…)` o `Accounts: not checked (…)`):
+  cada una es una parte que no se pudo comparar, y el `RESULT` ya no es `no difference`. Cómo leer cada línea:
   [migration/README.md](../../deploy/desktop/migration/README.md#reading-the-comparison).
   Cualquier otro `RESULT` (`Sign-in failed`, `N differences`, `not fully checked`) o un número distinto
   de `0`: regla de corte.
@@ -445,7 +453,15 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
 
 - **30 días**: se conservan el respaldo de `E:`, `%LOCALAPPDATA%\SIPGES` con `<clon>` (la versión vieja),
   `SIPGES-visita` y las copias al lado de `SIPGES-datos`. Ninguna se borra sola; pasado ese plazo se decide
-  qué guardar. Todas contienen los datos y la clave: se tratan como un respaldo.
+  qué guardar. Todas contienen los datos y la clave: se tratan como un respaldo. Cada arranque anota en
+  `SIPGES-app\launcher.log` cuántas copias hay y cuánto ocupan (`"stateCopies"` en la línea `started`).
+  Para verlas y, después de un respaldo, borrar las de más de 30 días (nunca borra la copia previa a la
+  actualización más reciente, y se niega si una actualización quedó a medias):
+
+  ```powershell
+  node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --copies
+  node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --remove-copies-older-than 30
+  ```
 - **Cómo llegan las actualizaciones**: se construye y firma en Windows una versión mayor con **la misma
   clave** (los comandos de la sección 1 con otro `<versión>` y notas en `--notes`) y su carpeta se copia
   dentro de `%LOCALAPPDATA%\SIPGES-app\releases`. En el siguiente arranque la usuaria (administradora) ve

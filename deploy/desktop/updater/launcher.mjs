@@ -17,12 +17,22 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
-import { bootCheck, managedEnv } from './boot.mjs';
-import { findUpdate, firstStart, readCurrent, readStateDir, recover, update } from './updater.mjs';
+import { PARENT_WATCH, bootCheck, managedEnv } from './boot.mjs';
+import {
+  findUpdate,
+  firstStart,
+  listStateCopies,
+  readCurrent,
+  readStateDir,
+  recover,
+  update,
+} from './updater.mjs';
 
 export const CHANNEL = 'update-channel';
 /** Exit code when an update could not be rolled back: nothing is started on that state. */
 export const ROLLBACK_INCOMPLETE_EXIT = 3;
+/** Exit code after a second stop signal forced the server down without its graceful stop. */
+export const FORCED_EXIT = 1;
 const ROLLBACK_INCOMPLETE = 'ROLLBACK_INCOMPLETE';
 const STATUS = 'status.json';
 const REQUEST = 'request.json';
@@ -116,6 +126,7 @@ export async function launch({
   const stoppedEarly = () => ({
     done: Promise.resolve(0),
     stop: async () => 0,
+    kill: () => {},
     checked: Promise.resolve(),
     halted: () => null,
   });
@@ -175,13 +186,23 @@ export async function launch({
   let finish;
   const done = new Promise((resolveDone) => (finish = resolveDone));
 
-  const publish = (installed) =>
+  const writeStatus = (installed) =>
     writeJsonAtomic(join(channel, STATUS), {
       format: 1,
       installed,
       available: verified && { version: verified.version, notes: verified.notes },
       checkedAt: new Date().toISOString(),
     });
+  // The status only feeds the notice in the app: failing to write it never stops SIPGES.
+  const publish = (installed) =>
+    writeStatus(installed).catch((error) => log('status_write_failed', { reason: error.message }));
+
+  /** How many copies the updater left beside the state folder, and their total size. */
+  const copiesNow = () =>
+    listStateCopies({ root }).then(
+      ({ count, bytes }) => ({ count, bytes }),
+      () => null,
+    );
 
   const start = async () => {
     const current = await readCurrent(root);
@@ -192,12 +213,19 @@ export async function launch({
       channel,
       base: baseEnv,
     });
-    const started = spawn(process.execPath, [join(current.dir, 'start.mjs')], {
-      cwd: current.dir,
-      env,
-      stdio: ['ignore', 'inherit', 'inherit'],
-      windowsHide: true,
-    });
+    // The server watches a pipe from this launcher and ends when the launcher is gone, however
+    // it ended (a forced stop, a hard kill, Windows), so no server outlives its launcher.
+    const started = spawn(
+      process.execPath,
+      ['--import', PARENT_WATCH, join(current.dir, 'start.mjs')],
+      {
+        cwd: current.dir,
+        env,
+        stdio: ['pipe', 'inherit', 'inherit'],
+        windowsHide: true,
+      },
+    );
+    started.stdin.on('error', () => {});
     started.on('exit', (code, signal) => {
       if (child !== started) return;
       child = null;
@@ -207,7 +235,8 @@ export async function launch({
       finish(stopping ? 0 : (code ?? (signal ? 1 : 0)));
     });
     child = started;
-    log('started', { version: current.version, port });
+    // Counted beside the starting server, never before it: one field of the `started` line.
+    log('started', { version: current.version, port, stateCopies: await copiesNow() });
     return current;
   };
 
@@ -268,14 +297,25 @@ export async function launch({
       log('update_failed', fields);
     }
     verified = null;
-    const current = await readCurrent(root);
-    await publish(current.version);
-    updating = false;
-    if (stopping) {
+    // From here SIPGES runs again or the launcher ends: never left without a server and still
+    // `updating`, where neither a request nor a stop would do anything.
+    let current = null;
+    try {
+      current = await readCurrent(root);
+      await publish(current.version);
+      updating = false;
+      if (stopping) {
+        clearInterval(poller);
+        return finish(0);
+      }
+      await start();
+    } catch (error) {
+      updating = false;
       clearInterval(poller);
-      return finish(0);
+      log('start_failed', { version: current?.version ?? null, reason: error.message });
+      await stopChild();
+      finish(stopping ? 0 : 1);
     }
-    await start();
   };
 
   const takeRequest = async () => {
@@ -343,7 +383,15 @@ export async function launch({
     return done;
   };
 
-  return { done, stop, checked, halted: () => halted };
+  /** The second stop: the server is killed now, without waiting for its graceful stop. */
+  const kill = () => {
+    stopping = true;
+    halt.abort();
+    clearInterval(poller);
+    child?.kill('SIGKILL');
+  };
+
+  return { done, stop, kill, checked, halted: () => halted };
 }
 
 const USAGE = `Usage: node <version>/updater/launcher.mjs --install <root> [--releases <dir>] [--port <port>]
@@ -351,6 +399,8 @@ const USAGE = `Usage: node <version>/updater/launcher.mjs --install <root> [--re
 Starts the current version of a managed install on 127.0.0.1 (default port 8000), checks
 <dir> for a newer signed release at startup and offers it in the app. Updates run only after
 an administrator clicks «Actualizar». Without --releases no check is made.
+A first SIGINT or SIGTERM stops SIPGES gracefully (up to 15 s); a second one kills the server at
+once and exits with code 1.
 Exit codes: 0 stopped, 3 an update could not be rolled back and nothing was started (restore
 the pre-update copy named in the message), otherwise the server's own exit code or 1.`;
 
@@ -372,12 +422,22 @@ async function main(args) {
   const port = options['--port'] === undefined ? 8000 : Number(options['--port']);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid --port');
   // Registered before anything starts: a stop during the first start must end its boot child.
+  // The first SIGINT or SIGTERM stops gracefully; a second one forces: the server is killed at
+  // once and the launcher exits, and every boot child ends with its pipe from this process.
   const stop = new AbortController();
   let running = null;
+  let signals = 0;
   for (const signal of ['SIGINT', 'SIGTERM'])
-    process.once(signal, () => {
-      stop.abort();
-      if (running) void running.stop();
+    process.on(signal, () => {
+      signals += 1;
+      if (signals === 1) {
+        stop.abort();
+        if (running) void running.stop();
+        return;
+      }
+      running?.kill();
+      jsonLine('stop_forced', { signal });
+      process.exit(FORCED_EXIT);
     });
   running = await launch({
     root: options['--install'],

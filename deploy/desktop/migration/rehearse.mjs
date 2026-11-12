@@ -24,11 +24,12 @@
 //
 // The scratch worktree and the signed release copy are removed at the end; the state folders,
 // snapshots and logs stay under .data/migration-rehearsal/<run> (ignored by Git) as evidence.
+// Every process it starts is stopped and awaited on every way out: the end, an error, or SIGINT
+// or SIGTERM (exit code 130; a second signal kills them at once).
 /* global fetch, FormData */
 import { Blob } from 'node:buffer';
 import { spawn, spawnSync } from 'node:child_process';
 import { generateKeyPairSync, randomBytes } from 'node:crypto';
-import { once } from 'node:events';
 import { cp, lstat, mkdir, open, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,7 +48,78 @@ const BETA = 'SINTETICA/PRJ-BETA';
 const ANALYST = 'analista-sintetica';
 
 const say = (line) => console.log(line);
-const step = (title) => say(`\n== ${title}`);
+
+// The processes this rehearsal started and that have not ended yet.
+const running = new Set();
+let interrupted = null;
+let handlingInterrupts = false;
+const STOP_GRACE_MS = 30_000;
+
+const ended = (child) => child.exitCode !== null || child.signalCode !== null;
+const checkInterrupted = () => {
+  if (interrupted) throw new Error(`interrupted by ${interrupted}`);
+};
+const step = (title) => {
+  checkInterrupted();
+  say(`\n== ${title}`);
+};
+
+/** Keeps the child in `running` until it ends; `child.ended` resolves with its exit code. */
+function track(child) {
+  running.add(child);
+  child.ended = new Promise((resolveEnded) => {
+    const done = () => {
+      running.delete(child);
+      resolveEnded(child.exitCode);
+    };
+    child.once('exit', done);
+    // A process that could not be started emits no exit.
+    child.once('error', () => {
+      if (child.pid === undefined) done();
+    });
+  });
+  return child;
+}
+
+/**
+ * Stops a process this rehearsal started and waits until it is gone: SIGTERM, then SIGKILL
+ * after the grace time. Returns its exit code (null when it ended by a signal). A process that
+ * already ended, by a signal too, returns at once.
+ */
+export async function stop(child, { graceMs = STOP_GRACE_MS } = {}) {
+  if (!ended(child)) {
+    child.kill('SIGTERM');
+    const gone = await Promise.race([
+      child.ended.then(() => true),
+      sleep(graceMs, false, { ref: false }),
+    ]);
+    if (!gone) child.kill('SIGKILL');
+  }
+  return child.ended;
+}
+
+/** Stops and awaits every process still running. */
+export const stopAll = () => Promise.all([...running].map((child) => stop(child)));
+
+/**
+ * SIGINT or SIGTERM: every process this rehearsal started is stopped and awaited, the running
+ * step fails and the clean-up runs; exit code 130. A second signal kills them at once and exits.
+ */
+export function handleInterrupts() {
+  if (handlingInterrupts) return;
+  handlingInterrupts = true;
+  for (const signal of ['SIGINT', 'SIGTERM'])
+    process.on(signal, () => {
+      process.exitCode = 130;
+      if (interrupted) {
+        for (const child of running) child.kill('SIGKILL');
+        process.exit(130);
+      }
+      interrupted = signal;
+      say(`\n${signal}: stopping every process of the rehearsal`);
+      void stopAll();
+    });
+}
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: 'inherit', ...options });
@@ -76,7 +148,9 @@ async function port() {
 
 async function waitReady(base, child, seconds) {
   for (let waited = 0; waited < seconds * 2; waited += 1) {
-    if (child.exitCode !== null) throw new Error(`the server exited with code ${child.exitCode}`);
+    checkInterrupted();
+    if (ended(child))
+      throw new Error(`the server exited with code ${child.exitCode ?? child.signalCode}`);
     try {
       const response = await fetch(`${base}/health/ready`);
       await response.arrayBuffer();
@@ -89,23 +163,25 @@ async function waitReady(base, child, seconds) {
   throw new Error(`${base} was not ready within ${seconds} s`);
 }
 
-async function startLogged(command, args, { cwd, env, log }) {
+/**
+ * Starts a process with its output appended to `log`, tracked until it ends. With `ready`
+ * (`{ base, seconds }`) it resolves only once `<base>/health/ready` answers 200 (`readyIn`
+ * holds the seconds it took); a start that fails is stopped and awaited before it rejects.
+ */
+export async function startLogged(command, args, { cwd, env, log, ready }) {
+  handleInterrupts();
+  checkInterrupted();
   const output = await open(log, 'a', 0o600);
-  const child = spawn(command, args, { cwd, env, stdio: ['ignore', output.fd, output.fd] });
-  child.on('exit', () => output.close().catch(() => {}));
+  const child = track(spawn(command, args, { cwd, env, stdio: ['ignore', output.fd, output.fd] }));
+  void child.ended.then(() => output.close().catch(() => {}));
+  if (ready)
+    try {
+      child.readyIn = await waitReady(ready.base, child, ready.seconds);
+    } catch (error) {
+      await stop(child);
+      throw error;
+    }
   return child;
-}
-
-async function stop(child) {
-  if (child.exitCode !== null) return child.exitCode;
-  const exited = once(child, 'exit');
-  child.kill('SIGTERM');
-  const [code] = await Promise.race([exited, sleep(30_000).then(() => [null])]);
-  if (code === null && child.exitCode === null) {
-    child.kill('SIGKILL');
-    await exited;
-  }
-  return child.exitCode;
 }
 
 /** Relative path -> SHA-256 of every file (content only), to prove a folder unchanged. */
@@ -365,11 +441,41 @@ async function seed(base, state, work) {
     await admin.call('/system/auth/grants', json({ username: ANALYST, company_id, project_id })),
     'grant',
   );
-  return { secretFile, totpState, password, analystPassword };
+  // The second account enrolls MFA too: without it every scoped route answers 403, and the
+  // access check below would compare refusals instead of the projects it can open.
+  const analystTotpState = join(work, 'analyst-totp-state.json');
+  const analystFirst = await signIn({ base, username: ANALYST, password: analystPassword });
+  const analystSetup = await expectOk(
+    await analystFirst.call('/system/auth/totp/setup', { method: 'POST' }),
+    'second account MFA setup',
+  );
+  await expectOk(
+    await analystFirst.call(
+      '/system/auth/totp/enable',
+      json({ code: totp(analystSetup.secret, await nextStep(analystTotpState)) }),
+    ),
+    'second account MFA enable',
+  );
+  const analyst = {
+    password: analystPassword,
+    totpSecret: analystSetup.secret,
+    totpState: analystTotpState,
+  };
+  return { secretFile, totpState, password, analystPassword: analyst };
 }
 
-async function analystSignsIn(base, analystPassword) {
-  const session = await signIn({ base, username: ANALYST, password: analystPassword });
+/**
+ * The second account's check: it signed in and opened at least one project before the move, and
+ * after it signs in and opens the same number of projects.
+ */
+export const sameAccess = (before, after) =>
+  before.status === 200 &&
+  before.projects >= 1 &&
+  after.status === 200 &&
+  after.projects === before.projects;
+
+async function analystSignsIn(base, { password, totpSecret, totpState }) {
+  const session = await signIn({ base, username: ANALYST, password, totpSecret, totpState });
   const scopes = await session.call('/system/auth/scopes');
   const text = await scopes.text();
   return {
@@ -383,13 +489,16 @@ async function analystSignsIn(base, analystPassword) {
  * event loop would leave this process's idle keep-alive sockets to a server that closed them.
  */
 async function script(name, args) {
-  const child = spawn(process.execPath, [join(here, name), ...args], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  checkInterrupted();
+  const child = track(
+    spawn(process.execPath, [join(here, name), ...args], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }),
+  );
   let output = '';
   child.stdout.on('data', (chunk) => (output += chunk));
   child.stderr.on('data', (chunk) => (output += chunk));
-  const [status] = await once(child, 'exit');
+  const status = await child.ended;
   for (const line of output.trimEnd().split('\n')) say(`  | ${line}`);
   return status;
 }
@@ -417,6 +526,7 @@ async function main(args) {
     );
   if (process.platform !== 'linux')
     throw new Error('The rehearsal runs on Linux; Windows steps are in README.md');
+  handleInterrupts();
   const resolved = spawnSync('git', ['-C', repo, 'rev-parse', '--verify', `${commit}^{commit}`], {
     encoding: 'utf8',
   });
@@ -427,7 +537,7 @@ async function main(args) {
     .replace(/[-:]/g, '')
     .replace(/\.\d+Z$/, 'Z');
   const work = join(repo, '.data', 'migration-rehearsal', `${runId}-${sha.slice(0, 8)}`);
-  const old = join(work, 'old');
+  const oldDir = join(work, 'old');
   const home = join(work, 'home');
   const originalState = join(work, 'laptop', 'SIPGES');
   const movedState = join(work, 'managed', 'SIPGES');
@@ -435,11 +545,12 @@ async function main(args) {
   await mkdir(home, { recursive: true, mode: 0o700 });
   await mkdir(dirname(movedState), { recursive: true, mode: 0o700 });
   say(`Rehearsal ${runId}: source ${sha} (${commit}); work folder ${relative(repo, work)}`);
-  let oldApi = null;
-  let launcher = null;
+  let launcher;
   let releaseDir = null;
+  let old = null;
   try {
     step('1. Old version in a scratch worktree, without data/');
+    old = oldDir;
     oldWorktree(sha, old);
     check(
       (await readdir(old)).includes('data') === false,
@@ -457,9 +568,10 @@ async function main(args) {
     const oldBase = `http://127.0.0.1:${oldPort}`;
     const secret = async (name) => (await readFile(join(originalState, name), 'utf8')).trim();
     // The old launcher's environment (start.ps1), plus a port: its default 8000 is never used here.
-    oldApi = await startLogged(process.execPath, ['apps/api/src/main.ts'], {
+    const oldApi = await startLogged(process.execPath, ['apps/api/src/main.ts'], {
       cwd: old,
       log: join(originalState, 'api.log'),
+      ready: { base: oldBase, seconds: 180 },
       env: cleanEnv(home, {
         SIPGES_DATA_KEY: await secret('data-key'),
         SIPGES_ADMIN_PASSWORD: await secret('admin-password'),
@@ -471,11 +583,12 @@ async function main(args) {
         SIPGES_WEB_DIR: join(old, 'apps', 'web', 'dist'),
       }),
     });
-    say(`old API ready in ${await waitReady(oldBase, oldApi, 180)} s on port ${oldPort}`);
+    say(`old API ready in ${oldApi.readyIn} s on port ${oldPort}`);
     const secrets = await seed(oldBase, originalState, work);
+    const analystBefore = await analystSignsIn(oldBase, secrets.analystPassword);
     check(
-      (await analystSignsIn(oldBase, secrets.analystPassword)).status !== 0,
-      'the second account signs in on the old version',
+      analystBefore.status === 200 && analystBefore.projects >= 1,
+      `the second account signs in on the old version and opens ${analystBefore.projects} project(s) (scopes status ${analystBefore.status})`,
     );
 
     step('3. Snapshot of the old version, stop, copy the state folder');
@@ -491,7 +604,6 @@ async function main(args) {
       'snapshot.mjs exit 0',
     );
     check((await stop(oldApi)) !== null, 'the old API stopped');
-    oldApi = null;
     const original = await tree(originalState);
     say(`original state folder: ${Object.keys(original).length} files, digest ${digest(original)}`);
     await cp(originalState, movedState, {
@@ -540,6 +652,8 @@ async function main(args) {
     const installed = JSON.parse(await readFile(join(appRoot, 'current.json'), 'utf8'));
     say(`installed ${installed.version}`);
 
+    // A start that does not get ready is stopped and awaited inside startLogged, so the
+    // launcher is never left running unreferenced.
     const startManaged = async () => {
       const child = await startLogged(
         process.execPath,
@@ -548,9 +662,10 @@ async function main(args) {
           cwd: appRoot,
           env: cleanEnv(home),
           log: join(appRoot, 'launcher.log'),
+          ready: { base: newBase, seconds: 600 },
         },
       );
-      say(`managed version ready in ${await waitReady(newBase, child, 600)} s on port ${newPort}`);
+      say(`managed version ready in ${child.readyIn} s on port ${newPort}`);
       return child;
     };
     const launcherEvents = async () =>
@@ -585,8 +700,8 @@ async function main(args) {
     await compare('first start');
     const analyst = await analystSignsIn(newBase, secrets.analystPassword);
     check(
-      analyst.status !== 0,
-      `the second account signs in with its old password (scopes status ${analyst.status})`,
+      sameAccess(analystBefore, analyst),
+      `the second account signs in with its old password and opens the same ${analyst.projects} project(s) (scopes status ${analyst.status})`,
     );
     check(
       digest(await tree(originalState)) === digest(original),
@@ -595,7 +710,6 @@ async function main(args) {
 
     step('6. Rule d: installer and start again on the moved folder');
     check((await stop(launcher)) === 0, 'the managed version stopped with code 0');
-    launcher = null;
     run('sh', [join(repo, 'deploy/desktop/linux/install.sh'), '--managed', releaseDir], {
       env: desktopEnv,
     });
@@ -614,7 +728,6 @@ async function main(args) {
     // Step 1: `pkill -f run-current.mjs` sends this SIGTERM; here only to this rehearsal's pid,
     // so no other SIPGES on this computer is touched.
     check((await stop(launcher)) === 0, 'step 1: SIPGES stopped (code 0)');
-    launcher = null;
     const answers = await fetch(`${newBase}/health`).then(
       () => true,
       () => false,
@@ -633,7 +746,6 @@ async function main(args) {
     launcher = await startManaged();
     say('step 4: SIPGES opened again');
     check((await stop(launcher)) === 0, 'step 5: SIPGES stopped (code 0)');
-    launcher = null;
     const backedUp = await tree(backup);
     await rm(movedState, { recursive: true });
     check(
@@ -648,34 +760,37 @@ async function main(args) {
     launcher = await startManaged();
     await compare('step 8, after the restore');
     check(
-      (await analystSignsIn(newBase, secrets.analystPassword)).status !== 0,
-      'the second account signs in after the restore',
+      sameAccess(analystBefore, await analystSignsIn(newBase, secrets.analystPassword)),
+      'the second account signs in after the restore and opens the same projects',
     );
     check((await stop(launcher)) === 0, 'the managed version stopped with code 0');
-    launcher = null;
     check(
       digest(await tree(originalState)) === digest(original),
       'the original state folder is still byte-identical',
     );
     say('\nREHEARSAL PASSED');
   } finally {
-    if (oldApi) await stop(oldApi);
-    if (launcher) await stop(launcher);
+    // Every process this run started, whether or not a variable still names it.
+    await stopAll();
     if (releaseDir) await rm(releaseDir, { recursive: true, force: true });
-    const removed = spawnSync('git', ['-C', repo, 'worktree', 'remove', '--force', old], {
-      encoding: 'utf8',
-    });
-    say(
-      removed.status === 0
-        ? `removed the scratch worktree ${relative(repo, old)}`
-        : `could not remove the scratch worktree: ${removed.stderr.trim()}`,
-    );
+    if (old) {
+      const removed = spawnSync('git', ['-C', repo, 'worktree', 'remove', '--force', old], {
+        encoding: 'utf8',
+      });
+      say(
+        removed.status === 0
+          ? `removed the scratch worktree ${relative(repo, old)}`
+          : `could not remove the scratch worktree: ${removed.stderr.trim()}`,
+      );
+    }
   }
 }
 
-main(process.argv.slice(2)).catch((error) => {
-  console.error(
-    `REHEARSAL FAILED: ${error.message}${error.cause ? ` (${error.cause.message})` : ''}`,
-  );
-  process.exitCode = 1;
-});
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main(process.argv.slice(2)).catch((error) => {
+    console.error(
+      `REHEARSAL FAILED: ${error.message}${error.cause ? ` (${error.cause.message})` : ''}`,
+    );
+    process.exitCode = interrupted ? 130 : 1;
+  });
+}

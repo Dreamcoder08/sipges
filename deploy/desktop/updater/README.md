@@ -39,6 +39,9 @@ node deploy/desktop/updater/update.mjs --install <root> --recover
 node deploy/desktop/updater/update.mjs --install <root> --recover --accept-restored-state
 # The first start over existing data, in a terminal (the launcher does the same at its start).
 node deploy/desktop/updater/update.mjs --install <root> --first-start
+# The copies beside the state folder: list them, or remove those older than <days> whole days.
+node deploy/desktop/updater/update.mjs --install <root> --copies
+node deploy/desktop/updater/update.mjs --install <root> --remove-copies-older-than <days>
 ```
 
 ### The first start over existing data
@@ -78,8 +81,8 @@ Layout of `<root>`: `versions/<version>/` (verified copies; files are copied, ne
 `first-start.json` (written once by the first start), `update.log` (JSON lines: `installed`,
 `adopted`, `updated`, `refused`, `failed` for an error before any change such as a full disk
 while staging, `rolled-back`, `rollback-incomplete`, `recovered`, `restored-state-accepted`,
-`first-start`, `first-start-failed`), and while an update or the first start runs `update.lock`
-and `update-journal.json`.
+`first-start`, `first-start-failed`, `copies-removed`), and while an update or the first start
+runs `update.lock` and `update-journal.json`.
 
 The lock is created complete in one step (a hard link of a fully written file) and holds the
 process id, a random token and a heartbeat rewritten every 10 s. A lock whose heartbeat is older
@@ -102,9 +105,27 @@ free loopback port; the API migrates at boot), switches the pointer and checks r
 restores the state folder from the pre-update copy; the changed folder is kept as
 `<state>.failed-<time>-<to>`. The first update of an adopted install first runs migration and
 readiness on `<state>.rehearsal-<time>-<to>` and does not touch the state folder if that fails.
+The migration boot picks a free loopback port and closes it before the version binds it, so
+another program can take it in between: a version that ends with `EADDRINUSE` is booted again on
+another port, at most 5 times.
 
-The updater never deletes the copies it makes. They hold the same data as the state folder,
-including `data-key` and `admin-password`: treat them like the backup.
+### The copies beside the state folder
+
+The updater never deletes the copies it makes on its own. They hold the same data as the state
+folder, including `data-key` and `admin-password`: treat them like the backup. `update.log`
+records each one (`preUpdateCopy`, and `rehearsalCopy` on `first-start` and on the first
+`updated` of an adopted install), and every start of the launcher counts them: the `started`
+line carries `stateCopies: { count, bytes }` (null if they could not be read).
+
+- `--copies` prints `Copies beside <state>: <count>, <bytes> bytes` and one line per copy (kind,
+  time from its name, bytes, path), oldest first. Only finished folders named
+  `<state>.pre-update-<time>…`, `.rehearsal-<time>…` or `.failed-<time>…` count; a `.partial`
+  copy, a link or a file does not.
+- `--remove-copies-older-than <days>` (a whole number, 1 or more) removes the copies whose name
+  time is older than that, under the update lock, and logs `copies-removed`. It never removes the
+  newest pre-update copy, however old (it prints `Kept <path>: …` for it), and it is refused
+  (exit 1, nothing removed) while `update-journal.json` exists: an update or first start that is
+  pending or halted may need any of them.
 
 ## Start SIPGES and the update notice
 
@@ -142,6 +163,16 @@ node <root>/versions/<version>/updater/launcher.mjs --install <root> --releases 
    state folder, neither then nor at the next start: the launcher logs one line
    (`update_failed` or `start_refused`, with an `action`), prints «SIPGES no se inició: …
    Restaure la copia de seguridad … o contacte con soporte.» and exits with code 3.
+6. After an update (applied or rolled back) the launcher either runs a version again or ends:
+   if the resulting version cannot start (for example its state folder lost a secret), it logs
+   `start_failed` and exits with code 1 instead of staying up without a server. A status file
+   that cannot be written (`status_write_failed`) never keeps SIPGES from starting or stopping.
+
+Stopping: the first SIGINT or SIGTERM stops the server gracefully (SIGTERM, up to 15 s, then
+SIGKILL); a second one kills it at once, logs `stop_forced` and exits with code 1. The server,
+like every boot child, watches a pipe from the launcher and ends when the launcher is gone,
+however it ended, so no server outlives its launcher. `run-current.mjs` passes both signals on
+and kills the launcher 5 s after the second one if it is still there.
 
 The server and the migration boot get the same environment: no inherited `SIPGES_*` variable
 reaches them, in any letter case, only the allow-list `LAUNCHER_ENV` in `boot.mjs` (secrets and

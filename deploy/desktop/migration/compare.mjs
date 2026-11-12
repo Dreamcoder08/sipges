@@ -2,7 +2,8 @@
 // through the public HTTP API. Safe on real data: it prints counts, short keyed hashes, audit ids
 // with their module and action, and probe counts; never a record, a name or a file.
 // Exit code 0: no difference (audit entries added since the snapshot are listed, not counted);
-// 1: a difference, a part that could not be fully checked, a failed sign-in or an error. Read deploy/desktop/migration/README.md.
+// 1: a difference, a part that could not be fully checked (each one printed), a failed sign-in
+// or an error. Read deploy/desktop/migration/README.md.
 //
 //   node deploy/desktop/migration/compare.mjs --before <snapshot.json> --url http://127.0.0.1:8000
 //        [--user admin] [--password-file <file>] [--otp <code>] [--out <after.json>]
@@ -81,12 +82,18 @@ function auditLine(out, before, after, liveTrail) {
   return { problems: missing.length + changed.length, added: added.length };
 }
 
-/** Other exported tables, as sets of row hashes. Returns the number of differences. */
+/**
+ * Other exported tables, as sets of row hashes. Returns `{ differences, incomplete }`: an export
+ * readable on neither side compares nothing, so it is printed and counted as not checked.
+ */
 function exportLines(out, before, after) {
-  if (!before && !after) return 0;
+  if (!before && !after) {
+    out.push('  export: not checked (the project export is not readable on either side)');
+    return { differences: 0, incomplete: 1 };
+  }
   if (!before || !after) {
     out.push('  export: readable on one side only');
-    return 1;
+    return { differences: 1, incomplete: 0 };
   }
   let differences = 0;
   for (const table of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
@@ -107,14 +114,15 @@ function exportLines(out, before, after) {
       `  export ${table}: ${was.length} -> ${now.length}, ${problems.length ? problems.join(', ') : 'identical'}`,
     );
   }
-  return differences;
+  return { differences, incomplete: 0 };
 }
 
 /**
  * Compares two snapshots taken with the same salt. Returns `{ lines, differences, added,
- * incomplete }`: `incomplete` counts the parts that could not be checked in full (more uploads
- * than the list shows, or an audit trail past one page, without the project export); they never
- * count as identical.
+ * incomplete }`: `incomplete` counts the parts that could not be checked in full (a record list
+ * that did not end or that the export contradicts, more uploads than the list shows or an audit
+ * trail past one page without the project export, an export or accounts readable on neither
+ * side). Each is printed and none ever counts as identical.
  */
 export function compareSnapshots(before, after, live = { projects: {} }) {
   const out = [];
@@ -138,6 +146,11 @@ export function compareSnapshots(before, after, live = { projects: {} }) {
       differences += problems.length;
       report(out, `${slug}: ${a} -> ${b}`, problems, 'every field identical');
     }
+    const unchecked = [...new Set([...was.recordsUnchecked, ...now.recordsUnchecked])];
+    if (unchecked.length) {
+      incomplete += 1;
+      out.push(`  records: not fully checked (${unchecked.join('; ')})`);
+    }
     const links = mapProblems(was.links, now.links, 'link');
     differences += links.length;
     report(out, `links: ${count(was.links)} -> ${count(now.links)}`, links, 'identical');
@@ -145,7 +158,7 @@ export function compareSnapshots(before, after, live = { projects: {} }) {
     for (const key of Object.keys(was.uploads).sort()) {
       const [x, y] = [was.uploads[key], now.uploads[key]];
       if (!y) uploads.push(`upload [${short(key)}] missing`);
-      else if (x.sha256 !== y.sha256) uploads.push(`upload [${short(key)}] content differs`);
+      else if (x.content !== y.content) uploads.push(`upload [${short(key)}] content differs`);
       else if (x.meta !== y.meta) uploads.push(`upload [${short(key)}] metadata differs`);
     }
     for (const key of Object.keys(now.uploads).sort())
@@ -157,22 +170,25 @@ export function compareSnapshots(before, after, live = { projects: {} }) {
       );
     }
     differences += uploads.length;
+    // Keyed content hashes only: a known file's plain SHA-256 is never printed.
     const contents = keyed('00')(
       Object.values(was.uploads)
-        .map((u) => u.sha256)
+        .map((u) => u.content)
         .sort()
         .join('\n'),
     );
-    const sha = count(was.uploads) === 1 ? Object.values(was.uploads)[0].sha256 : contents;
+    const content = count(was.uploads) === 1 ? Object.values(was.uploads)[0].content : contents;
     if (was.uploadsComplete && now.uploadsComplete)
       report(
         out,
         `uploads: ${count(was.uploads)} -> ${count(now.uploads)}`,
         uploads,
-        count(was.uploads) === 0 ? 'none' : `sha256 ${sha.slice(0, 12)}… identical`,
+        count(was.uploads) === 0 ? 'none' : `content ${content.slice(0, 12)}… identical`,
       );
     else for (const problem of uploads.slice(0, LISTED)) out.push(`    ${problem}`);
-    differences += exportLines(out, was.export, now.export);
+    const exported = exportLines(out, was.export, now.export);
+    differences += exported.differences;
+    incomplete += exported.incomplete;
     if (!was.audit.complete || !now.audit.complete || was.audit.source !== now.audit.source) {
       // Streamed entries carry no detail, and two sources hash different shapes.
       incomplete += 1;
@@ -199,6 +215,9 @@ export function compareSnapshots(before, after, live = { projects: {} }) {
   } else if (before.accounts || after.accounts) {
     out.push('Accounts: readable on one side only');
     differences += 1;
+  } else {
+    out.push('Accounts: not checked (not readable on either side)');
+    incomplete += 1;
   }
   return { lines: out, differences, added, incomplete };
 }
@@ -251,10 +270,12 @@ Signs in (the same password and MFA as before the move), takes the same snapshot
 --before and prints, per project and module, the counts before and after and whether every field,
 link, upload (SHA-256) and audit entry is unchanged; audit entries added since are listed by id,
 module and action. Then probes that no record or upload of one project opens in another.
-Every upload is read by its id (the export names those past the 500 the list shows) and every
-audit entry with its content (from the export); a part that cannot be read in full is printed
-as "not fully checked" and fails the comparison. Prints counts and short hashes only. Exit code
-0 when nothing differs and everything was checked, otherwise 1.`;
+Every record list is read to its end and checked against the project export, every upload is
+read by its id (the export names those past the 500 the list shows) and every audit entry with
+its content (from the export); a part that cannot be read in full is printed as "not fully
+checked" (or "not checked") and fails the comparison, as does a snapshot of an older format.
+Prints counts and short keyed hashes only. Exit code 0 when nothing differs and everything was
+checked, otherwise 1.`;
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
