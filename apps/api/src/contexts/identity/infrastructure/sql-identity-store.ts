@@ -4,7 +4,12 @@ import { enterTenant } from '../../../platform/database/tenant-transaction.ts';
 
 const USER_COLUMNS =
   'username, full_name, password_hash, role, active, totp_secret_sealed, totp_enabled, totp_last_step, google_email';
-import type { AccountSummary, IdentityStore, StoredUser } from '../application/ports.ts';
+import type {
+  AccountSummary,
+  IdentityStore,
+  SessionAudit,
+  StoredUser,
+} from '../application/ports.ts';
 import type { Role } from '../domain/user.ts';
 
 type UserRow = {
@@ -41,6 +46,23 @@ const clearTotp = async (tx: SqlClient, username: string): Promise<'reset' | 'mi
   if (rows.length === 0) return 'missing';
   await tx.query('DELETE FROM sessions WHERE username = $1', [username]);
   return 'reset';
+};
+
+/** Session tables are global: the audit row goes in last, after entering the tenant. */
+const auditSessions = async (
+  tx: SqlClient,
+  tenantId: string,
+  audit: SessionAudit,
+  detail: string,
+) => {
+  await enterTenant(tx, tenantId);
+  await appendAudit(tx, {
+    module: 'Sesiones',
+    recordId: audit.recordId,
+    action: audit.action,
+    detail,
+    at: audit.at,
+  });
 };
 
 export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
@@ -275,6 +297,49 @@ export const createSqlIdentityStore = (sql: SqlClient): IdentityStore => ({
 
   async deleteSession(tokenHash) {
     await sql.query('DELETE FROM sessions WHERE token_hash = $1', [tokenHash]);
+  },
+
+  async listSessions(username, at) {
+    const rows = await sql.query<{
+      token_hash: string;
+      created_at: Date;
+      expires_at: Date;
+      via_google: boolean;
+    }>(
+      `SELECT token_hash, created_at, expires_at, via_google FROM sessions
+        WHERE username = $1::text AND expires_at > $2::timestamptz
+        ORDER BY created_at DESC, token_hash`,
+      [username, at],
+    );
+    return rows.map((r) => ({
+      tokenHash: r.token_hash,
+      createdAt: new Date(r.created_at),
+      expiresAt: new Date(r.expires_at),
+      viaGoogle: r.via_google,
+    }));
+  },
+
+  async endSession(username, tokenHash, tenantId, audit) {
+    return sql.transaction(async (tx) => {
+      const deleted = await tx.query(
+        'DELETE FROM sessions WHERE username = $1 AND token_hash = $2 RETURNING 1',
+        [username, tokenHash],
+      );
+      if (deleted.length === 0) return false;
+      await auditSessions(tx, tenantId, audit, audit.detail);
+      return true;
+    });
+  },
+
+  async endOtherSessions(username, keepTokenHash, tenantId, audit) {
+    return sql.transaction(async (tx) => {
+      const deleted = await tx.query(
+        'DELETE FROM sessions WHERE username = $1 AND token_hash <> $2 RETURNING 1',
+        [username, keepTokenHash],
+      );
+      await auditSessions(tx, tenantId, audit, audit.detail(deleted.length));
+      return deleted.length;
+    });
   },
 
   async purgeExpiredSessions(at) {

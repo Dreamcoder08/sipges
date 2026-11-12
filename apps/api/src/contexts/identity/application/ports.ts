@@ -10,6 +10,21 @@ export type StoredUser = Identity & {
   readonly googleEmail: string | null;
 };
 
+/** A session as its owner may see it: the hash stays inside the application layer. */
+export type StoredSession = {
+  readonly tokenHash: string;
+  readonly createdAt: Date;
+  readonly expiresAt: Date;
+  readonly viaGoogle: boolean;
+};
+
+/** The audit row a session write appends to the active project's trail. */
+export type SessionAudit = {
+  readonly action: string;
+  readonly recordId: string;
+  readonly at: Date;
+};
+
 export type AccountSummary = {
   readonly username: string;
   readonly fullName: string;
@@ -73,6 +88,28 @@ export type IdentityStore = {
   ): Promise<boolean>;
   findSessionIdentity(tokenHash: string, at: Date): Promise<SessionIdentity | null>;
   deleteSession(tokenHash: string): Promise<void>;
+  /** The user's unexpired sessions, newest first (ties by hash, so every adapter agrees). */
+  listSessions(username: string, at: Date): Promise<StoredSession[]>;
+  /**
+   * Deletes one session only if it belongs to `username` and, in the same transaction, appends
+   * the audit row to `tenantId`'s trail. False when nothing was deleted (no audit row then).
+   */
+  endSession(
+    username: string,
+    tokenHash: string,
+    tenantId: string,
+    audit: SessionAudit & { readonly detail: string },
+  ): Promise<boolean>;
+  /**
+   * Deletes every session of `username` except `keepTokenHash` and appends the audit row, whose
+   * detail depends on the count, atomically. Returns the count.
+   */
+  endOtherSessions(
+    username: string,
+    keepTokenHash: string,
+    tenantId: string,
+    audit: SessionAudit & { readonly detail: (count: number) => string },
+  ): Promise<number>;
   purgeExpiredSessions(at: Date): Promise<void>;
 
   /**
@@ -117,6 +154,11 @@ export type SessionTokens = {
   /** 64 hex characters (32 random bytes), like app.py secrets.token_hex(32). */
   newToken(): string;
   hash(token: string): string;
+  /**
+   * The opaque id a session is shown and ended by: 32 hex characters derived one-way from the
+   * stored hash, so it can neither sign in nor be matched to the hash column.
+   */
+  publicId(tokenHash: string): string;
 };
 
 export type Clock = { now(): Date };

@@ -6,5 +6,6 @@ export {
   createIdentityService,
   type IdentityService,
   type LoginError,
+  type SessionView,
 } from './identity-service.ts';
 export type { Clock, SecretCipher } from './ports.ts';
