@@ -55,7 +55,55 @@ If the window does not open, read `api.log` in the state folder. New runs are ap
 git pull
 ```
 
-Then run the installer again. It keeps your data, key and password.
+Then run the installer again. It keeps your data, key and password. This is for the clone
+install; a [managed install](#managed-install-the-definitive-version) updates from the notice
+inside SIPGES.
+
+## Managed install (the definitive version)
+
+Instead of running from the clone, the computer can run a **signed release**: a package built by
+`deploy/desktop/package/builder.mjs` and signed with `deploy/desktop/updater/release.mjs`
+([updater/README.md](updater/README.md)). The installed app no longer depends on the clone, and a
+newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualizar»).
+
+| Step | Windows | Linux |
+| --- | --- | --- |
+| 1. Close SIPGES; the installer refuses while SIPGES answers on port 8000 | Restart, or end `node` in Task Manager | `pkill -f apps/api/src/main.ts` |
+| 2. Back up the state folder | [Back up and restore](#back-up-and-restore) | [Back up and restore](#back-up-and-restore) |
+| 3. Install the release | `powershell -ExecutionPolicy Bypass -File deploy\desktop\windows\install.ps1 -Release <release folder>` | `deploy/desktop/linux/install.sh --managed <release folder>` |
+
+- The install root is `%LOCALAPPDATA%\SIPGES-app` (Windows) or `~/.local/share/sipges-app`
+  (Linux): `versions/`, `current.json`, `install.json`, `releases/`, `launcher.log`,
+  `run-current.mjs` and the start script. The shortcuts (Windows) and the launcher entry (Linux)
+  point at the start script in that root, so they keep working after every update.
+- The state folder stays where it is. Nothing in it is overwritten or deleted; only a missing data
+  key or admin password is created. The first start of the new version migrates an existing
+  database in place, which is why step 2 comes first.
+- The key that signed the release becomes the only key later updates are accepted with. The
+  installer prints its SHA-256 fingerprint: compare it with the one noted when the key was made.
+- To offer a newer release, copy its folder into `releases` in the install root. At the next
+  start an administrator sees the notice; nothing is installed before «Actualizar».
+- Running the installer again keeps the installed version and only refreshes the shortcuts.
+- The log is `launcher.log` in the install root, not in the state folder: an update copies that
+  folder and may move it while SIPGES runs.
+
+### If an update stops halfway
+
+If an update fails and even its rollback cannot finish, SIPGES does not start on that data. The
+person sees «SIPGES no se inició: … Restaure la copia de seguridad <copy> o contacte con soporte.»
+in a message box (Windows) or a notification and the terminal (Linux). `<version>` below is the one
+in `current.json` of the install root.
+
+1. Delete nothing.
+2. Retry the rollback (it finishes once the cause, such as a full disk, is fixed):
+   `node <root>/versions/<version>/updater/update.mjs --install <root> --recover`.
+   If it prints `Recovered`, open SIPGES.
+3. Otherwise restore the state folder yourself: rename the damaged folder aside (for example add
+   `.damaged`), then copy the copy named in the message, or your own backup, to the original path.
+4. Run `node <root>/versions/<version>/updater/update.mjs --install <root> --recover --accept-restored-state`.
+   It refuses while the state folder is missing or empty; otherwise the version from before the
+   update becomes current again and nothing in or beside the state folder is touched.
+5. Open SIPGES.
 
 ## Back up and restore
 
@@ -99,3 +147,7 @@ rm -r "$tmp"
   Chromium, Edge or Brave it finds, otherwise your default browser (a normal tab, no app window).
 - The port is fixed at 8000. If another program uses it, SIPGES cannot start.
 - A console window may flash for a moment when the Windows shortcut starts.
+- The managed install was run end to end on Linux only (install, open from the launcher entry, see
+  the notice, update, halt and way out). On Windows, `install.ps1 -Release` and
+  `start-managed.ps1` were checked statically; the Windows rehearsal in
+  [README.es.md](README.es.md#ensayo-en-windows-para-la-visita-roadmap-t34) is their first run.

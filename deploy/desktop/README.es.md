@@ -55,7 +55,97 @@ Si la ventana no abre, lee `api.log` en la carpeta de estado. Las ejecuciones nu
 git pull
 ```
 
-Después ejecuta de nuevo el instalador. Conserva tus datos, tu clave y tu contraseña.
+Después ejecuta de nuevo el instalador. Conserva tus datos, tu clave y tu contraseña. Esto vale para
+la instalación por clon; una [instalación gestionada](#instalación-gestionada-la-versión-definitiva)
+se actualiza desde el aviso dentro de SIPGES.
+
+## Instalación gestionada (la versión definitiva)
+
+En lugar de ejecutarse desde el clon, el computador puede ejecutar una **versión firmada**: un
+paquete construido con `deploy/desktop/package/builder.mjs` y firmado con
+`deploy/desktop/updater/release.mjs` ([updater/README.md](updater/README.md)). La aplicación
+instalada ya no depende del clon, y una versión más nueva se ofrece dentro de SIPGES («Nueva
+versión de SIPGES», «Actualizar»).
+
+| Paso | Windows | Linux |
+| --- | --- | --- |
+| 1. Cierra SIPGES; el instalador se niega mientras SIPGES responde en el puerto 8000 | Reinicia, o termina `node` en el Administrador de tareas | `pkill -f apps/api/src/main.ts` |
+| 2. Respalda la carpeta de estado | [Respaldar y restaurar](#respaldar-y-restaurar) | [Respaldar y restaurar](#respaldar-y-restaurar) |
+| 3. Instala la versión | `powershell -ExecutionPolicy Bypass -File deploy\desktop\windows\install.ps1 -Release <carpeta de la versión>` | `deploy/desktop/linux/install.sh --managed <carpeta de la versión>` |
+
+- La raíz de la instalación es `%LOCALAPPDATA%\SIPGES-app` (Windows) o `~/.local/share/sipges-app`
+  (Linux): `versions/`, `current.json`, `install.json`, `releases/`, `launcher.log`,
+  `run-current.mjs` y el script de arranque. Los accesos directos (Windows) y la entrada del
+  lanzador (Linux) apuntan al script de arranque de esa raíz, así que siguen funcionando después
+  de cada actualización.
+- La carpeta de estado se queda donde está. No se sobrescribe ni se borra nada en ella; solo se
+  crean la clave de datos o la contraseña de administrador si faltan. El primer arranque de la
+  versión nueva migra la base de datos existente en su sitio: por eso el paso 2 va primero.
+- La clave que firmó la versión pasa a ser la única con la que se aceptan las actualizaciones. El
+  instalador imprime su huella SHA-256: compárala con la que anotaste al crear la clave.
+- Para ofrecer una versión más nueva, copia su carpeta dentro de `releases` en la raíz. En el
+  siguiente arranque un administrador ve el aviso; nada se instala antes de «Actualizar».
+- Ejecutar de nuevo el instalador conserva la versión instalada y solo renueva los accesos directos.
+- El registro es `launcher.log` en la raíz, no en la carpeta de estado: una actualización copia esa
+  carpeta y puede moverla mientras SIPGES corre.
+
+### Si una actualización se detiene a medias
+
+Si una actualización falla y ni siquiera su vuelta atrás termina, SIPGES no arranca sobre esos
+datos. La persona ve «SIPGES no se inició: … Restaure la copia de seguridad <copia> o contacte con
+soporte.» en un cuadro de mensaje (Windows) o en una notificación y la terminal (Linux). Abajo,
+`<versión>` es la que dice `current.json` en la raíz.
+
+1. No borres nada.
+2. Reintenta la vuelta atrás (termina cuando la causa, por ejemplo un disco lleno, está resuelta):
+   `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --recover`.
+   Si imprime `Recovered`, abre SIPGES.
+3. Si no, restaura tú la carpeta de estado: renombra la carpeta dañada (por ejemplo, agrégale
+   `.danada`) y copia en la ruta original la copia que nombra el mensaje, o tu propio respaldo.
+4. Ejecuta `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --recover --accept-restored-state`.
+   Se niega mientras la carpeta de estado falta o está vacía; si no, la versión de antes de la
+   actualización vuelve a ser la actual y no se toca nada dentro ni al lado de la carpeta de estado.
+5. Abre SIPGES.
+
+### Ensayo en Windows (para la visita, roadmap T34)
+
+En una segunda cuenta de Windows o en otro equipo, nunca en el portátil con datos reales. Anota
+«pasa» o «falla» en cada línea; ante un fallo, guarda `%LOCALAPPDATA%\SIPGES-app\launcher.log` y el
+texto del cuadro de mensaje, y detente. `<raíz>` es `%LOCALAPPDATA%\SIPGES-app`.
+
+1. `node --version` dice 24 o más.
+2. Clona o actualiza el repositorio en el commit definitivo y ejecuta `pnpm install --frozen-lockfile`.
+3. Construye el paquete en ese mismo Windows (un paquete solo sirve para el sistema donde se
+   construyó): `node deploy\desktop\package\builder.mjs --version <versión> --out .data\desktop-packages\sipges-<versión>`.
+4. Firma con la clave privada traída en un USB y retira el USB después (la clave no se queda en el
+   equipo): `node deploy\desktop\updater\release.mjs --package .data\desktop-packages\sipges-<versión> --out <carpeta de la versión> --key <archivo de la clave> --notes "Qué cambió"`.
+5. Si la cuenta tiene la instalación por clon, crea en ella dos registros de prueba (datos
+   inventados). Cierra SIPGES por completo (termina los `node` en el Administrador de tareas).
+6. Copia `%LOCALAPPDATA%\SIPGES` completa a un disco externo.
+7. `powershell -ExecutionPolicy Bypass -File deploy\desktop\windows\install.ps1 -Release <carpeta de la versión>`.
+   Anota la huella SHA-256 que imprime y compárala con la de tu clave.
+8. `<raíz>` tiene `versions\<versión>`, `current.json`, `install.json`, `releases`,
+   `run-current.mjs`, `start.ps1` y `sipges.ico`; `%LOCALAPPDATA%\SIPGES` conserva sus archivos; los
+   accesos directos «SIPGES» del menú Inicio y del escritorio apuntan a `<raíz>\start.ps1`
+   (clic derecho, Propiedades, Destino).
+9. Abre SIPGES desde el acceso directo: Edge abre en modo aplicación antes de 90 segundos; inicia
+   sesión; los registros del paso 5 están.
+10. Construye y firma una versión mayor (pasos 3 y 4) y copia su carpeta dentro de `<raíz>\releases`.
+    Cierra SIPGES por completo y ábrelo: aparece «Nueva versión de SIPGES» con sus notas.
+11. Pulsa «Actualizar»: la página se recarga en la versión nueva, `<raíz>\current.json` la nombra y
+    existe `%LOCALAPPDATA%\SIPGES.pre-update-…`. Los registros siguen ahí.
+12. Fuerza una detención (solo en la cuenta de ensayo): con SIPGES cerrado, en PowerShell:
+
+    ```powershell
+    node -e 'const fs=require(`fs`),p=require(`path`),r=process.argv[1],c=JSON.parse(fs.readFileSync(p.join(r,`current.json`))),s=JSON.parse(fs.readFileSync(p.join(r,`install.json`))).stateDir;fs.writeFileSync(p.join(r,`update-journal.json`),JSON.stringify({from:{version:c.version,path:c.path,adopted:false},to:{version:`99.0.0`,path:`versions/99.0.0`},stateDir:s,preCopy:s+`.pre-update-ensayo`,failedAside:s+`.failed-ensayo`,restoring:s+`.restoring-ensayo`,phase:`migrating`}))' "$env:LOCALAPPDATA\SIPGES-app"
+    ```
+
+    Abre SIPGES: un cuadro de mensaje dice «SIPGES no se inició: …» y nombra
+    `%LOCALAPPDATA%\SIPGES.pre-update-ensayo`; Edge no abre.
+13. Sal de la detención como en [Si una actualización se detiene a medias](#si-una-actualización-se-detiene-a-medias),
+    pasos 2 y 4 (la carpeta de estado no cambió, así que no hay nada que restaurar): el paso 2 vuelve a
+    fallar con código 3; el paso 4 imprime `Accepted the restored state folder`. Abre SIPGES: arranca.
+14. Ejecuta de nuevo el instalador del paso 7: dice que ya está instalado y no cambia la versión.
 
 ## Respaldar y restaurar
 
@@ -100,3 +190,6 @@ rm -r "$tmp"
   (una pestaña normal, sin ventana de aplicación).
 - El puerto está fijo en 8000. Si otro programa lo usa, SIPGES no puede arrancar.
 - Puede verse una ventana de consola un instante cuando el acceso directo de Windows arranca.
+- La instalación gestionada se probó de punta a punta solo en Linux (instalar, abrir desde la entrada
+  del lanzador, ver el aviso, actualizar, detención y salida). En Windows, `install.ps1 -Release` y
+  `start-managed.ps1` solo se revisaron de forma estática: el ensayo de arriba es su primera prueba.

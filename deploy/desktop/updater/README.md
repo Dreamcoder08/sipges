@@ -25,15 +25,24 @@ internal directory links, directories) and `release.sig` (Ed25519 signature of t
 Stop SIPGES first: the state folder must not change while it is copied.
 
 ```sh
-# First install: the operator supplies the public key once.
+# First install: the operator supplies the public key once, or trusts the key that signed this
+# release (--trust-release-key prints its SHA-256 fingerprint to compare; the installers use it).
 node deploy/desktop/updater/update.mjs --install <root> --release <dir> --state <state dir> --trust-key <public.pem>
+node deploy/desktop/updater/update.mjs --install <root> --release <dir> --state <state dir> --trust-release-key
 # Later updates: verified with the key inside the installed version.
 node deploy/desktop/updater/update.mjs --install <root> --release <dir>
 # Old plain package directory (no versions/): adopted where it is, state folder not moved.
 node deploy/desktop/updater/update.mjs --install <new root> --release <dir> --adopt <old package> --state <state dir> [--trust-key <public.pem>]
 # After a crash or power cut during an update.
 node deploy/desktop/updater/update.mjs --install <root> --recover
+# Way out of a halt (exit code 3), after you restored the state folder from your own backup.
+node deploy/desktop/updater/update.mjs --install <root> --recover --accept-restored-state
 ```
+
+`--accept-restored-state` refuses while the state folder is missing, empty or a link. Otherwise it
+makes the version from before the interrupted update current again, clears the journal and logs
+`restored-state-accepted`; it never copies, moves or deletes anything in or beside the state
+folder, so the copies left by the failed update stay for diagnosis.
 
 Exit codes: 0 done, 1 refused or invalid, 2 failed and rolled back, 3 rollback incomplete (do
 not start SIPGES; run `--recover` to retry, or restore the pre-update copy named in the message).
@@ -42,7 +51,7 @@ Layout of `<root>`: `versions/<version>/` (verified copies; files are copied, ne
 `current.json` (the pointer, replaced by one atomic rename), `install.json` (state folder),
 `update.log` (JSON lines: `installed`, `adopted`, `updated`, `refused`, `failed` for an error
 before any change such as a full disk while staging, `rolled-back`, `rollback-incomplete`,
-`recovered`), and while an update runs `update.lock` and `update-journal.json`.
+`recovered`, `restored-state-accepted`), and while an update runs `update.lock` and `update-journal.json`.
 
 The lock is created complete in one step (a hard link of a fully written file) and holds the
 process id, a random token and a heartbeat rewritten every 10 s. A lock whose heartbeat is older
@@ -85,7 +94,9 @@ node <root>/versions/<version>/updater/launcher.mjs --install <root> --releases 
    folder of them. A release counts when its signature matches the key of the installed version,
    it is newer (minimum previous version and platform as for an update) and every file of its
    package matches the signed hashes, so a damaged or half-copied release is never offered
-   (hashing a 7700-file package took about 0.3 to 1 s here). The result is one JSON line,
+   (hashing a 7700-file package took about 0.3 to 1 s here). Packages are hashed newest first
+   and the check stops at the first that verifies, so old releases kept in the folder add no
+   time; `skipped` lists only the candidates that were examined. The result is one JSON line,
    `update_check` or `update_check_failed` (missing folder, a check slower than 10 s, no update
    key).
 3. The app shows administrators «Nueva versión de SIPGES», the release notes, «Actualizar» and
@@ -93,7 +104,8 @@ node <root>/versions/<version>/updater/launcher.mjs --install <root> --releases 
    «Actualizar».
 4. After the click the launcher first checks the release folder again (signature, every hash,
    and that it still holds exactly the version it offered; otherwise it logs
-   `update_request_refused`, withdraws the offer and keeps SIPGES running). Then it stops
+   `update_request_refused`, withdraws the offer and keeps SIPGES running; if SIPGES was stopped
+   during that check it logs `update_cancelled` and installs nothing). Then it stops
    SIPGES, runs the same update as `update.mjs` for that exact version (verified again,
    pre-update copy of the state folder, migration, readiness, rollback on failure) and starts the
    resulting version on the same port. The page reloads itself, or says the update failed and
@@ -104,8 +116,21 @@ node <root>/versions/<version>/updater/launcher.mjs --install <root> --releases 
    Restaure la copia de seguridad … o contacte con soporte.» and exits with code 3.
 
 The server and the migration boot get the same environment: no inherited `SIPGES_*` variable
-reaches them, only the ones the launcher sets (secrets and folders from the state folder,
-loopback host and port, plain-HTTP cookies, the web folder and the update channel).
+reaches them, in any letter case, only the allow-list `LAUNCHER_ENV` in `boot.mjs` (secrets and
+folders from the state folder, loopback host and port, plain-HTTP cookies, the version's `web`
+and `references` folders, and for the server the update channel). `SIPGES_REFERENCE_DIR` is the
+same folder the package's `start.mjs` defaults to. When the server stops, the launcher process
+ends at once (the stop grace timer does not hold it).
+
+### The stable entry
+
+The installers (`deploy/desktop/windows/install.ps1 -Release`, `deploy/desktop/linux/install.sh
+--managed`, see [../README.md](../README.md)) copy `run-current.mjs` into the install root, outside
+`versions/`, and the shortcut starts it: it reads `current.json` and runs that version's
+`updater/launcher.mjs --install <root>` with the same options, then ends with the launcher's exit
+code. The start scripts beside it (`start.ps1` on Windows, `sipges-desktop.sh` on Linux) pass
+`--releases <root>/releases`, write `<root>/launcher.log`, open the browser and stay with the
+launcher: exit code 3 shows the halt notice in a message box or a notification.
 
 The launcher and the API share `<root>/update-channel/` (`SIPGES_DESKTOP_UPDATE_DIR`):
 `status.json` (written by the launcher) and `request.json` (written by the API after the
@@ -128,8 +153,7 @@ pre-update copy.
 - Reversing to the previous version restores the pre-update copy: records written after the update
   started are not carried back.
 - `update.mjs` does not detect a running SIPGES; stop it first. The launcher stops its own
-  server before an update. Shortcuts and the browser window still point at the clone-based
-  launchers in `deploy/desktop/linux` and `windows`; switching them to `launcher.mjs` is open.
+  server before an update. The installers refuse while something answers on port 8000.
 - The launcher was run end to end on Linux only; on Windows stopping the server is a hard stop.
 - An old install that is a Git clone (no `metadata.json`) cannot be adopted; carrying its data is
   closure-roadmap T33.
