@@ -55,10 +55,12 @@ describe('egress guard coverage', () => {
   });
 
   it('pins every module that makes outbound HTTP calls: a new one needs a decision', () => {
-    // Embeddings and the narrator are guarded. The rest do not carry tenant records to an AI
+    // Embeddings and the narrators (the OpenAI-compatible one is the analyst's only outbound call
+    // besides Claude's SDK) are guarded. The rest do not carry tenant records to an AI
     // service: object storage, Google sign-in, public feeds and registries, user-configured
     // automation channels (restricted content never leaves, ADR 0014) and Web Push.
     expect(withText(/typeof fetch|globalThis\.fetch|\?\? fetch\b|= fetch\b|\bfetch\(/)).toEqual([
+      'contexts/analyst/infrastructure/openai-compatible-narrator.ts',
       'contexts/automation/infrastructure/http-channel-sender.ts',
       'contexts/automation/infrastructure/web-push.ts',
       'contexts/evidence/infrastructure/s3-object-storage.ts',
