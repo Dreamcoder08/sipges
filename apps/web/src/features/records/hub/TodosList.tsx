@@ -5,6 +5,7 @@ import { Field } from '../../../shared/ui/Field.tsx';
 import { type ActiveFilter, ActiveFilters, FilterGroup, FilterSheet } from '../FilterSheet.tsx';
 import { MODULES } from '../modules.ts';
 import styles from './Hub.module.css';
+import { RecordRows } from './RecordRows.tsx';
 import type { OpenRecord, OpenWay } from './RecordSheet.tsx';
 import {
   type RecordSummary,
@@ -35,7 +36,8 @@ const MOVES: Readonly<Record<string, (from: number, last: number) => number>> = 
  * Every record type in one list, filtered by search and, in one sheet, A–E and validation.
  * The table is a grid with one tab stop: a click, Enter or Space on a row opens it, and the
  * arrows, Home and End move between rows. Beside a docked sheet the moves also select, so the
- * sheet follows the keyboard (closure-roadmap T31, direction 02).
+ * sheet follows the keyboard (closure-roadmap T31, direction 02). Below 1024 px, where the sheet
+ * is modal, the records are a list of two-line rows instead (RecordRows, direction 01).
  */
 export const TodosList = ({
   rows,
@@ -46,7 +48,7 @@ export const TodosList = ({
 }: {
   rows: readonly RecordSummary[];
   onOpen: (record: OpenRecord, way: OpenWay) => void;
-  /** The density control, drawn at the right end of the toolbar. */
+  /** The density control, drawn at the right end of the toolbar (desktop table only). */
   density: ReactNode;
   /** The record open in the sheet, marked with aria-selected. */
   selected: OpenRecord | null;
@@ -157,7 +159,13 @@ export const TodosList = ({
         </div>
       </div>
       <ActiveFilters active={active} onClear={clear} fallback={filtersButton} />
-      {visible.length ? (
+      {visible.length && !docked ? (
+        <RecordRows
+          rows={visible}
+          label="Registros de todos los tipos del proyecto activo"
+          onOpen={(record) => onOpen(record, 'select')}
+        />
+      ) : visible.length ? (
         <div
           className={styles.tableWrap}
           tabIndex={0}

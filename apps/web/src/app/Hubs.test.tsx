@@ -268,6 +268,27 @@ describe('Registros hub', () => {
     expect(pressed(await chips()).map(label)).toEqual(['Actores']);
   });
 
+  it('opens Eventos, the first type, from its chip and from its address', async () => {
+    installRecordsApi({
+      'DEMO/PRJ-DEMO/eventos': [{ _id: 'E-1', Descripcion_Hecho: 'Hecho sintético' }],
+    });
+    at('/registros');
+    const first = render(<App />);
+    const user = userEvent.setup();
+    await user.click(within(await chips()).getByRole('button', { name: /^Eventos/ }));
+    await waitFor(() =>
+      expect(window.location.pathname + window.location.search).toBe('/registros?tipo=eventos'),
+    );
+    expect(pressed(await chips()).map(label)).toEqual(['Eventos']);
+    expect(await screen.findByRole('button', { name: 'Ver E-1' })).toBeVisible();
+    first.unmount();
+
+    // A reload, or a shared link, keeps the type.
+    render(<App />);
+    expect(await screen.findByRole('button', { name: 'Ver E-1' })).toBeVisible();
+    expect(pressed(await chips()).map(label)).toEqual(['Eventos']);
+  });
+
   it('falls back to Todos when the URL names an unknown type', async () => {
     installRecordsApi();
     at('/registros?tipo=inexistente');

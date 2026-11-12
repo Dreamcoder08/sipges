@@ -5,6 +5,7 @@ import {
   SCREENS,
   SYSTEM_PATHS,
   destinationFor,
+  hubHref,
   safeRedirect,
   titleFor,
   visitFor,
@@ -69,14 +70,26 @@ describe('navigation', () => {
     expect(destinationFor('/objeto/eventos/EV-1')).toBeUndefined();
   });
 
+  it('folds only the view a hub opens on into its bare path', () => {
+    const [inicio, registros] = DESTINATIONS;
+    expect(hubHref(inicio, 'inicio')).toBe('/inicio');
+    expect(hubHref(inicio, 'gerencial')).toBe('/inicio?vista=gerencial');
+    // Registros opens on «Todos»: its first type, Eventos, needs its own address.
+    expect(hubHref(registros, 'todos')).toBe('/registros');
+    expect(hubHref(registros, 'eventos')).toBe('/registros?tipo=eventos');
+    expect(hubHref(registros, 'actores')).toBe('/registros?tipo=actores');
+  });
+
   it('names a visit by its screen or by its hub tab', () => {
     expect(visitFor('/irsa', '')).toEqual({ href: '/irsa', label: 'IRSA-SIPGES' });
     expect(visitFor('/registros', '?tipo=actores')).toEqual({
       href: '/registros?tipo=actores',
       label: 'Registros · Actores',
     });
-    expect(visitFor('/registros', '')).toEqual({
-      href: '/registros',
+    // Registros opens on «Todos», its own page with its sidebar link; Eventos keeps `?tipo=`.
+    expect(visitFor('/registros', '')).toBeNull();
+    expect(visitFor('/registros', '?tipo=eventos')).toEqual({
+      href: '/registros?tipo=eventos',
       label: 'Registros · Eventos',
     });
     // Inicio is where sign-in lands and it already has its own link: no «Recientes» copy.

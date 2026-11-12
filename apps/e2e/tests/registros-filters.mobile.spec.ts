@@ -28,18 +28,18 @@ test('Registros shows its first row at 360 px and keeps filters in one sheet', a
   expect(created.status(), await created.text()).toBe(200);
 
   await page.goto('/registros');
-  const table = page.getByRole('region', { name: 'Tabla de registros' });
-  const first = table.getByRole('row').nth(1);
+  const list = page.getByRole('list', { name: 'Registros de todos los tipos del proyecto activo' });
+  const first = list.getByRole('listitem').first();
   await expect(first).toBeVisible();
   const shot = process.env.SIPGES_SCREENSHOT;
   if (shot) await page.screenshot({ path: shot });
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   const box = await first.boundingBox();
   expect((box?.y ?? Infinity) + (box?.height ?? 0)).toBeLessThanOrEqual(640);
-  // Between the search and the table sits one row of controls (Filtros, density, count), not
+  // Between the search and the list sits at most one row of controls (Filtros, count), not
   // the A–E and validation rows the audit found stacked there.
   const search = await page.getByRole('searchbox', { name: 'Buscar en registros' }).boundingBox();
-  const top = (await table.boundingBox())?.y ?? Infinity;
+  const top = (await list.boundingBox())?.y ?? Infinity;
   expect(top - ((search?.y ?? 0) + (search?.height ?? 0))).toBeLessThanOrEqual(112);
 
   // One button opens the sheet; a choice there becomes a removable chip under the search.

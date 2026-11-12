@@ -585,7 +585,7 @@ const hubRoute = (hub: Destination) => {
             ficha={search.ficha}
             onFicha={(ficha) =>
               void navigate({
-                // The type as written: hubHref would fold the first type (eventos) into Todos.
+                // The type as written, so `?tipo=todos` stays in the address it came from.
                 href: withFicha(
                   asked ? `${hub.path}?${hub.param}=${encodeURIComponent(asked)}` : hub.path,
                   ficha,

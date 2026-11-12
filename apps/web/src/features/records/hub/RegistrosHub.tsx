@@ -214,7 +214,7 @@ const Workspace = ({
               <TodosList
                 rows={rows}
                 onOpen={onOpen}
-                density={control}
+                density={docked ? control : null}
                 selected={open}
                 docked={docked}
               />
