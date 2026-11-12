@@ -36,7 +36,10 @@ import {
   type ReferenceReader,
   type ReferenceService,
 } from './contexts/reference/application/index.ts';
-import { fileReferenceReader } from './contexts/reference/infrastructure/file-reference-reader.ts';
+import {
+  createManagedReferenceReader,
+  fileReferenceReader,
+} from './contexts/reference/infrastructure/file-reference-reader.ts';
 import {
   type AnalystService,
   type Narrator,
@@ -613,7 +616,12 @@ export const buildContainer = async (deps: {
     media,
     runtime,
     ready: readinessProbe(deps.sql),
-    reference: createReferenceService(deps.referenceReader ?? fileReferenceReader),
+    reference: createReferenceService(
+      deps.referenceReader ??
+        (deps.config.referenceDir === undefined
+          ? fileReferenceReader
+          : createManagedReferenceReader(deps.config.referenceDir)),
+    ),
     config: deps.config,
     identity,
     googleSignIn:
