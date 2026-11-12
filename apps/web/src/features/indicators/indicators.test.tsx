@@ -235,6 +235,41 @@ describe('Indicadores e IRSA', () => {
     renderPage(<IrsaPage {...context} />);
     expect(await screen.findByText('Metodología pendiente de validación')).toBeVisible();
   });
+  it('muestra un solo aviso junto al valor y deja la metodología tras un desplegable', async () => {
+    server.use(
+      http.get('*/system/irsa', () =>
+        HttpResponse.json({
+          ...report,
+          status: 'PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS',
+          notes: ['Los métodos actuales requieren validación y calibración.'],
+        }),
+      ),
+      http.get('*/system/irsa/config', () =>
+        HttpResponse.json({ ...config, status: 'PENDIENTE_DE_VALIDACION_METODOLOGICA' }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage(<IrsaPage {...context} />);
+    const current = (await screen.findByRole('heading', { name: 'IRSA actual' })).closest(
+      'section',
+    ) as HTMLElement;
+    expect(await within(current).findByText('Metodología pendiente de validación')).toBeVisible();
+    const caveats = () =>
+      within(current)
+        .queryAllByText(/pendiente de validaci|validación y calibración/i)
+        // Text inside a closed disclosure is not shown next to the value.
+        .filter((node) => !node.closest('details:not([open])'));
+    expect(caveats().map((node) => node.textContent)).toEqual([
+      'Metodología pendiente de validación',
+    ]);
+    await user.click(within(current).getByText('Cómo se calcula'));
+    expect(
+      within(current).getByText('PROVISIONAL / PENDIENTE DE VALIDACIÓN DE EXPERTOS'),
+    ).toBeVisible();
+    expect(
+      within(current).getByText('Los métodos actuales requieren validación y calibración.'),
+    ).toBeVisible();
+  });
   it('no marca la metodología como pendiente cuando la configuración no lo dice (S3)', async () => {
     renderPage(<IrsaPage {...context} />);
     await screen.findByText(/7\.00 \/ 100/);
