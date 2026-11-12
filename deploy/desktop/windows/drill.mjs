@@ -336,6 +336,126 @@ async function endServer(label) {
   );
 }
 
+/**
+ * The laptop today (step 1): a clone of `oldCommit` in <work>\old without its data/ folder, with
+ * the clone-mode launcher of `launcherCommit` when the old commit predates the launchers.
+ */
+export function cloneOld({ work, oldCommit, launcherCommit }) {
+  const sha = (commit) =>
+    git(['rev-parse', '--verify', `${commit}^{commit}`], { encoding: 'utf8' }).trim();
+  const oldSha = sha(oldCommit);
+  const old = join(work, 'old');
+  git(['clone', '--no-checkout', '--quiet', repo, old]);
+  git(['-C', old, 'update-ref', '--no-deref', 'HEAD', oldSha]);
+  git(['-C', old, 'read-tree', 'HEAD']);
+  const files = git(['-C', old, 'ls-files', '-z'], { encoding: 'buffer' })
+    .toString('utf8')
+    .split('\0')
+    .filter((file) => file && !file.startsWith('data/'));
+  git(['-C', old, 'checkout-index', '-z', '--stdin'], { input: `${files.join('\0')}\0` });
+  check(!existsSync(join(old, 'data')), 'the old clone has no data/ folder');
+  if (existsSync(join(old, 'deploy', 'desktop', 'windows', 'install.ps1')))
+    say(`${oldCommit} has its own clone-mode install.ps1: no launcher taken from elsewhere`);
+  else {
+    const launcherSha = sha(launcherCommit);
+    const same = spawnSync(
+      'git',
+      [
+        'diff',
+        '--quiet',
+        oldSha,
+        launcherSha,
+        '--',
+        'apps',
+        'packages',
+        'package.json',
+        'pnpm-lock.yaml',
+        'pnpm-workspace.yaml',
+      ],
+      { cwd: repo },
+    );
+    check(
+      same.status === 0,
+      `${launcherCommit} changes nothing the old API runs, so its launcher stands for the install of ${oldCommit}`,
+    );
+    const listed = git(
+      ['ls-tree', '-r', '-z', '--name-only', launcherSha, '--', 'deploy/desktop'],
+      { encoding: 'buffer' },
+    )
+      .toString('utf8')
+      .split('\0')
+      .filter(Boolean);
+    for (const file of listed) {
+      const target = join(old, ...file.split('/'));
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(
+        target,
+        git(['cat-file', 'blob', `${launcherSha}:${file}`], { encoding: 'buffer' }),
+      );
+    }
+    say(
+      `${oldCommit} has no desktop launcher: deploy/desktop taken from ${launcherCommit} (${listed.length} files)`,
+    );
+  }
+  return old;
+}
+
+/** The Arguments line of each SIPGES shortcut (Start menu, Desktop), one per line. */
+export const SHORTCUT_ARGS = [
+  "foreach ($f in [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) { (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $f 'SIPGES.lnk')).Arguments }",
+];
+
+/** Copies each existing SIPGES.lnk of `folders` to <saved>\<index>.lnk. */
+export function saveShortcuts(folders, saved) {
+  mkdirSync(saved, { recursive: true });
+  for (const [index, folder] of folders.entries())
+    if (existsSync(join(folder, 'SIPGES.lnk')))
+      copyFileSync(join(folder, 'SIPGES.lnk'), join(saved, `${index}.lnk`));
+}
+
+/** Puts back what saveShortcuts saved, and removes a SIPGES.lnk that did not exist then. */
+export function restoreShortcuts(folders, saved) {
+  for (const [index, folder] of folders.entries()) {
+    const link = join(folder, 'SIPGES.lnk');
+    const copy = join(saved, `${index}.lnk`);
+    try {
+      if (existsSync(copy)) copyFileSync(copy, link);
+      else if (existsSync(link)) rmSync(link);
+    } catch (error) {
+      say(`could not put back ${link}: ${error.message}`);
+    }
+  }
+}
+
+// Shared with the laptop-kit rehearsal (laptop-kit.mjs), which runs in its own process.
+export const setLog = (file) => {
+  logFile = file;
+};
+export {
+  BASE,
+  PORT,
+  POWERSHELL,
+  check,
+  countLine,
+  endServer,
+  git,
+  healthy,
+  killTree,
+  launch,
+  node as runNode,
+  parseCount,
+  portListeners,
+  psArgs,
+  psLines,
+  quotePs,
+  readJson,
+  run,
+  say,
+  step,
+  trees,
+  waitFor,
+};
+
 // ---------------------------------------------------------------------------------------------
 
 async function main(args) {
@@ -366,18 +486,6 @@ async function main(args) {
   const collected = [];
   let managed;
 
-  const restoreShortcuts = () => {
-    for (const [index, folder] of folders.entries()) {
-      const link = join(folder, 'SIPGES.lnk');
-      const copy = join(saved, `${index}.lnk`);
-      try {
-        if (existsSync(copy)) copyFileSync(copy, link);
-        else if (existsSync(link)) rmSync(link);
-      } catch (error) {
-        say(`could not put back ${link}: ${error.message}`);
-      }
-    }
-  };
   const collectLogs = () => {
     for (const [from, name] of [
       [join(original, 'api.log'), 'old-api.log'],
@@ -395,7 +503,7 @@ async function main(args) {
   const cleanUp = () => {
     for (const pid of [...trees]) killTree(pid);
     for (const pid of portListeners()) killTree(pid);
-    restoreShortcuts();
+    restoreShortcuts(folders, saved);
     rmSync(keyDir, { recursive: true, force: true });
     collectLogs();
   };
@@ -446,10 +554,7 @@ async function main(args) {
       found.length === 2 && found.every((folder) => existsSync(folder)),
       'the Start menu and Desktop folders exist',
     );
-    mkdirSync(saved, { recursive: true });
-    for (const [index, folder] of found.entries())
-      if (existsSync(join(folder, 'SIPGES.lnk')))
-        copyFileSync(join(folder, 'SIPGES.lnk'), join(saved, `${index}.lnk`));
+    saveShortcuts(found, saved);
     // Only once every existing shortcut is saved may the clean-up put them back or remove new ones.
     folders = found;
     say(`shortcuts saved from ${folders.join(', ')} (${readdirSync(saved).length} existed)`);
@@ -469,64 +574,11 @@ async function main(args) {
     );
 
     step(`1. The laptop today: clone install of ${options.oldCommit}, synthetic data, snapshot`);
-    const sha = (commit) =>
-      git(['rev-parse', '--verify', `${commit}^{commit}`], { encoding: 'utf8' }).trim();
-    const oldSha = sha(options.oldCommit);
-    const old = join(work, 'old');
-    git(['clone', '--no-checkout', '--quiet', repo, old]);
-    git(['-C', old, 'update-ref', '--no-deref', 'HEAD', oldSha]);
-    git(['-C', old, 'read-tree', 'HEAD']);
-    const files = git(['-C', old, 'ls-files', '-z'], { encoding: 'buffer' })
-      .toString('utf8')
-      .split('\0')
-      .filter((file) => file && !file.startsWith('data/'));
-    git(['-C', old, 'checkout-index', '-z', '--stdin'], { input: `${files.join('\0')}\0` });
-    check(!existsSync(join(old, 'data')), 'the old clone has no data/ folder');
-    if (existsSync(join(old, 'deploy', 'desktop', 'windows', 'install.ps1')))
-      say(
-        `${options.oldCommit} has its own clone-mode install.ps1: no launcher taken from elsewhere`,
-      );
-    else {
-      const launcherSha = sha(options.launcherCommit);
-      const same = spawnSync(
-        'git',
-        [
-          'diff',
-          '--quiet',
-          oldSha,
-          launcherSha,
-          '--',
-          'apps',
-          'packages',
-          'package.json',
-          'pnpm-lock.yaml',
-          'pnpm-workspace.yaml',
-        ],
-        { cwd: repo },
-      );
-      check(
-        same.status === 0,
-        `${options.launcherCommit} changes nothing the old API runs, so its launcher stands for the install of ${options.oldCommit}`,
-      );
-      const listed = git(
-        ['ls-tree', '-r', '-z', '--name-only', launcherSha, '--', 'deploy/desktop'],
-        { encoding: 'buffer' },
-      )
-        .toString('utf8')
-        .split('\0')
-        .filter(Boolean);
-      for (const file of listed) {
-        const target = join(old, ...file.split('/'));
-        mkdirSync(dirname(target), { recursive: true });
-        writeFileSync(
-          target,
-          git(['cat-file', 'blob', `${launcherSha}:${file}`], { encoding: 'buffer' }),
-        );
-      }
-      say(
-        `${options.oldCommit} has no desktop launcher: deploy/desktop taken from ${options.launcherCommit} (${listed.length} files)`,
-      );
-    }
+    const old = cloneOld({
+      work,
+      oldCommit: options.oldCommit,
+      launcherCommit: options.launcherCommit,
+    });
     mkdirSync(lad, { recursive: true });
     const oldInstall = await run(
       POWERSHELL,
@@ -539,10 +591,7 @@ async function main(args) {
         (await readFile(join(original, name), 'utf8')).trim() !== '',
         `${name} made in %LOCALAPPDATA%\\SIPGES`,
       );
-    const shortcutArgs = [
-      "foreach ($f in [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) { (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $f 'SIPGES.lnk')).Arguments }",
-    ];
-    const oldLinks = await psLines(work, 'shortcuts-old', shortcutArgs, {
+    const oldLinks = await psLines(work, 'shortcuts-old', SHORTCUT_ARGS, {
       env,
       log: out('shortcuts'),
     });
@@ -713,7 +762,7 @@ async function main(args) {
       (await readJson(join(appRoot, 'install.json'))).stateDir.endsWith('SIPGES-datos'),
       'install.json stateDir ends in SIPGES-datos',
     );
-    const newLinks = await psLines(work, 'shortcuts-new', shortcutArgs, {
+    const newLinks = await psLines(work, 'shortcuts-new', SHORTCUT_ARGS, {
       env,
       log: out('shortcuts'),
     });

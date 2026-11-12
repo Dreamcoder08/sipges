@@ -8,6 +8,7 @@ import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
+import { createServer } from 'node:net';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join, posix, win32 } from 'node:path';
@@ -15,12 +16,25 @@ import { fileURLToPath } from 'node:url';
 import { keyFingerprint } from '../updater/release.mjs';
 import { makePackage, makeState, withTemp } from '../updater/verifier-helpers.mjs';
 import {
+  BUILD_FREE,
+  KIT_FREE,
+  LAPTOP_FREE_GB,
   NOTES,
   checklist,
+  freeBytes,
   leeme,
+  nodeRefusal,
+  oldClones,
   opensCheckout,
   parseKitOptions,
+  placeRefusal,
+  pnpmRefusal,
+  portAnswers,
+  preflight,
   refusePaths,
+  sameDrive,
+  sipgesRefusal,
+  spaceRefusal,
   writeKit,
 } from './visit-kit.mjs';
 
@@ -321,6 +335,215 @@ test('CLI: refusals exit 1 with one line and write nothing', () =>
       assert.equal(existsSync(join(repo, 'clave.pem')), false);
     }
   }));
+
+// ---------------------------------------------------------------------------------------------
+// Built on the laptop itself (docs/deployment/desktop-visit.es.md, «Armar el kit en la laptop»):
+// the refusals below run before anything is built; their probes are injected here.
+
+const GiB = 1024 ** 3;
+const LAPTOP = {
+  checkout: 'C:\\SIPGES-kit',
+  key: 'K:\\sipges-clave-actualizaciones.pem',
+  out: 'F:\\',
+  localAppData: 'C:\\Users\\Someone\\AppData\\Local',
+  pathApi: win32,
+};
+const shortcut = (folder) =>
+  `-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "${folder}\\deploy\\desktop\\windows\\start.ps1"`;
+
+test('Node older than 24 is refused with the exact fix; 24 and later pass', () => {
+  assert.equal(
+    nodeRefusal('22.11.0'),
+    'Node.js 22.11.0 es anterior a 24: el kit necesita Node.js 24 o posterior. Instalalo con «winget install OpenJS.NodeJS.LTS», abrí una terminal nueva y repetí el comando.',
+  );
+  assert.match(nodeRefusal('23.9.9') ?? 'accepted', /^Node\.js 23\.9\.9 es anterior a 24/);
+  for (const version of ['24.0.0', '24.11.1', '26.1.0']) assert.equal(nodeRefusal(version), null);
+});
+
+test('pnpm missing or not 12 is refused with the exact fix; pnpm 12 passes', () => {
+  assert.equal(
+    pnpmRefusal(null),
+    'Falta pnpm: instalalo con «npm install -g pnpm@12.11.2», abrí una terminal nueva y repetí el comando.',
+  );
+  assert.equal(
+    pnpmRefusal('9.15.0'),
+    'pnpm 9.15.0 no sirve: este repositorio usa pnpm 12. Instalalo con «npm install -g pnpm@12.11.2», abrí una terminal nueva y repetí el comando.',
+  );
+  assert.equal(pnpmRefusal('12.11.2'), null);
+  assert.equal(pnpmRefusal('12.0.0'), null);
+});
+
+test('SIPGES answering on port 8000 is refused: the kit is not built while she works', () => {
+  assert.equal(
+    sipgesRefusal(true),
+    'SIPGES está abierto: algo responde en http://127.0.0.1:8000. El kit no se arma mientras la usuaria trabaja: cerrá SIPGES por completo («SIPGES cerrado», sección 2 del runbook) y repetí el comando.',
+  );
+  assert.equal(sipgesRefusal(false), null);
+});
+
+test('free space: the package where it is built and its signed copy in --out; one drive adds both', () => {
+  assert.equal(BUILD_FREE, GiB);
+  assert.equal(KIT_FREE, GiB);
+  const base = { checkout: 'C:\\SIPGES-kit', out: 'F:\\', sameDrive: false };
+  assert.equal(spaceRefusal({ ...base, freeCheckout: GiB, freeOut: GiB }), null);
+  assert.equal(
+    spaceRefusal({ ...base, freeCheckout: 0.4 * GiB, freeOut: 8 * GiB }),
+    'Falta espacio en el disco de este clon (C:\\SIPGES-kit): hay 0,4 GB libres y el kit necesita 1,0 GB para construir el paquete. Liberá espacio y repetí el comando.',
+  );
+  assert.equal(
+    spaceRefusal({ ...base, freeCheckout: 8 * GiB, freeOut: 0.25 * GiB }),
+    'Falta espacio en --out F:\\: hay 0,3 GB libres y el kit necesita 1,0 GB para la versión firmada. Usá otro USB o liberá espacio y repetí el comando.',
+  );
+  const local = { checkout: 'C:\\SIPGES-kit', out: 'C:\\SIPGES-kit-salida', sameDrive: true };
+  assert.equal(
+    spaceRefusal({ ...local, freeCheckout: 1.5 * GiB, freeOut: 1.5 * GiB }),
+    'Falta espacio en el disco de C:\\SIPGES-kit y de --out C:\\SIPGES-kit-salida (el mismo disco): hay 1,5 GB libres y el kit necesita 2,0 GB (el paquete en este clon y su copia firmada en --out). Liberá espacio o usá --out en otro disco y repetí el comando.',
+  );
+  assert.equal(spaceRefusal({ ...local, freeCheckout: 2 * GiB, freeOut: 2 * GiB }), null);
+});
+
+test('the old clones are the folders whose start.ps1 the SIPGES shortcuts open', () => {
+  assert.deepEqual(
+    oldClones(
+      `${shortcut('C:\\Users\\a\\sipges')}\r\n${shortcut('C:\\Users\\a\\sipges')}\r\n-NoProfile -File "C:\\x\\SIPGES-app\\start.ps1"\r\n`,
+    ),
+    ['C:\\Users\\a\\sipges'],
+  );
+  assert.deepEqual(oldClones(''), []);
+});
+
+test('the kit never writes in the old clone or a SIPGES folder of %LOCALAPPDATA%', () => {
+  const clones = ['C:\\Users\\Someone\\sipges'];
+  // Two USB drives, or one USB for the key and the kit in a laptop folder beside the clone.
+  assert.equal(placeRefusal({ ...LAPTOP, clones }), null);
+  assert.equal(placeRefusal({ ...LAPTOP, out: 'C:\\SIPGES-kit-salida', clones }), null);
+  assert.equal(
+    refusePaths({ ...LAPTOP, repo: LAPTOP.checkout, out: 'C:\\SIPGES-kit-salida' }),
+    null,
+    'a laptop folder outside the repository and %LOCALAPPDATA%\\SIPGES* is a valid --out',
+  );
+  assert.equal(
+    placeRefusal({ ...LAPTOP, checkout: 'c:\\users\\someone\\SIPGES', clones }),
+    'Los accesos directos «SIPGES» abren este clon (c:\\users\\someone\\SIPGES): es el clon viejo de la laptop y el kit no escribe en él. Cloná el commit definitivo en otra carpeta (C:\\SIPGES-kit) y corré el kit desde ahí.',
+  );
+  assert.equal(
+    placeRefusal({ ...LAPTOP, checkout: 'C:\\Users\\Someone\\sipges\\kit', clones }),
+    'Este clon (C:\\Users\\Someone\\sipges\\kit) está dentro del clon viejo C:\\Users\\Someone\\sipges, el que abren los accesos directos «SIPGES»: el kit no escribe en él. Cloná el commit definitivo en otra carpeta (C:\\SIPGES-kit) y corré el kit desde ahí.',
+  );
+  assert.equal(
+    placeRefusal({
+      ...LAPTOP,
+      checkout: 'C:\\Users\\Someone\\AppData\\Local\\SIPGES-kit',
+      clones,
+    }),
+    'Este clon (C:\\Users\\Someone\\AppData\\Local\\SIPGES-kit) está dentro de una carpeta SIPGES de %LOCALAPPDATA%, la de la instalación: el kit no escribe ahí. Cloná el commit definitivo en otra carpeta (C:\\SIPGES-kit) y corré el kit desde ahí.',
+  );
+  assert.equal(
+    placeRefusal({ ...LAPTOP, key: 'C:\\Users\\Someone\\sipges\\.data\\k.pem', clones }),
+    '--key C:\\Users\\Someone\\sipges\\.data\\k.pem está dentro del clon viejo C:\\Users\\Someone\\sipges: la clave va en su propio USB.',
+  );
+  assert.equal(
+    placeRefusal({ ...LAPTOP, out: 'C:\\Users\\Someone\\sipges', clones }),
+    '--out C:\\Users\\Someone\\sipges está dentro del clon viejo C:\\Users\\Someone\\sipges: el kit va al USB de la visita o a una carpeta aparte (C:\\SIPGES-kit-salida).',
+  );
+  assert.equal(
+    placeRefusal({ ...LAPTOP, checkout: '/src/kit', key: '/k/k.pem', out: '/usb', clones: [], localAppData: null, pathApi: posix }),
+    null,
+  );
+});
+
+/** Probes that record their calls under a short name; `over` replaces some. */
+const NAMES = {
+  pnpmVersion: 'pnpm',
+  installed: 'installed',
+  clean: 'clean',
+  shortcuts: 'shortcuts',
+  sipgesAnswers: 'sipges',
+  space: 'space',
+};
+function probes(over = {}) {
+  const calls = [];
+  const probe = (name, value) => async () => {
+    calls.push(name);
+    return value;
+  };
+  return {
+    calls,
+    probes: {
+      nodeVersion: '24.11.1',
+      pnpmVersion: probe('pnpm', '12.11.2'),
+      installed: probe('installed', true),
+      clean: probe('clean', true),
+      shortcuts: probe('shortcuts', `${shortcut('C:\\Users\\Someone\\sipges')}\r\n`),
+      sipgesAnswers: probe('sipges', false),
+      space: probe('space', { freeCheckout: 8 * GiB, freeOut: 8 * GiB, sameDrive: false }),
+      ...Object.fromEntries(
+        Object.entries(over).map(([name, value]) => [
+          name,
+          name === 'nodeVersion' ? value : probe(NAMES[name], value),
+        ]),
+      ),
+    },
+  };
+}
+const ALL = ['pnpm', 'installed', 'clean', 'shortcuts', 'sipges', 'space'];
+
+test('preflight: everything in order passes and asks every probe once', async () => {
+  const { calls, probes: p } = probes();
+  assert.equal(await preflight({ ...LAPTOP, probes: p }), null);
+  assert.deepEqual(calls, ALL);
+});
+
+test('preflight: the first refusal wins and nothing after it is asked', async () => {
+  for (const [over, message, asked] of [
+    [{ nodeVersion: '22.11.0' }, /^Node\.js 22\.11\.0 es anterior a 24/, []],
+    [{ pnpmVersion: null }, /^Falta pnpm/, ['pnpm']],
+    [{ installed: false }, /^this checkout is not installed: run pnpm install --frozen-lockfile$/, ['pnpm', 'installed']],
+    [{ clean: false }, /^this checkout has uncommitted changes/, ['pnpm', 'installed', 'clean']],
+    [
+      { shortcuts: `${shortcut('C:\\SIPGES-KIT')}\r\n` },
+      /^Los accesos directos «SIPGES» abren este clon/,
+      ['pnpm', 'installed', 'clean', 'shortcuts'],
+    ],
+    [{ sipgesAnswers: true }, /^SIPGES está abierto/, ALL.slice(0, 5)],
+    [
+      { space: { freeCheckout: GiB, freeOut: GiB, sameDrive: true } },
+      /^Falta espacio en el disco de C:\\SIPGES-kit y de --out F:\\ \(el mismo disco\)/,
+      ALL,
+    ],
+  ]) {
+    const { calls, probes: p } = probes(over);
+    assert.match((await preflight({ ...LAPTOP, probes: p })) ?? 'accepted', message);
+    assert.deepEqual(calls, asked, JSON.stringify(over));
+  }
+});
+
+test('the real probes: a listening port answers, a closed one does not; free space of a folder', async () => {
+  // An ephemeral loopback port, never 8000.
+  const server = createServer((socket) => socket.end());
+  await new Promise((done) => server.listen(0, '127.0.0.1', done));
+  const { port } = server.address();
+  assert.equal(await portAnswers(port), true);
+  await new Promise((done) => server.close(done));
+  assert.equal(await portAnswers(port), false);
+  await withTemp(async (dir) => {
+    const free = freeBytes(dir);
+    assert.ok(Number.isFinite(free) && free > 0, `free bytes ${free}`);
+    await mkdir(join(dir, 'a'));
+    assert.equal(sameDrive(dir, join(dir, 'a')), true);
+  });
+});
+
+test('the runbook asks for the free space this kit and CI use', async () => {
+  const runbook = await readFile(join(repo, 'docs/deployment/desktop-visit.es.md'), 'utf8');
+  assert.ok(runbook.includes(`${LAPTOP_FREE_GB} GB libres`), `the runbook lacks «${LAPTOP_FREE_GB} GB libres»`);
+  for (const line of [
+    'git clone https://github.com/Dreamcoder08/sipges.git C:\\SIPGES-kit',
+    'node deploy\\desktop\\windows\\visit-kit.mjs --version <versión> --key K:\\sipges-clave-actualizaciones.pem --out F:\\',
+    'node deploy\\desktop\\windows\\visit-kit.mjs --version <versión> --key K:\\sipges-clave-actualizaciones.pem --out C:\\SIPGES-kit-salida',
+  ])
+    assert.ok(runbook.includes(line), `the runbook lacks ${line}`);
+});
 
 test('CLI: --help prints the usage', () => {
   const result = node(kit, '--help');

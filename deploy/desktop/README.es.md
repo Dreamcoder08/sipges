@@ -207,7 +207,14 @@ El USB de la visita es un solo comando, en Windows, desde un clon limpio del com
 `node deploy\desktop\windows\visit-kit.mjs --version <semver> --key K:\<clave>.pem --out F:\` construye,
 crea o reutiliza la clave de firma, firma y escribe `F:\SIPGES-visita` (la versión firmada,
 `sipges-scripts.zip`, `fingerprint.txt`, `LEEME.txt`). Cuándo, lo dice el runbook
-([desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md)).
+([desktop-visit.es.md](../../docs/deployment/desktop-visit.es.md)): en la visita se arma en la
+laptop misma, desde un segundo clon (`C:\SIPGES-kit`), con `--out F:\` o, con un solo USB,
+`--out C:\SIPGES-kit-salida`. Antes de construir se niega, sin escribir nada, si Node es anterior a
+24, falta pnpm 12, el clon, la clave o el kit caen dentro del clon viejo o de
+`%LOCALAPPDATA%\SIPGES*`, SIPGES responde en el puerto 8000 o falta espacio libre. El job
+«laptop-kit» del mismo workflow lo ensaya (`deploy/desktop/windows/laptop-kit.mjs`): instalación por
+clon de un commit viejo, segundo clon con su `pnpm install`, las negativas, el kit, la instalación
+desde el kit y la comparación; el clon viejo queda igual byte a byte, y mide tiempo y espacio.
 
 ## Respaldar y restaurar
 
