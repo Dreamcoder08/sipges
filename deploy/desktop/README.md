@@ -77,8 +77,17 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   `run-current.mjs` and the start script. The shortcuts (Windows) and the launcher entry (Linux)
   point at the start script in that root, so they keep working after every update.
 - The state folder stays where it is. Nothing in it is overwritten or deleted; only a missing data
-  key or admin password is created. The first start of the new version migrates an existing
-  database in place, which is why step 2 comes first.
+  key or admin password is created, and never beside an existing database: the installer stops
+  if the database is there but its `data-key` is not (restore it from your backup).
+- The first start over an existing database copies the folder beside itself
+  (`<state>.pre-update-<time>-first-start-<version>`, never deleted), runs the new version on a
+  second copy first and only then on the folder; if that fails, SIPGES does not start and the
+  folder is as it was. To run it in a terminal, without the 90-second wait of the shortcut:
+  `node <root>/versions/<version>/updater/update.mjs --install <root> --first-start`. Step 2
+  still comes first.
+- To install on a copy of the state folder and leave the original to the clone install (the data
+  move, [migration/README.md](migration/README.md)): `-State <copy>` on Windows,
+  `SIPGES_DESKTOP_STATE=<copy>` on Linux.
 - The key that signed the release becomes the only key later updates are accepted with. The
   installer prints its SHA-256 fingerprint: compare it with the one noted when the key was made.
 - To offer a newer release, copy its folder into `releases` in the install root. At the next
@@ -107,12 +116,41 @@ in `current.json` of the install root.
 
 ## Back up and restore
 
-The state folder is everything: the database is useless without `data-key`.
+The state folder is everything: the database is useless without `data-key`. It is
+`%LOCALAPPDATA%\SIPGES` on Windows and `~/.local/share/sipges-local` on Linux, unless another
+one was chosen for a managed install (`stateDir` in `install.json` of the install root). The
+install root itself holds no data and is not backed up.
 
-1. Stop the server so no file is half-written: restart the computer, or end the `node` process
-   (Task Manager on Windows; `pkill -f apps/api/src/main.ts` on Linux).
-2. Copy the whole state folder to an external disk or encrypted storage you control.
-3. To restore, put the copy back in the same place (same user, same path) and open SIPGES.
+These are the steps of the drill run on Linux with synthetic data (closure-roadmap T11,
+`deploy/desktop/migration/rehearse.mjs` step 7). On Windows, use PowerShell; `E:` is the
+external disk.
+
+Back up:
+
+1. Stop SIPGES so no file is half-written. Managed install: `pkill -f run-current.mjs` (Linux),
+   or end every `node` process in Task Manager (Windows), or restart the computer. Clone install:
+   `pkill -f apps/api/src/main.ts`, or the same on Windows. `http://127.0.0.1:8000/health` must
+   no longer answer.
+2. Copy the whole state folder to an external disk or encrypted storage you control, in a folder
+   named with the date: `cp -a ~/.local/share/sipges-local /media/<disk>/SIPGES-<date>` (Linux),
+   `Copy-Item -Recurse "$env:LOCALAPPDATA\SIPGES" "E:\SIPGES-<date>"` (Windows).
+3. Check that the copy has the same number of files and bytes as the original:
+   `find <folder> -type f -printf '%s\n' | awk '{n++; s+=$1} END {print n, s}'` on each (Linux),
+   `Get-ChildItem -Recurse -File <folder> | Measure-Object -Property Length -Sum` on each
+   (Windows: `Count` and `Sum`).
+4. Open SIPGES again.
+
+Restore:
+
+5. Stop SIPGES as in step 1.
+6. If the state folder is still there, rename it aside (add `.damaged`); never delete it. (The
+   drill deleted it to stand for a lost disk.)
+7. Copy the backup back to the same path, as the same user:
+   `cp -a /media/<disk>/SIPGES-<date> ~/.local/share/sipges-local` (Linux),
+   `Copy-Item -Recurse "E:\SIPGES-<date>" "$env:LOCALAPPDATA\SIPGES"` (Windows).
+8. Open SIPGES, sign in with the password and an MFA code, and open a few records and uploads.
+   To check everything, run `deploy/desktop/migration/snapshot.mjs` before step 1 and
+   `compare.mjs` after this step, as the drill did: it must print `RESULT: no difference`.
 
 Anyone who gets the folder gets your data and the key to read it. Keep copies private.
 
@@ -148,6 +186,7 @@ rm -r "$tmp"
 - The port is fixed at 8000. If another program uses it, SIPGES cannot start.
 - A console window may flash for a moment when the Windows shortcut starts.
 - The managed install was run end to end on Linux only (install, open from the launcher entry, see
-  the notice, update, halt and way out). On Windows, `install.ps1 -Release` and
+  the notice, update, halt and way out, the data move from an older clone install and the backup
+  drill). On Windows, `install.ps1 -Release` and
   `start-managed.ps1` were checked statically; the Windows rehearsal in
   [README.es.md](README.es.md#ensayo-en-windows-para-la-visita-roadmap-t34) is their first run.

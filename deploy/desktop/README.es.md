@@ -79,8 +79,18 @@ versión de SIPGES», «Actualizar»).
   lanzador (Linux) apuntan al script de arranque de esa raíz, así que siguen funcionando después
   de cada actualización.
 - La carpeta de estado se queda donde está. No se sobrescribe ni se borra nada en ella; solo se
-  crean la clave de datos o la contraseña de administrador si faltan. El primer arranque de la
-  versión nueva migra la base de datos existente en su sitio: por eso el paso 2 va primero.
+  crean la clave de datos o la contraseña de administrador si faltan, y nunca junto a una base de
+  datos existente: el instalador se detiene si la base de datos está pero su `data-key` no
+  (restáurala desde tu respaldo).
+- El primer arranque sobre una base de datos existente copia la carpeta a su lado
+  (`<estado>.pre-update-<hora>-first-start-<versión>`, nunca se borra), prueba la versión nueva
+  primero en una segunda copia y solo después en la carpeta; si falla, SIPGES no arranca y la
+  carpeta queda como estaba. Para hacerlo en una terminal, sin la espera de 90 segundos del acceso
+  directo: `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --first-start`.
+  El paso 2 sigue yendo primero.
+- Para instalar sobre una copia de la carpeta de estado y dejar la original a la instalación por
+  clon (el traslado de datos, [migration/README.md](migration/README.md)): `-State <copia>` en
+  Windows, `SIPGES_DESKTOP_STATE=<copia>` en Linux.
 - La clave que firmó la versión pasa a ser la única con la que se aceptan las actualizaciones. El
   instalador imprime su huella SHA-256: compárala con la que anotaste al crear la clave.
 - Para ofrecer una versión más nueva, copia su carpeta dentro de `releases` en la raíz. En el
@@ -149,12 +159,43 @@ texto del cuadro de mensaje, y detente. `<raíz>` es `%LOCALAPPDATA%\SIPGES-app`
 
 ## Respaldar y restaurar
 
-La carpeta de estado es todo: la base de datos no sirve sin `data-key`.
+La carpeta de estado es todo: la base de datos no sirve sin `data-key`. Es
+`%LOCALAPPDATA%\SIPGES` en Windows y `~/.local/share/sipges-local` en Linux, salvo que se haya
+elegido otra para una instalación gestionada (`stateDir` en `install.json` de la raíz). La raíz
+de la instalación no guarda datos y no se respalda.
 
-1. Apaga el servidor para que ningún archivo quede a medias: reinicia el computador o termina el proceso `node`
-   (Administrador de tareas en Windows; `pkill -f apps/api/src/main.ts` en Linux).
-2. Copia la carpeta de estado completa a un disco externo o a un almacenamiento cifrado que controles.
-3. Para restaurar, deja la copia en el mismo lugar (mismo usuario, misma ruta) y abre SIPGES.
+Estos son los pasos del simulacro hecho en Linux con datos inventados (roadmap T11,
+`deploy/desktop/migration/rehearse.mjs` paso 7). En Windows, usa PowerShell; `E:` es el disco
+externo.
+
+Respaldar:
+
+1. Apaga SIPGES para que ningún archivo quede a medias. Instalación gestionada:
+   `pkill -f run-current.mjs` (Linux), o termina todos los procesos `node` en el Administrador de
+   tareas (Windows), o reinicia el computador. Instalación por clon: `pkill -f apps/api/src/main.ts`,
+   o lo mismo en Windows. `http://127.0.0.1:8000/health` ya no debe responder.
+2. Copia la carpeta de estado completa a un disco externo o a un almacenamiento cifrado que
+   controles, en una carpeta con la fecha en el nombre:
+   `cp -a ~/.local/share/sipges-local /media/<disco>/SIPGES-<fecha>` (Linux),
+   `Copy-Item -Recurse "$env:LOCALAPPDATA\SIPGES" "E:\SIPGES-<fecha>"` (Windows).
+3. Comprueba que la copia tiene el mismo número de archivos y de bytes que el original:
+   `find <carpeta> -type f -printf '%s\n' | awk '{n++; s+=$1} END {print n, s}'` en cada una
+   (Linux), `Get-ChildItem -Recurse -File <carpeta> | Measure-Object -Property Length -Sum` en
+   cada una (Windows: `Count` y `Sum`).
+4. Abre SIPGES de nuevo.
+
+Restaurar:
+
+5. Apaga SIPGES como en el paso 1.
+6. Si la carpeta de estado sigue ahí, renómbrala (agrégale `.danada`); nunca la borres. (El
+   simulacro la borró para representar un disco perdido.)
+7. Copia el respaldo de vuelta en la misma ruta, con el mismo usuario:
+   `cp -a /media/<disco>/SIPGES-<fecha> ~/.local/share/sipges-local` (Linux),
+   `Copy-Item -Recurse "E:\SIPGES-<fecha>" "$env:LOCALAPPDATA\SIPGES"` (Windows).
+8. Abre SIPGES, inicia sesión con la contraseña y un código MFA, y abre algunos registros y
+   archivos. Para comprobarlo todo, ejecuta `deploy/desktop/migration/snapshot.mjs` antes del
+   paso 1 y `compare.mjs` después de este paso, como hizo el simulacro: debe decir
+   `RESULT: no difference`.
 
 Quien obtenga la carpeta obtiene tus datos y la clave para leerlos. Guarda las copias en privado.
 
@@ -191,5 +232,6 @@ rm -r "$tmp"
 - El puerto está fijo en 8000. Si otro programa lo usa, SIPGES no puede arrancar.
 - Puede verse una ventana de consola un instante cuando el acceso directo de Windows arranca.
 - La instalación gestionada se probó de punta a punta solo en Linux (instalar, abrir desde la entrada
-  del lanzador, ver el aviso, actualizar, detención y salida). En Windows, `install.ps1 -Release` y
+  del lanzador, ver el aviso, actualizar, detención y salida, el traslado de datos desde una
+  instalación por clon antigua y el simulacro de respaldo). En Windows, `install.ps1 -Release` y
   `start-managed.ps1` solo se revisaron de forma estática: el ensayo de arriba es su primera prueba.
