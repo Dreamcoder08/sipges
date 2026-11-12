@@ -441,7 +441,27 @@ async function seed(base, state, work) {
     await admin.call('/system/auth/grants', json({ username: ANALYST, company_id, project_id })),
     'grant',
   );
-  return { secretFile, totpState, password, analystPassword };
+  // The second account enrolls MFA too: without it every scoped route answers 403, and the
+  // access check below would compare refusals instead of the projects it can open.
+  const analystTotpState = join(work, 'analyst-totp-state.json');
+  const analystFirst = await signIn({ base, username: ANALYST, password: analystPassword });
+  const analystSetup = await expectOk(
+    await analystFirst.call('/system/auth/totp/setup', { method: 'POST' }),
+    'second account MFA setup',
+  );
+  await expectOk(
+    await analystFirst.call(
+      '/system/auth/totp/enable',
+      json({ code: totp(analystSetup.secret, await nextStep(analystTotpState)) }),
+    ),
+    'second account MFA enable',
+  );
+  const analyst = {
+    password: analystPassword,
+    totpSecret: analystSetup.secret,
+    totpState: analystTotpState,
+  };
+  return { secretFile, totpState, password, analystPassword: analyst };
 }
 
 /**
@@ -454,8 +474,8 @@ export const sameAccess = (before, after) =>
   after.status === 200 &&
   after.projects === before.projects;
 
-async function analystSignsIn(base, analystPassword) {
-  const session = await signIn({ base, username: ANALYST, password: analystPassword });
+async function analystSignsIn(base, { password, totpSecret, totpState }) {
+  const session = await signIn({ base, username: ANALYST, password, totpSecret, totpState });
   const scopes = await session.call('/system/auth/scopes');
   const text = await scopes.text();
   return {
@@ -568,7 +588,7 @@ async function main(args) {
     const analystBefore = await analystSignsIn(oldBase, secrets.analystPassword);
     check(
       analystBefore.status === 200 && analystBefore.projects >= 1,
-      `the second account signs in on the old version and opens ${analystBefore.projects} project(s)`,
+      `the second account signs in on the old version and opens ${analystBefore.projects} project(s) (scopes status ${analystBefore.status})`,
     );
 
     step('3. Snapshot of the old version, stop, copy the state folder');
