@@ -83,24 +83,54 @@ export async function managedEnv({ versionDir, stateDir, port, channel, base = p
 
 export { freePort, status as httpStatus };
 
-/** Returns `({ versionDir, stateDir }) => Promise<void>` that boots, checks and stops. */
-export function bootCheck({ logFile, timeoutMs = 120_000 }) {
+/**
+ * Loaded before the version's start.mjs in every boot child: its stdin is a pipe from the process
+ * that started it, and that pipe ends when that process is gone, however it ended (a hard kill
+ * runs no handler, and Windows has no SIGTERM). The child then ends too, so a migration boot
+ * never keeps writing a state folder that the next start restores from its copy.
+ */
+export const PARENT_WATCH = `data:text/javascript,${encodeURIComponent(
+  "import process from 'node:process';" +
+    "process.stdin.on('end', () => process.exit(70));" +
+    "process.stdin.on('error', () => process.exit(70));" +
+    'process.stdin.resume();',
+)}`;
+
+const stopped = () => Object.assign(new Error('SIPGES was stopped'), { code: 'STOPPED' });
+
+/**
+ * Returns `({ versionDir, stateDir }) => Promise<void>` that boots, checks and stops. `signal`
+ * (an AbortSignal) stops a running boot: the child is ended and awaited before the returned
+ * promise rejects with code STOPPED, so nothing writes the state folder after that.
+ */
+export function bootCheck({ logFile, timeoutMs = 120_000, signal }) {
   return async ({ versionDir, stateDir }) => {
+    if (signal?.aborted) throw stopped();
     const port = await freePort();
     const env = await managedEnv({ versionDir, stateDir, port });
     const output = await open(logFile, 'a', 0o600);
-    const child = spawn(process.execPath, [join(versionDir, 'start.mjs')], {
-      cwd: versionDir,
-      env,
-      stdio: ['ignore', output.fd, output.fd],
-      windowsHide: true,
-    });
+    const child = spawn(
+      process.execPath,
+      ['--import', PARENT_WATCH, join(versionDir, 'start.mjs')],
+      {
+        cwd: versionDir,
+        env,
+        stdio: ['pipe', output.fd, output.fd],
+        windowsHide: true,
+      },
+    );
+    child.stdin.on('error', () => {});
     let exited = null;
     child.on('exit', (code, signal) => (exited = { code, signal }));
+    const exit = once(child, 'exit');
+    const aborted = new Promise((resolveAbort) => {
+      if (signal) signal.addEventListener('abort', resolveAbort, { once: true });
+    });
     try {
       const deadline = Date.now() + timeoutMs;
       const base = `http://127.0.0.1:${port}`;
       while (Date.now() < deadline) {
+        if (signal?.aborted) throw stopped();
         if (exited)
           throw new Error(
             `the new version stopped while starting (code ${exited.code}); see ${logFile}`,
@@ -110,16 +140,20 @@ export function bootCheck({ logFile, timeoutMs = 120_000 }) {
             throw new Error('the new version is ready but does not serve the web app');
           return;
         }
-        await sleep(500);
+        await Promise.race([sleep(500, undefined, { ref: false }), aborted]);
       }
       throw new Error(`the new version was not ready within ${timeoutMs / 1000} s; see ${logFile}`);
     } finally {
       if (!exited) {
         child.kill('SIGTERM');
         // Unreferenced: the grace timer must not keep the process alive after the child exited.
-        await Promise.race([once(child, 'exit'), sleep(15_000, undefined, { ref: false })]);
-        if (!exited) child.kill('SIGKILL');
+        await Promise.race([exit, sleep(15_000, undefined, { ref: false })]);
+        if (!exited) {
+          child.kill('SIGKILL');
+          await exit;
+        }
       }
+      child.stdin.destroy();
       await output.close();
     }
   };

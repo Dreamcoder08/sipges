@@ -6,6 +6,7 @@
 //
 // The API never decides what to install: a request names a version, and only the release this
 // launcher verified for that version is applied, through `update` (verified again, with rollback).
+/* global AbortController */
 import { spawn } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
@@ -90,7 +91,9 @@ const withTimeout = (work, ms) => {
  * Starts the current version and keeps it running. Options other than `root` are for tests and
  * the CLI: `source` (local release directory; unset disables the check), `migrate`/`ready`
  * (defaults boot the new version on a free port, as update.mjs does) and `find`.
- * Returns `{ done, stop, checked }`: `done` resolves with the exit code when SIPGES stops.
+ * `signal` (an AbortSignal) is the stop that may arrive before this returns, during the first
+ * start: its boot child is ended and awaited, the folder is restored, and the launch ends as
+ * stopped. Returns `{ done, stop, checked }`: `done` resolves with the exit code when SIPGES stops.
  */
 export async function launch({
   root,
@@ -103,8 +106,19 @@ export async function launch({
   migrate,
   ready,
   baseEnv = process.env,
+  signal,
 }) {
   root = resolve(root);
+  // One stop for every boot child this launch starts (first start, rehearsal, update).
+  const halt = new AbortController();
+  if (signal?.aborted) halt.abort();
+  else signal?.addEventListener('abort', () => halt.abort(), { once: true });
+  const stoppedEarly = () => ({
+    done: Promise.resolve(0),
+    stop: async () => 0,
+    checked: Promise.resolve(),
+    halted: () => null,
+  });
   let recovered;
   try {
     recovered = await recover({ root });
@@ -119,7 +133,7 @@ export async function launch({
     throw error;
   }
   if (recovered.recovered) log('update_recovered', { version: recovered.version });
-  const check = bootCheck({ logFile: join(root, 'update-boot.log') });
+  const check = bootCheck({ logFile: join(root, 'update-boot.log'), signal: halt.signal });
   migrate ??= check;
   ready ??= check;
   // Existing data (an older install's state folder) opens only through a copy and a rehearsal,
@@ -130,6 +144,13 @@ export async function launch({
     if (first.preUpdateCopy)
       log('first_start', { version: first.version, preUpdateCopy: first.preUpdateCopy });
   } catch (error) {
+    // Stopped during the first start: its boot child is gone and the folder was put back, so
+    // this is a normal stop and the next start runs the first start again. Only a restore that
+    // did not finish halts.
+    if (halt.signal.aborted && error.code !== ROLLBACK_INCOMPLETE) {
+      log('first_start_cancelled', { code: error.code ?? null, reason: error.message });
+      return stoppedEarly();
+    }
     log('start_refused', {
       code: error.code ?? null,
       reason: error.message,
@@ -137,6 +158,7 @@ export async function launch({
     });
     throw Object.assign(error, { firstStart: true });
   }
+  if (halt.signal.aborted) return stoppedEarly();
   const stateDir = await readStateDir(root);
   await prepareState(stateDir);
   const channel = join(root, CHANNEL);
@@ -311,6 +333,8 @@ export async function launch({
   const stop = async () => {
     if (stopping) return done;
     stopping = true;
+    // A boot running for an update is ended now; the update then rolls back.
+    halt.abort();
     if (!updating) {
       clearInterval(poller);
       await stopChild();
@@ -347,12 +371,21 @@ async function main(args) {
   if (!options['--install']) throw new Error('Missing --install');
   const port = options['--port'] === undefined ? 8000 : Number(options['--port']);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid --port');
-  const running = await launch({
+  // Registered before anything starts: a stop during the first start must end its boot child.
+  const stop = new AbortController();
+  let running = null;
+  for (const signal of ['SIGINT', 'SIGTERM'])
+    process.once(signal, () => {
+      stop.abort();
+      if (running) void running.stop();
+    });
+  running = await launch({
     root: options['--install'],
     source: options['--releases'] ? resolve(options['--releases']) : undefined,
     port,
+    signal: stop.signal,
   });
-  for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => void running.stop());
+  if (stop.signal.aborted) void running.stop();
   process.exitCode = await running.done;
   if (running.halted()) console.error(running.halted());
 }

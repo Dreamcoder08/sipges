@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { firstStart, install, readCurrent } from './updater.mjs';
+import { firstStart, install, readCurrent, recover } from './updater.mjs';
 import { launch } from './launcher.mjs';
 import { freePort } from './boot.mjs';
 import {
@@ -256,4 +256,162 @@ test('update.mjs --first-start runs the same first start from a terminal', () =>
     );
     assert.equal(wrong.status, 1);
     assert.match(wrong.stderr, /--first-start takes only --install/);
+  }));
+
+/** A start.mjs that answers on the rehearsal copy and hangs on the real folder, recording its pid. */
+const hangingLiveStart = `
+  import { writeFileSync } from 'node:fs';
+  import { dirname, join } from 'node:path';
+  import { createServer } from 'node:http';
+  const state = dirname(process.env.SIPGES_PGLITE_DIR);
+  if (state.includes('.rehearsal-')) {
+    createServer((req, res) => res.end('ok'))
+      .listen(Number(process.env.SIPGES_PORT), '127.0.0.1');
+  } else {
+    writeFileSync(join(state, 'live-child.pid'), String(process.pid));
+  }
+  setInterval(() => {}, 1000);
+`;
+
+test('T33/T35: stopping during firstStart also stops its live boot child', () =>
+  withTemp(async (dir) => {
+    const { spawn } = await import('node:child_process');
+    const { once } = await import('node:events');
+    const { setTimeout: sleep } = await import('node:timers/promises');
+    const pair = newPair();
+    const root = join(dir, 'install');
+    const state = join(dir, 'state');
+    await makeState(state);
+    const release = await releases(dir, pair)('1.0.0', { start: hangingLiveStart });
+    await install({ root, stateDir: state, release, trustKey: publicPem(pair) });
+    let port;
+    do {
+      port = await freePort();
+    } while ([8000, 18080].includes(port));
+    const child = spawn(
+      process.execPath,
+      [join(dirname(updateCli), 'launcher.mjs'), '--install', root, '--port', String(port)],
+      { stdio: 'ignore' },
+    );
+    const ended = once(child, 'exit');
+    let livePid;
+    try {
+      const deadline = Date.now() + 10_000;
+      while (Date.now() < deadline) {
+        try {
+          livePid = Number(await readFile(join(state, 'live-child.pid'), 'utf8'));
+          break;
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+        }
+        await sleep(20);
+      }
+      assert.ok(livePid, 'live migration child must start');
+      child.kill('SIGTERM');
+      const [code] = await Promise.race([
+        ended,
+        sleep(3000).then(() => {
+          throw new Error('launcher did not stop');
+        }),
+      ]);
+      await sleep(200);
+      let alive = true;
+      try {
+        process.kill(livePid, 0);
+      } catch (error) {
+        if (error.code !== 'ESRCH') throw error;
+        alive = false;
+      }
+      assert.equal(alive, false, 'migration child survived launcher shutdown');
+      // A stop during the first start is a normal stop: the folder is restored, nothing pending.
+      assert.equal(code, 0);
+      await assert.rejects(readFile(join(root, 'update-journal.json')), { code: 'ENOENT' });
+      await assert.rejects(readFile(join(state, 'live-child.pid')), { code: 'ENOENT' });
+      await assert.rejects(readFile(join(root, 'first-start.json')), { code: 'ENOENT' });
+    } finally {
+      child.kill('SIGKILL');
+      if (livePid) {
+        try {
+          process.kill(livePid, 'SIGKILL');
+        } catch {
+          // Already gone, as it should be.
+        }
+      }
+    }
+  }));
+
+test('T33/T35: a launcher killed during the live migration: its boot child ends and the next start restores the dated copy', () =>
+  withTemp(async (dir) => {
+    const { spawn } = await import('node:child_process');
+    const { once } = await import('node:events');
+    const { setTimeout: sleep } = await import('node:timers/promises');
+    const pair = newPair();
+    const root = join(dir, 'install');
+    const state = join(dir, 'state');
+    await makeState(state);
+    const before = await snapshot(state);
+    const release = await releases(dir, pair)('1.0.0', { start: hangingLiveStart });
+    await install({ root, stateDir: state, release, trustKey: publicPem(pair) });
+    let port;
+    do {
+      port = await freePort();
+    } while ([8000, 18080].includes(port));
+    const child = spawn(
+      process.execPath,
+      [join(dirname(updateCli), 'launcher.mjs'), '--install', root, '--port', String(port)],
+      { stdio: 'ignore' },
+    );
+    const ended = once(child, 'exit');
+    let livePid;
+    const alive = (pid) => {
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch (error) {
+        if (error.code !== 'ESRCH') throw error;
+        return false;
+      }
+    };
+    try {
+      const deadline = Date.now() + 10_000;
+      while (Date.now() < deadline) {
+        try {
+          livePid = Number(await readFile(join(state, 'live-child.pid'), 'utf8'));
+          break;
+        } catch (error) {
+          if (error.code !== 'ENOENT') throw error;
+        }
+        await sleep(20);
+      }
+      assert.ok(livePid, 'live migration child must start');
+      // A hard stop (no handler runs): the boot child must still end on its own.
+      child.kill('SIGKILL');
+      await ended;
+      const gone = Date.now() + 3000;
+      while (alive(livePid) && Date.now() < gone) await sleep(20);
+      assert.equal(alive(livePid), false, 'the boot child outlived a killed launcher');
+      const journal = JSON.parse(await readFile(join(root, 'update-journal.json'), 'utf8'));
+      assert.equal(journal.phase, 'migrating');
+      // The next start: recovery restores the folder from the dated copy, then the first start
+      // runs again on copies first.
+      const recovered = await recover({ root });
+      assert.equal(recovered.recovered, true);
+      assert.deepEqual(await snapshot(state), before);
+      const around = await siblings(state);
+      const [failed] = named(around, 'failed');
+      assert.ok(failed, 'the changed folder is kept aside');
+      assert.ok((await readdir(join(dirname(state), failed))).includes('live-child.pid'));
+      const calls = [];
+      const again = await firstStart({ root, migrate: migrating(calls) });
+      assert.equal(again.done, true);
+      assert.equal(calls.length, 2);
+      assert.equal(calls[1], state);
+      assert.deepEqual(await snapshot(state, (rel) => rel === 'pglite/migrated'), before);
+      const events = (await logLines(root)).map((l) => l.event);
+      assert.ok(events.includes('recovered'), events.join(','));
+      assert.equal(events.at(-1), 'first-start');
+    } finally {
+      child.kill('SIGKILL');
+      if (livePid && alive(livePid)) process.kill(livePid, 'SIGKILL');
+    }
   }));

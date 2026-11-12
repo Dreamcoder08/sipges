@@ -55,7 +55,14 @@ a failure on the folder restores it from the dated copy (the changed one is kept
 update. Either way SIPGES does not start: the launcher logs `start_refused` with «SIPGES no se
 inició: la versión nueva no pudo abrir los datos existentes. Sus datos no se tocaron. …» and
 exits with code 1. When it succeeds, `first-start.json` in the install root records it and the
-launcher logs `first_start` with the copy; later starts change nothing. Carrying an older
+launcher logs `first_start` with the copy; later starts change nothing. Stopping the launcher
+(SIGINT or SIGTERM, handled from its first line) during the first start ends and awaits the boot
+child, restores the folder from the dated copy, logs `first_start_cancelled` and exits with code
+0; the next start runs the first start again. Every boot child also watches a pipe from the
+process that started it and ends when that process is gone, however it ended (a hard kill, or
+Windows, where there is no SIGTERM), so the next start's recovery never restores a folder a boot
+child still writes; a stop during the click's update ends its boot the same way and the update
+rolls back. Carrying an older
 install's data, with its rehearsal and comparison scripts: [../migration/README.md](../migration/README.md).
 
 `--accept-restored-state` refuses while the state folder is missing, empty or a link. Otherwise it
