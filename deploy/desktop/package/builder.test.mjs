@@ -166,3 +166,25 @@ test('compiles deployed workspace packages for Node outside the checkout', async
     assert.equal(await readFile(join(api, 'src/main.ts'), 'utf8'), source);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('desktop runtime: the package carries the updater and marks its web app as the desktop build', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-runtime-'));
+  try {
+    await mkdir(join(dir, 'web'), { recursive: true });
+    const html = '<!doctype html>\n<html lang="es">\n  <head>\n    <meta charset="UTF-8" />\n    <title>SIPGES</title>\n  </head>\n  <body></body>\n</html>\n';
+    await writeFile(join(dir, 'web/index.html'), html);
+    const { addDesktopRuntime } = await import('./builder.mjs');
+    await addDesktopRuntime(dir);
+    assert.deepEqual((await readdir(join(dir, 'updater'))).sort(), ['boot.mjs', 'launcher.mjs', 'release.mjs', 'update.mjs', 'updater.mjs']);
+    for (const name of await readdir(join(dir, 'updater'))) assert.equal(await readFile(join(dir, 'updater', name), 'utf8'), await readFile(resolve('deploy/desktop/updater', name), 'utf8'));
+    const marked = await readFile(join(dir, 'web/index.html'), 'utf8');
+    assert.equal(marked, html.replace('  <head>\n', '  <head>\n    <meta name="sipges-desktop" content="1" />\n'));
+    const help = spawnSync(process.execPath, [join(dir, 'updater/launcher.mjs'), '--help'], { encoding: 'utf8' });
+    assert.equal(help.status, 0, help.stderr);
+    assert.match(help.stdout, /^Usage: node <version>\/updater\/launcher\.mjs --install <root>/);
+    await assert.rejects(addDesktopRuntime(dir), /EEXIST|already/);
+    await rm(join(dir, 'updater'), { recursive: true });
+    await writeFile(join(dir, 'web/index.html'), '<html><body></body></html>');
+    await assert.rejects(addDesktopRuntime(dir), /^Error: web\/index\.html has no <head> to mark$/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

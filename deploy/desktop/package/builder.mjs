@@ -76,6 +76,18 @@ export async function writeManagedEntry(destination, metadata) {
   await writeFile(join(destination, 'metadata.json'), `${JSON.stringify({ ...metadata, node: '>=24', entry: 'start.mjs' }, null, 2)}\n`, { flag: 'wx' });
 }
 
+const UPDATER_RUNTIME = ['boot.mjs', 'launcher.mjs', 'release.mjs', 'update.mjs', 'updater.mjs'];
+
+/** Ships the updater and launcher inside the package (signed with it) and marks the web app as the desktop build, which shows the update notice. */
+export async function addDesktopRuntime(destination) {
+  const index = join(destination, 'web', 'index.html');
+  const html = await readFile(index, 'utf8');
+  if (!/<head(\s[^>]*)?>/i.test(html)) throw new Error('web/index.html has no <head> to mark');
+  await mkdir(join(destination, 'updater'), { mode: 0o700 });
+  for (const name of UPDATER_RUNTIME) await cp(join(repo, 'deploy/desktop/updater', name), join(destination, 'updater', name), { errorOnExist: true, force: false });
+  await writeFile(index, html.replace(/<head(\s[^>]*)?>/i, '$&\n    <meta name="sipges-desktop" content="1" />'));
+}
+
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: repo, stdio: 'inherit' });
   if (result.error || result.status !== 0) throw new Error(`${command} failed: ${result.error?.message ?? result.status}`);
@@ -118,6 +130,7 @@ async function main(args) {
   await rejectExternalLinks(destination);
   await compileDeployed(join(destination, 'api'));
   await writeManagedEntry(destination, { version: options['--version'], platform: process.platform, arch: process.arch });
+  await addDesktopRuntime(destination);
   console.log(`Package created: ${destination}`);
 }
 
