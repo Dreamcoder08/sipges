@@ -11,6 +11,8 @@ export type CanvasPoint = {
   readonly evidence: Evidence;
   /** Timeline playback: the month being shown, earlier months, or no playback. */
   readonly emphasis: 'current' | 'normal' | 'dim';
+  /** The number the record carries in the map's list (the 3D columns do not show it). */
+  readonly label?: string;
 };
 
 export type CanvasConcession = Pick<Concession, 'code' | 'legend' | 'geometry'>;

@@ -37,6 +37,7 @@ import { EvidenceTag } from './EvidenceTag.tsx';
 import { LOCALITIES } from './localities.ts';
 import { MapErrorBoundary } from './MapErrorBoundary.tsx';
 import { MapFrame } from './MapFrame.tsx';
+import { MapList, UnplacedGroup } from './MapList.tsx';
 import { MapSheet } from './MapSheet.tsx';
 import { SIGNAL_MODULES } from './operations.ts';
 import { OperationsPanel } from './OperationsPanel.tsx';
@@ -53,6 +54,7 @@ import {
   mapPoints,
   monthlyCounts,
   monthsOf,
+  numbered,
   type TerritorialRecord,
 } from './territorial-model.ts';
 import { TerritorialTimeline } from './TerritorialTimeline.tsx';
@@ -226,6 +228,8 @@ const TerritorialWorkspace = ({
   const placed = filterPlace(points, { ...filters, evidence }).filter(related);
   const visible = placed.filter((p) => inPeriod(p, filters.from, filters.to));
   const drawn = atCursor(visible, cursor);
+  // One number per record, the same on its list row and its marker.
+  const listed = numbered(drawn);
   const months = monthsOf(points);
   const activity = monthlyCounts(placed);
   const selectedPoint =
@@ -404,8 +408,9 @@ const TerritorialWorkspace = ({
     </div>
   );
 
-  const canvasPoints: CanvasPoint[] = drawn.map(({ point, emphasis }) => ({
+  const canvasPoints: CanvasPoint[] = listed.map(({ point, emphasis, n }) => ({
     id: point.id,
+    label: String(n),
     at: point.at,
     color: DIMENSION_RGB[point.dimension],
     evidence: point.evidence,
@@ -456,9 +461,10 @@ const TerritorialWorkspace = ({
               />
             );
           })}
-          {spread(drawn, unit).map(({ point: p, emphasis, at }) => {
+          {spread(listed, unit).map(({ point: p, emphasis, at, n }) => {
             const active = p.id === selectedPoint?.id;
             const r = unit * (active ? 3.4 : emphasis === 'current' ? 3.2 : 2.6);
+            const digits = String(n).length;
             return (
               <g
                 key={`${p.layer}-${p.id}`}
@@ -466,7 +472,7 @@ const TerritorialWorkspace = ({
                 data-emphasis={emphasis}
                 role="button"
                 tabIndex={0}
-                aria-label={`${p.layer}: ${p.title} (${p.locality})`}
+                aria-label={`${n}. ${p.layer}: ${p.title} (${p.locality})`}
                 aria-pressed={active}
                 onClick={() => selectPoint(p.id)}
                 onKeyDown={(event) => {
@@ -477,8 +483,13 @@ const TerritorialWorkspace = ({
                 }}
               >
                 <circle cx={at[0]} cy={at[1]} r={r} strokeWidth={unit * 0.4} />
-                <text x={at[0]} y={at[1] + r * 0.38} fontSize={r * 1.1} textAnchor="middle">
-                  {p.dimension}
+                <text
+                  x={at[0]}
+                  y={at[1] + r * 0.36}
+                  fontSize={r * (digits > 2 ? 0.75 : digits > 1 ? 0.95 : 1.1)}
+                  textAnchor="middle"
+                >
+                  {n}
                 </text>
               </g>
             );
@@ -754,20 +765,25 @@ const TerritorialWorkspace = ({
             ) : null}{' '}
             Concesiones: catastro minero GEOCATMIN de INGEMMET. Los registros sin coordenadas se
             ubican aproximadamente en su localidad.
-            {unlocated ? ` ${unlocated} registro(s) sin localidad no se muestran.` : ''}
           </p>
         </section>
 
-        {compact ? null : (
-          <Card title="Ficha territorial">
-            {sheet ?? (
-              <p className={styles.note}>
-                Seleccione una concesión o un registro en el mapa, o un registro de la evolución
-                temporal, para ver sus fuentes, verificación y registros vinculados.
-              </p>
-            )}
+        <div className={styles.side}>
+          <Card title="Registros en el mapa" eyebrow={`${listed.length} con ubicación`}>
+            <MapList items={listed} selectedId={selectedPoint?.id ?? ''} onSelect={focusPoint} />
+            <UnplacedGroup records={unlocated} sechura={area.sechura} />
           </Card>
-        )}
+          {compact ? null : (
+            <Card title="Ficha territorial">
+              {sheet ?? (
+                <p className={styles.note}>
+                  Seleccione una concesión o un registro en el mapa, o un registro de la evolución
+                  temporal, para ver sus fuentes, verificación y registros vinculados.
+                </p>
+              )}
+            </Card>
+          )}
+        </div>
       </div>
 
       {compact && sheet ? (
