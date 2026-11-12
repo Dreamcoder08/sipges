@@ -42,9 +42,8 @@ type SettingsPageProps = FeatureContext & {
 
 /**
  * Configuración as one settings screen with a section list, like Claude's settings
- * (docs/adr/0018, docs/adr/0020): Cuenta, Apariencia, Proyecto, Privacidad y datos,
- * Notificaciones and a link to Integraciones. One section shows at a time and each one has its
- * own URL.
+ * (docs/adr/0018, docs/adr/0020): Cuenta, Apariencia, Proyecto, Privacidad y datos and
+ * Notificaciones. One section shows at a time and each one has its own URL.
  */
 export const SettingsPage = ({
   scope,
@@ -63,7 +62,6 @@ export const SettingsPage = ({
     <div className={layout.layout}>
       <SettingsNav
         current={current}
-        onNavigate={onNavigate}
         onSection={(next) => (onNavigate ? onNavigate(settingsHref(next)) : setLocal(next))}
       />
       <div className={layout.content}>

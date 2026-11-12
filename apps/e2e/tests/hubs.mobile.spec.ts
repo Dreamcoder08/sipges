@@ -248,7 +248,11 @@ for (const colorScheme of SCHEMES) {
       page,
       async () => {
         await page.goto('/bandeja');
-        await page.getByRole('option').first().tap();
+        await page
+          .getByRole('listbox', { name: 'Pendientes de decisión' })
+          .getByRole('option')
+          .first()
+          .tap();
         await expect(back).toBeVisible();
         await settled();
       },
