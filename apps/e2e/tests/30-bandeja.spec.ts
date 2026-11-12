@@ -24,11 +24,11 @@ const seed = async (page: Page, stamp: number) => {
 
 /**
  * Bandeja › Pendientes at 1440 px (closure-roadmap T31 slice 6, direction 02): one 36 px row
- * per item under a sticky header, the detail beside the list, keyboard focus and Escape back
- * to the list. URL state and Ctrl K filter commands ship in the following work units.
+ * per item under a sticky header, the item beside the list and named in the URL, a reload that
+ * keeps it, Escape back to the list, and category filters read from `?clase=`.
  */
 for (const colorScheme of ['light', 'dark'] as const) {
-  test(`Bandeja at 1440 px: dense rows, side detail, Escape back to the list (${colorScheme})`, async ({
+  test(`Bandeja at 1440 px: dense rows, linkable detail, Escape back to the list (${colorScheme})`, async ({
     page,
     admin,
   }) => {
@@ -38,11 +38,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await signInToProject(page, admin, DEFAULT_SCOPE);
     const [, second] = await seed(page, stamp);
 
-    // The existing type control filters the list without changing its navigation contract.
-    await page.goto('/bandeja');
+    // A shared filter URL opens the matching pending category.
+    await page.goto('/bandeja?clase=calidad');
     const box = page.getByRole('listbox', { name: 'Pendientes de decisión' });
     await expect(box.getByRole('option').first()).toBeVisible();
-    await page.getByRole('combobox', { name: 'Filtrar pendientes' }).selectOption('calidad');
+    await expect(page.getByRole('combobox', { name: 'Filtrar pendientes' })).toHaveValue('calidad');
 
     const row = box.getByRole('option', { name: new RegExp(second ?? '') });
     await expect(row).toBeVisible();
@@ -57,11 +57,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // A mouse and keyboard: the shortcut hint is shown.
     await expect(page.getByLabel('Atajos de teclado')).toBeVisible();
 
-    // A click selects the item and shows its detail beside the list.
+    // A click selects the item, shows it beside the list and names it in the URL.
     await row.click();
     await expect(row).toHaveAttribute('aria-selected', 'true');
     const detail = page.getByRole('region', { name: 'Detalle del pendiente' });
     await expect(detail.getByRole('heading', { level: 2 })).toContainText(second ?? '');
+    await expect(page).toHaveURL(/pendiente=calidad%3Aeventos%2FEV-B2-/);
     const list = await page.getByRole('region', { name: 'Pendientes', exact: true }).boundingBox();
     const side = await detail.boundingBox();
     expect((list?.x ?? 0) + (list?.width ?? 0)).toBeLessThanOrEqual((side?.x ?? 0) + 1);
@@ -74,10 +75,16 @@ for (const colorScheme of ['light', 'dark'] as const) {
       });
     }
 
+    // A reload keeps it; Enter moves into the detail and Escape returns to the list.
+    await page.reload();
+    await expect(row).toHaveAttribute('aria-selected', 'true');
+    await expect(detail.getByRole('heading', { level: 2 })).toContainText(second ?? '');
     await box.focus();
     await page.keyboard.press('Enter');
     await expect(detail.getByRole('heading', { level: 2 })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(box).toBeFocused();
+    await expect(page).not.toHaveURL(/pendiente=/);
+    await expect(page).toHaveURL(/clase=calidad/);
   });
 }
