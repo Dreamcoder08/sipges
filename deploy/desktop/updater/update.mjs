@@ -12,14 +12,18 @@ import {
   acceptRestoredState,
   firstStart,
   install,
+  listStateCopies,
   readCurrent,
   recover,
+  removeStateCopies,
   update,
 } from './updater.mjs';
 
 const USAGE = `Usage: node deploy/desktop/updater/update.mjs --install <root> --release <dir> [--state <dir>] [--adopt <old package dir>] [--trust-key <public.pem> | --trust-release-key]
        node deploy/desktop/updater/update.mjs --install <root> --recover [--accept-restored-state]
        node deploy/desktop/updater/update.mjs --install <root> --first-start
+       node deploy/desktop/updater/update.mjs --install <root> --copies
+       node deploy/desktop/updater/update.mjs --install <root> --remove-copies-older-than <days>
 
 First install: --state and a trust key are required: --trust-key names the public key file, or
 --trust-release-key trusts the key that signed this release and prints its SHA-256 fingerprint.
@@ -31,14 +35,26 @@ update current again without touching the state folder (refused while it is miss
 --first-start does now, in this terminal, what the launcher does at the first start: a state
 folder that already holds a database gets a dated pre-update copy, the migration runs on a
 second copy and only then on the state folder. Done once; later runs change nothing.
+--copies lists the copies beside the state folder (pre-update, rehearsal and failed copies),
+their number and total size. None is ever removed automatically. --remove-copies-older-than
+removes those older than <days> whole days, except the newest pre-update copy, which is never
+removed; it is refused while an update is pending or halted.
 Exit codes: 0 done, 1 refused or invalid, 2 failed and rolled back, 3 rollback incomplete.`;
 
-const VALUED = ['--install', '--release', '--state', '--adopt', '--trust-key'];
+const VALUED = [
+  '--install',
+  '--release',
+  '--state',
+  '--adopt',
+  '--trust-key',
+  '--remove-copies-older-than',
+];
 const FLAGS = {
   '--recover': 'recover',
   '--accept-restored-state': 'accept',
   '--trust-release-key': 'trustRelease',
   '--first-start': 'firstStart',
+  '--copies': 'copies',
 };
 
 function parse(args) {
@@ -74,10 +90,39 @@ async function releaseKey(release) {
   return pem;
 }
 
+const time = (date) => date.toISOString().replace(/\.\d+Z$/, 'Z');
+
+async function copies(root, options) {
+  const days = options['--remove-copies-older-than'];
+  if (Object.keys(options).length !== 2)
+    throw new Error('--copies and --remove-copies-older-than take only --install');
+  if (days === undefined) {
+    const listed = await listStateCopies({ root });
+    console.log(`Copies beside ${listed.stateDir}: ${listed.count}, ${listed.bytes} bytes`);
+    for (const copy of listed.copies)
+      console.log(`  ${copy.kind} ${time(copy.at)} ${copy.bytes} bytes ${copy.path}`);
+    return;
+  }
+  if (!/^\d+$/.test(days) || Number(days) < 1)
+    throw new Error('--remove-copies-older-than takes a whole number of days, 1 or more');
+  const result = await removeStateCopies({ root, olderThanDays: Number(days) });
+  for (const copy of result.removed) console.log(`Removed ${copy.path} (${copy.bytes} bytes)`);
+  if (result.kept) console.log(`Kept ${result.kept}: the newest pre-update copy is never removed.`);
+  const bytes = result.removed.reduce((sum, copy) => sum + copy.bytes, 0);
+  const n = result.removed.length;
+  console.log(
+    n === 0
+      ? 'Nothing removed.'
+      : `Removed ${n} ${n === 1 ? 'copy' : 'copies'} (${bytes} bytes); ${result.left} left beside the state folder.`,
+  );
+}
+
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
   const options = parse(args);
   const root = resolve(options['--install']);
+  if (options.copies || options['--remove-copies-older-than'] !== undefined)
+    return copies(root, options);
   if (options.firstStart) {
     if (Object.keys(options).length !== 2) throw new Error('--first-start takes only --install');
     const result = await firstStart({
