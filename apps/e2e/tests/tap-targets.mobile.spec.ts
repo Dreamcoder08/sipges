@@ -70,10 +70,25 @@ for (const colorScheme of ['light', 'dark'] as const) {
   test(`every control of the seven destinations is a 44 px tap target (${colorScheme})`, async ({
     page,
     admin,
+    adminApi,
   }) => {
     test.setTimeout(120_000);
     await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 360, height: 800 });
+    const stamp = `${colorScheme}-${Date.now()}`;
+    const actorName = `Colectivo táctil ${stamp}`;
+    const created = await adminApi.post('/api/actores', {
+      headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
+      data: {
+        payload: {
+          ID_Actor: `A-TAP-${stamp}`,
+          'Nombre_Actor/Organizacion': actorName,
+          Posicion_Proyecto: 'En contra',
+          Territorio: 'Vice',
+        },
+      },
+    });
+    expect(created.status(), await created.text()).toBe(200);
     await signInToProject(page, admin, DEFAULT_SCOPE);
     const settled = watchNetwork(page);
     const found: Record<string, string[]> = {};
@@ -81,6 +96,11 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await page.goto(href);
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
       await settled();
+      if (href === '/territorio') {
+        await page.getByRole('button', { name: new RegExp(actorName) }).click();
+        await expect(page.getByRole('link', { name: actorName, exact: true })).toBeVisible();
+        await settled();
+      }
       const small = await smallTargets(page);
       if (small.length > 0) found[href] = small;
       // The visible screen only: a full-page capture resizes the emulated phone and drops its
