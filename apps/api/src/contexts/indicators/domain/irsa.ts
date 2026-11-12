@@ -15,6 +15,8 @@ export const CONFIG_VERSION = '0.4-indicators';
 const FALLBACK_LEVEL = 'Rojo';
 const MAX_DRIVERS = 15;
 const WEIGHT_TOLERANCE = 0.02;
+/** Dimension I measures traceability, not field evidence: it never counts as data. */
+const EVIDENCE_DIMENSIONS: readonly Dimension[] = ['G', 'A', 'D', 'N', 'E'];
 
 export type IrsaDriver = {
   readonly dimension: Dimension;
@@ -36,6 +38,10 @@ export type IrsaResult = {
   readonly drivers: IrsaDriver[];
   readonly details: Record<Dimension, Indicator[]>;
   readonly availability: Record<Dimension, number>;
+  /** Stored inputs that fed each dimension: the largest evidence_count among its scored indicators. */
+  readonly coverage: Record<Dimension, number>;
+  /** True when G, A, D, N and E all have coverage 0: the level then says nothing about risk. */
+  readonly insufficient_data: boolean;
   readonly indicators: Indicator[];
   readonly config_version: string;
   readonly status: string;
@@ -46,6 +52,17 @@ export type IrsaResult = {
 export const selectBand = (irsa: number, thresholds: Thresholds): string =>
   Object.entries(thresholds).find(([, [lo, hi]]) => lo <= irsa && irsa <= hi)?.[0] ??
   FALLBACK_LEVEL;
+
+const coverageOf = (report: IndicatorsReport): Record<Dimension, number> =>
+  Object.fromEntries(
+    DIMENSIONS.map((d) => [
+      d,
+      Math.max(
+        0,
+        ...report.dimensions[d].flatMap((x) => (x.score === null ? [] : [x.evidence_count])),
+      ),
+    ]),
+  ) as Record<Dimension, number>;
 
 export const computeIrsa = (config: IrsaConfig, report: IndicatorsReport): IrsaResult => {
   const scores = report.dimension_scores;
@@ -74,6 +91,7 @@ export const computeIrsa = (config: IrsaConfig, report: IndicatorsReport): IrsaR
     // Array.prototype.sort is stable, like Python sorted().
     .sort((a, b) => b.points - a.points)
     .slice(0, MAX_DRIVERS);
+  const coverage = coverageOf(report);
   return {
     irsa,
     level: selectBand(irsa, config.thresholds),
@@ -83,6 +101,8 @@ export const computeIrsa = (config: IrsaConfig, report: IndicatorsReport): IrsaR
     drivers,
     details: report.dimensions,
     availability: report.availability,
+    coverage,
+    insufficient_data: EVIDENCE_DIMENSIONS.every((d) => coverage[d] === 0),
     indicators: report.indicators,
     config_version: CONFIG_VERSION,
     status: VALIDATION_STATUS,

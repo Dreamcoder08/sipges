@@ -49,6 +49,7 @@ export const IrsaConfig = z
     weights: Weights,
     thresholds: z.record(z.string(), Band),
     contributions: z.record(z.string(), z.number()),
+    status: z.string().optional(),
   })
   .loose();
 export type IrsaConfig = z.infer<typeof IrsaConfig>;
@@ -76,6 +77,8 @@ export const IrsaSummary = z
     scores: z.record(Dimension, z.number()),
     drivers: z.array(IrsaDriver),
     config_version: z.string(),
+    coverage: z.record(Dimension, z.number()).optional(),
+    insufficient_data: z.boolean().optional(),
   })
   .loose();
 export type IrsaSummary = z.infer<typeof IrsaSummary>;

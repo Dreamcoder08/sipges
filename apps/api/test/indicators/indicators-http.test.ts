@@ -81,6 +81,8 @@ describe('GET /system/irsa and /system/indicators', () => {
     });
     expect(body.drivers).toHaveLength(15);
     expect(body.indicators).toHaveLength(32);
+    expect(body.coverage).toEqual({ G: 0, A: 0, D: 0, N: 0, E: 0, I: 0 });
+    expect(body.insufficient_data).toBe(true);
     expect(Object.keys(body.thresholds)).toEqual(['Verde', 'Amarillo', 'Naranja', 'Rojo']);
   });
 
