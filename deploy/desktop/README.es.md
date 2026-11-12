@@ -80,14 +80,16 @@ versión de SIPGES», «Actualizar»).
   de cada actualización.
 - La carpeta de estado se queda donde está. No se sobrescribe ni se borra nada en ella; solo se
   crean la clave de datos o la contraseña de administrador si faltan, y nunca junto a una base de
-  datos existente: el instalador se detiene si la base de datos está pero su `data-key` no
-  (restáurala desde tu respaldo).
+  datos existente: el instalador se detiene si la base de datos está pero su `data-key` o su
+  `admin-password` no (restáuralas desde tu respaldo).
 - El primer arranque sobre una base de datos existente copia la carpeta a su lado
   (`<estado>.pre-update-<hora>-first-start-<versión>`, nunca se borra), prueba la versión nueva
   primero en una segunda copia y solo después en la carpeta; si falla, SIPGES no arranca y la
   carpeta queda como estaba. Para hacerlo en una terminal, sin la espera de 90 segundos del acceso
   directo: `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --first-start`.
-  El paso 2 sigue yendo primero.
+  El paso 2 sigue yendo primero. Cerrar SIPGES durante el primer arranque detiene también sus
+  pruebas y devuelve la carpeta desde esa copia; el siguiente arranque lo intenta de nuevo. Si el
+  equipo se apagó a mitad, el siguiente arranque devuelve la carpeta igual antes de reintentar.
 - Para instalar sobre una copia de la carpeta de estado y dejar la original a la instalación por
   clon (el traslado de datos, [migration/README.md](migration/README.md)): `-State <copia>` en
   Windows, `SIPGES_DESKTOP_STATE=<copia>` en Linux.
@@ -96,6 +98,8 @@ versión de SIPGES», «Actualizar»).
 - Para ofrecer una versión más nueva, copia su carpeta dentro de `releases` en la raíz. En el
   siguiente arranque un administrador ve el aviso; nada se instala antes de «Actualizar».
 - Ejecutar de nuevo el instalador conserva la versión instalada y solo renueva los accesos directos.
+  También conserva la carpeta de estado anotada en `install.json`, y se detiene sin cambiar nada
+  si se le da otra (`-State` o `SIPGES_DESKTOP_STATE`).
 - El registro es `launcher.log` en la raíz, no en la carpeta de estado: una actualización copia esa
   carpeta y puede moverla mientras SIPGES corre.
 
@@ -175,9 +179,10 @@ Respaldar:
    tareas (Windows), o reinicia el computador. Instalación por clon: `pkill -f apps/api/src/main.ts`,
    o lo mismo en Windows. `http://127.0.0.1:8000/health` ya no debe responder.
 2. Copia la carpeta de estado completa a un disco externo o a un almacenamiento cifrado que
-   controles, en una carpeta con la fecha en el nombre:
-   `cp -a ~/.local/share/sipges-local /media/<disco>/SIPGES-<fecha>` (Linux),
-   `Copy-Item -Recurse "$env:LOCALAPPDATA\SIPGES" "E:\SIPGES-<fecha>"` (Windows).
+   controles, en una carpeta con la fecha y, en una instalación gestionada, la versión de
+   `current.json` de la raíz en el nombre:
+   `cp -a ~/.local/share/sipges-local /media/<disco>/SIPGES-<fecha>-<versión>` (Linux),
+   `Copy-Item -Recurse "$env:LOCALAPPDATA\SIPGES" "E:\SIPGES-<fecha>-<versión>"` (Windows).
 3. Comprueba que la copia tiene el mismo número de archivos y de bytes que el original:
    `find <carpeta> -type f -printf '%s\n' | awk '{n++; s+=$1} END {print n, s}'` en cada una
    (Linux), `Get-ChildItem -Recurse -File <carpeta> | Measure-Object -Property Length -Sum` en
@@ -190,8 +195,15 @@ Restaurar:
 6. Si la carpeta de estado sigue ahí, renómbrala (agrégale `.danada`); nunca la borres. (El
    simulacro la borró para representar un disco perdido.)
 7. Copia el respaldo de vuelta en la misma ruta, con el mismo usuario:
-   `cp -a /media/<disco>/SIPGES-<fecha> ~/.local/share/sipges-local` (Linux),
-   `Copy-Item -Recurse "E:\SIPGES-<fecha>" "$env:LOCALAPPDATA\SIPGES"` (Windows).
+   `cp -a /media/<disco>/SIPGES-<fecha>-<versión> ~/.local/share/sipges-local` (Linux),
+   `Copy-Item -Recurse "E:\SIPGES-<fecha>-<versión>" "$env:LOCALAPPDATA\SIPGES"` (Windows).
+   Restaura solo un respaldo hecho con la versión instalada ahora. Uno de una versión anterior
+   (hecho antes del primer arranque o antes de una actualización) lo abriría la versión nueva
+   directamente, sin copia ni prueba previa. Para restaurarlo, antes del paso 8 renombra
+   `first-start.json` de la raíz (agrégale `.done-<fecha>`; no borres nada) y ejecuta
+   `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --first-start`: copia la
+   carpeta restaurada a su lado y prueba la versión primero en una segunda copia, como hizo el
+   primer arranque.
 8. Abre SIPGES, inicia sesión con la contraseña y un código MFA, y abre algunos registros y
    archivos. Para comprobarlo todo, ejecuta `deploy/desktop/migration/snapshot.mjs` antes del
    paso 1 y `compare.mjs` después de este paso, como hizo el simulacro: debe decir

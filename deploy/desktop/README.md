@@ -78,13 +78,16 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   point at the start script in that root, so they keep working after every update.
 - The state folder stays where it is. Nothing in it is overwritten or deleted; only a missing data
   key or admin password is created, and never beside an existing database: the installer stops
-  if the database is there but its `data-key` is not (restore it from your backup).
+  if the database is there but its `data-key` or `admin-password` is not (restore it from your
+  backup).
 - The first start over an existing database copies the folder beside itself
   (`<state>.pre-update-<time>-first-start-<version>`, never deleted), runs the new version on a
   second copy first and only then on the folder; if that fails, SIPGES does not start and the
   folder is as it was. To run it in a terminal, without the 90-second wait of the shortcut:
   `node <root>/versions/<version>/updater/update.mjs --install <root> --first-start`. Step 2
-  still comes first.
+  still comes first. Closing SIPGES during the first start stops its test runs too and puts the
+  folder back from that copy; the next start does it again. If the computer was switched off in
+  the middle, the next start puts the folder back the same way before trying again.
 - To install on a copy of the state folder and leave the original to the clone install (the data
   move, [migration/README.md](migration/README.md)): `-State <copy>` on Windows,
   `SIPGES_DESKTOP_STATE=<copy>` on Linux.
@@ -92,7 +95,9 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   installer prints its SHA-256 fingerprint: compare it with the one noted when the key was made.
 - To offer a newer release, copy its folder into `releases` in the install root. At the next
   start an administrator sees the notice; nothing is installed before «Actualizar».
-- Running the installer again keeps the installed version and only refreshes the shortcuts.
+- Running the installer again keeps the installed version and only refreshes the shortcuts. It
+  keeps the state folder recorded in `install.json` too, and stops without changing anything when
+  another one is given (`-State` or `SIPGES_DESKTOP_STATE`).
 - The log is `launcher.log` in the install root, not in the state folder: an update copies that
   folder and may move it while SIPGES runs.
 
@@ -132,8 +137,9 @@ Back up:
    `pkill -f apps/api/src/main.ts`, or the same on Windows. `http://127.0.0.1:8000/health` must
    no longer answer.
 2. Copy the whole state folder to an external disk or encrypted storage you control, in a folder
-   named with the date: `cp -a ~/.local/share/sipges-local /media/<disk>/SIPGES-<date>` (Linux),
-   `Copy-Item -Recurse "$env:LOCALAPPDATA\SIPGES" "E:\SIPGES-<date>"` (Windows).
+   named with the date and, for a managed install, the version in `current.json` of the install
+   root: `cp -a ~/.local/share/sipges-local /media/<disk>/SIPGES-<date>-<version>` (Linux),
+   `Copy-Item -Recurse "$env:LOCALAPPDATA\SIPGES" "E:\SIPGES-<date>-<version>"` (Windows).
 3. Check that the copy has the same number of files and bytes as the original:
    `find <folder> -type f -printf '%s\n' | awk '{n++; s+=$1} END {print n, s}'` on each (Linux),
    `Get-ChildItem -Recurse -File <folder> | Measure-Object -Property Length -Sum` on each
@@ -146,8 +152,15 @@ Restore:
 6. If the state folder is still there, rename it aside (add `.damaged`); never delete it. (The
    drill deleted it to stand for a lost disk.)
 7. Copy the backup back to the same path, as the same user:
-   `cp -a /media/<disk>/SIPGES-<date> ~/.local/share/sipges-local` (Linux),
-   `Copy-Item -Recurse "E:\SIPGES-<date>" "$env:LOCALAPPDATA\SIPGES"` (Windows).
+   `cp -a /media/<disk>/SIPGES-<date>-<version> ~/.local/share/sipges-local` (Linux),
+   `Copy-Item -Recurse "E:\SIPGES-<date>-<version>" "$env:LOCALAPPDATA\SIPGES"` (Windows).
+   Restore only a backup taken with the version now installed. A backup from an older version
+   (one taken before the first start, or before an update) would be opened by the newer version
+   directly, without a copy and a test run first. To restore one, before step 8 rename
+   `first-start.json` in the install root aside (add `.done-<date>`; delete nothing) and run
+   `node <root>/versions/<version>/updater/update.mjs --install <root> --first-start`: it copies
+   the restored folder beside itself and tests the version on a second copy first, as the first
+   start did.
 8. Open SIPGES, sign in with the password and an MFA code, and open a few records and uploads.
    To check everything, run `deploy/desktop/migration/snapshot.mjs` before step 1 and
    `compare.mjs` after this step, as the drill did: it must print `RESULT: no difference`.
