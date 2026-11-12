@@ -24,7 +24,7 @@
     "odd:status": "node scripts/odd-status.mjs",
     "parity": "node apps/parity/src/main.ts",
     "engram": "node scripts/agents/engram.mjs",
-    "test:tooling": "node --test scripts/tooling.test.mjs"
+    "test:tooling": "node --test scripts/tooling.test.mjs scripts/check-bundle-budget.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
