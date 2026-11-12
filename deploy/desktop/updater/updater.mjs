@@ -210,22 +210,37 @@ function lockIsStale({ held, mtimeMs }) {
   return Boolean(held) && Number.isInteger(held.pid) && !alive(held.pid);
 }
 
-/** Moves a stale lock aside; if another process replaced it meanwhile, puts that one back. */
+/**
+ * Removes a stale lock. Only one process at a time may do it: the takeover is guarded by an
+ * exclusively created directory, so two racers can never move each other's fresh lock aside.
+ * Inside the guard the lock is read again and removed only if it is still the stale one found.
+ * A guard left by a crash is cleared once it is older than LOCK_STALE_MS.
+ */
 async function takeOver(path, found) {
-  const aside = `${path}.stale-${randomUUID()}`;
+  const guard = `${path}.takeover`;
   try {
-    await renameRetry(path, aside);
+    await mkdir(guard);
   } catch (error) {
-    if (error.code === 'ENOENT') return;
-    throw error;
+    if (error.code !== 'EEXIST') throw error;
+    const info = await lstat(guard).catch(() => null);
+    if (info && Date.now() - info.mtimeMs > LOCK_STALE_MS)
+      await rm(guard, { recursive: true, force: true });
+    throw new UpdateError('BUSY', 'Another update is taking over the lock');
   }
-  const moved = await readFile(aside, 'utf8').catch(() => null);
-  if (moved !== found.text) {
-    await link(aside, path).catch(() => {});
+  try {
+    const current = await readLock(path);
+    if (!current || current.text !== found.text) return;
+    const aside = `${path}.stale-${randomUUID()}`;
+    try {
+      await renameRetry(path, aside);
+    } catch (error) {
+      if (error.code === 'ENOENT') return;
+      throw error;
+    }
     await rm(aside, { force: true });
-    throw new UpdateError('BUSY', 'Another update took the lock');
+  } finally {
+    await rm(guard, { recursive: true, force: true });
   }
-  await rm(aside, { force: true });
 }
 
 /**
