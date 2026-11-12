@@ -733,3 +733,13 @@ Not chosen in S2. Each stays open in its own document.
   15 map/3D/hub regressions. ~500 lines, coherent overage disclosed. Limits: no numbers in the Cesium 3D view,
   WebGL numbers only proven to load without errors, the unplaced group ignores toolbar filters, and coordinates
   are not editable outside Sechura (the UI says so). Parent gate, PR, CI and merge pending. T31 stays open.
+- L23 — Merged after CI on exact heads: #432 Territorio list ↔ numbered marker and «Sin ubicación» (7c930729);
+  #434 two-line phone rows for every Registros type tab, desktop dense table unchanged (0898c398; RED 4, web 617,
+  19 browser probes); #433 T32 budgets (b08a8769) and #435 its follow-up (dac70911). T32: accessibility was
+  already enforced by 07-accessibility.spec.ts (any WCAG 2.1 A/AA violation, seven destinations, both themes);
+  added a bundle budget (today +5%) after the web build and an Inicio usable-time test (6000 ms) on a provisional
+  laptop-class profile pending T27. Native review high tier (CI), two lenses, approved with advisories; the
+  entry-measures-0 advisory is fixed by #435 (RED 1 → 6/6). First CI timing: Inicio usable in 1691 ms. A
+  pre-existing bug (a compromiso opened from the hub as `demandas/<id>`, `?ficha=` lost on reload) is fixed on
+  fix/registros-compromiso-ficha (RED 3/2, web 622), PR/CI/merge pending. T32 is done except recalibrating the
+  profile and threshold once T27 records the laptop.
