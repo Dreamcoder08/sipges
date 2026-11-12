@@ -3,7 +3,7 @@
 // `wrangler deploy -c wrangler.go.deploy.jsonc`; no workflow deploys it, and production
 // (wrangler.jsonc) declares no container, no GO_BACKEND binding and no SIPGES_GO_ROUTING, so every route stays on
 // TypeScript there. It has no Hyperdrive on purpose: go-trial-config.mjs adds the id of the trial's
-// Neon branch at deploy, and refuses production's. Deploy wrangler.go.deploy.jsonc, the file it
+// Neon branch and the public host at deploy, and refuses production's. Deploy wrangler.go.deploy.jsonc, the file it
 // writes, by following docs/deployment/go-trial-runbook.md.
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
@@ -23,7 +23,8 @@
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "sipges-evidence-go" }],
   // No cron trigger: scheduled automation runs only in the production Worker.
   "vars": {
-    "SIPGES_ALLOWED_HOSTS": "sipges-go.dreamcoder-dev08.workers.dev",
+    // `localhost` here; go-trial-config.mjs writes the host in SIPGES_GO_PUBLIC_HOST.
+    "SIPGES_ALLOWED_HOSTS": "localhost",
     "SIPGES_GO_ROUTING": "1",
   },
   "containers": [

@@ -31,10 +31,11 @@ parameters, which in SIPGES are the global tables (accounts, sessions, grants, A
 read can keep a revoked session or key alive and shows writes up to a minute late. Tenant reads
 run inside `withTenant` transactions, which Hyperdrive never caches.
 
-The production Hyperdrive id is already committed in `wrangler.jsonc` (`hyperdrive[0].id`). Only
-when you create a new configuration, replace that id with the one the first command prints, and
-in the `deploy:worker` script of `apps/hosting-cloudflare/package.json` in the same change; a test
-pins the two together (§3). Never commit the connection string.
+The Hyperdrive id is not committed: `wrangler.jsonc` holds a placeholder and
+`deploy-config.mjs` renders `wrangler.deploy.jsonc` from the `SIPGES_HYPERDRIVE_ID` and
+`SIPGES_PUBLIC_HOST` GitHub Actions variables at deploy time. When you create a new configuration,
+set `SIPGES_HYPERDRIVE_ID` to the id the first command prints. Never commit the connection string.
+A fork follows [own-instance.md](own-instance.md).
 
 ## 2. Set variables and secrets
 
@@ -75,12 +76,17 @@ Manual run, with the owner's go-ahead:
 pnpm --filter @sipges/hosting-cloudflare build   # SPA into ./public + migration index
 pnpm --filter @sipges/hosting-cloudflare bundle  # dry run: bundle size and bindings
 SIPGES_MIGRATION_DATABASE_URL="<direct-url>" pnpm --filter @sipges/hosting-cloudflare migrate
+export SIPGES_PUBLIC_HOST="<host>" SIPGES_HYPERDRIVE_ID="<id>"   # the repository variables' values
 pnpm --filter @sipges/hosting-cloudflare run deploy:worker  # only with the owner's go-ahead
 ```
 
+A manual `deploy:worker` needs `SIPGES_PUBLIC_HOST` and `SIPGES_HYPERDRIVE_ID` in the shell, with
+the same values as the GitHub repository variables; without them it stops with
+`Missing GitHub Actions variable …` before touching Cloudflare.
+
 `deploy:worker` turns Hyperdrive query caching off before every deploy, so a cache switched on
-in the dashboard cannot serve stale accounts, sessions or grants; a test pins the script to the
-Hyperdrive id in `wrangler.jsonc`. If you change the id, update both. Deploy only through
+in the dashboard cannot serve stale accounts, sessions or grants; it reads the same
+`SIPGES_HYPERDRIVE_ID` the rendered config uses, so the two cannot drift. Deploy only through
 `deploy:worker`: a plain `wrangler deploy` skips the guard, and the cache state is re-asserted
 only at deploy time, not while the Worker runs.
 

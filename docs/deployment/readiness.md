@@ -24,7 +24,7 @@ Cloudflare Workers is the only SIPGES host (ADR 0028; the Vercel host was retire
 plain-JavaScript password hasher (`@noble/hashes`, T6). Inside workerd that hasher hashes and
 verifies new, native and legacy hashes with WebAssembly compilation still disabled (L17); the
 Hyperdrive connection and migrations already passed after a binding-only TLS correction.
-The Worker runs at `https://sipges.dreamcoder-dev08.workers.dev` against a Neon database through
+The reference instance, the repository owner's own deployment, runs at `https://sipges.dreamcoder-dev08.workers.dev`; a fork deploys its own with its own accounts ([own-instance guide](own-instance.md)). It runs against a Neon database through
 Hyperdrive and holds no real data (ODD L22). The end-to-end suite against `wrangler dev`
 (T4) passes locally (93 passed, 1 optional skip; L20) and the steps are in the
 [Workers deployment guide](cloudflare-workers.md).
