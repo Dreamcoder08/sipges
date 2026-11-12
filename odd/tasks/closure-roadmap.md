@@ -50,12 +50,12 @@ Phase 1, desktop (the nearest real use; does not depend on the cloud):
   gentle-ai-verify. Done: two verifier passes, see L7.
 - T10 [ ] — S2, S5: check the existing Windows install without risking its data. Route: owner on the laptop, parent
   reads the evidence. Commit: pending (fixes only).
-- T11 [ ] — S2: local backup and restore drill for the desktop state folder. Route: inline. Commit: pending.
+- T11 [x] — S2: local backup and restore drill for the desktop state folder. Route: inline. Done: PR #401 (drill on Linux; procedure in deploy/desktop/README*.md).
 
-- T33 [ ] — S6: carry an existing install's data into the definitive version, rehearsed. Route: worker, then
-  verifier. Commit: pending.
-- T35 [ ] — S6: shortcuts start the managed launcher; the halt reaches the user. Route: worker, then verifier.
-  Commit: pending.
+- T33 [x] — S6: carry an existing install's data into the definitive version, rehearsed. Route: worker, then
+  verifier. Done: PR #401 (`rehearse.mjs e490339c` → no difference; rerun with the T27 commit).
+- T35 [x] — S6: shortcuts start the managed launcher; the halt reaches the user. Route: worker, then verifier.
+  Done: PR #401 (Linux; Windows static only).
 - T34 [ ] — S6: the visit, by a written runbook. Route: owner on the laptop. Commit: pending (runbook).
 
 Phase 2, cloud and backup (blocked until the Neon quota resets on Dec 1):
@@ -592,3 +592,12 @@ Not chosen in S2. Each stays open in its own document.
   folder got no real backup) and two medium defects (stale lock with a reused pid; damaged package offered); one
   correction round fixed all, and a second verifier confirmed them on Linux with six advisories, carried into T35.
   Not run anywhere: Windows. A stash `engram manifest before merge` was left in `.worktrees/irsa-coverage`.
+- L8 — 2026-11-12. T35, T33 and T11 done by workers on `feat/desktop-updates`, pushed as draft PR #401. The data move
+  rehearsal from `e490339c` printed `RESULT: no difference` after the first start, after a second run and after a
+  backup restore (records, links, uploads by hash, audit, MFA sign-in, 32 isolation probes). A third verifier found six
+  blockers (interrupted first start left a child running; installer rerun accepted another state folder; typed values,
+  uploads past 500 and old audit rows not compared; installer generated a missing admin password); one correction
+  round fixed them and a fourth verifier confirmed all six on Linux. Still unverified: Windows, the real server start
+  through `run-current.mjs` after the last boot change (the rehearsal started it through the launcher), the laptop
+  commit (T27). Native review of PR #401 refused: the candidate exceeds the reviewer context budget
+  (`lens_context_budget_exceeded`); it must be split into smaller PRs to be reviewed natively.
