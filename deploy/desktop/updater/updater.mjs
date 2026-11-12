@@ -865,9 +865,10 @@ export async function update({
     await copyTree(stateDir, journal.preCopy);
     await step('state-copied');
 
+    let rehearsal = null;
     if (current.adopted) {
       at = 'rehearsal';
-      const rehearsal = await freeName(`${stateDir}.rehearsal-${when}-${to}`);
+      rehearsal = await freeName(`${stateDir}.rehearsal-${when}-${to}`);
       await copyTree(stateDir, rehearsal);
       try {
         await migrate({ versionDir, stateDir: rehearsal, version: to });
@@ -897,7 +898,13 @@ export async function update({
     await rm(join(root, JOURNAL), { force: true });
     journal = null;
     await step('committed');
-    await log(root, { event: 'updated', from, to, preUpdateCopy });
+    await log(root, {
+      event: 'updated',
+      from,
+      to,
+      preUpdateCopy,
+      ...(rehearsal ? { rehearsalCopy: rehearsal } : {}),
+    });
     return { from, to, preUpdateCopy };
   } catch (error) {
     // A refusal after the journal exists (the state folder became a link before its copy)
@@ -997,6 +1004,7 @@ export async function firstStart({ root, migrate, now, statfs = fsStatfs }) {
     if (await readJson(join(root, FIRST_START)))
       return { done: false, version, preUpdateCopy: null };
     const stateDir = await stateDirOf(root);
+    let rehearsal = null;
     const record = async (preUpdateCopy) => {
       await writeJsonAtomic(join(root, FIRST_START), {
         format: 1,
@@ -1005,7 +1013,12 @@ export async function firstStart({ root, migrate, now, statfs = fsStatfs }) {
         preUpdateCopy,
         at: clock().toISOString(),
       });
-      await log(root, { event: 'first-start', version, preUpdateCopy });
+      await log(root, {
+        event: 'first-start',
+        version,
+        preUpdateCopy,
+        ...(rehearsal ? { rehearsalCopy: rehearsal } : {}),
+      });
       return { done: true, version, preUpdateCopy };
     };
     if (!(await holdsDatabase(stateDir))) return await record(null);
@@ -1029,7 +1042,7 @@ export async function firstStart({ root, migrate, now, statfs = fsStatfs }) {
     };
     await writeJsonAtomic(join(root, JOURNAL), journal);
     await copyTree(stateDir, journal.preCopy);
-    const rehearsal = await freeName(`${stateDir}.rehearsal-${when}-${version}`);
+    rehearsal = await freeName(`${stateDir}.rehearsal-${when}-${version}`);
     await copyTree(stateDir, rehearsal);
     try {
       await migrate({ versionDir: current.dir, stateDir: rehearsal, version });
@@ -1083,6 +1096,100 @@ export async function firstStart({ root, migrate, now, statfs = fsStatfs }) {
         reason: error.message,
       }).catch(() => {});
     throw error;
+  } finally {
+    await unlock();
+  }
+}
+
+// The copies the updater leaves beside the state folder, named `<state>.<kind>-<UTC time>-…`.
+// None is ever deleted automatically: they hold the data and its key.
+const COPY_KINDS = ['pre-update', 'rehearsal', 'failed'];
+const DAY_MS = 86_400_000;
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** The time in a copy's name (`20261111T102030Z`), as a Date. */
+const stampDate = (text) =>
+  new Date(
+    `${text.slice(0, 4)}-${text.slice(4, 6)}-${text.slice(6, 8)}T${text.slice(9, 11)}:${text.slice(11, 13)}:${text.slice(13, 15)}Z`,
+  );
+
+async function treeBytes(path) {
+  let bytes = 0;
+  for (const entry of await readdir(path, { withFileTypes: true })) {
+    const full = join(path, entry.name);
+    if (entry.isDirectory()) bytes += await treeBytes(full);
+    else bytes += (await lstat(full)).size;
+  }
+  return bytes;
+}
+
+/**
+ * The copies beside the recorded state folder, oldest first: `{ stateDir, copies, count, bytes,
+ * newestPreUpdate }`; each copy is `{ kind, path, at, bytes }`. Only finished folders named by
+ * the updater count (not `.partial` copies, links, files or other folders).
+ */
+export async function listStateCopies({ root }) {
+  const stateDir = await stateDirOf(resolve(root));
+  const parent = dirname(stateDir);
+  const pattern = new RegExp(
+    `^${escapeRegExp(basename(stateDir))}\\.(${COPY_KINDS.join('|')})-(\\d{8}T\\d{6}Z)(-.*)?$`,
+  );
+  let names;
+  try {
+    names = await readdir(parent, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === 'ENOENT') names = [];
+    else throw error;
+  }
+  const copies = [];
+  for (const entry of names) {
+    const match = pattern.exec(entry.name);
+    if (!match || entry.name.endsWith('.partial') || !entry.isDirectory()) continue;
+    const path = join(parent, entry.name);
+    copies.push({ kind: match[1], path, at: stampDate(match[2]), bytes: await treeBytes(path) });
+  }
+  copies.sort((a, b) => a.at - b.at || (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  const preUpdate = copies.filter((copy) => copy.kind === 'pre-update');
+  return {
+    stateDir,
+    copies,
+    count: copies.length,
+    bytes: copies.reduce((sum, copy) => sum + copy.bytes, 0),
+    newestPreUpdate: preUpdate.at(-1)?.path ?? null,
+  };
+}
+
+/**
+ * The explicit clean-up: removes the copies whose name is older than `olderThanDays` whole days,
+ * except the newest pre-update copy, which is never removed (it is the way back from the last
+ * update). Refused while an update or first start is pending or halted, since its journal may
+ * need any of them. Returns `{ removed, kept, left }`; logs `copies-removed`.
+ */
+export async function removeStateCopies({ root, olderThanDays, now }) {
+  root = resolve(root);
+  if (!Number.isInteger(olderThanDays) || olderThanDays < 1)
+    throw refuse('The age of the copies to remove must be a whole number of days, 1 or more');
+  const unlock = await lock(root);
+  try {
+    if (await exists(join(root, JOURNAL)))
+      throw refuse(
+        'An update is pending or halted; its copies may be needed. Run --recover first (or restore the state folder and --accept-restored-state), then remove copies.',
+      );
+    const listed = await listStateCopies({ root });
+    const limit = (now ?? new Date()).getTime() - olderThanDays * DAY_MS;
+    const old = listed.copies.filter((copy) => copy.at.getTime() < limit);
+    const kept = old.find((copy) => copy.path === listed.newestPreUpdate)?.path ?? null;
+    const removed = old.filter((copy) => copy.path !== listed.newestPreUpdate);
+    for (const copy of removed) await rm(copy.path, { recursive: true });
+    if (removed.length || kept)
+      await log(root, {
+        event: 'copies-removed',
+        olderThanDays,
+        removed: removed.map((copy) => copy.path),
+        kept,
+      });
+    return { removed, kept, left: listed.count - removed.length };
   } finally {
     await unlock();
   }

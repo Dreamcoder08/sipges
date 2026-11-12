@@ -1,0 +1,103 @@
+﻿# Opens a managed SIPGES install (install.ps1 -Release) as a desktop app. install.ps1 copies this
+# script into the install root as start.ps1 and the shortcuts run that copy, so they keep
+# working after updates. It reuses the local server when it answers; otherwise it starts
+# run-current.mjs (the launcher of the current version, which checks the releases folder for
+# updates), opens Microsoft Edge in app mode and stays with the launcher: if an update cannot be
+# rolled back (exit code 3) a message box names the copy to restore. Read deploy\desktop\README.md.
+$ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.Windows.Forms
+
+$Root = $PSScriptRoot
+$Url = 'http://localhost:8000'
+# The server binds 127.0.0.1; "localhost" may resolve to ::1 first, where nothing listens.
+$Probe = 'http://127.0.0.1:8000/health'
+$WaitSeconds = 90
+# Outside the state folder: an update copies and may move that folder while SIPGES runs, and
+# Windows cannot move a folder holding an open file.
+$Log = Join-Path $Root 'launcher.log'
+$HaltExitCode = 3
+$HaltPrefix = 'SIPGES no se inició*'
+$HaltFallback = 'SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad previa a la actualización (la carpeta SIPGES.pre-update-… junto a %LOCALAPPDATA%\SIPGES) o contacte con soporte.'
+
+function Show-Failure([string]$Message) {
+    [System.Windows.Forms.MessageBox]::Show($Message, 'SIPGES', 'OK', 'Error') | Out-Null
+    exit 1
+}
+
+# The launcher's own notice (the last one in the log) names the pre-update copy to restore.
+function Show-Halt {
+    $notice = $null
+    if (Test-Path -LiteralPath $Log) {
+        $notice = Get-Content -LiteralPath $Log -Encoding UTF8 |
+            Where-Object { $_ -like $HaltPrefix } | Select-Object -Last 1
+    }
+    if ([string]::IsNullOrWhiteSpace($notice)) { $notice = $HaltFallback }
+    [System.Windows.Forms.MessageBox]::Show($notice, 'SIPGES', 'OK', 'Error') | Out-Null
+    exit $HaltExitCode
+}
+
+function Test-Server {
+    try {
+        Invoke-WebRequest -Uri $Probe -UseBasicParsing -TimeoutSec 2 | Out-Null
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+# Appends to launcher.log (a plain redirect through cmd keeps earlier runs) and hides the window.
+# cmd ends with node's exit code, so the launcher's code 3 reaches this script.
+function Start-Launcher {
+    $command = '"{0}" "{1}" --releases "{2}" >> "{3}" 2>&1' -f (Get-Command node).Source,
+        (Join-Path $Root 'run-current.mjs'), (Join-Path $Root 'releases'), $Log
+    Start-Process -FilePath $env:ComSpec -ArgumentList "/d /c `"$command`"" `
+        -WorkingDirectory $Root -WindowStyle Hidden -PassThru
+}
+
+function Wait-Server([int]$Seconds) {
+    $deadline = (Get-Date).AddSeconds($Seconds)
+    while (-not (Test-Server)) {
+        if ((Get-Date) -gt $deadline) { Show-Failure "SIPGES no arrancó en $Seconds segundos. Revisa $Log." }
+        Start-Sleep -Seconds 1
+    }
+}
+
+try {
+    if (Test-Server) {
+        Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
+        exit 0
+    }
+    # Held while this launcher runs: a click while it starts, or restarts for an update, only
+    # waits for the same server instead of starting a second one.
+    $created = $false
+    $booting = New-Object System.Threading.Mutex($true, 'Local\SIPGES-start', [ref]$created)
+    if (-not $created) {
+        Wait-Server $WaitSeconds
+        Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
+        exit 0
+    }
+    $launcher = Start-Launcher
+    # Without a handle taken right away, ExitCode stays empty after the process ends.
+    $null = $launcher.Handle
+    $deadline = (Get-Date).AddSeconds($WaitSeconds)
+    while (-not (Test-Server)) {
+        # Release before the message box so later clicks are not held by an open dialog.
+        if ($launcher.HasExited) {
+            $booting.ReleaseMutex()
+            if ($launcher.ExitCode -eq $HaltExitCode) { Show-Halt }
+            Show-Failure "SIPGES se cerró al arrancar. Revisa $Log."
+        }
+        if ((Get-Date) -gt $deadline) {
+            $booting.ReleaseMutex()
+            Show-Failure "SIPGES no arrancó en $WaitSeconds segundos. Revisa $Log."
+        }
+        Start-Sleep -Seconds 1
+    }
+    Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
+    # Stay with the launcher: an update after the click can still end in a halt.
+    $launcher.WaitForExit()
+    $booting.ReleaseMutex()
+    if ($launcher.ExitCode -eq $HaltExitCode) { Show-Halt }
+} catch {
+    Show-Failure "SIPGES no pudo abrirse: $($_.Exception.Message)"
+}
