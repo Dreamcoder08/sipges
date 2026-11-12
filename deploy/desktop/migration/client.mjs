@@ -79,10 +79,25 @@ export async function nextStep(stateFile) {
   return step;
 }
 
-/** A keyed hash: the same value gives the same hash only with the snapshot's own salt. */
+/**
+ * The typed form a hash is taken of: arrays in order, object keys sorted, every value with its
+ * JSON type, so the text "12" and the number 12 never hash alike, and key order never matters.
+ */
+export function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === 'object')
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonical(value[key])]),
+    );
+  return value;
+}
+
+/** A keyed hash of the typed value: equal only for the same value with the snapshot's salt. */
 export const keyed = (salt) => (value) =>
   createHmac('sha256', Buffer.from(salt, 'hex'))
-    .update(typeof value === 'string' ? value : JSON.stringify(value))
+    .update(JSON.stringify(canonical(value)) ?? 'undefined')
     .digest('hex');
 
 export const short = (hash) => hash.slice(0, 8);

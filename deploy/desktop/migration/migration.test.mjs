@@ -2,6 +2,7 @@
 // fake of the SIPGES HTTP API filled with synthetic, recognisable values. They must print and
 // store only counts and hashes, and report every difference, an MFA sign-in that no longer works
 // (the old data key) and a record visible from another project.
+/* global structuredClone */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import process from 'node:process';
@@ -122,7 +123,13 @@ const auditOf = (data, extra = {}) => {
 /** A fake of the routes the scripts read, with switches for the failures they must catch. */
 async function fakeApi(
   data,
-  { audit = auditOf(data), mfaBroken = false, leak = false, leakShared = false } = {},
+  {
+    audit = auditOf(data),
+    mfaBroken = false,
+    leak = false,
+    leakShared = false,
+    noExport = false,
+  } = {},
 ) {
   const sessions = new Set();
   const server = createServer(async (req, res) => {
@@ -218,16 +225,22 @@ async function fakeApi(
         })),
       });
     }
-    if (url.pathname === '/system/uploads')
-      return json(
-        200,
-        scope.uploads.map((u) => ({
-          id: u.id,
-          original_name: u.name,
-          sha256: 'x',
-          size_bytes: u.bytes.length,
-        })),
-      );
+    // Like the real API: the list holds at most 500 (newest first there), one upload by its id.
+    const uploadJson = (u) => ({
+      id: u.id,
+      original_name: u.name,
+      sha256: 'x',
+      size_bytes: u.bytes.length,
+    });
+    if (url.pathname === '/system/uploads') {
+      const limit = Math.min(Number(url.searchParams.get('limit') ?? 200), 500);
+      return json(200, scope.uploads.slice(0, 500).slice(0, limit).map(uploadJson));
+    }
+    const single = /^\/system\/uploads\/([^/]+)$/.exec(url.pathname);
+    if (single) {
+      const found = scope.uploads.find((u) => u.id === decodeURIComponent(single[1]));
+      return found ? json(200, uploadJson(found)) : json(404, { detail: 'No encontrado' });
+    }
     const download = /^\/system\/uploads\/([^/]+)\/download$/.exec(url.pathname);
     if (download) {
       const found = (
@@ -237,6 +250,8 @@ async function fakeApi(
       res.writeHead(200, { 'content-type': 'text/plain' });
       return res.end(found.bytes);
     }
+    if (url.pathname === '/system/export' && noExport)
+      return json(403, { detail: 'Requiere rol administrador' });
     if (url.pathname === '/system/export')
       return json(200, {
         format: 'sipges.tenant-export',
@@ -245,6 +260,8 @@ async function fakeApi(
         data: {
           module_records: Object.values(scope.records).flat(),
           audit: audit[scopeName] ?? [],
+          // The stored row: a file changed on disk leaves it as it was.
+          attachments: scope.uploads.map((u) => ({ id: u.id, original_name: u.name })),
           document_review: scope.reviews ?? [],
           preventive_actions: [],
         },
@@ -477,4 +494,102 @@ test('the audit trail is read in full past the 500 entries one page shows', () =
     assert.match(taken.stdout, /^project 1 \[[0-9a-f]{8}\]: .*audit 603$/m);
     assert.equal(compared.status, 0, compared.stdout);
     assert.match(compared.stdout, /^ {2}audit: 603 -> 603, 603 kept unchanged$/m);
+  }));
+
+test('T33: a changed JSON field type is a difference', () =>
+  withTemp(async (dir) => {
+    const scope = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+    const before = fixture();
+    const after = fixture();
+    before.scopes[scope].records.eventos[0].Participantes = '12';
+    after.scopes[scope].records.eventos[0].Participantes = 12;
+    const { compared } = await snapshotThenCompare(dir, before, after);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.doesNotMatch(compared.stdout, /RESULT: no difference/);
+    assert.match(
+      compared.stdout,
+      /^ {2}eventos: 3 -> 3, record \[[0-9a-f]{8}\] field \[[0-9a-f]{8}\] differs$/m,
+    );
+    absent(compared.stdout + compared.stderr, after, 'compare output');
+  }));
+
+test('T33: unchecked upload 501 cannot produce a successful comparison', () =>
+  withTemp(async (dir) => {
+    const scope = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+    const before = fixture();
+    before.scopes[scope].uploads = Array.from({ length: 501 }, (_, i) => ({
+      id: `upload-${i}`,
+      name: `synthetic-${i}.txt`,
+      bytes: `synthetic-file-${i}`,
+    }));
+    const after = structuredClone(before);
+    after.scopes[scope].uploads[500].bytes = 'CORRUPTED-CONTENT';
+    const { taken, compared } = await snapshotThenCompare(dir, before, after);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.doesNotMatch(compared.stdout, /RESULT: no difference/);
+    assert.match(taken.stdout, /^project 1 \[[0-9a-f]{8}\]: .*uploads 501, audit 3$/m);
+    assert.match(
+      compared.stdout,
+      /^ {2}uploads: 501 -> 501, upload \[[0-9a-f]{8}\] content differs$/m,
+    );
+    absent(compared.stdout + compared.stderr, after, 'compare output');
+  }));
+
+test('T33: more uploads than the list shows, without the export, is not fully checked', () =>
+  withTemp(async (dir) => {
+    const scope = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+    const data = fixture();
+    data.scopes[scope].uploads = Array.from({ length: 501 }, (_, i) => ({
+      id: `upload-${i}`,
+      name: `synthetic-${i}.txt`,
+      bytes: `synthetic-file-${i}`,
+    }));
+    const { taken, compared } = await snapshotThenCompare(
+      dir,
+      data,
+      data,
+      { noExport: true },
+      { noExport: true },
+    );
+    assert.match(taken.stdout, /uploads 500 \(not fully checked\)/);
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(compared.stdout, /^ {2}uploads: not fully checked/m);
+    assert.match(compared.stdout, /^RESULT: not fully checked/m);
+  }));
+
+test('T33: a historical audit detail change is a difference', () =>
+  withTemp(async (dir) => {
+    const scope = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+    const data = fixture();
+    const before = auditOf(data, { [scope]: Array.from({ length: 600 }, () => 'login') });
+    const after = structuredClone(before);
+    after[scope][0].detail = 'CHANGED-HISTORICAL-DETAIL';
+    const { compared } = await snapshotThenCompare(
+      dir,
+      data,
+      data,
+      { audit: before },
+      { audit: after },
+    );
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.doesNotMatch(compared.stdout, /RESULT: no difference/);
+    assert.match(compared.stdout, /^ {2}audit: 603 -> 603, 602 kept unchanged, 1 changed$/m);
+    assert.ok(!compared.stdout.includes('CHANGED-HISTORICAL-DETAIL'));
+  }));
+
+test('T33: a long audit trail without the export is not fully checked', () =>
+  withTemp(async (dir) => {
+    const scope = 'EMPRESA-SINTETICA/PRJ-ALFA-SINTETICO';
+    const data = fixture();
+    const audit = auditOf(data, { [scope]: Array.from({ length: 600 }, () => 'login') });
+    const { compared } = await snapshotThenCompare(
+      dir,
+      data,
+      data,
+      { audit, noExport: true },
+      { audit, noExport: true },
+    );
+    assert.equal(compared.status, 1, compared.stdout);
+    assert.match(compared.stdout, /^ {2}audit: not fully checked/m);
+    assert.match(compared.stdout, /^RESULT: not fully checked/m);
   }));

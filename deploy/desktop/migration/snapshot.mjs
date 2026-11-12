@@ -26,8 +26,12 @@ import {
 } from './client.mjs';
 
 export const FORMAT = 'sipges.migration-snapshot';
+// 2: values hashed with their JSON type; every upload and audit entry, or marked incomplete.
+export const FORMAT_VERSION = 2;
 const PAGE = 500;
 const AUDIT_PAGE = 500;
+// The upload list answers at most this many; the rest come from the export's attachment rows.
+const UPLOAD_LIST_CAP = 500;
 // Tables of the project export (GET /system/export) compared above record by record and entry
 // by entry; every other exported table is compared as a set of row hashes.
 const EXPORT_COMPARED_ELSEWHERE = new Set(['module_records', 'audit']);
@@ -56,9 +60,12 @@ async function moduleRows(session, scope, slug) {
   }
 }
 
-/** Ids, modules and actions of the whole audit trail of a project, oldest first. */
-async function auditTrail(session, scope, newest) {
-  if (newest.length < AUDIT_PAGE) return [...newest].reverse();
+/**
+ * Ids, modules and actions of the whole audit trail of a project, oldest first, from the activity
+ * stream: only when the export cannot be read. It carries no detail, so its entries are counted
+ * but their content is not checked.
+ */
+async function streamedTrail(session, scope, newest) {
   // One page shows the newest 500; the activity stream replays the rest from the start (module
   // and action only), so the count and every id are exact.
   const lastId = newest[0].id;
@@ -105,6 +112,39 @@ async function auditTrail(session, scope, newest) {
 }
 
 /**
+ * Every audit entry with its full content: the export's rows, or the newest page when it holds
+ * the whole trail. Otherwise the streamed ids, marked incomplete (their content is not checked).
+ */
+async function auditOf(session, scope, h, exported) {
+  const byId = (a, b) => Number(a.id) - Number(b.id);
+  if (Array.isArray(exported?.audit)) {
+    const rows = [...exported.audit].sort(byId);
+    return { source: 'export', complete: true, rows, hash: (row) => h(row) };
+  }
+  const newest = await getJson(session, `/system/audit?limit=${AUDIT_PAGE}`, scope);
+  if (newest.status !== 200) throw failed('/system/audit', newest.status);
+  if (newest.body.length < AUDIT_PAGE)
+    return { source: 'audit', complete: true, rows: [...newest.body].sort(byId), hash: h };
+  const rows = await streamedTrail(session, scope, newest.body);
+  return { source: 'stream', complete: false, rows, hash: (e) => h(`${e.module}\n${e.action}`) };
+}
+
+/**
+ * The id of every upload: the list shows at most 500, so the export's attachment rows name the
+ * rest. Without the export a full list is marked incomplete: the rest cannot be checked.
+ */
+async function uploadIdsOf(session, scope, exported) {
+  const listed = await getJson(session, `/system/uploads?limit=${UPLOAD_LIST_CAP}`, scope);
+  if (listed.status !== 200) throw failed('/system/uploads', listed.status);
+  const ids = new Set(listed.body.map((upload) => String(upload.id)));
+  if (Array.isArray(exported?.attachments)) {
+    for (const row of exported.attachments) ids.add(String(row.id));
+    return { ids: [...ids].sort(), complete: true };
+  }
+  return { ids: [...ids].sort(), complete: listed.body.length < UPLOAD_LIST_CAP };
+}
+
+/**
  * Reads everything the comparison needs. Returns `{ snapshot, live }`: `snapshot` holds only
  * counts and keyed hashes; `live` keeps the raw ids, modules and actions in memory for the
  * isolation probes and the list of added audit entries, and is never written.
@@ -114,7 +154,12 @@ export async function takeSnapshot(session, { salt = randomBytes(16).toString('h
   const scopes = await getJson(session, '/system/auth/scopes');
   if (scopes.status !== 200) throw failed('/system/auth/scopes', scopes.status);
   const names = scopes.body.map((s) => `${s.company_id}/${s.project_id}`).sort();
-  const snapshot = { format: FORMAT, version: 1, takenAt: new Date().toISOString(), salt };
+  const snapshot = {
+    format: FORMAT,
+    version: FORMAT_VERSION,
+    takenAt: new Date().toISOString(),
+    salt,
+  };
   const live = { projects: {} };
   snapshot.projects = [];
   for (const scope of names) {
@@ -154,36 +199,41 @@ export async function takeSnapshot(session, { salt = randomBytes(16).toString('h
         for (const link of found.body.links ?? [])
           project.links[h(String(link.edge.id))] = h(link.edge);
       }
-    const uploads = await getJson(session, `/system/uploads?limit=${PAGE}`, scope);
-    if (uploads.status !== 200) throw failed('/system/uploads', uploads.status);
-    project.uploadsCapped = uploads.body.length >= PAGE;
-    const uploadIds = [];
-    for (const upload of uploads.body) {
-      const file = await session.call(`/system/uploads/${encodeURIComponent(upload.id)}/download`, {
-        scope,
-      });
+    const exportedAnswer = await getJson(session, '/system/export', scope);
+    const exported = exportedAnswer.status === 200 ? (exportedAnswer.body.data ?? {}) : null;
+    project.export = exported
+      ? Object.fromEntries(
+          Object.entries(exported)
+            .filter(([table]) => !EXPORT_COMPARED_ELSEWHERE.has(table))
+            .map(([table, rows]) => [table, rows.map((row) => h(row)).sort()]),
+        )
+      : null;
+    // Every upload by its id: metadata and the downloaded content's SHA-256.
+    const { ids: uploadIds, complete: uploadsComplete } = await uploadIdsOf(
+      session,
+      scope,
+      exported,
+    );
+    project.uploadsComplete = uploadsComplete;
+    for (const id of uploadIds) {
+      const path = `/system/uploads/${encodeURIComponent(id)}`;
+      const upload = await getJson(session, path, scope);
+      if (upload.status !== 200) throw failed('an upload', upload.status);
+      const file = await session.call(`${path}/download`, { scope });
       if (file.status !== 200) throw failed('an upload download', file.status);
       const bytes = new Uint8Array(await file.arrayBuffer());
-      const meta = Object.fromEntries(Object.entries(upload).filter(([k]) => k !== 'download_url'));
-      project.uploads[h(String(upload.id))] = { sha256: sha256(bytes), meta: h(meta) };
-      uploadIds.push(String(upload.id));
+      const meta = Object.fromEntries(
+        Object.entries(upload.body).filter(([k]) => k !== 'download_url'),
+      );
+      project.uploads[h(id)] = { sha256: sha256(bytes), meta: h(meta) };
     }
-    const exported = await getJson(session, '/system/export', scope);
-    project.export =
-      exported.status === 200
-        ? Object.fromEntries(
-            Object.entries(exported.body.data ?? {})
-              .filter(([table]) => !EXPORT_COMPARED_ELSEWHERE.has(table))
-              .map(([table, rows]) => [table, rows.map((row) => h(row)).sort()]),
-          )
-        : null;
-    const newest = await getJson(session, `/system/audit?limit=${AUDIT_PAGE}`, scope);
-    if (newest.status !== 200) throw failed('/system/audit', newest.status);
-    const trail = await auditTrail(session, scope, newest.body);
+    const audit = await auditOf(session, scope, h, exported);
     project.audit = {
-      entries: Object.fromEntries(trail.map((e) => [String(e.id), h(`${e.module}\n${e.action}`)])),
-      latest: Object.fromEntries(newest.body.map((e) => [String(e.id), h(e)])),
+      source: audit.source,
+      complete: audit.complete,
+      entries: Object.fromEntries(audit.rows.map((row) => [String(row.id), audit.hash(row)])),
     };
+    const trail = audit.rows.map((row) => ({ id: row.id, module: row.module, action: row.action }));
     snapshot.projects.push(project);
     live.projects[project.key] = { scope, ids, contents, uploadIds, audit: trail, hash: h };
   }
@@ -213,9 +263,9 @@ export function summary(snapshot) {
         modules.length ? ` (${modules.join(', ')})` : ''
       }, links ${Object.keys(project.links).length}, uploads ${
         Object.keys(project.uploads).length
-      }${project.uploadsCapped ? ' (list capped at 500)' : ''}, audit ${
+      }${project.uploadsComplete ? '' : ' (not fully checked)'}, audit ${
         Object.keys(project.audit.entries).length
-      }`,
+      }${project.audit.complete ? '' : ' (not fully checked)'}`,
     );
   });
   lines.push(

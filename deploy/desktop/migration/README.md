@@ -127,20 +127,27 @@ failed`.
 - `project N [hash]`: projects in the order of their identifiers; the hash is keyed with the
   snapshot's salt, so it means nothing outside this comparison.
 - One line per module with records: count before and after, then either `every field identical`
+  (each value is hashed with its JSON type, so the text `"12"` and the number `12` differ)
   or the problems: `record [hash] missing`, `record [hash] new`, `record [hash] field [hash]
 differs`, `missing`, `new`, `record [hash] update time differs`.
-- `links`, `uploads` (content SHA-256 of every file, downloaded), `export <table>` (the other
+- `links`, `uploads` (content SHA-256 of every file, downloaded by its id: the upload list shows
+  at most 500, and the export's attachment rows name the rest), `export <table>` (the other
   tables of the project export, `GET /system/export`, as sets of row hashes: attachment rows,
   record links, record history versions, document and alert reviews, preventive actions).
-- `audit`: before -> after, entries kept unchanged, `missing`, `changed`, and every entry added
-  since the snapshot listed by id, module and action (`added: #23 auth/login`). Added entries
-  are listed but are not differences. In the rehearsal none were added: the move writes no
-  audit entry.
+- `audit`: every entry of the trail with its whole content (time, module, record, action,
+  detail; from the project export). Before -> after, entries kept unchanged, `missing`,
+  `changed`, and every entry added since the snapshot listed by id, module and action
+  (`added: #23 auth/login`). Added entries are listed but are not differences. In the rehearsal
+  none were added: the move writes no audit entry.
 - `Accounts`: every account's summary (name, role, active, Google link) hashed.
 - `Isolation`: for up to 25 records per module and 25 uploads of each project, the same id is
   asked for in every other project. It must answer 404, or that project's own record of the same
   id with its own content.
-- `RESULT`: `no difference`, or the number of differences; exit code 0 or 1.
+- `uploads: not fully checked` or `audit: not fully checked`: the project export could not be
+  read and there were more uploads than the list shows (500) or more audit entries than one page
+  (500). What was read is still compared, but the comparison fails.
+- `RESULT`: `no difference`, the number of differences, or `not fully checked (N parts, listed
+above)`; exit code 0 only for `no difference`, otherwise 1.
 
 `snapshot.mjs` prints the same counts and short hashes. Its file holds only counts, keyed hashes
 and the salt, and is written with mode 600; it is refused if the file exists. Keep it with the
@@ -148,7 +155,9 @@ data all the same: with the salt, a guessed value can be confirmed.
 
 Not compared: notifications, automation rules and channels (a channel's
 sealed settings can only be read back by sending to its public HTTPS address), sessions and push
-subscriptions. Uploads beyond the first 500 of a project are not compared (a warning says so).
+subscriptions. A snapshot from an earlier `snapshot.mjs` (format version 1, which hashed `"12"`
+and `12` alike and read only the newest 500 uploads and audit details) is refused by
+`compare.mjs`: take it again before the move.
 
 ## On the visit (Windows)
 
