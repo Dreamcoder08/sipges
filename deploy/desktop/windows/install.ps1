@@ -9,6 +9,8 @@
 #   ... install.ps1 -Release <folder> -State <folder>
 #     Managed mode on another state folder, such as a copy of %LOCALAPPDATA%\SIPGES made for
 #     the data move (deploy\desktop\migration\README.md); the original stays as it was.
+# Either mode stops without creating anything while an update is pending or halted
+# (update-journal.json in %LOCALAPPDATA%\SIPGES-app).
 # Read deploy\desktop\README.md first.
 param([string]$Release, [string]$State)
 $ErrorActionPreference = 'Stop'
@@ -139,6 +141,16 @@ function Get-RecordedState {
     catch { Stop-Install "No se pudo leer ${config}; no se cambió nada." }
 }
 
+# An update pending or halted (its journal in the install root) needs the state folder exactly as
+# the update left it: one created here, even empty, would be taken for the restored folder and
+# SIPGES could start on an empty database. Nothing is created, moved or deleted.
+function Assert-NoPendingUpdate {
+    $journal = Join-Path $AppRoot 'update-journal.json'
+    if (Test-Path -LiteralPath $journal) {
+        Stop-Install "Hay una actualización de SIPGES pendiente o detenida ($journal); no se cambió nada. No borres ni muevas ninguna carpeta de SIPGES. Abre SIPGES desde su acceso directo para que termine de recuperarla; si dice que no se inició, sigue «Si una actualización se detiene a medias» en deploy\desktop\README.es.md."
+    }
+}
+
 function New-Shortcuts([string]$Start, [string]$WorkingDirectory, [string]$Icon) {
     $shell = New-Object -ComObject WScript.Shell
     foreach ($folder in [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) {
@@ -210,6 +222,9 @@ function Install-Managed {
     }
     Write-Host "Respalda la carpeta completa $State (contiene tus datos y su clave)."
 }
+
+# Before anything is created, in both modes.
+Assert-NoPendingUpdate
 
 $node = Get-Command node -ErrorAction SilentlyContinue
 $major = 0

@@ -32,6 +32,9 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ Guardar y devolver los accesos directos (`.lnk`) | Solo el destino se comprobó; la copia y la devolución no se probaron |
 | ⚠ Crear la clave, calcular la huella, contar archivos con `-Force` | Ensayo automático (PR #419) |
 | ⚠ Comprobar «SIPGES cerrado», la memoria USB, la huella anotada a mano | No probado |
+| ⚠ Que el kit borre su paquete fallido y el reintento arme el kit; la contraseña oculta en la consola de Windows; la línea `Managed install` de `compare.mjs` | Solo pruebas en Linux (paquete y servidor simulados; terminal real solo en Linux); las del kit corren también en el job «visit-kit» (anotá el resultado) |
+| ⚠ F4: `install.ps1` se niega con una actualización pendiente o detenida (`update-journal.json`) | No probado en Windows hasta que el ensayo automático lo cubra |
+| ⚠ F7: el texto de detención que nombra la carpeta de datos gestionada | No probado en Windows hasta que el ensayo automático lo cubra |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
 laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
@@ -40,16 +43,17 @@ T27, anotada en «Datos de esta visita».
 ## Datos de esta visita
 
 En los comandos, `E:` es el disco externo del respaldo, `K:` el USB de la clave y `F:` el USB de la
-visita. Con un solo USB (el de la clave), el kit queda en la laptop, en `C:\SIPGES-kit-salida`: donde
-dice `F:\SIPGES-visita`, usá `C:\SIPGES-kit-salida\SIPGES-visita` (el `LEEME.txt` del kit ya trae la
-ruta correcta). Si Windows les da otras letras, cambialas en cada comando.
+visita, que solo se usa si está formateado en NTFS. Lo normal es que el kit quede en la laptop, en
+`C:\SIPGES-kit-salida`: donde dice `F:\SIPGES-visita`, usá `C:\SIPGES-kit-salida\SIPGES-visita` (el
+`LEEME.txt` del kit ya trae la ruta correcta). Si Windows les da otras letras, cambialas en cada
+comando.
 
 | Dato | Valor |
 | --- | --- |
 | Fecha de la visita (`<fecha>`, por ejemplo `2026-12-05`) | |
 | Versión definitiva (`<versión>`, por ejemplo `1.0.0`) | |
 | Commit definitivo (`git log --oneline -1` al construir) | |
-| Huella SHA-256 de la clave (anotada en casa) | |
+| Huella SHA-256 de la clave (anotada en el paso K, de `fingerprint.txt`) | |
 | Commit de la instalación vieja (respuesta T27 y paso 2) | |
 | Carpeta del clon viejo (`<clon>`, paso K) | |
 | Clon viejo antes del kit: `git log --oneline -1` y si `status` imprimió algo (paso K) | |
@@ -83,9 +87,10 @@ ruta correcta). Si Windows les da otras letras, cambialas en cada comando.
   - El commit definitivo y la versión, anotados en «Datos de esta visita».
   - El USB de la clave `K:`. Si ya firmaste algo con una clave, llevala en ese USB como
     `K:\sipges-clave-actualizaciones.pem`: el kit la reutiliza. Si no, el kit la crea ahí.
-  - Para el kit, **un segundo USB** `F:` (mejor formateado en NTFS) **o ninguno**: con un solo USB, el
-    kit queda en la laptop, en `C:\SIPGES-kit-salida`, fuera del clon viejo y de
-    `%LOCALAPPDATA%\SIPGES*`.
+  - El kit se escribe en la laptop, en **`C:\SIPGES-kit-salida`**, fuera del clon viejo y de
+    `%LOCALAPPDATA%\SIPGES*`. Un segundo USB `F:` solo si está formateado en **NTFS**; **nunca**
+    uno FAT32 o exFAT (los pendrives suelen venir así): el paquete tiene enlaces de carpeta, y esos
+    formatos no los guardan. Ante la duda, `C:\SIPGES-kit-salida`.
   - El disco externo `E:` del respaldo (más abajo). La clave nunca va en él.
   - **Red** en la casa para `git clone` y `pnpm install` (Wi-Fi, o tu teléfono como punto de acceso;
     no el de la usuaria, que hace falta para el MFA).
@@ -204,7 +209,9 @@ niega a escribir ahí. Con la red de la casa.
 
   Node `v24` o más; pnpm `12.…`; git responde; `Free` con al menos 5 GB libres más lo que pide el
   paso 0 (cuatro veces `%LOCALAPPDATA%\SIPGES` más 2 GB); `Test-Path` dice `False`. Con Node menor que
-  24 no hay visita (sección 1). Sin pnpm 12: `npm install -g pnpm@12.11.2` y una terminal nueva.
+  24 no hay visita (sección 1): **no instales ni actualices Node en la laptop**, la versión vieja de
+  SIPGES corre con ese Node; parás acá y la laptop queda como está. Sin pnpm 12:
+  `npm install -g pnpm@12.11.2` y una terminal nueva.
 - [ ] El clon viejo **antes** del kit (anotá las dos salidas; `--no-optional-locks` evita que `git`
   escriba en él):
 
@@ -227,19 +234,20 @@ niega a escribir ahí. Con la red de la casa.
   `git status --short` no imprime nada y `git log` muestra el commit definitivo. Si `git clone` o
   `pnpm install` fallan por la red, reintentá una vez; si vuelven a fallar, regla de corte del kit
   (abajo).
-- [ ] Conectá el USB de la clave `K:` y armá el kit, todavía en `C:\SIPGES-kit`. Con dos USB (el kit
-  a `F:`):
-
-  ```powershell
-  node deploy\desktop\windows\visit-kit.mjs --version <versión> --key K:\sipges-clave-actualizaciones.pem --out F:\
-  $LASTEXITCODE
-  ```
-
-  Con un solo USB (el kit queda en la laptop, en una carpeta aparte):
+- [ ] Conectá el USB de la clave `K:` y armá el kit, todavía en `C:\SIPGES-kit`. El kit va a una
+  carpeta aparte de la laptop:
 
   ```powershell
   New-Item -ItemType Directory C:\SIPGES-kit-salida
   node deploy\desktop\windows\visit-kit.mjs --version <versión> --key K:\sipges-clave-actualizaciones.pem --out C:\SIPGES-kit-salida
+  $LASTEXITCODE
+  ```
+
+  Solo si tenés un segundo USB `F:` y `(Get-Volume -DriveLetter F).FileSystemType` dice `NTFS` (no
+  `FAT32` ni `exFAT`), el kit puede ir a él:
+
+  ```powershell
+  node deploy\desktop\windows\visit-kit.mjs --version <versión> --key K:\sipges-clave-actualizaciones.pem --out F:\
   $LASTEXITCODE
   ```
 
@@ -248,20 +256,31 @@ niega a escribir ahí. Con la red de la casa.
   `sipges-scripts.zip`, `fingerprint.txt` y `LEEME.txt`. Tenés que ver `Release <versión> signed: …`,
   `Kit listo: …\SIPGES-visita`, la lista final y `0`.
 
-  Antes de construir, se niega con `Error: …` y `1`, sin escribir nada:
+  Antes de construir, se niega con `Error: …` y `1`, sin escribir nada. Lo único que puede borrar es
+  el paquete **incompleto** que dejó un intento anterior fallido de esta misma versión en
+  `C:\SIPGES-kit\.data\desktop-packages\sipges-<versión>` (lo dice: `Paquete incompleto de un
+  intento anterior borrado: …`); nunca un paquete terminado ni nada fuera de esa carpeta. Si otra terminal
+  todavía está construyendo esa versión, se niega («Hay otra construcción de la versión … en curso»)
+  y no borra nada: **corré el kit en una sola terminal a la vez** y esperá a que termine.
 
   | Empieza con | Qué hacer |
   | --- | --- |
-  | `Node.js … es anterior a 24` | No hay visita (sección 1); la versión vieja sigue como está. |
+  | `Node.js … es anterior a 24` | No hay visita (sección 1): no instales ni actualices Node en la laptop; la versión vieja sigue como está. |
   | `Falta pnpm` / `pnpm … no sirve` | `npm install -g pnpm@12.11.2`, terminal nueva, repetí. |
   | `SIPGES está abierto` | Cerralo por completo (`SIPGES cerrado`) y repetí. |
   | `Falta espacio en …` | Usá `--out F:\` si estabas en la laptop, o liberá espacio (nunca en `%LOCALAPPDATA%\SIPGES*` ni en `<clon>`). |
   | `Los accesos directos «SIPGES» abren este clon` / `… dentro del clon viejo …` | Estás en el clon viejo o dentro: `cd C:\SIPGES-kit`. |
   | `… is inside the repository …` / `… overlap …` / `… SIPGES folder of %LOCALAPPDATA% …` | La clave o el kit apuntan a un lugar prohibido: usá exactamente los comandos de arriba. |
   | `this checkout has uncommitted changes` | En `C:\SIPGES-kit`, `git status --short` imprimió algo: regla de corte del kit. |
-  | `… already exists; move it away first` | Ya hay un `SIPGES-visita` en `--out`: movelo a otro lado y repetí. |
+  | `… already exists; move it away first` | Ya hay un `SIPGES-visita` en `--out`: renombralo (`Rename-Item <ruta>\SIPGES-visita SIPGES-visita-fallida-1`) y repetí. |
+  | `Ya hay un paquete terminado de la versión …` | Un intento anterior construyó el paquete y falló después. Borrá **solo** la carpeta que nombra el mensaje, con `cmd /c rmdir /s /q "<carpeta del mensaje>"` (no sigue enlaces, a diferencia de `Remove-Item -Recurse`), y repetí. |
+  | `… no es un paquete que haya dejado builder.mjs …` / `… es un enlace o no es una carpeta …` | Algo ajeno ocupa ese lugar en `C:\SIPGES-kit\.data`: no lo borres a ciegas; regla de corte del kit. |
 
-  Si falla más tarde (al construir o firmar), mové `SIPGES-visita` a otro lado antes de repetir.
+  Si falla **al construir** (antes de `Package created: …`), repetí el mismo comando: el kit borra
+  solo ese paquete incompleto y vuelve a construir. Si falla **después** (al firmar o al escribir
+  `SIPGES-visita`), primero renombrá `SIPGES-visita` como dice la tabla; al repetir, el kit se niega
+  con `Ya hay un paquete terminado …`: borrá la carpeta que nombra y repetí. Un segundo fallo en el
+  mismo punto: regla de corte del kit.
 - [ ] **La clave** (Ed25519, PKCS#8 PEM) es la única con la que la laptop aceptará actualizaciones; si
   se pierde, no hay más actualizaciones sin reinstalar. Si el kit dice «La clave se creó ahora», hacé
   una segunda copia apenas puedas, en otro USB o en tu equipo al volver; nunca en la laptop, en el
@@ -339,7 +358,8 @@ sus números.
   ```
 
   El commit tiene que ser el de T27 (el que se ensayó con `rehearse.mjs`). Si es otro, no sigas: el
-  traslado no se ensayó desde ese commit. Anotá también si `git status --short` imprimió algo.
+  traslado no se ensayó desde ese commit. Anotá también si `git --no-optional-locks status --short`
+  imprimió algo.
 - [ ] Abrí SIPGES desde el acceso directo de siempre. Edge se abre en `http://localhost:8000` y la
   usuaria entra. Cerrá solo la ventana: el servidor sigue encendido.
 - [ ] Conteos de la versión vieja. La persona que tiene la contraseña de `admin` la escribe cuando se pide
@@ -384,7 +404,9 @@ sus números.
   ```
 
   Si alguno da error porque no existe, anotá cuál; la regla de corte tiene otra salida.
-- [ ] Instalá:
+- [ ] Instalá. El comando lleva **siempre** `-State "$env:LOCALAPPDATA\SIPGES-datos"`: sin `-State`, el
+  instalador usa la carpeta original `%LOCALAPPDATA%\SIPGES` y el primer arranque la migraría en su
+  lugar, dejando la versión vieja sin sus datos. Antes de Enter, leé que esté:
 
   ```powershell
   powershell -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\SIPGES-visita\sipges\deploy\desktop\windows\install.ps1" -Release F:\SIPGES-visita\release-<versión> -State "$env:LOCALAPPDATA\SIPGES-datos"
@@ -392,7 +414,7 @@ sus números.
 
   Tenés que ver, en este orden:
   - `Trusting the update key that signed this release (SHA-256 …).` La huella **tiene que ser igual**
-    a la anotada en casa. Si no lo es, regla de corte.
+    a la anotada en el paso K (la de `SIPGES-visita\fingerprint.txt`). Si no lo es, regla de corte.
   - `Installed <versión>`
   - `SIPGES está instalado. Ábrelo desde el menú Inicio o el escritorio.` (todavía no lo abras)
   - `Instalación: …\SIPGES-app. …`, `Usuario administrador: admin. Contraseña: …\SIPGES-datos\admin-password`
@@ -402,13 +424,18 @@ sus números.
   Si en cambio aparece `SIPGES está abierto en este equipo: …`, cerralo por completo y repetí.
   `… no es una versión firmada …`, `La carpeta de datos … tiene una base de datos pero falta su …`,
   `Esta instalación usa la carpeta de datos …` o `Falló: …`: regla de corte.
-- [ ] `Get-Content "$env:LOCALAPPDATA\SIPGES-app\install.json"` muestra `stateDir` terminado en
-  `SIPGES-datos`. Retirá el USB `F:` si lo usaste (la versión ya se copió dentro de
-  `SIPGES-app\versions`).
+  `Hay una actualización de SIPGES pendiente o detenida (…); no se cambió nada. No borres ni muevas
+  ninguna carpeta de SIPGES. …` (y `1`): alguien ya instaló y empezó una actualización en esta
+  cuenta. No repitas el comando, no borres ni muevas nada: regla de corte (⚠ F4, no probado en
+  Windows).
+- [ ] Confirmá la carpeta de datos: `Get-Content "$env:LOCALAPPDATA\SIPGES-app\install.json"` muestra
+  `stateDir` terminado en `SIPGES-datos`. Si termina en `\SIPGES` o en otra cosa: **no hagas el paso
+  4 ni abras SIPGES** (el primer arranque migraría esa carpeta); regla de corte. Retirá el USB `F:`
+  si lo usaste (la versión ya se copió dentro de `SIPGES-app\versions`).
 
 ### Paso 4 — Primer arranque sobre la copia (traslado T33)
 
-Se hace en la terminal para no depender de la espera de 90 segundos del acceso directo.
+Se hace en la terminal para no depender de la espera de 300 segundos del acceso directo.
 
 - [ ] Ejecutá:
 
@@ -420,11 +447,26 @@ Se hace en la terminal para no depender de la espera de 90 segundos del acceso d
   Tenés que ver `First start of <versión> done. Pre-update copy: …\SIPGES-datos.pre-update-<hora>-first-start-<versión>`
   y después `0`. Al lado de `SIPGES-datos` aparecen esa copia y `SIPGES-datos.rehearsal-<hora>-<versión>`:
   no las borres, tienen los datos y la clave.
-  Si sale `Error: …` o un número distinto de `0`: regla de corte. La carpeta original no se abrió
-  nunca, y `SIPGES-datos` vuelve a como estaba.
-- [ ] Abrí SIPGES desde el acceso directo (ya apunta a la versión nueva). Edge se abre antes de 90 segundos.
-  Si aparece un cuadro «SIPGES no arrancó en 90 segundos. Revisa …», «SIPGES se cerró al arrancar.
-  Revisa …» o «SIPGES no se inició: …»: regla de corte.
+  Si sale `Error: …` o un número distinto de `0`: regla de corte. La carpeta original
+  `%LOCALAPPDATA%\SIPGES` no se abrió nunca: la versión vieja sigue con ella. Lo que queda en
+  `SIPGES-datos` depende del número (anotalo):
+  - `1` (se negó; por ejemplo falta `data-key`): no tocó nada.
+  - `2` (falló y volvió atrás): `SIPGES-datos` quedó como estaba; si ya se había migrado, se
+    restauró de la copia `SIPGES-datos.pre-update-…` y la cambiada quedó al lado como
+    `SIPGES-datos.failed-…`.
+  - `3` (vuelta atrás incompleta): `SIPGES-datos` puede quedar **a medio migrar o a medio
+    restaurar**; los datos de antes están en `SIPGES-datos.pre-update-<hora>-first-start-<versión>`.
+    **No vuelvas a ejecutar `install.ps1`**, ni `update.mjs` (`--first-start` o `--recover`), ni
+    abras la versión nueva: regla de corte ya, y no borres nada al lado de `SIPGES-datos`.
+- [ ] Abrí SIPGES desde el acceso directo (ya apunta a la versión nueva). Edge se abre antes de 300 segundos (normalmente en menos de 90).
+  Si en cambio aparece un cuadro: regla de corte. Si el primer arranque falla desde el acceso
+  directo, el cuadro dice «SIPGES se cerró al arrancar. Revisa …\launcher.log.» (el texto «SIPGES no
+  se inició: la versión nueva no pudo abrir los datos existentes …» queda **solo** en
+  `launcher.log`, no en el cuadro); con una vuelta atrás incompleta (código 3) el cuadro dice
+  «SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. …». También
+  puede decir «SIPGES no arrancó en 300 segundos. Revisa …». Ese aviso **no** detiene el lanzador, que
+  sigue en segundo plano: antes de reintentar, cerralo (Administrador de tareas, proceso `node`
+  de SIPGES) y mirá `launcher.log`.
 
 ### Paso 5 — Comparar
 
@@ -435,7 +477,9 @@ Se hace en la terminal para no depender de la espera de 90 segundos del acceso d
   $LASTEXITCODE
   ```
 
-  Tenés que ver `Sign-in: ok (password and MFA code)`; por proyecto, cada módulo con
+  Tenés que ver `Sign-in: ok (password and MFA code)`; `Managed install: version <versión>`, con la
+  versión de hoy (prueba que responde la versión nueva y no la vieja, que también contesta en el
+  puerto 8000); por proyecto, cada módulo con
   `every field identical`, `links … identical`, `uploads … identical`, `audit … kept unchanged`;
   `Accounts: … identical`; `Isolation: … no record or upload of one project visible in another`;
   al final `RESULT: no difference` (puede seguir `(N audit entries added, listed above)`: las líneas
@@ -443,8 +487,30 @@ Se hace en la terminal para no depender de la espera de 90 segundos del acceso d
   (por ejemplo `records: not fully checked (…)`, `export: not checked (…)` o `Accounts: not checked (…)`):
   cada una es una parte que no se pudo comparar, y el `RESULT` ya no es `no difference`. Cómo leer cada línea:
   [migration/README.md](../../deploy/desktop/migration/README.md#reading-the-comparison).
-  Cualquier otro `RESULT` (`Sign-in failed`, `N differences`, `not fully checked`) o un número distinto
-  de `0`: regla de corte.
+  Si dice `RESULT: not compared (not the managed install)` y `2`, no se comparó nada: responde la
+  versión vieja (quedó abierta y el acceso directo la reutilizó). Cerrá SIPGES por completo
+  (`SIPGES cerrado`), abrilo desde el acceso directo, esperá otro código MFA y repetí una sola vez.
+  Si vuelve a decirlo, o dice `RESULT: not compared (installed version not readable)` o
+  `RESULT: not compared (no project scope for this account)` (la cuenta no es `admin` o no tiene
+  proyectos), o la versión de `Managed install` no es la de hoy: regla de corte.
+  Cualquier otro `RESULT` (`sign-in failed`, que sigue a `Sign-in failed (status …)`;
+  `N differences`; `not fully checked`; `not compared`) o un número distinto de `0`: regla de corte.
+- [ ] **Lo que la comparación no cubre** (verificado en el código; está en
+  [migration/README.md](../../deploy/desktop/migration/README.md#reading-the-comparison)). Un
+  `RESULT: no difference` no prueba:
+  - de cada registro, su marca de clasificación (`marking`) ni su fecha de creación (`created_at`):
+    se comparan sus campos y su fecha de modificación;
+  - tablas que no están en la exportación del proyecto: `irsa_configs`, `irsa_snapshots`,
+    `media_feeds`, `proposal_decisions`, `link_evidence_history`, `grants`, `api_keys`,
+    `integration_channels`, las etiquetas de los proyectos (`tenants`) y estado técnico
+    (`record_embeddings`, `ingest_receipts`, `notification_reads`, `automation_cursors`,
+    `digital_signal_dedup_locks`, sesiones, intentos fallidos de entrada, suscripciones y envíos push);
+  - las contraseñas y los secretos MFA de las cuentas que no son `admin` (la de `admin` la prueba el
+    inicio de sesión); de cada cuenta se compara nombre, rol, si está activa, alta y vínculo Google;
+  - los proyectos a los que `admin` no tiene acceso.
+
+  Por eso la usuaria revisa a mano el paso siguiente y, si usa IRSA, fuentes de medios o cuentas
+  de otras personas, que abran como antes.
 - [ ] La usuaria elige y abre, en la versión nueva, **diez registros** y **tres archivos subidos**. Cada uno
   abre y se ve como lo recuerda (marcá sin escribir cuál):
   Registros ☐ ☐ ☐ ☐ ☐ ☐ ☐ ☐ ☐ ☐ — Archivos ☐ ☐ ☐
@@ -499,7 +565,7 @@ quedan así.
 ## 3. Regla de corte
 
 Se aplica ante **cualquiera** de estas cosas: una diferencia o un `RESULT` distinto de `no difference` en el
-paso 5; un inicio de sesión fallido (pasos 2, 5 o 6); un `Error: …` del primer arranque; una huella que no
+paso 5 (incluido `not compared`, salvo el único reintento que dice ese paso); un inicio de sesión fallido (pasos 2, 5 o 6); un `Error: …` del primer arranque; una huella que no
 coincide; un cuadro «SIPGES no se inició: …» o cualquier otro mensaje de error de la versión nueva.
 Entonces **la versión vieja sigue en uso y la laptop queda como estaba**. No intentes reparar nada en la
 visita: se lleva los registros (sección 4) y se resuelve en casa.
@@ -531,7 +597,8 @@ visita: se lleva los registros (sección 4) y se resuelve en casa.
 
 - [ ] Con el comando del paso 7 las dos líneas terminan en `\deploy\desktop\windows\start.ps1"` del clon.
 - [ ] Confirmá que la carpeta original no se tocó: el conteo del paso 3 da **los mismos** archivos y bytes
-  anotados, y en `<clon>` `git log --oneline -1` y `git status --short` dicen lo mismo que en el paso 2.
+  anotados, y en `<clon>` `git log --oneline -1` y `git --no-optional-locks status --short` dicen lo
+  mismo que en el paso 2 (`--no-optional-locks` evita que `git` reescriba el índice del clon viejo).
 
   ```powershell
   foreach ($c in "$env:LOCALAPPDATA\SIPGES") { $m = Get-ChildItem -Recurse -File -Force -LiteralPath $c | Measure-Object -Property Length -Sum; "$c  archivos: $($m.Count)  bytes: $($m.Sum)" }
@@ -550,10 +617,12 @@ visita: se lleva los registros (sección 4) y se resuelve en casa.
 
 | Mensaje | Qué pasó |
 | --- | --- |
-| «SIPGES no se inició: la versión nueva no pudo abrir los datos existentes. Sus datos no se tocaron. …» | El primer arranque falló en una copia; `SIPGES-datos` quedó como estaba. Regla de corte. |
+| Cuadro «SIPGES se cerró al arrancar. Revisa …\launcher.log.», y en `launcher.log` «SIPGES no se inició: la versión nueva no pudo abrir los datos existentes. Sus datos no se tocaron. …» | El primer arranque falló y volvió atrás; `SIPGES-datos` quedó como estaba. Ese texto no aparece en el cuadro: está solo en `launcher.log`. Regla de corte. |
 | «SIPGES no se inició: … Restaure la copia de seguridad <copia> o contacte con soporte.» | Detención: una actualización falló y ni su vuelta atrás terminó. SIPGES no arranca sobre esos datos. |
-| «SIPGES no arrancó en 90 segundos. Revisa …\launcher.log.» / «SIPGES se cerró al arrancar. Revisa …» | Versión nueva: mirá `launcher.log`. |
+| «SIPGES no arrancó en 300 segundos. Revisa …\launcher.log.» / «SIPGES no arrancó. Revisa …» / «SIPGES se cerró al arrancar. Revisa …» | Versión nueva: mirá `launcher.log`. |
 | «El servidor no arrancó en 90 segundos. Revisa …\api.log.» / «El servidor se cerró al arrancar. …» | Versión vieja: mirá `api.log`. |
+| «Hay una actualización de SIPGES pendiente o detenida (…); no se cambió nada. No borres ni muevas ninguna carpeta de SIPGES. …» (de `install.ps1`, código 1) | Ya hay una instalación gestionada con una actualización a medias (`update-journal.json`). En la visita: regla de corte. Después: la salida documentada de una detención, abajo. |
+| `--recover` se niega con código 3 pidiendo apartar la carpeta de datos recreada | La carpeta de datos se volvió a crear después de la detención: renombrala sin borrarla y repetí `--recover` (paso 2 de abajo). |
 
 **Dónde están los registros**
 
@@ -569,7 +638,10 @@ la visita, donde se aplica la regla de corte). `<versión>` es la que dice `curr
 
 1. No borres nada.
 2. `node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --recover`
-   — si imprime `Recovered: rolled back to …`, abrí SIPGES.
+   — si imprime `Recovered: rolled back to …`, abrí SIPGES. Si en cambio se niega con `Error: …` y
+   `3` porque la carpeta de datos se volvió a crear después de la detención, el mensaje pide apartar
+   esa carpeta recreada: renombrala (por ejemplo `SIPGES-datos` → `SIPGES-datos.recreada`, sin
+   borrarla) y repetí este mismo paso 2.
 3. Si no: renombrá la carpeta dañada (`%LOCALAPPDATA%\SIPGES-datos` → `SIPGES-datos.danada`) y copiá en su
    lugar la copia que nombra el mensaje, o tu propio respaldo.
 4. `node "$env:LOCALAPPDATA\SIPGES-app\versions\<versión>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --recover --accept-restored-state`

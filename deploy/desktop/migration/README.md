@@ -98,6 +98,7 @@ of the plain `sha256`, shown below as `<keyed>` (not rerun since):
 
 ```text
 Sign-in: ok (password and MFA code)
+Managed install: version <version>
 project 1 [008e7c91]
   actores: 2 -> 2, every field identical
   alertas: 1 -> 1, every field identical
@@ -134,6 +135,19 @@ RESULT: no difference
   stored sealed with `data-key`, so this line is also the proof that the old key decrypts under
   the new version. A refused sign-in prints `Sign-in failed (status 401)` and `RESULT: sign-in
 failed`.
+- `Managed install: version <v>`: which server answers. The old version answers `/health` on the
+  same port as the new one, and a SIPGES shortcut reuses whichever server answers, so before
+  comparing `compare.mjs` asks for `GET /system/desktop/update`, which only a managed install
+  started by the desktop launcher mounts (`apps/api/src/app.ts`, the route in
+  `apps/api/src/contexts/system/http/desktop-update-routes.ts`, set up only when
+  `SIPGES_DESKTOP_UPDATE_DIR` is set), and prints the installed version it reports. Check it is
+  the version just installed. When that route is missing (`Managed install: no (GET
+  /system/desktop/update answered 404) …`), answers a redirect (never followed) or anything but
+  JSON, or reports no version, nothing is compared: `RESULT: not compared (not the managed
+  install)` or `RESULT: not compared (installed version not readable)`; a 403 (the account has no
+  project scope or is not an administrator) prints `RESULT: not compared (no project scope for
+  this account)`. Exit code 2 in every case, and `--out` is not written. (The sample above predates this check;
+  its second line is shown as the comparison prints it now.)
 - `project N [hash]`: projects in the order of their identifiers; the hash is keyed with the
   snapshot's salt, so it means nothing outside this comparison.
 - One line per module with records: count before and after, then either `every field identical`
@@ -168,15 +182,36 @@ differs`, `missing`, `new`, `record [hash] update time differs`.
   part; each counts as a part not fully checked and fails the comparison. Nothing is skipped
   without a line.
 - `RESULT`: `no difference`, the number of differences, or `not fully checked (N parts, listed
-above)`; exit code 0 only for `no difference`, otherwise 1.
+above)`; exit code 0 only for `no difference`, otherwise 1. `not compared (…)` with exit code 2:
+  the server is not the managed install (above).
+- The password prompt (`Contraseña:`) does not show what is typed: the terminal is put in raw
+  mode with Node's own TTY support (Windows console and Linux alike) and restored afterwards;
+  Ctrl+C cancels. The MFA code is shown as typed.
 
 `snapshot.mjs` prints the same counts and short hashes. Its file holds only counts, keyed hashes
 and the salt, and is written with mode 600; it is refused if the file exists. Keep it with the
 data all the same: with the salt, a guessed value can be confirmed.
 
-Not compared: notifications, automation rules and channels (a channel's
-sealed settings can only be read back by sending to its public HTTPS address), sessions and push
-subscriptions. A snapshot from an earlier `snapshot.mjs` is refused by `compare.mjs` before it
+Not compared (checked against `apps/api/src/contexts/tenancy/infrastructure/sql-tenant-data-reader.ts`,
+the records routes and the migrations):
+
+- of each record, only its fields (the stored `payload`) and its update time: not its
+  classification `marking` nor its `created_at` (the export's `module_records` rows are used to
+  prove the lists complete, not hashed);
+- tables outside the project export: `irsa_configs`, `irsa_snapshots`, `media_feeds`,
+  `proposal_decisions`, `link_evidence_history`, `grants`, `api_keys`, `integration_channels`
+  (automation channels: their sealed settings can only be read back by sending to their public
+  HTTPS address), `tenants` (the project labels), `record_embeddings`, `ingest_receipts`,
+  `notification_reads`, `automation_cursors`, `digital_signal_dedup_locks`, `sessions`,
+  `login_failures`, `push_subscriptions` and `push_deliveries`;
+- of the accounts, only name, role, active flag, creation time and Google link: not the password
+  hashes nor the MFA secrets (the administrator's password and MFA are proved by the sign-in;
+  every other account's are not);
+- projects the signed-in administrator has no grant for (only the projects
+  `/system/auth/scopes` lists are read).
+
+Notifications, automation rules and runs, record versions and the other export tables are
+compared as row hashes. A snapshot from an earlier `snapshot.mjs` is refused by `compare.mjs` before it
 signs in: format version 1 hashed `"12"` and `12` alike and read only the newest 500 uploads and
 audit details; version 2 stored each upload's plain SHA-256 and could stop a record list early.
 Take it again, with the scripts that will run the comparison, before the move.

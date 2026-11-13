@@ -11,7 +11,9 @@ import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { PassThrough } from 'node:stream';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { URL, URLSearchParams, fileURLToPath } from 'node:url';
@@ -37,6 +39,7 @@ const code = (secret, step) => {
 
 const SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
 const PASSWORD = 'clave-sintetica-admin-001';
+const DESKTOP_VERSION = '1.0.0-sintetico.1';
 
 /** Synthetic content; every string here must stay out of the scripts' output and files. */
 const fixture = () => ({
@@ -135,6 +138,11 @@ async function fakeApi(
     listCap = Infinity,
     // A version that ignores ?offset= and answers the first page again.
     ignoreOffset = false,
+    // GET /system/desktop/update, which only a managed install started by the desktop launcher
+    // mounts: its status, null for a server without the route (the old version, answers 404),
+    // 'html' for an answer that is not JSON, 'text' for a JSON body sent as text/plain,
+    // 'redirect' for a redirect to a route that answers a valid status, 'forbidden' for 403.
+    desktop = { installed: DESKTOP_VERSION },
   } = {},
 ) {
   const sessions = new Set();
@@ -172,6 +180,30 @@ async function fakeApi(
     const scopeName = req.headers['x-sipges-scope'];
     const scope = data.scopes[scopeName];
     if (!scope) return json(403, { detail: 'Seleccione un proyecto' });
+    // Like the real route: behind the session and the project scope (not scope-free).
+    const valid = { installed: DESKTOP_VERSION, available: null, notes: null, dismissed: false };
+    if (url.pathname === '/system/desktop/update-elsewhere') return json(200, valid);
+    if (url.pathname === '/system/desktop/update' && desktop === 'redirect') {
+      res.writeHead(302, { location: '/system/desktop/update-elsewhere' });
+      return res.end();
+    }
+    if (url.pathname === '/system/desktop/update' && desktop === 'forbidden')
+      return json(403, { detail: 'Requiere rol administrador' });
+    if (url.pathname === '/system/desktop/update' && desktop === 'text') {
+      res.writeHead(200, { 'content-type': 'text/plain' });
+      return res.end(JSON.stringify(valid));
+    }
+    if (url.pathname === '/system/desktop/update' && desktop === 'html') {
+      res.writeHead(200, { 'content-type': 'text/html; charset=UTF-8' });
+      return res.end('<!doctype html><html><head></head><body></body></html>');
+    }
+    if (url.pathname === '/system/desktop/update' && desktop)
+      return json(200, {
+        installed: desktop.installed,
+        available: null,
+        notes: null,
+        dismissed: false,
+      });
     if (url.pathname === '/system/auth/accounts' && noAccounts)
       return json(403, { detail: 'Requiere rol administrador' });
     if (url.pathname === '/system/auth/accounts')
@@ -534,7 +566,12 @@ test('T33: a changed JSON field type is a difference', () =>
       compared.stdout,
       /^ {2}eventos: 3 -> 3, record \[[0-9a-f]{8}\] field \[[0-9a-f]{8}\] differs$/m,
     );
-    absent(compared.stdout + compared.stderr, after, 'compare output');
+    // Hashes are hex and hold "12" by chance (the value 12 itself): look outside them only.
+    const unhashed = (compared.stdout + compared.stderr)
+      .replace(/\[[0-9a-f]{8}\]/g, '[hash]')
+      .replace(/[0-9a-f]{12}…/g, 'hash…');
+    assert.doesNotMatch(unhashed, /[0-9a-f]{8}/, 'every hash was masked');
+    absent(unhashed, after, 'compare output');
   }));
 
 test('T33: unchecked upload 501 cannot produce a successful comparison', () =>
@@ -751,4 +788,233 @@ test('T33 follow-up: compare refuses a snapshot of an older format before signin
     } finally {
       api.close();
     }
+  }));
+
+// ---------------------------------------------------------------------------------------------
+// Which server answers. The old version keeps answering /health on the same port, so before
+// comparing compare.mjs asks for GET /system/desktop/update, which only a managed install started
+// by the desktop launcher mounts (apps/api/src/app.ts), and prints the version it reports. A
+// refusal is its own RESULT and exit code: never "no difference".
+
+/** Every file and folder under `dir`, with the content of each file. */
+async function tree(dir) {
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+  const out = {};
+  for (const entry of entries) {
+    const path = join(entry.parentPath, entry.name).slice(dir.length);
+    out[path] = entry.isFile() ? await readFile(join(entry.parentPath, entry.name), 'utf8') : 'dir';
+  }
+  return out;
+}
+
+/** Snapshot from a managed fake, then compare --out against a fake with `afterOptions`. */
+async function compareAgainst(parent, afterOptions) {
+  const dir = await mkdtemp(join(parent, 'run-'));
+  const login = await credentials(dir);
+  const before = join(dir, 'before.json');
+  const first = await fakeApi(fixture());
+  try {
+    const taken = await run(snapshotCli, ['--url', first.url, ...login, '--out', before]);
+    assert.equal(taken.status, 0, taken.stderr);
+  } finally {
+    first.close();
+  }
+  const files = await tree(dir);
+  const second = await fakeApi(fixture(), afterOptions);
+  try {
+    const out = join(dir, 'after.json');
+    const compared = await run(compareCli, [
+      '--before',
+      before,
+      '--url',
+      second.url,
+      ...login,
+      '--out',
+      out,
+    ]);
+    return { compared, written: existsSync(out), unchanged: files, now: await tree(dir) };
+  } finally {
+    second.close();
+  }
+}
+
+test('F1: the old server (no managed-install route) is refused: not compared, exit 2, nothing written', () =>
+  withTemp(async (dir) => {
+    const { compared, written, unchanged, now } = await compareAgainst(dir, { desktop: null });
+    assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+    assert.equal(compared.stderr, '');
+    assert.equal(
+      compared.stdout,
+      [
+        'Sign-in: ok (password and MFA code)',
+        'Managed install: no (GET /system/desktop/update answered 404); the server on this port is not the new version installed with install.ps1 -Release',
+        'RESULT: not compared (not the managed install)',
+        '',
+      ].join('\n'),
+    );
+    assert.doesNotMatch(compared.stdout, /no difference/);
+    assert.equal(written, false, '--out must not be written when nothing was compared');
+    assert.deepEqual(now, unchanged);
+  }));
+
+test('F1: a 200 answer that is not JSON (an HTML page) is not the managed install', () =>
+  withTemp(async (dir) => {
+    const { compared, written } = await compareAgainst(dir, { desktop: 'html' });
+    assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+    assert.match(
+      compared.stdout,
+      /^Managed install: no \(GET \/system\/desktop\/update answered 200, not JSON\); the server on this port is not the new version installed with install\.ps1 -Release$/m,
+    );
+    assert.match(compared.stdout, /^RESULT: not compared \(not the managed install\)\n$/m);
+    assert.doesNotMatch(compared.stdout, /no difference/);
+    assert.equal(written, false);
+  }));
+
+test('F1: a managed install that does not report its version is refused: exit 2, nothing written', () =>
+  withTemp(async (dir) => {
+    for (const installed of [null, '', 42, 'x'.repeat(300), 'bad version\n']) {
+      const { compared, written, unchanged, now } = await compareAgainst(dir, {
+        desktop: { installed },
+      });
+      assert.equal(compared.status, 2, `${JSON.stringify(installed)}: ${compared.stdout}`);
+      assert.equal(compared.stderr, '');
+      assert.equal(
+        compared.stdout,
+        [
+          'Sign-in: ok (password and MFA code)',
+          'Managed install: version not readable (GET /system/desktop/update reports no installed version)',
+          'RESULT: not compared (installed version not readable)',
+          '',
+        ].join('\n'),
+      );
+      assert.equal(written, false);
+      assert.deepEqual(now, unchanged);
+    }
+  }));
+
+test('F1 preserved: the managed install with the same data prints its version and no difference, exit 0', () =>
+  withTemp(async (dir) => {
+    const { compared, written } = await compareAgainst(dir, {});
+    assert.equal(compared.status, 0, compared.stdout + compared.stderr);
+    assert.match(compared.stdout, /^Sign-in: ok \(password and MFA code\)\nManaged install: version 1\.0\.0-sintetico\.1\n/);
+    assert.match(compared.stdout, /^RESULT: no difference\n$/m);
+    assert.equal(written, true);
+  }));
+
+// ---------------------------------------------------------------------------------------------
+// E7: the password typed at «Contraseña:» is not shown. Raw mode on the terminal (Windows console
+// and Linux tty alike, Node's stdlib only): nothing typed is echoed, Enter ends it.
+
+/** A fake terminal: input that records its raw mode, output that records what is shown. */
+function fakeTerminal() {
+  const input = new PassThrough();
+  input.isTTY = true;
+  input.isRaw = false;
+  const modes = [];
+  input.setRawMode = (mode) => {
+    modes.push(mode);
+    input.isRaw = mode;
+    return input;
+  };
+  const output = new PassThrough();
+  let shown = '';
+  output.on('data', (chunk) => (shown += chunk));
+  return { input, output, modes, shown: () => shown };
+}
+
+test('E7: the password prompt hides what is typed and restores the terminal', async () => {
+  const { readHidden } = await import('./client.mjs');
+  const term = fakeTerminal();
+  const answer = readHidden('Contraseña: ', term);
+  term.input.write('clave-sintetica-x');
+  term.input.write('\u007f\b'); // two kinds of backspace erase "-x"
+  term.input.write('y\u001b[A'); // an arrow key is ignored
+  term.input.write('\r');
+  assert.equal(await answer, 'clave-sinteticay');
+  assert.equal(term.shown(), 'Contraseña: \n');
+  assert.deepEqual(term.modes, [true, false]);
+  assert.equal(term.input.isRaw, false);
+});
+
+test('E7: Ctrl+C at the password prompt cancels and restores the terminal', async () => {
+  const { readHidden } = await import('./client.mjs');
+  const term = fakeTerminal();
+  const answer = readHidden('Contraseña: ', term);
+  term.input.write('abc\u0003');
+  await assert.rejects(answer, /^Error: Cancelado \(Ctrl\+C\)$/);
+  assert.deepEqual(term.modes, [true, false]);
+  assert.ok(!term.shown().includes('abc'));
+});
+
+test('E7 preserved: credentials ask the password hidden, then the MFA code; no terminal gives empty answers', async () => {
+  const { credentials: ask } = await import('./client.mjs');
+  const term = fakeTerminal();
+  const saved = process.env.SIPGES_MIGRATION_PASSWORD;
+  delete process.env.SIPGES_MIGRATION_PASSWORD;
+  try {
+    const answered = ask({ '--url': 'http://127.0.0.1:1' }, term);
+    term.input.write('clave-sintetica-z\r');
+    const deadline = Date.now() + 5000;
+    while (!term.shown().includes('Código MFA')) {
+      assert.ok(Date.now() < deadline, `no MFA prompt; shown: ${JSON.stringify(term.shown())}`);
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    term.input.write('123456\n');
+    const got = await answered;
+    assert.equal(got.password, 'clave-sintetica-z');
+    assert.equal(got.otp, '123456');
+    assert.equal(got.username, 'admin');
+    assert.ok(!term.shown().includes('clave-sintetica-z'), term.shown());
+    assert.ok(term.shown().startsWith('Contraseña: \nCódigo MFA (vacío si no tiene): '));
+    const piped = new PassThrough();
+    const none = await ask({ '--url': 'http://127.0.0.1:1' }, { input: piped, output: new PassThrough() });
+    assert.deepEqual([none.password, none.otp], ['', undefined]);
+  } finally {
+    if (saved !== undefined) process.env.SIPGES_MIGRATION_PASSWORD = saved;
+  }
+});
+
+test('F1: a redirect is not the managed install, even to a route that would answer: exit 2', () =>
+  withTemp(async (dir) => {
+    const { compared, written } = await compareAgainst(dir, { desktop: 'redirect' });
+    assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+    assert.equal(
+      compared.stdout,
+      [
+        'Sign-in: ok (password and MFA code)',
+        'Managed install: no (GET /system/desktop/update answered 302); the server on this port is not the new version installed with install.ps1 -Release',
+        'RESULT: not compared (not the managed install)',
+        '',
+      ].join('\n'),
+    );
+    assert.equal(written, false);
+  }));
+
+test('F1: a valid JSON body sent as text/plain is not the managed install: exit 2', () =>
+  withTemp(async (dir) => {
+    const { compared, written } = await compareAgainst(dir, { desktop: 'text' });
+    assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+    assert.match(
+      compared.stdout,
+      /^Managed install: no \(GET \/system\/desktop\/update answered 200, not JSON\);/m,
+    );
+    assert.match(compared.stdout, /^RESULT: not compared \(not the managed install\)\n$/m);
+    assert.equal(written, false);
+  }));
+
+test('F1: a 403 (no project scope, or not an administrator) has its own text: exit 2', () =>
+  withTemp(async (dir) => {
+    const { compared, written } = await compareAgainst(dir, { desktop: 'forbidden' });
+    assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+    assert.equal(
+      compared.stdout,
+      [
+        'Sign-in: ok (password and MFA code)',
+        'Managed install: not asked (GET /system/desktop/update answered 403: this account has no project scope or is not an administrator)',
+        'RESULT: not compared (no project scope for this account)',
+        '',
+      ].join('\n'),
+    );
+    assert.doesNotMatch(compared.stdout, /no difference/);
+    assert.equal(written, false);
   }));

@@ -93,15 +93,29 @@ async function readJson(path) {
   }
 }
 
-// Windows refuses a rename while another process (an antivirus scan) briefly holds the file.
-async function renameRetry(from, to) {
-  for (let attempt = 0; ; attempt += 1) {
+// Windows refuses a rename while another process holds the file or folder (an antivirus scan,
+// the search indexer, an open Explorer window), sometimes for many seconds. Such a refusal is
+// retried with pauses growing from RENAME_FIRST_WAIT_MS to RENAME_MAX_WAIT_MS until
+// RENAME_RETRY_MS have passed since the first attempt; then the last error is thrown unchanged.
+const RENAME_RETRY_MS = 45_000;
+const RENAME_FIRST_WAIT_MS = 100;
+const RENAME_MAX_WAIT_MS = 2_000;
+
+/** `move`, `wait`, `now` and `platform` are for tests. */
+export async function renameRetry(
+  from,
+  to,
+  { move = rename, wait = sleep, now = Date.now, platform = process.platform } = {},
+) {
+  const deadline = now() + RENAME_RETRY_MS;
+  for (let pause = RENAME_FIRST_WAIT_MS; ; pause = Math.min(pause * 2, RENAME_MAX_WAIT_MS)) {
     try {
-      return await rename(from, to);
+      return await move(from, to);
     } catch (error) {
       const transient = ['EPERM', 'EACCES', 'EBUSY'].includes(error.code);
-      if (process.platform !== 'win32' || !transient || attempt >= 20) throw error;
-      await sleep(100);
+      const left = deadline - now();
+      if (platform !== 'win32' || !transient || left <= 0) throw error;
+      await wait(Math.min(pause, left));
     }
   }
 }
@@ -621,8 +635,59 @@ async function commitStaging(root, { staging, final }, now) {
   await renameRetry(staging, final);
 }
 
+/**
+ * The relative path of every entry of a tree with its kind and, for a file, the SHA-256 of its
+ * content; links are not followed. Two trees with the same shape hold the same bytes by name.
+ */
+async function treeShape(path) {
+  const shape = [];
+  const walk = async (dir, prefix) => {
+    const entries = (await readdir(dir, { withFileTypes: true })).sort((a, b) =>
+      a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
+    );
+    for (const entry of entries) {
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        shape.push(`${rel}/`);
+        await walk(full, rel);
+      } else if (entry.isFile()) shape.push(`${rel} ${await hashFile(full)}`);
+      else shape.push(`${rel} (other)`);
+    }
+  };
+  await walk(path, '');
+  return shape.join('\n');
+}
+
+/**
+ * With the changed state already moved aside, a folder at the state's name is either the restored
+ * copy or one created since (an installer rerun, by hand). Only the restored copy may end the
+ * journal: it is proven when no restore copy waits any more and it matches the pre-update copy
+ * it was made from. Otherwise this throws and nothing is moved, copied or deleted.
+ */
+async function checkRestored({ stateDir, preCopy, restoring }) {
+  const halt = (problem) =>
+    new UpdateError('ROLLBACK_INCOMPLETE', `the state folder ${stateDir} ${problem}`);
+  if (await exists(restoring))
+    throw halt(
+      `was created again while its restore was pending; the restored data is still in ${restoring}: move ${stateDir} aside without deleting anything, then run --recover again`,
+    );
+  if (!(await exists(preCopy)))
+    throw halt(`cannot be proven restored: the pre-update copy ${preCopy} is missing`);
+  if ((await treeShape(stateDir)) !== (await treeShape(preCopy)))
+    throw halt(`cannot be proven restored: it does not match the pre-update copy ${preCopy}`);
+}
+
 /** Idempotent: moves the changed state aside (never deleted) and puts a fresh copy in its place. */
 async function restoreState(root, journal) {
+  if ((await exists(journal.stateDir)) && (await exists(journal.failedAside)))
+    return checkRestored(journal);
+  // The restore copy is only replaced by a new copy of the pre-update one: without it, it is kept.
+  if ((await exists(journal.stateDir)) && !(await exists(journal.preCopy)))
+    throw new UpdateError(
+      'ROLLBACK_INCOMPLETE',
+      `the pre-update copy ${journal.preCopy} is missing; nothing was moved or deleted`,
+    );
   await writeJsonAtomic(join(root, JOURNAL), { ...journal, phase: 'restoring' });
   if ((await exists(journal.stateDir)) && !(await exists(journal.failedAside))) {
     await rm(journal.restoring, { recursive: true, force: true });

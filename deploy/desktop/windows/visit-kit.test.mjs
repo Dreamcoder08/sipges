@@ -10,17 +10,25 @@ import { spawnSync } from 'node:child_process';
 import { generateKeyPairSync } from 'node:crypto';
 import { createServer } from 'node:net';
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, symlink, writeFile } from 'node:fs/promises';
 import { dirname, join, posix, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { keyFingerprint } from '../updater/release.mjs';
 import { makePackage, makeState, withTemp } from '../updater/verifier-helpers.mjs';
+import { fakeCheckout, treeOf } from '../package/builder-helpers.mjs';
+import * as builder from '../package/builder.mjs';
 import {
   BUILD_FREE,
   KIT_FREE,
   LAPTOP_FREE_GB,
   NOTES,
+  PACKAGE_BUILDING,
+  PACKAGE_COMPLETE,
+  PACKAGE_MARKER,
+  PACKAGE_MARKER_TEXT,
   checklist,
+  builderCommand,
+  clearFailedPackage,
   freeBytes,
   leeme,
   nodeRefusal,
@@ -150,10 +158,13 @@ test('LEEME names the runbook steps with this kit’s paths, version and fingerp
     `  Trusting the update key that signed this release (SHA-256 ${FP}).`,
     '  Installed 1.0.0',
     '  SIPGES está instalado. Ábrelo desde el menú Inicio o el escritorio.',
+    '  (stateDir tiene que terminar en SIPGES-datos): Get-Content "$env:LOCALAPPDATA\\SIPGES-app\\install.json"',
     'Paso 4 - Primer arranque sobre la copia',
     '  node "$env:LOCALAPPDATA\\SIPGES-app\\versions\\1.0.0\\updater\\update.mjs" --install "$env:LOCALAPPDATA\\SIPGES-app" --first-start',
     'Paso 5 - Comparar',
     '  node "$env:LOCALAPPDATA\\SIPGES-visita\\sipges\\deploy\\desktop\\migration\\compare.mjs" --before "$env:LOCALAPPDATA\\SIPGES-visita\\sipges-antes.json" --url http://127.0.0.1:8000',
+    '  Antes de comparar dice: Managed install: version 1.0.0',
+    '  RESULT: not compared (...) y 2: responde otro SIPGES (la versión vieja); nada se comparó.',
     'Regla de corte (sección 3 del runbook). La versión vieja sigue en uso.',
   ])
     assert.ok(
@@ -351,11 +362,13 @@ const LAPTOP = {
 const shortcut = (folder) =>
   `-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "${folder}\\deploy\\desktop\\windows\\start.ps1"`;
 
-test('Node older than 24 is refused with the exact fix; 24 and later pass', () => {
+test('Node older than 24 is refused without installing Node on the laptop; 24 and later pass', () => {
+  // The old SIPGES runs on that Node: installing or upgrading it during the visit changes it.
   assert.equal(
     nodeRefusal('22.11.0'),
-    'Node.js 22.11.0 es anterior a 24: el kit necesita Node.js 24 o posterior. Instalalo con «winget install OpenJS.NodeJS.LTS», abrí una terminal nueva y repetí el comando.',
+    'Node.js 22.11.0 es anterior a 24: el kit necesita Node.js 24 o posterior. No instales ni actualices Node.js en la laptop durante la visita (la versión vieja de SIPGES usa este Node): hoy no se instala nada (regla de corte del kit).',
   );
+  assert.doesNotMatch(nodeRefusal('22.11.0'), /winget|Instalalo/);
   assert.match(nodeRefusal('23.9.9') ?? 'accepted', /^Node\.js 23\.9\.9 es anterior a 24/);
   for (const version of ['24.0.0', '24.11.1', '26.1.0']) assert.equal(nodeRefusal(version), null);
 });
@@ -459,6 +472,7 @@ const NAMES = {
   clean: 'clean',
   shortcuts: 'shortcuts',
   sipgesAnswers: 'sipges',
+  failedPackage: 'package',
   space: 'space',
 };
 function probes(over = {}) {
@@ -476,6 +490,7 @@ function probes(over = {}) {
       clean: probe('clean', true),
       shortcuts: probe('shortcuts', `${shortcut('C:\\Users\\Someone\\sipges')}\r\n`),
       sipgesAnswers: probe('sipges', false),
+      failedPackage: probe('package', null),
       space: probe('space', { freeCheckout: 8 * GiB, freeOut: 8 * GiB, sameDrive: false }),
       ...Object.fromEntries(
         Object.entries(over).map(([name, value]) => [
@@ -486,7 +501,7 @@ function probes(over = {}) {
     },
   };
 }
-const ALL = ['pnpm', 'installed', 'clean', 'shortcuts', 'sipges', 'space'];
+const ALL = ['pnpm', 'installed', 'clean', 'shortcuts', 'sipges', 'package', 'space'];
 
 test('preflight: everything in order passes and asks every probe once', async () => {
   const { calls, probes: p } = probes();
@@ -506,6 +521,8 @@ test('preflight: the first refusal wins and nothing after it is asked', async ()
       ['pnpm', 'installed', 'clean', 'shortcuts'],
     ],
     [{ sipgesAnswers: true }, /^SIPGES está abierto/, ALL.slice(0, 5)],
+    // A completed package of this version is refused before the space is measured.
+    [{ failedPackage: 'Ya hay un paquete terminado de la versión 1.0.0 en X' }, /^Ya hay un paquete terminado/, ALL.slice(0, 6)],
     [
       { space: { freeCheckout: GiB, freeOut: GiB, sameDrive: true } },
       /^Falta espacio en el disco de C:\\SIPGES-kit y de --out F:\\ \(el mismo disco\)/,
@@ -554,3 +571,237 @@ test('CLI: --help prints the usage', () => {
   );
   assert.equal(result.stderr, '');
 });
+
+// ---------------------------------------------------------------------------------------------
+// F2: retrying after a failed build. builder.mjs keeps a failed package folder and refuses an
+// existing one (Output already exists), so the kit removes only its own failed, incomplete
+// package of this version (inside .data/desktop-packages of this checkout, with the builder's
+// marker and without its completion file) and refuses anything else, naming the folder.
+
+const PACKAGES = '.data/desktop-packages';
+/** `tree` without the entries under `prefix`. */
+const without = (tree, prefix) =>
+  Object.fromEntries(Object.entries(tree).filter(([k]) => k !== prefix && !k.startsWith(`${prefix}/`)));
+
+test('the kit knows the package marker and completion file builder.mjs writes', () => {
+  assert.equal(PACKAGE_MARKER, builder.PACKAGE_MARKER);
+  assert.equal(PACKAGE_MARKER_TEXT, builder.PACKAGE_MARKER_TEXT);
+  assert.equal(PACKAGE_COMPLETE, builder.PACKAGE_COMPLETE);
+  assert.equal(PACKAGE_BUILDING, builder.PACKAGE_BUILDING);
+});
+
+test('F2: after a failed build the kit removes only that package, and the retry builds', () =>
+  withTemp(async (dir) => {
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    // A finished package of another version, which must stay.
+    assert.equal(build('0.9.0').status, 0);
+    const failed = build('1.0.0', { failWebBuild: true });
+    assert.equal(failed.status, 1);
+    const half = join(root, PACKAGES, 'sipges-1.0.0');
+    // Links inside the failed package to things outside it: removed as links, never followed.
+    await mkdir(join(dir, 'outside'));
+    await writeFile(join(dir, 'outside', 'keep.txt'), 'synthetic, must stay');
+    await symlink(join(dir, 'outside'), join(half, 'api', 'outside-dir'), 'junction');
+    await symlink(join(dir, 'outside', 'keep.txt'), join(half, 'outside-file'));
+    // The builder refuses to build over it: the trap of the retry.
+    assert.match(build('1.0.0').stderr, /^Error: Output already exists\n$/);
+    const before = await treeOf(dir);
+
+    const result = await clearFailedPackage({ checkout: root, version: '1.0.0' });
+    assert.deepEqual(result, { removed: half, refusal: null });
+    assert.deepEqual(await treeOf(dir), without(before, `repo/${PACKAGES}/sipges-1.0.0`));
+    assert.equal(await readFile(join(dir, 'outside', 'keep.txt'), 'utf8'), 'synthetic, must stay');
+
+    // The retry: the same version builds, and its finished package is never removed.
+    const retried = build('1.0.0');
+    assert.equal(retried.status, 0, retried.stderr);
+    const done = await treeOf(dir);
+    assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+      removed: null,
+      refusal: `Ya hay un paquete terminado de la versión 1.0.0 en ${half}: el kit no lo borra. Para armar el kit de nuevo con esta versión, borrá esa carpeta (solo ${half}) y repetí el comando.`,
+    });
+    assert.deepEqual(await treeOf(dir), done);
+  }));
+
+test('F2 preserved: with no package of this version nothing is removed or written', () =>
+  withTemp(async (dir) => {
+    const root = join(dir, 'repo');
+    await fakeCheckout(root);
+    const before = await treeOf(dir);
+    assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+      removed: null,
+      refusal: null,
+    });
+    await mkdir(join(root, PACKAGES), { recursive: true });
+    const withParents = await treeOf(dir);
+    assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+      removed: null,
+      refusal: null,
+    });
+    assert.deepEqual(await treeOf(dir), withParents);
+    assert.notDeepEqual(before, withParents);
+  }));
+
+test('F2: a package that may be finished, or that the builder did not make, is never removed', () =>
+  withTemp(async (dir) => {
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    assert.equal(build('1.0.0').status, 0);
+    const pkg = join(root, PACKAGES, 'sipges-1.0.0');
+    const notBuilder = (path) =>
+      `${path} no es un paquete que haya dejado builder.mjs (es un enlace, no es una carpeta o le falta su marca .sipges-desktop-package): el kit no la borra. Revisá qué es, borrá esa carpeta (solo ${path}) y repetí el comando.`;
+    const finished = (version, path) =>
+      `Ya hay un paquete terminado de la versión ${version} en ${path}: el kit no lo borra. Para armar el kit de nuevo con esta versión, borrá esa carpeta (solo ${path}) y repetí el comando.`;
+    const cases = [];
+    // Finished by an older builder.mjs, without the completion file: its web app is marked.
+    const legacy = join(root, PACKAGES, 'sipges-2.0.0');
+    await mkdir(join(legacy, 'web'), { recursive: true });
+    await writeFile(join(legacy, PACKAGE_MARKER), PACKAGE_MARKER_TEXT);
+    await writeFile(join(legacy, 'web', 'index.html'), await readFile(join(pkg, 'web', 'index.html')));
+    cases.push(['2.0.0', finished('2.0.0', legacy)]);
+    // Not made by builder.mjs: no marker, or another marker text.
+    const foreign = join(root, PACKAGES, 'sipges-3.0.0');
+    await mkdir(foreign);
+    await writeFile(join(foreign, 'keep.txt'), 'synthetic');
+    cases.push(['3.0.0', notBuilder(foreign)]);
+    const other = join(root, PACKAGES, 'sipges-3.0.1');
+    await mkdir(other);
+    await writeFile(join(other, PACKAGE_MARKER), 'something else\n');
+    cases.push(['3.0.1', notBuilder(other)]);
+    // A link where the package should be, to a folder outside the checkout.
+    await mkdir(join(dir, 'elsewhere'));
+    await writeFile(join(dir, 'elsewhere', PACKAGE_MARKER), PACKAGE_MARKER_TEXT);
+    const linked = join(root, PACKAGES, 'sipges-4.0.0');
+    await symlink(join(dir, 'elsewhere'), linked, 'junction');
+    cases.push(['4.0.0', notBuilder(linked)]);
+    // A file where the package should be.
+    const file = join(root, PACKAGES, 'sipges-5.0.0');
+    await writeFile(file, 'synthetic');
+    cases.push(['5.0.0', notBuilder(file)]);
+    cases.push(['1.0.0', finished('1.0.0', pkg)]);
+    const before = await treeOf(dir);
+    for (const [version, refusal] of cases)
+      assert.deepEqual(
+        await clearFailedPackage({ checkout: root, version }),
+        { removed: null, refusal },
+        version,
+      );
+    assert.deepEqual(await treeOf(dir), before);
+  }));
+
+test('F2: a linked .data or desktop-packages folder is refused and nothing behind it is touched', () =>
+  withTemp(async (dir) => {
+    for (const which of ['.data', 'desktop-packages']) {
+      const root = join(dir, `repo-${which}`);
+      await fakeCheckout(root);
+      const external = join(dir, `external-${which}`);
+      const packages = which === '.data' ? join(external, 'desktop-packages') : external;
+      await mkdir(join(packages, 'sipges-1.0.0'), { recursive: true });
+      await writeFile(join(packages, 'sipges-1.0.0', PACKAGE_MARKER), PACKAGE_MARKER_TEXT);
+      if (which === 'desktop-packages') await mkdir(join(root, '.data'));
+      const link = which === '.data' ? join(root, '.data') : join(root, PACKAGES);
+      await symlink(external, link, 'junction');
+      const before = await treeOf(dir);
+      assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+        removed: null,
+        refusal: `${link} es un enlace o no es una carpeta: el kit no borra nada a través de él y builder.mjs no construye ahí. Quitá ese enlace (no lo que contiene) y repetí el comando.`,
+      });
+      assert.deepEqual(await treeOf(dir), before);
+    }
+  }));
+
+test('F2: a removal that stops half-way keeps the marker, so the next run finishes it', {
+  skip: process.platform === 'win32' || process.getuid?.() === 0 ? 'needs POSIX permissions as a normal user' : false,
+}, () =>
+  withTemp(async (dir) => {
+    const { chmod } = await import('node:fs/promises');
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    assert.equal(build('1.0.0', { failWebBuild: true }).status, 1);
+    const half = join(root, PACKAGES, 'sipges-1.0.0');
+    const locked = join(half, 'api', 'src');
+    await chmod(locked, 0o500); // its files cannot be removed
+    try {
+      await assert.rejects(clearFailedPackage({ checkout: root, version: '1.0.0' }), { code: 'EACCES' });
+    } finally {
+      await chmod(locked, 0o700);
+    }
+    assert.equal(await readFile(join(half, PACKAGE_MARKER), 'utf8'), PACKAGE_MARKER_TEXT);
+    assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+      removed: half,
+      refusal: null,
+    });
+    assert.equal(existsSync(half), false);
+    assert.equal(build('1.0.0').status, 0);
+  }));
+
+test('F2: a version that is not a version never reaches a folder outside desktop-packages', () =>
+  withTemp(async (dir) => {
+    const root = join(dir, 'repo');
+    await fakeCheckout(root);
+    await mkdir(join(root, PACKAGES), { recursive: true });
+    const cases = [
+      ['1.0.0/../../../victim', join(root, 'victim')],
+      ['x/../../../../outside', join(dir, 'outside')],
+    ];
+    for (const [version, victim] of cases) {
+      await mkdir(victim);
+      await writeFile(join(victim, PACKAGE_MARKER), PACKAGE_MARKER_TEXT);
+      const before = await treeOf(dir);
+      const result = await clearFailedPackage({ checkout: root, version }).catch((error) => ({
+        removed: null,
+        refusal: error.message,
+      }));
+      assert.equal(result.removed, null, version);
+      assert.ok(result.refusal, version);
+      assert.deepEqual(await treeOf(dir), before);
+    }
+  }));
+
+test('F2: a link that cannot be removed never has its target changed', {
+  skip: process.platform === 'win32' || process.getuid?.() === 0 ? 'needs POSIX permissions as a normal user' : false,
+}, () =>
+  withTemp(async (dir) => {
+    const { chmod, stat } = await import('node:fs/promises');
+    const root = join(dir, 'repo');
+    await fakeCheckout(root);
+    const half = join(root, PACKAGES, 'sipges-1.0.0');
+    await mkdir(join(half, 'locked'), { recursive: true });
+    await writeFile(join(half, PACKAGE_MARKER), PACKAGE_MARKER_TEXT);
+    const outside = join(dir, 'outside-file');
+    await writeFile(outside, 'synthetic', { mode: 0o600 });
+    await symlink(outside, join(half, 'locked', 'link'));
+    await chmod(join(half, 'locked'), 0o500);
+    try {
+      await assert.rejects(clearFailedPackage({ checkout: root, version: '1.0.0' }), { code: 'EACCES' });
+    } finally {
+      await chmod(join(half, 'locked'), 0o700);
+    }
+    assert.equal((await stat(outside)).mode & 0o777, 0o600);
+  }));
+
+test('F2: builder.mjs gets --out under the checkout path as the kit was started, never its real path', () =>
+  withTemp(async (dir) => {
+    // builder.mjs compares --out with its own folder as a string: a real path in another letter
+    // case (Windows, «cd c:\sipges-kit») or through a link would be refused. A path that does
+    // not exist proves nothing resolves it.
+    const repoAsTyped = join(dir, 'Not-Real', 'sipges-KIT');
+    assert.deepEqual(builderCommand({ repo: repoAsTyped, version: '1.0.0' }), [
+      join(repoAsTyped, 'deploy', 'desktop', 'package', 'builder.mjs'),
+      '--version',
+      '1.0.0',
+      '--out',
+      join(repoAsTyped, '.data', 'desktop-packages', 'sipges-1.0.0'),
+    ]);
+    // Preserved: what the kit runs builds (the fake pnpm, synthetic packages only).
+    const root = join(dir, 'repo');
+    const { env } = await fakeCheckout(root);
+    const built = spawnSync(process.execPath, builderCommand({ repo: root, version: '1.0.0' }), {
+      cwd: root,
+      encoding: 'utf8',
+      env: env(),
+    });
+    assert.equal(built.status, 0, built.stderr);
+    assert.ok(existsSync(join(root, PACKAGES, 'sipges-1.0.0', PACKAGE_COMPLETE)));
+  }));

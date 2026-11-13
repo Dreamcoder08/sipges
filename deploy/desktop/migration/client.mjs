@@ -187,9 +187,11 @@ export function parseArgs(args, allowed) {
   return options;
 }
 
-async function ask(question) {
-  if (!process.stdin.isTTY) return '';
-  const rl = createInterface({ input: process.stdin, output: process.stderr });
+const TERMINAL = { input: process.stdin, output: process.stderr };
+
+async function ask(question, { input, output } = TERMINAL) {
+  if (!input.isTTY) return '';
+  const rl = createInterface({ input, output });
   try {
     return (await rl.question(question)).trim();
   } finally {
@@ -198,19 +200,57 @@ async function ask(question) {
 }
 
 /**
+ * Asks without showing what is typed: the terminal goes to raw mode (Node's own TTY support, on
+ * the Windows console and a Linux tty alike), so nothing is echoed; Enter ends the answer,
+ * Backspace erases, other control keys are ignored and Ctrl+C cancels. Raw mode is always undone.
+ * Without a terminal (input piped) the answer is empty, like `ask`.
+ */
+export function readHidden(question, { input, output } = TERMINAL) {
+  if (!input.isTTY || typeof input.setRawMode !== 'function') return Promise.resolve('');
+  return new Promise((done, fail) => {
+    const wasRaw = Boolean(input.isRaw);
+    let value = '';
+    const finish = (error) => {
+      input.removeListener('data', onData);
+      input.setRawMode(wasRaw);
+      input.pause();
+      output.write('\n');
+      if (error) fail(error);
+      else done(value.trim());
+    };
+    const onData = (chunk) => {
+      const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+      for (const char of text) {
+        if (char === '\r' || char === '\n') return finish();
+        if (char === '\u0003') return finish(new Error('Cancelado (Ctrl+C)'));
+        // An escape sequence (an arrow or function key) arrives whole: drop the rest of it.
+        if (char === '\u001b') break;
+        if (char === '\u007f' || char === '\b') value = [...value].slice(0, -1).join('');
+        else if (char >= ' ') value += char;
+      }
+    };
+    output.write(question);
+    input.setRawMode(true);
+    input.on('data', onData);
+    input.resume();
+  });
+}
+
+/**
  * Credentials from the options: the password from `--password-file` (for example the state
  * folder's `admin-password`) or SIPGES_MIGRATION_PASSWORD or a prompt; the MFA code from
  * `--otp`, `--totp-secret-file` (synthetic rehearsals) or a prompt (empty for no MFA).
  */
-export async function credentials(options) {
+export async function credentials(options, terminal = TERMINAL) {
   const password = options['--password-file']
     ? (await readFile(options['--password-file'], 'utf8')).trim()
-    : (process.env.SIPGES_MIGRATION_PASSWORD ?? (await ask('Contraseña: ')));
+    : (process.env.SIPGES_MIGRATION_PASSWORD ?? (await readHidden('Contraseña: ', terminal)));
   const totpSecret = options['--totp-secret-file']
     ? (await readFile(options['--totp-secret-file'], 'utf8')).trim()
     : undefined;
   const otp =
-    options['--otp'] ?? (totpSecret ? undefined : await ask('Código MFA (vacío si no tiene): '));
+    options['--otp'] ??
+    (totpSecret ? undefined : await ask('Código MFA (vacío si no tiene): ', terminal));
   return {
     base: options['--url'],
     username: options['--user'] ?? 'admin',

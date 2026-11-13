@@ -8,6 +8,8 @@
 #                                  beside the state folder (which stays where it is) and points
 #                                  the launcher entry at that root, so updates arrive through the
 #                                  update notice. A rerun keeps the installed version.
+# Either mode stops without creating anything while an update is pending or halted
+# (update-journal.json in the install root).
 set -eu
 
 HERE=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
@@ -30,6 +32,13 @@ case "$#:${1:-}" in
   2:--managed) RELEASE=$2 ;;
   *) die "$USAGE" ;;
 esac
+
+# An update pending or halted needs the state folder exactly as the update left it: one created
+# here, even empty, would be taken for the restored folder and SIPGES could start on an empty
+# database. Checked before anything is run or created, in both modes.
+if [ -e "$APP_ROOT/update-journal.json" ]; then
+  die "hay una actualización de SIPGES pendiente o detenida ($APP_ROOT/update-journal.json); no se cambió nada. No borres ni muevas ninguna carpeta de SIPGES. Abre SIPGES desde su lanzador para que termine de recuperarla; si dice que no se inició, sigue «Si una actualización se detiene a medias» en deploy/desktop/README.es.md."
+fi
 
 command -v curl >/dev/null 2>&1 || die 'curl is required: install it with your package manager and try again.'
 command -v openssl >/dev/null 2>&1 || die 'openssl is required: install it with your package manager and try again.'

@@ -83,7 +83,7 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
 - The first start over an existing database copies the folder beside itself
   (`<state>.pre-update-<time>-first-start-<version>`, never deleted), runs the new version on a
   second copy first and only then on the folder; if that fails, SIPGES does not start and the
-  folder is as it was. To run it in a terminal, without the 90-second wait of the shortcut:
+  folder is as it was. To run it in a terminal, without the shortcut's wait (5 minutes on Windows, 90 seconds on Linux):
   `node <root>/versions/<version>/updater/update.mjs --install <root> --first-start`. Step 2
   still comes first. Closing SIPGES during the first start stops its test runs too and puts the
   folder back from that copy; the next start does it again. If the computer was switched off in
@@ -97,7 +97,10 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   start an administrator sees the notice; nothing is installed before «Actualizar».
 - Running the installer again keeps the installed version and only refreshes the shortcuts. It
   keeps the state folder recorded in `install.json` too, and stops without changing anything when
-  another one is given (`-State` or `SIPGES_DESKTOP_STATE`).
+  another one is given (`-State` or `SIPGES_DESKTOP_STATE`). While an update is pending or halted
+  (`update-journal.json` in the install root) the installer, in either mode, stops with exit code 1
+  and «Hay una actualización de SIPGES pendiente o detenida …» before creating anything: a state
+  folder created then, even empty, could be taken for the restored one.
 - The log is `launcher.log` in the install root, not in the state folder: an update copies that
   folder and may move it while SIPGES runs.
 - Copies beside the state folder (`.pre-update-…`, `.rehearsal-…`, `.failed-…`) are never deleted
@@ -121,7 +124,11 @@ in `current.json` of the install root.
 1. Delete nothing.
 2. Retry the rollback (it finishes once the cause, such as a full disk, is fixed):
    `node <root>/versions/<version>/updater/update.mjs --install <root> --recover`.
-   If it prints `Recovered`, open SIPGES.
+   If it prints `Recovered`, open SIPGES. If it says the state folder «was created again while its
+   restore was pending», something (an installer run, a person) made a new folder at that path
+   after the update moved the old one aside: move that new folder aside too (do not delete it),
+   then run `--recover` again; it puts the restored copy it names back in place. If it says the
+   folder «cannot be proven restored» or that the pre-update copy is missing, go to step 3.
 3. Otherwise restore the state folder yourself: rename the damaged folder aside (for example add
    `.damaged`), then copy the copy named in the message, or your own backup, to the original path.
 4. Run `node <root>/versions/<version>/updater/update.mjs --install <root> --recover --accept-restored-state`.
@@ -216,6 +223,8 @@ Restore:
 8. Open SIPGES, sign in with the password and an MFA code, and open a few records and uploads.
    To check everything, run `deploy/desktop/migration/snapshot.mjs` before step 1 and
    `compare.mjs` after this step, as the drill did: it must print `RESULT: no difference`.
+   `compare.mjs` only compares against a managed install; against a clone install it refuses
+   with `RESULT: not compared (…)` and exit code 2.
 
 Anyone who gets the folder gets your data and the key to read it. Keep copies private.
 

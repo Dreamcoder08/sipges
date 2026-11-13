@@ -3,7 +3,9 @@
 // with their module and action, and probe counts; never a record, a name or a file.
 // Exit code 0: no difference (audit entries added since the snapshot are listed, not counted);
 // 1: a difference, a part that could not be fully checked (each one printed), a failed sign-in
-// or an error. Read deploy/desktop/migration/README.md.
+// or an error; 2: not compared, because the server on --url is not the managed install (the old
+// version still running on the port answers /health the same) or does not report its version.
+// Read deploy/desktop/migration/README.md.
 //
 //   node deploy/desktop/migration/compare.mjs --before <snapshot.json> --url http://127.0.0.1:8000
 //        [--user admin] [--password-file <file>] [--otp <code>] [--out <after.json>]
@@ -12,11 +14,17 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
-import { SignInError, credentials, keyed, parseArgs, short, signIn } from './client.mjs';
+import { SignInError, credentials, getJson, keyed, parseArgs, short, signIn } from './client.mjs';
 import { FORMAT, FORMAT_VERSION, contentHash, takeSnapshot } from './snapshot.mjs';
 
 const LISTED = 20;
 const DEFAULT_PROBES = 25;
+// Mounted only when the desktop launcher started SIPGES (SIPGES_DESKTOP_UPDATE_DIR): see
+// apps/api/src/app.ts and apps/api/src/contexts/system/http/desktop-update-routes.ts.
+export const DESKTOP_UPDATE_PATH = '/system/desktop/update';
+// Exit code of a comparison that did not run: never 0 and never the 1 of a difference.
+export const NOT_COMPARED_EXIT = 2;
+const VERSION_TEXT = /^[0-9A-Za-z][0-9A-Za-z.+-]{0,255}$/;
 
 const count = (map) => Object.keys(map ?? {}).length;
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -262,12 +270,49 @@ export async function probeIsolation(session, live, limit = DEFAULT_PROBES) {
   return { probes, leaks };
 }
 
+/**
+ * Which server answers on --url. The old version and the new one both answer /health on the same
+ * port, and start-managed.ps1 reuses whichever answers; only a managed install started by the
+ * desktop launcher mounts GET /system/desktop/update (administrators, behind a project scope).
+ * Returns `{ version }`; `{ managed: false, why }` for another server (a redirect too: it is never
+ * followed); `{ forbidden: true }` for 403, an account without a project scope or not an
+ * administrator; or `{ managed: true }` when it does not report a readable installed version.
+ */
+export async function managedInstall(session) {
+  const scopes = await getJson(session, '/system/auth/scopes');
+  const first = scopes.status === 200 && Array.isArray(scopes.body) ? scopes.body[0] : undefined;
+  const scope = first ? `${first.company_id}/${first.project_id}` : undefined;
+  const response = await session.call(DESKTOP_UPDATE_PATH, { scope, redirect: 'manual' });
+  const type = response.headers.get('content-type') ?? '';
+  if (response.status === 403) {
+    await response.arrayBuffer();
+    return { forbidden: true };
+  }
+  if (response.status !== 200 || !/^application\/json\b/i.test(type)) {
+    await response.arrayBuffer();
+    const why = response.status === 200 ? '200, not JSON' : String(response.status);
+    return { managed: false, why };
+  }
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    return { managed: false, why: '200, not JSON' };
+  }
+  const installed = body?.installed;
+  if (typeof installed !== 'string' || !VERSION_TEXT.test(installed)) return { managed: true };
+  return { version: installed };
+}
+
 const USAGE = `Usage: node deploy/desktop/migration/compare.mjs --before <snapshot.json> --url <base>
        [--user admin] [--password-file <file>] [--otp <code> | --totp-secret-file <file> [--totp-state <file>]]
        [--probe-limit 25] [--out <after.json>]
 
-Signs in (the same password and MFA as before the move), takes the same snapshot with the salt of
---before and prints, per project and module, the counts before and after and whether every field,
+Signs in (the same password and MFA as before the move) and first checks which server answers:
+only the managed install of the new version mounts GET ${DESKTOP_UPDATE_PATH}. It prints
+"Managed install: version <v>", or refuses with "RESULT: not compared (…)" and exit code 2 when
+the server is another one (for example the old version, still running on the port) or does not
+report its version. Then it takes the same snapshot with the salt of --before and prints, per project and module, the counts before and after and whether every field,
 link, upload (SHA-256) and audit entry is unchanged; audit entries added since are listed by id,
 module and action. Then probes that no record or upload of one project opens in another.
 Every record list is read to its end and checked against the project export, every upload is
@@ -275,7 +320,7 @@ read by its id (the export names those past the 500 the list shows) and every au
 its content (from the export); a part that cannot be read in full is printed as "not fully
 checked" (or "not checked") and fails the comparison, as does a snapshot of an older format.
 Prints counts and short keyed hashes only. Exit code 0 when nothing differs and everything was
-checked, otherwise 1.`;
+checked, 2 when nothing was compared (not the managed install), otherwise 1.`;
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
@@ -312,6 +357,28 @@ async function main(args) {
     return;
   }
   console.log(`Sign-in: ok (${session.withCode ? 'password and MFA code' : 'password'})`);
+  const managed = await managedInstall(session);
+  if (!managed.version) {
+    const [line, result] = managed.forbidden
+      ? [
+          `Managed install: not asked (GET ${DESKTOP_UPDATE_PATH} answered 403: this account has no project scope or is not an administrator)`,
+          'no project scope for this account',
+        ]
+      : managed.managed
+        ? [
+            `Managed install: version not readable (GET ${DESKTOP_UPDATE_PATH} reports no installed version)`,
+            'installed version not readable',
+          ]
+        : [
+            `Managed install: no (GET ${DESKTOP_UPDATE_PATH} answered ${managed.why}); the server on this port is not the new version installed with install.ps1 -Release`,
+            'not the managed install',
+          ];
+    console.log(line);
+    console.log(`RESULT: not compared (${result})`);
+    process.exitCode = NOT_COMPARED_EXIT;
+    return;
+  }
+  console.log(`Managed install: version ${managed.version}`);
   const { snapshot: after, live } = await takeSnapshot(session, { salt: before.salt });
   if (options['--out'])
     await writeFile(resolve(options['--out']), `${JSON.stringify(after, null, 2)}\n`, {
