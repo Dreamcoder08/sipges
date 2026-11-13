@@ -1,8 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 
-/** WCAG 2.1 A and AA, the level every screen is held to. */
-export const WCAG_21_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+/**
+ * WCAG 2.2 AA, the level every screen is held to. Axe tags select rules by the version that
+ * introduced them, not cumulatively, so the 2.0 and 2.1 A/AA tags stay listed beside `wcag22aa`.
+ */
+export const WCAG_22_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 /**
  * Waits for every running animation that ends (a sheet sliding in, a menu fading in) to finish.
@@ -28,7 +31,7 @@ export const settleAnimations = (page: Page) =>
  * sees at rest: CI on main measured the account menu's muted text as #7c7c7c (4.17:1) halfway
  * through its 220 ms `pop`. Settling first measures the colours WCAG judges.
  */
-export const analyzeAccessibility = async (page: Page, tags: string[] = WCAG_21_AA) => {
+export const analyzeAccessibility = async (page: Page, tags: string[] = WCAG_22_AA) => {
   await settleAnimations(page);
   return new AxeBuilder({ page }).withTags(tags).analyze();
 };

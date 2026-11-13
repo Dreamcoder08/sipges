@@ -37,7 +37,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
           expect(rect?.height ?? 0).toBeGreaterThanOrEqual(44);
         }
         if (width === 360) {
-          const axe = await analyzeAccessibility(page, ['wcag2a', 'wcag2aa']);
+          const axe = await analyzeAccessibility(page);
           expect(axe.violations, `${section} (${colorScheme})`).toEqual([]);
         }
       }

@@ -8,7 +8,7 @@ import { watchNetwork } from '../support/network.ts';
 /**
  * Hub tabs, record pages and open sheets on a phone (functional-closure S11): at 360 and 412 px,
  * in light and dark, the page never scrolls sideways, the key controls sit inside the width and
- * axe finds no WCAG 2.1 AA violation.
+ * axe finds no WCAG 2.2 AA violation.
  */
 const WIDTHS = [360, 412] as const;
 const SCHEMES = ['light', 'dark'] as const;

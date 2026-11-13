@@ -1,4 +1,5 @@
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
+import { CAPTURE_DIR, captureTerritorioMap } from '../support/territorio-capture.ts';
 
 /**
  * Territorio › Mapa at 1440 px (closure-roadmap T31, direction 03 inside Territorio): each record
@@ -72,4 +73,26 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await action.click();
     await expect(page.getByRole('heading', { name: `Ficha ${unplacedId}` })).toBeVisible();
   });
+}
+
+/**
+ * Opt-in capture for the owner's review: with SIPGES_SCREENSHOT_DIR set, Territorio › Mapa with
+ * records at 1440 px, the «sin ubicación» group open, in both themes, once with the SVG markers and
+ * once with WebGL 2 left on so the canvas draws the numbers. Skipped in the regular suite.
+ */
+for (const renderer of ['svg', 'webgl'] as const) {
+  for (const colorScheme of ['light', 'dark'] as const) {
+    test(`capture Territorio › Mapa with records at 1440 px (${renderer}, ${colorScheme})`, async ({
+      page,
+      admin,
+      adminApi,
+    }) => {
+      test.skip(!CAPTURE_DIR, 'SIPGES_SCREENSHOT_DIR is not set');
+      await captureTerritorioMap(
+        page,
+        { admin, adminApi },
+        { colorScheme, renderer, width: 1440, height: 900 },
+      );
+    });
+  }
 }
