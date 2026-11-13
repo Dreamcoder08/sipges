@@ -96,8 +96,9 @@ versión de SIPGES», «Actualizar»).
   enlace a ella: un enlace o una unión (junction) quedaría anotado como su destino, y el primer
   arranque migraría la original en su lugar. El instalador se detiene con código 1 antes de
   escribir nada si la carpeta dada es un enlace o una unión, o, en la primera instalación, lleva a
-  la original (`%LOCALAPPDATA%\SIPGES`, o `~/.local/share/sipges-local` en Linux);
-  `update.mjs --install` también rechaza un enlace.
+  la original (`%LOCALAPPDATA%\SIPGES`, o `~/.local/share/sipges-local` en Linux).
+  `update.mjs --install` también rechaza un enlace en una primera instalación; con `--adopt` todavía
+  lo sigue y anota la carpeta a la que lleva, así que pásale también la carpeta real.
 - La clave que firmó la versión pasa a ser la única con la que se aceptan las actualizaciones. El
   instalador imprime su huella SHA-256: compárala con la que anotaste al crear la clave.
 - Para ofrecer una versión más nueva, copia su carpeta dentro de `releases` en la raíz. En el

@@ -129,3 +129,64 @@ test('install.sh --managed refuses a SIPGES_DESKTOP_STATE that is a link or lead
     const recorded = JSON.parse(readFileSync(join(s.appRoot, 'install.json'), 'utf8'));
     assert.equal(recorded.stateDir, copy);
   }));
+
+const linkLine = (state) =>
+  `SIPGES: la carpeta de datos ${state} es un enlace: pasa en SIPGES_DESKTOP_STATE la carpeta real de la copia, nunca un enlace a ella; no se cambió nada.\n`;
+
+test('install.sh --managed refuses every spelling of a link to the copy before it creates anything', () =>
+  withTemp(async (dir) => {
+    const s = await sandbox(dir);
+    const release = await releases(dir, newPair())('1.0.0');
+    // A link to a folder that is NOT the original: only the link check can refuse it.
+    const copy = join(s.data, 'sipges-datos');
+    await makeState(copy);
+    const link = join(dir, 'enlace');
+    symlinkSync(copy, link);
+    const before = await snapshot(s.home);
+    for (const state of [`${link}//`, `${link}/.`, `${link}/./`, `${link}/sub/..`]) {
+      const result = s.exec(['--managed', release], { SIPGES_DESKTOP_STATE: state });
+      assert.equal(existsSync(s.appRoot), false, `the install root was not created: ${state}`);
+      assert.deepEqual([result.status, result.stdout, result.stderr], [1, '', linkLine(state)], state);
+      assert.doesNotMatch(result.log, /update\.mjs/, 'the updater was not run');
+      assert.deepEqual(await snapshot(s.home), before, 'nothing in HOME changed');
+    }
+  }));
+
+test('install.sh --managed rerun accepts the original folder the install itself recorded', () =>
+  withTemp(async (dir) => {
+    const s = await sandbox(dir);
+    const release = await releases(dir, newPair())('1.0.0');
+    await makeState(s.state);
+    // Installed in place, without SIPGES_DESKTOP_STATE: the original folder is the recorded one.
+    const first = s.exec(['--managed', release]);
+    assert.equal(first.status, 0, first.stderr);
+    const recorded = JSON.parse(readFileSync(join(s.appRoot, 'install.json'), 'utf8'));
+    assert.equal(recorded.stateDir, s.state);
+    const result = s.exec(['--managed', release], { SIPGES_DESKTOP_STATE: s.state });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^SIPGES is already installed: 1\.0\.0\./m);
+  }));
+
+test('install.sh --managed rerun on a recorded copy refuses a link to it and the original folder', () =>
+  withTemp(async (dir) => {
+    const s = await sandbox(dir);
+    const release = await releases(dir, newPair())('1.0.0');
+    await makeState(s.state);
+    const copy = join(s.data, 'sipges-datos');
+    await makeState(copy);
+    const first = s.exec(['--managed', release], { SIPGES_DESKTOP_STATE: copy });
+    assert.equal(first.status, 0, first.stderr);
+    const link = join(dir, 'enlace-copia');
+    symlinkSync(copy, link);
+    const before = await snapshot(s.home);
+    const recordedLine = (state) =>
+      `SIPGES: esta instalación usa la carpeta de datos ${copy}, no ${state}: vuelve a ejecutar el script sin SIPGES_DESKTOP_STATE o con SIPGES_DESKTOP_STATE=${copy}; no se cambió nada.\n`;
+    for (const [state, stderr] of [
+      [link, linkLine(link)],
+      [s.state, recordedLine(s.state)],
+    ]) {
+      const result = s.exec(['--managed', release], { SIPGES_DESKTOP_STATE: state });
+      assert.deepEqual([result.status, result.stdout, result.stderr], [1, '', stderr], state);
+      assert.deepEqual(await snapshot(s.home), before, 'nothing in HOME changed');
+    }
+  }));

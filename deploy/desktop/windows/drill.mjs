@@ -20,7 +20,8 @@
 // 2. A throwaway Ed25519 key made with the runbook's command, the package built with
 //    deploy/desktop/package/builder.mjs and signed with deploy/desktop/updater/release.mjs.
 // 3. The runbook's Copy-Item of the state folder; install.ps1 -State <a junction to the original>
-//    exits 1 and changes nothing; install.ps1 -Release <release> -State <copy>,
+//    and install.ps1 -State <the original folder itself> exit 1 and change nothing;
+//    install.ps1 -Release <release> -State <copy>,
 //    update.mjs --first-start, the installed start.ps1 (SIPGES_DESKTOP_NO_UI=1), compare.mjs:
 //    `RESULT: no difference`; the original state folder stays byte-identical.
 // 4. Update N -> N+1: a second package signed with the same key into <root>\releases, the
@@ -43,6 +44,7 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -80,6 +82,8 @@ export const HALT_LINE = 'SIPGES no se inició';
 export const PENDING_LINE = 'Hay una actualización de SIPGES pendiente o detenida';
 // install.ps1 -State given a link or junction (to the original folder, in the drill).
 export const STATE_LINK_LINE = 'es un enlace o una unión (junction)';
+// install.ps1 -State given a path that leads to the original folder, on a first install.
+export const STATE_ORIGINAL_LINE = 'lleva a la carpeta de datos original';
 export const haltFallbackNamed = (state) =>
   `(la carpeta ${win32.basename(state)}.pre-update-… que está en ${win32.dirname(state)}, junto a su carpeta de datos ${state})`;
 export const HALT_FALLBACK_GENERIC =
@@ -477,11 +481,15 @@ async function main(args) {
     throw new Error(
       'the Windows drill runs on Windows only; on Linux use deploy/desktop/migration/rehearse.mjs',
     );
-  const { work, logs, versions } = options;
+  const { logs, versions } = options;
   const [N, N1] = versions;
-  if (existsSync(work) && readdirSync(work).length > 0)
-    throw new Error(`${work} already exists and is not empty`);
-  mkdirSync(work, { recursive: true });
+  if (existsSync(options.work) && readdirSync(options.work).length > 0)
+    throw new Error(`${options.work} already exists and is not empty`);
+  mkdirSync(options.work, { recursive: true });
+  // Every path below starts from the long real path of the work folder: install.ps1 prints -State
+  // through GetFullPath, which on Windows PowerShell 5.1 expands an 8.3 short name such as the
+  // C:\Users\RUNNER~1 of %TEMP%, and the drill compares those lines to its own paths exactly.
+  const work = realpathSync.native(options.work);
   mkdirSync(logs, { recursive: true });
   logFile = join(logs, 'drill.txt');
   const out = (name) => join(logs, `${name}.txt`);
@@ -800,6 +808,30 @@ async function main(args) {
         !existsSync(junctionDir) &&
         digest(await tree(original)) === originalDigest,
       'rmdir removed the junction itself; the original is still byte-identical',
+    );
+    // Nor the original folder itself, while no managed install exists: no link involved, only
+    // the path. The only run of this refusal on Windows.
+    const aroundOriginal = around();
+    const viaOriginal = await run(
+      POWERSHELL,
+      psArgs(join(scripts, 'windows', 'install.ps1'), ['-Release', releaseN, '-State', original]),
+      { env, log: out('managed-install-original'), seconds: 120 },
+    );
+    check(
+      viaOriginal.status === 1,
+      `install.ps1 -State <the original folder> exit 1 (got ${viaOriginal.status})`,
+    );
+    check(
+      viaOriginal.output.includes(`-State ${original} ${STATE_ORIGINAL_LINE} ${original}:`),
+      `install.ps1 printed «-State … ${STATE_ORIGINAL_LINE} …»`,
+    );
+    check(
+      around() === aroundOriginal,
+      'no install root content and nothing new beside the original',
+    );
+    check(
+      digest(await tree(original)) === originalDigest,
+      'the original state folder is byte-identical after the refusal',
     );
     const install = await run(
       POWERSHELL,
