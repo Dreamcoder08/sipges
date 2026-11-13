@@ -48,7 +48,7 @@ test('SIPGES relates recent records, explains the colour and lets a person raise
   await expect(card.getByText(/^Naranja – Requiere intervención preventiva/).first()).toBeVisible();
   await expect(card.getByRole('link', { name: new RegExp(`D-${stamp}`) }).first()).toBeVisible();
   await expect(card.getByText('Coordinar una reunión con los actores involucrados.')).toBeVisible();
-  expect((await analyzeAccessibility(page, ['wcag2a', 'wcag2aa'])).violations).toEqual([]);
+  expect((await analyzeAccessibility(page)).violations).toEqual([]);
 
   await card.getByRole('button', { name: 'Crear alerta naranja con esta explicación' }).click();
   const created = card.getByRole('link', { name: /^AL-/ });

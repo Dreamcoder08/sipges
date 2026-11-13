@@ -415,6 +415,8 @@
     container-type: inline-size;
     max-block-size: max(20rem, calc(100dvh - 11rem));
     overflow: auto;
+    /* The row the arrows move to stays clear of the sticky header (WCAG 2.2 SC 2.4.11). */
+    scroll-padding-top: var(--control-sm);
   }
   .tableWrap .table {
     table-layout: fixed;

@@ -36,7 +36,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         .boundingBox();
       expect(mark && mark.x + mark.width, `mark all at ${width}px`).toBeLessThanOrEqual(width);
       if (width === 360) {
-        const axe = await analyzeAccessibility(page, ['wcag2a', 'wcag2aa']);
+        const axe = await analyzeAccessibility(page);
         expect(axe.violations, `Avisos (${colorScheme})`).toEqual([]);
       }
     }
