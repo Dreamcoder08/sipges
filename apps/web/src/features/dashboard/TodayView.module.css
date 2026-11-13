@@ -129,8 +129,10 @@
 
 .item {
   display: flex;
+  /* A long level meaning («Naranja – Requiere intervención preventiva») takes its own line. */
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-1) var(--space-3);
   min-height: 3.25rem;
   padding: var(--space-2) var(--space-4);
   color: var(--color-text);
@@ -139,6 +141,7 @@
 
 .itemText {
   display: grid;
+  flex: 1 1 12rem;
   min-width: 0;
 }
 
@@ -156,8 +159,8 @@
 }
 
 .slot {
-  flex: none;
-  width: 5.25rem;
+  flex: 0 1 auto;
+  min-width: 5.25rem;
 }
 
 .noDimension {

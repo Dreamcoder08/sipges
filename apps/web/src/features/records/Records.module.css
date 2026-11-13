@@ -43,7 +43,8 @@
 }
 .table td {
   max-width: 24rem;
-  overflow-wrap: anywhere;
+  /* Never mid-word («Corroborad / a», a split id): the table scrolls in its region instead. */
+  overflow-wrap: break-word;
   vertical-align: middle;
 }
 .progress {
@@ -224,6 +225,7 @@
     gap: var(--space-3);
     max-width: none;
     padding: var(--space-2) var(--space-3);
+    overflow-wrap: anywhere;
   }
   .table td::before {
     content: attr(data-label);
