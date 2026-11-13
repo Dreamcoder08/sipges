@@ -433,7 +433,7 @@ sus números.
 
 ### Paso 4 — Primer arranque sobre la copia (traslado T33)
 
-Se hace en la terminal para no depender de la espera de 90 segundos del acceso directo.
+Se hace en la terminal para no depender de la espera de 300 segundos del acceso directo.
 
 - [ ] Ejecutá:
 
@@ -456,13 +456,13 @@ Se hace en la terminal para no depender de la espera de 90 segundos del acceso d
     restaurar**; los datos de antes están en `SIPGES-datos.pre-update-<hora>-first-start-<versión>`.
     **No vuelvas a ejecutar `install.ps1`**, ni `update.mjs` (`--first-start` o `--recover`), ni
     abras la versión nueva: regla de corte ya, y no borres nada al lado de `SIPGES-datos`.
-- [ ] Abrí SIPGES desde el acceso directo (ya apunta a la versión nueva). Edge se abre antes de 90 segundos.
+- [ ] Abrí SIPGES desde el acceso directo (ya apunta a la versión nueva). Edge se abre antes de 300 segundos (normalmente en menos de 90).
   Si en cambio aparece un cuadro: regla de corte. Si el primer arranque falla desde el acceso
   directo, el cuadro dice «SIPGES se cerró al arrancar. Revisa …\launcher.log.» (el texto «SIPGES no
   se inició: la versión nueva no pudo abrir los datos existentes …» queda **solo** en
   `launcher.log`, no en el cuadro); con una vuelta atrás incompleta (código 3) el cuadro dice
   «SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. …». También
-  puede decir «SIPGES no arrancó en 90 segundos. Revisa …».
+  puede decir «SIPGES no arrancó en 300 segundos. Revisa …».
 
 ### Paso 5 — Comparar
 
@@ -615,7 +615,7 @@ visita: se lleva los registros (sección 4) y se resuelve en casa.
 | --- | --- |
 | Cuadro «SIPGES se cerró al arrancar. Revisa …\launcher.log.», y en `launcher.log` «SIPGES no se inició: la versión nueva no pudo abrir los datos existentes. Sus datos no se tocaron. …» | El primer arranque falló y volvió atrás; `SIPGES-datos` quedó como estaba. Ese texto no aparece en el cuadro: está solo en `launcher.log`. Regla de corte. |
 | «SIPGES no se inició: … Restaure la copia de seguridad <copia> o contacte con soporte.» | Detención: una actualización falló y ni su vuelta atrás terminó. SIPGES no arranca sobre esos datos. |
-| «SIPGES no arrancó en 90 segundos. Revisa …\launcher.log.» / «SIPGES se cerró al arrancar. Revisa …» | Versión nueva: mirá `launcher.log`. |
+| «SIPGES no arrancó en 300 segundos. Revisa …\launcher.log.» / «SIPGES no arrancó. Revisa …» / «SIPGES se cerró al arrancar. Revisa …» | Versión nueva: mirá `launcher.log`. |
 | «El servidor no arrancó en 90 segundos. Revisa …\api.log.» / «El servidor se cerró al arrancar. …» | Versión vieja: mirá `api.log`. |
 | «Hay una actualización de SIPGES pendiente o detenida (…); no se cambió nada. No borres ni muevas ninguna carpeta de SIPGES. …» (de `install.ps1`, código 1) | Ya hay una instalación gestionada con una actualización a medias (`update-journal.json`). En la visita: regla de corte. Después: la salida documentada de una detención, abajo. |
 | `--recover` se niega con código 3 pidiendo apartar la carpeta de datos recreada | La carpeta de datos se volvió a crear después de la detención: renombrala sin borrarla y repetí `--recover` (paso 2 de abajo). |

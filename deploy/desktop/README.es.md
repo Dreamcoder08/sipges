@@ -85,7 +85,7 @@ versión de SIPGES», «Actualizar»).
 - El primer arranque sobre una base de datos existente copia la carpeta a su lado
   (`<estado>.pre-update-<hora>-first-start-<versión>`, nunca se borra), prueba la versión nueva
   primero en una segunda copia y solo después en la carpeta; si falla, SIPGES no arranca y la
-  carpeta queda como estaba. Para hacerlo en una terminal, sin la espera de 90 segundos del acceso
+  carpeta queda como estaba. Para hacerlo en una terminal, sin la espera de 300 segundos del acceso
   directo: `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --first-start`.
   El paso 2 sigue yendo primero. Cerrar SIPGES durante el primer arranque detiene también sus
   pruebas y devuelve la carpeta desde esa copia; el siguiente arranque lo intenta de nuevo. Si el
@@ -124,6 +124,10 @@ soporte.» en un cuadro de mensaje (Windows) o en una notificación y la termina
 2. Reintenta la vuelta atrás (termina cuando la causa, por ejemplo un disco lleno, está resuelta):
    `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --recover`.
    Si imprime `Recovered`, abre SIPGES.
+   Si se niega con código 3 y dice que la carpeta de estado fue creada de nuevo o que no puede
+   probar que quedó restaurada, no borres nada: renombra esa carpeta recién creada (por ejemplo,
+   agrégale `.recreada`) y repite el comando. Mientras la detención siga, el instalador también se
+   niega («Hay una actualización de SIPGES pendiente o detenida…») y no cambia nada.
 3. Si no, restaura tú la carpeta de estado: renombra la carpeta dañada (por ejemplo, agrégale
    `.danada`) y copia en la ruta original la copia que nombra el mensaje, o tu propio respaldo.
 4. Ejecuta `node <raíz>/versions/<versión>/updater/update.mjs --install <raíz> --recover --accept-restored-state`.
@@ -155,7 +159,7 @@ texto del cuadro de mensaje, y detente. `<raíz>` es `%LOCALAPPDATA%\SIPGES-app`
    `run-current.mjs`, `start.ps1` y `sipges.ico`; `%LOCALAPPDATA%\SIPGES` conserva sus archivos; los
    accesos directos «SIPGES» del menú Inicio y del escritorio apuntan a `<raíz>\start.ps1`
    (clic derecho, Propiedades, Destino).
-9. Abre SIPGES desde el acceso directo: Edge abre en modo aplicación antes de 90 segundos; inicia
+9. Abre SIPGES desde el acceso directo: Edge abre en modo aplicación antes de 300 segundos; inicia
    sesión; los registros del paso 5 están.
 10. Construye y firma una versión mayor (pasos 3 y 4) y copia su carpeta dentro de `<raíz>\releases`.
     Cierra SIPGES por completo y ábrelo: aparece «Nueva versión de SIPGES» con sus notas.
