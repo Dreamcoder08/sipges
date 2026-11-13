@@ -756,3 +756,13 @@ Not chosen in S2. Each stays open in its own document.
   snapshot reads following redirects, `compare.mjs` exit 1 on a dropped connection, second-click and antivirus
   rename waits unproven, automated axe is not WCAG conformance, no Authenticode signature. `visit-rc2` only after
   #438 is green on its exact head.
+- L25 — Candidates after the freeze, each merged on a green exact head: `visit-rc2` = #438 install-safety fixes
+  (4e283d48; its last correction had no independent verifier, the launch was refused), `visit-rc3` = #439 two
+  visual defects from the review of the 73 captures (95a06410; phone Inicio level pill, Eventos table word
+  breaks; the Territorio 360 list was not a defect), `visit-rc4` = #440 `compare.mjs` never follows a redirect and
+  exits 2 with `RESULT: not compared (…)` when the comparison did not happen (independent verifier: 3,216 fault
+  runs, no blocker; on rc1 70 of 72 redirect positions printed `no difference`). Follow-ups, not blockers: four
+  regression tests the verifier wrote (record-id mask, 301/303/308, password-file exit 1, `error:` wording), a
+  JSON parse error echoing a body fragment in the RESULT line, up to 300 s of silence on a hung server,
+  `prettier --check deploy docs` checks nothing (`.prettierignore`), overlapping map cluster labels on phones,
+  Windows folder-link safety, comparison coverage gaps. The owner's visual review and the laptop backup remain.
