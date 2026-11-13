@@ -17,7 +17,8 @@ REPO=$(cd "$HERE/../../.." && pwd)
 LAUNCHER="$HERE/sipges-desktop.sh"
 UPDATER="$HERE/../updater"
 STATE_GIVEN=${SIPGES_DESKTOP_STATE:-}
-STATE=${SIPGES_DESKTOP_STATE:-$HOME/.local/share/sipges-local}
+ORIGINAL_STATE=$HOME/.local/share/sipges-local
+STATE=${SIPGES_DESKTOP_STATE:-$ORIGINAL_STATE}
 DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 APP_ROOT=${SIPGES_DESKTOP_ROOT:-$DATA_HOME/sipges-app}
 PORT=${SIPGES_DESKTOP_PORT:-8000}
@@ -93,6 +94,17 @@ install_managed() {
     die "not a signed release (release.json, release.sig and package/ are needed): $RELEASE"
   if curl -fsS --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null 2>&1; then
     die "SIPGES is running on this computer (port $PORT): close it, end its node process or restart, and run this script again."
+  fi
+  # SIPGES_DESKTOP_STATE names the copy made for the data move: a link, or a path that leads to
+  # the original folder, would have the install record the original and its first start migrate
+  # it in place. A rerun keeps its recorded folder, compared below.
+  if [ -n "$STATE_GIVEN" ]; then
+    if [ -L "${STATE%/}" ]; then
+      die "la carpeta de datos $STATE es un enlace: pasa en SIPGES_DESKTOP_STATE la carpeta real de la copia, nunca un enlace a ella; no se cambió nada."
+    fi
+    if [ ! -f "$APP_ROOT/install.json" ] && [ "$(real_dir "$STATE")" = "$(real_dir "$ORIGINAL_STATE")" ]; then
+      die "SIPGES_DESKTOP_STATE=$STATE lleva a la carpeta de datos original $ORIGINAL_STATE: pasa la carpeta real de la copia, nunca la original ni un enlace a ella; no se cambió nada."
+    fi
   fi
   # A rerun keeps the state folder the install recorded: another one would be prepared and named
   # here while SIPGES keeps opening the recorded one.

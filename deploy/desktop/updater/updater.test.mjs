@@ -736,41 +736,45 @@ test('release notes: optional signed text shown by the update notice', () =>
     assert.equal((await readRelease(out, key)).manifest.notes, 'Nota.');
   }));
 
-test('rule 6: a state folder reached through a link is refused or really copied and restored', () =>
+test('rule 6: a state folder given as a link or junction is refused before anything is written', () =>
   withTemp(async (dir) => {
     const { pair, releaseOf } = await fixture(dir);
+    const release = await releaseOf('1.0.0');
+    // The original data folder; the link would have recorded it and migrated it in place.
     const real = join(dir, 'real-state');
     await makeState(real);
-    const link = join(dir, 'linked-state');
-    await symlink(real, link, 'dir');
-    const root = join(dir, 'install-linked');
     const before = await snapshot(real);
-    try {
-      await install({
-        root,
-        release: await releaseOf('1.0.0'),
-        stateDir: link,
-        trustKey: publicPem(pair),
-      });
-    } catch (error) {
-      assert.equal(error.code, 'REFUSED', error.message);
-      return;
+    const existing = join(dir, 'install-existing');
+    await put(join(existing, 'synthetic-note.txt'), 'left by an earlier attempt\n');
+    const existingBefore = await snapshot(existing);
+    for (const type of ['dir', 'junction']) {
+      const link = join(dir, `linked-state-${type}`);
+      await symlink(real, link, type);
+      for (const given of [link, `${link}/`]) {
+        const root = join(dir, `install-${type}`);
+        await assert.rejects(
+          install({ root, release, stateDir: given, trustKey: publicPem(pair) }),
+          refused(
+            /^The state folder .* is a link or junction: pass the real folder of the copy, never a link to it$/,
+          ),
+        );
+        assert.equal(await lstat(root).catch((e) => e.code), 'ENOENT', 'no install root');
+        await assert.rejects(
+          install({ root: existing, release, stateDir: given, trustKey: publicPem(pair) }),
+          (e) => e.code === 'REFUSED' && e.message.includes(given),
+        );
+        assert.deepEqual(await snapshot(existing), existingBefore, 'the install root is unchanged');
+        assert.deepEqual(await snapshot(real), before, 'the link target is unchanged');
+        assert.deepEqual(await siblings(real), [], 'no copy beside the original');
+      }
     }
-    await assert.rejects(
-      update({
-        root,
-        release: await releaseOf('1.1.0'),
-        migrate: async ({ stateDir }) => {
-          await writeFile(join(stateDir, 'pglite', 'PG_VERSION'), 'broken');
-          throw new Error('synthetic migration failure');
-        },
-        ready: noop,
-      }),
-      rolledBack(/failed at migrate/),
-    );
-    assert.deepEqual(await snapshot(real), before);
-    for (const name of await siblings(link))
-      assert.equal((await lstat(join(dir, name))).isDirectory(), true, `${name} is not a copy`);
+    // Preserved: the real folder itself still installs and is recorded as given.
+    const root = join(dir, 'install-real');
+    assert.deepEqual(await install({ root, release, stateDir: real, trustKey: publicPem(pair) }), {
+      version: '1.0.0',
+    });
+    assert.equal(JSON.parse(await readFile(join(root, 'install.json'), 'utf8')).stateDir, real);
+    assert.equal((await readCurrent(root)).version, '1.0.0');
   }));
 
 test('rule 6: a state folder that became a link, or holds one, is refused before any copy', () =>

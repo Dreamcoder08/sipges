@@ -800,10 +800,31 @@ export async function acceptRestoredState({ root }) {
   }
 }
 
+/**
+ * Refuses a state folder given as a link or junction, before anything is created: it would be
+ * recorded as its target, such as the original folder a copy was meant to protect, and the first
+ * start would migrate that one in place. A folder under a linked parent is still accepted.
+ */
+async function refuseLinkedState(stateDir) {
+  if (typeof stateDir !== 'string' || !isAbsolute(stateDir)) return; // checkStateDir refuses it
+  let info;
+  try {
+    info = await lstat(resolve(stateDir));
+  } catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw error;
+  }
+  if (info.isSymbolicLink())
+    throw refuse(
+      `The state folder ${stateDir} is a link or junction: pass the real folder of the copy, never a link to it`,
+    );
+}
+
 /** First install of a verified release; the trust key is supplied by the operator. */
 export async function install({ root, release, stateDir, trustKey }) {
   root = resolve(root);
   release = resolve(release);
+  await refuseLinkedState(stateDir);
   await mkdir(root, { recursive: true, mode: 0o700 });
   const unlock = await lock(root);
   try {

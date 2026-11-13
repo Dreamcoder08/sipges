@@ -19,7 +19,8 @@
 //    snapshot.mjs; SIPGES ended the way the runbook does (the node process is ended).
 // 2. A throwaway Ed25519 key made with the runbook's command, the package built with
 //    deploy/desktop/package/builder.mjs and signed with deploy/desktop/updater/release.mjs.
-// 3. The runbook's Copy-Item of the state folder, install.ps1 -Release <release> -State <copy>,
+// 3. The runbook's Copy-Item of the state folder; install.ps1 -State <a junction to the original>
+//    exits 1 and changes nothing; install.ps1 -Release <release> -State <copy>,
 //    update.mjs --first-start, the installed start.ps1 (SIPGES_DESKTOP_NO_UI=1), compare.mjs:
 //    `RESULT: no difference`; the original state folder stays byte-identical.
 // 4. Update N -> N+1: a second package signed with the same key into <root>\releases, the
@@ -77,6 +78,8 @@ export const HALT_LINE = 'SIPGES no se inició';
 // install.ps1 during a pending or halted update; the halt text start-managed.ps1 shows when the
 // launcher left no notice: naming the state folder of install.json, or for any install.
 export const PENDING_LINE = 'Hay una actualización de SIPGES pendiente o detenida';
+// install.ps1 -State given a link or junction (to the original folder, in the drill).
+export const STATE_LINK_LINE = 'es un enlace o una unión (junction)';
 export const haltFallbackNamed = (state) =>
   `(la carpeta ${win32.basename(state)}.pre-update-… que está en ${win32.dirname(state)}, junto a su carpeta de datos ${state})`;
 export const HALT_FALLBACK_GENERIC =
@@ -749,6 +752,54 @@ async function main(args) {
     check(
       digest(await tree(moved)) === originalDigest,
       'the copy is byte-identical to the original',
+    );
+    // Deviating from the runbook: -State given a junction to the original folder would record
+    // the original and migrate it in place. Refused before anything is written.
+    const junctionDir = join(lad, 'SIPGES-enlace');
+    const linked = await run('cmd', ['/d', '/c', 'mklink', '/J', junctionDir, original], {
+      env,
+      log: out('junction'),
+    });
+    check(linked.status === 0, 'mklink /J made a junction to the original state folder');
+    check(
+      (await lstat(junctionDir)).isSymbolicLink() === true,
+      'Node reports the junction as a link (lstat().isSymbolicLink())',
+    );
+    const around = () =>
+      JSON.stringify([readdirSync(lad).sort(), existsSync(appRoot) && readdirSync(appRoot).sort()]);
+    const aroundBefore = around();
+    const viaJunction = await run(
+      POWERSHELL,
+      psArgs(join(scripts, 'windows', 'install.ps1'), [
+        '-Release',
+        releaseN,
+        '-State',
+        junctionDir,
+      ]),
+      { env, log: out('managed-install-junction'), seconds: 120 },
+    );
+    check(
+      viaJunction.status === 1,
+      `install.ps1 -State <junction> exit 1 (got ${viaJunction.status})`,
+    );
+    check(
+      viaJunction.output.includes(`${junctionDir} ${STATE_LINK_LINE}`),
+      `install.ps1 printed «… ${STATE_LINK_LINE}…»`,
+    );
+    check(around() === aroundBefore, 'no install root content and nothing new beside the original');
+    check(
+      digest(await tree(original)) === originalDigest,
+      'the original state folder is byte-identical after the refusal',
+    );
+    const unlinked = await run('cmd', ['/d', '/c', 'rmdir', junctionDir], {
+      env,
+      log: out('junction'),
+    });
+    check(
+      unlinked.status === 0 &&
+        !existsSync(junctionDir) &&
+        digest(await tree(original)) === originalDigest,
+      'rmdir removed the junction itself; the original is still byte-identical',
     );
     const install = await run(
       POWERSHELL,

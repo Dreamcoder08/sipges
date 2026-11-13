@@ -35,6 +35,7 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ Que el kit borre su paquete fallido y el reintento arme el kit; la contraseña oculta en la consola de Windows; la línea `Managed install` de `compare.mjs` | Solo pruebas en Linux (paquete y servidor simulados; terminal real solo en Linux); las del kit corren también en el job «visit-kit» (anotá el resultado) |
 | ⚠ F4: `install.ps1` se niega con una actualización pendiente o detenida (`update-journal.json`) | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ F7: el texto de detención que nombra la carpeta de datos gestionada | No probado en Windows hasta que el ensayo automático lo cubra |
+| ⚠ `install.ps1` se niega con un `-State` que es un enlace o una unión (junction), o que lleva a la carpeta original | No probado en Windows hasta que el ensayo automático lo cubra |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
 laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
@@ -428,6 +429,11 @@ sus números.
   ninguna carpeta de SIPGES. …` (y `1`): alguien ya instaló y empezó una actualización en esta
   cuenta. No repitas el comando, no borres ni muevas nada: regla de corte (⚠ F4, no probado en
   Windows).
+  `La carpeta de datos … es un enlace o una unión (junction): …` o `-State … lleva a la carpeta de
+  datos original …` (y `1`, ⚠ no probado en Windows): el `-State` no es la copia real y no se cambió
+  nada. Revisá que el comando diga `-State "$env:LOCALAPPDATA\SIPGES-datos"` y que `SIPGES-datos`
+  sea la carpeta que copiaste arriba con `Copy-Item`, nunca un enlace a la original; corregí y
+  repetí. Si no queda claro: regla de corte.
 - [ ] Confirmá la carpeta de datos: `Get-Content "$env:LOCALAPPDATA\SIPGES-app\install.json"` muestra
   `stateDir` terminado en `SIPGES-datos`. Si termina en `\SIPGES` o en otra cosa: **no hagas el paso
   4 ni abras SIPGES** (el primer arranque migraría esa carpeta); regla de corte. Retirá el USB `F:`

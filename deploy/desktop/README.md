@@ -90,7 +90,12 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
   the middle, the next start puts the folder back the same way before trying again.
 - To install on a copy of the state folder and leave the original to the clone install (the data
   move, [migration/README.md](migration/README.md)): `-State <copy>` on Windows,
-  `SIPGES_DESKTOP_STATE=<copy>` on Linux.
+  `SIPGES_DESKTOP_STATE=<copy>` on Linux. Give the real folder of the copy, never a link to it:
+  a link or junction would be recorded as its target, and the first start would migrate the
+  original in place. The installer stops with exit code 1 before writing anything when the folder
+  given is a link or junction, or, on a first install, leads to the original
+  (`%LOCALAPPDATA%\SIPGES`, or `~/.local/share/sipges-local` on Linux); `update.mjs --install`
+  refuses a link too.
 - The key that signed the release becomes the only key later updates are accepted with. The
   installer prints its SHA-256 fingerprint: compare it with the one noted when the key was made.
 - To offer a newer release, copy its folder into `releases` in the install root. At the next

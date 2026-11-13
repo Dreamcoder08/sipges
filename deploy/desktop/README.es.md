@@ -92,7 +92,12 @@ versión de SIPGES», «Actualizar»).
   equipo se apagó a mitad, el siguiente arranque devuelve la carpeta igual antes de reintentar.
 - Para instalar sobre una copia de la carpeta de estado y dejar la original a la instalación por
   clon (el traslado de datos, [migration/README.md](migration/README.md)): `-State <copia>` en
-  Windows, `SIPGES_DESKTOP_STATE=<copia>` en Linux.
+  Windows, `SIPGES_DESKTOP_STATE=<copia>` en Linux. Pasa la carpeta real de la copia, nunca un
+  enlace a ella: un enlace o una unión (junction) quedaría anotado como su destino, y el primer
+  arranque migraría la original en su lugar. El instalador se detiene con código 1 antes de
+  escribir nada si la carpeta dada es un enlace o una unión, o, en la primera instalación, lleva a
+  la original (`%LOCALAPPDATA%\SIPGES`, o `~/.local/share/sipges-local` en Linux);
+  `update.mjs --install` también rechaza un enlace.
 - La clave que firmó la versión pasa a ser la única con la que se aceptan las actualizaciones. El
   instalador imprime su huella SHA-256: compárala con la que anotaste al crear la clave.
 - Para ofrecer una versión más nueva, copia su carpeta dentro de `releases` en la raíz. En el
