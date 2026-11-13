@@ -493,6 +493,11 @@ Se hace en la terminal para no depender de la espera de 300 segundos del acceso 
   Si vuelve a decirlo, o dice `RESULT: not compared (installed version not readable)` o
   `RESULT: not compared (no project scope for this account)` (la cuenta no es `admin` o no tiene
   proyectos), o la versión de `Managed install` no es la de hoy: regla de corte.
+  También `2`, y regla de corte, sin reintento: `RESULT: not compared (redirect: …)` (algo en el
+  puerto respondió con una redirección; la comparación nunca la sigue),
+  `RESULT: not compared (the server could not be reached or the connection dropped: …)` (SIPGES no
+  respondió o cortó la conexión) y `RESULT: not compared (error: …)`. Las tres vienen después de un
+  `Error: …`; las líneas anteriores comparan solo una parte.
   Cualquier otro `RESULT` (`sign-in failed`, que sigue a `Sign-in failed (status …)`;
   `N differences`; `not fully checked`; `not compared`) o un número distinto de `0`: regla de corte.
 - [ ] **Lo que la comparación no cubre** (verificado en el código; está en

@@ -143,6 +143,12 @@ async function fakeApi(
     // 'html' for an answer that is not JSON, 'text' for a JSON body sent as text/plain,
     // 'redirect' for a redirect to a route that answers a valid status, 'forbidden' for 403.
     desktop = { installed: DESKTOP_VERSION },
+    // `{ prefix, status }`: every path starting with `prefix` answers a redirect to the same
+    // request under /elsewhere, which answers exactly what the path itself would (a front server
+    // that hands data reads to another server).
+    redirect = null,
+    // Paths starting with this prefix close the connection without an answer.
+    drop = null,
   } = {},
 ) {
   const sessions = new Set();
@@ -152,6 +158,12 @@ async function fakeApi(
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(body));
     };
+    if (redirect && url.pathname.startsWith(redirect.prefix)) {
+      res.writeHead(redirect.status ?? 302, { location: `/elsewhere${req.url}` });
+      return res.end();
+    }
+    if (url.pathname.startsWith('/elsewhere/')) url.pathname = url.pathname.slice(10);
+    if (drop && url.pathname.startsWith(drop)) return req.socket.destroy();
     if (req.method === 'POST' && url.pathname === '/login') {
       let body = '';
       for await (const chunk of req) body += chunk;
@@ -988,6 +1000,87 @@ test('F1: a redirect is not the managed install, even to a route that would answ
       ].join('\n'),
     );
     assert.equal(written, false);
+  }));
+
+// ---------------------------------------------------------------------------------------------
+// Rule 1 (rc3): no request of the migration client follows a redirect. A server that reports the
+// managed version while sending data reads elsewhere must never come out as "no difference".
+
+test('rc3 rule 1: compare refuses a redirect on any request: not compared, exit 2, nothing written', () =>
+  withTemp(async (dir) => {
+    for (const [redirect, line] of [
+      [{ prefix: '/api/', status: 302 }, 'redirect: GET /api/eventos answered 302, not followed'],
+      [
+        { prefix: '/system/uploads/', status: 307 },
+        'redirect: GET /system/uploads/<id> answered 307, not followed',
+      ],
+      [{ prefix: '/login', status: 307 }, 'redirect: POST /login answered 307, not followed'],
+    ]) {
+      const { compared, written } = await compareAgainst(dir, { redirect });
+      const label = `${redirect.prefix}: ${compared.stdout}${compared.stderr}`;
+      assert.equal(compared.status, 2, label);
+      assert.equal(compared.stdout.split('\n').at(-2), `RESULT: not compared (${line})`, label);
+      assert.doesNotMatch(compared.stdout, /no difference|identical/, label);
+      assert.equal(written, false, label);
+      absent(compared.stdout + compared.stderr, fixture(), 'compare output');
+    }
+  }));
+
+test('rc3 rule 1: snapshot refuses a redirect: non-zero exit, the redirect named, no file', () =>
+  withTemp(async (dir) => {
+    const login = await credentials(dir);
+    const out = join(dir, 'before.json');
+    const api = await fakeApi(fixture(), { redirect: { prefix: '/api/', status: 302 } });
+    let taken;
+    try {
+      taken = await run(snapshotCli, ['--url', api.url, ...login, '--out', out]);
+    } finally {
+      api.close();
+    }
+    assert.notEqual(taken.status, 0, taken.stdout + taken.stderr);
+    assert.equal(taken.stdout, '');
+    assert.equal(taken.stderr, 'Error: GET /api/eventos answered 302, a redirect (not followed)\n');
+    assert.equal(existsSync(out), false, 'no snapshot file may be left');
+  }));
+
+// Rule 2 (rc3): a comparison that did not happen (server not reachable, connection dropped) is
+// "not compared" with exit code 2, never the 1 of a comparison that found differences.
+
+test('rc3 rule 2: an unreachable server or a dropped connection is not compared, exit 2', () =>
+  withTemp(async (dir) => {
+    const dropped = await compareAgainst(dir, { drop: '/system/links' });
+    assert.equal(dropped.compared.status, 2, dropped.compared.stdout + dropped.compared.stderr);
+    assert.match(
+      dropped.compared.stdout,
+      /^Managed install: version 1\.0\.0-sintetico\.1\nRESULT: not compared \(the server could not be reached or the connection dropped: [^\n]+\)\n$/m,
+    );
+    assert.equal(dropped.written, false);
+
+    const run2 = await mkdtemp(join(dir, 'gone-'));
+    const login = await credentials(run2);
+    const before = join(run2, 'before.json');
+    const api = await fakeApi(fixture());
+    try {
+      assert.equal(
+        (await run(snapshotCli, ['--url', api.url, ...login, '--out', before])).status,
+        0,
+      );
+    } finally {
+      api.close();
+    }
+    const closed = createServer();
+    closed.listen(0, '127.0.0.1');
+    await once(closed, 'listening');
+    const gone = `http://127.0.0.1:${closed.address().port}`;
+    closed.close();
+    await once(closed, 'close');
+    const compared = await run(compareCli, ['--before', before, '--url', gone, ...login]);
+    assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+    assert.equal(
+      compared.stdout,
+      'RESULT: not compared (the server could not be reached or the connection dropped: fetch failed, ECONNREFUSED)\n',
+    );
+    assert.match(compared.stderr, /^Error: fetch failed\n$/);
   }));
 
 test('F1: a valid JSON body sent as text/plain is not the managed install: exit 2', () =>

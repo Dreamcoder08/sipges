@@ -452,7 +452,7 @@ export function leeme({ version, commit, fingerprint, visit, built }) {
     `  node "${scripts}\\migration\\compare.mjs" --before "$env:LOCALAPPDATA\\SIPGES-visita\\sipges-antes.json" --url http://127.0.0.1:8000`,
     '  $LASTEXITCODE',
     `  Antes de comparar dice: Managed install: version ${version}`,
-    '  RESULT: not compared (...) y 2: responde otro SIPGES (la versión vieja); nada se comparó.',
+    '  RESULT: not compared (...) y 2: nada se comparó (responde otro SIPGES, hubo una redirección o se cortó la conexión).',
     '',
     'Una huella distinta, un Error, un RESULT distinto de no difference o un código distinto de 0:',
     'Regla de corte (sección 3 del runbook). La versión vieja sigue en uso.',

@@ -148,6 +148,16 @@ failed`.
   project scope or is not an administrator) prints `RESULT: not compared (no project scope for
   this account)`. Exit code 2 in every case, and `--out` is not written. (The sample above predates this check;
   its second line is shown as the comparison prints it now.)
+- No request of `compare.mjs` or `snapshot.mjs` follows a redirect (the real API answers none of
+  them with one: `POST /login` answers 200 or an error, and only `/select-project` and the Google
+  sign-in, which these scripts never call, redirect). A redirect on any other request, sign-in
+  included, stops the run with
+  `RESULT: not compared (redirect: GET /api/eventos answered 302, not followed)`, the route
+  named without its query or ids. A server that cannot be reached or drops the connection prints
+  `RESULT: not compared (the server could not be reached or the connection dropped: fetch failed, ECONNREFUSED)`
+  (the last part is the socket error), and any other error after the options were read
+  `RESULT: not compared (error: …)`. Each also prints `Error: …` and exits with code 2; nothing
+  is reported as equal, and the lines printed before it cover only part of the data.
 - `project N [hash]`: projects in the order of their identifiers; the hash is keyed with the
   snapshot's salt, so it means nothing outside this comparison.
 - One line per module with records: count before and after, then either `every field identical`
@@ -182,14 +192,19 @@ differs`, `missing`, `new`, `record [hash] update time differs`.
   part; each counts as a part not fully checked and fails the comparison. Nothing is skipped
   without a line.
 - `RESULT`: `no difference`, the number of differences, or `not fully checked (N parts, listed
-above)`; exit code 0 only for `no difference`, otherwise 1. `not compared (…)` with exit code 2:
-  the server is not the managed install (above).
+above)`; exit code 0 only for `no difference`, otherwise 1 (also `sign-in failed`).
+  `not compared (…)` with exit code 2: the server is not the managed install, a redirect, the
+  server not reachable or the connection dropped, or another error (above). An invalid option or
+  `--before` file prints only `Error: …` and exits with code 1, before signing in.
 - The password prompt (`Contraseña:`) does not show what is typed: the terminal is put in raw
   mode with Node's own TTY support (Windows console and Linux alike) and restored afterwards;
   Ctrl+C cancels. The MFA code is shown as typed.
 
 `snapshot.mjs` prints the same counts and short hashes. Its file holds only counts, keyed hashes
-and the salt, and is written with mode 600; it is refused if the file exists. Keep it with the
+and the salt, and is written with mode 600; it is refused if the file exists. It is written only
+once everything was read: a redirect
+(`Error: GET /api/eventos answered 302, a redirect (not followed)`), a dropped connection or any
+other error exits with code 1 and writes no file. Keep it with the
 data all the same: with the salt, a guessed value can be confirmed.
 
 Not compared (checked against `apps/api/src/contexts/tenancy/infrastructure/sql-tenant-data-reader.ts`,
