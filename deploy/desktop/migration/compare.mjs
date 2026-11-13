@@ -3,8 +3,10 @@
 // with their module and action, and probe counts; never a record, a name or a file.
 // Exit code 0: no difference (audit entries added since the snapshot are listed, not counted);
 // 1: a difference, a part that could not be fully checked (each one printed), a failed sign-in
-// or an error; 2: not compared, because the server on --url is not the managed install (the old
-// version still running on the port answers /health the same) or does not report its version.
+// or an invalid option or --before file; 2: not compared, because the server on --url is not the
+// managed install (the old version still running on the port answers /health the same), does not
+// report its version, answers a redirect (never followed), cannot be reached or drops the
+// connection, or any other error stops the run after the options were read.
 // Read deploy/desktop/migration/README.md.
 //
 //   node deploy/desktop/migration/compare.mjs --before <snapshot.json> --url http://127.0.0.1:8000
@@ -14,7 +16,16 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import console from 'node:console';
-import { SignInError, credentials, getJson, keyed, parseArgs, short, signIn } from './client.mjs';
+import {
+  RedirectError,
+  SignInError,
+  credentials,
+  getJson,
+  keyed,
+  parseArgs,
+  short,
+  signIn,
+} from './client.mjs';
 import { FORMAT, FORMAT_VERSION, contentHash, takeSnapshot } from './snapshot.mjs';
 
 const LISTED = 20;
@@ -282,7 +293,7 @@ export async function managedInstall(session) {
   const scopes = await getJson(session, '/system/auth/scopes');
   const first = scopes.status === 200 && Array.isArray(scopes.body) ? scopes.body[0] : undefined;
   const scope = first ? `${first.company_id}/${first.project_id}` : undefined;
-  const response = await session.call(DESKTOP_UPDATE_PATH, { scope, redirect: 'manual' });
+  const response = await session.call(DESKTOP_UPDATE_PATH, { scope, acceptRedirect: true });
   const type = response.headers.get('content-type') ?? '';
   if (response.status === 403) {
     await response.arrayBuffer();
@@ -319,8 +330,22 @@ Every record list is read to its end and checked against the project export, eve
 read by its id (the export names those past the 500 the list shows) and every audit entry with
 its content (from the export); a part that cannot be read in full is printed as "not fully
 checked" (or "not checked") and fails the comparison, as does a snapshot of an older format.
-Prints counts and short keyed hashes only. Exit code 0 when nothing differs and everything was
-checked, 2 when nothing was compared (not the managed install), otherwise 1.`;
+No request follows a redirect. Prints counts and short keyed hashes only. Exit code 0 when
+nothing differs and everything was checked; 2 with "RESULT: not compared (…)" when the
+comparison did not happen (not the managed install, a redirect, the server not reachable or the
+connection dropped, any other error after the options were read); otherwise 1.`;
+
+/** Why a run that stopped compared nothing, for its RESULT line. */
+function notComparedReason(error) {
+  if (error instanceof RedirectError)
+    return `redirect: ${error.route} answered ${error.status}, not followed`;
+  // fetch rejects with a TypeError whose cause is the socket error (refused, reset, closed).
+  if (error instanceof TypeError && error.cause) {
+    const cause = error.cause.code ?? error.cause.message;
+    return `the server could not be reached or the connection dropped: ${error.message}${cause ? `, ${cause}` : ''}`;
+  }
+  return `error: ${error.message}`;
+}
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
@@ -346,9 +371,21 @@ async function main(args) {
   const limit =
     options['--probe-limit'] === undefined ? DEFAULT_PROBES : Number(options['--probe-limit']);
   if (!Number.isInteger(limit) || limit < 0) throw new Error('Invalid --probe-limit');
+  const login = await credentials(options);
+  try {
+    await compareWith(login, before, limit, options['--out']);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    console.log(`RESULT: not compared (${notComparedReason(error)})`);
+    process.exitCode = NOT_COMPARED_EXIT;
+  }
+}
+
+/** Signs in, checks the server and compares; an error thrown here means nothing was compared. */
+async function compareWith(login, before, limit, out) {
   let session;
   try {
-    session = await signIn(await credentials(options));
+    session = await signIn(login);
   } catch (error) {
     if (!(error instanceof SignInError)) throw error;
     console.log(error.message);
@@ -380,8 +417,8 @@ async function main(args) {
   }
   console.log(`Managed install: version ${managed.version}`);
   const { snapshot: after, live } = await takeSnapshot(session, { salt: before.salt });
-  if (options['--out'])
-    await writeFile(resolve(options['--out']), `${JSON.stringify(after, null, 2)}\n`, {
+  if (out)
+    await writeFile(resolve(out), `${JSON.stringify(after, null, 2)}\n`, {
       mode: 0o600,
       flag: 'wx',
     });

@@ -118,16 +118,31 @@ export class SignInError extends Error {
 }
 
 /**
+ * A 3xx answer: never followed (the data would come from another server). The route is named
+ * without its query or ids, which may be record or upload ids.
+ */
+export class RedirectError extends Error {
+  constructor(method, path, status) {
+    const route = path.split('?')[0].replace(/^(\/api\/[^/]+|\/system\/uploads)\/[^/]+/, '$1/<id>');
+    super(`${method} ${route} answered ${status}, a redirect (not followed)`);
+    this.route = `${method} ${route}`;
+    this.status = status;
+  }
+}
+
+/**
  * Signs in like the login page (`POST /login`) and returns a session: `call(path, options)`
  * with `scope` sending X-SIPGES-Scope. Codes come from `otp`, or from `totpSecret` (synthetic
- * rehearsals). Throws SignInError when the server refuses.
+ * rehearsals). Throws SignInError when the server refuses. No request follows a redirect: a 3xx
+ * answer throws RedirectError, unless `acceptRedirect` (the caller reads the 3xx itself).
  */
 export async function signIn({ base, username, password, otp, totpSecret, totpState }) {
   base = base.replace(/\/+$/, '');
   let cookie = '';
-  const call = async (path, { scope, headers = {}, ...init } = {}) => {
+  const call = async (path, { scope, headers = {}, acceptRedirect = false, ...init } = {}) => {
     const response = await fetch(base + path, {
       ...init,
+      redirect: 'manual',
       headers: {
         Origin: base,
         Accept: 'application/json',
@@ -136,6 +151,10 @@ export async function signIn({ base, username, password, otp, totpSecret, totpSt
         ...headers,
       },
     });
+    if (!acceptRedirect && response.status >= 300 && response.status < 400) {
+      await response.body?.cancel();
+      throw new RedirectError(init.method ?? 'GET', path, response.status);
+    }
     const set = response.headers.getSetCookie?.() ?? [];
     const session = set.map((c) => c.split(';')[0]).filter((c) => c.startsWith('sipges_session='));
     if (session.length) cookie = session.at(-1);
@@ -146,7 +165,6 @@ export async function signIn({ base, username, password, otp, totpSecret, totpSt
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ username, password, otp: code }),
-    redirect: 'manual',
   });
   await response.arrayBuffer();
   if (response.status !== 200 || !cookie) throw new SignInError(response.status);

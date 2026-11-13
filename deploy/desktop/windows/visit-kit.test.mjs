@@ -164,7 +164,7 @@ test('LEEME names the runbook steps with this kit’s paths, version and fingerp
     'Paso 5 - Comparar',
     '  node "$env:LOCALAPPDATA\\SIPGES-visita\\sipges\\deploy\\desktop\\migration\\compare.mjs" --before "$env:LOCALAPPDATA\\SIPGES-visita\\sipges-antes.json" --url http://127.0.0.1:8000',
     '  Antes de comparar dice: Managed install: version 1.0.0',
-    '  RESULT: not compared (...) y 2: responde otro SIPGES (la versión vieja); nada se comparó.',
+    '  RESULT: not compared (...) y 2: nada se comparó (responde otro SIPGES, hubo una redirección o se cortó la conexión).',
     'Regla de corte (sección 3 del runbook). La versión vieja sigue en uso.',
   ])
     assert.ok(
