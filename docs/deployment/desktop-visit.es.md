@@ -35,7 +35,8 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ Que el kit borre su paquete fallido y el reintento arme el kit; la contraseña oculta en la consola de Windows; la línea `Managed install` de `compare.mjs` | Solo pruebas en Linux (paquete y servidor simulados; terminal real solo en Linux); las del kit corren también en el job «visit-kit» (anotá el resultado) |
 | ⚠ F4: `install.ps1` se niega con una actualización pendiente o detenida (`update-journal.json`) | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ F7: el texto de detención que nombra la carpeta de datos gestionada | No probado en Windows hasta que el ensayo automático lo cubra |
-| ⚠ `install.ps1` se niega con un `-State` que es un enlace o una unión (junction), o que lleva a la carpeta original | No probado en Windows hasta que el ensayo automático lo cubra |
+| ⚠ `install.ps1` se niega con un `-State` que es un enlace o una unión (junction) | No probado en Windows hasta que el ensayo automático lo cubra |
+| ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
 laptop pudo haber instalado (sección 1). Lo que vale para la visita es la ejecución sobre el commit de
@@ -430,7 +431,8 @@ sus números.
   cuenta. No repitas el comando, no borres ni muevas nada: regla de corte (⚠ F4, no probado en
   Windows).
   `La carpeta de datos … es un enlace o una unión (junction): …` o `-State … lleva a la carpeta de
-  datos original …` (y `1`, ⚠ no probado en Windows): el `-State` no es la copia real y no se cambió
+  datos original …` (y `1`; ⚠ el primero no probado en Windows, el segundo lo ejecuta el drill de
+  Windows, paso 3): el `-State` no es la copia real y no se cambió
   nada. Revisá que el comando diga `-State "$env:LOCALAPPDATA\SIPGES-datos"` y que `SIPGES-datos`
   sea la carpeta que copiaste arriba con `Copy-Item`, nunca un enlace a la original; corregí y
   repetí. Si no queda claro: regla de corte.

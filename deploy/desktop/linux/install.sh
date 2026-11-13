@@ -97,9 +97,10 @@ install_managed() {
   fi
   # SIPGES_DESKTOP_STATE names the copy made for the data move: a link, or a path that leads to
   # the original folder, would have the install record the original and its first start migrate
-  # it in place. A rerun keeps its recorded folder, compared below.
+  # it in place. A rerun keeps its recorded folder, compared below. The link test sees the path
+  # as update.mjs does (path.resolve), so no spelling (link//, link/., link/x/..) gets past it.
   if [ -n "$STATE_GIVEN" ]; then
-    if [ -L "${STATE%/}" ]; then
+    if [ -L "$(node -p 'require("path").resolve(process.argv[1])' "$STATE")" ]; then
       die "la carpeta de datos $STATE es un enlace: pasa en SIPGES_DESKTOP_STATE la carpeta real de la copia, nunca un enlace a ella; no se cambió nada."
     fi
     if [ ! -f "$APP_ROOT/install.json" ] && [ "$(real_dir "$STATE")" = "$(real_dir "$ORIGINAL_STATE")" ]; then

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { STATE_LINK_LINE } from './drill.mjs';
+import { STATE_LINK_LINE, STATE_ORIGINAL_LINE } from './drill.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const read = async (file) => (await readFile(join(here, file), 'utf8')).replace(/^\uFEFF/, '');
@@ -36,7 +36,7 @@ const GUARD = [
   '    if ($first -and (Test-Path -LiteralPath $State) -and (Test-Path -LiteralPath $original)) {',
   `        $real = ${realpath('$State')}`,
   `        if ($real -and ($real -eq (${realpath('$original')}))) {`,
-  '            Stop-Install "-State $State lleva a la carpeta de datos original ${original}: pasa con -State la carpeta real de la copia, nunca la original ni un enlace a ella; no se cambió nada."',
+  `            Stop-Install "-State $State ${STATE_ORIGINAL_LINE} \${original}: pasa con -State la carpeta real de la copia, nunca la original ni un enlace a ella; no se cambió nada."`,
   '        }',
   '    }',
 ];
@@ -68,7 +68,7 @@ test('install.ps1 checks a given -State before the managed install reads, record
     assert.doesNotMatch(line, /\breturn\b|exit 0/, `nothing skips the guard: ${line.trim()}`);
 });
 
-test('the drill makes a junction to the original before the managed install and expects the refusal', async () => {
+test('the drill refuses a junction to the original, then the original itself, before the managed install', async () => {
   const drill = await read('drill.mjs');
   const at = (text) => {
     const i = drill.indexOf(text);
@@ -78,8 +78,29 @@ test('the drill makes a junction to the original before the managed install and 
   const junction = at("'mklink', '/J'");
   const refusal = at('${junctionDir} ${STATE_LINK_LINE}');
   const removed = at("['/d', '/c', 'rmdir', junctionDir]");
+  const viaOriginal = at("['-Release', releaseN, '-State', original]");
+  const originalRefusal = at('`-State ${original} ${STATE_ORIGINAL_LINE} ${original}:`');
   const install = at("['-Release', releaseN, '-State', moved]");
-  assert.ok(junction < refusal && refusal < removed && removed < install, 'in that order');
+  assert.ok(
+    junction < refusal &&
+      refusal < removed &&
+      removed < viaOriginal &&
+      viaOriginal < originalRefusal &&
+      originalRefusal < install,
+    'in that order: junction refused and removed, original refused, then the install on the copy',
+  );
   assert.ok(at('step(') < junction);
   assert.doesNotMatch(drill, /rmdir[^\n]*\/[sS]\b/, 'the junction is never removed recursively');
+  // The junction goes only through that one `rmdir` without /s: never through rm, rmSync or
+  // Remove-Item, which could follow it into the original folder.
+  assert.deepEqual(drill.match(/'rmdir'[^\n]*/g), ["'rmdir', junctionDir], {"], 'one rmdir');
+  for (const line of drill.split('\n').filter((l) => l.includes('junctionDir')))
+    assert.doesNotMatch(line, /\brm\(|\brmSync\(|Remove-Item|recursive/, line.trim());
+});
+
+test('the drill resolves its work folder to the long real path before deriving any path', async () => {
+  const drill = await read('drill.mjs');
+  const resolved = drill.indexOf('const work = realpathSync.native(options.work);');
+  assert.ok(resolved > 0, 'the work folder is resolved with realpathSync.native');
+  assert.ok(resolved < drill.indexOf("const lad = join(work, 'LocalAppData');"), 'before LOCALAPPDATA');
 });
