@@ -151,6 +151,25 @@ function Assert-NoPendingUpdate {
     }
 }
 
+# -State names the copy made for the data move. A link or junction, or a path that leads to the
+# original %LOCALAPPDATA%\SIPGES, would have the installer record the original folder and its
+# first start migrate it in place. A rerun keeps its recorded folder, compared in Install-Managed.
+# Nothing is created, moved or deleted.
+function Assert-StateIsCopy {
+    $original = Join-Path $env:LOCALAPPDATA 'SIPGES'
+    $item = Get-Item -LiteralPath $State -Force -ErrorAction SilentlyContinue
+    if ($item -and ($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
+        Stop-Install "La carpeta de datos $State es un enlace o una unión (junction): pasa con -State la carpeta real de la copia, nunca un enlace a ella; no se cambió nada."
+    }
+    $first = -not (Test-Path -LiteralPath (Join-Path $AppRoot 'install.json'))
+    if ($first -and (Test-Path -LiteralPath $State) -and (Test-Path -LiteralPath $original)) {
+        $real = (& node -p "require('fs').realpathSync.native(process.argv[1])" $State) -join ''
+        if ($real -and ($real -eq ((& node -p "require('fs').realpathSync.native(process.argv[1])" $original) -join ''))) {
+            Stop-Install "-State $State lleva a la carpeta de datos original ${original}: pasa con -State la carpeta real de la copia, nunca la original ni un enlace a ella; no se cambió nada."
+        }
+    }
+}
+
 function New-Shortcuts([string]$Start, [string]$WorkingDirectory, [string]$Icon) {
     $shell = New-Object -ComObject WScript.Shell
     foreach ($folder in [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) {
@@ -178,6 +197,7 @@ function Install-Managed {
     if (Test-Server) {
         Stop-Install 'SIPGES está abierto en este equipo: ciérralo (termina el proceso node o reinicia el equipo) y vuelve a ejecutar este script.'
     }
+    if ($StateGiven) { Assert-StateIsCopy }
     # A rerun keeps the state folder the install recorded: another one would be prepared and
     # named here while SIPGES keeps opening the recorded one.
     $recorded = Get-RecordedState
