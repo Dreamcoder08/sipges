@@ -497,7 +497,11 @@ Se hace en la terminal para no depender de la espera de 300 segundos del acceso 
   puerto respondió con una redirección; la comparación nunca la sigue),
   `RESULT: not compared (the server could not be reached or the connection dropped: …)` (SIPGES no
   respondió o cortó la conexión) y `RESULT: not compared (error: …)`. Las tres vienen después de un
-  `Error: …`; las líneas anteriores comparan solo una parte.
+  `Error: …`; las líneas anteriores comparan solo una parte. Si se corta en las pruebas de
+  aislamiento, ya pueden verse líneas `identical` y estar escrito el archivo de `--out`: lo único
+  que vale es la última línea `RESULT:` y el `$LASTEXITCODE`. Si SIPGES deja de responder sin
+  cortar, la comparación puede quedar sin escribir nada hasta unos 5 minutos antes de decir
+  `not compared` y `2`.
   Cualquier otro `RESULT` (`sign-in failed`, que sigue a `Sign-in failed (status …)`;
   `N differences`; `not fully checked`; `not compared`) o un número distinto de `0`: regla de corte.
 - [ ] **Lo que la comparación no cubre** (verificado en el código; está en
