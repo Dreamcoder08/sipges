@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import process from 'node:process';
 import { existsSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { fakeCheckout, treeOf } from './builder-helpers.mjs';
@@ -75,6 +75,36 @@ test('a process id file that cannot be read as one is refused, nothing removed',
     assert.notEqual(build('1.0.0', { failWebBuild: true }).status, 0);
     const out = join(root, '.data/desktop-packages/sipges-1.0.0');
     await writeFile(join(out, '.sipges-package-building'), 'not a number\n');
+    const before = await treeOf(out);
+    const result = await clearFailedPackage({ checkout: root, version: '1.0.0' });
+    assert.equal(result.removed, null);
+    assert.ok(result.refusal);
+    assert.deepEqual(await treeOf(out), before);
+  }));
+
+test('builder.mjs records its process id before the marker and drops it after the completion file', async () => {
+  const source = await readFile(join(import.meta.dirname, 'builder.mjs'), 'utf8');
+  const at = (text) => {
+    const index = source.indexOf(text);
+    assert.notEqual(index, -1, text);
+    assert.equal(source.indexOf(text, index + 1), -1, `${text} appears once`);
+    return index;
+  };
+  const made = at('await mkdir(destination, { mode: 0o700 });');
+  const pid = at('await writeFile(join(destination, PACKAGE_BUILDING), `${process.pid}\\n`, { flag: \'wx\' });');
+  const marker = at('await writeFile(join(destination, PACKAGE_MARKER), PACKAGE_MARKER_TEXT, { flag: \'wx\' });');
+  const complete = at("await writeFile(join(destination, PACKAGE_COMPLETE), 'Build finished.\\n', { flag: 'wx' });");
+  const dropped = at('await rm(join(destination, PACKAGE_BUILDING));');
+  assert.ok(made < pid && pid < marker && marker < complete && complete < dropped);
+});
+
+test('a folder with a live process id and no marker yet is refused, nothing removed', () =>
+  withTemp(async (dir) => {
+    const root = join(dir, 'repo');
+    await fakeCheckout(root);
+    const out = join(root, '.data/desktop-packages/sipges-1.0.0');
+    await mkdir(out, { recursive: true });
+    await writeFile(join(out, '.sipges-package-building'), `${process.pid}\n`);
     const before = await treeOf(out);
     const result = await clearFailedPackage({ checkout: root, version: '1.0.0' });
     assert.equal(result.removed, null);
