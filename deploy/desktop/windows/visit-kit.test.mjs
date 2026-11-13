@@ -736,6 +736,60 @@ test('F2: a removal that stops half-way keeps the marker, so the next run finish
     assert.equal(build('1.0.0').status, 0);
   }));
 
+/** The refusal of a process id file that is alive or cannot be read as one. */
+const inProgress = (path) =>
+  `Hay otra construcción de la versión 1.0.0 en curso en ${path} (o no se puede saber si terminó): el kit no borra nada. Esperá a que termine esa terminal; si ya no hay ninguna construyendo, borrá esa carpeta (solo ${path}) y repetí el comando.`;
+
+test('F2: a process id file that cannot be opened is the same refusal, nothing removed', {
+  skip: process.platform === 'win32' || process.getuid?.() === 0 ? 'needs POSIX permissions as a normal user (root reads a mode 000 file)' : false,
+}, () =>
+  withTemp(async (dir) => {
+    const { chmod } = await import('node:fs/promises');
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    assert.equal(build('1.0.0', { failWebBuild: true }).status, 1);
+    const half = join(root, PACKAGES, 'sipges-1.0.0');
+    const id = join(half, PACKAGE_BUILDING);
+    const text = await readFile(id, 'utf8');
+    const before = await treeOf(dir);
+    await chmod(id, 0o000);
+    try {
+      assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+        removed: null,
+        refusal: inProgress(half),
+      });
+    } finally {
+      await chmod(id, 0o644);
+    }
+    assert.equal(await readFile(id, 'utf8'), text);
+    assert.deepEqual(await treeOf(dir), before);
+  }));
+
+test('F2: an absurdly large process id file is the same refusal, read only a few bytes', () =>
+  withTemp(async (dir) => {
+    const { stat, truncate } = await import('node:fs/promises');
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    assert.equal(build('1.0.0', { failWebBuild: true }).status, 1);
+    const half = join(root, PACKAGES, 'sipges-1.0.0');
+    const id = join(half, PACKAGE_BUILDING);
+    // The ended builder's process id: removable as it is, so only the size refuses it below.
+    const text = await readFile(id, 'utf8');
+    assert.match(text, /^[1-9]\d*\n$/);
+    const before = await treeOf(dir);
+    // Sparse where the file system allows it: past what Node reads into one buffer (2 GiB).
+    const size = 3 * GiB;
+    await truncate(id, size);
+    assert.deepEqual(await clearFailedPackage({ checkout: root, version: '1.0.0' }), {
+      removed: null,
+      refusal: inProgress(half),
+    });
+    assert.equal((await stat(id)).size, size);
+    // Cut back to its first bytes, the tree is the one before: nothing else changed.
+    await truncate(id, Buffer.byteLength(text));
+    assert.deepEqual(await treeOf(dir), before);
+  }));
+
 test('F2: a version that is not a version never reaches a folder outside desktop-packages', () =>
   withTemp(async (dir) => {
     const root = join(dir, 'repo');

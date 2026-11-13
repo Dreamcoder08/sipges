@@ -276,7 +276,8 @@ niega a escribir ahí. Con la red de la casa.
   | `this checkout has uncommitted changes` | En `C:\SIPGES-kit`, `git status --short` imprimió algo: regla de corte del kit. |
   | `… already exists; move it away first` | Ya hay un `SIPGES-visita` en `--out`: renombralo (`Rename-Item <ruta>\SIPGES-visita SIPGES-visita-fallida-1`) y repetí. |
   | `Ya hay un paquete terminado de la versión …` | Un intento anterior construyó el paquete y falló después. Borrá **solo** la carpeta que nombra el mensaje, con `cmd /c rmdir /s /q "<carpeta del mensaje>"` (no sigue enlaces, a diferencia de `Remove-Item -Recurse`), y repetí. |
-  | `… no es un paquete que haya dejado builder.mjs …` / `… es un enlace o no es una carpeta …` | Algo ajeno ocupa ese lugar en `C:\SIPGES-kit\.data`: no lo borres a ciegas; regla de corte del kit. |
+  | `Hay otra construcción de la versión … en curso …` | Otra terminal está armando esa versión: esperá a que termine y repetí. Si ya no queda ninguna terminal con el kit (se cerró o se cortó a mitad, Windows le dio su número de proceso a otro programa, o ese número no se pudo leer), borrá **solo** la carpeta que nombra el mensaje, con la ruta tal como la imprime: `cmd /c rmdir /s /q "C:\SIPGES-kit\.data\desktop-packages\sipges-<versión>"`, y repetí. Nunca borres otra cosa: ni `.data`, ni `desktop-packages`, ni otra versión. |
+  | `… no es un paquete que haya dejado builder.mjs …` / `… es un enlace o no es una carpeta …` | Algo ajeno ocupa ese lugar en `C:\SIPGES-kit\.data`: no lo borres a ciegas; regla de corte del kit. El mensaje propone revisarlo y borrarlo (o quitar el enlace) porque sirve también fuera de la visita; en la laptop no lo hagas: en un clon recién hecho ahí solo escribe el kit, y algo ajeno puede ser un enlace a otros datos. |
 
   Si falla **al construir** (antes de `Package created: …`), repetí el mismo comando: el kit borra
   solo ese paquete incompleto y vuelve a construir. Si falla **después** (al firmar o al escribir
@@ -487,11 +488,23 @@ Se hace en la terminal para no depender de la espera de 300 segundos del acceso 
 
   Tenés que ver `Sign-in: ok (password and MFA code)`; `Managed install: version <versión>`, con la
   versión de hoy (prueba que responde la versión nueva y no la vieja, que también contesta en el
-  puerto 8000); por proyecto, cada módulo con
-  `every field identical`, `links … identical`, `uploads … identical`, `audit … kept unchanged`;
-  `Accounts: … identical`; `Isolation: … no record or upload of one project visible in another`;
-  al final `RESULT: no difference` (puede seguir `(N audit entries added, listed above)`: las líneas
-  `added: …` no son diferencias) y `0`. Ninguna línea puede decir `not fully checked` ni `not checked`
+  puerto 8000); por cada proyecto, `project N [<hash>]` y debajo solo estas líneas, en este orden:
+
+  | Línea | Cuándo aparece |
+  | --- | --- |
+  | `<módulo>: N -> N, every field identical` | Una por módulo con registros; un proyecto sin registros no tiene ninguna. |
+  | `links: N -> N, identical` | Siempre, también `links: 0 -> 0, identical`. |
+  | `uploads: N -> N, content <hash>… identical` o `uploads: 0 -> 0, none` | Siempre; `none` es un proyecto sin archivos subidos. |
+  | `export <tabla>: N -> N, identical` | Una por tabla de la exportación con filas (`attachments`, `record_links`, `record_versions`, …); un proyecto vacío no tiene ninguna. |
+  | `audit: N -> N, N kept unchanged` o `audit: 0 -> 0` | Siempre; sin `kept unchanged` cuando el proyecto no tenía entradas antes. A las dos puede seguir `, added: #<id> <módulo>/<acción>, …`, y entonces el segundo número es mayor: son entradas nuevas desde el conteo, no diferencias. |
+
+  Las dos cifras de cada línea son iguales, salvo en `audit` con `added`. Después,
+  `Accounts: N -> N, identical`; `Isolation: … no record or upload of one project visible in another`;
+  al final `RESULT: no difference` (puede seguir `(N audit entries added, listed above)`) y `0`. Todas
+  esas formas son correctas: no apliques la regla de corte por la forma de una línea de proyecto; el
+  veredicto de la comparación es la última línea `RESULT:` y el `$LASTEXITCODE`. Una línea con
+  `missing`, `new`, `differs`, `changed` o `problems` es una diferencia, y el `RESULT` ya no es
+  `no difference`. Ninguna línea puede decir `not fully checked` ni `not checked`
   (por ejemplo `records: not fully checked (…)`, `export: not checked (…)` o `Accounts: not checked (…)`):
   cada una es una parte que no se pudo comparar, y el `RESULT` ya no es `no difference`. Cómo leer cada línea:
   [migration/README.md](../../deploy/desktop/migration/README.md#reading-the-comparison).
@@ -709,8 +722,13 @@ Códigos de salida de `update.mjs` (`$LASTEXITCODE`): 0 hecho, 1 rechazado, 2 fa
 
   ```powershell
   node deploy\desktop\package\builder.mjs --version <versión> --out .data\desktop-packages\sipges-<versión>
+  $LASTEXITCODE
   node deploy\desktop\updater\release.mjs --package .data\desktop-packages\sipges-<versión> --out F:\release-<versión> --key K:\sipges-clave-actualizaciones.pem --notes "<qué cambió>"
   ```
+
+  Firmá con `release.mjs` solo un paquete que `builder.mjs` (o el kit) terminó con `0` (el
+  `$LASTEXITCODE` de arriba, después de `Package created: …`): `release.mjs` no comprueba que el
+  paquete esté terminado y firmaría también uno a medias.
 - **Respaldo**: el del paso 8, siempre antes de pulsar «Actualizar» y con la frecuencia que acuerden.
   Nunca en una carpeta compartida o sincronizada con la nube. Para restaurar:
   [Respaldar y restaurar](../../deploy/desktop/README.es.md#respaldar-y-restaurar), pasos 5 a 8 (la carpeta

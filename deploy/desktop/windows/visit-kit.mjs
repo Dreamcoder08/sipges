@@ -29,9 +29,12 @@ import { spawnSync } from 'node:child_process';
 import { createPrivateKey, generateKeyPairSync } from 'node:crypto';
 import {
   chmodSync,
+  closeSync,
   existsSync,
   lstatSync,
+  openSync,
   readFileSync,
+  readSync,
   readdirSync,
   realpathSync,
   rmdirSync,
@@ -40,6 +43,7 @@ import {
   unlinkSync,
 } from 'node:fs';
 import { connect } from 'node:net';
+import { Buffer } from 'node:buffer';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -255,6 +259,24 @@ function alive(pid) {
   }
 }
 
+// A process id file is `<pid>\n`: far shorter than this. One this long or longer is not one.
+const PID_FILE_BYTES = 64;
+
+/** The text of a process id file, at most PID_FILE_BYTES read; null when unreadable or that long. */
+function readPidFile(path) {
+  let fd;
+  try {
+    fd = openSync(path, 'r');
+    const buffer = Buffer.alloc(PID_FILE_BYTES);
+    const read = readSync(fd, buffer, 0, PID_FILE_BYTES, 0);
+    return read < PID_FILE_BYTES ? buffer.toString('utf8', 0, read) : null;
+  } catch {
+    return null;
+  } finally {
+    if (fd !== undefined) closeSync(fd);
+  }
+}
+
 /** Removes a file or a link (a junction too) itself; a read-only file (Windows) once more after chmod. */
 function removeEntry(path) {
   try {
@@ -333,8 +355,8 @@ export async function clearFailedPackage({ checkout, version }) {
   // process id before the marker. Alive, or unreadable as a process id: nothing is removed.
   const building = join(dir, PACKAGE_BUILDING);
   if (kind(building)) {
-    const text = kind(building).isFile() ? readFileSync(building, 'utf8') : '';
-    const pid = /^[1-9]\d*\n$/.test(text) ? Number(text) : null;
+    const text = kind(building).isFile() ? readPidFile(building) : null;
+    const pid = text !== null && /^[1-9]\d*\n$/.test(text) ? Number(text) : null;
     if (pid === null || alive(pid))
       return refuse(
         `Hay otra construcción de la versión ${version} en curso en ${dir} (o no se puede saber si terminó): el kit no borra nada. Esperá a que termine esa terminal; si ya no hay ninguna construyendo, borrá esa carpeta (solo ${dir}) y repetí el comando.`,
