@@ -117,13 +117,14 @@ export class SignInError extends Error {
   }
 }
 
-/**
- * A 3xx answer: never followed (the data would come from another server). The route is named
- * without its query or ids, which may be record or upload ids.
- */
+/** A route for messages: without its query or ids, which may be record or upload ids. */
+const routeOf = (path) =>
+  path.split('?')[0].replace(/^(\/api\/[^/]+|\/system\/uploads)\/[^/]+/, '$1/<id>');
+
+/** A 3xx answer: never followed (the data would come from another server). */
 export class RedirectError extends Error {
   constructor(method, path, status) {
-    const route = path.split('?')[0].replace(/^(\/api\/[^/]+|\/system\/uploads)\/[^/]+/, '$1/<id>');
+    const route = routeOf(path);
     super(`${method} ${route} answered ${status}, a redirect (not followed)`);
     this.route = `${method} ${route}`;
     this.status = status;
@@ -171,6 +172,21 @@ export async function signIn({ base, username, password, otp, totpSecret, totpSt
   return { call, withCode: code !== '' };
 }
 
+/**
+ * The parsed JSON body of a GET answer. A body that is not JSON is named by its route only: the
+ * parse error's own message quotes part of the body, which may be record content.
+ */
+export async function readJson(response, path) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      `GET ${routeOf(path)} answered ${response.status} with a body that is not valid JSON`,
+    );
+  }
+}
+
 /** GET returning parsed JSON, or `{ status }` when the answer is not 200. */
 export async function getJson(session, path, scope) {
   const response = await session.call(path, { scope });
@@ -178,7 +194,7 @@ export async function getJson(session, path, scope) {
     await response.arrayBuffer();
     return { status: response.status };
   }
-  return { status: 200, body: await response.json() };
+  return { status: 200, body: await readJson(response, path) };
 }
 
 const VALUED = new Set([
