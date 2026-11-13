@@ -782,3 +782,11 @@ Not chosen in S2. Each stays open in its own document.
   to the long real path; the verifier's regression tests are in (desktop suite 233). Of L26's open list only
   these remain: `update.mjs --adopt` follows a linked state folder, and omitting `-State` installs on the
   original by design.
+- L28 — Independent verification of `visit-rc7`: no blocker. The kit cleanup fix that had shipped unverified
+  (L25) holds: a real builder paused and killed at seven stages, no live build deleted, every refusal names the
+  way out. About 120 runbook items checked against the code; four text mismatches. `visit-rc8` (4c878818) =
+  #445: paso 5 of the runbook lists every valid comparison line (`uploads: 0 -> 0, none`, `audit: 0 -> 0`; read
+  literally it would have aborted a correct migration), a kit table row for «Hay otra construcción… en curso»,
+  an unreadable or huge build id file is a refusal (at most 64 bytes read), the verifier's edge tests (desktop
+  suite 239). Open: no lock for two concurrent cleanups (one-terminal rule), an orphaned pnpm child of a killed
+  builder can keep writing, the live-build refusal is run by no Windows job.
