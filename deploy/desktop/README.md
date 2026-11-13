@@ -83,7 +83,7 @@ newer release is offered inside SIPGES («Nueva versión de SIPGES», «Actualiz
 - The first start over an existing database copies the folder beside itself
   (`<state>.pre-update-<time>-first-start-<version>`, never deleted), runs the new version on a
   second copy first and only then on the folder; if that fails, SIPGES does not start and the
-  folder is as it was. To run it in a terminal, without the 5-minute wait of the shortcut:
+  folder is as it was. To run it in a terminal, without the shortcut's wait (5 minutes on Windows, 90 seconds on Linux):
   `node <root>/versions/<version>/updater/update.mjs --install <root> --first-start`. Step 2
   still comes first. Closing SIPGES during the first start stops its test runs too and puts the
   folder back from that copy; the next start does it again. If the computer was switched off in
@@ -223,6 +223,8 @@ Restore:
 8. Open SIPGES, sign in with the password and an MFA code, and open a few records and uploads.
    To check everything, run `deploy/desktop/migration/snapshot.mjs` before step 1 and
    `compare.mjs` after this step, as the drill did: it must print `RESULT: no difference`.
+   `compare.mjs` only compares against a managed install; against a clone install it refuses
+   with `RESULT: not compared (…)` and exit code 2.
 
 Anyone who gets the folder gets your data and the key to read it. Keep copies private.
 

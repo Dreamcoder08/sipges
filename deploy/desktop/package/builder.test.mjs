@@ -217,7 +217,7 @@ test('a finished build ends with its completion file; a failed one has the marke
     assert.match(failed.stderr, /^Error: pnpm failed: 1\n$/m);
     const half = join(root, '.data/desktop-packages/sipges-1.0.0');
     assert.equal(await readFile(join(half, PACKAGE_MARKER), 'utf8'), PACKAGE_MARKER_TEXT);
-    assert.deepEqual((await readdir(half)).sort(), [PACKAGE_MARKER, 'api']);
+    assert.deepEqual((await readdir(half)).sort(), [PACKAGE_MARKER, '.sipges-package-building', 'api']);
     // The first clean build of another version (preserved): exit 0, the completion file last.
     const done = build('1.0.1');
     assert.equal(done.status, 0, done.stderr);

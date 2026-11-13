@@ -22,6 +22,7 @@ import {
   KIT_FREE,
   LAPTOP_FREE_GB,
   NOTES,
+  PACKAGE_BUILDING,
   PACKAGE_COMPLETE,
   PACKAGE_MARKER,
   PACKAGE_MARKER_TEXT,
@@ -586,6 +587,7 @@ test('the kit knows the package marker and completion file builder.mjs writes', 
   assert.equal(PACKAGE_MARKER, builder.PACKAGE_MARKER);
   assert.equal(PACKAGE_MARKER_TEXT, builder.PACKAGE_MARKER_TEXT);
   assert.equal(PACKAGE_COMPLETE, builder.PACKAGE_COMPLETE);
+  assert.equal(PACKAGE_BUILDING, builder.PACKAGE_BUILDING);
 });
 
 test('F2: after a failed build the kit removes only that package, and the retry builds', () =>

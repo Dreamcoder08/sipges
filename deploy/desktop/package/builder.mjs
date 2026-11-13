@@ -1,4 +1,4 @@
-import { chmod, cp, lstat, mkdir, readFile, readdir, realpath, rename, stat, writeFile } from 'node:fs/promises';
+import { chmod, cp, lstat, mkdir, readFile, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,9 @@ const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 export const PACKAGE_MARKER = '.sipges-desktop-package';
 export const PACKAGE_MARKER_TEXT = 'Generated package; failed builds are retained.\n';
 export const PACKAGE_COMPLETE = '.sipges-package-complete';
+// Holds the builder's process id while it builds, written before the marker: a folder whose
+// builder is still alive is a build in progress, never a failed one.
+export const PACKAGE_BUILDING = '.sipges-package-building';
 const inside = (parent, child) => { const r = relative(parent, child); return r === '' || (!r.startsWith(`..${sep}`) && r !== '..' && !isAbsolute(r)); };
 
 async function walk(root, visit) {
@@ -139,6 +142,7 @@ async function main(args) {
   await mkdir(join(repo, '.data', 'desktop-packages'), { mode: 0o700, recursive: true });
   await outputPath(repo, destination, options['--version']);
   await mkdir(destination, { mode: 0o700 });
+  await writeFile(join(destination, PACKAGE_BUILDING), `${process.pid}\n`, { flag: 'wx' });
   await writeFile(join(destination, PACKAGE_MARKER), PACKAGE_MARKER_TEXT, { flag: 'wx' });
   run('pnpm', ['--filter', '@sipges/api', 'deploy', '--prod', '--legacy', join(destination, 'api')]);
   run('pnpm', ['--filter', '@sipges/web', 'build']);
@@ -149,6 +153,7 @@ async function main(args) {
   await addDesktopRuntime(destination);
   // Last: everything above finished.
   await writeFile(join(destination, PACKAGE_COMPLETE), 'Build finished.\n', { flag: 'wx' });
+  await rm(join(destination, PACKAGE_BUILDING));
   console.log(`Package created: ${destination}`);
 }
 

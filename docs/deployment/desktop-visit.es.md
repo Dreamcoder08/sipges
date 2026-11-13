@@ -259,7 +259,9 @@ niega a escribir ahí. Con la red de la casa.
   Antes de construir, se niega con `Error: …` y `1`, sin escribir nada. Lo único que puede borrar es
   el paquete **incompleto** que dejó un intento anterior fallido de esta misma versión en
   `C:\SIPGES-kit\.data\desktop-packages\sipges-<versión>` (lo dice: `Paquete incompleto de un
-  intento anterior borrado: …`); nunca un paquete terminado ni nada fuera de esa carpeta.
+  intento anterior borrado: …`); nunca un paquete terminado ni nada fuera de esa carpeta. Si otra terminal
+  todavía está construyendo esa versión, se niega («Hay otra construcción de la versión … en curso»)
+  y no borra nada: **corré el kit en una sola terminal a la vez** y esperá a que termine.
 
   | Empieza con | Qué hacer |
   | --- | --- |
@@ -462,7 +464,9 @@ Se hace en la terminal para no depender de la espera de 300 segundos del acceso 
   se inició: la versión nueva no pudo abrir los datos existentes …» queda **solo** en
   `launcher.log`, no en el cuadro); con una vuelta atrás incompleta (código 3) el cuadro dice
   «SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. …». También
-  puede decir «SIPGES no arrancó en 300 segundos. Revisa …».
+  puede decir «SIPGES no arrancó en 300 segundos. Revisa …». Ese aviso **no** detiene el lanzador, que
+  sigue en segundo plano: antes de reintentar, cerralo (Administrador de tareas, proceso `node`
+  de SIPGES) y mirá `launcher.log`.
 
 ### Paso 5 — Comparar
 

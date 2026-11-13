@@ -80,6 +80,8 @@ const PNPM_FIX = '«npm install -g pnpm@12.11.2», abrí una terminal nueva y re
 export const PACKAGE_MARKER = '.sipges-desktop-package';
 export const PACKAGE_MARKER_TEXT = 'Generated package; failed builds are retained.\n';
 export const PACKAGE_COMPLETE = '.sipges-package-complete';
+// Holds builder.mjs's process id from before the marker until after the completion file.
+export const PACKAGE_BUILDING = '.sipges-package-building';
 // What builder.mjs adds to web/index.html in its last step before the completion file: a package
 // with it and no completion file may have been finished by an older builder.mjs.
 const DESKTOP_MARK = '<meta name="sipges-desktop" content="1" />';
@@ -243,6 +245,16 @@ export function builderCommand({ repo: checkout, version }) {
   ];
 }
 
+/** Whether a process with this id exists (signal 0 only asks; EPERM means it exists). */
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error.code !== 'ESRCH';
+  }
+}
+
 /** Removes a file or a link (a junction too) itself; a read-only file (Windows) once more after chmod. */
 function removeEntry(path) {
   try {
@@ -271,7 +283,8 @@ function removeTree(path) {
  * keeps a failed folder and refuses to build over it, so a retry would always fail. The folder is
  * removed only when it is provably the kit's own failed build: a real folder (no link) under real
  * .data and desktop-packages folders of this checkout, holding builder.mjs's marker with its
- * exact text and neither its completion file nor the desktop mark of its last step. Anything
+ * exact text and neither its completion file nor the desktop mark of its last step, whose builder
+ * (its recorded process id) no longer runs. Anything
  * else is refused with the folder to delete by hand; nothing outside that folder is touched.
  * Returns `{ removed, refusal }`: the removed folder or null, the refusal or null.
  */
@@ -316,6 +329,17 @@ export async function clearFailedPackage({ checkout, version }) {
     return refuse(
       `Ya hay un paquete terminado de la versión ${version} en ${dir}: el kit no lo borra. Para armar el kit de nuevo con esta versión, borrá esa carpeta (solo ${dir}) y repetí el comando.`,
     );
+  // A marker without a completion file is also a build still running: its builder wrote its
+  // process id before the marker. Alive, or unreadable as a process id: nothing is removed.
+  const building = join(dir, PACKAGE_BUILDING);
+  if (kind(building)) {
+    const text = kind(building).isFile() ? readFileSync(building, 'utf8') : '';
+    const pid = /^[1-9]\d*\n$/.test(text) ? Number(text) : null;
+    if (pid === null || alive(pid))
+      return refuse(
+        `Hay otra construcción de la versión ${version} en curso en ${dir} (o no se puede saber si terminó): el kit no borra nada. Esperá a que termine esa terminal; si ya no hay ninguna construyendo, borrá esa carpeta (solo ${dir}) y repetí el comando.`,
+      );
+  }
   // The marker goes last: if removing stops half-way, the next run still proves the folder its own.
   for (const name of readdirSync(dir)) if (name !== PACKAGE_MARKER) removeTree(join(dir, name));
   removeEntry(join(dir, PACKAGE_MARKER));
