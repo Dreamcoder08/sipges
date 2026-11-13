@@ -38,6 +38,8 @@ const code = (secret, step) => {
 };
 
 const SECRET = 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP';
+// In a body that is not valid JSON: a JSON parse error quotes the text around the bad byte.
+const NOT_JSON_MARK = 'SINTNOJSON';
 const PASSWORD = 'clave-sintetica-admin-001';
 const DESKTOP_VERSION = '1.0.0-sintetico.1';
 
@@ -149,6 +151,9 @@ async function fakeApi(
     redirect = null,
     // Paths starting with this prefix close the connection without an answer.
     drop = null,
+    // Paths starting with this prefix answer 200 with a body that is not valid JSON: the
+    // synthetic marker, then a stray byte.
+    notJson = null,
   } = {},
 ) {
   const sessions = new Set();
@@ -192,6 +197,10 @@ async function fakeApi(
     const scopeName = req.headers['x-sipges-scope'];
     const scope = data.scopes[scopeName];
     if (!scope) return json(403, { detail: 'Seleccione un proyecto' });
+    if (notJson && url.pathname.startsWith(notJson)) {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(`{"Titulo": ${NOT_JSON_MARK}\u0001}`);
+    }
     // Like the real route: behind the session and the project scope (not scope-free).
     const valid = { installed: DESKTOP_VERSION, available: null, notes: null, dismissed: false };
     if (url.pathname === '/system/desktop/update-elsewhere') return json(200, valid);
@@ -1110,4 +1119,162 @@ test('F1: a 403 (no project scope, or not an administrator) has its own text: ex
     );
     assert.doesNotMatch(compared.stdout, /no difference/);
     assert.equal(written, false);
+  }));
+
+// ---------------------------------------------------------------------------------------------
+// rc4 follow-ups of the independent review: the remaining redirect statuses, a redirect during
+// the isolation probes, the option errors that stop before signing in, an --out that exists, and
+// a 200 answer whose body is not JSON (its parse error would quote part of the body).
+
+test('rc4: a redirect on an isolation probe is not compared, exit 2, the record id masked', () =>
+  withTemp(async (dir) => {
+    const { compared } = await compareAgainst(dir, {
+      redirect: { prefix: '/api/eventos/', status: 302 },
+    });
+    const label = compared.stdout + compared.stderr;
+    assert.equal(compared.status, 2, label);
+    // The probes come last: the per-module lines were printed, the Isolation line never was.
+    assert.match(compared.stdout, /^Accounts: 2 -> 2, identical$/m, label);
+    assert.doesNotMatch(compared.stdout, /^Isolation:/m, label);
+    assert.equal(
+      compared.stdout.split('\n').at(-2),
+      'RESULT: not compared (redirect: GET /api/eventos/<id> answered 302, not followed)',
+      label,
+    );
+    assert.equal(
+      compared.stderr,
+      'Error: GET /api/eventos/<id> answered 302, a redirect (not followed)\n',
+    );
+    assert.doesNotMatch(compared.stdout, /no difference/);
+    absent(label, fixture(), 'compare output');
+  }));
+
+test('rc4: 301, 303 and 308 are refused like 302 and 307, on a read and on the sign-in', () =>
+  withTemp(async (dir) => {
+    for (const status of [301, 303, 308])
+      for (const [prefix, route] of [
+        ['/system/links', 'GET /system/links'],
+        ['/login', 'POST /login'],
+      ]) {
+        const { compared, written } = await compareAgainst(dir, { redirect: { prefix, status } });
+        const label = `${status} ${prefix}: ${compared.stdout}${compared.stderr}`;
+        assert.equal(compared.status, 2, label);
+        assert.equal(
+          compared.stdout.split('\n').at(-2),
+          `RESULT: not compared (redirect: ${route} answered ${status}, not followed)`,
+          label,
+        );
+        assert.doesNotMatch(
+          compared.stdout + compared.stderr,
+          /no difference|identical|sign-in failed/i,
+          label,
+        );
+        assert.equal(written, false, label);
+      }
+  }));
+
+test('rc4: a --password-file that does not exist stops before signing in: exit 1, no RESULT', () =>
+  withTemp(async (dir) => {
+    const { FORMAT, FORMAT_VERSION } = await import('./snapshot.mjs');
+    const before = join(dir, 'before.json');
+    await writeFile(
+      before,
+      JSON.stringify({ format: FORMAT, version: FORMAT_VERSION, salt: '00', projects: [] }),
+    );
+    // Nothing listens on port 1: no request is needed to refuse the option.
+    const compared = await run(compareCli, [
+      '--before',
+      before,
+      '--url',
+      'http://127.0.0.1:1',
+      '--password-file',
+      join(dir, 'missing-password'),
+      '--otp',
+      '123456',
+    ]);
+    assert.equal(compared.status, 1, compared.stdout + compared.stderr);
+    assert.equal(compared.stdout, '');
+    assert.match(compared.stderr, /^Error: ENOENT: [^\n]+\n$/);
+  }));
+
+test('rc4: an --out file that already exists is kept: not compared, exit 2', () =>
+  withTemp(async (dir) => {
+    const login = await credentials(dir);
+    const before = join(dir, 'before.json');
+    const out = join(dir, 'after.json');
+    const kept = 'contenido-sintetico-previo\n';
+    const api = await fakeApi(fixture());
+    try {
+      const taken = await run(snapshotCli, ['--url', api.url, ...login, '--out', before]);
+      assert.equal(taken.status, 0, taken.stderr);
+      await writeFile(out, kept);
+      const compared = await run(compareCli, [
+        '--before',
+        before,
+        '--url',
+        api.url,
+        ...login,
+        '--out',
+        out,
+      ]);
+      assert.equal(compared.status, 2, compared.stdout + compared.stderr);
+      assert.match(
+        compared.stdout.split('\n').at(-2),
+        /^RESULT: not compared \(error: EEXIST: [^\n]+\)$/,
+      );
+      assert.match(compared.stderr, /^Error: EEXIST: [^\n]+\n$/);
+      assert.equal(await readFile(out, 'utf8'), kept);
+    } finally {
+      api.close();
+    }
+  }));
+
+test('rc4: a 200 answer that is not valid JSON is named by its route, never quoted: compare exit 2', () =>
+  withTemp(async (dir) => {
+    for (const [notJson, route] of [
+      ['/api/eventos/', 'GET /api/eventos/<id>'],
+      ['/api/eventos', 'GET /api/eventos'],
+    ]) {
+      const { compared } = await compareAgainst(dir, { notJson });
+      const label = `${notJson}: ${compared.stdout}${compared.stderr}`;
+      const why = `${route} answered 200 with a body that is not valid JSON`;
+      assert.equal(compared.status, 2, label);
+      assert.equal(
+        compared.stdout.split('\n').at(-2),
+        `RESULT: not compared (error: ${why})`,
+        label,
+      );
+      assert.equal(compared.stderr, `Error: ${why}\n`, label);
+      assert.ok(!label.includes(NOT_JSON_MARK), `the body was quoted: ${label}`);
+      assert.doesNotMatch(compared.stdout, /no difference/, label);
+      absent(label, fixture(), 'compare output');
+    }
+  }));
+
+test('rc4: snapshot names a 200 answer that is not valid JSON by its route: non-zero exit, no file', () =>
+  withTemp(async (dir) => {
+    const login = await credentials(dir);
+    for (const [notJson, route] of [
+      ['/api/eventos', 'GET /api/eventos'],
+      ['/system/uploads/', 'GET /system/uploads/<id>'],
+    ]) {
+      const out = join(dir, `before-${notJson.replaceAll('/', '-')}.json`);
+      const api = await fakeApi(fixture(), { notJson });
+      let taken;
+      try {
+        taken = await run(snapshotCli, ['--url', api.url, ...login, '--out', out]);
+      } finally {
+        api.close();
+      }
+      const label = `${notJson}: ${taken.stdout}${taken.stderr}`;
+      assert.notEqual(taken.status, 0, label);
+      assert.equal(taken.stdout, '', label);
+      assert.equal(
+        taken.stderr,
+        `Error: ${route} answered 200 with a body that is not valid JSON\n`,
+        label,
+      );
+      assert.ok(!label.includes(NOT_JSON_MARK), `the body was quoted: ${label}`);
+      assert.equal(existsSync(out), false, label);
+    }
   }));

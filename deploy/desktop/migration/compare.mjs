@@ -23,6 +23,7 @@ import {
   getJson,
   keyed,
   parseArgs,
+  readJson,
   short,
   signIn,
 } from './client.mjs';
@@ -256,11 +257,10 @@ export async function probeIsolation(session, live, limit = DEFAULT_PROBES) {
       for (const [slug, ids] of Object.entries(from.ids))
         for (const id of ids.slice(0, limit)) {
           probes += 1;
-          const response = await session.call(`/api/${slug}/${encodeURIComponent(id)}`, {
-            scope: other.scope,
-          });
+          const path = `/api/${slug}/${encodeURIComponent(id)}`;
+          const response = await session.call(path, { scope: other.scope });
           const body =
-            response.status === 200 ? await response.json() : await response.arrayBuffer();
+            response.status === 200 ? await readJson(response, path) : await response.arrayBuffer();
           if (response.status === 200) {
             const own = other.contents[slug]?.[id];
             if (own === undefined || own !== contentHash(other.hash, body)) leaks.records += 1;

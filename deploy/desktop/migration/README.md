@@ -156,8 +156,14 @@ failed`.
   named without its query or ids. A server that cannot be reached or drops the connection prints
   `RESULT: not compared (the server could not be reached or the connection dropped: fetch failed, ECONNREFUSED)`
   (the last part is the socket error), and any other error after the options were read
-  `RESULT: not compared (error: …)`. Each also prints `Error: …` and exits with code 2; nothing
-  is reported as equal, and the lines printed before it cover only part of the data.
+  `RESULT: not compared (error: …)` (a 200 answer that is not JSON is named by its route, like a
+  redirect, and never quoted:
+  `error: GET /api/eventos answered 200 with a body that is not valid JSON`). Each also prints
+  `Error: …` and exits with code 2. When the run stops during the
+  isolation probes, the per-module `identical` lines and the `--out` file may already exist: they
+  cover only part of the check, and only the final `RESULT:` line and the exit code are the
+  verdict. A server that stops answering without closing the connection can keep `compare.mjs`
+  silent for up to about 5 minutes before it prints `RESULT: not compared (…)` and exits with 2.
 - `project N [hash]`: projects in the order of their identifiers; the hash is keyed with the
   snapshot's salt, so it means nothing outside this comparison.
 - One line per module with records: count before and after, then either `every field identical`
