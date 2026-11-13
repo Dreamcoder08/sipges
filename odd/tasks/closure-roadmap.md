@@ -743,3 +743,16 @@ Not chosen in S2. Each stays open in its own document.
   pre-existing bug (a compromiso opened from the hub as `demandas/<id>`, `?ficha=` lost on reload) is fixed on
   fix/registros-compromiso-ficha (RED 3/2, web 622), PR/CI/merge pending. T32 is done except recalibrating the
   profile and threshold once T27 records the laptop.
+- L24 — Freeze and hardening. #436 compromiso ficha merged (89d87460) and tagged `visit-rc1`; from there only fixes
+  and tests. Correction of earlier logs: the first T18 gallery was never fully reviewed (2 of 25 images opened) and
+  was lost with its worktree; 74 regenerated captures are kept in `.data/rc1-screens` and are still unreviewed.
+  Independent adversarial review of `visit-rc1` found 8 defects (rollback reported recovered on a recreated state
+  folder, comparison could read the old server and print `no difference`, kit not retryable, runbook traps);
+  nothing ran on Windows locally. #437 (a6217ac1): axe on WCAG 2.2 AA tags, focus-not-obscured keyboard checks
+  (found and fixed a Registros row hidden under the sticky header), Inicio budget as the median of three cold loads
+  under 3000 ms. PR #438 carries the install-safety fixes; two verifier rounds each rejected the previous version
+  (round 2: cleanup deleted a package still being built, fixed with the builder's process id, 214/214 desktop
+  tests, three mutations caught). Still open for Saturday: Windows folder-link safety, comparison coverage gaps,
+  snapshot reads following redirects, `compare.mjs` exit 1 on a dropped connection, second-click and antivirus
+  rename waits unproven, automated axe is not WCAG conformance, no Authenticode signature. `visit-rc2` only after
+  #438 is green on its exact head.
