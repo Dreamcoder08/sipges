@@ -8,6 +8,11 @@ import process from 'node:process';
 import console from 'node:console';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+// Written first in a package folder, and last when the build finished: a folder with the marker
+// and without the completion file is a failed build (retained), which the visit kit may remove.
+export const PACKAGE_MARKER = '.sipges-desktop-package';
+export const PACKAGE_MARKER_TEXT = 'Generated package; failed builds are retained.\n';
+export const PACKAGE_COMPLETE = '.sipges-package-complete';
 const inside = (parent, child) => { const r = relative(parent, child); return r === '' || (!r.startsWith(`..${sep}`) && r !== '..' && !isAbsolute(r)); };
 
 async function walk(root, visit) {
@@ -134,7 +139,7 @@ async function main(args) {
   await mkdir(join(repo, '.data', 'desktop-packages'), { mode: 0o700, recursive: true });
   await outputPath(repo, destination, options['--version']);
   await mkdir(destination, { mode: 0o700 });
-  await writeFile(join(destination, '.sipges-desktop-package'), 'Generated package; failed builds are retained.\n', { flag: 'wx' });
+  await writeFile(join(destination, PACKAGE_MARKER), PACKAGE_MARKER_TEXT, { flag: 'wx' });
   run('pnpm', ['--filter', '@sipges/api', 'deploy', '--prod', '--legacy', join(destination, 'api')]);
   run('pnpm', ['--filter', '@sipges/web', 'build']);
   await cp(join(repo, 'apps/web/dist'), join(destination, 'web'), { recursive: true, errorOnExist: true, force: false });
@@ -142,6 +147,8 @@ async function main(args) {
   await compileDeployed(join(destination, 'api'));
   await writeManagedEntry(destination, { version: options['--version'], platform: process.platform, arch: process.arch });
   await addDesktopRuntime(destination);
+  // Last: everything above finished.
+  await writeFile(join(destination, PACKAGE_COMPLETE), 'Build finished.\n', { flag: 'wx' });
   console.log(`Package created: ${destination}`);
 }
 

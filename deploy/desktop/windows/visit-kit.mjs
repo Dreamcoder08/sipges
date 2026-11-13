@@ -9,7 +9,10 @@
 // with a Spanish message and nothing written, when Node.js is older than 24 or pnpm 12 is missing
 // (printing the fix), the checkout is not installed or not clean, this checkout, --key or --out is
 // inside the old clone or this checkout inside %LOCALAPPDATA%\SIPGES*, SIPGES answers on port 8000
-// (she is working), or a drive lacks the free space below. It
+// (she is working), a package of this version is already in .data\desktop-packages and is not a
+// failed build of this checkout (a failed one, which builder.mjs keeps and would refuse to build
+// over, is removed: the only thing the kit ever deletes), or a drive lacks the free space below.
+// It
 //   (a) builds the package with deploy/desktop/package/builder.mjs;
 //   (b) creates the Ed25519 signing key at --key when that file does not exist yet (the path is
 //       meant to be on the key USB), otherwise reuses it;
@@ -24,7 +27,18 @@
 // repository, the old clone and %LOCALAPPDATA%\SIPGES* (C:\SIPGES-kit-salida).
 import { spawnSync } from 'node:child_process';
 import { createPrivateKey, generateKeyPairSync } from 'node:crypto';
-import { existsSync, lstatSync, realpathSync, statSync, statfsSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  lstatSync,
+  readFileSync,
+  readdirSync,
+  realpathSync,
+  rmdirSync,
+  statSync,
+  statfsSync,
+  unlinkSync,
+} from 'node:fs';
 import { connect } from 'node:net';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path, { basename, dirname, join, resolve } from 'node:path';
@@ -60,6 +74,15 @@ export const KIT_FREE = 1 * GiB;
 // kit). The same job fails when twice its measured total passes it.
 export const LAPTOP_FREE_GB = 5;
 const PNPM_FIX = '«npm install -g pnpm@12.11.2», abrí una terminal nueva y repetí el comando.';
+// What deploy/desktop/package/builder.mjs writes first in a package folder and, last, when the
+// build finished (visit-kit.test.mjs checks they are the builder's). Not imported from it: the
+// builder loads TypeScript, and the kit must refuse an uninstalled checkout with its own message.
+export const PACKAGE_MARKER = '.sipges-desktop-package';
+export const PACKAGE_MARKER_TEXT = 'Generated package; failed builds are retained.\n';
+export const PACKAGE_COMPLETE = '.sipges-package-complete';
+// What builder.mjs adds to web/index.html in its last step before the completion file: a package
+// with it and no completion file may have been finished by an older builder.mjs.
+const DESKTOP_MARK = '<meta name="sipges-desktop" content="1" />';
 const CLONE_ELSEWHERE =
   'Cloná el commit definitivo en otra carpeta (C:\\SIPGES-kit) y corré el kit desde ahí.';
 
@@ -73,7 +96,9 @@ otherwise; never inside the repository, %LOCALAPPDATA%\\SIPGES* or <out>\\${VISI
 outside the repository, the old clone and %LOCALAPPDATA%\\SIPGES* (C:\\SIPGES-kit-salida).
 Windows only, from a clean second clone after pnpm install --frozen-lockfile, never inside the
 laptop's old clone. Refuses before building when Node.js is older than 24, pnpm 12 is missing,
-SIPGES answers on port ${SIPGES_PORT} or a drive has less free space than the build needs.`;
+SIPGES answers on port ${SIPGES_PORT}, a finished package of this version (or a folder builder.mjs
+did not make) is in .data\\desktop-packages, or a drive has less free space than the build needs.
+A failed build of this version there (builder.mjs's marker, no completion file) is removed first.`;
 
 /** The kit's options: all three required, each once. */
 export function parseKitOptions(args) {
@@ -143,7 +168,7 @@ const gb = (bytes) => `${(bytes / GiB).toFixed(1).replace('.', ',')} GB`;
 /** Why this Node.js cannot build the kit, with the fix, or null. */
 export function nodeRefusal(version) {
   if (Number(version.split('.')[0]) >= 24) return null;
-  return `Node.js ${version} es anterior a 24: el kit necesita Node.js 24 o posterior. Instalalo con «winget install OpenJS.NodeJS.LTS», abrí una terminal nueva y repetí el comando.`;
+  return `Node.js ${version} es anterior a 24: el kit necesita Node.js 24 o posterior. No instales ni actualices Node.js en la laptop durante la visita (la versión vieja de SIPGES usa este Node): hoy no se instala nada (regla de corte del kit).`;
 }
 
 /** Why this pnpm (its --version, or null when missing) cannot build the kit, with the fix, or null. */
@@ -204,10 +229,106 @@ export function placeRefusal({ checkout, key, out, clones, localAppData, pathApi
 }
 
 /**
+ * The builder.mjs arguments for this checkout, from the checkout path as this script was started
+ * (never its real path): builder.mjs compares --out with its own folder as text, so another letter
+ * case (Windows) or a resolved link would be refused. The last one is the package folder.
+ */
+export function builderCommand({ repo: checkout, version }) {
+  return [
+    join(checkout, 'deploy', 'desktop', 'package', 'builder.mjs'),
+    '--version',
+    version,
+    '--out',
+    join(checkout, '.data', 'desktop-packages', `sipges-${version}`),
+  ];
+}
+
+/** Removes a file or a link (a junction too) itself; a read-only file (Windows) once more after chmod. */
+function removeEntry(path) {
+  try {
+    unlinkSync(path);
+  } catch (error) {
+    if (error.code !== 'EPERM' && error.code !== 'EACCES') throw error;
+    // chmod follows links: a link that cannot be removed must never change its target.
+    if (lstatSync(path).isSymbolicLink()) throw error;
+    chmodSync(path, 0o666);
+    unlinkSync(path);
+  }
+}
+
+/** Removes a tree without following any link: a link (or junction) is removed itself. */
+function removeTree(path) {
+  const info = lstatSync(path);
+  if (info.isDirectory() && !info.isSymbolicLink()) {
+    for (const name of readdirSync(path)) removeTree(join(path, name));
+    rmdirSync(path);
+  } else removeEntry(path);
+}
+
+/**
+ * Before building: the package folder of this version in this checkout
+ * (<checkout>\.data\desktop-packages\sipges-<version>), when a build failed there. builder.mjs
+ * keeps a failed folder and refuses to build over it, so a retry would always fail. The folder is
+ * removed only when it is provably the kit's own failed build: a real folder (no link) under real
+ * .data and desktop-packages folders of this checkout, holding builder.mjs's marker with its
+ * exact text and neither its completion file nor the desktop mark of its last step. Anything
+ * else is refused with the folder to delete by hand; nothing outside that folder is touched.
+ * Returns `{ removed, refusal }`: the removed folder or null, the refusal or null.
+ */
+export async function clearFailedPackage({ checkout, version }) {
+  // A version is one folder name: never a path (`1.0.0/../..`) that reaches outside.
+  if (!isVersion(version))
+    return { removed: null, refusal: `Invalid semantic version: ${version}` };
+  const data = join(checkout, '.data');
+  const packages = join(data, 'desktop-packages');
+  const dir = join(packages, `sipges-${version}`);
+  const kind = (path) => {
+    try {
+      return lstatSync(path);
+    } catch (error) {
+      if (error.code === 'ENOENT') return null;
+      throw error;
+    }
+  };
+  const refuse = (refusal) => ({ removed: null, refusal });
+  for (const parent of [data, packages]) {
+    const info = kind(parent);
+    if (!info) return { removed: null, refusal: null };
+    if (info.isSymbolicLink() || !info.isDirectory())
+      return refuse(
+        `${parent} es un enlace o no es una carpeta: el kit no borra nada a través de él y builder.mjs no construye ahí. Quitá ese enlace (no lo que contiene) y repetí el comando.`,
+      );
+  }
+  const info = kind(dir);
+  if (!info) return { removed: null, refusal: null };
+  const notBuilder = refuse(
+    `${dir} no es un paquete que haya dejado builder.mjs (es un enlace, no es una carpeta o le falta su marca ${PACKAGE_MARKER}): el kit no la borra. Revisá qué es, borrá esa carpeta (solo ${dir}) y repetí el comando.`,
+  );
+  // With a valid version and .data, desktop-packages and the folder each a real folder (lstat,
+  // no link or junction), the folder is <checkout>\.data\desktop-packages\sipges-<version>.
+  if (info.isSymbolicLink() || !info.isDirectory()) return notBuilder;
+  const marker = kind(join(dir, PACKAGE_MARKER));
+  if (!marker?.isFile() || readFileSync(join(dir, PACKAGE_MARKER), 'utf8') !== PACKAGE_MARKER_TEXT)
+    return notBuilder;
+  const index = join(dir, 'web', 'index.html');
+  const marked = kind(index)?.isFile() && readFileSync(index, 'utf8').includes(DESKTOP_MARK);
+  if (kind(join(dir, PACKAGE_COMPLETE)) || marked)
+    return refuse(
+      `Ya hay un paquete terminado de la versión ${version} en ${dir}: el kit no lo borra. Para armar el kit de nuevo con esta versión, borrá esa carpeta (solo ${dir}) y repetí el comando.`,
+    );
+  // The marker goes last: if removing stops half-way, the next run still proves the folder its own.
+  for (const name of readdirSync(dir)) if (name !== PACKAGE_MARKER) removeTree(join(dir, name));
+  removeEntry(join(dir, PACKAGE_MARKER));
+  rmdirSync(dir);
+  return { removed: dir, refusal: null };
+}
+
+/**
  * The laptop checks, in order, before anything is built: the first refusal (a message) or null.
  * Each probe is asked only when every check before it passed. `probes`: nodeVersion (string),
  * and the functions pnpmVersion (string or null), installed, clean, shortcuts (the Arguments
- * lines of this account's SIPGES shortcuts), sipgesAnswers and space
+ * lines of this account's SIPGES shortcuts), sipgesAnswers, failedPackage (removes a failed
+ * build of this version, clearFailedPackage; returns its refusal or null) and space
  * ({ freeCheckout, freeOut, sameDrive }); the functions may be async.
  */
 export async function preflight({ checkout, key, out, localAppData, pathApi = path, probes }) {
@@ -224,6 +345,10 @@ export async function preflight({ checkout, key, out, localAppData, pathApi = pa
   if (place) return place;
   const open = sipgesRefusal(await probes.sipgesAnswers());
   if (open) return open;
+  // After the SIPGES check (never while she works) and before the space: a failed build may be
+  // what filled the drive.
+  const failed = await probes.failedPackage();
+  if (failed) return failed;
   return spaceRefusal({ checkout, out, ...(await probes.space()) });
 }
 
@@ -292,6 +417,8 @@ export function leeme({ version, commit, fingerprint, visit, built }) {
     `  Trusting the update key that signed this release (SHA-256 ${fingerprint}).`,
     `  Installed ${version}`,
     '  SIPGES está instalado. Ábrelo desde el menú Inicio o el escritorio.',
+    '  Siempre con -State: sin él la versión nueva migra la carpeta original. Comprobalo',
+    `  (stateDir tiene que terminar en SIPGES-datos): Get-Content "${app}\\install.json"`,
     '',
     'Paso 4 - Primer arranque sobre la copia (tiene que terminar en 0)',
     `  node "${app}\\versions\\${version}\\updater\\update.mjs" --install "${app}" --first-start`,
@@ -300,6 +427,8 @@ export function leeme({ version, commit, fingerprint, visit, built }) {
     'Paso 5 - Comparar (con SIPGES abierto y un código MFA nuevo; RESULT: no difference y 0)',
     `  node "${scripts}\\migration\\compare.mjs" --before "$env:LOCALAPPDATA\\SIPGES-visita\\sipges-antes.json" --url http://127.0.0.1:8000`,
     '  $LASTEXITCODE',
+    `  Antes de comparar dice: Managed install: version ${version}`,
+    '  RESULT: not compared (...) y 2: responde otro SIPGES (la versión vieja); nada se comparó.',
     '',
     'Una huella distinta, un Error, un RESULT distinto de no difference o un código distinto de 0:',
     'Regla de corte (sección 3 del runbook). La versión vieja sigue en uso.',
@@ -467,6 +596,11 @@ async function main(args) {
       clean: () => git(['status', '--porcelain']).trim() === '',
       shortcuts: shortcutArguments,
       sipgesAnswers: () => portAnswers(SIPGES_PORT),
+      failedPackage: async () => {
+        const { removed, refusal } = await clearFailedPackage({ checkout, version: options.version });
+        if (removed) console.log(`Paquete incompleto de un intento anterior borrado: ${removed}`);
+        return refusal;
+      },
       space: () => ({
         freeCheckout: freeBytes(checkout),
         freeOut: freeBytes(out),
@@ -479,18 +613,9 @@ async function main(args) {
   console.log(`Visit kit ${options.version} from ${commit}`);
 
   console.log('\n== (a) builder.mjs');
-  const packageDir = join(repo, '.data', 'desktop-packages', `sipges-${options.version}`);
-  const built = spawnSync(
-    process.execPath,
-    [
-      join(repo, 'deploy', 'desktop', 'package', 'builder.mjs'),
-      '--version',
-      options.version,
-      '--out',
-      packageDir,
-    ],
-    { cwd: repo, stdio: 'inherit' },
-  );
+  const command = builderCommand({ repo, version: options.version });
+  const packageDir = command.at(-1);
+  const built = spawnSync(process.execPath, command, { cwd: repo, stdio: 'inherit' });
   if (built.status !== 0) throw new Error(`builder.mjs failed (exit code ${built.status})`);
 
   console.log('\n== (b)–(d) key, signed release, scripts, fingerprint.txt, LEEME.txt');

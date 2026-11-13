@@ -201,3 +201,33 @@ test('pnpm runs through cmd.exe on Windows, where it is a .cmd shim Node cannot 
   assert.equal(commandFor('pnpm', ['build'], 'win32', undefined).file, 'cmd.exe');
   for (const unsafe of ['C:\\a"b', 'C:\\100%\\x']) assert.throws(() => commandFor('pnpm', [unsafe], 'win32', 'cmd.exe'), /^Error: Cannot pass .+ to cmd\.exe$/);
 });
+
+// F2: a build that fails half-way leaves its folder (failed builds are retained); only a build
+// that finished writes the completion file, last, so the visit kit can tell the two apart.
+test('a finished build ends with its completion file; a failed one has the marker and no completion file', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'sipges-package-complete-'));
+  try {
+    const { fakeCheckout } = await import('./builder-helpers.mjs');
+    const { PACKAGE_MARKER, PACKAGE_MARKER_TEXT, PACKAGE_COMPLETE } = await import('./builder.mjs');
+    assert.deepEqual([PACKAGE_MARKER, PACKAGE_MARKER_TEXT, PACKAGE_COMPLETE], ['.sipges-desktop-package', 'Generated package; failed builds are retained.\n', '.sipges-package-complete']);
+    const root = join(dir, 'repo');
+    const { build } = await fakeCheckout(root);
+    const failed = build('1.0.0', { failWebBuild: true });
+    assert.equal(failed.status, 1, failed.stderr);
+    assert.match(failed.stderr, /^Error: pnpm failed: 1\n$/m);
+    const half = join(root, '.data/desktop-packages/sipges-1.0.0');
+    assert.equal(await readFile(join(half, PACKAGE_MARKER), 'utf8'), PACKAGE_MARKER_TEXT);
+    assert.deepEqual((await readdir(half)).sort(), [PACKAGE_MARKER, 'api']);
+    // The first clean build of another version (preserved): exit 0, the completion file last.
+    const done = build('1.0.1');
+    assert.equal(done.status, 0, done.stderr);
+    const full = join(root, '.data/desktop-packages/sipges-1.0.1');
+    assert.match(done.stdout, new RegExp(`Package created: ${full.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n$`));
+    assert.equal(await readFile(join(full, PACKAGE_COMPLETE), 'utf8'), 'Build finished.\n');
+    const metadata = JSON.parse(await readFile(join(full, 'metadata.json'), 'utf8'));
+    assert.equal(metadata.version, '1.0.1');
+    const completed = (await stat(join(full, PACKAGE_COMPLETE))).mtimeMs;
+    for (const later of ['metadata.json', 'web/index.html', 'updater/updater.mjs'])
+      assert.ok((await stat(join(full, later))).mtimeMs <= completed, `${later} written after the completion file`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
