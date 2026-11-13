@@ -27,7 +27,9 @@
 //    version runs and compare.mjs again finds no difference.
 // 5. Halt: a fresh managed install whose update cannot be rolled back (the pre-update copy is
 //    removed by an injected migration, as in the updater tests); update.mjs --recover exits 3 and
-//    the installed start.ps1 exits 3 printing the notice.
+//    the installed start.ps1 exits 3 printing the notice. Rerunning install.ps1 (managed and
+//    clone mode) then exits 1 with «Hay una actualización de SIPGES pendiente o detenida» and
+//    changes nothing; the halt text start.ps1 falls back to names the recorded state folder.
 // 6. Logs (launcher.log, update.log, update-boot.log, api.log, the outputs of every command) are
 //    copied to --logs; never a state folder, a snapshot or the key. The key is deleted at the end.
 //
@@ -45,7 +47,7 @@ import {
 } from 'node:fs';
 import { lstat, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { release as osRelease, tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve, win32 } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { clearTimeout, setTimeout } from 'node:timers';
 import { setTimeout as sleep } from 'node:timers/promises';
@@ -72,6 +74,13 @@ const COMMIT = /^(?!.*\.\.)[0-9A-Za-z][0-9A-Za-z._/-]{0,99}$/;
 // output is read through a pipe ([Console]::OutputEncoding), so the drill can check it as typed.
 export const INSTALLED_LINE = 'SIPGES está instalado. Ábrelo desde el menú Inicio o el escritorio.';
 export const HALT_LINE = 'SIPGES no se inició';
+// install.ps1 during a pending or halted update; the halt text start-managed.ps1 shows when the
+// launcher left no notice: naming the state folder of install.json, or for any install.
+export const PENDING_LINE = 'Hay una actualización de SIPGES pendiente o detenida';
+export const haltFallbackNamed = (state) =>
+  `(la carpeta ${win32.basename(state)}.pre-update-… que está en ${win32.dirname(state)}, junto a su carpeta de datos ${state})`;
+export const HALT_FALLBACK_GENERIC =
+  '(la carpeta terminada en .pre-update-… que está junto a su carpeta de datos de SIPGES)';
 
 const USAGE = `Usage: node deploy/desktop/windows/drill.mjs [--work <new dir>] [--logs <dir>] [--old-commit <commit>] [--launcher-commit <commit>]
 
@@ -958,6 +967,73 @@ async function main(args) {
       'launcher.log: start_refused ROLLBACK_INCOMPLETE',
     );
     check(!(await healthy()), 'nothing answers on port 8000 after the halt');
+
+    step('5b. During the halt the installer creates nothing; the fallback names the state folder');
+    const haltState = JSON.parse(await readFile(join(haltRoot, 'install.json'), 'utf8')).stateDir;
+    const journal = join(haltRoot, 'update-journal.json');
+    const pendingJournal = await readFile(journal);
+    const stateDigest = digest(await tree(haltState));
+    const besideState = readdirSync(dirname(haltState)).sort().join('|');
+    const inRoot = readdirSync(haltRoot).sort().join('|');
+    for (const [mode, args] of [
+      ['managed', ['-Release', releaseN]],
+      ['clone', []],
+    ]) {
+      const rerun = await run(POWERSHELL, psArgs(join(scripts, 'windows', 'install.ps1'), args), {
+        env: haltEnv,
+        log: out(`halt-install-rerun-${mode}`),
+        seconds: 120,
+      });
+      check(rerun.status === 1, `install.ps1 (${mode}) during the halt exit 1 (got ${rerun.status})`);
+      check(
+        rerun.output.includes(`${PENDING_LINE} (${journal})`),
+        `install.ps1 (${mode}) printed «${PENDING_LINE} (…)»`,
+      );
+      check(
+        (await readFile(journal)).equals(pendingJournal) &&
+          digest(await tree(haltState)) === stateDigest &&
+          readdirSync(dirname(haltState)).sort().join('|') === besideState &&
+          readdirSync(haltRoot).sort().join('|') === inRoot,
+        `install.ps1 (${mode}) changed nothing: journal, state folder, its siblings, install root`,
+      );
+    }
+    // Get-HaltFallback of the installed start.ps1, run on its own: start.ps1 shows it only when
+    // the launcher's notice is missing from launcher.log, which the halt above always writes.
+    const fallbackOf = (name, startPs1) =>
+      psLines(
+        work,
+        name,
+        [
+          "$ErrorActionPreference = 'Stop'",
+          `$path = ${quotePs(startPs1)}`,
+          '$Root = Split-Path -Parent $path',
+          '$ast = [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$null)',
+          'foreach ($statement in $ast.EndBlock.Statements) {',
+          "    $assigned = ($statement -is [System.Management.Automation.Language.AssignmentStatementAst]) -and (@('$HaltNamed', '$HaltGeneric') -contains $statement.Left.Extent.Text)",
+          "    $defined = ($statement -is [System.Management.Automation.Language.FunctionDefinitionAst]) -and ($statement.Name -eq 'Get-HaltFallback')",
+          '    if ($assigned -or $defined) { . ([scriptblock]::Create($statement.Extent.Text)) }',
+          '}',
+          'Write-Output (Get-HaltFallback)',
+        ],
+        { log: out(name), seconds: 60 },
+      );
+    const named = await fallbackOf('halt-fallback-named', join(haltRoot, 'start.ps1'));
+    check(
+      named.status === 0 &&
+        named.output.trim().startsWith(HALT_LINE) &&
+        named.output.includes(haltFallbackNamed(haltState)),
+      `the fallback halt text names the managed state folder ${haltState}`,
+    );
+    const bare = join(work, 'halt-fallback-generic');
+    mkdirSync(bare, { recursive: true });
+    copyFileSync(join(haltRoot, 'start.ps1'), join(bare, 'start.ps1'));
+    const generic = await fallbackOf('halt-fallback-generic', join(bare, 'start.ps1'));
+    check(
+      generic.status === 0 &&
+        generic.output.trim().startsWith(HALT_LINE) &&
+        generic.output.includes(HALT_FALLBACK_GENERIC),
+      'without install.json the fallback halt text is the generic one',
+    );
 
     say('\nDRILL PASSED');
   } finally {

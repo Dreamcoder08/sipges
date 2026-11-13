@@ -21,13 +21,18 @@ $Root = $PSScriptRoot
 $Url = 'http://localhost:8000'
 # The server binds 127.0.0.1; "localhost" may resolve to ::1 first, where nothing listens.
 $Probe = 'http://127.0.0.1:8000/health'
-$WaitSeconds = 90
+# How long a click waits for SIPGES while its launcher still runs: a start that recovers an
+# interrupted update may retry each folder rename for 45 s while Windows reports it held.
+$WaitSeconds = 300
 # Outside the state folder: an update copies and may move that folder while SIPGES runs, and
 # Windows cannot move a folder holding an open file.
 $Log = Join-Path $Root 'launcher.log'
 $HaltExitCode = 3
 $HaltPrefix = 'SIPGES no se inició*'
-$HaltFallback = 'SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad previa a la actualización (la carpeta SIPGES.pre-update-… junto a %LOCALAPPDATA%\SIPGES) o contacte con soporte.'
+# When the launcher left no notice: the copies beside the state folder install.json records ({0}
+# its name, {1} the folder holding it, {2} its path), or a text true of any install.
+$HaltNamed = 'SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad previa a la actualización (la carpeta {0}.pre-update-… que está en {1}, junto a su carpeta de datos {2}) o contacte con soporte.'
+$HaltGeneric = 'SIPGES no se inició: una actualización falló y sus datos no se pudieron restaurar. No borre nada. Restaure la copia de seguridad previa a la actualización (la carpeta terminada en .pre-update-… que está junto a su carpeta de datos de SIPGES) o contacte con soporte.'
 $NoUi = $env:SIPGES_DESKTOP_NO_UI -eq '1'
 
 function Show-Message([string]$Message) {
@@ -45,6 +50,18 @@ function Open-App {
     Start-Process -FilePath 'msedge.exe' -ArgumentList "--app=$Url"
 }
 
+# The halt text naming the state folder recorded in install.json; the generic one when that file
+# is missing, unreadable or records no absolute folder.
+function Get-HaltFallback {
+    try {
+        $stateDir = (Get-Content -LiteralPath (Join-Path $Root 'install.json') -Raw -Encoding UTF8 | ConvertFrom-Json).stateDir
+        if (($stateDir -is [string]) -and [System.IO.Path]::IsPathRooted($stateDir)) {
+            return $HaltNamed -f (Split-Path -Leaf $stateDir), (Split-Path -Parent $stateDir), $stateDir
+        }
+    } catch { }
+    return $HaltGeneric
+}
+
 # The launcher's own notice (the last one in the log) names the pre-update copy to restore.
 function Show-Halt {
     $notice = $null
@@ -52,7 +69,7 @@ function Show-Halt {
         $notice = Get-Content -LiteralPath $Log -Encoding UTF8 |
             Where-Object { $_ -like $HaltPrefix } | Select-Object -Last 1
     }
-    if ([string]::IsNullOrWhiteSpace($notice)) { $notice = $HaltFallback }
+    if ([string]::IsNullOrWhiteSpace($notice)) { $notice = Get-HaltFallback }
     Show-Message $notice
     exit $HaltExitCode
 }
@@ -75,10 +92,20 @@ function Start-Launcher {
         -WorkingDirectory $Root -WindowStyle Hidden -PassThru
 }
 
-function Wait-Server([int]$Seconds) {
-    $deadline = (Get-Date).AddSeconds($Seconds)
+# A second click while another start of this script holds the mutex: it waits for the same server
+# as long as that start does, and never starts a second launcher.
+function Wait-Other([System.Threading.Mutex]$Mutex) {
+    $deadline = (Get-Date).AddSeconds($WaitSeconds)
     while (-not (Test-Server)) {
-        if ((Get-Date) -gt $deadline) { Show-Failure "SIPGES no arrancó en $Seconds segundos. Revisa $Log." }
+        # Free: the other start ended without a server (it showed its own message). Abandoned
+        # (that start was killed) counts as free and is now held here.
+        $ended = $false
+        try { $ended = $Mutex.WaitOne(0) } catch { $ended = $true }
+        if ($ended) {
+            $Mutex.ReleaseMutex()
+            Show-Failure "SIPGES no arrancó. Revisa $Log."
+        }
+        if ((Get-Date) -gt $deadline) { Show-Failure "SIPGES no arrancó en $WaitSeconds segundos. Revisa $Log." }
         Start-Sleep -Seconds 1
     }
 }
@@ -93,7 +120,7 @@ try {
     $created = $false
     $booting = New-Object System.Threading.Mutex($true, 'Local\SIPGES-start', [ref]$created)
     if (-not $created) {
-        Wait-Server $WaitSeconds
+        Wait-Other $booting
         Open-App
         exit 0
     }

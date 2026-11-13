@@ -203,7 +203,16 @@ copy the state folder yourself before the first update, as in `deploy/desktop/RE
 Failure: a failed update rolls back by itself and the previous version starts again; after a
 power cut the next start (or `update.mjs --recover`) finishes the rollback. If even that cannot
 finish, SIPGES stays stopped (exit code 3) until the state folder is restored from the
-pre-update copy.
+pre-update copy. A restore that halted is only finished on a folder proven to be its own copy:
+when a folder was created again at the state folder's name in the meantime (by hand, or an
+installer run), `--recover` refuses with exit code 3, keeps the journal and moves nothing; move
+that folder aside and run `--recover` again. A folder is proven restored only when no restore copy
+waits and every file matches the pre-update copy by SHA-256; and a restore copy is never replaced
+while the pre-update copy it comes from is missing. The installers (`windows/install.ps1`,
+`linux/install.sh`, either mode) stop with exit code 1 without creating anything while
+`update-journal.json` exists. On Windows a rename refused because another program holds the
+folder (antivirus, indexer, an open Explorer window) is retried for 45 s before it counts as a
+failure.
 
 ## Limits
 
