@@ -776,3 +776,9 @@ Not chosen in S2. Each stays open in its own document.
   refuses); `drill.mjs:786` may fail falsely on an 8.3 temp path outside CI; `update.mjs --adopt` still follows a
   linked state folder; omitting `-State` still installs on the original by design (the runbook's cut rule covers
   it); the verifier's two probe test files are not yet in the repository.
+- L27 — `visit-rc7` (4792ec06) = #444: `install.sh` refuses every spelling of a linked state folder before
+  creating anything (RED: app root created), the Windows drill now runs the `-State <original folder>` refusal
+  (green on all five drills, so that branch of `install.ps1` is proven on Windows) and resolves its work folder
+  to the long real path; the verifier's regression tests are in (desktop suite 233). Of L26's open list only
+  these remain: `update.mjs --adopt` follows a linked state folder, and omitting `-State` installs on the
+  original by design.
