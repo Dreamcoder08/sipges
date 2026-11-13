@@ -766,3 +766,13 @@ Not chosen in S2. Each stays open in its own document.
   JSON parse error echoing a body fragment in the RESULT line, up to 300 s of silence on a hung server,
   `prettier --check deploy docs` checks nothing (`.prettierignore`), overlapping map cluster labels on phones,
   Windows folder-link safety, comparison coverage gaps. The owner's visual review and the laptop backup remain.
+- L26 — `visit-rc5` (4a3c396b) = #441 compare follow-ups (a 200 body that is not JSON no longer reaches the output;
+  the verifier's four regression tests) and #442 one readable number per group of nearby WebGL markers (captures
+  regenerated in `.data/rc4-screens`). `visit-rc6` = #443: `install()`, `install.ps1` and `install.sh` refuse a
+  state folder given as a link or junction, or leading to the original on a first install; the Windows drill makes
+  a real junction and proved Node reports it as a link and the refusal leaves the original unchanged. Independent
+  verifier: no blocker. Open, not blockers: the «lleva a la carpeta de datos original» branch of `install.ps1` is
+  run by no Windows step; `install.sh` strips one trailing slash only (`link//` reaches `mkdir` before the updater
+  refuses); `drill.mjs:786` may fail falsely on an 8.3 temp path outside CI; `update.mjs --adopt` still follows a
+  linked state folder; omitting `-State` still installs on the original by design (the runbook's cut rule covers
+  it); the verifier's two probe test files are not yet in the repository.
