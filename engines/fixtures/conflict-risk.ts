@@ -434,6 +434,42 @@ for (const stamp of [
   );
 }
 
+// IRSA snapshots are stored instants too: each counts on its Lima day, as the level (R4) and as
+// the start of the rise (R5). Both snapshots fall on the prediction day when the first is shifted.
+for (const stamp of [
+  '2026-11-02T02:00:00Z',
+  '2026-11-02T04:59:59Z',
+  '2026-11-02T05:00:00Z',
+  '2026-10-31T23:59:59-05:00',
+  '2026-11-01T01:00:00+02:00',
+  '2027-01-01T03:00:00Z',
+  '2024-03-01T02:00:00Z',
+  '2026-11-02 02:00:00+00',
+  '2026-11-02',
+  '2026-11-02T02:00:00',
+  '2026-11-02T25:00:00Z',
+  '2/11/2026',
+  'sin fecha',
+]) {
+  const today = limaDayOf(stamp) ?? TODAY;
+  const open = { Territorio: 'Irsa', Fecha_Registro: addDays(today, -10), Estado: 'Nueva' };
+  for (const [name, day] of [
+    ['same-day', today],
+    ['day-before', addDays(today, -1)],
+  ] as const)
+    add(
+      `lima-days/irsa/${name}/${JSON.stringify(stamp)}`,
+      [{ module: 'Demandas', id: 'De-irsa', payload: open, updatedAt: null }],
+      {
+        irsa: [
+          { ts: stamp, irsa: 20 },
+          { ts: `${today}T12:00:00-05:00`, irsa: 45 },
+        ],
+        today: day,
+      },
+    );
+}
+
 // --- folding, accents and units --------------------------------------------------------------------
 
 add('units/folding-and-duplicates', [
