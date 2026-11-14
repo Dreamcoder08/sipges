@@ -11,12 +11,15 @@ This folder holds the proof that it does, and the scripts to check it on the rea
 | `snapshot.mjs`       | Signs in through the public HTTP API and writes counts and keyed hashes of every project.              |
 | `compare.mjs`        | Takes the same snapshot of a running SIPGES and prints the differences, then probes project isolation. |
 | `rehearse.mjs`       | The whole move with synthetic data, from any older commit to this checkout, on Linux.                  |
+| `tables.mjs`         | Offline, SIPGES stopped: the database before and after the move, table by table, every column.         |
 | `client.mjs`         | Sign-in, TOTP, keyed hashes; shared by the three.                                                      |
 | `migration.test.mjs` | Tests of the two scripts against a fake API full of recognisable synthetic values.                     |
 | `rehearse.test.mjs`  | Tests that every process the rehearsal starts is stopped and awaited, also on SIGINT and SIGTERM.      |
+| `tables.test.mjs`    | Tests of `tables.mjs` on synthetic PGlite folders: comparisons, refusals, no value ever printed.       |
 
-The scripts need only Node.js 24 or later; nothing to install. They never print or store a record,
-a name, a file or a password.
+The scripts need only Node.js 24 or later; nothing to install (`tables.mjs` takes PGlite from the
+managed install, `--app`, or from this checkout's `pnpm install`). They never print or store a
+record, a name, a file or a password.
 
 ## How the move works
 
@@ -38,6 +41,8 @@ a name, a file or a password.
      the changed one is kept as `<state>.failed-<time>-<version>`;
    - records `first-start.json` in the install root. Later starts change nothing.
 4. `compare.mjs` against the snapshot taken before step 1 must print `RESULT: no difference`.
+5. Recommended: SIPGES stopped, right after the first start and before the new version is used,
+   `tables.mjs` compares the dated copy of step 3 with the migrated folder, table by table ([below](#table-by-table-offline)).
 
 No database migration was added between the desktop launchers (`6d867050`, the first commit with
 `deploy/desktop/windows/install.ps1`) and this checkout, so any clone-based install from that
@@ -77,6 +82,13 @@ T27; `e490339c` until it is known). It takes about 2 minutes plus the package bu
 7. The backup drill of [../README.md](../README.md#back-up-and-restore) (closure-roadmap T11):
    stop, copy the state folder, check files and bytes, delete it, restore it from the copy,
    start, `compare.mjs`, second account.
+8. SIPGES stopped, `tables.mjs --before <the pre-update copy> --after <moved folder>
+   --app <install root>` must print `RESULT: no difference`; its scratch folder is empty
+   afterwards and the pre-update copy unchanged. This is the proof that the rules of `tables.mjs`
+   match the real migrations. Run of 2026-11-14 from `e490339c`: the whole rehearsal 111 s
+   (package build included), `tables.mjs` 3 s, 34 tables and their structure, 13 sequences, no
+   difference. That run seeds no IRSA, media feed,
+   channel, API key, automation, push or proposal rows: those rules are proved on empty tables.
 
 Every process the rehearsal starts (the old API, the managed launcher, the snapshot and compare
 runs) is tracked until it ends. On any way out (the end, a failed check, a start that never gets
@@ -179,8 +191,10 @@ differs`, `missing`, `new`, `record [hash] update time differs`.
 - `links`, `uploads` (every file downloaded by its id and its content hashed with the snapshot's
   key, never a plain SHA-256 that would confirm a known document; the upload list shows at most
   500, and the export's attachment rows name the rest), `export <table>` (the other
-  tables of the project export, `GET /system/export`, as sets of row hashes: attachment rows,
-  record links, record history versions, document and alert reviews, preventive actions).
+  tables of the project export, `GET /system/export`, as sets of row hashes: attachments,
+  record links, record versions, document reviews, alert reviews, preventive actions and their
+  log, automation rules and runs, notifications, source import settings and project settings;
+  `apps/api/src/contexts/tenancy/infrastructure/sql-tenant-data-reader.ts`).
 - `audit`: every entry of the trail with its whole content (time, module, record, action,
   detail; from the project export). Before -> after, entries kept unchanged, `missing`,
   `changed`, and every entry added since the snapshot listed by id, module and action
@@ -213,8 +227,9 @@ once everything was read: a redirect
 other error exits with code 1 and writes no file. Keep it with the
 data all the same: with the salt, a guessed value can be confirmed.
 
-Not compared (checked against `apps/api/src/contexts/tenancy/infrastructure/sql-tenant-data-reader.ts`,
-the records routes and the migrations):
+Not compared by `compare.mjs` (checked against `apps/api/src/contexts/tenancy/infrastructure/sql-tenant-data-reader.ts`,
+the records routes and the migrations; `tables.mjs` covers the database part of this list,
+[below](#table-by-table-offline)):
 
 - of each record, only its fields (the stored `payload`) and its update time: not its
   classification `marking` nor its `created_at` (the export's `module_records` rows are used to
@@ -231,8 +246,9 @@ the records routes and the migrations):
 - projects the signed-in administrator has no grant for (only the projects
   `/system/auth/scopes` lists are read).
 
-Notifications, automation rules and runs, record versions and the other export tables are
-compared as row hashes. A snapshot from an earlier `snapshot.mjs` is refused by `compare.mjs` before it
+Notifications, automation rules and runs, record versions, source import and project settings
+and the other export tables are compared as row hashes, for the projects the administrator can
+open. A snapshot from an earlier `snapshot.mjs` is refused by `compare.mjs` before it
 signs in: format version 1 hashed `"12"` and `12` alike and read only the newest 500 uploads and
 audit details; version 2 stored each upload's plain SHA-256 and could stop a record list early.
 Take it again, with the scripts that will run the comparison, before the move.
@@ -253,6 +269,8 @@ powershell -ExecutionPolicy Bypass -File deploy\desktop\windows\install.ps1 -Rel
 node "$env:LOCALAPPDATA\SIPGES-app\versions\<version>\updater\update.mjs" --install "$env:LOCALAPPDATA\SIPGES-app" --first-start
 # 5. Compare. Wait for a new MFA code: the server refuses a code already used.
 node deploy\desktop\migration\compare.mjs --before "$env:USERPROFILE\Desktop\sipges-antes.json" --url http://127.0.0.1:8000
+# 6. Recommended: close SIPGES completely, then table by table (the copy named by step 4).
+node deploy\desktop\migration\tables.mjs --before "$env:LOCALAPPDATA\SIPGES-datos.pre-update-<time>-first-start-<version>" --after "$env:LOCALAPPDATA\SIPGES-datos" --app "$env:LOCALAPPDATA\SIPGES-app"
 ```
 
 `--password-file "$env:LOCALAPPDATA\SIPGES\admin-password"` replaces the password prompt only if
@@ -261,6 +279,140 @@ version; `%LOCALAPPDATA%\SIPGES` was not touched. The managed installer moved th
 the managed install, so open the old version with
 `powershell -ExecutionPolicy Bypass -File <old clone>\deploy\desktop\windows\start.ps1` until
 the old installer is run again.
+
+## Table by table, offline
+
+```sh
+node deploy/desktop/migration/tables.mjs --before <state>.pre-update-<time>-first-start-<version> \
+  --after <state> [--app <install root>] [--scratch <folder>] [--port 8000]
+```
+
+SIPGES stopped, right after the first start and before anyone uses the new version. It compares
+the database of the launcher's dated copy (the folder as it was before the migration) with the
+migrated state folder. Nothing to sign in to.
+
+What is compared:
+
+- the row values of every column of every table of the catalog: password hashes, sealed MFA
+  secrets, sealed channel settings, API key hashes, other users' grants and projects the
+  administrator cannot open included (values read as text, by primary key or as a multiset);
+- the structure of every table: each column's data type and nullability, its constraints
+  (primary, unique, foreign keys, checks) and unique indexes, whether row-level security is
+  enabled and forced, its policy names and its trigger names with their enabled state;
+- every sequence's last value, which may only stay or grow.
+
+Not compared: that other accounts can still sign in (their hashes are compared, their
+passwords are not tried), that sealed values still decrypt with `data-key` (the
+administrator's MFA is proved by `compare.mjs`'s sign-in), the bytes of the uploaded files
+(`uploads/`, compared by `compare.mjs` for the projects the administrator can open), behaviour,
+the columns a rule leaves out, the rows a rule allows to be added, and the ephemeral tables. Of
+the structure, these are not compared either: column defaults, functions (a trigger's function
+body included), the expression of a policy and the definition of a trigger (only their names,
+and whether a trigger is enabled), indexes that are not unique, owners and privileges (grants),
+a sequence's settings other than its last value, views.
+
+Rows a rule allows to be added (a sign-in's audit entry, a session) pass; any other legitimate
+write since the first start (an edited record, a feed import, a new grant) shows as a
+difference: run it right after the first start, before the new version is used. How long it takes depends on the size
+of the database; the scratch drive needs room for a copy of each database folder.
+
+How the inputs are protected. PGlite has no read-only mode and may write to a folder it opens,
+so neither input is ever opened. Only each input's database folder, `pglite/`, is copied, to a
+new `sipges-tables-*` folder under `--scratch` (default the temp folder): never `data-key`,
+`admin-password`, `uploads/` or anything else of the state folder. The copy is checked equal to
+its source, only the copies are opened, and they are removed at the end, also after an error,
+and on Ctrl+C, SIGTERM or a closed terminal (`RESULT: not compared (interrupted)`, exit 2). A
+signal only asks the run to stop: the run removes its copy itself once the step in flight has
+ended (removing it from the signal handler raced the copy still being written and left part of
+a database behind), so the RESULT line can take as long as copying one database; wait for it.
+It then checks the folder is gone, and names it if not (`the scratch copy <folder> could not be
+removed …: delete that folder`). A signal in the first instant, before anything is copied, may
+end the process with no RESULT line. Each `pglite/` folder,
+the only part read, is hashed (names, sizes, bytes) before and after; if one changed: `RESULT:
+not compared (an input folder changed during the run)`. The rest of the state folder is not
+read, so it is not proved unchanged either (only listed, to refuse links). If the process is
+killed outright (Task Manager, `kill -9`), its copy stays: delete only the `sipges-tables-*`
+folder it names under `--scratch` (by default the temp folder: `%TEMP%\sipges-tables-*` on
+Windows), nothing else there.
+
+It refuses, exit code 2 and nothing copied: an input that is a link or junction or holds one
+(or any special file), an input without `pglite/PG_VERSION`, the same folder twice or one inside
+the other, `--scratch` inside an input or without room for both database folders, anything
+answering on `--port` (SIPGES open), a `pglite/postmaster.pid` written in the last 2 minutes
+(PGlite writes it on open and removes it on close; a killed SIPGES leaves an old one, which does
+not count), and a fresh `update.lock` (an update or first start running) in `--app` or in an
+install root beside an input that records it as its state folder. There is no launcher heartbeat
+to read: the port and these two files are the checks. PGlite is the installed version's
+(`--app`, its `current.json`), or this checkout's when `--app` is not given; the visit's scripts
+come from a zip without `node_modules`, so `--app` is needed there.
+
+Output, one line per table, then the sequences and the verdict:
+
+```text
+Migrations applied between the two: none
+Structure: compared (column types and nullability, keys and constraints, row-level security, policies, triggers, sequences)
+audit: 22 -> 24, identical (0032 not run between the two), 2 rows added
+automation_cursors: 2 -> 2, identical except last_tick_token, …, last_tick_error, last_audit_id not lower
+module_records: 13 -> 13, identical
+sessions: ephemeral, 5 -> 10
+users: 2 -> 2, identical except totp_last_step (0032 not run between the two)
+Sequences: 21 -> 21, none decreased
+RESULT: no difference
+```
+
+A difference reads `users: 2 -> 2, row [3fa1c09e] differs in password_hash`, `api_keys: 2 -> 1,
+row [5b0e7d21] missing`, `row [...] new`, `row [...] last_audit_id decreased`, `column <name>
+missing after`, for a table without primary key `N rows missing or changed`, and for the
+structure `users: structure differs: column totp_enabled type boolean -> text`, `… constraint
+<name> missing after`, `… row-level security enabled -> disabled`, `… policy <name> missing
+after`, `… trigger <name> missing after` (or `enabled O -> D`), `sequence <name>: last value
+decreased`. Each counts as a difference. No value is ever printed: a row is named by an 8-hex
+fingerprint of its primary key, an HMAC-SHA-256 with a random key made in memory for each run
+and never written, so two runs cannot be matched and a fingerprint cannot confirm a guess.
+Errors print only `the database could not be read (SQLSTATE <code>)`, `file system error
+<code>` or `unexpected <error class>` (for instance `unexpected RuntimeError` for a database
+PGlite cannot open), never PGlite's message or SQL. `RESULT: no difference` exit 0; `RESULT: N differences`
+or `RESULT: not fully compared (…)` exit 1; `RESULT: not compared (…)` exit 2.
+
+The rules are one data structure at the top of `tables.mjs`, one per table with its reason; a
+test applies the real migrations and fails if a table has no rule or a rule no table. A table
+with no rule makes the run `not fully compared (table <name> has no rule)`, and so does a ruled
+table found in neither database (`… is in neither database`: two empty databases never pass); a
+table missing after the move is a difference. Tables and columns come from each database's
+catalog. A name read from a database (a table, column, trigger, sequence or migration version
+called `constructor`, `toString` or `__proto__`) is only ever looked up among the declared
+entries, never among what a JavaScript object inherits: a migration version with no declared
+expectation always leaves the run `not fully compared`.
+
+- `identical` (same rows by primary key, or as a multiset without one; every common column):
+  `module_records`, `tenants`, `irsa_configs`, `irsa_snapshots`.
+- `expected-change`, migration `0032_rename_admin_username.sql`: when 0032 ran between the two,
+  every row before, with the exact value `mascli-admin` of the migration's reviewed column read
+  as `sipges-admin` (`audit.detail`: only its two templates; free text naming the old login
+  stays as written), must be in the migrated database with every other column identical; when
+  it did not run, `identical`. `users` (hashes and sealed MFA secrets byte for byte;
+  `totp_last_step` left out, it moves at each MFA sign-in), `api_keys` (`last_used_at` left out),
+  `grants`, `attachments`, `automation_rules`, `digital_alert_reviews`, `document_review`,
+  `integration_channels`, `link_evidence_history`, `preventive_actions`, `preventive_action_log`,
+  `project_settings`, `proposal_decisions`, `record_links`, `record_versions`, `media_feeds` and
+  `source_import_settings` (poll status columns left out: the automation tick polls them); with
+  rows that may be added: `audit` (sign-ins and work), `notification_reads`,
+  `push_subscriptions`, `push_deliveries` (delivery status left out).
+- `superset`, rows may be added and existing ones must not change: `schema_migrations` (the
+  versions this start applied), `notifications`, `ingest_receipts`, `digital_signal_dedup_locks`
+  (the app never deletes a dedup key), `automation_runs` (status, attempts and times of a
+  retried run left out), `record_embeddings` (a derived index: only that no row vanishes),
+  `automation_cursors` (the tick's durable audit position: no row may vanish and
+  `last_audit_id` may not go back, which would replay or skip automations; the last tick's
+  status columns left out).
+- `ephemeral`, counts only: `sessions`, `login_failures`.
+
+Any other migration applied between the two (read from `schema_migrations`) makes the run `not
+fully compared (migration <n> ran between the two and declares no expected change here)`, and
+then the structure is not compared (`Structure: not compared (…)`): such a migration may change
+it. That includes 0030 and 0031, which rewrite tenant ids in every table: every clone install
+from the first installer (`6d867050`) on already has all 32 migrations, so on the laptop none
+runs. With only 0032 between the two, the structure is compared (0032 restores what it lifts).
 
 ## Fallback if the in-place move fails
 
@@ -284,7 +436,9 @@ would lose the audit trail, record history and MFA enrolments. It is not built.
 ## Limits
 
 - Run on Linux only. Windows (`install.ps1 -Release -State`, `Copy-Item`, the first start on NTFS,
-  PowerShell 5.1 with these scripts) has not been run.
+  PowerShell 5.1 with these scripts) has not been run. `tables.mjs` has not run on Windows
+  (copying NTFS folders, the installed PGlite under `SIPGES-app`, junction refusals) until the
+  Windows drill runs it.
 - The rehearsal source was `e490339c`, the parent of the launcher commit, because the laptop's
   commit is not known yet (closure-roadmap T27). Rerun with that commit.
 - A Linux clone install keeps its browser profile in the state folder (`chrome/`, with links and
