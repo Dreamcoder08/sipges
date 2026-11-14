@@ -330,8 +330,8 @@ export const IntelligencePage = (context: FeatureContext) => {
               {!items.length ? (
                 <p>No hay alertas digitales en este proyecto.</p>
               ) : (
-                <div className={styles.table}>
-                  <table>
+                <div className={`${styles.table} ${styles.cardsWrap}`}>
+                  <table className={styles.cards}>
                     <thead>
                       <tr>
                         <th>Publicación</th>
@@ -343,12 +343,12 @@ export const IntelligencePage = (context: FeatureContext) => {
                     <tbody>
                       {items.map((a) => (
                         <tr key={a.id}>
-                          <td>{a.excerpt}</td>
-                          <td>
+                          <td data-label="Publicación">{a.excerpt}</td>
+                          <td data-label="Prioridad">
                             {a.level} ({a.score})
                           </td>
-                          <td>{a.status}</td>
-                          <td>
+                          <td data-label="Estado">{a.status}</td>
+                          <td data-label="Revisión">
                             <Button
                               variant="secondary"
                               onClick={() => {
