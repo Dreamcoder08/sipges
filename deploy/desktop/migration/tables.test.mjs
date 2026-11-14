@@ -1047,7 +1047,7 @@ test('a removal that reports success but leaves the folder is refused, naming th
         const [left] = readdirSync(scratch);
         assert.equal(
           safeReason(error),
-          `the scratch copy ${join(realpathSync(scratch), left)} could not be removed (still there): delete that folder`,
+          `the scratch copy ${join(realpathSync.native(scratch), left)} could not be removed (still there): delete that folder`,
         );
         return true;
       },
