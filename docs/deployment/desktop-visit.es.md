@@ -36,6 +36,7 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ F4: `install.ps1` se niega con una actualización pendiente o detenida (`update-journal.json`) | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ F7: el texto de detención que nombra la carpeta de datos gestionada | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ `install.ps1` se niega con un `-State` que es un enlace o una unión (junction) | No probado en Windows hasta que el ensayo automático lo cubra |
+| ⚠ `tables.mjs` (paso 5b): copiar las dos carpetas `pglite` en NTFS, abrir las copias con el PGlite de `SIPGES-app`, sus negativas (SIPGES abierto, enlaces o uniones, espacio), que Ctrl+C borre sus copias | No probado en Windows hasta que el ensayo automático lo cubra (en Linux lo corre el ensayo de `rehearse.mjs`) |
 | ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
@@ -540,10 +541,72 @@ Se hace en la terminal para no depender de la espera de 300 segundos del acceso 
   - los proyectos a los que `admin` no tiene acceso.
 
   Por eso la usuaria revisa a mano el paso siguiente y, si usa IRSA, fuentes de medios o cuentas
-  de otras personas, que abran como antes.
+  de otras personas, que abran como antes. El paso 5b compara esas tablas, sin abrir nada.
 - [ ] La usuaria elige y abre, en la versión nueva, **diez registros** y **tres archivos subidos**. Cada uno
   abre y se ve como lo recuerda (marcá sin escribir cuál):
   Registros ☐ ☐ ☐ ☐ ☐ ☐ ☐ ☐ ☐ ☐ — Archivos ☐ ☐ ☐
+
+### Paso 5b — Comparar tabla por tabla (opcional, recomendado)
+
+Compara la base de datos de la copia que tomó el primer arranque (los datos tal como estaban antes
+de migrar) con `SIPGES-datos` ya migrada. Compara el valor de cada columna de cada fila de todas las
+tablas (también las contraseñas cifradas y los secretos MFA de todas las cuentas, los permisos, las
+claves de API, los canales sellados, IRSA, fuentes de medios y los proyectos que `admin` no abre) y
+la estructura de cada tabla: tipo de cada columna y si admite vacíos, claves y restricciones, la
+seguridad por fila (activada y forzada), los nombres de sus políticas y de sus disparadores, y que
+ningún contador (secuencia) haya bajado.
+
+No inicia sesión ni abre las carpetas: copia en `%TEMP%` solo la carpeta `pglite` de cada una (la
+base de datos; nunca `data-key`, `admin-password` ni los archivos subidos), abre solo las copias y
+las borra al final. Comprueba que esas dos carpetas `pglite` no cambiaron; el resto de cada carpeta
+no lo lee. Imprime solo nombres de tablas y columnas, cantidades y huellas cortas, nunca un dato.
+Cuánto tarda depende del tamaño de la base de datos, y `C:` necesita lugar libre para una copia de
+la carpeta `pglite` de cada una.
+
+Hacelo ahora, antes de que la usuaria cargue o cambie algo (paso 6): un cambio legítimo después del
+primer arranque (un registro editado, una importación de fuentes de medios, un permiso nuevo)
+también aparece como diferencia. En el paso 5 solo se abren registros y archivos; los inicios de
+sesión y lo que se abrió dejan filas que la comparación acepta (`rows added`, `ephemeral`).
+
+- [ ] Cerrá SIPGES por completo (`SIPGES cerrado`).
+- [ ] Ejecutá, con la carpeta que imprimió el paso 4 (`Pre-update copy: …`):
+
+  ```powershell
+  node "$env:LOCALAPPDATA\SIPGES-visita\sipges\deploy\desktop\migration\tables.mjs" --before "$env:LOCALAPPDATA\SIPGES-datos.pre-update-<hora>-first-start-<versión>" --after "$env:LOCALAPPDATA\SIPGES-datos" --app "$env:LOCALAPPDATA\SIPGES-app"
+  $LASTEXITCODE
+  ```
+
+  Tenés que ver `Migrations applied between the two: none` (la versión vieja ya tenía todas las
+  migraciones), `Structure: compared (…)`, una línea por tabla, `Sequences: N -> N, none decreased`
+  y al final `RESULT: no difference` y `0`. Las líneas correctas
+  dicen `identical`, a veces con `except <columnas>` (columnas que cambian solas, como el último
+  código MFA usado) o `(0032 not run between the two)`; `expected change (0032): …`; `, N rows
+  added` (por ejemplo entradas nuevas de `audit` por los inicios de sesión de hoy) o
+  `ephemeral, N -> M` (sesiones e intentos de entrada: solo se cuentan); `, last_audit_id not lower`
+  en `automation_cursors`. Una línea `structure differs: …` es una diferencia.
+  Cómo leer cada línea: [migration/README.md](../../deploy/desktop/migration/README.md#table-by-table-offline).
+- [ ] **Regla de corte** si dice `RESULT: N differences` o `RESULT: not fully compared (…)` (y `1`):
+  una línea con `missing`, `new`, `differs` o `no rule` es un dato que no pasó igual.
+- [ ] Si dice `RESULT: not compared (…)` y `2`, no comparó nada y no tocó nada. Corregí lo que dice
+  (`SIPGES answers on port 8000`: SIPGES sigue abierto; `opened in the last 120 s`: esperá dos
+  minutos; `not enough free space`: liberá espacio en `C:`) y repetí una sola vez. Si vuelve a
+  decir `not compared`, anotá el motivo y seguí: este paso es opcional, pero entonces no prueba nada.
+  `an input folder changed during the run` quiere decir que algo escribió en los datos mientras
+  comparaba: comprobá `SIPGES cerrado` antes de repetir.
+- [ ] Si hace falta cortarlo, Ctrl+C: borra sus copias y dice `RESULT: not compared (interrupted)` y
+  `2`. Si en cambio se cerró la ventana o se mató el proceso, la copia queda en `%TEMP%`: borrá
+  **solo** esa carpeta, nada más de `%TEMP%`:
+
+  ```powershell
+  Get-ChildItem -Directory "$env:TEMP" -Filter 'sipges-tables-*' | Remove-Item -Recurse -Force
+  ```
+
+- [ ] Lo que este paso **no** prueba: que las otras cuentas puedan entrar (sus contraseñas cifradas
+  se comparan byte a byte, pero no se prueban), que los valores sellados se sigan descifrando con
+  `data-key` (el de `admin` lo prueba el inicio de sesión del paso 5), el contenido de los archivos
+  subidos (lo compara el paso 5, solo en los proyectos de `admin`), el funcionamiento, las columnas
+  que dicen `except`, las filas nuevas (`rows added`) y las tablas `ephemeral`.
+- [ ] Abrí SIPGES desde el acceso directo para el paso siguiente.
 
 ### Paso 6 — La usuaria trabaja diez minutos
 
@@ -595,7 +658,8 @@ quedan así.
 ## 3. Regla de corte
 
 Se aplica ante **cualquiera** de estas cosas: una diferencia o un `RESULT` distinto de `no difference` en el
-paso 5 (incluido `not compared`, salvo el único reintento que dice ese paso); un inicio de sesión fallido (pasos 2, 5 o 6); un `Error: …` del primer arranque; una huella que no
+paso 5 (incluido `not compared`, salvo el único reintento que dice ese paso); `N differences` o
+`not fully compared` en el paso 5b; un inicio de sesión fallido (pasos 2, 5 o 6); un `Error: …` del primer arranque; una huella que no
 coincide; un cuadro «SIPGES no se inició: …» o cualquier otro mensaje de error de la versión nueva.
 Entonces **la versión vieja sigue en uso y la laptop queda como estaba**. No intentes reparar nada en la
 visita: se lleva los registros (sección 4) y se resuelve en casa.
