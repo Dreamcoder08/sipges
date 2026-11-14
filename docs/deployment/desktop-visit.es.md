@@ -593,8 +593,11 @@ sesión y lo que se abrió dejan filas que la comparación acepta (`rows added`,
   decir `not compared`, anotá el motivo y seguí: este paso es opcional, pero entonces no prueba nada.
   `an input folder changed during the run` quiere decir que algo escribió en los datos mientras
   comparaba: comprobá `SIPGES cerrado` antes de repetir.
-- [ ] Si hace falta cortarlo, Ctrl+C: borra sus copias y dice `RESULT: not compared (interrupted)` y
-  `2`. Si en cambio se cerró la ventana o se mató el proceso, la copia queda en `%TEMP%`: borrá
+- [ ] Si hace falta cortarlo, Ctrl+C **una vez y esperá**: avisa `Interrupted: removing the scratch
+  copy …`, termina la copia que tenía a medias (puede tardar lo mismo que copiar la base), borra
+  sus copias y recién entonces dice `RESULT: not compared (interrupted)` y `2`. No cierres la
+  ventana antes de ver esa línea. Si dice `could not be removed … delete that folder`, o si se
+  cerró la ventana o se mató el proceso, la copia queda en `%TEMP%`: borrá
   **solo** esa carpeta, nada más de `%TEMP%`:
 
   ```powershell
@@ -605,7 +608,9 @@ sesión y lo que se abrió dejan filas que la comparación acepta (`rows added`,
   se comparan byte a byte, pero no se prueban), que los valores sellados se sigan descifrando con
   `data-key` (el de `admin` lo prueba el inicio de sesión del paso 5), el contenido de los archivos
   subidos (lo compara el paso 5, solo en los proyectos de `admin`), el funcionamiento, las columnas
-  que dicen `except`, las filas nuevas (`rows added`) y las tablas `ephemeral`.
+  que dicen `except`, las filas nuevas (`rows added`) y las tablas `ephemeral`. De la estructura
+  tampoco compara: valores por defecto, funciones, el texto de las políticas y de los disparadores
+  (solo sus nombres), índices no únicos, dueños y permisos de las tablas.
 - [ ] Abrí SIPGES desde el acceso directo para el paso siguiente.
 
 ### Paso 6 — La usuaria trabaja diez minutos

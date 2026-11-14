@@ -304,9 +304,12 @@ What is compared:
 Not compared: that other accounts can still sign in (their hashes are compared, their
 passwords are not tried), that sealed values still decrypt with `data-key` (the
 administrator's MFA is proved by `compare.mjs`'s sign-in), the bytes of the uploaded files
-(`uploads/`, compared by `compare.mjs` for the projects the administrator can open), column
-defaults and functions, behaviour, the columns a rule leaves out, the rows a rule allows to be
-added, and the ephemeral tables.
+(`uploads/`, compared by `compare.mjs` for the projects the administrator can open), behaviour,
+the columns a rule leaves out, the rows a rule allows to be added, and the ephemeral tables. Of
+the structure, these are not compared either: column defaults, functions (a trigger's function
+body included), the expression of a policy and the definition of a trigger (only their names,
+and whether a trigger is enabled), indexes that are not unique, owners and privileges (grants),
+a sequence's settings other than its last value, views.
 
 Rows a rule allows to be added (a sign-in's audit entry, a session) pass; any other legitimate
 write since the first start (an edited record, a feed import, a new grant) shows as a
@@ -318,7 +321,13 @@ so neither input is ever opened. Only each input's database folder, `pglite/`, i
 new `sipges-tables-*` folder under `--scratch` (default the temp folder): never `data-key`,
 `admin-password`, `uploads/` or anything else of the state folder. The copy is checked equal to
 its source, only the copies are opened, and they are removed at the end, also after an error,
-and on Ctrl+C or SIGTERM (`RESULT: not compared (interrupted)`, exit 2). Each `pglite/` folder,
+and on Ctrl+C, SIGTERM or a closed terminal (`RESULT: not compared (interrupted)`, exit 2). A
+signal only asks the run to stop: the run removes its copy itself once the step in flight has
+ended (removing it from the signal handler raced the copy still being written and left part of
+a database behind), so the RESULT line can take as long as copying one database; wait for it.
+It then checks the folder is gone, and names it if not (`the scratch copy <folder> could not be
+removed …: delete that folder`). A signal in the first instant, before anything is copied, may
+end the process with no RESULT line. Each `pglite/` folder,
 the only part read, is hashed (names, sizes, bytes) before and after; if one changed: `RESULT:
 not compared (an input folder changed during the run)`. The rest of the state folder is not
 read, so it is not proved unchanged either (only listed, to refuse links). If the process is
@@ -360,8 +369,9 @@ after`, `… trigger <name> missing after` (or `enabled O -> D`), `sequence <nam
 decreased`. Each counts as a difference. No value is ever printed: a row is named by an 8-hex
 fingerprint of its primary key, an HMAC-SHA-256 with a random key made in memory for each run
 and never written, so two runs cannot be matched and a fingerprint cannot confirm a guess.
-Errors print only `the database could not be read (SQLSTATE <code>)` or `file system error
-<code>`, never PGlite's message or SQL. `RESULT: no difference` exit 0; `RESULT: N differences`
+Errors print only `the database could not be read (SQLSTATE <code>)`, `file system error
+<code>` or `unexpected <error class>` (for instance `unexpected RuntimeError` for a database
+PGlite cannot open), never PGlite's message or SQL. `RESULT: no difference` exit 0; `RESULT: N differences`
 or `RESULT: not fully compared (…)` exit 1; `RESULT: not compared (…)` exit 2.
 
 The rules are one data structure at the top of `tables.mjs`, one per table with its reason; a
@@ -369,7 +379,10 @@ test applies the real migrations and fails if a table has no rule or a rule no t
 with no rule makes the run `not fully compared (table <name> has no rule)`, and so does a ruled
 table found in neither database (`… is in neither database`: two empty databases never pass); a
 table missing after the move is a difference. Tables and columns come from each database's
-catalog.
+catalog. A name read from a database (a table, column, trigger, sequence or migration version
+called `constructor`, `toString` or `__proto__`) is only ever looked up among the declared
+entries, never among what a JavaScript object inherits: a migration version with no declared
+expectation always leaves the run `not fully compared`.
 
 - `identical` (same rows by primary key, or as a multiset without one; every common column):
   `module_records`, `tenants`, `irsa_configs`, `irsa_snapshots`.

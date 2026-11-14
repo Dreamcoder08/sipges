@@ -837,3 +837,123 @@ test(
       assert.deepEqual([await treeDigest(a), await treeDigest(b)], digests);
     }),
 );
+
+test('inherited object keys are not declared migration expectations', () => {
+  for (const version of ['constructor', 'toString', '__proto__']) {
+    const result = compareDatabases(
+      { schema_migrations: migrations('0032') },
+      { schema_migrations: migrations('0032', version) },
+      { rules: pick('schema_migrations') },
+    );
+    assert.equal(verdict(result).code, 1);
+    assert.ok(
+      result.incomplete.includes(
+        `migration ${version} ran between the two and declares no expected change here`,
+      ),
+      lines(result),
+    );
+    assert.match(lines(result), /^Structure: not compared \(/m);
+  }
+});
+
+test('a table, trigger or sequence named like an Object.prototype member borrows nothing', () => {
+  const base = { schema_migrations: migrations('0032') };
+  for (const name of ['constructor', 'toString', '__proto__']) {
+    const result = compareDatabases(
+      base,
+      { ...base, [name]: t(['id'], [['1']]) },
+      { rules: pick('schema_migrations') },
+    );
+    assert.equal(verdict(result).line, `RESULT: not fully compared (table ${name} has no rule)`);
+    const trigger = compareDatabases(
+      base,
+      {
+        schema_migrations: t(['version'], [['0032']], ['version'], {
+          triggers: Object.fromEntries([[name, 'O']]),
+        }),
+      },
+      { rules: pick('schema_migrations') },
+    );
+    assert.ok(
+      trigger.lines.includes(`schema_migrations: structure differs: trigger ${name} new`),
+      lines(trigger),
+    );
+    const sequence = compareDatabases(base, base, {
+      rules: pick('schema_migrations'),
+      sequences: [{}, Object.fromEntries([[name, '5']])],
+    });
+    assert.ok(sequence.lines.includes(`sequence ${name}: new`), lines(sequence));
+    assert.equal(verdict(sequence).code, 1);
+  }
+});
+
+test('real tables named __proto__ and constructor are read and leave the run not fully compared', () =>
+  withTemp(async (dir) => {
+    const a = await variant(dir, 'a');
+    const b = await variant(
+      dir,
+      'b',
+      'CREATE TABLE "__proto__" (id int); CREATE TABLE "constructor" (id int);',
+    );
+    const scratch = join(dir, 'scratch');
+    await mkdir(scratch);
+    const result = await runTables(
+      { before: a, after: b, scratch },
+      { answers: async () => false },
+    );
+    assert.equal(result.code, 1, result.lines.join('\n'));
+    assert.match(
+      result.lines.at(-1),
+      /not fully compared \(tables __proto__, constructor have no rule\)/,
+    );
+  }));
+
+test('an interrupt during the copy waits for the copy in flight, then removes every copy', () =>
+  withTemp(async (dir) => {
+    const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+    const digests = [await treeDigest(a), await treeDigest(b)];
+    const scratch = join(dir, 'scratch');
+    await mkdir(scratch);
+    const stop = { requested: false };
+    let late = '';
+    // The copy still writes after the signal arrived, as a copy running in a worker thread does.
+    const slowCopy = async (from, to, options) => {
+      await cp(from, to, options);
+      stop.requested = true;
+      await sleep(50);
+      late = join(to, 'late.bin');
+      await writeFile(late, S);
+    };
+    await assert.rejects(
+      runTables(
+        { before: a, after: b, scratch },
+        { answers: async () => false, cp: slowCopy, stop },
+      ),
+      (error) => safeReason(error) === 'interrupted',
+    );
+    assert.ok(late, 'the copy in flight was not awaited');
+    assert.deepEqual(await readdir(scratch), []);
+    assert.deepEqual([await treeDigest(a), await treeDigest(b)], digests);
+  }));
+
+test('an interrupt at each later step still ends not compared, with nothing left', () =>
+  withTemp(async (dir) => {
+    const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+    const scratch = join(dir, 'scratch');
+    await mkdir(scratch);
+    const stop = { requested: false };
+    await assert.rejects(
+      runTables(
+        { before: a, after: b, scratch },
+        {
+          answers: async () => false,
+          stop,
+          copied: async () => {
+            stop.requested = true;
+          },
+        },
+      ),
+      (error) => safeReason(error) === 'interrupted',
+    );
+    assert.deepEqual(await readdir(scratch), []);
+  }));

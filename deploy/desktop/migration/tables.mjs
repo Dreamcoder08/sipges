@@ -14,7 +14,7 @@
 //   node deploy/desktop/migration/tables.mjs --before <folder> --after <folder>
 //        [--app <install root>] [--scratch <folder>] [--port 8000]
 import { createHash, createHmac, randomBytes } from 'node:crypto';
-import { createReadStream, rmSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import {
   cp,
   lstat,
@@ -336,7 +336,7 @@ export async function readDatabase(db) {
      WHERE c.relkind IN ('r', 'p') AND n.nspname NOT IN ('pg_catalog', 'information_schema')
        AND n.nspname NOT LIKE 'pg\\_toast%' AND n.nspname NOT LIKE 'pg\\_temp%'`,
   );
-  const out = {};
+  const out = Object.create(null);
   for (const table of tables) {
     const cols = await rowsOf(
       db,
@@ -381,13 +381,11 @@ export async function readDatabase(db) {
       pk: keys.length ? keys.map((k) => k.attname) : null,
       rows,
       structure: {
-        columns: Object.fromEntries(
-          cols.map((c) => [c.attname, { type: c.type, notnull: c.attnotnull }]),
-        ),
-        keys: Object.fromEntries(constraints.map((k) => [k.name, k.def])),
+        columns: bare(cols.map((c) => [c.attname, { type: c.type, notnull: c.attnotnull }])),
+        keys: bare(constraints.map((k) => [k.name, k.def])),
         rls: { enabled: table.rls, forced: table.forced },
         policies: policies.map((p) => p.polname).sort(),
-        triggers: Object.fromEntries(triggers.map((g) => [g.tgname, g.tgenabled])),
+        triggers: bare(triggers.map((g) => [g.tgname, g.tgenabled])),
       },
     };
   }
@@ -398,7 +396,7 @@ export async function readDatabase(db) {
   );
   return {
     tables: out,
-    sequences: Object.fromEntries(
+    sequences: bare(
       sequences.map((q) => [q.schema === 'public' ? q.name : `${q.schema}.${q.name}`, q.value]),
     ),
   };
@@ -410,13 +408,25 @@ const lower = (was, now) =>
   was !== undefined &&
   (now === null || now === undefined || BigInt(now) < BigInt(was));
 
-/** Removed, added and changed entries of two maps, labelled. */
+/**
+ * A map without a prototype. Table, column, trigger, sequence and migration names come from the
+ * database: on a plain object `constructor` or `toString` would find an inherited member, and
+ * `__proto__` would not be stored at all.
+ */
+const bare = (entries) => {
+  const out = Object.create(null);
+  for (const [k, v] of entries) out[k] = v;
+  return out;
+};
+const bareCopy = (object) => bare(Object.entries(object));
+
+/** Removed, added and changed entries of two maps, labelled. Own entries only. */
 function mapChanges(was, now, label, changed = () => 'differs') {
   const out = [];
   for (const [k, v] of Object.entries(was))
-    if (!(k in now)) out.push(`${label}${k} missing after`);
+    if (!Object.hasOwn(now, k)) out.push(`${label}${k} missing after`);
     else if (now[k] !== v) out.push(`${label}${k} ${changed(v, now[k])}`);
-  for (const k of Object.keys(now)) if (!(k in was)) out.push(`${label}${k} new`);
+  for (const k of Object.keys(now)) if (!Object.hasOwn(was, k)) out.push(`${label}${k} new`);
   return out;
 }
 
@@ -425,8 +435,8 @@ function structureProblems(was, now) {
   if (!was || !now) return was || now ? ['structure not readable on one side'] : [];
   const out = [];
   for (const [name, col] of Object.entries(was.columns)) {
+    if (!Object.hasOwn(now.columns, name)) continue;
     const other = now.columns[name];
-    if (!other) continue;
     if (col.type !== other.type) out.push(`column ${name} type ${col.type} -> ${other.type}`);
     if (col.notnull !== other.notnull)
       out.push(`column ${name} ${col.notnull ? 'NOT NULL -> nullable' : 'nullable -> NOT NULL'}`);
@@ -441,14 +451,13 @@ function structureProblems(was, now) {
     out.push(
       `row-level security ${state(was.rls.forced, 'forced', 'not forced')} -> ${state(now.rls.forced, 'forced', 'not forced')}`,
     );
-  const set = (names) => Object.fromEntries(names.map((n) => [n, true]));
+  const set = (names) => bare(names.map((n) => [n, true]));
   out.push(...mapChanges(set(was.policies), set(now.policies), 'policy '));
   out.push(...mapChanges(was.triggers, now.triggers, 'trigger ', (a, b) => `enabled ${a} -> ${b}`));
   return out;
 }
 
-const objects = (table) =>
-  table.rows.map((row) => Object.fromEntries(table.columns.map((c, i) => [c, row[i]])));
+const objects = (table) => table.rows.map((row) => bare(table.columns.map((c, i) => [c, row[i]])));
 
 /** One table present on both sides: `{ line, problems }`. */
 function compareTable(name, rule, was, now, applied, fp) {
@@ -459,7 +468,9 @@ function compareTable(name, rule, was, now, applied, fp) {
     .filter((c) => !now.columns.includes(c))
     .map((c) => `column ${c} missing after`);
   const added = now.columns.filter((c) => !was.columns.includes(c));
-  const allowed = added.filter((c) => applied.has(rule.columns?.[c]));
+  const allowed = added.filter(
+    (c) => rule.columns && Object.hasOwn(rule.columns, c) && applied.has(rule.columns[c]),
+  );
   problems.push(...added.filter((c) => !allowed.includes(c)).map((c) => `column ${c} new`));
   const skip = new Set([...(rule.mayChange ?? []), ...(rule.grows ?? [])]);
   const common = was.columns.filter((c) => now.columns.includes(c) && !skip.has(c));
@@ -527,10 +538,17 @@ function compareTable(name, rule, was, now, applied, fp) {
  * applied between the two whose effect is not declared). Prints no value, only fingerprints.
  */
 export function compareDatabases(
-  was,
-  now,
-  { rules = RULES, migrations = MIGRATIONS, key = randomBytes(32), sequences = [{}, {}] } = {},
+  wasTables,
+  nowTables,
+  {
+    rules: ruleSet = RULES,
+    migrations = MIGRATIONS,
+    key = randomBytes(32),
+    sequences = [{}, {}],
+  } = {},
 ) {
+  // Names read from a database never reach an inherited member of these maps.
+  const [was, now, rules] = [bareCopy(wasTables), bareCopy(nowTables), bareCopy(ruleSet)];
   const fp = (text) => createHmac('sha256', key).update(text).digest('hex').slice(0, 8);
   const versions = (db) =>
     new Set(db.schema_migrations ? objects(db.schema_migrations).map((r) => r.version) : []);
@@ -539,7 +557,7 @@ export function compareDatabases(
   const lines = [
     `Migrations applied between the two: ${applied.size ? [...applied].sort().join(', ') : 'none'}`,
   ];
-  const undeclared = [...applied].sort().filter((v) => !migrations[v]);
+  const undeclared = [...applied].sort().filter((v) => !Object.hasOwn(migrations, v));
   // An undeclared migration may change the structure; the run is then not fully compared anyway.
   const structure = undeclared.length === 0;
   lines.push(
@@ -595,10 +613,10 @@ export function compareDatabases(
     const [before, after] = sequences;
     const changed = [];
     for (const [name, value] of Object.entries(before))
-      if (!(name in after)) changed.push(`sequence ${name}: missing after`);
+      if (!Object.hasOwn(after, name)) changed.push(`sequence ${name}: missing after`);
       else if (lower(value, after[name])) changed.push(`sequence ${name}: last value decreased`);
     for (const name of Object.keys(after))
-      if (!(name in before)) changed.push(`sequence ${name}: new`);
+      if (!Object.hasOwn(before, name)) changed.push(`sequence ${name}: new`);
     differences += changed.length;
     lines.push(
       `Sequences: ${Object.keys(before).length} -> ${Object.keys(after).length}${changed.length ? '' : ', none decreased'}`,
@@ -631,6 +649,7 @@ export function verdict({ differences, incomplete }) {
 /** Why a run stopped, without any text PGlite or SQL could carry. */
 export function safeReason(error) {
   if (error instanceof Refusal) return error.message;
+  if (error instanceof Interrupted) return 'interrupted';
   const code = typeof error?.code === 'string' ? error.code : '';
   // Errno codes first: EFBIG, EPERM, EBUSY and EROFS also look like a five-character SQLSTATE.
   const errno =
@@ -653,25 +672,23 @@ async function openAndRead(PGlite, dir) {
   }
 }
 
-// Scratch copies that exist right now, removed by the signal handler of main.
-const scratchCopies = new Set();
+class Interrupted extends Error {}
+
+// Set by Ctrl+C (SIGINT), SIGTERM or a closed terminal (SIGHUP).
+const STOP = { requested: false, work: null };
 
 /**
- * Ctrl+C (SIGINT) or SIGTERM: the scratch copies are removed before exiting with 2, so no copy
- * of a database is left behind. A folder that cannot be removed is named.
+ * A signal only asks the run to stop. The run itself removes its copies, once the step in flight
+ * has ended: removing them from the handler raced the copy still being written, which left part
+ * of a database behind. So the answer to Ctrl+C can take as long as copying one database.
  */
 function onInterrupt() {
-  for (const dir of scratchCopies)
-    try {
-      rmSync(dir, { recursive: true, force: true, maxRetries: 5 });
-    } catch (error) {
-      console.error(
-        `Error: could not remove the scratch copy ${dir} (${safeReason(error)}): delete that folder`,
-      );
-    }
-  console.error('Error: interrupted');
-  console.log('RESULT: not compared (interrupted)');
-  process.exit(NOT_COMPARED_EXIT);
+  STOP.requested = true;
+  console.error(
+    STOP.work
+      ? `Interrupted: removing the scratch copy ${STOP.work}; wait for the RESULT line. If this window is closed first, delete that folder.`
+      : 'Interrupted: stopping.',
+  );
 }
 
 /**
@@ -679,7 +696,16 @@ function onInterrupt() {
  * `copied()`, called once both copies exist.
  */
 export async function runTables(options, probes = {}) {
-  const { answers = portAnswers, statfs: fs = statfs, copied = async () => {} } = probes;
+  const {
+    answers = portAnswers,
+    statfs: fs = statfs,
+    copied = async () => {},
+    cp: copy = cp,
+    stop = STOP,
+  } = probes;
+  const checkpoint = () => {
+    if (stop.requested) throw new Interrupted('interrupted');
+  };
   if (!options.before || !options.after) refuse('--before and --after are required');
   const port = Number(options.port ?? 8000);
   if (!Number.isInteger(port) || port < 1 || port > 65535) refuse('invalid --port');
@@ -706,27 +732,49 @@ export async function runTables(options, probes = {}) {
   // What is read (and so proved unchanged) is the database folder of each input.
   const databaseOf = (input) => join(input.real, 'pglite');
   const digests = [await treeDigest(databaseOf(before)), await treeDigest(databaseOf(after))];
+  checkpoint();
   const work = await mkdtemp(join(scratch, 'sipges-tables-'));
-  scratchCopies.add(work);
-  let databases;
+  stop.work = work;
+  const databases = [];
+  let failure = null;
   try {
     const copies = [join(work, 'before'), join(work, 'after')];
     for (const [i, input] of inputs.entries()) {
-      await cp(databaseOf(input), copies[i], {
+      checkpoint();
+      await copy(databaseOf(input), copies[i], {
         recursive: true,
         errorOnExist: true,
         force: false,
         verbatimSymlinks: true,
       });
+      checkpoint();
       if ((await treeDigest(copies[i])) !== digests[i])
         refuse(`the copy of ${input.label} differs from it`);
     }
     await copied();
-    databases = [await openAndRead(PGlite, copies[0]), await openAndRead(PGlite, copies[1])];
-  } finally {
-    await rm(work, { recursive: true, force: true });
-    scratchCopies.delete(work);
+    for (const dir of copies) {
+      checkpoint();
+      databases.push(await openAndRead(PGlite, dir));
+    }
+  } catch (error) {
+    failure = error;
   }
+  // Nothing of this run is still writing under `work` here: every step above was awaited.
+  const removal = await rm(work, { recursive: true, force: true, maxRetries: 5 }).then(
+    () => null,
+    (error) => error,
+  );
+  const left = await lstat(work).then(
+    () => true,
+    () => false,
+  );
+  if (left)
+    refuse(
+      `the scratch copy ${work} could not be removed (${removal ? safeReason(removal) : 'still there'}): delete that folder`,
+    );
+  stop.work = null;
+  if (failure) throw failure;
+  checkpoint();
   if (
     (await treeDigest(databaseOf(before))) !== digests[0] ||
     (await treeDigest(databaseOf(after))) !== digests[1]
@@ -749,7 +797,7 @@ Compares, table by table and column by column, the database of the state folder 
 migration (the launcher's <state>.pre-update-<time>-first-start-<version> copy) with the migrated
 state folder, SIPGES closed, and the structure of each table and the sequences. Only each pglite
 database folder is copied under --scratch (default the temp folder) and only the copies are
-opened, then removed, also on Ctrl+C; each database folder is hashed before and after and must
+opened, then removed, also on Ctrl+C (after the copy in flight ends); each database folder is hashed before and after and must
 not change. PGlite comes from the managed install given with --app (its current version), else from
 this checkout. Refuses (exit 2, nothing copied) a link or junction, a folder holding one, the
 same folder twice, --scratch inside an input or without room for both copies, SIPGES answering
@@ -767,7 +815,7 @@ const OPTIONS = {
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
-  for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, onInterrupt);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, onInterrupt);
   try {
     const options = {};
     for (let i = 0; i < args.length; i += 2) {
