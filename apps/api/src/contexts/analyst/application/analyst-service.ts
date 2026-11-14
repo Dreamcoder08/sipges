@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@sipges/kernel';
+import { type Result, err, limaToday, ok } from '@sipges/kernel';
 import { log } from '../../../platform/observability/logger.ts';
 import type { EgressGuard, EgressSession } from '../../privacy/application/index.ts';
 import {
@@ -103,7 +103,7 @@ export const createAnalystService = (deps: {
       deps.source.mentions(tenantId, slug, id),
     ]);
     if (!found) return null;
-    const today = deps.clock.now().toISOString().slice(0, 10);
+    const today = limaToday(deps.clock.now());
     const all = [
       ...followUpProposals(found.subject, found.connections, today),
       ...(mentions ?? []).map((m) => mentionProposal(found.subject, m)),
@@ -174,7 +174,7 @@ export const createAnalystService = (deps: {
       const found = await deps.source.neighbours(tenantId, slug, id);
       if (!found) return null;
       const now = deps.clock.now();
-      const today = now.toISOString().slice(0, 10);
+      const today = limaToday(now);
       const seen = options.session ? sanitisedView(options.session, found) : found;
       const subjectWithheld = 'subjectWithheld' in seen && seen.subjectWithheld;
       const briefing = buildBriefing(seen.subject, seen.connections, today);
