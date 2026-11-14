@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type IrsaPoint,
   type RiskAlert,
   type RiskInput,
   type RiskRecord,
+  featuresAt,
   indexSignals,
 } from '../../src/contexts/analytics/domain/conflict-risk/index.ts';
 
@@ -35,6 +37,9 @@ const NOT_INSTANTS: readonly (readonly [string, string | null])[] = [
   ['2026-02-30T10:00:00Z', null],
   ['sin fecha', null],
 ];
+
+const addDay = (day: string, days: number) =>
+  new Date(Date.parse(`${day}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
 
 const input = (records: RiskRecord[], alerts: RiskAlert[] = []): RiskInput => ({
   records,
@@ -116,5 +121,44 @@ describe('conflict-risk days of stored instants (Lima)', () => {
     expect(signals(input([dated('2026-11-02T02:00:00Z')]))[0]?.date).toBe('2026-11-02');
     expect(signals(input([dated('2/11/2026')]))[0]?.date).toBe('2026-11-02');
     expect(signals(input([dated('2026-11-02')]))[0]?.date).toBe('2026-11-02');
+  });
+
+  const irsaFactors = (irsa: IrsaPoint[], t: string) =>
+    featuresAt(indexSignals(input([])), UNIT, t, irsa)
+      .filter((f) => f.id === 'irsa' || f.id === 'irsa_rise')
+      .map((f) => [f.id, f.count] as const)
+      .sort(([a], [b]) => a.localeCompare(b));
+
+  it('R4: an IRSA snapshot counts from the Lima day it was taken', () => {
+    for (const [ts, day] of INSTANTS) {
+      const irsa = [{ ts, irsa: 60 }];
+      expect([ts, irsaFactors(irsa, day)]).toEqual([ts, [['irsa', 60]]]);
+      expect([ts, irsaFactors(irsa, addDay(day, -1))]).toEqual([ts, []]);
+    }
+  });
+
+  it('R5: the IRSA rise starts at the earliest snapshot of the window, by Lima day', () => {
+    for (const [ts, day] of INSTANTS) {
+      // Both snapshots fall on `day` in Lima; the first is the start, the last the level.
+      const irsa = [
+        { ts, irsa: 20 },
+        { ts: `${day}T12:00:00-05:00`, irsa: 45 },
+      ];
+      expect([ts, irsaFactors(irsa, day)]).toEqual([
+        ts,
+        [
+          ['irsa', 45],
+          ['irsa_rise', 25],
+        ],
+      ]);
+    }
+  });
+
+  it('keeps the written day of an IRSA snapshot that is not a zoned instant', () => {
+    for (const [ts, day] of NOT_INSTANTS) {
+      const irsa = [{ ts, irsa: 60 }];
+      expect([ts, irsaFactors(irsa, day ?? '2026-11-02')]).toEqual([ts, day ? [['irsa', 60]] : []]);
+      if (day) expect([ts, irsaFactors(irsa, addDay(day, -1))]).toEqual([ts, []]);
+    }
   });
 });

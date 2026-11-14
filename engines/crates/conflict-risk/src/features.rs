@@ -4,7 +4,7 @@
 
 use sipges_analytics_common::EngineError;
 
-use crate::dates::{add_days, day_of, days_between};
+use crate::dates::{add_days, days_between, lima_day_of};
 use crate::jsmath;
 use crate::signals::{IrsaPoint, Kind, Signal, SignalIndex};
 
@@ -89,11 +89,12 @@ fn sum(signals: &[(usize, &Signal)]) -> f64 {
     signals.iter().fold(0.0, |n, (_, s)| n + s.weight)
 }
 
-/// Latest IRSA value on or before `day` (the last of its day), with that day.
+/// Latest IRSA value on or before `day` (the last of its day), with that day. A snapshot counts on
+/// its Lima day.
 fn irsa_at(points: &[IrsaPoint<'_>], day: &str) -> Option<(String, f64)> {
     let mut best: Option<(String, f64)> = None;
     for p in points {
-        if let Some(d) = day_of(p.ts)
+        if let Some(d) = lima_day_of(p.ts)
             && d.as_str() <= day
             && best.as_ref().is_none_or(|(b, _)| d >= *b)
         {
@@ -198,7 +199,7 @@ pub fn features_at(
         let start = irsa_at(irsa, &d90).map(|(_, v)| v).or_else(|| {
             let mut first: Option<(String, f64)> = None;
             for p in irsa {
-                if let Some(d) = day_of(p.ts)
+                if let Some(d) = lima_day_of(p.ts)
                     && d > d90
                     && d.as_str() <= t
                     && first.as_ref().is_none_or(|(b, _)| d < *b)

@@ -4,8 +4,8 @@ import {
   type SignalIndex,
   type SourceRef,
   addDays,
-  dayOf,
   daysBetween,
+  limaDayOf,
 } from './signals.ts';
 
 /** Factors of docs/adr/0031 §2, with their fixed weights and the words the screen shows. */
@@ -55,11 +55,11 @@ const after = (s: Signal, since: string, t: string) => s.date > since && s.date 
 const openAt = (s: Signal, t: string) => s.closedOn === null || s.closedOn > t;
 const sum = (signals: readonly Signal[]) => signals.reduce((n, s) => n + s.weight, 0);
 
-/** Latest IRSA value on or before `day`, null when there is none. */
+/** Latest IRSA value on or before `day`, null when there is none. A snapshot counts on its Lima day. */
 const irsaAt = (points: readonly IrsaPoint[], day: string) => {
   let best: { day: string; irsa: number } | null = null;
   for (const p of points) {
-    const d = dayOf(p.ts);
+    const d = limaDayOf(p.ts);
     if (d && d <= day && (!best || d >= best.day)) best = { day: d, irsa: p.irsa };
   }
   return best;
@@ -114,7 +114,7 @@ export const featuresAt = (
     const start =
       before ??
       irsa
-        .map((p) => ({ day: dayOf(p.ts), irsa: p.irsa }))
+        .map((p) => ({ day: limaDayOf(p.ts), irsa: p.irsa }))
         .filter((p) => p.day !== null && p.day > d90 && p.day <= t)
         .sort((a, b) => (a.day ?? '').localeCompare(b.day ?? ''))[0];
     if (start) {
