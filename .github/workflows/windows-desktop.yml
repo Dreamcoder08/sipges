@@ -111,7 +111,7 @@ jobs:
       - name: Install this checkout
         run: pnpm install --frozen-lockfile
       - name: Visit kit unit tests
-        run: node --test deploy/desktop/windows/visit-kit.test.mjs
+        run: node --test deploy/desktop/windows/visit-kit.test.mjs deploy/desktop/package/active-build.test.mjs deploy/desktop/package/active-build-edges.test.mjs
       # A throwaway key on a «key USB» folder and the kit on a «visit USB» folder, as at home.
       - name: Visit kit into a temporary USB folder
         run: |
