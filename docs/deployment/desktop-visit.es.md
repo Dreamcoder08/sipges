@@ -36,7 +36,7 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ F4: `install.ps1` se niega con una actualización pendiente o detenida (`update-journal.json`) | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ F7: el texto de detención que nombra la carpeta de datos gestionada | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ `install.ps1` se niega con un `-State` que es un enlace o una unión (junction) | No probado en Windows hasta que el ensayo automático lo cubra |
-| ⚠ `tables.mjs` (paso 5b): copiar las dos carpetas `pglite` en NTFS, abrir las copias con el PGlite de `SIPGES-app`, sus negativas (SIPGES abierto, enlaces o uniones, espacio), que Ctrl+C borre sus copias | No probado en Windows hasta que el ensayo automático lo cubra (en Linux lo corre el ensayo de `rehearse.mjs`) |
+| ⚠ `tables.mjs` (paso 5b): copiar las dos carpetas `pglite` en NTFS, abrir las copias con el PGlite de `SIPGES-app`, sus negativas (SIPGES abierto, enlaces o uniones, espacio), que Ctrl+C borre sus copias | No probado en Windows hasta que el ensayo automático lo cubra (en Linux el ensayo de `rehearse.mjs` lo corre completo; el corte con Ctrl+C lo cubren sus pruebas) |
 | ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la

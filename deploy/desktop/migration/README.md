@@ -330,16 +330,15 @@ It then checks the folder is gone, and names it if not (`the scratch copy <folde
 removed …: delete that folder`). A signal in the first instant, before anything is copied, may
 end the process with no RESULT line. When nobody reads the output any more (it was piped, as in
 `2>&1 | tee`, and the reader ended; or the terminal was closed, which sends SIGHUP on Linux), the
-messages are lost but the run still removes its copy and exits with 2. Do not rely on that on
+messages are lost but the run still removes its copy, and a signalled run still exits with 2. Do not rely on that on
 Windows: closing the console window lets Windows end the process about 10 seconds later, whatever
-it is doing, so a copy still in flight stays in `--scratch`; that case has not been run. A killed
-process (`kill -9`, Task Manager) and a step that never ends (the run cannot be interrupted while
-it waits for it, only killed) leave the copy too: delete the `sipges-tables-*` folder by hand. Each `pglite/` folder,
+it is doing, so a copy still in flight stays in `--scratch`; that case has not been run. A step
+that never ends cannot be interrupted, only killed. Each `pglite/` folder,
 the only part read, is hashed (names, sizes, bytes) before and after; if one changed: `RESULT:
 not compared (an input folder changed during the run)`. The rest of the state folder is not
 read, so it is not proved unchanged either (only listed, to refuse links). If the process is
 killed outright (Task Manager, `kill -9`), its copy stays: delete only the `sipges-tables-*`
-folder it names under `--scratch` (by default the temp folder: `%TEMP%\sipges-tables-*` on
+folder under `--scratch` (by default the temp folder: `%TEMP%\sipges-tables-*` on
 Windows), nothing else there.
 
 It refuses, exit code 2 and nothing copied: an input that is a link or junction or holds one

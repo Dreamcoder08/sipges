@@ -1053,3 +1053,82 @@ test('a removal that reports success but leaves the folder is refused, naming th
     assert.equal((await readdir(scratch)).length, 1);
     assert.deepEqual([await treeDigest(a), await treeDigest(b)], digests);
   }));
+
+test('the signal handler starts no removal of its own, not even one that ends later', () =>
+  withTemp(async (dir) => {
+    const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+    const scratch = join(dir, 'scratch');
+    await mkdir(scratch);
+    const stop = { requested: false, work: null };
+    const counts = [];
+    const copyThenSignal = async (from, to, options) => {
+      await cp(from, to, options);
+      const copied = (await names(to)).length;
+      onInterrupt(stop, () => {});
+      // A removal started by the handler and not awaited would be at work by now.
+      await sleep(500);
+      counts.push(copied, (await names(to).catch(() => [])).length);
+    };
+    await assert.rejects(
+      runTables(
+        { before: a, after: b, scratch },
+        { answers: async () => false, cp: copyThenSignal, stop },
+      ),
+      (error) => safeReason(error) === 'interrupted',
+    );
+    assert.equal(counts.length, 2, 'only the copy in flight runs after a signal');
+    assert.ok(counts[0] > 0);
+    assert.equal(counts[1], counts[0], 'the handler removed files of the copy on its own');
+    assert.deepEqual(await readdir(scratch), []);
+  }));
+
+test(
+  'a closed terminal (a real pty whose master goes away) still removes the copies',
+  {
+    skip:
+      (process.platform !== 'linux' && 'needs a Linux pty and /proc') ||
+      (!existsSync('/usr/bin/script') && 'script(1) of util-linux is not installed'),
+  },
+  () =>
+    withTemp(async (dir) => {
+      const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+      await writeFile(join(b, 'pglite', 'filler.bin'), Buffer.alloc(96 * 1024 ** 2));
+      const digests = [await treeDigest(a), await treeDigest(b)];
+      const scratch = join(dir, 'scratch');
+      await mkdir(scratch);
+      const port = String(await closedPort());
+      const quote = (text) => `'${text.replaceAll("'", `'\\''`)}'`;
+      const args = [script, '--before', a, '--after', b, '--scratch', scratch, '--port', port];
+      const command = `exec ${[process.execPath, ...args].map(quote).join(' ')}`;
+      // script(1) holds the pty master: killing it closes the terminal, so the run gets SIGHUP
+      // from the kernel and every later write fails with EIO, not EPIPE.
+      const terminal = spawn('script', ['-qec', command, '/dev/null'], { stdio: 'ignore' });
+      for (let i = 0; i < 2000 && terminal.exitCode === null; i += 1) {
+        if ((await names(scratch)).some((n) => n.includes('PG_VERSION'))) break;
+        await sleep(5);
+      }
+      assert.ok((await names(scratch)).length > 0, 'scratch stayed empty');
+      const children = await readFile(
+        `/proc/${terminal.pid}/task/${terminal.pid}/children`,
+        'utf8',
+      );
+      const pid = Number(children.trim().split(' ')[0]);
+      assert.ok(pid > 0, 'the run under script(1) was not found');
+      const ended = () => {
+        try {
+          return process.kill(pid, 0) && false;
+        } catch {
+          return true;
+        }
+      };
+      terminal.kill('SIGKILL');
+      for (const signal of ['SIGINT', 'SIGINT']) {
+        await sleep(20);
+        if (!ended()) process.kill(pid, signal);
+      }
+      for (let i = 0; i < 6000 && !ended(); i += 1) await sleep(10);
+      assert.ok(ended(), 'the run did not end');
+      assert.deepEqual(await readdir(scratch), [], 'the closed terminal left the copies');
+      assert.deepEqual([await treeDigest(a), await treeDigest(b)], digests);
+    }),
+);
