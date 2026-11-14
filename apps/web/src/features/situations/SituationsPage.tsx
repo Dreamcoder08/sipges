@@ -6,6 +6,7 @@ import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import {
   raisedSituations,
+  SITUATION_KINDS as KIND,
   situationAlertsQuery,
   situationsReportQuery,
 } from '../../shared/api/situations.ts';
@@ -18,12 +19,6 @@ import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { situationAlertPayload, citationHref } from './model.ts';
 import styles from './Situations.module.css';
-
-const KIND: Readonly<Record<Situation['kind'], string>> = {
-  tema: 'Tema',
-  actor: 'Actor',
-  territorio: 'Territorio',
-};
 
 /** Related records, their trend and suggested actions (docs/adr/0020). */
 export const SituationsPage = ({ scope, projectId, projectLabel, role }: FeatureContext) => {

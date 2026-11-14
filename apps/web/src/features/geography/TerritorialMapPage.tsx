@@ -29,6 +29,7 @@ import {
   queryExtent,
   relationPolygon,
 } from './concessions.ts';
+import { clearLabels } from './engine/labels.ts';
 import type { CanvasPoint, Focus } from './engine/types.ts';
 import { RELIEF } from './engine/terrarium.ts';
 import { supportsWebGl2 } from './engine/webgl.ts';
@@ -417,6 +418,42 @@ const TerritorialWorkspace = ({
     emphasis,
   }));
   const mapLabel = `Mapa territorial de ${area.place}`;
+  // SVG markers: close ones overlap, so only the numbers that clear each other are drawn, by the
+  // rule the WebGL engine follows (engine/labels.ts), and, but for the selected record's, none
+  // that a marker painted later would cover. Every marker keeps its name and its button.
+  const markers = spread(listed, unit).map((entry) => {
+    const key = `${entry.point.layer}-${entry.point.id}`;
+    const active = entry.point.id === selectedPoint?.id;
+    const r = unit * (active ? 3.4 : entry.emphasis === 'current' ? 3.2 : 2.6);
+    const digits = String(entry.n).length;
+    const size = r * (digits > 2 ? 0.75 : digits > 1 ? 0.95 : 1.1);
+    // The number's box, with the margin labels.ts gives the canvas digits.
+    const box = {
+      id: key,
+      emphasis: entry.emphasis,
+      x: entry.at[0],
+      y: entry.at[1],
+      w: digits * size * 0.7 + size * 0.5,
+      h: (size * 4) / 3,
+    };
+    return { ...entry, key, active, r, size, box };
+  });
+  const uncovered = ({ box }: (typeof markers)[number], i: number) =>
+    markers
+      .slice(i + 1)
+      .every(
+        (o) =>
+          Math.abs(o.at[0] - box.x) * 2 >= o.r * 2 + box.w ||
+          Math.abs(o.at[1] - box.y) * 2 >= o.r * 2 + box.h,
+      );
+  const labelled = clearLabels(
+    markers
+      .filter((marker, i) => marker.active || uncovered(marker, i))
+      // In list order, as on the canvas; the markers are grouped by locality.
+      .sort((a, b) => a.n - b.n)
+      .map((marker) => marker.box),
+    selectedPoint ? `${selectedPoint.layer}-${selectedPoint.id}` : '',
+  );
 
   const svgMap = (
     <MapFrame map={map} homeLabel={area.home}>
@@ -461,13 +498,10 @@ const TerritorialWorkspace = ({
               />
             );
           })}
-          {spread(listed, unit).map(({ point: p, emphasis, at, n }) => {
-            const active = p.id === selectedPoint?.id;
-            const r = unit * (active ? 3.4 : emphasis === 'current' ? 3.2 : 2.6);
-            const digits = String(n).length;
+          {markers.map(({ point: p, emphasis, at, n, key, active, r, size }) => {
             return (
               <g
-                key={`${p.layer}-${p.id}`}
+                key={key}
                 className={`${styles.marker} ${styles[p.dimension] ?? ''} ${styles[`ev_${p.evidence}`] ?? ''}`}
                 data-emphasis={emphasis}
                 role="button"
@@ -483,14 +517,11 @@ const TerritorialWorkspace = ({
                 }}
               >
                 <circle cx={at[0]} cy={at[1]} r={r} strokeWidth={unit * 0.4} />
-                <text
-                  x={at[0]}
-                  y={at[1] + r * 0.36}
-                  fontSize={r * (digits > 2 ? 0.75 : digits > 1 ? 0.95 : 1.1)}
-                  textAnchor="middle"
-                >
-                  {n}
-                </text>
+                {labelled.has(key) ? (
+                  <text x={at[0]} y={at[1] + r * 0.36} fontSize={size} textAnchor="middle">
+                    {n}
+                  </text>
+                ) : null}
               </g>
             );
           })}

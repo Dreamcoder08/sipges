@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ageLabel, fourEyesFor, groupItems, orderItems, qualityItems } from './model.ts';
+import type { SituationsReport } from '@sipges/contracts';
+import {
+  ageLabel,
+  fourEyesFor,
+  groupItems,
+  orderItems,
+  qualityItems,
+  situationItems,
+} from './model.ts';
 
 describe('fourEyesFor', () => {
   it('needs two people only for a high-priority alert', () => {
@@ -69,5 +77,29 @@ describe('orderItems', () => {
     ]);
     expect(ordered.map((entry) => entry.key)).toEqual(['a', 'c', 'b']);
     expect(groupItems(ordered).map((group) => group.value)).toEqual(['urgent', 'routine']);
+  });
+});
+
+describe('situationItems', () => {
+  it('refers to a situation by its kind, never by its stored key', () => {
+    const report = {
+      situations: [
+        {
+          key: 'territorio:zona dos',
+          kind: 'territorio',
+          label: 'Zona Dos',
+          level: 'Rojo',
+          summary: 'Resumen sintético',
+          reasons: [],
+          records: [],
+          territories: ['Zona Dos'],
+          last_date: '2026-10-20',
+        },
+      ],
+    } as unknown as SituationsReport;
+    const [item] = situationItems(report, new Set());
+    expect(item?.ref).toBe('Territorio');
+    // The key still identifies the item in the URL.
+    expect(item?.key).toBe('situacion:territorio:zona dos');
   });
 });

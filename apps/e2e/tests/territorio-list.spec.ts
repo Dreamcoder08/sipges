@@ -38,22 +38,26 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
     const list = page.getByRole('list', { name: 'Registros en el mapa' });
     const row = (title: string) => list.getByRole('button', { name: new RegExp(title) });
+    // A marker is named after its row's number; the number itself is drawn only where it clears
+    // its neighbours (engine/labels.ts), and always on the selected record's marker.
     const marker = async (title: string, place: string) => {
       const n = ((await row(title).locator('span').first().textContent()) ?? '').trim();
       expect(n).toMatch(/^\d+$/);
       const found = page.getByRole('button', { name: `${n}. Eventos: ${title} (${place})` });
-      await expect(found).toHaveText(n);
-      return found;
+      await expect(found).toHaveCount(1);
+      return [found, n] as const;
     };
-    const firstMarker = await marker(first, 'Vice');
-    const secondMarker = await marker(second, 'Bayóvar');
+    const [firstMarker, firstN] = await marker(first, 'Vice');
+    const [secondMarker, secondN] = await marker(second, 'Bayóvar');
 
     await row(first).click();
     await expect(firstMarker).toHaveAttribute('aria-pressed', 'true');
+    await expect(firstMarker).toHaveText(firstN);
     await expect(row(first)).toHaveAttribute('aria-pressed', 'true');
     await secondMarker.focus();
     await page.keyboard.press('Enter');
     await expect(row(second)).toHaveAttribute('aria-pressed', 'true');
+    await expect(secondMarker).toHaveText(secondN);
     await expect(row(first)).toHaveAttribute('aria-pressed', 'false');
 
     const overflow = await page.evaluate(

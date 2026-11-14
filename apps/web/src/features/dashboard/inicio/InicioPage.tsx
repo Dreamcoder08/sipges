@@ -1,5 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { type FormEvent, type KeyboardEvent, type ReactNode, useId, useRef, useState } from 'react';
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
 import { useOnline } from '../../../shared/lib/online.ts';
@@ -84,6 +92,29 @@ export const InicioPage = ({
   const suggestId = useId();
   const chips = useRef<HTMLUListElement>(null);
   useScrollHints(chips);
+  const composer = useRef<HTMLFormElement>(null);
+  // On a phone the composer rests on the bottom of the screen; its height is the scroll padding
+  // that keeps a focused control clear of it (WCAG 2.2 SC 2.4.11, the stylesheet's phone layout).
+  useEffect(() => {
+    const form = composer.current;
+    if (!form || typeof ResizeObserver === 'undefined') return;
+    const root = document.documentElement.style;
+    let frame: number | undefined;
+    const observer = new ResizeObserver(() => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      // As in AppShell: a root style write must not reflow the observed form in the same frame.
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        root.setProperty('--composer-height', `${form.offsetHeight}px`);
+      });
+    });
+    observer.observe(form);
+    return () => {
+      observer.disconnect();
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      root.removeProperty('--composer-height');
+    };
+  }, []);
   const online = useOnline();
   const aiOn = useProjectSettings()?.external_ai?.enabled ?? false;
   const alerts = useQuery(moduleRecordsQuery('alertas', scope));
@@ -184,7 +215,12 @@ export const InicioPage = ({
       </section>
 
       <div className={styles.compose}>
-        <form className={styles.ask} data-ai={aiOn ? 'on' : 'off'} onSubmit={onSubmit}>
+        <form
+          ref={composer}
+          className={styles.ask}
+          data-ai={aiOn ? 'on' : 'off'}
+          onSubmit={onSubmit}
+        >
           <textarea
             id={fieldId}
             rows={2}

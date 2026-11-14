@@ -12,15 +12,12 @@ import { moduleAttachmentsQuery } from '../evidence-api.ts';
 import { MODULES } from '../modules.ts';
 import {
   QUALITY_MODULES,
+  qualityFieldLabel as fieldLabel,
   qualityIssues,
   sourceInventory,
   type QualityData,
-  type QualityIssue,
 } from './model.ts';
 import styles from '../Records.module.css';
-
-const fieldLabel = (issue: QualityIssue) =>
-  MODULES[issue.module].fields.find((field) => field.key === issue.field)?.label ?? issue.field;
 
 const countLabel = (count: number, one: string, many: string) =>
   `${count} ${count === 1 ? one : many}`;

@@ -3,6 +3,7 @@ import type { QualityReview } from '../features/bandeja/index.ts';
 import { recordsQuery } from '../features/records/api.ts';
 import {
   QUALITY_MODULES,
+  qualityFieldLabel,
   qualityIssues,
   type QualityData,
 } from '../features/records/quality/model.ts';
@@ -32,5 +33,10 @@ export const useQualityReview = (scope: string): QualityReview => {
     compromisos: queries[5]?.data ?? [],
     fuentes: queries[6]?.data ?? [],
   };
-  return { state: 'ready', observations: qualityIssues(data) };
+  // The inbox shows each field by the label the Calidad de datos screen uses, not its key.
+  const observations = qualityIssues(data).map((issue) => ({
+    ...issue,
+    field: qualityFieldLabel(issue),
+  }));
+  return { state: 'ready', observations };
 };
