@@ -682,18 +682,18 @@ const STOP = { requested: false, work: null };
  * has ended: removing them from the handler raced the copy still being written, which left part
  * of a database behind. So the answer to Ctrl+C can take as long as copying one database.
  */
-function onInterrupt() {
-  STOP.requested = true;
-  console.error(
-    STOP.work
-      ? `Interrupted: removing the scratch copy ${STOP.work}; wait for the RESULT line. If this window is closed first, delete that folder.`
+export function onInterrupt(stop = STOP, say = console.error) {
+  stop.requested = true;
+  say(
+    stop.work
+      ? `Interrupted: removing the scratch copy ${stop.work}; wait for the RESULT line. If this window is closed first, delete that folder.`
       : 'Interrupted: stopping.',
   );
 }
 
 /**
- * The whole run. Returns `{ lines, code }`. `probes` (tests): `answers(port)`, `statfs`, and
- * `copied()`, called once both copies exist.
+ * The whole run. Returns `{ lines, code }`. `probes` (tests): `answers(port)`, `statfs`,
+ * `copied()`, called once both copies exist, and stand-ins for `cp`, `rm` and the stop flag.
  */
 export async function runTables(options, probes = {}) {
   const {
@@ -701,6 +701,7 @@ export async function runTables(options, probes = {}) {
     statfs: fs = statfs,
     copied = async () => {},
     cp: copy = cp,
+    rm: remove = rm,
     stop = STOP,
   } = probes;
   const checkpoint = () => {
@@ -760,7 +761,7 @@ export async function runTables(options, probes = {}) {
     failure = error;
   }
   // Nothing of this run is still writing under `work` here: every step above was awaited.
-  const removal = await rm(work, { recursive: true, force: true, maxRetries: 5 }).then(
+  const removal = await remove(work, { recursive: true, force: true, maxRetries: 5 }).then(
     () => null,
     (error) => error,
   );
@@ -815,7 +816,11 @@ const OPTIONS = {
 
 async function main(args) {
   if (args.length === 1 && args[0] === '--help') return console.log(USAGE);
-  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, onInterrupt);
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP']) process.on(signal, () => onInterrupt());
+  // With the output piped to a reader that went away, or the terminal closed, a write fails
+  // (EPIPE, EIO) and the stream emits `error` after the write returned. Unheard, that error ends
+  // the process at once, before the run removes its copies. The lines are lost; the exit code is not.
+  for (const stream of [process.stdout, process.stderr]) stream.on('error', () => {});
   try {
     const options = {};
     for (let i = 0; i < args.length; i += 2) {

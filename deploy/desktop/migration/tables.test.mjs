@@ -8,7 +8,7 @@ import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
 import { createHash, createHmac } from 'node:crypto';
 import { once } from 'node:events';
-import { rmSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
 import {
   cp,
   mkdir,
@@ -33,6 +33,7 @@ import {
   checkRoom,
   compareDatabases,
   readDatabase,
+  onInterrupt,
   runTables,
   safeReason,
   treeDigest,
@@ -956,4 +957,99 @@ test('an interrupt at each later step still ends not compared, with nothing left
       (error) => safeReason(error) === 'interrupted',
     );
     assert.deepEqual(await readdir(scratch), []);
+  }));
+
+test(
+  'signals with nobody reading the output still remove the copies and exit 2',
+  {
+    skip:
+      process.platform === 'win32' &&
+      'POSIX signals sent with child.kill are not delivered to Node on Windows',
+  },
+  () =>
+    withTemp(async (dir) => {
+      const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+      await writeFile(join(b, 'pglite', 'filler.bin'), Buffer.alloc(96 * 1024 ** 2));
+      const digests = [await treeDigest(a), await treeDigest(b)];
+      const scratch = join(dir, 'scratch');
+      await mkdir(scratch);
+      const port = String(await closedPort());
+      // Output piped to a reader that went away (`2>&1 | tee`, then Ctrl+C twice), and a closed
+      // terminal (SIGHUP, then every write fails): each message the run prints fails to write.
+      for (const signals of [
+        ['SIGINT', 'SIGINT', 'SIGINT'],
+        ['SIGHUP', 'SIGTERM', 'SIGHUP'],
+      ]) {
+        const args = [script, '--before', a, '--after', b, '--scratch', scratch, '--port', port];
+        const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+        const exited = once(child, 'exit');
+        for (let i = 0; i < 2000 && child.exitCode === null; i += 1) {
+          if ((await names(scratch)).some((n) => n.includes('PG_VERSION'))) break;
+          await sleep(5);
+        }
+        assert.ok((await names(scratch)).length > 0, `scratch stayed empty before ${signals}`);
+        child.stdout.destroy();
+        child.stderr.destroy();
+        for (const signal of signals) {
+          child.kill(signal);
+          await sleep(20);
+        }
+        const [code, killedBy] = await exited;
+        assert.deepEqual(await readdir(scratch), [], `${signals} left the copies`);
+        assert.deepEqual([code, killedBy], [2, null], String(signals));
+      }
+      assert.deepEqual([await treeDigest(a), await treeDigest(b)], digests);
+    }),
+);
+
+test('the signal handler removes nothing itself: the copy stays until the run removes it', () =>
+  withTemp(async (dir) => {
+    const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+    const scratch = join(dir, 'scratch');
+    await mkdir(scratch);
+    const stop = { requested: false, work: null };
+    const said = [];
+    const seen = [];
+    const copyThenSignal = async (from, to, options) => {
+      await cp(from, to, options);
+      onInterrupt(stop, (line) => said.push(line));
+      seen.push(stop.work, existsSync(to), existsSync(join(to, 'PG_VERSION')));
+    };
+    await assert.rejects(
+      runTables(
+        { before: a, after: b, scratch },
+        { answers: async () => false, cp: copyThenSignal, stop },
+      ),
+      (error) => safeReason(error) === 'interrupted',
+    );
+    assert.equal(seen.length, 3, 'only the copy in flight runs after a signal');
+    assert.ok(seen[0].startsWith(join(scratch, 'sipges-tables-')));
+    assert.deepEqual(seen.slice(1), [true, true], 'the handler removed the copy');
+    assert.equal(said.length, 1);
+    assert.ok(said[0].startsWith(`Interrupted: removing the scratch copy ${seen[0]};`), said[0]);
+    assert.deepEqual(await readdir(scratch), []);
+  }));
+
+test('a removal that reports success but leaves the folder is refused, naming the folder', () =>
+  withTemp(async (dir) => {
+    const [a, b] = [await variant(dir, 'a'), await variant(dir, 'b')];
+    const digests = [await treeDigest(a), await treeDigest(b)];
+    const scratch = join(dir, 'scratch');
+    await mkdir(scratch);
+    await assert.rejects(
+      runTables(
+        { before: a, after: b, scratch },
+        { answers: async () => false, rm: async () => {} },
+      ),
+      (error) => {
+        const [left] = readdirSync(scratch);
+        assert.equal(
+          safeReason(error),
+          `the scratch copy ${join(scratch, left)} could not be removed (still there): delete that folder`,
+        );
+        return true;
+      },
+    );
+    assert.equal((await readdir(scratch)).length, 1);
+    assert.deepEqual([await treeDigest(a), await treeDigest(b)], digests);
   }));

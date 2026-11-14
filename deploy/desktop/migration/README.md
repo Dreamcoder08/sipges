@@ -309,7 +309,8 @@ the columns a rule leaves out, the rows a rule allows to be added, and the ephem
 the structure, these are not compared either: column defaults, functions (a trigger's function
 body included), the expression of a policy and the definition of a trigger (only their names,
 and whether a trigger is enabled), indexes that are not unique, owners and privileges (grants),
-a sequence's settings other than its last value, views.
+a sequence's settings other than its last value, views and materialized views, rewrite rules,
+enum and other types.
 
 Rows a rule allows to be added (a sign-in's audit entry, a session) pass; any other legitimate
 write since the first start (an edited record, a feed import, a new grant) shows as a
@@ -321,13 +322,19 @@ so neither input is ever opened. Only each input's database folder, `pglite/`, i
 new `sipges-tables-*` folder under `--scratch` (default the temp folder): never `data-key`,
 `admin-password`, `uploads/` or anything else of the state folder. The copy is checked equal to
 its source, only the copies are opened, and they are removed at the end, also after an error,
-and on Ctrl+C, SIGTERM or a closed terminal (`RESULT: not compared (interrupted)`, exit 2). A
+and on Ctrl+C or SIGTERM (`RESULT: not compared (interrupted)`, exit 2). A
 signal only asks the run to stop: the run removes its copy itself once the step in flight has
 ended (removing it from the signal handler raced the copy still being written and left part of
 a database behind), so the RESULT line can take as long as copying one database; wait for it.
 It then checks the folder is gone, and names it if not (`the scratch copy <folder> could not be
 removed …: delete that folder`). A signal in the first instant, before anything is copied, may
-end the process with no RESULT line. Each `pglite/` folder,
+end the process with no RESULT line. When nobody reads the output any more (it was piped, as in
+`2>&1 | tee`, and the reader ended; or the terminal was closed, which sends SIGHUP on Linux), the
+messages are lost but the run still removes its copy and exits with 2. Do not rely on that on
+Windows: closing the console window lets Windows end the process about 10 seconds later, whatever
+it is doing, so a copy still in flight stays in `--scratch`; that case has not been run. A killed
+process (`kill -9`, Task Manager) and a step that never ends (the run cannot be interrupted while
+it waits for it, only killed) leave the copy too: delete the `sipges-tables-*` folder by hand. Each `pglite/` folder,
 the only part read, is hashed (names, sizes, bytes) before and after; if one changed: `RESULT:
 not compared (an input folder changed during the run)`. The rest of the state folder is not
 read, so it is not proved unchanged either (only listed, to refuse links). If the process is
@@ -370,8 +377,8 @@ decreased`. Each counts as a difference. No value is ever printed: a row is name
 fingerprint of its primary key, an HMAC-SHA-256 with a random key made in memory for each run
 and never written, so two runs cannot be matched and a fingerprint cannot confirm a guess.
 Errors print only `the database could not be read (SQLSTATE <code>)`, `file system error
-<code>` or `unexpected <error class>` (for instance `unexpected RuntimeError` for a database
-PGlite cannot open), never PGlite's message or SQL. `RESULT: no difference` exit 0; `RESULT: N differences`
+<code>` or `unexpected <error class>` (for instance `unexpected Error`), never PGlite's message
+or SQL. `RESULT: no difference` exit 0; `RESULT: N differences`
 or `RESULT: not fully compared (…)` exit 1; `RESULT: not compared (…)` exit 2.
 
 The rules are one data structure at the top of `tables.mjs`, one per table with its reason; a

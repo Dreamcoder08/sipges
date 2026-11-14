@@ -555,6 +555,8 @@ claves de API, los canales sellados, IRSA, fuentes de medios y los proyectos que
 la estructura de cada tabla: tipo de cada columna y si admite vacíos, claves y restricciones, la
 seguridad por fila (activada y forzada), los nombres de sus políticas y de sus disparadores, y que
 ningún contador (secuencia) haya bajado.
+No compara, de la estructura: valores por defecto, funciones, el contenido de políticas y
+disparadores (solo sus nombres), índices no únicos, dueños y permisos, vistas, reglas ni tipos.
 
 No inicia sesión ni abre las carpetas: copia en `%TEMP%` solo la carpeta `pglite` de cada una (la
 base de datos; nunca `data-key`, `admin-password` ni los archivos subidos), abre solo las copias y
