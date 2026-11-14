@@ -581,6 +581,13 @@
     scroll-snap-align: start;
   }
 
+  /* Focused controls and anchors stop above the sticky composer (its height set by InicioPage). */
+  :global(html):has(.ask) {
+    scroll-padding-bottom: calc(
+      var(--composer-height, 0px) + env(safe-area-inset-bottom) + var(--space-3) * 2
+    );
+  }
+
   .ask {
     position: sticky;
     bottom: calc(env(safe-area-inset-bottom) + var(--space-3));
