@@ -21,6 +21,8 @@
 //    original folder must be byte-identical; the second account still signs in.
 // 6. Rule d: installer and start again; nothing new beside the folder; compare again.
 // 7. T11: stop, copy the state folder, delete it, restore it from the copy, start, compare.
+// 8. tables.mjs, SIPGES stopped: the pre-update copy against the migrated folder, table by
+//    table, must print RESULT: no difference.
 //
 // The scratch worktree and the signed release copy are removed at the end; the state folders,
 // snapshots and logs stay under .data/migration-rehearsal/<run> (ignored by Git) as evidence.
@@ -486,10 +488,11 @@ export async function analystSignsIn(base, { password, totpSecret, totpState }) 
 }
 
 /**
- * Runs snapshot.mjs or compare.mjs and prints its output. Asynchronous on purpose: a blocked
- * event loop would leave this process's idle keep-alive sockets to a server that closed them.
+ * Runs snapshot.mjs, compare.mjs or tables.mjs, prints its output and hands it to `keep`.
+ * Asynchronous on purpose: a blocked event loop would leave this process's idle keep-alive
+ * sockets to a server that closed them.
  */
-async function script(name, args) {
+async function script(name, args, keep = () => {}) {
   checkInterrupted();
   const child = track(
     spawn(process.execPath, [join(here, name), ...args], {
@@ -501,6 +504,7 @@ async function script(name, args) {
   child.stderr.on('data', (chunk) => (output += chunk));
   const status = await child.ended;
   for (const line of output.trimEnd().split('\n')) say(`  | ${line}`);
+  keep(output);
   return status;
 }
 
@@ -765,6 +769,32 @@ async function main(args) {
       'the second account signs in after the restore and opens the same projects',
     );
     check((await stop(launcher)) === 0, 'the managed version stopped with code 0');
+
+    step('8. tables.mjs: the pre-update copy against the migrated folder, offline');
+    // Every table and column, identity and sealed ones too, with the rules of tables.mjs: the
+    // proof that those rules match the real migrations. PGlite comes from the installed package.
+    const scratch = join(work, 'tables-scratch');
+    await mkdir(scratch, { mode: 0o700 });
+    const preUpdate = await tree(first[0].preUpdateCopy);
+    const started = Date.now();
+    let printed = '';
+    const status = await script(
+      'tables.mjs',
+      [
+        ...['--before', first[0].preUpdateCopy, '--after', movedState, '--app', appRoot],
+        ...['--scratch', scratch, '--port', String(newPort)],
+      ],
+      (output) => (printed = output),
+    );
+    check(
+      status === 0 && /^RESULT: no difference$/m.test(printed),
+      `tables.mjs: RESULT: no difference (${Math.round((Date.now() - started) / 1000)} s)`,
+    );
+    check((await readdir(scratch)).length === 0, 'tables.mjs removed its scratch copies');
+    check(
+      digest(await tree(first[0].preUpdateCopy)) === digest(preUpdate),
+      'the pre-update copy is unchanged by tables.mjs',
+    );
     check(
       digest(await tree(originalState)) === digest(original),
       'the original state folder is still byte-identical',
