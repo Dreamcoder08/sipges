@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { APIRequestContext, Page } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 
 /**
@@ -6,7 +6,8 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
  * 31-focus-not-obscured.spec.ts: Inicio's composer rests on the bottom of the screen (sticky), so
  * the attention rows, the week and the suggestion chips scroll under it. Scrolled to the end,
  * nothing stays under it, and Tab or Shift+Tab never leaves the focused control under it, also
- * after a long question has made the composer taller.
+ * after a long question has made the composer taller. At rest and at any scroll position the page
+ * reserves the composer's strip: no content shows under or around it («Esta semana» at 360 px).
  */
 
 /** The composer form, found by its field. */
@@ -41,25 +42,77 @@ const walk = async (page: Page, key: string, times: number) => {
   return problems;
 };
 
+/**
+ * Content of the page that shows from the composer's top edge to the bottom of the screen: the
+ * strip the layout reserves for the composer. Each entry names the content and one point it shows at.
+ */
+const contentInComposerStrip = (page: Page) =>
+  composerOf(page).evaluate((form) => {
+    const top = Math.ceil(form.getBoundingClientRect().top) + 1;
+    const found = new Map<string, string>();
+    for (let y = top; y < window.innerHeight; y += 4) {
+      for (let x = 2; x < window.innerWidth - 1; x += 6) {
+        const hit = document.elementFromPoint(x, y);
+        if (!hit || form.contains(hit)) continue;
+        const content = hit.closest('main header, main section, main li');
+        if (!content) continue;
+        const name = (content.textContent ?? '').trim().slice(0, 32);
+        if (!found.has(name)) found.set(name, `«${name}» at ${x},${y}`);
+      }
+    }
+    return [...found.values()];
+  });
+
+/** Open alerts with long causes, as in the review captures: the page outgrows the screen. */
+const seedLongAlerts = async (adminApi: APIRequestContext) => {
+  for (let n = 1; n <= 6; n += 1) {
+    const created = await adminApi.post('/api/alertas', {
+      headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
+      data: {
+        payload: {
+          Causa: `Alerta sintética por convocatoria a asamblea ${n} ${Date.now()}`,
+          Nivel_Preliminar: 'Naranja',
+        },
+      },
+    });
+    expect(created.status(), await created.text()).toBe(200);
+  }
+};
+
 for (const width of [360, 412] as const) {
+  test(`Inicio at ${width} px reserves the composer's strip at rest and while scrolling`, async ({
+    page,
+    admin,
+    adminApi,
+  }) => {
+    await seedLongAlerts(adminApi);
+    await page.setViewportSize({ width, height: 640 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    await page.goto('/inicio');
+    await expect(page.getByRole('region', { name: /Riesgo del territorio/ })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Prueba con' }).getByRole('button')).toHaveCount(4);
+    const end = await page.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight,
+    );
+    expect(end, 'the page must scroll, or the check proves nothing').toBeGreaterThan(0);
+
+    const shown: string[] = [];
+    for (const share of [0, 0.25, 0.5, 0.75, 1]) {
+      const y = Math.round(end * share);
+      await page.evaluate((top) => window.scrollTo(0, top), y);
+      await expect.poll(() => page.evaluate(() => Math.round(window.scrollY))).toBe(y);
+      for (const item of await contentInComposerStrip(page)) shown.push(`scrollY ${y}: ${item}`);
+    }
+    expect(shown, `content under Inicio's composer at ${width} px`).toEqual([]);
+  });
+
   test(`Inicio at ${width} px keeps the focused control clear of its sticky composer`, async ({
     page,
     admin,
     adminApi,
   }) => {
-    // Open alerts with long causes, as in the review captures: the page outgrows the screen.
-    for (let n = 1; n <= 6; n += 1) {
-      const created = await adminApi.post('/api/alertas', {
-        headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
-        data: {
-          payload: {
-            Causa: `Alerta sintética por convocatoria a asamblea ${n} ${Date.now()}`,
-            Nivel_Preliminar: 'Naranja',
-          },
-        },
-      });
-      expect(created.status(), await created.text()).toBe(200);
-    }
+    await seedLongAlerts(adminApi);
     await page.setViewportSize({ width, height: 640 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await signInToProject(page, admin, DEFAULT_SCOPE);

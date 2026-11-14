@@ -92,23 +92,24 @@ export const InicioPage = ({
   const suggestId = useId();
   const chips = useRef<HTMLUListElement>(null);
   useScrollHints(chips);
-  const composer = useRef<HTMLFormElement>(null);
-  // On a phone the composer rests on the bottom of the screen; its height is the scroll padding
-  // that keeps a focused control clear of it (WCAG 2.2 SC 2.4.11, the stylesheet's phone layout).
+  const composer = useRef<HTMLDivElement>(null);
+  // On a phone the composer rests on the bottom of the screen in a strip the layout reserves; the
+  // strip's height is the scroll padding that keeps a focused control clear of it (WCAG 2.2
+  // SC 2.4.11, the stylesheet's phone layout).
   useEffect(() => {
-    const form = composer.current;
-    if (!form || typeof ResizeObserver === 'undefined') return;
+    const strip = composer.current;
+    if (!strip || typeof ResizeObserver === 'undefined') return;
     const root = document.documentElement.style;
     let frame: number | undefined;
     const observer = new ResizeObserver(() => {
       if (frame !== undefined) cancelAnimationFrame(frame);
-      // As in AppShell: a root style write must not reflow the observed form in the same frame.
+      // As in AppShell: a root style write must not reflow the observed strip in the same frame.
       frame = requestAnimationFrame(() => {
         frame = undefined;
-        root.setProperty('--composer-height', `${form.offsetHeight}px`);
+        root.setProperty('--composer-height', `${strip.offsetHeight}px`);
       });
     });
-    observer.observe(form);
+    observer.observe(strip);
     return () => {
       observer.disconnect();
       if (frame !== undefined) cancelAnimationFrame(frame);
@@ -215,46 +216,43 @@ export const InicioPage = ({
       </section>
 
       <div className={styles.compose}>
-        <form
-          ref={composer}
-          className={styles.ask}
-          data-ai={aiOn ? 'on' : 'off'}
-          onSubmit={onSubmit}
-        >
-          <textarea
-            id={fieldId}
-            rows={2}
-            value={question}
-            aria-describedby={`${fieldId}-hint`}
-            placeholder={
-              aiOn
-                ? 'Pregunta por eventos, actores, demandas o compromisos…'
-                : 'Palabras de eventos, actores, demandas o compromisos…'
-            }
-            onChange={(event) => setQuestion(event.target.value)}
-            onKeyDown={onKeyDown}
-          />
-          <div className={styles.bar}>
-            <label htmlFor={fieldId} className={styles.scope}>
-              <Icon name={aiOn ? 'message' : 'search'} />
-              {aiOn
-                ? 'Preguntar, con citas'
-                : `Buscar en registros de ${project || 'este proyecto'}`}
-            </label>
-            <span id={`${fieldId}-hint`} className={styles.hint}>
-              {aiOn
-                ? 'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.'
-                : 'Enter busca · Mayús+Enter, nueva línea'}
-            </span>
-            <button
-              type="submit"
-              className={styles.send}
-              aria-label={aiOn ? 'Enviar pregunta' : 'Buscar en registros'}
-            >
-              <Icon name="arrowUp" />
-            </button>
-          </div>
-        </form>
+        <div ref={composer} className={styles.dock}>
+          <form className={styles.ask} data-ai={aiOn ? 'on' : 'off'} onSubmit={onSubmit}>
+            <textarea
+              id={fieldId}
+              rows={2}
+              value={question}
+              aria-describedby={`${fieldId}-hint`}
+              placeholder={
+                aiOn
+                  ? 'Pregunta por eventos, actores, demandas o compromisos…'
+                  : 'Palabras de eventos, actores, demandas o compromisos…'
+              }
+              onChange={(event) => setQuestion(event.target.value)}
+              onKeyDown={onKeyDown}
+            />
+            <div className={styles.bar}>
+              <label htmlFor={fieldId} className={styles.scope}>
+                <Icon name={aiOn ? 'message' : 'search'} />
+                {aiOn
+                  ? 'Preguntar, con citas'
+                  : `Buscar en registros de ${project || 'este proyecto'}`}
+              </label>
+              <span id={`${fieldId}-hint`} className={styles.hint}>
+                {aiOn
+                  ? 'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.'
+                  : 'Enter busca · Mayús+Enter, nueva línea'}
+              </span>
+              <button
+                type="submit"
+                className={styles.send}
+                aria-label={aiOn ? 'Enviar pregunta' : 'Buscar en registros'}
+              >
+                <Icon name="arrowUp" />
+              </button>
+            </div>
+          </form>
+        </div>
         <div className={styles.suggest}>
           <p id={suggestId} className={styles.suggestLabel}>
             Prueba con

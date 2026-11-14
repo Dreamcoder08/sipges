@@ -264,9 +264,7 @@ describe('phone shell', () => {
     signIn();
     at('/');
     render(<App />);
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' }),
-    ).toBeVisible();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeVisible();
     expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull();
     expect(screen.queryByRole('navigation', { name: 'Navegación principal' })).toBeNull();

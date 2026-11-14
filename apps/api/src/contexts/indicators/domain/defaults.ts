@@ -242,8 +242,8 @@ export const MODEL_STATUS: Readonly<Record<string, unknown>> = {
   dimensions: ['G', 'A', 'D', 'N', 'E', 'I'],
   canonical_entity: 'Comunidad Campesina San Martín de Sechura (CCSMS)',
   release_rule:
-    'La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se asignará después del juicio de expertos y la evaluación funcional contra Gold Standard.',
+    'La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.',
   classifier: 'Reglas ponderadas y contextuales',
-  functional_validation: 'Protocolo preparado; Gold Standard pendiente',
+  functional_validation: 'Protocolo preparado; patrón de referencia pendiente',
   ui_release: 'Web Final RC 1.0',
 };

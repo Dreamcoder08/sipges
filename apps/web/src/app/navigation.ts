@@ -5,7 +5,7 @@ import type { IconName } from '../shared/ui/icons.ts';
  * chronology (docs/adr/0011 §7); `ready` ones are rebuilt.
  */
 export const SCREENS = [
-  { path: '/', label: 'Dashboard', title: 'Dashboard ejecutivo', ready: true },
+  { path: '/', label: 'Panel', title: 'Panel ejecutivo', ready: true },
   { path: '/eventos', label: 'Eventos', title: 'Eventos', ready: true },
   { path: '/actores', label: 'Actores', title: 'Mapa y gestión de actores', ready: true },
   {
@@ -131,7 +131,7 @@ export const DESTINATIONS = [
     icon: 'home',
     param: 'vista',
     // The first tab is the briefing page (features/dashboard/inicio); it has no screen of its own
-    // and shares «/» with the Dashboard tab, which keeps the old route's content.
+    // and shares «/» with the Panel tab (DashboardPage), which keeps the old route's content.
     tabs: tabs(['inicio', '/', 'Inicio'], ['dashboard', '/'], ['gerencial', '/gerencia']),
   },
   {

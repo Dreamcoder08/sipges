@@ -5,6 +5,24 @@ import (
 	"testing"
 )
 
+// TestModelStatusWording pins the Spanish wording of the two model status strings, byte-identical
+// to MODEL_STATUS in apps/api/src/contexts/indicators/domain/defaults.ts.
+func TestModelStatusWording(t *testing.T) {
+	var status map[string]any
+	if err := json.Unmarshal([]byte(ModelStatus), &status); err != nil {
+		t.Fatal(err)
+	}
+	for key, want := range map[string]string{
+		"release_rule": "La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se " +
+			"asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.", //nolint:misspell // Spanish text kept verbatim from the TypeScript API.
+		"functional_validation": "Protocolo preparado; patrón de referencia pendiente",
+	} {
+		if status[key] != want {
+			t.Errorf("%s = %q, want %q", key, status[key], want)
+		}
+	}
+}
+
 // TestHistoryLimit pins IrsaHistoryQuery's coercion: the values below are what
 // `z.coerce.number().int().default(50)` gave on Node 26 (FAIL = 422), negatives meaning all.
 func TestHistoryLimit(t *testing.T) {

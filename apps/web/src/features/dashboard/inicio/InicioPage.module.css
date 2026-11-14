@@ -581,18 +581,27 @@
     scroll-snap-align: start;
   }
 
-  /* Focused controls and anchors stop above the sticky composer (its height set by InicioPage). */
-  :global(html):has(.ask) {
-    scroll-padding-bottom: calc(
-      var(--composer-height, 0px) + env(safe-area-inset-bottom) + var(--space-3) * 2
-    );
+  /* Focused controls and anchors stop above the composer's strip (its height set by InicioPage). */
+  :global(html):has(.dock) {
+    scroll-padding-bottom: calc(var(--composer-height, 0px) + var(--space-2));
+  }
+
+  /*
+   * The composer rests on the bottom of the screen in a full-width strip of the page colour: the
+   * content area ends above it at rest and while scrolling, so nothing shows under or around the
+   * composer. At the end of the page the strip is back in the flow, below the suggestions.
+   */
+  .dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    order: 5;
+    margin-inline: calc(-1 * var(--space-3));
+    padding: var(--space-3) var(--space-3) calc(env(safe-area-inset-bottom) + var(--space-3));
+    background: var(--color-bg);
   }
 
   .ask {
-    position: sticky;
-    bottom: calc(env(safe-area-inset-bottom) + var(--space-3));
-    z-index: 1;
-    order: 5;
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
     padding: var(--space-3) var(--space-2) var(--space-2) var(--space-4);

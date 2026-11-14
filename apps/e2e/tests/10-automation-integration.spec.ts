@@ -115,8 +115,8 @@ test('Integraciones: sidebar link, kind filters and the MCP card opens its keys'
   ).toBeVisible();
 
   const kinds = page.getByRole('group', { name: 'Filtrar por tipo' });
-  await kinds.getByRole('button', { name: /^Skills/ }).click();
-  await expect(page.getByRole('heading', { level: 2, name: /^Skills/ })).toBeVisible();
+  await kinds.getByRole('button', { name: /^Habilidades/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: /^Habilidades/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Claude vía MCP' })).toHaveCount(0);
   await kinds.getByRole('button', { name: /^Todos/ }).click();
 
