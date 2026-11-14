@@ -96,11 +96,10 @@ export const DonutChart = ({
                   const segment = (
                     <circle
                       key={d.key}
-                      className={tone(d.tone)}
+                      className={`${styles.donutSegment} ${tone(d.tone)}`}
                       cx="60"
                       cy="60"
                       r={radius}
-                      fill="none"
                       strokeWidth="16"
                       strokeDasharray={`${length} ${circumference - length}`}
                       strokeDashoffset={-offset}

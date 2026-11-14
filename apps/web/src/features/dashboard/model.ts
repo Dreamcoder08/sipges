@@ -1,3 +1,4 @@
+import { limaToday } from '@sipges/kernel';
 import {
   DIMENSIONS,
   type DimensionCode,
@@ -111,8 +112,10 @@ export const recentEvents = (
  * `total` counts all of them; `items` keeps the first `limit` for the briefing.
  */
 export const eventsThisWeek = (events: readonly ModuleRecord[], now: Date, limit = 3) => {
-  const from = new Date(now.getTime() - 7 * 86_400_000).toISOString().slice(0, 10);
-  const to = new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10);
+  // Seven Lima calendar days, today included. The former UTC bounds (now − 7 d to now + 1 d)
+  // moved with the hour and spanned eight or nine days.
+  const to = limaToday(now);
+  const from = new Date(Date.parse(`${to}T00:00:00Z`) - 6 * 86_400_000).toISOString().slice(0, 10);
   const week = recentEvents(events, Number.POSITIVE_INFINITY).filter(
     (event) => event.date.slice(0, 10) >= from && event.date.slice(0, 10) <= to,
   );

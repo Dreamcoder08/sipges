@@ -1,4 +1,5 @@
 import type { ModuleRecord } from '@sipges/contracts';
+import { limaToday } from '@sipges/kernel';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { InternalLink, objectHref, useInternalNavigate } from '../../../shared/lib/navigation.tsx';
@@ -76,12 +77,8 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
       <QueryState query={alerts} label="las alertas">
         {(rows) => {
           const eventRows: readonly ModuleRecord[] = events.data ?? [];
-          const data = alertOverview(
-            rows,
-            eventRows,
-            period,
-            new Date().toISOString().slice(0, 10),
-          );
+          // The period ends in Lima's month, not the UTC one (a day ahead after 19:00).
+          const data = alertOverview(rows, eventRows, period, limaToday());
           const previousLabel = period === 'todo' ? '' : `${period} meses anteriores`;
           const months = data.monthly.map((m) => m.month);
           const withYear = months.length > 12;

@@ -77,6 +77,12 @@
   stroke: var(--color-track);
 }
 
+/* A level tone sets `fill` too, and CSS beats the SVG `fill` attribute: without this the last
+   segment painted the donut's hole and hid the centre labels (rc8 review). */
+.svg .donutSegment {
+  fill: none;
+}
+
 .donutTotal {
   fill: var(--color-text);
   font-size: 26px;
