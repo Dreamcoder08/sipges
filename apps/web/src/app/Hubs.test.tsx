@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { limaToday } from '@sipges/kernel';
 import { HttpResponse, delay, http } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
@@ -353,8 +354,8 @@ describe('Registros hub', () => {
 });
 
 describe('Inicio hub', () => {
-  const day = (offset: number) =>
-    new Date(Date.now() - offset * 86_400_000).toISOString().slice(0, 10);
+  // Lima's calendar, like the week window; the UTC date is tomorrow after 19:00 in Lima.
+  const day = (offset: number) => limaToday(new Date(Date.now() - offset * 86_400_000));
   const searched: string[] = [];
   const counters = {
     eventos: 2,

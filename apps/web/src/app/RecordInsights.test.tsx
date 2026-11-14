@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { limaToday } from '@sipges/kernel';
 import { beforeEach, expect, it } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi } from '../test/server.ts';
@@ -14,7 +15,7 @@ it('starts the alert centre on an overview whose heatmap opens the actual alert'
     'DEMO/PRJ-DEMO/alertas': [
       {
         _id: 'AL-1',
-        Fecha: new Date().toISOString().slice(0, 10),
+        Fecha: limaToday(),
         Causa: 'Alerta de prueba',
         Dimension: 'G',
         Nivel_Preliminar: 'Naranja',
@@ -23,7 +24,7 @@ it('starts the alert centre on an overview whose heatmap opens the actual alert'
       },
       {
         _id: 'AL-2',
-        Fecha: new Date().toISOString().slice(0, 10),
+        Fecha: limaToday(),
         Causa: 'Alerta sin ubicar',
         Dimension: 'E',
         Nivel_Preliminar: 'Rojo',

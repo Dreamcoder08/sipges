@@ -1,4 +1,5 @@
 import { RecordNeighbourhood } from '@sipges/contracts';
+import { limaToday } from '@sipges/kernel';
 import { useQuery } from '@tanstack/react-query';
 import { requestJson } from '../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
@@ -45,8 +46,6 @@ const ActionItem = ({ action }: { action: DossierAction }) => (
     </small>
   </li>
 );
-
-const today = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Operational intelligence of what is selected on the territorial map (ODD
@@ -100,7 +99,8 @@ export const OperationsPanel = ({
     );
   if (!query.data) return <p role="status">Reuniendo señales, alertas y acciones vinculadas…</p>;
 
-  const dossier = buildDossier(query.data, seeds, today());
+  // Lima's calendar day: the UTC one turns over at 19:00 and marked today's deadlines «vencida».
+  const dossier = buildDossier(query.data, seeds, limaToday());
   const openAlerts = dossier.alerts.filter((a) => a.open);
   const attending = new Set(dossier.alerts.flatMap((a) => a.actions.map((x) => x.id)));
   const demandActions = dossier.actions.filter((a) => !attending.has(a.id));

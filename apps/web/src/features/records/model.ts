@@ -1,4 +1,4 @@
-import { recordDueDate } from '@sipges/kernel';
+import { limaToday, recordDueDate } from '@sipges/kernel';
 import type { ModuleRecord, Role } from '@sipges/contracts';
 import { MODULES, type RecordField, type RecordModule } from './modules.ts';
 
@@ -16,7 +16,8 @@ export const isCompactField = (field: RecordField) =>
   (!!field.options?.length && field.options.every((option) => option.length <= 14));
 export const fieldValue = (record: ModuleRecord | undefined, field: RecordField) => {
   if (!record)
-    return field.initial ?? (field.type === 'date' ? new Date().toISOString().slice(0, 10) : '');
+    // Today on the projects' calendar (America/Lima), not the UTC day, which is tomorrow after 19:00.
+    return field.initial ?? (field.type === 'date' ? limaToday() : '');
   // Imported ISO-only Plazo is already an effective deadline. Preserve it when
   // editing another field; narrative Plazo never becomes a calendar date.
   if (field.key === 'Fecha_Vencimiento') {
