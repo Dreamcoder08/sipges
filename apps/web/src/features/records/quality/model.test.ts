@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { qualityIssues, sourceInventory } from './model.ts';
+import { qualityFieldLabel, qualityIssues, sourceInventory } from './model.ts';
 
 it('uses only exact accessible evidence and event references and never changes records', () => {
   const rows = {
@@ -103,4 +103,23 @@ it('keeps documentary placeholder identities in the quality queue without alteri
     }),
   );
   expect(row).toEqual(before);
+});
+
+it('names every field it flags by its form label, never by its stored key', () => {
+  // One empty row per module: every rule that can fire on an empty record fires.
+  const empty = (id: string) => [{ _id: id }];
+  const issues = qualityIssues({
+    actores: empty('A'),
+    alertas: empty('AL'),
+    eventos: empty('EV'),
+    demandas: empty('D'),
+    acciones: empty('AC'),
+    compromisos: empty('C'),
+    fuentes: [],
+  });
+  const fields = [...new Set(issues.map((issue) => `${issue.module}/${issue.field}`))];
+  expect(fields).toContain('eventos/Fuente_ID');
+  expect(qualityFieldLabel({ module: 'eventos', field: 'Fuente_ID' })).toBe('Referencia de fuente');
+  // Keys look like `Fuente_ID` or `Nombre_Actor/Organizacion`; labels never do.
+  for (const issue of issues) expect(qualityFieldLabel(issue)).not.toMatch(/_|\S\/\S/);
 });
