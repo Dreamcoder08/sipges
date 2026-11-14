@@ -790,3 +790,13 @@ Not chosen in S2. Each stays open in its own document.
   an unreadable or huge build id file is a refusal (at most 64 bytes read), the verifier's edge tests (desktop
   suite 239). Open: no lock for two concurrent cleanups (one-terminal rule), an orphaned pnpm child of a killed
   builder can keep writing, the live-build refusal is run by no Windows job.
+- L29 — `visit-rc9` (c5680292) = #446 the build-in-progress kit tests now run on Windows (live-build refusal
+  proven there) and #447: the alerts donut painted its hole (a tone class's `fill` beat `fill="none"`; «abiertas»
+  1.2:1, now 6.6:1 light and 7.8:1 dark; axe reports SVG text backgrounds as incomplete, never as violations), and
+  "today" on the web comes from the Lima date (new-record default, overdue in Territorio, alert overview period,
+  «Esta semana» now exactly 7 days instead of 8–9). Independent verifier: no blocker; each date fix dies under
+  mutation, the donut is guarded only by e2e spec 32 (green in CI). A gallery of 89 captures at visit-rc8 is in
+  `.data/rc8-screens`. Open: the same UTC "today" on the server (prevention-service:39, analyst-service:106,177,
+  review-records:58, decision.go:98), so the prevention room and the Territorio panel can disagree on «vencida»
+  between 19:00 and midnight; the Inicio composer covers content at 360 px; SVG map numbers overlap; English
+  «Dashboard»/«Gold Standard»; the verifier's extra date probes are not in the repository.
