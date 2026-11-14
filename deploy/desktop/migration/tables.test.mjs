@@ -8,7 +8,7 @@ import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
 import { createHash, createHmac } from 'node:crypto';
 import { once } from 'node:events';
-import { existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, realpathSync, rmSync } from 'node:fs';
 import {
   cp,
   mkdir,
@@ -16,6 +16,7 @@ import {
   open,
   readFile,
   readdir,
+  realpath,
   rm,
   symlink,
   writeFile,
@@ -1023,7 +1024,8 @@ test('the signal handler removes nothing itself: the copy stays until the run re
       (error) => safeReason(error) === 'interrupted',
     );
     assert.equal(seen.length, 3, 'only the copy in flight runs after a signal');
-    assert.ok(seen[0].startsWith(join(scratch, 'sipges-tables-')));
+    // The run names the real path: on Windows the temp folder is an 8.3 short name.
+    assert.ok(seen[0].startsWith(join(await realpath(scratch), 'sipges-tables-')));
     assert.deepEqual(seen.slice(1), [true, true], 'the handler removed the copy');
     assert.equal(said.length, 1);
     assert.ok(said[0].startsWith(`Interrupted: removing the scratch copy ${seen[0]};`), said[0]);
@@ -1045,7 +1047,7 @@ test('a removal that reports success but leaves the folder is refused, naming th
         const [left] = readdirSync(scratch);
         assert.equal(
           safeReason(error),
-          `the scratch copy ${join(scratch, left)} could not be removed (still there): delete that folder`,
+          `the scratch copy ${join(realpathSync.native(scratch), left)} could not be removed (still there): delete that folder`,
         );
         return true;
       },

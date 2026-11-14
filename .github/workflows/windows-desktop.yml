@@ -2,8 +2,9 @@ name: Windows desktop drill
 
 # The visit drill (closure-roadmap T33–T35) on a real Windows runner, synthetic data only: the
 # clone install of an old commit, the data move into the managed version, an update N -> N+1 and
-# the halt. deploy/desktop/windows/drill.mjs runs every step, so the owner can run the same drill
-# by hand on another Windows computer (docs/deployment/desktop-visit.es.md). Not a required check.
+# the halt, then deploy/desktop/migration/tables.mjs on NTFS with the managed install's PGlite.
+# deploy/desktop/windows/drill.mjs runs every step, so the owner can run the same drill by hand on
+# another Windows computer (docs/deployment/desktop-visit.es.md). Not a required check.
 # The laptop's installed commit is not known yet, so the drill runs once per candidate: every
 # clone-mode installer from 6d867050 (the first one) to main. A manual run with `old_commit`
 # drills only that commit. The visit-kit job builds the visit USB with
@@ -78,6 +79,7 @@ jobs:
           if ($pnpm -ne '12.11.2') { throw "pnpm $pnpm, expected 12.11.2" }
           powershell.exe -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
       - name: Install this checkout
+        id: install
         run: pnpm install --frozen-lockfile
       - name: Drill unit tests
         run: node --test deploy/desktop/windows/drill.test.mjs
@@ -85,6 +87,15 @@ jobs:
         env:
           OLD_COMMIT: ${{ matrix.commit }}
         run: node deploy/desktop/windows/drill.mjs --old-commit "$env:OLD_COMMIT" --work "$env:RUNNER_TEMP\d" --logs "$env:RUNNER_TEMP\drill-logs"
+      # tables.mjs again, on its own, with this checkout's PGlite (no --app), real junctions and an
+      # NTFS check, then its own unit tests on Windows (the signal tests skip on win32: child.kill
+      # delivers no signal there). Once, on the main row; also when the drill failed earlier.
+      - name: tables.mjs on NTFS with this checkout's PGlite
+        if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
+        run: node --test deploy/desktop/windows/tables-drill.test.mjs
+      - name: tables.mjs unit tests on Windows
+        if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
+        run: node --test deploy/desktop/migration/tables.test.mjs
       # Logs and command outputs only: never a state folder, a snapshot or the key.
       - name: Upload the drill logs
         if: always()
