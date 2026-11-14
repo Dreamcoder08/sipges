@@ -131,6 +131,30 @@ export const addDays = (day: string, days: number) =>
 export const daysBetween = (from: string, to: string) =>
   Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
 
+/** Peru keeps UTC−5 all year (no DST since 1994), so a fixed offset gives the Lima day. */
+const LIMA_OFFSET_MINUTES = -300;
+const ZONED_INSTANT =
+  /^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|([+-])(\d{2})(?::?(\d{2}))?)$/;
+
+/**
+ * Lima calendar day of a stored instant (`updatedAt`, `createdAt`, `reviewedAt`). Only a full
+ * timestamp with `Z` or an offset is shifted; anything else (a civil date, a timestamp without a
+ * zone, which reads as Lima wall time, or a malformed one) is read by {@link dayOf}, as before.
+ * Hand-parsed rather than `Date.parse`, which reads a zoneless time in the host's zone.
+ */
+export const limaDayOf = (value: string | null | undefined): string | null => {
+  const m = value ? ZONED_INSTANT.exec(value) : null;
+  const day = m?.[1] ? dayOf(m[1]) : null;
+  if (!m || !day) return dayOf(value);
+  const [hour, minute, second] = [m[2], m[3], m[4] ?? '0'].map(Number) as [number, number, number];
+  const [offsetHours, offsetMinutes] = [m[6] ?? '0', m[7] ?? '0'].map(Number) as [number, number];
+  if (hour > 23 || minute > 59 || second > 59 || offsetHours > 23 || offsetMinutes > 59)
+    return dayOf(value);
+  const offset = (m[5] === '-' ? -1 : 1) * (offsetHours * 60 + offsetMinutes);
+  const limaMinutes = hour * 60 + minute - offset + LIMA_OFFSET_MINUTES;
+  return addDays(day, Math.floor(limaMinutes / 1440));
+};
+
 /** Rojo, crítico or muy alta: 2; naranja or alta: 1.5; anything else 1. */
 const severityOf = (value: string) => {
   const v = fold(value);
@@ -184,7 +208,7 @@ const recordSignals = (record: RiskRecord, names: Names): Signal[] => {
   if (!units.length) return [];
   const state = payload['Estado'];
   // Closed today: when it was last updated, or its own date when that is unknown (docs/adr/0031 §2).
-  const closedDay = dayOf(record.updatedAt) ?? date;
+  const closedDay = limaDayOf(record.updatedAt) ?? date;
   const base = {
     module: record.module,
     id: record.id,
@@ -247,7 +271,7 @@ const recordSignals = (record: RiskRecord, names: Names): Signal[] => {
 const ALERT_WEIGHT: Readonly<Record<string, number>> = { alta: 2, media: 1.5 };
 
 const alertSignals = (alert: RiskAlert, names: Names): Signal[] => {
-  const date = dayOf(alert.createdAt);
+  const date = limaDayOf(alert.createdAt);
   if (!date || !alert.territory?.trim()) return [];
   const discarded = DISCARDED.test(fold(alert.status));
   const signal: Signal = {
@@ -258,7 +282,7 @@ const alertSignals = (alert: RiskAlert, names: Names): Signal[] => {
     units: [names.add('L', alert.territory.trim())],
     kind: 'alert',
     weight: ALERT_WEIGHT[fold(alert.level)] ?? 1,
-    closedOn: discarded ? (dayOf(alert.reviewedAt) ?? date) : null,
+    closedOn: discarded ? (limaDayOf(alert.reviewedAt) ?? date) : null,
     dueDate: null,
     negative: false,
   };
