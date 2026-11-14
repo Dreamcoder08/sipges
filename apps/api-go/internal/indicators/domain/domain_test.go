@@ -14,7 +14,7 @@ func TestModelStatusWording(t *testing.T) {
 	}
 	for key, want := range map[string]string{
 		"release_rule": "La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se " +
-			"asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.",
+			"asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.", //nolint:misspell // Spanish text kept verbatim from the TypeScript API.
 		"functional_validation": "Protocolo preparado; patrón de referencia pendiente",
 	} {
 		if status[key] != want {
