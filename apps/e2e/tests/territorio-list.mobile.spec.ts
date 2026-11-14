@@ -46,14 +46,17 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(listBox && mapBox && listBox.y >= mapBox.y + mapBox.height).toBe(true);
 
     const n = ((await row(second).locator('span').first().textContent()) ?? '').trim();
+    // Named after its row's number, which is drawn where it clears its neighbours (labels.ts)
+    // and always once the record is selected.
     const secondMarker = page.getByRole('button', { name: `${n}. Eventos: ${second} (Bayóvar)` });
-    await expect(secondMarker).toHaveText(n);
+    await expect(secondMarker).toHaveCount(1);
     await row(first).click();
     await expect(row(first)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('region', { name: 'Ficha del registro' })).toBeVisible();
     await secondMarker.focus();
     await page.keyboard.press('Enter');
     await expect(row(second)).toHaveAttribute('aria-pressed', 'true');
+    await expect(secondMarker).toHaveText(n);
     await expect(row(first)).toHaveAttribute('aria-pressed', 'false');
     await page.getByRole('button', { name: 'Cerrar ficha' }).first().click();
 

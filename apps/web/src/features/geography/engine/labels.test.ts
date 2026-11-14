@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { labelSize, placeLabels } from './labels.ts';
+import { clearLabels, labelSize, placeLabels } from './labels.ts';
 import type { CanvasPoint } from './types.ts';
 
 const point = (n: number, at: readonly [number, number]): CanvasPoint => ({
@@ -85,6 +85,23 @@ describe('placeLabels', () => {
     expect(placeLabels(points, 16).size).toBe(12);
     const scattered = [point(1, [-80.82, -5.56]), point(2, [-80.7, -5.4])];
     expect(placeLabels(scattered, PHONE_ZOOM)).toEqual(new Set(['r1', 'r2']));
+  });
+
+  it('places boxes in any unit, as the SVG map draws them', () => {
+    const box = (id: string, x: number, emphasis: 'current' | 'normal' = 'normal') => ({
+      id,
+      emphasis,
+      x,
+      y: 0,
+      w: 4,
+      h: 3,
+    });
+    // 2 overlaps 1 and 3; 3 clears 1.
+    const boxes = [box('1', 0), box('2', 3), box('3', 6)];
+    expect(clearLabels(boxes)).toEqual(new Set(['1', '3']));
+    // The selected number wins over list order, then the current month.
+    expect(clearLabels(boxes, '2')).toEqual(new Set(['2']));
+    expect(clearLabels([box('1', 0), box('2', 3, 'current')])).toEqual(new Set(['2']));
   });
 
   it('leaves out points that carry no number', () => {
