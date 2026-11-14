@@ -38,7 +38,7 @@ export const SYNTHETIC_WARNING = 'Datos sintéticos hasta aprobar política de d
 
 export const KIND_LABELS: Record<Kind, string> = {
   connector: 'Conector',
-  skill: 'Skill',
+  skill: 'Habilidad',
   scheduled: 'Programada',
 };
 
@@ -105,10 +105,10 @@ const SKILLS = [
     description: 'Lecciones aprendidas del territorio, para preparar reuniones y mesas de diálogo.',
   },
   {
-    name: 'Resumen de registro (briefing)',
+    name: 'Informe de registro',
     href: '/registros',
     description:
-      'Briefing de un registro con sus vínculos y fuentes citadas; se abre desde la ficha de cada registro.',
+      'Informe de un registro con sus vínculos y fuentes citadas; se abre desde la ficha de cada registro.',
   },
 ] as const;
 
@@ -193,7 +193,7 @@ const connectors = ({ media, defensoria, geography, keys, push, overview }: Sour
       direction: 'Saliente',
       name: 'Claude vía MCP',
       description:
-        'Servidor MCP de SIPGES: Claude y otros agentes consultan registros, vínculos y briefings con una clave de API del proyecto.' +
+        'Servidor MCP de SIPGES: Claude y otros agentes consultan registros, vínculos e informes con una clave de API del proyecto.' +
         (live.length ? ` ${plural(live.length, 'clave activa', 'claves activas')}.` : ''),
       trust: 'integrated',
       status: live.length ? 'ok' : 'auth',
@@ -353,7 +353,7 @@ export const SECTIONS = [
     title: 'Conectores salientes',
     sub: 'sacan datos o avisos',
   },
-  { kind: 'skill', title: 'Skills', sub: 'capacidades de análisis sobre tus registros' },
+  { kind: 'skill', title: 'Habilidades', sub: 'capacidades de análisis sobre tus registros' },
   { kind: 'scheduled', title: 'Programadas', sub: 'automatizaciones existentes' },
 ] as const satisfies readonly {
   kind: Kind;
@@ -365,7 +365,7 @@ export const SECTIONS = [
 export const FILTERS = [
   { value: 'all', label: 'Todos' },
   { value: 'connector', label: 'Conectores' },
-  { value: 'skill', label: 'Skills' },
+  { value: 'skill', label: 'Habilidades' },
   { value: 'scheduled', label: 'Programadas' },
 ] as const;
 

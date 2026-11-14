@@ -29,6 +29,22 @@ describe('navigation', () => {
     expect(titleFor('/nope')).toBe('SIPGES');
   });
 
+  it('names the executive screen at «/» in Spanish, apart from the Inicio tab', () => {
+    expect(SCREENS.find((s) => s.path === '/')).toMatchObject({
+      label: 'Panel',
+      title: 'Panel ejecutivo',
+    });
+    expect(DESTINATIONS[0].tabs.map((tab) => tab.label)).toEqual([
+      'Inicio',
+      'Panel',
+      'Centro gerencial',
+    ]);
+    expect(visitFor('/inicio', '?vista=dashboard')).toEqual({
+      href: '/inicio?vista=dashboard',
+      label: 'Inicio · Panel',
+    });
+  });
+
   it('offers five destinations whose tabs absorb 24 screens, the rest being Sistema', () => {
     expect(DESTINATIONS.map((hub) => hub.path)).toEqual([
       '/inicio',
@@ -50,7 +66,7 @@ describe('navigation', () => {
       ...SYSTEM_PATHS,
       '/integraciones',
     ];
-    // The Inicio tab shares «/» with the Dashboard tab.
+    // The Inicio tab shares «/» with the Panel tab.
     expect(new Set(reachable).size).toBe(SCREENS.length);
     expect(new Set(reachable)).toEqual(new Set(SCREENS.map((s) => s.path)));
   });

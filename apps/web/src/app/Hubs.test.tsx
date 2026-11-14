@@ -222,7 +222,7 @@ describe('Integraciones', () => {
     ).toEqual([
       expect.stringMatching(/^Todos/),
       expect.stringMatching(/^Conectores/),
-      expect.stringMatching(/^Skills/),
+      expect.stringMatching(/^Habilidades/),
       expect.stringMatching(/^Programadas/),
     ]);
     page.unmount();
@@ -444,14 +444,14 @@ describe('Inicio hub', () => {
   const SEARCH = 'Buscar en registros de Proyecto Demo';
   const attention = () => screen.findByRole('region', { name: /Necesita tu atención/ });
 
-  it('opens on the Inicio tab with Dashboard and Centro gerencial next to it', async () => {
+  it('opens on the Inicio tab with Panel and Centro gerencial next to it', async () => {
     await open();
     const tabs = await screen.findByRole('group', { name: 'Inicio' });
     expect(
       within(tabs)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Inicio', 'Dashboard', 'Centro gerencial']);
+    ).toEqual(['Inicio', 'Panel', 'Centro gerencial']);
     expect(pressed(tabs)).toEqual(['Inicio']);
   });
 

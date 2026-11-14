@@ -218,6 +218,10 @@ describe('static system documents', () => {
     expect(status).toMatchObject({
       indicator_count: 32,
       dimensions: ['G', 'A', 'D', 'N', 'E', 'I'],
+      // Spanish wording, byte-identical to apps/api-go/internal/indicators/domain/static.go.
+      release_rule:
+        'La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.',
+      functional_validation: 'Protocolo preparado; patrón de referencia pendiente',
     });
     const template = (await (
       await request('/system/validation-template')

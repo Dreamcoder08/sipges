@@ -161,12 +161,10 @@ const cardNamed = async (name: string) => {
 it('lists what the project has, one section per kind, with trust label and status', async () => {
   useApi();
   renderPage();
-  for (const title of ['Conectores entrantes', 'Conectores salientes', 'Skills', 'Programadas']) {
-    expect(
-      await screen.findByRole('heading', { level: 2, name: new RegExp(`^${title}`) }),
-    ).toBeVisible();
-  }
   const media = await cardNamed('Medios RSS');
+  expect(
+    screen.getAllByRole('heading', { level: 2 }).map((h) => h.firstChild?.textContent),
+  ).toEqual(['Conectores entrantes', 'Conectores salientes', 'Habilidades', 'Programadas']);
   expect(media.getByText('Integrado')).toBeVisible();
   expect(media.getByText('Conectado')).toBeVisible();
   // Status is the shared badge family: the word plus a tone that picks colour and shape.
@@ -191,17 +189,17 @@ it('filters by kind with the chips and keeps the counts', async () => {
     'aria-pressed',
     'true',
   );
-  await user.click(within(chips).getByRole('button', { name: /^Skills/ }));
-  expect(within(chips).getByRole('button', { name: /^Skills/ })).toHaveAttribute(
+  await user.click(within(chips).getByRole('button', { name: /^Habilidades/ }));
+  expect(within(chips).getByRole('button', { name: /^Habilidades/ })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  expect(screen.getByRole('heading', { level: 2, name: /^Skills/ })).toBeVisible();
+  expect(screen.getByRole('heading', { level: 2, name: /^Habilidades/ })).toBeVisible();
   expect(screen.queryByRole('heading', { level: 2, name: /^Programadas/ })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Medios RSS' })).toBeNull();
   await user.click(within(chips).getByRole('button', { name: /^Programadas/ }));
   expect(screen.getByRole('button', { name: 'Alertas altas' })).toBeVisible();
-  expect(screen.queryByRole('heading', { level: 2, name: /^Skills/ })).toBeNull();
+  expect(screen.queryByRole('heading', { level: 2, name: /^Habilidades/ })).toBeNull();
 });
 
 it('searches names and descriptions without caring about accents', async () => {
@@ -278,7 +276,7 @@ it('opens the existing key management in a detail view and returns to the list',
   await user.click(await screen.findByRole('button', { name: 'Claude vía MCP' }));
   expect(await screen.findByRole('heading', { level: 2, name: 'Claude vía MCP' })).toHaveFocus();
   expect(await screen.findByLabelText(/Nombre de la clave/)).toBeVisible();
-  expect(screen.queryByRole('heading', { level: 2, name: /^Skills/ })).toBeNull();
+  expect(screen.queryByRole('heading', { level: 2, name: /^Habilidades/ })).toBeNull();
   await user.click(screen.getByRole('button', { name: 'Integraciones' }));
   expect(await screen.findByRole('button', { name: 'Claude vía MCP' })).toHaveFocus();
 });
@@ -309,6 +307,20 @@ it('shows skills as built-in screens and links to them', async () => {
   useApi();
   renderPage();
   const strategic = await cardNamed('Informe estratégico');
+  expect(
+    strategic.getByText(
+      (_, node) =>
+        node?.tagName === 'SMALL' && node.textContent === 'Habilidad · Pantalla integrada',
+    ),
+  ).toBeVisible();
+  const record = await cardNamed('Informe de registro');
+  expect(
+    record.getByText(
+      'Informe de un registro con sus vínculos y fuentes citadas; se abre desde la ficha de cada registro.',
+    ),
+  ).toBeVisible();
+  // Our own copy is Spanish: no «Skill» or «briefing» left on the page.
+  expect(document.body).not.toHaveTextContent(/skill|briefing/i);
   expect(strategic.getByText('Pantalla integrada')).toBeVisible();
   expect(strategic.getByText('Integrado')).toBeVisible();
   expect(strategic.getByRole('link', { name: 'Abrir: Informe estratégico' })).toHaveAttribute(

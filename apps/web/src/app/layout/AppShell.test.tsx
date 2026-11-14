@@ -174,7 +174,7 @@ describe('desktop sidebar', () => {
 describe('wide layout: tools live in the sidebar, not in the top bar', () => {
   it('drops the top bar and keeps the title as a visually hidden heading', async () => {
     await renderAt('/');
-    const heading = await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' });
     expect(heading).toHaveClass('visually-hidden');
     const main = document.getElementById('contenido');
     expect(main?.parentElement?.querySelector(':scope > header')).toBeNull();
@@ -267,7 +267,7 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
     api.me = { username: 'persona', full_name: 'Persona Sintética', role: 'admin' };
     at('/');
     render(<App />);
-    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+    await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' });
     const bar = document.querySelector('header');
     if (!bar) throw new Error('Missing top bar');
     expect(
@@ -275,7 +275,7 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual(['Abrir menú']);
-    expect(within(bar).getByRole('heading', { level: 1 })).toHaveTextContent('Dashboard ejecutivo');
+    expect(within(bar).getByRole('heading', { level: 1 })).toHaveTextContent('Panel ejecutivo');
     expect(screen.queryByRole('navigation', { name: 'Navegación principal' })).toBeNull();
     expect(document.querySelector('aside')).toBeNull();
   });
@@ -334,7 +334,7 @@ describe('compact layout opens the sidebar as a drawer (ChatGPT / Claude mobile)
     at('/');
     render(<App />);
     const user = userEvent.setup();
-    await screen.findByRole('heading', { level: 1, name: 'Dashboard ejecutivo' });
+    await screen.findByRole('heading', { level: 1, name: 'Panel ejecutivo' });
     const open = screen.getByRole('button', { name: /^Abrir menú/ });
     expect(open).toHaveAttribute('aria-haspopup', 'dialog');
     await user.click(open);
