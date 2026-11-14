@@ -442,9 +442,20 @@ would lose the audit trail, record history and MFA enrolments. It is not built.
 ## Limits
 
 - Run on Linux only. Windows (`install.ps1 -Release -State`, `Copy-Item`, the first start on NTFS,
-  PowerShell 5.1 with these scripts) has not been run. `tables.mjs` has not run on Windows
-  (copying NTFS folders, the installed PGlite under `SIPGES-app`, junction refusals) until the
-  Windows drill runs it.
+  PowerShell 5.1 with these scripts) has not been run.
+- `tables.mjs` on Windows: the Windows drill (`.github/workflows/windows-desktop.yml`, step 6 of
+  `deploy/desktop/windows/drill.mjs`, in `tables-drill.mjs`) runs it from the scripts unpacked
+  from the visit zip, with the PGlite of the drill's managed install (`--app`), on synthetic state
+  folders on NTFS: two identical folders (exit 0, last line `RESULT: no difference`), one changed
+  row (exit 1, `RESULT: N difference(s)`), an input that is a junction and one that holds a
+  junction, `--app` without `current.json` and something answering on `--port` (exit 2,
+  `RESULT: not compared (…)`). After each run the scratch folder is empty and the inputs are
+  byte-identical. Its `main` row also runs the same with this checkout's PGlite (no `--app`) and
+  runs `tables.test.mjs`. Proved on Windows only by a run where that job passed. Not run on
+  Windows: Ctrl+C (Node cannot deliver a console Ctrl+C or another signal to a child process
+  there, `child.kill()` ends it outright, so the signal tests skip on win32), closing the console
+  window during a run, the no-room refusal, and a real pre-update copy against its migrated
+  folder.
 - The rehearsal source was `e490339c`, the parent of the launcher commit, because the laptop's
   commit is not known yet (closure-roadmap T27). Rerun with that commit.
 - A Linux clone install keeps its browser profile in the state folder (`chrome/`, with links and

@@ -32,7 +32,15 @@
 //    the installed start.ps1 exits 3 printing the notice. Rerunning install.ps1 (managed and
 //    clone mode) then exits 1 with «Hay una actualización de SIPGES pendiente o detenida» and
 //    changes nothing; the halt text start.ps1 falls back to names the recorded state folder.
-// 6. Logs (launcher.log, update.log, update-boot.log, api.log, the outputs of every command) are
+// 6. deploy/desktop/migration/tables.mjs for real, from the unpacked zip, with PGlite from the
+//    managed install of steps 3-4 (--app), on synthetic state folders built under <work>\tables
+//    (NTFS, checked): two identical folders exit 0 with `RESULT: no difference`; one changed row
+//    exits 1 with `RESULT: N difference(s)`; an input that is a junction, and one that holds a
+//    junction, exit 2 with `RESULT: not compared (…)`; --app without current.json and something
+//    answering on --port exit 2 too. After each run the scratch folder is empty and the inputs
+//    are byte-identical (tables-drill.mjs). No interrupt: child.kill() on Windows ends the process
+//    outright, it delivers no Ctrl+C.
+// 7. Logs (launcher.log, update.log, update-boot.log, api.log, the outputs of every command) are
 //    copied to --logs; never a state folder, a snapshot or the key. The key is deleted at the end.
 //
 // Every process it starts is ended on every way out (on Windows, the whole process tree).
@@ -59,6 +67,7 @@ import process from 'node:process';
 import console from 'node:console';
 import { signIn } from '../migration/client.mjs';
 import { LOGIN, analystSignsIn, digest, sameAccess, seed, tree } from '../migration/rehearse.mjs';
+import { tablesDrill } from './tables-drill.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '../../..');
@@ -1117,6 +1126,18 @@ async function main(args) {
         generic.output.includes(HALT_FALLBACK_GENERIC),
       'without install.json the fallback halt text is the generic one',
     );
+
+    step('6. tables.mjs on NTFS with the managed install PGlite (synthetic state folders)');
+    // SIPGES is stopped (step 5 checked port 8000); the runs get a closed port of their own.
+    const tables = await tablesDrill({
+      work,
+      app: appRoot,
+      script: join(scripts, 'migration', 'tables.mjs'),
+      say,
+      check,
+      log: (name) => out(`tables-${name}`),
+    });
+    check(tables.pglite === 'managed', 'tables.mjs ran with PGlite from the managed install (--app)');
 
     say('\nDRILL PASSED');
   } finally {
