@@ -1,3 +1,4 @@
+import { limaToday } from '@sipges/kernel';
 import type { ReviewItem, ReviewStatus } from './review.ts';
 
 /**
@@ -54,8 +55,8 @@ const STATUS_LABELS: Record<ReviewStatus, string> = {
   corroborado_documentalmente: 'corroborado documentalmente',
 };
 
-/** `YYYY-MM-DD` of the decision, the date fields' format. */
-const day = (at: Date) => at.toISOString().slice(0, 10);
+/** `YYYY-MM-DD` of the decision in Peru, the date fields' format. */
+const day = (at: Date) => limaToday(at);
 
 /**
  * Record fields for an approved item, derived only from the item so the inbox and the backfill

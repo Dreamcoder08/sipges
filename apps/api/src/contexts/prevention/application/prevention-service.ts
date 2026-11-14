@@ -1,4 +1,4 @@
-import { type Result, err, ok } from '@sipges/kernel';
+import { type Result, err, limaToday, ok } from '@sipges/kernel';
 import { type Scope, formatScope } from '../../tenancy/application/index.ts';
 import {
   type ActionUpdate,
@@ -36,7 +36,7 @@ export const createPreventionService = (deps: {
   randomHex: RandomHex;
 }) => {
   const { store, alerts, evidence, clock, randomHex } = deps;
-  const today = () => clock.now().toISOString().slice(0, 10);
+  const today = () => limaToday(clock.now());
   const list = (scope: Scope) => store.list(formatScope(scope), scope.projectId);
 
   return {
