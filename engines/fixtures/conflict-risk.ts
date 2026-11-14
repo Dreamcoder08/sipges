@@ -20,6 +20,7 @@ import {
   type RiskInput,
   conflictRisk,
 } from '../../apps/api/src/contexts/analytics/domain/conflict-risk/index.ts';
+import { limaDayOf } from '../../apps/api/src/contexts/analytics/domain/conflict-risk/signals.ts';
 
 const FIXTURES = fileURLToPath(new URL('./conflict-risk.json', import.meta.url));
 const TODAY = '2026-11-02';
@@ -380,6 +381,58 @@ add('dates/year-zero', [demand('Antiguo', '0000-02-29'), demand('Antiguo', '0000
 add('dates/far-future', [demand('Futuro', '9999-12-01'), redAlert('Futuro', '9999-11-01')], {
   today: '9999-12-31',
 });
+
+// Stored instants (`updatedAt`, `createdAt`, `reviewedAt`) count on their Lima day (UTC−5); a civil
+// date, a zoneless or a malformed timestamp keeps its written day. Each case predicts on that day,
+// so a day off by one shows: a record closed the next day is still open, an alert created the next
+// day is not yet listed. One unit per rule: R1 closing, R2 creation, R3 review of a discard.
+for (const stamp of [
+  '2026-11-02T02:00:00Z',
+  '2026-11-02T04:59:59Z',
+  '2026-11-02T05:00:00Z',
+  '2026-11-02T05:00:00.000Z',
+  '2026-10-31T23:59:59-05:00',
+  '2026-11-01T01:00:00+02:00',
+  '2026-12-01T04:59:59.999Z',
+  '2027-01-01T03:00:00Z',
+  '2027-01-01T05:00:00Z',
+  '2024-03-01T02:00:00Z',
+  '2026-11-02 02:00:00+00',
+  '2026-11-02T02:00Z',
+  '2026-11-01T22:00:00-0500',
+  '2026-11-01T23:30:00-06:00',
+  '2026-11-02T00:00:00+23:59',
+  '2026-11-02',
+  '2026-11-02T02:00:00',
+  '2026-11-02T25:00:00Z',
+  '2026-11-02T02:00:60Z',
+  '2026-11-02T02:00:00+25:00',
+  '2026-11-02T02:00:00.Z',
+  '2026-11-02T02:00:00+05:',
+  '2026-11-02T02:00:00+053',
+  '2026-11-02t02:00:00z',
+  '2026-11-02T02:00:00Z ',
+  '2/11/2026',
+  '2026-02-29T10:00:00Z',
+  'sin fecha',
+  '',
+]) {
+  const today = limaDayOf(stamp) ?? TODAY;
+  const opened = addDays(today, -10);
+  // A fixed id, not rec(), so the ids of the later cases do not move.
+  const closed = { Territorio: 'Cierre', Fecha_Registro: opened, Estado: 'Atendido' };
+  add(
+    `lima-days/${JSON.stringify(stamp)}`,
+    [{ module: 'Demandas', id: 'De-cierre', payload: closed, updatedAt: stamp }],
+    {
+      alerts: [
+        territorial('ta-creada', stamp, 'Creada', 'Alta'),
+        territorial('ta-revisada', `${opened}T15:00:00Z`, 'Revisada', 'Media', 'Descartado', stamp),
+      ],
+      today,
+    },
+  );
+}
 
 // --- folding, accents and units --------------------------------------------------------------------
 
