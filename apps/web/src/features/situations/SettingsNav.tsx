@@ -1,14 +1,6 @@
 import type { MouseEvent } from 'react';
-import { type SettingsSection, settingsHref } from './sections.ts';
+import { SECTION_LABELS, type SettingsSection, settingsHref } from './sections.ts';
 import styles from './SettingsPage.module.css';
-
-export const SECTION_LABELS: Readonly<Record<SettingsSection, string>> = {
-  cuenta: 'Cuenta',
-  apariencia: 'Apariencia',
-  proyecto: 'Proyecto',
-  privacidad: 'Privacidad y datos',
-  notificaciones: 'Notificaciones',
-};
 
 /** A plain left click stays in the app; a new tab or window keeps the browser's default. */
 const inApp = (event: MouseEvent<HTMLAnchorElement>) =>

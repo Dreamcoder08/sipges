@@ -56,7 +56,7 @@ const typeLabel = (entry: Entry) =>
 
 const Trust = ({ entry }: { entry: Entry }) => (
   <span className={styles.trust} data-trust={entry.trust}>
-    <Icon name={entry.trust === 'integrated' ? 'check' : 'sliders'} />
+    <Icon name={entry.trust === 'integrated' ? 'plug' : 'sliders'} />
     {TRUST_LABELS[entry.trust]}
   </span>
 );

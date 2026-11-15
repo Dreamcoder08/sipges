@@ -471,7 +471,11 @@ describe('Inicio hub', () => {
     const decisions = await within(list).findByRole('link', { name: 'Revisar en Bandeja' });
     expect(decisions).toHaveAttribute('href', '/bandeja');
     expect(within(list).getByText('2 alertas digitales esperan verificación')).toBeVisible();
-    const alert = await within(list).findByRole('link', { name: 'Abrir alerta' });
+    // The visible word stays «Abrir alerta»; the name says which one (functional-10 T5).
+    const alert = await within(list).findByRole('link', {
+      name: 'Abrir alerta Alerta sin causa documentada',
+    });
+    expect(alert).toHaveTextContent(/^Abrir alerta$/);
     expect(alert).toHaveAttribute('href', '/objeto/alertas/AL-1');
     expect(within(list).getByRole('link', { name: 'Abrir Bandeja' })).toHaveAttribute(
       'href',
@@ -737,7 +741,7 @@ describe('Inicio hub', () => {
 describe('Configuración', () => {
   it('opens the section named in the URL and Apariencia for an unknown one', async () => {
     const user = userEvent.setup();
-    at('/version-4?seccion=privacidad');
+    at('/configuracion?seccion=privacidad');
     const page = render(<App />);
     const nav = await screen.findByRole('navigation', { name: 'Secciones de Configuración' });
     expect(within(nav).getByRole('link', { name: 'Privacidad y datos' })).toHaveAttribute(

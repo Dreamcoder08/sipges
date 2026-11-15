@@ -5,7 +5,7 @@ export type Scope = { readonly companyId: string; readonly projectId: string };
 
 /** Legacy project of the Python installation (app.py bootstrap). */
 export const DEFAULT_SCOPE: Scope = { companyId: 'SIPGES', projectId: 'PRJ-SECHURA' };
-export const DEFAULT_SCOPE_LABEL = 'Proyecto Sechura (migración)';
+export const DEFAULT_SCOPE_LABEL = 'Proyecto principal';
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{2,64}$/;
 const LABEL_MAX = 120;

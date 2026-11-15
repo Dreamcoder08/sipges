@@ -131,6 +131,29 @@ describe('Ollama embeddings settings (RC 2.5)', () => {
   });
 });
 
+describe('SIPGES_DEFENSORIA_URL (the Defensoría connector endpoint)', () => {
+  it('is unset by default, so the connector asks the official endpoint', () => {
+    expect(loadConfig({}).defensoriaUrl).toBeUndefined();
+    expect(loadConfig({ SIPGES_DEFENSORIA_URL: '' }).defensoriaUrl).toBeUndefined();
+  });
+
+  it('accepts an http(s) endpoint, such as a synthetic double on loopback', () => {
+    expect(
+      loadConfig({ SIPGES_DEFENSORIA_URL: 'http://127.0.0.1:4555/wp-json/wp/v2/posts' })
+        .defensoriaUrl,
+    ).toBe('http://127.0.0.1:4555/wp-json/wp/v2/posts');
+  });
+
+  it.each(['not a url', 'file:///tmp/posts', 'https://double.example/posts?x=1', 'http://a/#f'])(
+    'rejects %j',
+    (value) => {
+      expect(() => loadConfig({ SIPGES_DEFENSORIA_URL: value })).toThrow(
+        'SIPGES_DEFENSORIA_URL must be an absolute http or https URL without a query',
+      );
+    },
+  );
+});
+
 describe('SIPGES_WEB_DIR', () => {
   it('is optional and passed through', () => {
     expect(loadConfig({}).webDir).toBeUndefined();

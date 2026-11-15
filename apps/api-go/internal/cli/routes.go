@@ -23,6 +23,9 @@ type Route struct {
 	Access  string `json:"access"`
 	Command string `json:"command,omitempty"`
 	Summary string `json:"summary,omitempty"`
+	// Upstream marks a read that relays an external service; its 502 or 504 means that service
+	// did not answer, which the route sweep does not count as a broken read.
+	Upstream bool `json:"upstream,omitempty"`
 }
 
 // Key is the route as ServeMux writes it.

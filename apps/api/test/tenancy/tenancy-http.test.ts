@@ -17,7 +17,7 @@ const NORTE = {
 const SECHURA = {
   company_id: 'SIPGES',
   project_id: 'PRJ-SECHURA',
-  label: 'Proyecto Sechura (migración)',
+  label: 'Proyecto principal',
 };
 
 const json = (res: Response) => res.json() as Promise<unknown>;
@@ -36,11 +36,25 @@ const tenantRows = async (t: Awaited<ReturnType<typeof createTestApp>>) =>
   ]);
 
 describe('bootstrap', () => {
-  it('creates the legacy default project and grants it to admins', async () => {
+  it('creates a neutrally named default project and grants it to admins', async () => {
     const { t, admin } = await setup();
     const res = await t.request('/system/auth/scopes', { headers: { cookie: admin.cookie } });
     expect(res.status).toBe(200);
     expect(await json(res)).toEqual([SECHURA]);
+  });
+
+  it('keeps the label an existing installation stored when it bootstraps again', async () => {
+    // functional-10 T6: only a new installation gets the neutral name; stored rows are never
+    // renamed, so an installation from before keeps «Proyecto Sechura (migración)».
+    const { t, admin } = await setup();
+    await t.sql.query(
+      `UPDATE tenants SET label = 'Proyecto Sechura (migración)' WHERE tenant_id = 'SIPGES/PRJ-SECHURA'`,
+    );
+    const before = await tenantRows(t);
+    await t.container.tenancy.bootstrap();
+    expect(await tenantRows(t)).toBe(before);
+    const res = await t.request('/system/auth/scopes', { headers: { cookie: admin.cookie } });
+    expect(await json(res)).toEqual([{ ...SECHURA, label: 'Proyecto Sechura (migración)' }]);
   });
 
   it('requires a session to list scopes (ADR 0008 #4)', async () => {

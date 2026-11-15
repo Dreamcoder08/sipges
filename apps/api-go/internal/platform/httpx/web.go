@@ -1,13 +1,16 @@
 package httpx
 
 import (
+	"cmp"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -24,10 +27,16 @@ var (
 	assetName  = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`)
 	cesiumPath = regexp.MustCompile(`^(Workers|ThirdParty|Assets)(/[A-Za-z0-9_][A-Za-z0-9._-]{0,127}){1,4}$`)
 
+	// rootFiles is ROOT_FILES of spa.ts: the installable-app files, the tab icons and the crawler
+	// rule (functional-10 T9). Every other path outside the shell and the built folders asks for
+	// a session.
 	rootFiles = map[string]string{
 		"/manifest.webmanifest": "application/manifest+json",
 		"/sw.js":                "text/javascript; charset=utf-8",
 		"/icon.svg":             "image/svg+xml",
+		"/favicon.ico":          "image/x-icon",
+		"/favicon.svg":          "image/svg+xml",
+		"/robots.txt":           "text/plain; charset=utf-8",
 	}
 	assetTypes = map[string]string{
 		".js":    "text/javascript; charset=utf-8",
@@ -43,6 +52,11 @@ var (
 		".jpg": "image/jpeg",
 		".xml": "application/xml",
 	}
+
+	// compressible is COMPRESSIBLE of spa.ts: the asset types the build precompresses.
+	compressible = map[string]bool{".js": true, ".css": true, ".svg": true, ".json": true}
+	// variantSuffix names the file the web build writes for each content coding.
+	variantSuffix = map[string]string{"br": ".br", "gzip": ".gz"}
 
 	apiPrefixes = []string{"/api/", "/system/", "/auth/"}
 	apiPaths    = map[string]bool{"/health": true, "/health/ready": true, "/select-project": true, "/logout": true}
@@ -100,8 +114,7 @@ func Web(dir string) (Middleware, error) {
 					WriteError(w, http.StatusNotFound, "Not Found")
 					return
 				}
-				w.Header().Set("Cache-Control", AssetCache)
-				serveBuilt(w, root, "assets/"+name, contentType)
+				serveAsset(w, r, root, name, contentType)
 			case strings.HasPrefix(p, "/cesium/"):
 				file := strings.TrimPrefix(p, "/cesium/")
 				contentType := cesiumTypes[path.Ext(file)]
@@ -117,6 +130,80 @@ func Web(dir string) (Middleware, error) {
 			}
 		})
 	}, nil
+}
+
+// acceptedEncodings is acceptedEncodings of spa.ts: the precompressed codings an Accept-Encoding
+// header allows, best first. A coding listed with q=0 is refused, "*" stands for the ones not
+// listed, and brotli wins a tie (RFC 9110 §12.5.3).
+func acceptedEncodings(header string) []string {
+	weights := map[string]float64{}
+	for part := range strings.SplitSeq(strings.ToLower(header), ",") {
+		pieces := strings.Split(part, ";")
+		coding := strings.TrimSpace(pieces[0])
+		if coding == "" {
+			continue
+		}
+		weight := 1.0
+		for _, param := range pieces[1:] {
+			if q, ok := strings.CutPrefix(strings.TrimSpace(param), "q="); ok {
+				parsed, err := strconv.ParseFloat(q, 64)
+				if err != nil || math.IsNaN(parsed) || math.IsInf(parsed, 0) {
+					parsed = 0
+				}
+				weight = parsed
+				break
+			}
+		}
+		if coding == "x-gzip" {
+			coding = "gzip"
+		}
+		weights[coding] = weight
+	}
+	weightOf := func(coding string) float64 {
+		if w, ok := weights[coding]; ok {
+			return w
+		}
+		return weights["*"]
+	}
+	accepted := make([]string, 0, 2)
+	for _, coding := range []string{"br", "gzip"} {
+		if weightOf(coding) > 0 {
+			accepted = append(accepted, coding)
+		}
+	}
+	slices.SortStableFunc(accepted, func(a, b string) int { return cmp.Compare(weightOf(b), weightOf(a)) })
+	return accepted
+}
+
+// serveAsset answers a hashed asset: the brotli or gzip variant the build wrote when the client
+// takes it (functional-10 T9), the plain file otherwise, cached for a year either way.
+func serveAsset(w http.ResponseWriter, r *http.Request, root *os.Root, name, contentType string) {
+	negotiated := compressible[path.Ext(name)]
+	if negotiated {
+		for _, coding := range acceptedEncodings(r.Header.Get("Accept-Encoding")) {
+			file, info, err := openRegular(root, "assets/"+name+variantSuffix[coding])
+			if err != nil {
+				continue
+			}
+			w.Header().Set("Cache-Control", AssetCache)
+			w.Header().Set("Content-Encoding", coding)
+			w.Header().Set("Vary", "Accept-Encoding")
+			writeFile(w, file, info, contentType)
+			_ = file.Close()
+			return
+		}
+	}
+	file, info, err := openRegular(root, "assets/"+name)
+	if err != nil {
+		WriteError(w, http.StatusNotFound, "Not Found")
+		return
+	}
+	defer func() { _ = file.Close() }()
+	w.Header().Set("Cache-Control", AssetCache)
+	if negotiated {
+		w.Header().Set("Vary", "Accept-Encoding")
+	}
+	writeFile(w, file, info, contentType)
 }
 
 // serveShell answers a navigation; without a build's shell the request goes on to the API, as

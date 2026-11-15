@@ -50,3 +50,21 @@ export const monthLabel = (month: string) => {
   const label = MONTH.format(new Date(`${month}-01T12:00:00Z`));
   return label.charAt(0).toUpperCase() + label.slice(1);
 };
+
+/**
+ * A stored key written as words, for keys no label map names yet (functional-10 T3):
+ * «Fuente_Principal» → «Fuente principal», «Evidencia/Resultado» → «Evidencia / resultado». A
+ * person never reads the key itself.
+ */
+export const keyWords = (key: string) => {
+  const words = key
+    .replace(/\s*\/\s*/g, ' / ')
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .join(' ')
+    .toLocaleLowerCase('es');
+  return words.charAt(0).toLocaleUpperCase('es') + words.slice(1);
+};
+
+/** A dimension with its name beside its letter: «G · Gobernanza». */
+export const dimensionLabel = (code: DimensionCode) => `${code} · ${DIMENSION_NAMES[code]}`;

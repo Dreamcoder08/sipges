@@ -118,7 +118,7 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
   ).toEqual(['Cuenta', 'Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones']);
   expect(within(nav).getByRole('link', { name: 'Cuenta' })).toHaveAttribute(
     'href',
-    '/version-4?seccion=cuenta',
+    '/configuracion?seccion=cuenta',
   );
   expect(within(nav).getByRole('link', { name: 'Apariencia' })).toHaveAttribute(
     'aria-current',
@@ -126,7 +126,7 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
   );
   expect(within(nav).getByRole('link', { name: 'Proyecto' })).toHaveAttribute(
     'href',
-    '/version-4?seccion=proyecto',
+    '/configuracion?seccion=proyecto',
   );
   expect(within(nav).queryByRole('link', { name: 'Integraciones' })).not.toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
@@ -149,7 +149,7 @@ it('shows one section at a time and goes to another through the URL', async () =
   );
   within(nav).getByRole('link', { name: 'Proyecto' }).focus();
   await user.keyboard('{Enter}');
-  expect(visited).toEqual(['/version-4?seccion=proyecto']);
+  expect(visited).toEqual(['/configuracion?seccion=proyecto']);
 });
 
 it('keeps the section nav working without a router', async () => {
@@ -404,6 +404,22 @@ it('shows the switch to everyone else read-only', async () => {
   const toggle = await screen.findByRole('checkbox', { name: 'Envío a IA externa' });
   expect(toggle).toBeChecked();
   expect(toggle).toBeDisabled();
+});
+
+// functional-10 T5 (F13): what may receive data is said in Spanish, without «embeddings».
+it('names what may receive pseudonymised data in plain Spanish', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({ ...settings(), external_ai: { enabled: true } }),
+    ),
+  );
+  renderPage('admin', 'privacidad');
+  expect(
+    await screen.findByText(
+      'Activado: el servidor MCP, el resumen asistido y la búsqueda por significado con un modelo externo pueden recibir datos seudonimizados. Cada envío queda en Auditoría.',
+    ),
+  ).toBeInTheDocument();
+  expect(document.body).not.toHaveTextContent(/embedding/i);
 });
 
 it('lets an administrator save and clear the project location the maps open on', async () => {

@@ -10,7 +10,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { IrsaPendingBadge, isIrsaPending } from '../../shared/ui/IrsaPendingBadge.tsx';
 import { useLevelLabel } from '../../shared/lib/project-settings.tsx';
-import { LEVELS } from '../../shared/lib/text.ts';
+import { DIMENSIONS, LEVELS, dimensionLabel } from '../../shared/lib/text.ts';
 import {
   formatDateTime,
   formatIndex,
@@ -23,9 +23,13 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { LineChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { configQuery, historyQuery, irsaQuery } from './api.ts';
 import { IndicatorTable } from './IndicatorTable.tsx';
+import { contributionLabel, irsaMethodLabel } from './labels.ts';
 import styles from './Indicators.module.css';
 
-const dimensions = ['G', 'A', 'D', 'N', 'E', 'I'] as const;
+const dimensions = DIMENSIONS;
+/** The six weights as shares of 100 % in dimension order, so they add up on screen. */
+const weightShares = (weights: Readonly<Record<string, number>>) =>
+  formatShares(dimensions.map((d) => weights[d] ?? 0));
 export const IrsaPage = (context: FeatureContext) => (
   <IrsaWorkspace key={context.scope} {...context} />
 );
@@ -80,8 +84,19 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                 <div className={styles.radar}>
                   <RadarChart
                     caption="Puntuación IRSA por dimensión (0 a 100)"
-                    data={dimensions.map((d) => ({ key: d, label: d, value: data.scores[d] }))}
+                    data={dimensions.map((d) => ({
+                      key: d,
+                      label: dimensionLabel(d),
+                      value: data.scores[d],
+                    }))}
+                    renderLabel={(d) => d.key}
                   />
+                  {/* The axes keep the letter; the names sit beside them here (functional-10 T3). */}
+                  <ul className={styles.legend} aria-label="Dimensiones del gráfico">
+                    {dimensions.map((d) => (
+                      <li key={d}>{dimensionLabel(d)}</li>
+                    ))}
+                  </ul>
                 </div>
                 <div
                   className={styles.table}
@@ -106,15 +121,9 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                     <tbody>
                       {dimensions.map((d, index) => (
                         <tr key={d}>
-                          <th scope="row">{d}</th>
+                          <th scope="row">{dimensionLabel(d)}</th>
                           <td>{formatIndex(data.scores[d])}</td>
-                          <td>
-                            {
-                              formatShares(
-                                dimensions.map((dimension) => data.weights[dimension] ?? 0),
-                              )[index]
-                            }
-                          </td>
+                          <td>{weightShares(data.weights)[index]}</td>
                           <td>{formatPercent(data.availability[d])}</td>
                         </tr>
                       ))}
@@ -136,7 +145,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
               <details>
                 <summary>Cómo se calcula</summary>
                 <p>{data.status}</p>
-                <p>Versión de configuración: {data.config_version}</p>
+                <p>{irsaMethodLabel(data.config_version)}</p>
                 {data.notes.map((note) => (
                   <p key={note}>{note}</p>
                 ))}
@@ -235,7 +244,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                     <tr>
                       <th scope="col">Fecha</th>
                       <th scope="col">IRSA / nivel</th>
-                      <th scope="col">Versión</th>
+                      <th scope="col">Método IRSA</th>
                       <th scope="col">Nota</th>
                     </tr>
                   </thead>
@@ -248,7 +257,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                         <td>
                           {formatIndex(row.irsa)} / {row.level}
                         </td>
-                        <td>{row.config_version ?? 'Sin versión'}</td>
+                        <td>{irsaMethodLabel(row.config_version)}</td>
                         <td>{row.note || 'Sin nota'}</td>
                       </tr>
                     ))}
@@ -268,10 +277,10 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
             ) : (
               <>
                 <p>Solo un administrador puede modificar los parámetros.</p>
-                <ul>
-                  {Object.entries(data.weights).map(([key, value]) => (
-                    <li key={key}>
-                      Peso {key}: {value}
+                <ul aria-label="Pesos de dimensiones">
+                  {dimensions.map((d, index) => (
+                    <li key={d}>
+                      Peso {dimensionLabel(d)}: {weightShares(data.weights)[index]}
                     </li>
                   ))}
                 </ul>
@@ -382,7 +391,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
           {dimensions.map((d) => (
             <Field
               key={d}
-              label={`Peso ${d}`}
+              label={`Peso ${dimensionLabel(d)}`}
               type="number"
               step="any"
               min="0"
@@ -432,7 +441,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
           {Object.entries(contributions).map(([name, value]) => (
             <Field
               key={name}
-              label={`Contribución ${name}`}
+              label={contributionLabel(name)}
               type="number"
               step="any"
               required

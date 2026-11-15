@@ -24,6 +24,10 @@ A case without an answer in 15 s fails, an API that cannot start or dies before 
 (with its exit code or signal), and Ctrl-C or a cancelled job still stops both APIs and drops the database.
 CI runs it in the `Go/TypeScript parity` job of `.github/workflows/go.yml`.
 
+No run reaches a real site. A local double (`embedder-double.ts`) stands in for Ollama, the Anthropic API
+and the Defensoría connector (`SIPGES_DEFENSORIA_URL`, set for both APIs by `externalDoubles()`); seeded feed
+hosts use the reserved `.example` name. A live site that stops answering once timed out the cron case.
+
 ## Adding a route
 
 Add one or more entries to `CASES` in [`src/cases.ts`](src/cases.ts) when a route moves to Go, or, for a

@@ -143,10 +143,13 @@ describe('text and semantic analysis', () => {
     );
     const semantic = body.semantic as {
       active: boolean;
+      method: string;
       model: string;
       matches: { theme: string; similarity: number }[];
     };
     expect(semantic.active).toBe(true);
+    // functional-10 T5 (F13): the method is said in Spanish, without «embeddings» or «coseno».
+    expect(semantic.method).toBe('Similitud de significado calculada con el modelo local Ollama');
     expect(semantic.model).toBe('fake-embed');
     expect(semantic.matches.length).toBeGreaterThan(0);
     const sims = semantic.matches.map((m) => m.similarity);

@@ -26,7 +26,7 @@ const (
 
 	rulesSemanticMethod = "Reglas verificables; sin modelo semántico"
 	rulesNote           = "Análisis de temas por reglas. No se ha interpretado semánticamente el texto."
-	modelSemanticMethod = "Similitud coseno de embeddings del modelo local Ollama"
+	modelSemanticMethod = "Similitud de significado calculada con el modelo local Ollama"
 	modelNote           = "Los valores son similitudes relativas, no probabilidades de conflicto ni pruebas de veracidad."
 	rulesOnlyNote       = "Ollama local no disponible; se aplicaron únicamente reglas. El análisis semántico NO se ejecutó."
 )

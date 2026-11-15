@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -22,6 +23,9 @@ func webDir(t *testing.T) string {
 		"sw.js":                        "self.x=1",
 		"manifest.webmanifest":         "{}",
 		"icon.svg":                     "<svg/>",
+		"favicon.ico":                  "ico",
+		"favicon.svg":                  "<svg/>",
+		"robots.txt":                   "User-agent: *\nDisallow: /\n",
 		"secret.txt":                   "not served",
 		"assets/app-abc.js":            "console.log(1)",
 		"assets/app-abc.css":           "a{}",
@@ -135,6 +139,9 @@ func TestWebServesInstallableRootFilesUnderTheSPAPolicy(t *testing.T) {
 		"/manifest.webmanifest": "application/manifest+json",
 		"/sw.js":                "text/javascript; charset=utf-8",
 		"/icon.svg":             "image/svg+xml",
+		"/favicon.ico":          "image/x-icon",
+		"/favicon.svg":          "image/svg+xml",
+		"/robots.txt":           "text/plain; charset=utf-8",
 	}
 	dir := webDir(t)
 	for path, contentType := range cases {
@@ -148,6 +155,99 @@ func TestWebServesInstallableRootFilesUnderTheSPAPolicy(t *testing.T) {
 		if got := rec.Header().Get("Content-Security-Policy"); got != httpx.SPACSP {
 			t.Errorf("%s: CSP = %q", path, got)
 		}
+	}
+}
+
+// functional-10 T9: the crawler rule keeps every crawler out.
+func TestWebServesRobotsTxtThatDisallowsEverything(t *testing.T) {
+	rec := webRequest(t, webDir(t), http.MethodGet, "/robots.txt", "*/*")
+	if rec.Code != http.StatusOK || rec.Body.String() != "User-agent: *\nDisallow: /\n" {
+		t.Fatalf("%d %q", rec.Code, rec.Body.String())
+	}
+}
+
+// encodedRequest is webRequest with an Accept-Encoding header; "-" sends none.
+func encodedRequest(t *testing.T, dir, path, acceptEncoding string) *httptest.ResponseRecorder {
+	t.Helper()
+	web, err := httpx.Web(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := httptest.NewRequest(http.MethodGet, path, nil)
+	if acceptEncoding != "-" {
+		r.Header.Set("Accept-Encoding", acceptEncoding)
+	}
+	rec := httptest.NewRecorder()
+	web(fallthroughHandler).ServeHTTP(rec, r)
+	return rec
+}
+
+// functional-10 T9: the brotli or gzip variant the build wrote, when the client takes it, with
+// the same type and cache headers; the plain file otherwise. Spa.ts answers the same.
+func TestWebServesPrecompressedAssets(t *testing.T) {
+	dir := webDir(t)
+	for name, body := range map[string]string{
+		"assets/app-abc.js.br":  "br bytes",
+		"assets/app-abc.js.gz":  "gzip bytes",
+		"assets/only-gz.css":    "a{}",
+		"assets/only-gz.css.gz": "css gzip",
+		"assets/logo.png":       "png",
+		"assets/logo.png.br":    "never",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, filepath.FromSlash(name)), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cases := []struct{ path, acceptEncoding, body, encoding string }{
+		{"/assets/app-abc.js", "gzip, deflate, br, zstd", "br bytes", "br"},
+		{"/assets/app-abc.js", "gzip", "gzip bytes", "gzip"},
+		{"/assets/app-abc.js", "br;q=0, gzip;q=0.5", "gzip bytes", "gzip"},
+		{"/assets/app-abc.js", "*", "br bytes", "br"},
+		{"/assets/app-abc.js", "BR;Q=1", "br bytes", "br"},
+		{"/assets/app-abc.js", "gzip;q=0, br;q=0", "console.log(1)", ""},
+		{"/assets/app-abc.js", "*;q=0", "console.log(1)", ""},
+		{"/assets/app-abc.js", "identity", "console.log(1)", ""},
+		{"/assets/app-abc.js", "", "console.log(1)", ""},
+		{"/assets/app-abc.js", "-", "console.log(1)", ""},
+		{"/assets/only-gz.css", "br, gzip", "css gzip", "gzip"},
+		{"/assets/only-gz.css", "br", "a{}", ""},
+	}
+	for _, c := range cases {
+		label := c.path + " with " + c.acceptEncoding
+		rec := encodedRequest(t, dir, c.path, c.acceptEncoding)
+		if rec.Code != http.StatusOK || rec.Body.String() != c.body {
+			t.Errorf("%s: %d %q", label, rec.Code, rec.Body.String())
+			continue
+		}
+		if got := rec.Header().Get("Content-Encoding"); got != c.encoding {
+			t.Errorf("%s: Content-Encoding = %q", label, got)
+		}
+		if got := rec.Header().Get("Vary"); got != "Accept-Encoding" {
+			t.Errorf("%s: Vary = %q", label, got)
+		}
+		if got := rec.Header().Get("Cache-Control"); got != httpx.AssetCache {
+			t.Errorf("%s: Cache-Control = %q", label, got)
+		}
+		if got, want := rec.Header().Get("Content-Length"), strconv.Itoa(len(c.body)); got != want {
+			t.Errorf("%s: Content-Length = %q, want %q", label, got, want)
+		}
+		want := "text/css; charset=utf-8"
+		if strings.HasSuffix(c.path, ".js") {
+			want = "text/javascript; charset=utf-8"
+		}
+		if got := rec.Header().Get("Content-Type"); got != want {
+			t.Errorf("%s: Content-Type = %q", label, got)
+		}
+	}
+	png := encodedRequest(t, dir, "/assets/logo.png", "br, gzip")
+	if png.Body.String() != "png" || png.Header().Get("Content-Encoding") != "" || png.Header().Get("Vary") != "" {
+		t.Errorf("png: %q %v", png.Body.String(), png.Header())
+	}
+	if rec := encodedRequest(t, dir, "/assets/app-abc.js.br", "br"); rec.Code != http.StatusNotFound {
+		t.Errorf("variant by its own name: %d", rec.Code)
+	}
+	if rec := encodedRequest(t, dir, "/assets/missing.js", "br"); rec.Code != http.StatusNotFound || rec.Header().Get("Vary") != "" || rec.Header().Get("Cache-Control") != "" {
+		t.Errorf("missing: %d %v", rec.Code, rec.Header())
 	}
 }
 

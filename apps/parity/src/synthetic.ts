@@ -3,6 +3,9 @@ import { generateKeyPairSync } from 'node:crypto';
 /** Fixed synthetic values both APIs start with; never a real credential. */
 export const CRON_SECRET = 'synthetic-parity-cron-secret-000000';
 
+/** The Defensoría WordPress API path both APIs ask the local double (embedder-double.ts). */
+export const DEFENSORIA_PATH = '/wp-json/wp/v2/posts';
+
 const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
 const { x = '', y = '' } = publicKey.export({ format: 'jwk' });
 const point = Buffer.concat([

@@ -29,6 +29,18 @@ describe('dashboard model', () => {
     expect(eventsThisWeek(events, new Date('2026-01-04T12:00:00Z')).total).toBe(2);
   });
 
+  it('keeps the place of each open alert so cards with one title can be told apart', () => {
+    expect(
+      criticalAlerts([
+        { _id: 'a', Nivel: 'Rojo', Causa: 'Igual', Territorio: ' Pampa ' },
+        { _id: 'b', Nivel: 'Rojo', Causa: 'Igual' },
+      ]).map(({ id, place }) => [id, place]),
+    ).toEqual([
+      ['a', 'Pampa'],
+      ['b', ''],
+    ]);
+  });
+
   it('counts open alerts of the project by severity, like app.js', () => {
     const counts = alertsByLevel([
       { _id: '1', Nivel_Preliminar: 'Crítica', Proyecto_ID: 'P' },

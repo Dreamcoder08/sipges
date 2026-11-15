@@ -79,7 +79,7 @@ export type TodayItem = { id: string; title: string; date: string };
 export const criticalAlerts = (
   alerts: readonly ModuleRecord[],
   limit = 3,
-): (TodayItem & { level: Level })[] =>
+): (TodayItem & { level: Level; place: string })[] =>
   alerts
     .filter((a) => !CLOSED.has(foldText(a['Estado'])))
     .map((a) => ({
@@ -87,6 +87,8 @@ export const criticalAlerts = (
       title: text(a['Causa']) || 'Alerta sin causa documentada',
       date: dateOf(a),
       level: severityLevel(a['Nivel_Preliminar'] || a['Nivel']),
+      // Two alerts with one cause are told apart by where they happened (functional-10 T5).
+      place: text(a['Territorio']),
     }))
     .filter((a) => a.level !== 'Verde')
     .sort((x, y) => RANK[y.level] - RANK[x.level] || y.date.localeCompare(x.date))

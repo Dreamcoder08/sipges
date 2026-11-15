@@ -373,7 +373,7 @@ func TestStartCreatesTheDefaultProjectAndGrantsItToEveryAdministrator(t *testing
 			t.Fatal(err)
 		}
 	}
-	if got := scalar(t, s.URL, `SELECT count(*)::text || '|' || min(tenant_id) || '|' || min(label) FROM tenants`); got != "1|SIPGES/PRJ-SECHURA|Proyecto Sechura (migración)" {
+	if got := scalar(t, s.URL, `SELECT count(*)::text || '|' || min(tenant_id) || '|' || min(label) FROM tenants`); got != "1|SIPGES/PRJ-SECHURA|Proyecto principal" {
 		t.Fatalf("tenants %q", got)
 	}
 	if got := scalar(t, s.URL, `SELECT string_agg(username, ',' ORDER BY username) FROM grants WHERE tenant_id = 'SIPGES/PRJ-SECHURA'`); got != "owner,second" {

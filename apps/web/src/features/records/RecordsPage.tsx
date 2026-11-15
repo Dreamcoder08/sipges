@@ -465,12 +465,14 @@ const RecordsWorkspace = ({
                     />
                   </div>
                 ) : null}
-                <p className={styles.muted} role="status">
-                  {visible.length
-                    ? `${pageRows.length} de ${count(visible.length, 'registro mostrado', 'registros mostrados')}`
-                    : 'Ningún registro que mostrar'}{' '}
-                  · {data.length} en la consulta
-                </p>
+                {data.length ? (
+                  <p className={styles.muted} role="status">
+                    {visible.length
+                      ? `${pageRows.length} de ${count(visible.length, 'registro mostrado', 'registros mostrados')}`
+                      : 'Ningún registro que mostrar'}{' '}
+                    · {data.length} en la consulta
+                  </p>
+                ) : null}
                 {pageCount > 1 ? (
                   <nav aria-label="Paginación de registros" className={styles.actions}>
                     <Button
@@ -642,9 +644,26 @@ const RecordsWorkspace = ({
                     Prueba con otras palabras, otros filtros o revisa la ortografía.
                   </EmptyState>
                 ) : (
-                  <EmptyState title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}>
+                  <EmptyState
+                    title={`Aún no hay registros de ${definition.label.toLowerCase()}.`}
+                    action={
+                      writable ? (
+                        <Button
+                          disabled={busy}
+                          data-return="primer-registro"
+                          onClick={() => {
+                            save.reset();
+                            setNotice('');
+                            openPanel({ kind: 'create' }, 'primer-registro');
+                          }}
+                        >
+                          Crear el primer registro
+                        </Button>
+                      ) : undefined
+                    }
+                  >
                     {writable
-                      ? 'Usa «Nuevo registro» o «Importar CSV» para cargar el primero en el proyecto activo.'
+                      ? 'Crea el primero aquí o carga varios con «Importar CSV».'
                       : 'Cuando el equipo registre información aparecerá aquí.'}
                   </EmptyState>
                 )}

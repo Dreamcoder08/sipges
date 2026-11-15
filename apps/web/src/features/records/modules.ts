@@ -1,3 +1,5 @@
+import { keyWords } from '../../shared/lib/text.ts';
+
 export type RecordModule =
   | 'eventos'
   | 'actores'
@@ -516,3 +518,12 @@ export const MODULES: Record<RecordModule, ModuleDefinition> = {
     ],
   },
 };
+
+/**
+ * The label the record form gives a stored field, its aliases included («Descripcion_Hecho» →
+ * «Descripción del hecho»); a key no form declares reads as words, never as the key
+ * (functional-10 T3).
+ */
+export const recordFieldLabel = (module: RecordModule, key: string) =>
+  MODULES[module].fields.find((field) => field.key === key || field.aliases?.includes(key))
+    ?.label ?? keyWords(key);

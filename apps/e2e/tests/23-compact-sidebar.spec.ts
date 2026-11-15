@@ -89,7 +89,7 @@ test('search, inbox, project and account are in the sidebar, with no top bar', a
   await account.click();
   await menu.getByRole('menuitem', { name: 'Configuración' }).click();
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+    page.getByRole('heading', { level: 1, name: 'Configuración · Apariencia' }),
   ).toBeVisible();
 });
 
@@ -102,7 +102,7 @@ test('Ctrl+, opens Configuración, where Apariencia pins the theme and the menu 
   await expect(page.getByRole('heading', { level: 1, name: 'Eventos' })).toBeVisible();
   await page.keyboard.press('Control+,');
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+    page.getByRole('heading', { level: 1, name: 'Configuración · Apariencia' }),
   ).toBeVisible();
 
   const group = page.getByRole('group', { name: 'Tema' });

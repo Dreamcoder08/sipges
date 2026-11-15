@@ -95,3 +95,15 @@
   font-size: var(--text-sm);
   max-width: 62ch;
 }
+/* Dimension names beside the radar's letters (functional-10 T3): wrap on a phone, never cut. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
