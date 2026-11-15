@@ -1,9 +1,9 @@
 import type { ConsoleMessage, Page, Response } from '@playwright/test';
 import { DESTINATIONS, SCREENS, hubHref } from '../../web/src/app/navigation.ts';
 import {
-  SETTINGS_PATH,
   SettingsSection,
   settingsHref,
+  settingsTitle,
 } from '../../web/src/features/situations/sections.ts';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
@@ -33,8 +33,6 @@ const OFFLINE_HOSTS = new Set([
 
 type Route = { readonly href: string; readonly heading: string };
 
-const settingsTitle = SCREENS.find((screen) => screen.path === SETTINGS_PATH)?.title ?? '';
-
 const ROUTES: readonly Route[] = [
   ...SCREENS.map((screen) => ({ href: screen.path, heading: screen.title })),
   ...DESTINATIONS.flatMap((hub) => [
@@ -43,7 +41,8 @@ const ROUTES: readonly Route[] = [
   ]),
   ...SettingsSection.options.map((section) => ({
     href: settingsHref(section),
-    heading: settingsTitle,
+    // Each section names itself in the page heading (functional-10 T6).
+    heading: settingsTitle(`?seccion=${section}`),
   })),
 ].filter((route, index, all) => all.findIndex((other) => other.href === route.href) === index);
 
