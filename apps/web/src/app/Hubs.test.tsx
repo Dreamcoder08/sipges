@@ -5,6 +5,7 @@ import { HttpResponse, delay, http } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi, server } from '../test/server.ts';
+import { formatDay } from '../shared/lib/format.ts';
 import { App } from './App.tsx';
 import { DESTINATIONS, hubHref, titleFor } from './navigation.ts';
 
@@ -647,6 +648,18 @@ describe('Inicio hub', () => {
     expect(
       within(territory).getByRole('link', { name: /Riesgo de conflicto por localidad/ }),
     ).toHaveAttribute('href', '/analisis?vista=riesgo');
+  });
+
+  // functional-10 T1 (F1) and T2 (F6): the week's dates in the shared style and a labelled IRSA.
+  it('labels the current IRSA with a decimal comma and dates the week like every other screen', async () => {
+    await open();
+    const fresh = await screen.findByRole('region', { name: /Registros nuevos/ });
+    await waitFor(() => expect(within(fresh).getByText('Hecho de hoy')).toBeVisible());
+    expect(fresh).toHaveTextContent(`Evento · ${formatDay(day(0))}`);
+    expect(fresh).not.toHaveTextContent(day(0));
+    const territory = await screen.findByRole('region', { name: /Riesgo del territorio/ });
+    expect(territory).toHaveTextContent('IRSA actual 42,3');
+    expect(territory).not.toHaveTextContent('42.3');
   });
 
   it('shows «Sin datos suficientes» and asks for records when the IRSA has no evidence (S3)', async () => {

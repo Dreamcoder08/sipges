@@ -9,6 +9,7 @@ import { importRecords } from './api.ts';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { count } from '../../shared/lib/plural.ts';
 
 const IGNORE = '';
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -195,7 +196,7 @@ export const ImportPanel = ({
       {report ? (
         report.problems.length ? (
           <Alert tone="error">
-            {report.problems.length} fila(s) con problemas; no se importó nada.
+            {count(report.problems.length, 'fila', 'filas')} con problemas; no se importó nada.
             <ul>
               {report.problems.slice(0, 20).map((problem) => (
                 <li key={`${problem.row}-${problem.message}`}>

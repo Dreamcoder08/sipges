@@ -215,7 +215,7 @@ describe('Indicadores e IRSA', () => {
     expect(
       within(current).getByText('Carga registros del proyecto para calcular el IRSA.'),
     ).toBeVisible();
-    expect(current).not.toHaveTextContent('7.00 / 100');
+    expect(current).not.toHaveTextContent('7,0 / 100');
     expect(current).not.toHaveTextContent('Verde');
   });
   it('con datos muestra el valor y el nivel, sin el aviso de falta de datos (S3, S5)', async () => {
@@ -223,8 +223,73 @@ describe('Indicadores e IRSA', () => {
     const current = (await screen.findByRole('heading', { name: 'IRSA actual' })).closest(
       'section',
     ) as HTMLElement;
-    await waitFor(() => expect(current).toHaveTextContent('7.00 / 100 · Verde'));
+    await waitFor(() => expect(current).toHaveTextContent('7,0 / 100 · Verde'));
     expect(screen.queryByText('Sin datos suficientes')).not.toBeInTheDocument();
+  });
+  // functional-10 T1 (F2) and T2 (F4–F6).
+  it('escribe los valores con coma, los pesos como partes que suman 100 % y los cortes en hora de Lima', async () => {
+    const sixth = 0.1666667;
+    const weights = { G: sixth, A: sixth, D: sixth, N: sixth, E: sixth, I: 0.1666665 };
+    server.use(
+      http.get('*/system/irsa', () =>
+        HttpResponse.json({
+          ...report,
+          irsa: 10.75,
+          weights,
+          availability: { ...numbers, G: 100 },
+        }),
+      ),
+      http.get('*/system/irsa/history', () =>
+        HttpResponse.json([
+          {
+            id: 2,
+            ts: '2026-11-15T03:32:56Z',
+            irsa: 2.8,
+            level: 'Verde',
+            scores: numbers,
+            config_version: '0.4-indicators',
+            note: 'Corte nocturno',
+          },
+          {
+            id: 1,
+            ts: '2026-10-13T15:00:00Z',
+            irsa: 7,
+            level: 'Verde',
+            scores: numbers,
+            config_version: '0.4-indicators',
+            note: 'Corte anterior',
+          },
+        ]),
+      ),
+    );
+    renderPage(<IrsaPage {...context} />);
+    const current = (await screen.findByRole('heading', { name: 'IRSA actual' })).closest(
+      'section',
+    ) as HTMLElement;
+    // Wait for the value, then read it: a wrong format fails at once instead of timing out.
+    expect(await within(current).findByText(/\/ 100 · Verde/)).toHaveTextContent(
+      '10,8 / 100 · Verde',
+    );
+    const table = within(current).getByRole('table', { name: /Puntuación y disponibilidad/ });
+    const row = (name: string) =>
+      within(table).getByRole('rowheader', { name }).closest('tr') as HTMLElement;
+    expect(row('G')).toHaveTextContent(/G\s*15,0\s*16,7\s%\s*100,0\s%/);
+    expect(row('I')).toHaveTextContent(/I\s*0,0\s*16,6\s%\s*0,0\s%/);
+    expect(row('Total')).toHaveTextContent(/Total\s*100,0\s%/);
+    expect(table).not.toHaveTextContent('0.1666');
+
+    const history = screen
+      .getByRole('heading', { name: 'Historial de cortes' })
+      .closest('section') as HTMLElement;
+    const cuts = await within(history).findByRole('table', {
+      name: 'Últimos 50 cortes del proyecto',
+    });
+    await within(cuts).findByText('Corte nocturno');
+    expect(history).toHaveTextContent('Último corte guardado: 2,8 / Verde · 14 nov. 2026, 22:32');
+    expect(cuts).toHaveTextContent('14 nov. 2026, 22:32');
+    expect(cuts).toHaveTextContent('2,8 / Verde');
+    expect(cuts).not.toHaveTextContent('2026-11-15T03:32:56Z');
+    expect(cuts.querySelector('time')).toHaveAttribute('datetime', '2026-11-15T03:32:56Z');
   });
   it('marca la metodología pendiente de validación junto al valor (S3)', async () => {
     server.use(
@@ -272,7 +337,7 @@ describe('Indicadores e IRSA', () => {
   });
   it('no marca la metodología como pendiente cuando la configuración no lo dice (S3)', async () => {
     renderPage(<IrsaPage {...context} />);
-    await screen.findByText(/7\.00 \/ 100/);
+    await screen.findByText(/7,0 \/ 100/);
     expect(screen.queryByText('Metodología pendiente de validación')).not.toBeInTheDocument();
   });
   it('presenta errores del servidor sin un resultado inventado', async () => {

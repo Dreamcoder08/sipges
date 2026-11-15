@@ -3,6 +3,7 @@ import type { OpenRecord } from './RecordSheet.tsx';
 import type { RecordSummary } from './summary.ts';
 import { typeLabel } from './types.ts';
 import { ValidationChip } from './VerificationChip.tsx';
+import { formatDay } from '../../../shared/lib/format.ts';
 
 /**
  * Todos and the type tabs below 1024 px (closure-roadmap T31, direction 01): one two-line row
@@ -37,7 +38,9 @@ export const RecordRows = ({
           </span>
           <span className={styles.rowMeta} data-line="meta">
             <span className={styles.rowFacts}>
-              {[typeLabel(row.module), row.territory, row.date].filter(Boolean).join(' · ')}
+              {[typeLabel(row.module), row.territory, row.date && formatDay(row.date)]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
             {row.verification ? (
               <>

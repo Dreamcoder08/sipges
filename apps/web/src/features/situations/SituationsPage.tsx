@@ -19,6 +19,7 @@ import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { situationAlertPayload, citationHref } from './model.ts';
 import styles from './Situations.module.css';
+import { count, plural } from '../../shared/lib/plural.ts';
 
 /** Related records, their trend and suggested actions (docs/adr/0020). */
 export const SituationsPage = ({ scope, projectId, projectLabel, role }: FeatureContext) => {
@@ -62,8 +63,12 @@ const SituationList = ({
 }) => (
   <>
     <p className={styles.muted}>
-      {data.considered} registro(s) con fecha en los últimos {data.window_days} días
-      {data.undated ? ` · ${data.undated} sin fecha no se consideran` : ''}.
+      {count(data.considered, 'registro', 'registros')} con fecha en los últimos{' '}
+      {count(data.window_days, 'día', 'días')}
+      {data.undated
+        ? ` · ${data.undated} sin fecha no ${plural(data.undated, 'se considera', 'se consideran')}`
+        : ''}
+      .
     </p>
     {data.situations.length ? (
       <ol className={styles.list}>
@@ -218,7 +223,8 @@ const NarrativeCard = ({ narratives }: { narratives: Report['narratives'] }) => 
     {narratives.total ? (
       <>
         <p>
-          {narratives.total} publicación(es) con fecha · {narratives.recent} en los últimos 7 días.
+          {count(narratives.total, 'publicación', 'publicaciones')} con fecha · {narratives.recent}{' '}
+          en los últimos 7 días.
         </p>
         {narratives.tone ? (
           <p className={styles.summary}>
@@ -232,7 +238,7 @@ const NarrativeCard = ({ narratives }: { narratives: Report['narratives'] }) => 
             <ul>
               {narratives.topics.map((topic) => (
                 <li key={topic.name}>
-                  {topic.name}: {topic.count} publicación(es)
+                  {topic.name}: {count(topic.count, 'publicación', 'publicaciones')}
                   {topic.recent ? `, ${topic.recent} esta semana` : ''}
                 </li>
               ))}

@@ -7,6 +7,7 @@ import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from './IrsaStatus.tsx';
 import { dashboardQuery, irsaQuery, moduleRecordsQuery } from './api.ts';
 import { criticalAlerts, recentEvents } from './model.ts';
 import styles from './TodayView.module.css';
+import { formatIndex, formatLongDay, formatShortDay, limaDay } from '../../shared/lib/format.ts';
 
 const TILES = [
   ['alertas_activas', 'Alertas activas', '/alertas'],
@@ -22,16 +23,9 @@ const SHORTCUTS = [
   ['/fuentes', 'Consultar evidencia'],
 ] as const;
 
-const today = () =>
-  new Date().toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long' });
+const today = () => formatLongDay();
 
-const when = (date: string) =>
-  /^\d{4}-\d{2}-\d{2}/.test(date)
-    ? new Date(`${date.slice(0, 10)}T12:00:00`).toLocaleDateString('es-PE', {
-        day: 'numeric',
-        month: 'short',
-      })
-    : 'Sin fecha';
+const when = (date: string) => (limaDay(date) ? formatShortDay(date) : 'Sin fecha');
 
 /**
  * Phone home (odd/archive/mobile-first-redesign.md T9): what matters today in one screen —
@@ -64,7 +58,7 @@ export const TodayView = ({
                 '/irsa',
                 <>
                   Riesgo IRSA{' '}
-                  {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}
+                  {hasNoEvidence(irsa.data) ? null : <strong>{formatIndex(irsa.data.irsa)}</strong>}
                 </>,
               )}{' '}
               <IrsaStatus scope={scope} irsa={irsa.data} />

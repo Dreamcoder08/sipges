@@ -26,6 +26,21 @@ describe('demandProgress', () => {
 });
 
 describe('RecordCell', () => {
+  // functional-10 T1 (F1): lists show the shared date style, never the raw ISO day.
+  it('shows a date field as the Lima day in Spanish and keeps the stored day for machines', () => {
+    const { container } = render(
+      <RecordCell
+        module="demandas"
+        row={{ _id: 'D-5', Fecha_Registro: '2026-11-14' }}
+        field={field('Fecha_Registro')}
+      />,
+    );
+    const time = container.querySelector('time');
+    expect(time).toHaveAttribute('datetime', '2026-11-14');
+    expect(container).toHaveTextContent('14 nov. 2026');
+    expect(container).not.toHaveTextContent('2026-11-14');
+  });
+
   it('shows the requests table columns in the tracking order', () => {
     expect(demandas.columns).toEqual([
       'Fecha_Registro',
@@ -47,7 +62,7 @@ describe('RecordCell', () => {
     );
     const bar = screen.getByRole('progressbar', { name: 'Avance' });
     expect(bar).toHaveAttribute('aria-valuenow', '25');
-    expect(screen.getByText('25%')).toBeInTheDocument();
+    expect(screen.getByText('25 %')).toBeInTheDocument();
   });
 
   it('shows a dash when the status has no known progress', () => {

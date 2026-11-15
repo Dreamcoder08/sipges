@@ -2,6 +2,8 @@ import { type CSSProperties, useEffect, useId, useRef } from 'react';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { LAYER_SLUGS, type Layer, type MapPoint, type Unplaced } from './territorial-model.ts';
 import styles from './TerritorialMap.module.css';
+import { count } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /** The record open in the Registros sheet (`?ficha=<type>.<id>`), where it can be edited. */
 export const recordSheetHref = ({ layer, id }: { layer: Layer; id: string }) => {
@@ -56,7 +58,8 @@ export const MapList = ({
             <span className={styles.rowText}>
               <span>{point.title}</span>
               <small>
-                {point.layer} · {point.date || 'Sin fecha'} · {point.locality}
+                {point.layer} · <DateText value={point.date} fallback="Sin fecha" /> ·{' '}
+                {point.locality}
               </small>
             </span>
           </button>
@@ -78,7 +81,7 @@ export const UnplacedGroup = ({
   if (!records.length) return null;
   return (
     <details className={styles.unplaced} aria-labelledby={id}>
-      <summary id={id}>{records.length} registro(s) sin ubicación</summary>
+      <summary id={id}>{count(records.length, 'registro', 'registros')} sin ubicación</summary>
       <p className={styles.note}>
         {sechura
           ? 'No aparecen en el mapa: no tienen coordenadas ni una localidad de Sechura en «Territorio». Ábralos en Registros y use «Editar» para completar su territorio.'

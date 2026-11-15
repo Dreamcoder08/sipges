@@ -70,7 +70,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(row).toBeVisible();
       await expect(page.getByRole('region', { name: 'Tabla de eventos' })).toHaveCount(0);
       await expect(row.locator('[data-line="meta"]')).toContainText(
-        'Eventos · Vice, Sechura · 2026-10-14',
+        'Eventos · Vice, Sechura · 14 oct. 2026',
       );
       await expect(row.locator('[data-verification="B"]')).toBeVisible();
       await expect(row.getByText('En revisión')).toBeVisible();

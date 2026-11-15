@@ -17,6 +17,7 @@ import {
 
 import type { RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { formatNumber } from '../../shared/lib/format.ts';
 
 const errorText = (error: unknown) =>
   isApiError(error)
@@ -91,7 +92,7 @@ export const EvidencePanel = ({
                   <div>
                     <strong>{item.original_name}</strong>
                     <small>
-                      {(item.size_bytes / 1024).toFixed(1)} KB · {item.document_type} ·{' '}
+                      {formatNumber(item.size_bytes / 1024, 1)} KB · {item.document_type} ·{' '}
                       {item.verification}
                       {item.author ? ` · ${item.author}` : ''} · {item.created_at.slice(0, 10)}
                     </small>

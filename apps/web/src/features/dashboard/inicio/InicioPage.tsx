@@ -10,6 +10,8 @@ import {
 } from 'react';
 import { territorialAlertsQuery } from '../../../shared/api/territorial-alerts.ts';
 import { InternalLink } from '../../../shared/lib/navigation.tsx';
+import { formatIndex, formatLongDay } from '../../../shared/lib/format.ts';
+import { DateText } from '../../../shared/ui/DateText.tsx';
 import { useOnline } from '../../../shared/lib/online.ts';
 import { useProjectSettings } from '../../../shared/lib/project-settings.tsx';
 import { useScrollHints } from '../../../shared/lib/scroll-hints.ts';
@@ -31,13 +33,7 @@ const SUGGESTIONS = [
   '¿Qué alertas esperan aprobación?',
 ] as const;
 
-const today = () =>
-  new Date().toLocaleDateString('es-PE', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+const today = () => formatLongDay();
 
 const Card = ({
   title,
@@ -290,7 +286,9 @@ export const InicioPage = ({
                     <li key={event.id}>
                       <span className={styles.text}>
                         <b>{event.title}</b>
-                        <small>Evento · {event.date.slice(0, 10)}</small>
+                        <small>
+                          Evento · <DateText value={event.date} />
+                        </small>
                       </span>
                     </li>
                   ))}
@@ -303,8 +301,8 @@ export const InicioPage = ({
           {irsa.data ? (
             <Card title="Riesgo del territorio" to="/analisis" action="Abrir IRSA">
               <p className={styles.risk}>
-                IRSA{' '}
-                {hasNoEvidence(irsa.data) ? null : <strong>{irsa.data.irsa.toFixed(1)}</strong>}{' '}
+                IRSA actual{' '}
+                {hasNoEvidence(irsa.data) ? null : <strong>{formatIndex(irsa.data.irsa)}</strong>}{' '}
                 {/* The provisional caveat sits once, in the status line above. */}
                 <IrsaStatus scope={scope} irsa={irsa.data} caveat={false} />
               </p>

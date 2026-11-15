@@ -9,6 +9,7 @@ import { Field } from '../../shared/ui/Field.tsx';
 import { displayValue, extraFields, initialExtras, initialValues } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { formatPercent } from '../../shared/lib/format.ts';
 
 export const RecordEditor = ({
   module,
@@ -183,7 +184,7 @@ export const RecordEditor = ({
             <>
               <p>
                 {suggestion.dimension} · {suggestion.dimension_label} · confianza orientativa{' '}
-                {suggestion.confidence.toFixed(0)}%
+                {formatPercent(suggestion.confidence, 0)}
               </p>
               <p>{suggestion.nota}</p>
               <p>

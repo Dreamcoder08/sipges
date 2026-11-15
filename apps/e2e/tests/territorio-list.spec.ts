@@ -65,7 +65,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     );
     expect(overflow).toBeLessThanOrEqual(0);
 
-    const group = page.getByRole('group', { name: /registro\(s\) sin ubicación/ });
+    const group = page.getByRole('group', { name: /registros? sin ubicación/ });
     await group.locator('summary').click();
     const action = group.getByRole('link', { name: new RegExp(unplaced) });
     await expect(action).toHaveAttribute(

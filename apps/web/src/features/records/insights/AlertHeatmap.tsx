@@ -7,6 +7,7 @@ import { Button } from '../../../shared/ui/Button.tsx';
 import { alertHeatmap, LEVEL_ORDER, MISSING_TERRITORY } from './alert-heatmap.ts';
 import { LEVEL_LABEL } from './alert-overview.ts';
 import styles from './Insights.module.css';
+import { count } from '../../../shared/lib/plural.ts';
 
 export const AlertHeatmap = ({
   rows,
@@ -120,7 +121,7 @@ export const AlertHeatmap = ({
                                 {cell.rows.length ? (
                                   <>
                                     {' '}
-                                    <span>{cell.rows.length} alerta(s)</span>
+                                    <span>{count(cell.rows.length, 'alerta', 'alertas')}</span>
                                   </>
                                 ) : null}
                                 {cell.unknown ? (
@@ -157,7 +158,7 @@ export const AlertHeatmap = ({
               <p className={styles.explanation}>
                 Territorio tomado de la alerta o de una referencia exacta a su evento de origen.{' '}
                 {missing
-                  ? `${missing} alerta(s) requieren completar o verificar su territorio. `
+                  ? `${count(missing, 'alerta requiere', 'alertas requieren')} completar o verificar su territorio. `
                   : ''}
                 Las alertas cerradas y descartadas siguen disponibles en «Alertas territoriales».
               </p>

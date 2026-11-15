@@ -7,6 +7,7 @@ import { GEOCATMIN_VIEWER } from './MiningCadastreLayer.tsx';
 import type { MapPoint } from './territorial-model.ts';
 import { EVIDENCE_LABELS } from './evidence.ts';
 import styles from './TerritorialMap.module.css';
+import { count, plural } from '../../shared/lib/plural.ts';
 
 /** Record modules with a 360° view; other related modules are listed without a link. */
 const LINKABLE = new Set(['eventos', 'demandas', 'actores', 'narrativas']);
@@ -198,8 +199,9 @@ export const ConcessionCard = ({
           )}
           {relation.data.unlocated.length ? (
             <p className={styles.note}>
-              {relation.data.unlocated.length} registro(s) sin coordenadas WGS84 no se pueden
-              vincular geométricamente; la localidad escrita no basta.
+              {count(relation.data.unlocated.length, 'registro', 'registros')} sin coordenadas WGS84{' '}
+              {plural(relation.data.unlocated.length, 'no se puede', 'no se pueden')} vincular
+              geométricamente; la localidad escrita no basta.
             </p>
           ) : null}
           {history.length ? (

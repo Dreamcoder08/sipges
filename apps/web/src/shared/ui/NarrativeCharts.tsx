@@ -3,6 +3,7 @@ import { type TrendWindow, narrativeTrend } from '../lib/narrative-trend.ts';
 import { BarList } from './BarList.tsx';
 import { MultiLineChart } from './charts/Charts.tsx';
 import styles from './NarrativeCharts.module.css';
+import { count, plural } from '../lib/plural.ts';
 
 const DAY = new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 const dayLabel = (day: string) => DAY.format(new Date(`${day}T12:00:00Z`)).replace('.', '');
@@ -35,10 +36,10 @@ export const NarrativeCharts = ({
       ? 'La tendencia necesita narrativas con fecha en al menos dos días distintos; mientras tanto se muestra el total por categoría.'
       : '',
     trend.undated
-      ? `${trend.undated} narrativa(s) sin fecha utilizable no se grafican en la tendencia.`
+      ? `${count(trend.undated, 'narrativa', 'narrativas')} sin fecha utilizable no ${plural(trend.undated, 'se grafica', 'se grafican')} en la tendencia.`
       : '',
     trend.fromUpdate
-      ? `${trend.fromUpdate} narrativa(s) sin fecha propia se ubican en el día de su último cambio en SIPGES.`
+      ? `${count(trend.fromUpdate, 'narrativa', 'narrativas')} sin fecha propia ${plural(trend.fromUpdate, 'se ubica', 'se ubican')} en el día de su último cambio en SIPGES.`
       : '',
   ].filter(Boolean);
   return (

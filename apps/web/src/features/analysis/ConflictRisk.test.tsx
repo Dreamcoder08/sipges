@@ -197,8 +197,40 @@ describe('ConflictRiskPage', () => {
     });
     mount();
     expect(await screen.findByText('45 %')).toBeInTheDocument();
-    expect(screen.getByText(/Brier 0.12/)).toBeInTheDocument();
+    expect(screen.getByText(/Brier 0,120/)).toBeInTheDocument();
     expect(screen.getByText(/170 muestras/)).toBeInTheDocument();
+  });
+
+  // functional-10 T1 (F1), T2 (F4, F6): the IRSA factor names the saved cut it comes from.
+  it('labels the IRSA factor as the last saved cut and writes numbers and dates in one style', async () => {
+    const top = unit('Pampa Alta', 'locality', 3.1, 'alta');
+    respond({
+      ...thinReport,
+      localities: [
+        {
+          ...top,
+          factors: [
+            ...top.factors,
+            {
+              id: 'irsa',
+              label: 'IRSA del proyecto',
+              count: 2.8,
+              value: 0.028,
+              contribution: 0.0224,
+              records: [],
+            },
+          ],
+        },
+      ],
+    });
+    mount();
+    const card = await screen.findByRole('article');
+    expect(card).toHaveTextContent('IRSA del último corte guardado: 2,8 (aporta 0,02)');
+    expect(card).not.toHaveTextContent('IRSA del proyecto');
+    expect(card).toHaveTextContent('Alertas (últimos 90 días, por nivel): 2 (aporta 0,99)');
+    expect(within(card).getByRole('link', { name: /Bloqueo de vía/ })).toHaveTextContent(
+      'Bloqueo de vía · 30 oct. 2026',
+    );
   });
 
   it('says «Sin datos suficientes» instead of an empty ranking', async () => {

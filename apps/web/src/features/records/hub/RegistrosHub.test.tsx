@@ -116,7 +116,7 @@ it('lists every type together under Todos as two-line rows, each one button', as
   expect(within(row).getByText('Bloqueo del muelle')).toHaveAttribute('data-line', 'title');
   expect(within(row).getByText('Validado')).toHaveAttribute('data-tone', 'positive');
   expect(row.querySelector('[data-line="meta"]')).toHaveTextContent(
-    /^Eventos · Bayóvar · 2026-10-28\s*Verificación B$/,
+    /^Eventos · Bayóvar · 28 oct\. 2026\s*Verificación B$/,
   );
   expect(within(row).getByText('B', { selector: '[data-verification]' })).toBeInTheDocument();
 });
@@ -538,7 +538,7 @@ describe('a type tab below 1024 px', () => {
     expect(within(row).getByText('Bloqueo del muelle')).toHaveAttribute('data-line', 'title');
     expect(within(row).getByText('Validado')).toHaveAttribute('data-tone', 'positive');
     expect(row.querySelector('[data-line="meta"]')).toHaveTextContent(
-      /^Eventos · Bayóvar · 2026-10-28\s*Verificación B$/,
+      /^Eventos · Bayóvar · 28 oct\. 2026\s*Verificación B$/,
     );
     // The type screen keeps its own actions and search above the rows.
     expect(screen.getByRole('button', { name: 'Nuevo registro' })).toBeInTheDocument();

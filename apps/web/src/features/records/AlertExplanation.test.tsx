@@ -13,7 +13,7 @@ it('shows why a SIPGES alert was raised, with links to its records', () => {
         Origen: 'SIPGES',
         Situacion: 'tema:empleo local',
         Explicacion:
-          '3 registros relacionados con el tema «Empleo local» en 5 día(s).\nParticipan Comunidad Norte.',
+          '3 registros relacionados con el tema «Empleo local» en 5 días.\nParticipan Comunidad Norte.',
         Registros_Relacionados: ['Demandas:D-1', 'Eventos:EV-1'],
       }}
     />,

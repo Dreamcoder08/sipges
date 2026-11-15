@@ -73,7 +73,7 @@ it('shows each request with its priority, derived progress and status in the tab
     'aria-valuenow',
     '50',
   );
-  expect(within(second as HTMLElement).getByText('50%')).toBeInTheDocument();
+  expect(within(second as HTMLElement).getByText('50 %')).toBeInTheDocument();
   expect(within(second as HTMLElement).getByText('En diálogo')).toHaveAttribute(
     'data-tone',
     'info',

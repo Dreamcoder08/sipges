@@ -13,6 +13,8 @@ import { AlertHeatmap } from './AlertHeatmap.tsx';
 import { alertTerritory, LEVEL_ORDER, MISSING_TERRITORY, recordedLevel } from './alert-heatmap.ts';
 import { alertDay, alertOverview, LEVEL_LABEL, type OverviewPeriod } from './alert-overview.ts';
 import styles from './AlertOverview.module.css';
+import { count, plural } from '../../../shared/lib/plural.ts';
+import { DateText } from '../../../shared/ui/DateText.tsx';
 
 const PERIODS: readonly [OverviewPeriod, string][] = [
   [6, '6 meses'],
@@ -164,7 +166,8 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                     />
                     {data.undated ? (
                       <p className={styles.note}>
-                        {data.undated} alerta(s) sin fecha no se grafican.
+                        {count(data.undated, 'alerta', 'alertas')} sin fecha no{' '}
+                        {plural(data.undated, 'se grafica', 'se grafican')}.
                       </p>
                     ) : null}
                   </section>
@@ -192,7 +195,9 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                             >
                               {c.level ? levelName(c.level, LEVEL_LABEL[c.level]) : 'Sin nivel'}
                             </span>
-                            <span className={styles.count}>{c.count} alerta(s)</span>
+                            <span className={styles.count}>
+                              {count(c.count, 'alerta', 'alertas')}
+                            </span>
                           </li>
                         ))}
                       </ol>
@@ -203,8 +208,9 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                     )}
                     {data.missingTerritory ? (
                       <p className={styles.note}>
-                        {data.missingTerritory} alerta(s) activa(s) sin comunidad registrada:
-                        complete «Comunidad / territorio» en su ficha para ubicarlas.
+                        {count(data.missingTerritory, 'alerta activa', 'alertas activas')} sin
+                        comunidad registrada: complete «Comunidad / territorio» en su ficha para{' '}
+                        {plural(data.missingTerritory, 'ubicarla', 'ubicarlas')}.
                       </p>
                     ) : null}
                   </section>
@@ -241,7 +247,9 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                           const territory = alertTerritory(row, eventRows);
                           return (
                             <tr key={row._id}>
-                              <td data-label="Fecha">{alertDay(row) ?? 'Sin fecha'}</td>
+                              <td data-label="Fecha">
+                                <DateText value={alertDay(row)} fallback="Sin fecha" />
+                              </td>
                               <td data-label="Dimensión">
                                 {dimension
                                   ? `${dimension} - ${DIMENSION_NAMES[dimension]}`

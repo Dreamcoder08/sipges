@@ -4,6 +4,7 @@ import { objectHref } from '../../../shared/lib/navigation.tsx';
 import type { Level } from '../../../shared/lib/text.ts';
 import { hasNoEvidence } from '../IrsaStatus.tsx';
 import type { TodayItem } from '../model.ts';
+import { formatShortDay, limaDay } from '../../../shared/lib/format.ts';
 
 /** One row of «Necesita tu atención»: what it is, a line of context and the one next step. */
 export type AttentionItem = {
@@ -19,13 +20,7 @@ export type AttentionItem = {
 const AWAITING = 'Pendiente de verificación';
 const MAX_ROWS = 5;
 
-const day = (date: string) =>
-  /^\d{4}-\d{2}-\d{2}/.test(date)
-    ? new Date(`${date.slice(0, 10)}T12:00:00`).toLocaleDateString('es-PE', {
-        day: 'numeric',
-        month: 'short',
-      })
-    : null;
+const day = (date: string) => (limaDay(date) ? formatShortDay(date) : null);
 
 /**
  * Inicio's attention list from data other screens already load: digital alerts awaiting

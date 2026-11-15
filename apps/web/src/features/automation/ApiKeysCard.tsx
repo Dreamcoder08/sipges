@@ -11,11 +11,11 @@ import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { apiKeysQuery } from './api.ts';
 import styles from './AutomationPage.module.css';
+import { formatDateTime } from '../../shared/lib/format.ts';
 
 const Ok = z.object({ ok: z.literal(true) });
 
-const date = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const date = (iso: string | null) => (iso ? formatDateTime(iso) : '—');
 
 /** Machine access for AI agents (MCP) and inbound integrations (ADR 0014 §6-7). */
 export const ApiKeysCard = ({ scope }: { scope: string }) => {

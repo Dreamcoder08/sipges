@@ -15,6 +15,7 @@ import {
 } from './summary.ts';
 import { TypeChip } from './TypeChip.tsx';
 import { ValidationChip, VerificationChip } from './VerificationChip.tsx';
+import { DateText } from '../../../shared/ui/DateText.tsx';
 
 const matches = (row: RecordSummary, query: string) =>
   !query ||
@@ -237,7 +238,11 @@ export const TodosList = ({
                     {row.territory || <span className={styles.muted}>—</span>}
                   </td>
                   <td className={styles.colDate}>
-                    {row.date || <span className={styles.muted}>—</span>}
+                    {row.date ? (
+                      <DateText value={row.date} />
+                    ) : (
+                      <span className={styles.muted}>—</span>
+                    )}
                   </td>
                   <td>
                     <VerificationChip letter={row.verification} />

@@ -63,6 +63,7 @@ import { TerritorialTimeline } from './TerritorialTimeline.tsx';
 import { type Basemap, TileLayer } from './TileLayer.tsx';
 import { useMapView } from './useMapView.ts';
 import styles from './TerritorialMap.module.css';
+import { count } from '../../shared/lib/plural.ts';
 
 // The WebGL engine (MapLibre GL JS + deck.gl) is a separate chunk, loaded only for this map.
 const GeoCanvas = lazy(() => import('./engine/GeoCanvas.tsx'));
@@ -608,14 +609,15 @@ const TerritorialWorkspace = ({
             ? 'Consultando el catastro minero de INGEMMET…'
             : cadastre.error
               ? null
-              : `${concessions.length} concesión(es) de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
+              : `${count(concessions.length, 'concesión', 'concesiones')} de INGEMMET en esta vista${cadastre.data?.truncated ? '; se muestran las primeras 200, acerque el mapa para ver el resto' : ''}. Pulse una para ver su ficha.`;
 
   return (
     <div className={styles.page}>
       <details className={styles.filters} key={String(compact)} open={!compact || undefined}>
         <summary>
-          Capas y filtros{activeFilters ? ` (${activeFilters} activos)` : ''} · {visible.length}{' '}
-          registro(s) en el mapa
+          Capas y filtros
+          {activeFilters ? ` (${count(activeFilters, 'activo', 'activos')})` : ''} ·{' '}
+          {count(visible.length, 'registro', 'registros')} en el mapa
         </summary>
         <div className={styles.toolbar}>
           {select('layer', 'Capa', [['', 'Todas'], ...LAYERS.map((l): [string, string] => [l, l])])}

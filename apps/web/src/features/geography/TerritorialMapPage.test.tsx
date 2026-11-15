@@ -540,7 +540,7 @@ it('groups records without a place under «Sin ubicación» with a way to comple
     ),
   );
   renderPage();
-  const group = await screen.findByRole('group', { name: '1 registro(s) sin ubicación' });
+  const group = await screen.findByRole('group', { name: '1 registro sin ubicación' });
   expect(within(group).getByText(/^No aparecen en el mapa.*use «Editar»/)).toBeInTheDocument();
   expect(within(group).getByRole('link', { name: /Reunión sin lugar/ })).toHaveAttribute(
     'href',

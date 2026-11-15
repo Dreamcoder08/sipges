@@ -12,6 +12,7 @@ import { IrsaNoDataHint, IrsaStatus, hasNoEvidence } from './IrsaStatus.tsx';
 import { alertsByLevel, eventsByDimension, eventsByMonth } from './model.ts';
 import { TodayView } from './TodayView.tsx';
 import styles from './DashboardPage.module.css';
+import { formatIndex, formatNumber } from '../../shared/lib/format.ts';
 
 /** Counter, label, module it comes from and the rule it applies (shown to the reader). */
 const KPIS = [
@@ -159,7 +160,7 @@ export const DashboardPage = ({
             {(data) => (
               <>
                 <p className={styles.irsa}>
-                  {hasNoEvidence(data) ? null : <strong>{data.irsa.toFixed(1)}</strong>}{' '}
+                  {hasNoEvidence(data) ? null : <strong>{formatIndex(data.irsa)}</strong>}{' '}
                   <IrsaStatus scope={scope} irsa={data} />
                 </p>
                 <IrsaNoDataHint irsa={data} />
@@ -177,7 +178,7 @@ export const DashboardPage = ({
                   {DIMENSIONS.map((code) => (
                     <li key={code}>
                       <DimensionBadge code={code} />
-                      <span>{(data.scores[code] ?? 0).toFixed(0)}</span>
+                      <span>{formatNumber(data.scores[code] ?? 0)}</span>
                     </li>
                   ))}
                 </ul>
@@ -222,7 +223,7 @@ export const DashboardPage = ({
                         <b>{driver.label}</b>
                         <small>{driver.dimension_label}</small>
                       </span>
-                      <span className={styles.points}>{driver.points.toFixed(0)}</span>
+                      <span className={styles.points}>{formatNumber(driver.points)}</span>
                     </li>
                   ))}
                 </ol>

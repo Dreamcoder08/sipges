@@ -9,6 +9,8 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { Field } from '../../shared/ui/Field.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import styles from './AuditPage.module.css';
+import { formatDateTime } from '../../shared/lib/format.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /** Server audit is scoped, append-only and restricted to administrators. */
 export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
@@ -61,9 +63,14 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
         <QueryState query={query} label="auditoría">
           {(entries) => {
             const filtered = entries.filter((entry) =>
-              [entry.module, entry.record_id, entry.action, entry.detail, entry.ts].some((value) =>
-                value?.toLocaleLowerCase('es').includes(needle),
-              ),
+              [
+                entry.module,
+                entry.record_id,
+                entry.action,
+                entry.detail,
+                entry.ts,
+                formatDateTime(entry.ts),
+              ].some((value) => value?.toLocaleLowerCase('es').includes(needle)),
             );
             return (
               <>
@@ -76,7 +83,7 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
                       <caption>Registro de operaciones del proyecto activo</caption>
                       <thead>
                         <tr>
-                          <th>Fecha UTC</th>
+                          <th>Fecha y hora (Lima)</th>
                           <th>Módulo</th>
                           <th>Registro</th>
                           <th>Acción</th>
@@ -87,7 +94,7 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
                         {filtered.map((entry) => (
                           <tr key={entry.id}>
                             <td>
-                              <time dateTime={entry.ts}>{entry.ts}</time>
+                              <DateText value={entry.ts} time />
                             </td>
                             <td>{entry.module}</td>
                             <td>{entry.record_id ?? '—'}</td>

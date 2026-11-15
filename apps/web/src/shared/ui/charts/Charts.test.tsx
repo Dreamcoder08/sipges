@@ -1,6 +1,6 @@
 import { act, render } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { ColumnChart } from './Charts.tsx';
+import { ColumnChart, LineChart, RadarChart } from './Charts.tsx';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -44,4 +44,35 @@ it('updates chart geometry after the observer delivery and cancels a pending fra
   deliver(450);
   unmount();
   expect(frames.size).toBe(0);
+});
+
+// functional-10 T2 (F4): chart values follow the app's number rule, decimal comma and one decimal.
+it('writes chart values with a decimal comma and one decimal, counts without decimals', () => {
+  const radar = render(
+    <RadarChart
+      caption="Puntaje por dimensión"
+      data={[
+        { key: 'G', label: 'G', value: 7.2 },
+        { key: 'I', label: 'I', value: 33.333333 },
+        { key: 'A', label: 'A', value: 0 },
+      ]}
+    />,
+  );
+  const cells = [...radar.container.querySelectorAll('td')].map((td) => td.textContent);
+  expect(cells).toEqual(['7,2', '33,3', '0']);
+  radar.unmount();
+  const line = render(
+    <LineChart
+      caption="Cortes"
+      empty="Sin cortes"
+      data={[
+        { key: 'a', label: '13 nov.', value: 1 },
+        { key: 'b', label: '14 nov.', value: 2.78 },
+      ]}
+    />,
+  );
+  expect([...line.container.querySelectorAll('td')].map((td) => td.textContent)).toEqual([
+    '1',
+    '2,8',
+  ]);
 });
