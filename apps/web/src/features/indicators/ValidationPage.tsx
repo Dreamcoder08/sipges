@@ -98,7 +98,9 @@ const ValidationWorkspace = ({ scope, projectLabel }: FeatureContext) => {
                 aria-label="Plantilla de expertos"
               >
                 <table>
-                  <caption>Indicadores pendientes de revisión</caption>
+                  <caption>
+                    <span className={styles.captionText}>Indicadores pendientes de revisión</span>
+                  </caption>
                   <thead>
                     <tr>
                       <th scope="col">Código / dimensión</th>

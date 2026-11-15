@@ -30,8 +30,9 @@
   padding: var(--space-3);
   font-weight: 600;
 }
-/* A table wider than a phone scrolls inside its region; the caption wraps to the visible width
-   and stays in view while the columns scroll, instead of being cut at the region's edge. */
+/* A table wider than a phone scrolls inside its region; the caption text (a span in every
+   Indicators table) wraps to the visible width and stays in view while the columns scroll,
+   instead of being cut at the region's edge. */
 .captionText {
   display: block;
   position: sticky;
