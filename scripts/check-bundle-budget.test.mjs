@@ -52,6 +52,18 @@ test('measure counts the index.html entry and every emitted script and style, no
   assert.deepEqual(Object.keys(totals).sort(), Object.keys(BUDGETS).sort());
 });
 
+test('the brotli and gzip variants the build writes beside each asset are not measured (functional-10 T9)', (t) => {
+  const plain = measure(syntheticDist(t));
+  const withVariants = syntheticDist(t);
+  for (const name of ['index-a.js', 'index-b.css', 'lazy-c.js'])
+    for (const suffix of ['.br', '.gz'])
+      writeFileSync(path.join(withVariants, 'assets', name + suffix), randomBytes(50_000));
+  const measured = measure(withVariants);
+  assert.deepEqual(measured.totals, plain.totals);
+  assert.deepEqual(measured.raw, plain.raw);
+  assert.deepEqual([...measured.files.keys()].sort(), ['index-a.js', 'index-b.css', 'lazy-c.js']);
+});
+
 test('an entry index.html that names no built asset, or a missing one, fails instead of measuring 0', (t) => {
   const noEntry = syntheticDist(t);
   writeFileSync(
