@@ -164,14 +164,14 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   e2e or `sipgesctl verify` step. Route: worker + independent verifier. Risk: item 2. Commit: #466 3b05c0dc, #467 6b4a3a62
 - [x] T11 — S1, F28 and S3: the same walk-through at 360 px and on WebKit; the three Indicators captions;
   the Windows interrupt drill step. Route: worker. Commit: #468 cc27b30e
-- [ ] T12 — S1: release. `visit-rc13` on the commit that holds T1–T11 with CI and the Windows drill
-  green, roadmap log entry, gallery regenerated and every image reviewed. Route: inline. Commit: —
+- [x] T12 — S1: release. `visit-rc13` on the commit that holds T1–T11 with CI and the Windows drill
+  green, roadmap log entry, gallery regenerated and every image reviewed. Route: inline. Commit: tags visit-rc13 (cc27b30e) and visit-rc14 (b51f2e7d); #469
 
-- [ ] T13 — S1, F29–F31: close what the rc13 gallery found. Dates and numbers through the shared helpers
+- [x] T13 — S1, F29–F31: close what the rc13 gallery found. Dates and numbers through the shared helpers
   in the record sheet, Seguimiento, Fuentes oficiales and the IRSA weight and band inputs (decimal comma,
   inputs still accept what they accept today); Auditoría readable at 360 and 1440 px; the F31 list; the
   capture helper regex. Each with a failing test first; then regenerate the gallery and review it again.
-  Route: worker. Commit: —
+  Route: worker. Commit: #470 b51f2e7d
 
 Owner decisions these tasks do not take: the cloud database plan (F28), grouping map circles into one
 marker with a count (F28), and the default project name of T6 if «Proyecto 1» is not wanted.
@@ -226,3 +226,14 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   (`.worktrees/rc13-gallery/.data/rc13-screens/`, 122 images) counts 66 ok / 41 duda / 15 defecto against rc12's
   64 / 26 / 0; none of the 15 is a regression (the 9 on rc12 images were already there, unmarked). F29–F31 and
   T13 added; T12 stays open until the T13 gallery is clean.
+- L8 — T13 closed (#470, b51f2e7d): every F29–F31 item, plus two layout regressions CI's wider fonts exposed
+  (implicit `auto` grid tracks on Inicio and Auditoría; now `minmax(0, 1fr)`) and a keyboard-unreachable
+  Auditoría scroll region. A signed-out visit to an unknown address now goes to sign-in first.
+- L9 — T12 closed. `visit-rc14` on b51f2e7d, CI and the Windows drill green on that commit. Final gallery
+  (`.worktrees/rc14-gallery/.data/rc14-screens/`, 122 images, every one opened and classified again): 93 ok /
+  29 duda / 0 defecto (rc13 66/41/15, rc12 64/26/0); all 15 rc13 defects fixed, no regression. The 29 dudas, by
+  cause: identical alerts that cannot be told apart on Panel and the phone home (5), stacked map circles (12,
+  owner decision F28), the Territorio list's fifth row and full-page timeline dots / two «Alertas abiertas»
+  counts (5), tablet Eventos with dimension letters (2), artefact captures (4: actor-map labels, heat-map scroll
+  hint, a painted top bar in two full-page captures), Configuración dark active segment and a gap (2),
+  Auditoría at 1440 px without a visible title showing «SIPGES/PRJ-SECHURA».
