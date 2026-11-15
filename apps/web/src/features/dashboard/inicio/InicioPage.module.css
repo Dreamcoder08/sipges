@@ -92,6 +92,9 @@
 
 .rowText {
   display: grid;
+  /* An implicit auto track grows to its widest child's min-content: the one-line level pill below
+     then pushed the row past a 360 px phone with wider fonts (CI, functional-10 T13). */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
   min-width: 0;
 }

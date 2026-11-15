@@ -86,7 +86,14 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
                   {count(entries.length, 'registro cargado', 'registros cargados')}.
                 </p>
                 {filtered.length ? (
-                  <div className={styles.scroll}>
+                  // A long unspaced detail can make the table wider than its card: the scroll box
+                  // is then reachable and named for the keyboard (as in Registros).
+                  <div
+                    className={styles.scroll}
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Tabla de auditoría"
+                  >
                     <table>
                       <caption>Registro de operaciones del proyecto activo</caption>
                       <thead>

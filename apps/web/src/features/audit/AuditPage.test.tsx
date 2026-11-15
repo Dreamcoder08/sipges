@@ -180,3 +180,28 @@ it('labels every cell with its column for the phone cards and counts one operati
   expect(cells.map((cell) => cell.getAttribute('data-label'))).toEqual(headers);
   expect(screen.getByText(/de 1 registro/)).toHaveTextContent('1 de 1 registro cargado.');
 });
+
+// functional-10 T13 (CI follow-up): a long unspaced detail (a rule name) can make the table wider
+// than a tablet; its scroll box must then be reachable and named for the keyboard (axe
+// scrollable-region-focusable on WebKit at 930 px).
+it('wraps the table in a focusable, named region so a wide table scrolls from the keyboard', async () => {
+  server.use(
+    http.get('*/system/audit', () =>
+      HttpResponse.json([
+        {
+          id: 1,
+          ts: '2026-11-15T16:21:00Z',
+          module: 'Automatizaciones',
+          record_id: '7',
+          action: 'CREATE',
+          detail: 'Regla «ReglaSintéticaSinEspaciosQueNoCabeEnUnaTarjeta» activa',
+        },
+      ]),
+    ),
+  );
+  renderPage();
+  const table = await screen.findByRole('table', { name: /Registro de operaciones/ });
+  const region = screen.getByRole('region', { name: 'Tabla de auditoría' });
+  expect(region).toContainElement(table);
+  expect(region).toHaveAttribute('tabindex', '0');
+});

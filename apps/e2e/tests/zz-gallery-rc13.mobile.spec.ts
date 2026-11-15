@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { watchNetwork } from '../support/network.ts';
-import { splitPieces } from './split-pieces.ts';
+import { splitPieces, widerGlyphs } from './split-pieces.ts';
 
 /**
  * What the visit-rc13 gallery found at 360 px (odd/tasks/functional-10.md T13, F30–F31). Runs last
@@ -35,12 +35,29 @@ test('Auditoría at 360 px shows each operation as a card of whole words', async
     },
   });
   expect(created.status(), await created.text()).toBe(200);
+  // A paused rule created and deleted: two rows whose detail carries an unspaced name wider than a
+  // phone card (CI: a card ran 15 px past the screen), which must break inside the card.
+  const rule = await adminApi.post('/system/automations/rules', {
+    headers,
+    data: {
+      name: 'ReglaSintéticaSinEspaciosQueNoCabeEnUnaTarjeta',
+      enabled: false,
+      module: 'Eventos',
+      actions: ['CREATE'],
+      steps: [{ kind: 'notify', title: 'Aviso sintético' }],
+    },
+  });
+  expect(rule.status(), await rule.text()).toBe(200);
+  const { id } = (await rule.json()) as { id: number };
+  const removed = await adminApi.delete(`/system/automations/rules/${id}`, { headers });
+  expect(removed.status(), await removed.text()).toBe(200);
   const settled = await atPhone(page, admin);
   await page.goto('/auditoria');
   const table = page.getByRole('table', { name: /Registro de operaciones/ });
   const first = table.getByRole('row').nth(1);
   await expect(first).toBeVisible();
   await settled();
+  await widerGlyphs(page);
   // Every value beside its column name, inside the screen, no word split across lines.
   const firstDate = first.getByRole('cell').first();
   expect(await firstDate.evaluate((cell) => getComputedStyle(cell, '::before').content)).toContain(
@@ -88,6 +105,7 @@ test('Inicio at 360 px keeps each level pill on one line', async ({ page, admin,
   // The meaning arrives with the project settings («Rojo – Situación crítica…»): measure then.
   await expect(attention).toContainText('–');
   await settled();
+  await widerGlyphs(page);
   const pills = await attention.locator('li small > span:first-child').evaluateAll((spans) =>
     spans.map((span) => {
       const pill = span.firstElementChild ?? span;
@@ -101,6 +119,11 @@ test('Inicio at 360 px keeps each level pill on one line', async ({ page, admin,
     expect(pill.lines, pill.text ?? '').toBe(1);
     expect(pill.right, pill.text ?? '').toBeLessThanOrEqual(360);
   }
+  const widths = await page.evaluate(() => ({
+    page: document.documentElement.scrollWidth,
+    view: document.documentElement.clientWidth,
+  }));
+  expect(widths.page, 'Inicio wider than the screen').toBeLessThanOrEqual(widths.view);
 });
 
 test('IRSA at 360 px gives every table wider than the screen a scroll cue', async ({
