@@ -499,6 +499,35 @@ it('on phones a list row scrolls the page to the map only, not to the evolution'
   }
 });
 
+it.each([
+  ['with reduced motion, jumps to the map at once', true, 'auto'],
+  ['without reduced motion, glides to the map', false, 'smooth'],
+] as const)('on phones a list row %s', async (_, reduce, behavior) => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('prefers-reduced-motion') ? reduce : true,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+  const options: unknown[] = [];
+  Element.prototype.scrollIntoView = function (
+    this: Element,
+    arg?: boolean | ScrollIntoViewOptions,
+  ) {
+    options.push(arg);
+  };
+  try {
+    serve();
+    renderPage();
+    const list = await screen.findByRole('list', { name: 'Registros en el mapa' });
+    await userEvent.click(within(list).getByRole('button', { name: /Asamblea comunal sintética/ }));
+    expect(options).toEqual([{ block: 'start', behavior }]);
+  } finally {
+    // jsdom has no scrollIntoView of its own.
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  }
+});
+
 it('groups records without a place under «Sin ubicación» with a way to complete them', async () => {
   serve();
   server.use(

@@ -1,4 +1,5 @@
 import { type RefObject, useEffect } from 'react';
+import { REDUCED_MOTION_QUERY } from './motion.ts';
 
 /**
  * Edge fades of a horizontal scroller come from a scroll-driven animation in CSS
@@ -15,7 +16,7 @@ export const useScrollHints = (ref: RefObject<HTMLElement | null>) => {
     const animated =
       typeof CSS !== 'undefined' &&
       CSS.supports('animation-timeline', 'scroll()') &&
-      !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      !window.matchMedia?.(REDUCED_MOTION_QUERY).matches;
     const start = scroller.firstElementChild;
     const end = scroller.lastElementChild;
     if (animated || !start || !end) return;

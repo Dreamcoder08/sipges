@@ -6,6 +6,7 @@ import { saveBlob } from '../../shared/api/download.ts';
 import { moduleRecordsQuery } from '../../shared/api/module-records.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { COMPACT_QUERY, useMediaQuery } from '../../shared/lib/media.ts';
+import { scrollBehavior } from '../../shared/lib/motion.ts';
 import { useProjectSettings } from '../../shared/lib/project-settings.tsx';
 import {
   DIMENSIONS,
@@ -331,7 +332,8 @@ const TerritorialWorkspace = ({
   const focusPoint = (point: MapPoint) => {
     setSelection({ kind: 'point', id: point.id });
     // On phones the list sits below the map: bring the map back above the sheet.
-    if (compact) mapSection.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
+    if (compact)
+      mapSection.current?.scrollIntoView?.({ block: 'start', behavior: scrollBehavior() });
     map.focus(point.at, Math.max(map.zoom, 4));
     setFocus({ at: point.at, zoom: 13 });
   };
