@@ -30,15 +30,20 @@ const plain = (value: string) =>
     })
     .replace(/\s+/g, ' ')
     .trim();
+/**
+ * `baseUrl` replaces the official endpoint for a synthetic double only (SIPGES_DEFENSORIA_URL);
+ * every post must still link to the official host.
+ */
 export const createOfficialSourceGateway = (
-  deps: { fetch?: typeof fetch } = {},
+  deps: { fetch?: typeof fetch; baseUrl?: string | undefined } = {},
 ): OfficialSourceGateway => {
+  const base = deps.baseUrl ?? BASE;
   const read = async (params: URLSearchParams) => {
     params.set('_fields', 'id,link,date_gmt,title,excerpt');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await (deps.fetch ?? fetch)(`${BASE}?${params}`, {
+      const response = await (deps.fetch ?? fetch)(`${base}?${params}`, {
         redirect: 'error',
         signal: controller.signal,
         headers: { accept: 'application/json' },
