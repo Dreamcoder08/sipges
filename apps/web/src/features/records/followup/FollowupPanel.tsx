@@ -47,7 +47,7 @@ export const FollowupPanel = ({
       <div className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Agenda del proyecto</p>
-          <h4 id={id}>Seguimiento de {module === 'acciones' ? 'acciones' : 'compromisos'}</h4>
+          <h3 id={id}>Seguimiento de {module === 'acciones' ? 'acciones' : 'compromisos'}</h3>
         </div>
         <span>
           {rows.length} {rows.length === 1 ? 'registro' : 'registros'}

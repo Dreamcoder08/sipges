@@ -51,8 +51,9 @@
   align-items: center;
   justify-content: space-between;
 }
-.unitHeader h4 {
+.unitHeader h2 {
   margin: 0;
+  font-size: var(--text-body);
   overflow-wrap: anywhere;
 }
 .band {
@@ -82,6 +83,7 @@
 }
 .factorsTitle {
   margin: 0.25rem 0 0;
+  font-size: 0.83em;
 }
 .factors,
 .sources {

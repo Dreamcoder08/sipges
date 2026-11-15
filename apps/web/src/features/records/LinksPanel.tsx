@@ -328,7 +328,7 @@ export const LinksPanel = ({
   });
   return (
     <section className={styles.evidence} aria-labelledby={`links-${id}`}>
-      <h4 id={`links-${id}`}>Vínculos</h4>
+      <h3 id={`links-${id}`}>Vínculos</h3>
       {remove.error ? <Alert tone="error">{errorText(remove.error)}</Alert> : null}
       {catalog.error ? <Alert tone="error">{errorText(catalog.error)}</Alert> : null}
       <QueryState query={links} label="los vínculos">

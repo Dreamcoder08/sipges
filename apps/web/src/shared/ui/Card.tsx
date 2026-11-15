@@ -18,7 +18,7 @@ export const Card = ({
       <header className={styles.header}>
         <div>
           {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
-          {title ? <h3 className={styles.title}>{title}</h3> : null}
+          {title ? <h2 className={styles.title}>{title}</h2> : null}
         </div>
         {action}
       </header>

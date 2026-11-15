@@ -138,8 +138,8 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
   gap: var(--space-4);
 }
-.split h4,
-.stack h4 {
+.split h3,
+.stack h3 {
   margin: var(--space-4) 0 var(--space-2);
 }
 .notes {

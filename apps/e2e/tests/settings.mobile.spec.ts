@@ -23,7 +23,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await page.goto(`/configuracion?seccion=${section}`);
         const nav = page.getByRole('navigation', { name: 'Secciones de Configuración' });
         await expect(nav.getByRole('link', { name: link })).toHaveAttribute('aria-current', 'page');
-        await expect(page.getByRole('heading', { level: 3, name: heading })).toBeVisible();
+        await expect(page.getByRole('heading', { level: 2, name: heading })).toBeVisible();
         const widths = await page.evaluate(() => ({
           scroll: document.documentElement.scrollWidth,
           view: document.documentElement.clientWidth,

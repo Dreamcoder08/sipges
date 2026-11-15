@@ -17,7 +17,7 @@ export const AlertExplanation = ({ record }: { record: ModuleRecord }) => {
     : [];
   return (
     <section aria-labelledby={`why-${record._id}`} className={styles.evidence}>
-      <h4 id={`why-${record._id}`}>Por qué se generó esta alerta</h4>
+      <h3 id={`why-${record._id}`}>Por qué se generó esta alerta</h3>
       <p>Sugerida por SIPGES a partir de registros relacionados y confirmada por una persona.</p>
       <ul>
         {reasons.map((reason) => (

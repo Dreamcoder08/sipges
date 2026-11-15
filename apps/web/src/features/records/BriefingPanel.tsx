@@ -58,7 +58,7 @@ export const BriefingPanel = ({
   return (
     <section className={styles.evidence} aria-labelledby={`briefing-${id}`}>
       <div className={styles.graphHeader}>
-        <h4 id={`briefing-${id}`}>Informe del analista</h4>
+        <h3 id={`briefing-${id}`}>Informe del analista</h3>
         <Button
           variant="secondary"
           disabled={briefing.isFetching}
@@ -92,7 +92,7 @@ export const BriefingPanel = ({
               ) : null}
               {data.sections.map((section) => (
                 <div key={section.title}>
-                  <h5>{section.title}</h5>
+                  <h4>{section.title}</h4>
                   <ul>
                     {section.sentences.map((sentence, index) => (
                       <li key={index}>
@@ -102,7 +102,7 @@ export const BriefingPanel = ({
                   </ul>
                 </div>
               ))}
-              <h5>Fuentes</h5>
+              <h4>Fuentes</h4>
               <ol className={styles.sources} aria-label="Fuentes del informe">
                 {data.sources.map((source) => (
                   <li key={source.ref} value={source.ref}>

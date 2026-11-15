@@ -78,7 +78,7 @@ export const EvidencePanel = ({
   });
   return (
     <section className={styles.evidence} aria-labelledby={`evidence-${id}`}>
-      <h4 id={`evidence-${id}`}>Evidencias vinculadas</h4>
+      <h3 id={`evidence-${id}`}>Evidencias vinculadas</h3>
       {upload.isSuccess ? <Alert tone="success">Evidencia guardada.</Alert> : null}
       {upload.error || download.error ? (
         <Alert tone="error">{errorText(upload.error ?? download.error)}</Alert>
@@ -230,7 +230,7 @@ const EvidenceViewer = ({ attachment, scope }: { attachment: Attachment; scope: 
             <>
               {data.pages.map((page, index) => (
                 <article key={index}>
-                  {data.format === 'pdf' ? <h5>Página {index + 1}</h5> : null}
+                  {data.format === 'pdf' ? <h4>Página {index + 1}</h4> : null}
                   <pre>{page}</pre>
                 </article>
               ))}

@@ -30,7 +30,7 @@ export const ProposalsPanel = ({
   });
   return (
     <section className={styles.evidence} aria-labelledby={`proposals-${id}`}>
-      <h4 id={`proposals-${id}`}>Propuestas del analista</h4>
+      <h3 id={`proposals-${id}`}>Propuestas del analista</h3>
       {decide.error ? (
         <Alert tone="error">
           {isApiError(decide.error) ? decide.error.detail : 'No se pudo guardar la decisión.'}

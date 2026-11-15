@@ -104,7 +104,7 @@ export const SituationalPage = ({
             <Card title="Escenarios orientativos">
               {data.escenarios.map((scenario, i) => (
                 <article key={i}>
-                  <h4>{scenario.nombre}</h4>
+                  <h3>{scenario.nombre}</h3>
                   <p>{scenario.supuesto}</p>
                 </article>
               ))}

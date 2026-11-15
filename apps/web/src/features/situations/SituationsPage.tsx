@@ -142,7 +142,7 @@ const SituationCard = ({
     >
       <p className={styles.summary}>{situation.summary}</p>
       <section aria-label={`Por qué: ${situation.label}`}>
-        <h4>Por qué</h4>
+        <h3>Por qué</h3>
         <ul className={styles.reasons}>
           {situation.reasons.map((reason) => (
             <li key={reason.text}>
@@ -168,7 +168,7 @@ const SituationCard = ({
         </ul>
       </section>
       <section aria-label={`Acciones sugeridas: ${situation.label}`}>
-        <h4>Acciones sugeridas</h4>
+        <h3>Acciones sugeridas</h3>
         <ul>
           {situation.recommendations.map((text) => (
             <li key={text}>{text}</li>
@@ -178,7 +178,7 @@ const SituationCard = ({
       </section>
       {situation.lessons && situation.lessons.length > 0 && (
         <section>
-          <h4>Lecciones previas</h4>
+          <h3>Lecciones previas</h3>
           <ul>
             {situation.lessons.map((lesson) => (
               <li key={lesson.id}>
@@ -234,7 +234,7 @@ const NarrativeCard = ({ narratives }: { narratives: Report['narratives'] }) => 
         ) : null}
         {narratives.topics.length ? (
           <>
-            <h4>Temas que se repiten</h4>
+            <h3>Temas que se repiten</h3>
             <ul>
               {narratives.topics.map((topic) => (
                 <li key={topic.name}>

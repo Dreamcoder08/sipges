@@ -71,6 +71,19 @@ h4 {
   text-wrap: balance;
 }
 
+/* The outline runs h1 (the page) → h2 (a card or section) → h3 (a panel inside it) → h4, with
+   no skipped level (WCAG 1.3.1, functional-10 F21). Panel headings keep the compact size they
+   had one level lower; zero specificity, so any component rule still wins. */
+:where(h3) {
+  margin-block: 1.33em;
+  font-size: 1em;
+}
+
+:where(h4) {
+  margin-block: 1.67em;
+  font-size: 0.83em;
+}
+
 p {
   text-wrap: pretty;
 }
@@ -99,6 +112,35 @@ svg,
 video,
 canvas {
   max-width: 100%;
+}
+
+/* Pointer targets of at least 24×24 px (WCAG 2.2 SC 2.5.8, functional-10 F20) for every control
+   outside a sentence, whatever the pointer. Zero specificity, so a component's own size wins.
+   min-height and min-width do not apply to inline boxes, so a link inside running text keeps its
+   line; links laid out as blocks, flex or grid items get the minimum. */
+:where(
+  button,
+  select,
+  summary,
+  a[href],
+  [role='button'],
+  [role='tab'],
+  input:not([type='checkbox'], [type='radio'], [type='range'], [type='hidden'])
+) {
+  min-height: 1.5rem;
+}
+
+:where(button, a[href], [role='button'], [role='tab']) {
+  min-width: 1.5rem;
+}
+
+/* A link alone in a list item or a table cell is not part of a sentence: it becomes a box tall
+   enough to be a target, on the baseline of the text around it. `.standalone-link` does the same
+   for a link on its own anywhere else (a paragraph holding only that link). */
+:where(:is(li, td, th, dd) > a[href]:only-child),
+.standalone-link {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* Touch screens: 44px targets for form controls and disclosures (WCAG 2.5.5). */

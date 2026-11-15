@@ -247,7 +247,7 @@ export const IntelligencePage = (context: FeatureContext) => {
           )}
           <p className={styles.fragment}>{report.evidence.fragment}</p>
           <p className={styles.hash}>SHA-256: {report.evidence.sha256}</p>
-          <h4>Temas y señales</h4>
+          <h3>Temas y señales</h3>
           <ul>
             {report.topics.map((t) => (
               <li key={t.tema}>
@@ -260,7 +260,7 @@ export const IntelligencePage = (context: FeatureContext) => {
               </li>
             ))}
           </ul>
-          <h4>Comparación con narrativas del proyecto</h4>
+          <h3>Comparación con narrativas del proyecto</h3>
           <ul>
             {report.project_comparison.map((t) => (
               <li key={t.tema}>
@@ -275,7 +275,7 @@ export const IntelligencePage = (context: FeatureContext) => {
               {m.theme}: similitud {m.similarity}; referencia {m.reference}
             </p>
           ))}
-          <h4>Acciones sugeridas</h4>
+          <h3>Acciones sugeridas</h3>
           <ul>
             {report.suggested_actions.map((s) => (
               <li key={s}>{s}</li>
@@ -305,7 +305,7 @@ export const IntelligencePage = (context: FeatureContext) => {
                   </div>
                 ))}
               </dl>
-              <h4>Prioridades de revisión</h4>
+              <h3>Prioridades de revisión</h3>
               <ul>
                 {Object.entries(data.by_priority).map(([level, total]) => (
                   <li key={level}>
@@ -313,7 +313,7 @@ export const IntelligencePage = (context: FeatureContext) => {
                   </li>
                 ))}
               </ul>
-              <h4>Temas registrados</h4>
+              <h3>Temas registrados</h3>
               <ul>
                 {data.themes.map((t) => (
                   <li key={t.name}>
@@ -379,9 +379,9 @@ export const IntelligencePage = (context: FeatureContext) => {
         )}
         {selectedAlert && (
           <div className={styles.form}>
-            <h4 ref={alertHeading} tabIndex={-1}>
+            <h3 ref={alertHeading} tabIndex={-1}>
               Alerta {selectedAlert.id}
-            </h4>
+            </h3>
             <p className={styles.fragment}>{selectedAlert.excerpt}</p>
             <p>
               Fuente: {selectedAlert.source_url || 'Sin enlace'} · {selectedAlert.source_type}

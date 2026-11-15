@@ -171,14 +171,14 @@ describe('Riesgo de conflicto', () => {
       );
       at('/analisis?vista=riesgo&localidad=Loma%20Verde');
       render(<App />);
-      expect(await screen.findByRole('heading', { level: 4, name: 'Loma Verde' })).toBeVisible();
-      expect(screen.queryByRole('heading', { level: 4, name: 'Pampa Alta' })).toBeNull();
+      expect(await screen.findByRole('heading', { level: 2, name: 'Loma Verde' })).toBeVisible();
+      expect(screen.queryByRole('heading', { level: 2, name: 'Pampa Alta' })).toBeNull();
       act(() => {
         window.history.pushState(null, '', '/analisis?vista=riesgo&localidad=Pampa%20Alta');
         window.dispatchEvent(new PopStateEvent('popstate'));
       });
-      expect(await screen.findByRole('heading', { level: 4, name: 'Pampa Alta' })).toBeVisible();
-      expect(screen.queryByRole('heading', { level: 4, name: 'Loma Verde' })).toBeNull();
+      expect(await screen.findByRole('heading', { level: 2, name: 'Pampa Alta' })).toBeVisible();
+      expect(screen.queryByRole('heading', { level: 2, name: 'Loma Verde' })).toBeNull();
     },
   );
 });

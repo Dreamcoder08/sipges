@@ -140,7 +140,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                 </div>
                 <div className={styles.side}>
                   <section className={styles.panel} aria-labelledby="alert-evolution">
-                    <h4 id="alert-evolution">Evolución de alertas</h4>
+                    <h2 id="alert-evolution">Evolución de alertas</h2>
                     <StackedColumnChart
                       labels={labels}
                       caption="Alertas registradas por mes y nivel de riesgo"
@@ -173,7 +173,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
                   </section>
                   <section className={styles.panel} aria-labelledby="alert-communities">
                     <div className={styles.panelHeading}>
-                      <h4 id="alert-communities">Comunidades prioritarias</h4>
+                      <h2 id="alert-communities">Comunidades prioritarias</h2>
                       {data.ranking.length > 5 ? (
                         <Button
                           variant="secondary"
@@ -219,7 +219,7 @@ export const AlertOverview = ({ scope, onShowList }: { scope: string; onShowList
 
               <section className={styles.panel} aria-labelledby="alert-recent">
                 <div className={styles.panelHeading}>
-                  <h4 id="alert-recent">Alertas recientes</h4>
+                  <h2 id="alert-recent">Alertas recientes</h2>
                   <Button variant="secondary" onClick={onShowList}>
                     Ver todas las alertas
                   </Button>

@@ -579,7 +579,9 @@ const Detail = ({
         </>
       ) : null}
       <p>
-        <InternalLink href={item.owner.href}>{item.owner.label}</InternalLink>
+        <InternalLink href={item.owner.href} className="standalone-link">
+          {item.owner.label}
+        </InternalLink>
       </p>
     </>
   );

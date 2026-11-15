@@ -103,9 +103,9 @@ export const ImportPanel = ({
   const mappedCount = mapping.filter(Boolean).length;
   return (
     <section className={styles.importPanel} aria-labelledby={`${ids}-title`}>
-      <h4 id={`${ids}-title`} ref={heading} tabIndex={-1}>
+      <h3 id={`${ids}-title`} ref={heading} tabIndex={-1}>
         Importar desde CSV
-      </h4>
+      </h3>
       <p className={styles.muted}>
         Las celdas vacías no borran datos. Si una fila trae un código existente, se actualiza ese
         registro; si hay cualquier error, no se importa nada.

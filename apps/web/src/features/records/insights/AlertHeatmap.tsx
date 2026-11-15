@@ -38,7 +38,7 @@ export const AlertHeatmap = ({
       <div className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Clasificación territorial</p>
-          <h4 id={id}>Mapa de calor de relacionamiento comunitario</h4>
+          <h2 id={id}>Mapa de calor de relacionamiento comunitario</h2>
         </div>
         <span className={styles.count}>{data.active.length} activas</span>
       </div>
@@ -164,9 +164,9 @@ export const AlertHeatmap = ({
               </p>
               {chosen ? (
                 <div className={styles.selection} aria-live="polite">
-                  <h5>
+                  <h3>
                     {chosen.territory} · {chosen.dimension}
-                  </h5>
+                  </h3>
                   <ul className={styles.recordList}>
                     {chosen.rows.map((row) => (
                       <li key={row._id}>
