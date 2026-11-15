@@ -1212,7 +1212,12 @@ test('the Windows launcher carries the agreed variables and keeps the secrets ou
 test('the Windows scripts keep their accents: a UTF-8 BOM, and UTF-8 output before any message', () => {
   const windows = path.join(desktop, 'windows');
   const scripts = readdirSync(windows).filter((file) => file.endsWith('.ps1'));
-  assert.deepEqual(scripts.sort(), ['install.ps1', 'start-managed.ps1', 'start.ps1']);
+  assert.deepEqual(scripts.sort(), [
+    'install.ps1',
+    'start-managed.ps1',
+    'start.ps1',
+    'tables-interrupt.ps1',
+  ]);
   // Windows PowerShell 5.1 reads a .ps1 without a BOM in the ANSI code page.
   for (const file of scripts)
     assert.deepEqual(

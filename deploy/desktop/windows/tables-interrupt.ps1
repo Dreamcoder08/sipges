@@ -1,4 +1,4 @@
-# A real console Ctrl+C for deploy/desktop/migration/tables.mjs on Windows, for
+﻿# A real console Ctrl+C for deploy/desktop/migration/tables.mjs on Windows, for
 # tables-interrupt.mjs. Node cannot send one (child.kill() ends a Windows process outright), so
 # this helper, in Windows PowerShell 5.1:
 #   1. takes a console of its own (FreeConsole, AllocConsole), so the Ctrl+C below can reach
