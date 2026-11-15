@@ -164,7 +164,7 @@ func TestLocalModelGetsTheTrimmedTextAndEveryConcept(t *testing.T) {
 	}}
 	got, _ := analyze(t, &application.Semantic{Text: &fakeAnalyzer{}, Embedder: embedder}, "  agua Marcos Villanueva Prado\n", "", "automatic")
 	want := `{"version":"2.5","source_url":"","method":"Análisis híbrido: reglas y similitud semántica local. Requiere corroboración.","evidence":{"sha256":"ab"},` +
-		`"semantic":{"active":true,"method":"Similitud coseno de embeddings del modelo local Ollama","model":"fake-embed",` +
+		`"semantic":{"active":true,"method":"Similitud de significado calculada con el modelo local Ollama","model":"fake-embed",` +
 		`"matches":[{"theme":"Ambiente y agua","similarity":1,"reference":"` + water + `"}],` +
 		`"note":"Los valores son similitudes relativas, no probabilidades de conflicto ni pruebas de veracidad."},` +
 		`"verification_status":"Pendiente de corroboración","source_retrieved":false}`

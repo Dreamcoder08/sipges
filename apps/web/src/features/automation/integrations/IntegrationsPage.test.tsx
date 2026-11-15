@@ -94,6 +94,7 @@ const key = (access: 'read' | 'write', revoked = false) => ({
 });
 
 type Api = {
+  geography?: 'verified' | 'unavailable';
   feeds?: unknown[];
   defensoria?: boolean;
   keys?: unknown[];
@@ -101,6 +102,7 @@ type Api = {
 };
 
 const useApi = ({
+  geography = 'verified',
   feeds = [feed],
   defensoria: configured = true,
   keys = [key('read')],
@@ -126,7 +128,7 @@ const useApi = ({
     http.get('*/system/intelligence/sources', () => HttpResponse.json(defensoria(configured))),
     http.get('*/system/geography/catalogue', () =>
       HttpResponse.json({
-        status: 'verified',
+        status: geography,
         checkedAt: '2026-10-14T09:00:00Z',
         serviceUrl: 'https://geocatmin.ingemmet.gob.pe',
         attribution: 'INGEMMET – GEOCATMIN',
@@ -165,12 +167,12 @@ it('lists what the project has, one section per kind, with trust label and statu
   expect(
     screen.getAllByRole('heading', { level: 2 }).map((h) => h.firstChild?.textContent),
   ).toEqual(['Conectores entrantes', 'Conectores salientes', 'Habilidades', 'Programadas']);
-  expect(media.getByText('Integrado')).toBeVisible();
+  expect(media.getByText('De SIPGES')).toBeVisible();
   expect(media.getByText('Conectado')).toBeVisible();
   // Status is the shared badge family: the word plus a tone that picks colour and shape.
   expect(media.getByText('Conectado')).toHaveAttribute('data-tone', 'positive');
   const channel = await cardNamed('Equipo social');
-  expect(channel.getByText('Personalizado')).toBeVisible();
+  expect(channel.getByText('Del equipo')).toBeVisible();
   const paused = await cardNamed('Control de calidad');
   expect(paused.getByText('Pausada')).toBeVisible();
   expect(paused.getByText('Pausada')).toHaveAttribute('data-tone', 'neutral');
@@ -322,11 +324,33 @@ it('shows skills as built-in screens and links to them', async () => {
   // Our own copy is Spanish: no «Skill» or «briefing» left on the page.
   expect(document.body).not.toHaveTextContent(/skill|briefing/i);
   expect(strategic.getByText('Pantalla integrada')).toBeVisible();
-  expect(strategic.getByText('Integrado')).toBeVisible();
+  expect(strategic.getByText('De SIPGES')).toBeVisible();
   expect(strategic.getByRole('link', { name: 'Abrir: Informe estratégico' })).toHaveAttribute(
     'href',
     '/estrategia',
   );
+});
+
+// functional-10 T5 (F14): a card states one condition; who made it is not a second state.
+it('shows one state on an integration whose service cannot be reached', async () => {
+  useApi({ geography: 'unavailable' });
+  renderPage();
+  const card = await cardNamed('GEOCATMIN INGEMMET');
+  expect(card.getByText('No disponible')).toHaveAttribute('data-tone', 'negative');
+  expect(card.queryByText(/Integrad|Conectad|Activ/)).toBeNull();
+  expect(card.getByText('De SIPGES')).toBeVisible();
+  expect(card.queryAllByText(/^(No disponible|Conectado|Pausado|Disponible)$/)).toHaveLength(1);
+});
+
+it('writes the rule processing sentence whole', async () => {
+  useApi();
+  renderPage();
+  const card = await cardNamed('Procesamiento de reglas');
+  expect(
+    card.getByText(
+      'Reglas al guardar registros; sin programador diario verificado en este servidor.',
+    ),
+  ).toBeVisible();
 });
 
 it('keeps the other cards when one source cannot be read', async () => {

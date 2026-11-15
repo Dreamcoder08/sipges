@@ -212,7 +212,7 @@ export const createIntelligenceService = (deps: {
         .sort((a, b) => b.similarity - a.similarity);
       report.semantic = {
         active: true,
-        method: 'Similitud coseno de embeddings del modelo local Ollama',
+        method: 'Similitud de significado calculada con el modelo local Ollama',
         model: embeddings.model,
         matches: scored.slice(0, 5),
         note: 'Los valores son similitudes relativas, no probabilidades de conflicto ni pruebas de veracidad.',

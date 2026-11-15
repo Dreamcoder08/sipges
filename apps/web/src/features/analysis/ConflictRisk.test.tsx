@@ -155,12 +155,16 @@ describe('ConflictRiskPage', () => {
     const card = await screen.findByRole('article');
     expect(within(card).getByText('Riesgo alto')).toBeInTheDocument();
     expect(within(card).getByText('45 %')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Último back-test a 90 días' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Última prueba retrospectiva a 90 días' }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Razón propia de 90 días.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '30 días' }));
     expect(within(card).getByText('Riesgo bajo')).toBeInTheDocument();
     expect(within(card).getByText('10 %')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Último back-test a 30 días' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Última prueba retrospectiva a 30 días' }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Razón propia de 90 días.')).toBeNull();
   });
 
@@ -273,5 +277,48 @@ describe('ConflictRiskPage', () => {
     mount();
     expect(await screen.findByText(/no supera la tasa base/)).toBeInTheDocument();
     expect(screen.queryByText(/mejora/)).toBeNull();
+  });
+
+  // functional-10 T5 (F13): no «back-test» on screen, even inside the engine's sentences, and
+  // the Brier score says what it measures.
+  it('says «prueba retrospectiva» and explains the Brier score', async () => {
+    respond({
+      ...thinReport,
+      localities: thinReport.localities.map((item) => ({
+        ...item,
+        confidenceReason: 'Historial insuficiente para calibrar; el detalle está en el back-test.',
+      })),
+      backtest: {
+        '30': thin(30),
+        '90': {
+          ...thin(90),
+          calibrated: true,
+          reason: null,
+          train: { samples: 120, events: 30 },
+          test: { samples: 50, events: 12 },
+          brier: 0.12,
+          brierReference: 0.18,
+          skill: 0.333,
+          bins: [],
+        },
+      },
+      limitations: [
+        'Es una ayuda para priorizar, no un pronóstico de hechos: la probabilidad tiene el error que muestra el back-test.',
+      ],
+    });
+    mount();
+    expect(
+      await screen.findByRole('heading', { name: 'Última prueba retrospectiva a 90 días' }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/el detalle está en la prueba retrospectiva\./)[0]).toBeVisible();
+    expect(
+      screen.getByText(/la probabilidad tiene el error que muestra la prueba retrospectiva\./),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /Puntaje de Brier 0,120 \(error medio entre la probabilidad estimada y lo que ocurrió; cuanto más bajo, mejor\) frente a 0,180 de la tasa base/,
+      ),
+    ).toBeVisible();
+    expect(document.body).not.toHaveTextContent(/back-test/i);
   });
 });

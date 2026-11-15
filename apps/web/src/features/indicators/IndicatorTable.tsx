@@ -1,6 +1,7 @@
 import type { IndicatorReportItem } from '@sipges/contracts';
 import styles from './Indicators.module.css';
 import { formatIndex } from '../../shared/lib/format.ts';
+import { plainMethod } from './labels.ts';
 export const IndicatorTable = ({ items }: { items: IndicatorReportItem[] }) => (
   <div className={styles.table} tabIndex={0} role="region" aria-label="Detalle de indicadores">
     <table>
@@ -28,7 +29,7 @@ export const IndicatorTable = ({ items }: { items: IndicatorReportItem[] }) => (
             </td>
             <td>
               {item.definition}
-              <p>{item.method}</p>
+              <p>{plainMethod(item.method)}</p>
             </td>
             <td>
               {item.evidence_count} evidencias · {item.confidence}

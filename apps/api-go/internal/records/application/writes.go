@@ -19,9 +19,10 @@ type AuditNote struct {
 	Detail string
 }
 
-// The notes of records-service.ts.
+// The notes of records-service.ts. A record created through the API was created in SIPGES
+// itself (functional-10 T3); rows written before keep their text.
 var (
-	createNote = AuditNote{Action: "CREATE", Detail: "Registro creado desde prototipo V0.2"}
+	createNote = AuditNote{Action: "CREATE", Detail: "Registro creado en SIPGES"}
 	updateNote = AuditNote{Action: "UPDATE", Detail: "Registro actualizado"}
 	deleteNote = AuditNote{Action: "DELETE", Detail: "Registro eliminado"}
 )
