@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
 
 // ReadyFunc reports whether the database answers.
@@ -47,7 +49,8 @@ type readyBody struct {
 	Status string `json:"status"`
 }
 
-var health = healthBody{Status: "ok", Service: "SIPGES", Version: "V0.5.1"}
+// health reports the one SIPGES release version (functional-10 T8).
+var health = healthBody{Status: "ok", Service: "SIPGES", Version: release.Version}
 
 // NewHandler builds the API handler: /health, /health/ready and whatever opts.Routes adds. No
 // production route moves to Go before its parity test (docs/adr/0032 §6).

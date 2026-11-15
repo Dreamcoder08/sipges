@@ -1,4 +1,4 @@
-export { DEFAULT_IRSA_CONFIG, INDICATOR_CONFIG, MODEL_STATUS } from './defaults.ts';
+export { DEFAULT_IRSA_CONFIG, INDICATOR_CONFIG, modelStatusFor } from './defaults.ts';
 export {
   DIM_LABELS,
   DIMENSIONS,

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { Hono } from 'hono';
 import { IrsaSummary, ModelStatus } from '../../../../packages/contracts/src/indicators.ts';
 import { describe, expect, it } from 'vitest';
@@ -212,6 +213,21 @@ describe('client contracts', () => {
 });
 
 describe('static system documents', () => {
+  // functional-10 T8 (F24): one SIPGES version, the root package.json's, first and last as the
+  // Go constant orders it; the IRSA method version is not this one.
+  it('names the one SIPGES release in the model status', async () => {
+    const { request } = await setup();
+    const root = (
+      JSON.parse(readFileSync(new URL('../../../../package.json', import.meta.url), 'utf8')) as {
+        version: string;
+      }
+    ).version;
+    const text = await (await request('/system/model-status')).text();
+    expect(text.startsWith(`{"version":"SIPGES ${root} · Prototipo final de tesis",`)).toBe(true);
+    expect(text.endsWith(`"ui_release":"${root}"}`)).toBe(true);
+    expect(text).not.toMatch(/V0\.5\.1|RC 1\.0|Motor/);
+  });
+
   it('serves model status and the 32-row validation template', async () => {
     const { request } = await setup();
     const status = await (await request('/system/model-status')).json();
