@@ -108,3 +108,58 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await expect(page).toHaveURL(/clase=calidad/);
   });
 }
+
+/**
+ * Bandeja at 1440 px, reloaded with `?pendiente=` naming an item far down the list: the list
+ * scrolls on its own until the row shows, clear of the sticky column header and group label.
+ */
+test('Bandeja at 1440 px: a reload scrolls the list to the linked item', async ({
+  page,
+  admin,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  const stamp = Date.now();
+  const headers = { 'X-SIPGES-Scope': DEFAULT_SCOPE, Origin: new URL(page.url()).origin };
+  // Quality items sort by key, so the last of these sits at the bottom of the list.
+  const ids = Array.from({ length: 30 }, (_, n) => `EV-ZZ-${stamp}-${String(n).padStart(2, '0')}`);
+  for (const id of ids) {
+    const payload = {
+      ID_Evento: id,
+      Fecha: '2026-10-12',
+      Territorio: 'Vice, Sechura',
+      Descripcion_Hecho: `Pendiente lejano ${id}`,
+    };
+    const created = await page.request.post('/api/eventos', { headers, data: { payload } });
+    expect(created.status(), await created.text()).toBe(200);
+  }
+  const last = ids.at(-1) ?? '';
+  await page.goto(`/bandeja?pendiente=${encodeURIComponent(`calidad:eventos/${last}`)}`);
+  await page.reload();
+
+  const list = page.getByRole('region', { name: 'Pendientes', exact: true });
+  const row = page.getByRole('option', { name: new RegExp(`Pendiente lejano ${last}`) });
+  await expect(row).toHaveAttribute('aria-selected', 'true');
+  await expect(
+    page.getByRole('region', { name: 'Detalle del pendiente' }).getByRole('heading', { level: 2 }),
+  ).toContainText(last);
+  const scrollable = await list.evaluate((node) => node.scrollHeight > node.clientHeight);
+  expect(scrollable, 'the list is long enough to scroll').toBe(true);
+  // The row ends inside the list's visible box, under the sticky bars that stay on top.
+  await expect
+    .poll(async () => {
+      const box = await list.boundingBox();
+      const target = await row.boundingBox();
+      const label = await row
+        .locator('xpath=ancestor::*[@role="group"][1]')
+        .locator('p[aria-hidden="true"]')
+        .boundingBox();
+      if (!box || !target || !label) return 'unmeasured';
+      if (target.y < label.y + label.height) return `row top ${target.y} under the group label`;
+      if (target.y + target.height > box.y + box.height)
+        return `row bottom ${target.y + target.height} below the list bottom ${box.y + box.height}`;
+      return 'in view';
+    })
+    .toBe('in view');
+});
