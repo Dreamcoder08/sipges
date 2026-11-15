@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Running } from './servers.ts';
+import { DEFENSORIA_PATH } from './synthetic.ts';
 
 const DIMENSIONS = 16;
 
@@ -44,7 +45,8 @@ const narrationOf = (body: Narration) => {
 };
 
 /**
- * A synthetic Ollama and Messages API on loopback: parity never contacts a real provider.
+ * A synthetic Ollama, Messages API and Defensoría WordPress API on loopback: parity never
+ * contacts a real provider. The Defensoría answers no post, so a cron's poll imports nothing.
  * `narrated` holds every request body the Messages API received, as it arrived.
  */
 export const startEmbedderDouble = async (): Promise<Running & { narrated: string[] }> => {
@@ -54,6 +56,11 @@ export const startEmbedderDouble = async (): Promise<Running & { narrated: strin
     request.on('data', (chunk: Buffer) => chunks.push(chunk));
     request.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8');
+      if ((request.url ?? '').split('?')[0] === DEFENSORIA_PATH) {
+        response.writeHead(200, { 'content-type': 'application/json' });
+        response.end('[]');
+        return;
+      }
       if ((request.url ?? '').startsWith('/v1/messages')) {
         // The two SDKs name themselves, so each body is attributed to the API that sent it.
         narrated.push(

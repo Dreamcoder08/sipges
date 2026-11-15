@@ -2,11 +2,13 @@ package app
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	integration "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/application"
 	integrationhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/http"
 	integrationsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/infrastructure"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/config"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	recordssql "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/infrastructure"
 )
@@ -14,12 +16,26 @@ import (
 func init() {
 	registerContext("integration", func(d Deps) (func(*http.ServeMux), error) {
 		service := integration.Service{Store: integrationsql.Store{DB: d.Pool}}
-		runtime := integrationRuntime(d, integrationsql.RSS{}, integrationsql.Official{})
+		official, err := officialGateway()
+		if err != nil {
+			return nil, err
+		}
+		runtime := integrationRuntime(d, integrationsql.RSS{}, official)
 		return func(mux *http.ServeMux) {
 			integrationhttp.Routes(mux, service, d.Logger)
 			integrationhttp.RegisterRuntime(mux, runtime)
 		}, nil
 	})
+}
+
+// officialGateway is the Defensoría connector, at SIPGES_DEFENSORIA_URL when a synthetic double
+// stands in for the official site (compose.ts passes config.defensoriaUrl the same way).
+func officialGateway() (integrationsql.Official, error) {
+	base, err := config.LoadDefensoriaURL(os.LookupEnv)
+	if err != nil {
+		return integrationsql.Official{}, err
+	}
+	return integrationsql.Official{Base: base}, nil
 }
 
 // integrationRuntime composes the integration runtime as compose.ts does: API keys, ingest
