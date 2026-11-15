@@ -163,3 +163,41 @@ test('Bandeja at 1440 px: a reload scrolls the list to the linked item', async (
     })
     .toBe('in view');
 });
+
+/**
+ * Bandeja at 1440 px (bandeja-1440-*.png): a data-quality item has no waiting time and no
+ * four-eyes rule, and its «Espera» and «Cuatro ojos» cells were blank. Each shows «—» under its
+ * column, and the option names why for assistive tech.
+ */
+test('Bandeja at 1440 px: empty «Espera» and «Cuatro ojos» cells show a dash', async ({
+  page,
+  admin,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  const [title] = await seed(page, Date.now());
+  await page.goto('/bandeja?clase=calidad');
+  const row = page.getByRole('option', { name: new RegExp(title ?? '') });
+  await expect(row).toBeVisible();
+  const header = page
+    .getByRole('region', { name: 'Pendientes', exact: true })
+    .locator('p[aria-hidden="true"]')
+    .first();
+  const dashes = row.getByText('—', { exact: true });
+  await expect(dashes).toHaveCount(2);
+  // Each dash sits inside its column, under the header that names it.
+  for (const [index, column] of [
+    [0, 'Espera'],
+    [1, 'Cuatro ojos'],
+  ] as const) {
+    const dash = await dashes.nth(index).boundingBox();
+    const cell = await header.getByText(column, { exact: true }).boundingBox();
+    if (!dash || !cell) throw new Error(`${column}: unmeasured`);
+    expect(
+      { left: dash.x >= cell.x - 0.5, right: dash.x + dash.width <= cell.x + cell.width + 0.5 },
+      column,
+    ).toEqual({ left: true, right: true });
+  }
+  await expect(row).toHaveAccessibleName(/Sin dato.*No aplica/);
+});

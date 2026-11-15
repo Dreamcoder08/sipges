@@ -41,8 +41,9 @@ export const TerritorialTimeline = ({
   playing: boolean;
   selectedId: string;
   /**
-   * Scroll the page to the selected entry. Phones turn it off: there the page brings the map
-   * back above the sheet, and scrolling down to this list afterwards would undo it.
+   * Scroll the list to the selected entry, inside its own scroll box only: the page stays where
+   * it is, so a marker just picked on the map stays on screen. Phones turn it off, since there
+   * the page brings the map back above the sheet.
    */
   revealSelection?: boolean;
   onPeriod: (from: string, to: string) => void;
@@ -71,8 +72,15 @@ export const TerritorialTimeline = ({
   const list = useRef<HTMLOListElement>(null);
   useEffect(() => {
     if (!selectedId || !revealSelection) return;
-    const item = list.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
-    item?.scrollIntoView?.({ block: 'nearest' });
+    const box = list.current;
+    const item = box?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
+    if (!box || !item) return;
+    // Like `scrollIntoView({ block: 'nearest' })`, but that also scrolls the page.
+    const top = box.getBoundingClientRect().top + box.clientTop;
+    const entry = item.getBoundingClientRect();
+    if (entry.top < top) box.scrollTop += entry.top - top;
+    else if (entry.bottom > top + box.clientHeight)
+      box.scrollTop += entry.bottom - (top + box.clientHeight);
   }, [selectedId, revealSelection]);
 
   const sorted = [...points].sort((a, b) => b.date.localeCompare(a.date));

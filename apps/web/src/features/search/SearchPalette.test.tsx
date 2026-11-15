@@ -41,6 +41,15 @@ it('says search is keyword only when the semantic model is unavailable', async (
   ).toBeVisible();
 });
 
+it('names the unreachable semantic model in Spanish', async () => {
+  await open(status({ available: false, reason: 'unreachable' }));
+  const note = await screen.findByText(/^Búsqueda por palabras clave/);
+  expect(note).toHaveTextContent(
+    'Búsqueda por palabras clave: la búsqueda por significado no está disponible (no se pudo contactar el modelo de representaciones semánticas).',
+  );
+  expect(note).toBeVisible();
+});
+
 it('says nothing extra when semantic search works', async () => {
   await open(status({}));
   expect(await screen.findByText(/Escribe para buscar/)).toBeVisible();

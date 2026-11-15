@@ -80,6 +80,90 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 /**
+ * Territorio › Mapa at 1440 px: picking a marker selects its entry in «Evolución temporal», a
+ * list far below the map. The entry is brought into view inside that list's own scroll box; the
+ * page itself stays put, so the marker the person just clicked never leaves the screen.
+ */
+test('picking a marker at 1440 px keeps the page on the map', async ({ page, admin, adminApi }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    delete (window as { WebGL2RenderingContext?: unknown }).WebGL2RenderingContext;
+  });
+  const stamp = Date.now();
+  // Newer than the other specs' records, so all eight lead the evolution list; the oldest of
+  // them, at Bernal, sits below the list's visible box.
+  const places = ['Vice, Sechura', 'Bayóvar', 'Sechura', 'Parachique'];
+  for (const day of [8, 7, 6, 5, 4, 3, 2]) {
+    const created = await adminApi.post('/api/eventos', {
+      headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
+      data: {
+        payload: {
+          Descripcion_Hecho: `Evolución sintética ${day} ${stamp}`,
+          Territorio: places[day % places.length] ?? 'Sechura',
+          Fecha: `2026-11-0${day}`,
+        },
+      },
+    });
+    expect(created.status(), await created.text()).toBe(200);
+  }
+  const target = `Evolución sintética antigua ${stamp}`;
+  const created = await adminApi.post('/api/eventos', {
+    headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
+    data: { payload: { Descripcion_Hecho: target, Territorio: 'Bernal', Fecha: '2026-11-01' } },
+  });
+  expect(created.status(), await created.text()).toBe(200);
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/territorio');
+
+  const row = page
+    .getByRole('list', { name: 'Registros en el mapa' })
+    .getByRole('button', { name: new RegExp(target) });
+  const n = ((await row.locator('span').first().textContent()) ?? '').trim();
+  expect(n).toMatch(/^\d+$/);
+  const marker = page.getByRole('button', { name: `${n}. Eventos: ${target} (Bernal)` });
+  await expect(marker).toHaveCount(1);
+  // Markers of earlier runs may sit on the same spot, so the marker is picked from the keyboard,
+  // which selects it through the same handler as a click.
+  await marker.scrollIntoViewIfNeeded();
+  await marker.focus();
+  const before = await page.evaluate(() => window.scrollY);
+  await page.keyboard.press('Enter');
+  await expect(marker).toHaveAttribute('aria-pressed', 'true');
+  const timeline = page.getByRole('list', { name: 'Registros del periodo' });
+  const entry = timeline.locator('li[data-selected="true"]');
+  await expect(entry).toContainText(target);
+  // The reveal runs in an effect after the selection renders; let two frames pass.
+  const after = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve(window.scrollY))),
+      ),
+  );
+  const shown = await marker.evaluate((node) => {
+    const box = node.getBoundingClientRect();
+    return box.top >= 0 && box.bottom <= window.innerHeight;
+  });
+  expect({ pageMoved: after - before, markerOnScreen: shown }).toEqual({
+    pageMoved: 0,
+    markerOnScreen: true,
+  });
+  // The entry is still revealed: the list scrolled its own box down to it.
+  const inList = await entry.evaluate((item) => {
+    const list = item.closest('ol');
+    if (!list) throw new Error('the entry sits outside its list');
+    const box = list.getBoundingClientRect();
+    const top = box.top + list.clientTop;
+    const own = item.getBoundingClientRect();
+    return {
+      listScrolled: list.scrollTop > 0,
+      entryShown: own.top >= top - 0.5 && own.bottom <= top + list.clientHeight + 0.5,
+    };
+  });
+  expect(inList).toEqual({ listScrolled: true, entryShown: true });
+});
+
+/**
  * Opt-in capture for the owner's review: with SIPGES_SCREENSHOT_DIR set, Territorio › Mapa with
  * records at 1440 px, the «sin ubicación» group open, in both themes, once with the SVG markers and
  * once with WebGL 2 left on so the canvas draws the numbers. Skipped in the regular suite.
