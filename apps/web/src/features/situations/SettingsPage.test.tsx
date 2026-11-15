@@ -96,10 +96,13 @@ it('shows the colour alone until the settings load, then colour with meaning, wi
   expect(screen.getByText('Naranja – Requiere intervención preventiva')).toBeInTheDocument();
 });
 
-it('presents the project as SIPGES with no switch to turn it on or off', async () => {
+it('names the active project on its card, with no switch to turn SIPGES on or off', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('admin');
-  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+  // functional-10 T13 (F31): the card names the project, not the product («Proyecto · SIPGES»).
+  await screen.findByText('Significado de cada color');
+  expect(screen.getByRole('heading', { name: 'Proyecto Uno' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'SIPGES' })).not.toBeInTheDocument();
   expect(screen.queryByText(/SIPGES 3\.0/)).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Activar|Volver a/ })).not.toBeInTheDocument();
   expect(screen.getByText('Significado de cada color')).toBeInTheDocument();
@@ -130,7 +133,7 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
   );
   expect(within(nav).queryByRole('link', { name: 'Integraciones' })).not.toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
-  expect(screen.queryByRole('heading', { name: 'SIPGES' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Proyecto Uno' })).not.toBeInTheDocument();
   expect(screen.queryByRole('checkbox', { name: 'Envío a IA externa' })).not.toBeInTheDocument();
 });
 
@@ -157,7 +160,8 @@ it('keeps the section nav working without a router', async () => {
   server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
   renderPage('admin', 'apariencia');
   await user.click(screen.getByRole('link', { name: 'Proyecto' }));
-  expect(await screen.findByRole('heading', { name: 'SIPGES' })).toBeInTheDocument();
+  await screen.findByText('Significado de cada color');
+  expect(screen.getByRole('heading', { name: 'Proyecto Uno' })).toBeInTheDocument();
 });
 
 it('shows Cuenta with the signed-in user and the active sessions', async () => {
@@ -477,4 +481,14 @@ it('shows the project location read-only to other roles', async () => {
   expect(await screen.findByLabelText('Lugar')).toHaveValue('Tambogrande, Piura');
   expect(screen.getByLabelText('Lugar')).toHaveAttribute('readonly');
   expect(screen.queryByRole('button', { name: 'Guardar ubicación' })).toBeNull();
+});
+
+// functional-10 T13 (F31): wide screens hide the shell's h1, so the page carries a visible title
+// that also heads the section list.
+it('titles the page «Configuración» above its section list', async () => {
+  server.use(http.get('*/system/v4/settings', () => HttpResponse.json(settings())));
+  renderPage('consulta', 'apariencia');
+  const title = screen.getByRole('heading', { level: 2, name: 'Configuración' });
+  const nav = screen.getByRole('navigation', { name: 'Secciones de Configuración' });
+  expect(nav).toContainElement(title);
 });

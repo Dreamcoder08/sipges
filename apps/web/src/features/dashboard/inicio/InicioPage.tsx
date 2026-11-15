@@ -192,7 +192,11 @@ export const InicioPage = ({
                     <span className={styles.rowText}>
                       <b>{item.title}</b>
                       <small>
-                        {item.level ? <LevelPill level={item.level} /> : null}
+                        {item.level ? (
+                          <span className={styles.level}>
+                            <LevelPill level={item.level} />
+                          </span>
+                        ) : null}
                         {item.meta}
                       </small>
                     </span>

@@ -12,11 +12,15 @@ import { IrsaPendingBadge, isIrsaPending } from '../../shared/ui/IrsaPendingBadg
 import { useLevelLabel } from '../../shared/lib/project-settings.tsx';
 import { DIMENSIONS, LEVELS, dimensionLabel } from '../../shared/lib/text.ts';
 import {
+  decimalInput,
   formatDateTime,
+  formatFractions,
   formatIndex,
+  formatNumber,
   formatPercent,
   formatShares,
   formatShortDay,
+  parseDecimal,
 } from '../../shared/lib/format.ts';
 import { DateText } from '../../shared/ui/DateText.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
@@ -295,23 +299,50 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
   );
 };
 
+/**
+ * A decimal field in Spanish: text with the decimal keypad, so it shows and accepts «0,167» (a
+ * number input would show «0.167» and drop the comma); a point is still accepted.
+ */
+const DECIMAL_FIELD = {
+  type: 'text',
+  inputMode: 'decimal',
+  autoComplete: 'off',
+  spellCheck: false,
+  required: true,
+} as const;
+
 const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfig }) => {
-  const [weights, setWeights] = useState(
-    Object.fromEntries(Object.entries(config.weights).map(([key, value]) => [key, String(value)])),
+  // Weights show as fractions that add up (0,167 ×4 and 0,166 ×2, like the shares above); one the
+  // person leaves as shown keeps its stored value, so an untouched save stores the same numbers.
+  const shownWeights = Object.fromEntries(
+    formatFractions(dimensions.map((d) => config.weights[d] ?? 0)).map((text, index) => [
+      dimensions[index] as string,
+      text,
+    ]),
   );
+  const initialWeights = Object.fromEntries(
+    Object.entries(config.weights).map(([key, value]) => [
+      key,
+      shownWeights[key] ?? decimalInput(value),
+    ]),
+  );
+  const [weights, setWeights] = useState(initialWeights);
   const [thresholds, setThresholds] = useState<Record<string, [string, string]>>(
     Object.fromEntries(
       Object.entries(config.thresholds).map(([key, [low, high]]) => [
         key,
-        [String(low), String(high)],
+        [decimalInput(low), decimalInput(high)],
       ]),
     ),
   );
   const [contributions, setContributions] = useState(
     Object.fromEntries(
-      Object.entries(config.contributions).map(([key, value]) => [key, String(value)]),
+      Object.entries(config.contributions).map(([key, value]) => [key, decimalInput(value)]),
     ),
   );
+  const weightValue = (key: string, text: string) =>
+    text === initialWeights[key] ? (config.weights[key] ?? NaN) : parseDecimal(text);
+  const weightSum = dimensions.reduce((total, d) => total + weightValue(d, weights[d] ?? ''), 0);
   const [validation, setValidation] = useState('');
   const [notice, setNotice] = useState('');
   const client = useQueryClient();
@@ -340,25 +371,16 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
         if (save.isPending) return;
         setNotice('');
         const parsedWeights = Object.fromEntries(
-          Object.entries(weights).map(([key, value]) => [
-            key,
-            value.trim() === '' ? NaN : Number(value),
-          ]),
+          Object.entries(weights).map(([key, value]) => [key, weightValue(key, value)]),
         );
         const parsedThresholds = Object.fromEntries(
           Object.entries(thresholds).map(([key, [low, high]]) => [
             key,
-            [low.trim() === '' ? NaN : Number(low), high.trim() === '' ? NaN : Number(high)] as [
-              number,
-              number,
-            ],
+            [parseDecimal(low), parseDecimal(high)] as [number, number],
           ]),
         );
         const parsedContributions = Object.fromEntries(
-          Object.entries(contributions).map(([key, value]) => [
-            key,
-            value.trim() === '' ? NaN : Number(value),
-          ]),
+          Object.entries(contributions).map(([key, value]) => [key, parseDecimal(value)]),
         );
         const sum = dimensions.reduce((total, d) => total + (parsedWeights[d] ?? 0), 0);
         if (!Number.isFinite(sum) || Math.abs(sum - 1) > 0.02) {
@@ -394,15 +416,16 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
             <Field
               key={d}
               label={`Peso ${dimensionLabel(d)}`}
-              type="number"
-              step="any"
-              min="0"
-              required
+              {...DECIMAL_FIELD}
               value={weights[d] ?? 0}
               onChange={(e) => setWeights({ ...weights, [d]: e.target.value })}
             />
           ))}
         </div>
+        <p className={styles.hint} aria-live="polite">
+          Suma de los pesos:{' '}
+          {Number.isFinite(weightSum) ? formatNumber(weightSum, 3) : 'revise los valores'}
+        </p>
       </fieldset>
       <fieldset disabled={save.isPending}>
         <legend>Bandas de riesgo</legend>
@@ -411,9 +434,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
             <div key={name}>
               <Field
                 label={`Límite inferior ${name}`}
-                type="number"
-                step="any"
-                required
+                {...DECIMAL_FIELD}
                 value={band[0]}
                 onChange={(e) =>
                   setThresholds({ ...thresholds, [name]: [e.target.value, band[1]] })
@@ -421,9 +442,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
               />
               <Field
                 label={`Límite superior ${name}`}
-                type="number"
-                step="any"
-                required
+                {...DECIMAL_FIELD}
                 value={band[1]}
                 onChange={(e) =>
                   setThresholds({ ...thresholds, [name]: [band[0], e.target.value] })
@@ -444,9 +463,7 @@ const ConfigurationForm = ({ scope, config }: { scope: string; config: IrsaConfi
             <Field
               key={name}
               label={contributionLabel(name)}
-              type="number"
-              step="any"
-              required
+              {...DECIMAL_FIELD}
               value={value}
               onChange={(e) => setContributions({ ...contributions, [name]: e.target.value })}
             />

@@ -24,9 +24,12 @@ export const AppShell = ({
   search,
   unread = 0,
   live,
+  title: titleOverride,
   children,
 }: {
   projectLabel: string;
+  /** The page's name when the address alone cannot tell it (a page that does not exist). */
+  title?: string | undefined;
   /** Stable id of the active project (its scope); the label changes once the project list loads. */
   projectKey?: string;
   projectSwitcher: ReactNode;
@@ -42,7 +45,7 @@ export const AppShell = ({
   const [drawer, setDrawer] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const topbar = useRef<HTMLElement>(null);
-  const title = titleFor(pathname, searchStr);
+  const title = titleOverride ?? titleFor(pathname, searchStr);
   const first = useRef(true);
   // Any navigation (a new search string included) or a completed project switch closes the drawer,
   // and so does leaving the compact layout, so it never reappears open when the window narrows.

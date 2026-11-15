@@ -179,3 +179,39 @@ it('shows lessons the team recorded earlier about the same situation', async () 
     screen.getByText(/Convocar a la junta de regantes antes de cualquier obra/),
   ).toBeInTheDocument();
 });
+
+// functional-10 T13 (F31): «alerta» is feminine, so the colour agrees with it for every level.
+for (const [level, words] of [
+  ['Verde', 'alerta verde'],
+  ['Amarillo', 'alerta amarilla'],
+  ['Naranja', 'alerta naranja'],
+  ['Rojo', 'alerta roja'],
+] as const) {
+  it(`offers «Crear ${words}» for a ${level} situation`, async () => {
+    server.use(
+      http.get('*/system/v4/situations', () =>
+        HttpResponse.json({ ...report, situations: [{ ...situation, level }] }),
+      ),
+      http.get('*/api/alertas', () => HttpResponse.json([])),
+    );
+    renderPage('analista');
+    // Found by its start, then read whole: a wrong agreement fails at once with the name it has.
+    expect(await screen.findByRole('button', { name: /^Crear alerta/ })).toHaveAccessibleName(
+      `Crear ${words} con esta explicación`,
+    );
+  });
+}
+
+// functional-10 T13 (F29): the cited records carry their day in Spanish, not the stored ISO form.
+it('dates the cited records of a situation in Spanish', async () => {
+  server.use(
+    http.get('*/system/v4/situations', () => HttpResponse.json(report)),
+    http.get('*/api/alertas', () => HttpResponse.json([])),
+  );
+  renderPage('consulta');
+  const evidence = (await screen.findByRole('link', { name: 'Demandas D-1' })).closest(
+    'li',
+  ) as HTMLElement;
+  expect(evidence).toHaveTextContent('Demandas D-1 · 18 oct. 2026 · Empleo local');
+  expect(evidence.querySelector('time')).toHaveAttribute('datetime', '2026-10-18');
+});

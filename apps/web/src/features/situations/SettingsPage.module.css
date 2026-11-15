@@ -50,6 +50,18 @@
   }
 }
 
+/* The page title: the top bar of a phone or tablet already says «Configuración · …». */
+.title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-xl);
+}
+
+@media (max-width: 60rem) {
+  .title {
+    display: none;
+  }
+}
+
 /* Wide screens: a vertical list on the left, like Claude's settings. */
 @media (min-width: 48rem) {
   .layout {

@@ -4,7 +4,8 @@ import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixture
 const SECTIONS = [
   ['cuenta', 'Cuenta', 'Sesiones activas'],
   ['apariencia', 'Apariencia', 'Apariencia'],
-  ['proyecto', 'Proyecto', 'SIPGES'],
+  // The Proyecto card names the active project (functional-10 T13), not the product.
+  ['proyecto', 'Proyecto', 'Proyecto principal'],
   ['privacidad', 'Privacidad y datos', 'IA externa'],
   ['notificaciones', 'Notificaciones', 'Notificaciones'],
 ] as const;

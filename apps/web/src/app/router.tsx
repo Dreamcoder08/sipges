@@ -14,6 +14,7 @@ import {
   useNavigate,
   useLocation,
   useRouter,
+  useRouterState,
 } from '@tanstack/react-router';
 import { z } from 'zod';
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
@@ -48,7 +49,7 @@ import {
 } from '../features/notifications/index.ts';
 import { SETTINGS_PATH, settingsSearch } from '../features/situations/sections.ts';
 import { AppShell } from './layout/AppShell.tsx';
-import { NotFoundPage } from './NotFoundPage.tsx';
+import { MISSING_PAGE_TITLE, NotFoundPage } from './NotFoundPage.tsx';
 import { useQualityReview } from './pending-quality.ts';
 import { recordFieldLabel } from '../features/records/modules.ts';
 
@@ -188,7 +189,7 @@ type RouterContext = { queryClient: QueryClient };
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
-  notFoundComponent: NotFoundPage,
+  notFoundComponent: () => <NotFoundPage />,
 });
 
 /**
@@ -326,11 +327,16 @@ const appRoute = createRoute({
     const pathname = useLocation({ select: (location) => location.pathname });
     const searchStr = useLocation({ select: (location) => location.searchStr });
     const commands = filterCommandsFor(pathname, searchStr);
+    // An address no screen answers keeps the shell and names itself in the title (functional-10 T13).
+    const missing = useRouterState({
+      select: (state) => state.matches.some((match) => match.routeId === missingRoute.id),
+    });
     usePreloadScreens();
     return (
       <ProjectSettingsProvider value={settings}>
         <NavigateProvider value={(href) => void router.navigate({ href })}>
           <AppShell
+            {...(missing ? { title: MISSING_PAGE_TITLE } : {})}
             projectLabel={projectLabel}
             projectKey={scope.scope}
             search={<SearchPalette scope={scope.scope} commands={commands} />}
@@ -353,6 +359,19 @@ const appRoute = createRoute({
         </NavigateProvider>
       </ProjectSettingsProvider>
     );
+  },
+});
+
+/**
+ * Signed in, an address no screen answers shows the not-found notice inside the shell, so the
+ * sidebar and menu stay one click away (functional-10 T13, F31). Signed out, the app route's
+ * session check sends the person to sign in first, as for any other screen.
+ */
+const missingRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '$',
+  component: function MissingRoute() {
+    return <NotFoundPage inShell />;
   },
 });
 
@@ -692,6 +711,7 @@ const routeTree = rootRoute.addChildren([
     ...hubRoutes,
     ...recordRoutes,
     ...featureRoutes,
+    missingRoute,
   ]),
 ]);
 
