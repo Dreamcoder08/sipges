@@ -149,6 +149,10 @@
   grid-area: state;
   justify-self: end;
 }
+.missing {
+  display: none;
+  color: var(--color-muted);
+}
 .item[aria-selected='true'] .meta,
 .item[aria-selected='true'] svg {
   color: var(--color-accent-text);
@@ -218,6 +222,9 @@
   }
   .groupLabel {
     top: var(--control-sm);
+  }
+  .missing {
+    display: inline;
   }
 }
 @container pending (width >= 52rem) {

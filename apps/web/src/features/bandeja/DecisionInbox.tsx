@@ -394,6 +394,17 @@ const fourEyesBadge = (item: PendingItem): [string, StatusTone] | null => {
 };
 
 /**
+ * An empty cell of the one-line rows: «—» to the eye, as in the other tables, and the reason to
+ * assistive tech. The two-line rows have no columns to keep aligned, so they show nothing.
+ */
+const Missing = ({ label }: { label: string }) => (
+  <span className={styles.missing}>
+    <span aria-hidden="true">—</span>
+    <span className="visually-hidden">{label}</span>
+  </span>
+);
+
+/**
  * One pending item. Below 1024 px two lines (title and wait; type, reference and four-eyes
  * state), like the Registros phone rows; from 1024 px one 36 px row whose cells line up as
  * columns (closure-roadmap T31, directions 01 and 02).
@@ -426,9 +437,13 @@ const Option = ({
           {item.where ? ` · ${item.where}` : ''}
         </span>
       </span>
-      <span className={styles.age}>{age ?? ''}</span>
+      <span className={styles.age}>{age ?? <Missing label="Sin dato" />}</span>
       <span className={styles.state}>
-        {badge ? <StatusBadge tone={badge[1]}>{badge[0]}</StatusBadge> : null}
+        {badge ? (
+          <StatusBadge tone={badge[1]}>{badge[0]}</StatusBadge>
+        ) : (
+          <Missing label="No aplica" />
+        )}
       </span>
     </div>
   );
