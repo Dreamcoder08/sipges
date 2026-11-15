@@ -264,7 +264,9 @@ export const IntelligencePage = (context: FeatureContext) => {
           <ul>
             {report.project_comparison.map((t) => (
               <li key={t.tema}>
-                {t.tema}: {t.registros_relacionados_por_palabras} registros por palabras
+                {t.tema}: {t.registros_relacionados_por_palabras}{' '}
+                {t.registros_relacionados_por_palabras === 1 ? 'registro' : 'registros'} por
+                palabras
               </li>
             ))}
           </ul>
@@ -292,7 +294,8 @@ export const IntelligencePage = (context: FeatureContext) => {
           {(data) => (
             <>
               <p>
-                {data.total} alertas registradas. {data.caution}
+                {data.total} {data.total === 1 ? 'alerta registrada' : 'alertas registradas'}.{' '}
+                {data.caution}
               </p>
               <dl className={styles.metrics}>
                 {Object.entries(data.by_status).map(([name, value]) => (
