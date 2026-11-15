@@ -402,7 +402,8 @@
   {
     "method": "GET",
     "path": "/system/intelligence/sources/defensoria/preview",
-    "access": "session"
+    "access": "session",
+    "upstream": true
   },
   { "method": "GET", "path": "/system/intelligence/territorial-alerts", "access": "session" },
   { "method": "POST", "path": "/system/intelligence/territorial-alerts", "access": "session" },

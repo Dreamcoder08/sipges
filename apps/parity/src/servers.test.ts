@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { startProcess } from './servers.ts';
+import { externalDoubles, startProcess } from './servers.ts';
 
 const startedWithin = async (ms: number, start: () => Promise<unknown>) => {
   const began = Date.now();
@@ -39,4 +39,11 @@ test('a process that exits with a code still reports it', async () => {
     startProcess('Exits', process.execPath, ['-e', 'process.exit(3)'], {}, 1),
     /Exits exited with code 3/,
   );
+});
+
+test('both APIs send the embedder and the Defensoría connector to the local double', () => {
+  assert.deepEqual(externalDoubles('http://127.0.0.1:9'), {
+    SIPGES_OLLAMA_URL: 'http://127.0.0.1:9',
+    SIPGES_DEFENSORIA_URL: 'http://127.0.0.1:9/wp-json/wp/v2/posts',
+  });
 });

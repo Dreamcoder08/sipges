@@ -278,6 +278,7 @@ Ley 29733, no una decisión legal.
 | `SIPGES_VAPID_PUBLIC_KEY`, `SIPGES_VAPID_PRIVATE_KEY`, `SIPGES_VAPID_SUBJECT` | Avisos en el dispositivo (`pnpm --filter @sipges/api vapid:keys`). | apagado |
 | `SIPGES_SEMANTIC_SEARCH` | `1` activa la búsqueda semántica con Ollama. | `0` |
 | `SIPGES_OCR`, `SIPGES_OCR_LANGUAGES` | OCR local de PDF escaneados con `ocrmypdf`. | apagado |
+| `SIPGES_DEFENSORIA_URL` | Dirección que consulta el conector de la Defensoría del Pueblo (URL http(s) absoluta, sin consulta). Solo para pruebas: las publicaciones importadas siguen enlazando a `www.defensoria.gob.pe`. | el sitio oficial |
 
 En Cloudflare Workers, define las variables en `wrangler.jsonc` o como secretos del Worker
 (`wrangler secret put`) y vuelve a desplegar, según [la guía de Workers](../deployment/cloudflare-workers.md).

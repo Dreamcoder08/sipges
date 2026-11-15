@@ -105,7 +105,11 @@ func automationModule(d Deps) (*automation, error) {
 		service.Sealer = cipher
 	}
 	m := &automation{service: service, cron: cron, interval: d.AutomationInterval, cronConfigured: cronConfigured}
-	m.runtime = automationRuntime(d, service, integrationsql.RSS{}, integrationsql.Official{})
+	official, err := officialGateway()
+	if err != nil {
+		return nil, err
+	}
+	m.runtime = automationRuntime(d, service, integrationsql.RSS{}, official)
 	automationModules[d.Pool] = m
 	return m, nil
 }

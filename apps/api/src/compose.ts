@@ -560,7 +560,8 @@ export const buildContainer = async (deps: {
     },
   };
   const authorizedSources = createAuthorizedSourcesService({
-    gateway: deps.sourceGateway ?? createOfficialSourceGateway(),
+    gateway:
+      deps.sourceGateway ?? createOfficialSourceGateway({ baseUrl: deps.config.defensoriaUrl }),
     settings: createSqlSourceSettings(deps.sql),
     clock: deps.clock.now,
     importer: sourceImporter,
