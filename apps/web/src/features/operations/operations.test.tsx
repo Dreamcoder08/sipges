@@ -637,10 +637,11 @@ it('says when the semantic model is unavailable and offers rules only', async ()
     ),
   );
   mount(<IntelligencePage {...context} />);
-  expect(
-    await screen.findByText(
-      'Análisis semántico no disponible: no se pudo contactar el modelo de embeddings. El modo automático aplica solo reglas.',
-    ),
-  ).toBeVisible();
+  const warning = await screen.findByText(/^Análisis semántico no disponible/);
+  expect(warning).toHaveTextContent(
+    'Análisis semántico no disponible: no se pudo contactar el modelo de representaciones semánticas. El modo automático aplica solo reglas.',
+    { normalizeWhitespace: true },
+  );
+  expect(warning).toBeVisible();
   expect(screen.getByRole('option', { name: /Semántico/ })).toBeDisabled();
 });

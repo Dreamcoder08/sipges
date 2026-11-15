@@ -9,6 +9,12 @@
   display: grid;
   gap: 6px;
 }
+/* A checkbox and its words share one row, the box first (as in Automatizaciones). */
+.form .check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .panel input:not([type='checkbox']),
 .form textarea {
   max-width: 100%;

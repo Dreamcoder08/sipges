@@ -136,9 +136,43 @@ for (const mobile of [false, true]) {
       const sourceCard = page.locator('section').filter({
         has: page.getByRole('heading', { name: 'Fuentes oficiales autorizadas', exact: true }),
       });
-      await expect(
-        sourceCard.getByRole('checkbox', { name: 'Activar consulta periódica autorizada' }),
-      ).not.toBeChecked();
+      const periodic = sourceCard.getByRole('checkbox', {
+        name: 'Activar consulta periódica autorizada',
+      });
+      await expect(periodic).not.toBeChecked();
+      // The box sits at the start of its label's row, beside the words (artefacto-territorial-
+      // intelligence-*.png showed it centred on a row of its own, away from them).
+      await periodic.scrollIntoViewIfNeeded();
+      const layout = await periodic.evaluate((input) => {
+        const label = input.closest('label');
+        const words = [...(label?.childNodes ?? [])].find(
+          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+        );
+        if (!label || !words) throw new Error('unexpected checkbox markup');
+        const range = document.createRange();
+        range.selectNodeContents(words);
+        const [first] = [...range.getClientRects()].filter((r) => r.width > 0);
+        const box = input.getBoundingClientRect();
+        const row = label.getBoundingClientRect();
+        if (!first) throw new Error('the label has no rendered words');
+        return {
+          sameRow: first.top < box.bottom && box.top < first.bottom,
+          wordsAfterBox: first.left >= box.right && first.left - box.right <= 16,
+          boxAtRowStart: box.left - row.left <= 4,
+        };
+      });
+      expect(layout).toEqual({ sameRow: true, wordsAfterBox: true, boxAtRowStart: true });
+      // The words toggle the box: the label stays clickable.
+      await sourceCard.getByText('Activar consulta periódica autorizada', { exact: true }).click();
+      await expect(periodic).toBeChecked();
+      await sourceCard.getByText('Activar consulta periódica autorizada', { exact: true }).click();
+      await expect(periodic).not.toBeChecked();
+      // Interface copy stays in Spanish. The suite points the model at an unreachable port
+      // (global-setup.ts), so the warning that names it is always there to read.
+      const semantic = page.getByText(/^Análisis semántico no disponible:/);
+      await expect(semantic).toBeVisible();
+      expect(await semantic.innerText()).toContain('modelo de representaciones semánticas');
+      expect(await page.locator('main').innerText()).not.toContain('embeddings');
       await expect(sourceCard.getByText(/Consulta periódica: desactivada/)).toBeVisible();
       // External outage/cleared-results coverage lives in AuthorizedSourcesCard.test.tsx.
       // Keep this persisted E2E independent of external availability and browser interception.

@@ -47,7 +47,7 @@ const Configuration = ({
   };
   return (
     <div className={styles.form}>
-      <label>
+      <label className={styles.check}>
         <input
           type="checkbox"
           checked={enabled}
@@ -72,7 +72,7 @@ const Configuration = ({
         <textarea maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />
       </label>
       {enabled ? (
-        <label>
+        <label className={styles.check}>
           <input
             type="checkbox"
             checked={confirmed}

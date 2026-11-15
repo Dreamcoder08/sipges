@@ -27,7 +27,7 @@ export const embedderStatusQuery = (scope: string) =>
 export const embedderUnavailableReason = (status: EmbedderStatus) =>
   status.reason === 'external_ai_disabled'
     ? 'el envío a IA externa está desactivado para este proyecto'
-    : 'no se pudo contactar el modelo de embeddings';
+    : 'no se pudo contactar el modelo de representaciones semánticas';
 
 /** Semantic search is switched on but its model cannot be used: results are keyword only. */
 export const semanticSearchDown = (status: EmbedderStatus) =>
