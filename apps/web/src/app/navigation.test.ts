@@ -161,4 +161,14 @@ describe('navigation', () => {
     const icons = Object.values(SCREEN_ICONS);
     expect(new Set(icons).size).toBe(icons.length);
   });
+
+  it('gives Configuración an icon no destination or other screen uses', () => {
+    const others = [
+      ...DESTINATIONS.map((hub) => hub.icon),
+      ...Object.entries(SCREEN_ICONS)
+        .filter(([path]) => path !== '/version-4')
+        .map(([, icon]) => icon),
+    ];
+    expect(others).not.toContain(SCREEN_ICONS['/version-4']);
+  });
 });

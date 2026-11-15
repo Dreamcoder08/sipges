@@ -265,7 +265,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/integraciones': 'plug',
   '/metodologia': 'bookOpen',
   '/auditoria': 'shield',
-  '/version-4': 'layers',
+  '/version-4': 'settings',
 };
 
 export const iconFor = (path: NavPath): IconName =>

@@ -286,6 +286,63 @@ it('consulta sees prevention history without write forms', async () => {
   expect(screen.getByText(/Reunión registrada/)).toBeVisible();
   expect(screen.queryByRole('button', { name: 'Guardar avance' })).toBeNull();
 });
+it('agrees counts in number on the territorial intelligence screen', async () => {
+  const summary = (total: number) =>
+    HttpResponse.json({
+      version: '2.6',
+      project_id: 'PRJ-DEMO',
+      total,
+      by_status: {},
+      by_priority: {},
+      themes: [],
+      irsa_integration: 'Independiente',
+      caution: 'Revisión.',
+    });
+  let total = 1;
+  server.use(
+    http.get('*/system/intelligence/territorial-alerts', () => HttpResponse.json([])),
+    http.get('*/system/intelligence/territorial-summary', () => summary(total)),
+    http.post('*/system/intelligence/semantic-analyze', () =>
+      HttpResponse.json({
+        version: '2.5',
+        project_id: 'PRJ-DEMO',
+        source_url: '',
+        analyzed_chars: 20,
+        topics: [],
+        signals: [],
+        orientation: { score: 0, level: 'Baja', meaning: 'Prioridad textual' },
+        project_comparison: [
+          { tema: 'Agua', registros_relacionados_por_palabras: 1 },
+          { tema: 'Empleo', registros_relacionados_por_palabras: 3 },
+        ],
+        suggested_actions: [],
+        evidence: { fragment: 'Texto', sha256: 'abc' },
+        method: 'Reglas',
+        limitations: [],
+        verification_status: 'Pendiente',
+        source_retrieved: false,
+      }),
+    ),
+  );
+  const view = mount(<IntelligencePage {...context} />);
+  // Wait for the summary in either number, then assert the exact sentence.
+  expect(await screen.findByText(/^1 alertas? registradas?\./)).toHaveTextContent(
+    /^1 alerta registrada\. Revisión\.$/,
+  );
+  const user = userEvent.setup();
+  await user.type(screen.getByLabelText('Texto a analizar'), 'Texto sintético');
+  await user.click(screen.getByRole('button', { name: 'Analizar texto' }));
+  expect(await screen.findByText(/^Agua: 1 registros? por palabras$/)).toHaveTextContent(
+    /^Agua: 1 registro por palabras$/,
+  );
+  expect(screen.getByText('Empleo: 3 registros por palabras')).toBeVisible();
+  view.unmount();
+  total = 2;
+  mount(<IntelligencePage {...context} />);
+  expect(await screen.findByText(/^2 alertas? registradas?\./)).toHaveTextContent(
+    /^2 alertas registradas\. Revisión\.$/,
+  );
+});
 it('reports unavailable semantic models without registering an alert', async () => {
   server.use(
     http.get('*/system/intelligence/territorial-alerts', () => HttpResponse.json([])),

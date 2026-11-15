@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { APIRequestContext } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { brokenWords } from '../support/text-fit.ts';
@@ -83,6 +84,72 @@ test('a long level label stays clear of the alert title and date at 360 px', asy
     });
     expect(await brokenWords(row)).toEqual([]);
   }
+});
+
+/**
+ * Panel «Resumen del proyecto» at 360 px (movil-inicio.png, movil-hoy-completo.png): the IRSA
+ * reading, its level and the methodology caveat shared one squeezed flex line, so «Riesgo IRSA
+ * 6.0» and «Metodología pendiente de validación» each broke onto three lines. Each keeps to one
+ * line now; the line wraps between them instead, and nothing leaves the screen.
+ */
+test('the IRSA reading and its caveat each keep to one line at 360 px', async ({
+  page,
+  admin,
+  adminApi,
+}) => {
+  // An event with a dimension gives the IRSA evidence, so the reading shows its value.
+  await seed(adminApi, 'eventos', {
+    Descripcion_Hecho: 'Reunión sintética para la lectura IRSA',
+    Dimension_Principal: 'G',
+    Fecha: '2026-10-13',
+  });
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/');
+  const lead = page.getByRole('region', { name: 'Resumen del proyecto' });
+  const reading = lead.getByRole('link', { name: /^Riesgo IRSA \d/ });
+  const caveat = lead.getByText('Metodología pendiente de validación');
+  await expect(reading).toBeVisible();
+  await expect(caveat).toBeVisible();
+  // Lines the element's text occupies, measured on its glyphs with a DOM Range (icons excluded).
+  // A glyph box whose middle lies below the current line's bottom starts a new line, so the
+  // larger «6.0» on the same baseline does not count as a line of its own.
+  const lines = (target: typeof reading) =>
+    target.evaluate((root) => {
+      const rects: DOMRect[] = [];
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        rects.push(...[...range.getClientRects()].filter((r) => r.width > 0));
+      }
+      rects.sort((a, b) => a.top - b.top);
+      let count = 0;
+      let bottom = -Infinity;
+      for (const rect of rects) {
+        if (rect.top + rect.height / 2 > bottom) {
+          count += 1;
+          bottom = rect.bottom;
+        } else bottom = Math.max(bottom, rect.bottom);
+      }
+      return count;
+    });
+  const dir = process.env.SIPGES_SCREENSHOT_DIR;
+  if (dir) await page.screenshot({ path: path.join(dir, 'panel-irsa-360.png') });
+  expect({ reading: await lines(reading), caveat: await lines(caveat) }).toEqual({
+    reading: 1,
+    caveat: 1,
+  });
+  for (const part of [reading, caveat]) {
+    const rect = await part.boundingBox();
+    expect(rect && rect.x + rect.width).toBeLessThanOrEqual(360);
+  }
+  const widths = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    view: document.documentElement.clientWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.view);
 });
 
 /**

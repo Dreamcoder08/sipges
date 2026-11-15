@@ -31,6 +31,8 @@
 
 .risk {
   display: flex;
+  /* On a phone the reading, the level and the caveat wrap between them, not inside each. */
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
   margin: var(--space-1) 0 0;
