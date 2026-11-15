@@ -35,12 +35,25 @@ for (const width of [360, 390, 1280] as const) {
     });
     await expect(button).toBeInViewport({ ratio: 1 });
 
-    const headers = page.getByRole('columnheader');
+    const revision = page.getByRole('columnheader').filter({ hasText: /^Revisión$/ });
     if (width > 640) {
-      await expect(headers.filter({ hasText: /^Revisión$/ })).toBeInViewport({ ratio: 1 });
+      // WebKit lays columns out in 1/64 px units and ends the last header cell 1/64 px past the
+      // table and its scroll region, which clips that fraction (ratio 0.9999): allow less than a
+      // pixel, never a cut column or a sideways swipe.
+      await expect(revision).toBeInViewport({ ratio: 0.99 });
+      const fit = await revision.evaluate((node) => {
+        const region = node.closest('table')?.parentElement;
+        if (!region) return { cut: Number.NaN, sideways: Number.NaN };
+        return {
+          cut: node.getBoundingClientRect().right - region.getBoundingClientRect().right,
+          sideways: region.scrollWidth - region.clientWidth,
+        };
+      });
+      expect(fit.cut, '«Revisión» past the right edge of its region (px)').toBeLessThan(1);
+      expect(fit.sideways, 'the table region scrolls sideways (px)').toBe(0);
     } else {
       // Stacked: the header row is kept for assistive technology, off screen.
-      await expect(headers.filter({ hasText: /^Revisión$/ })).not.toBeInViewport();
+      await expect(revision).not.toBeInViewport();
     }
     expect(
       await page.evaluate(() => document.documentElement.scrollWidth),
