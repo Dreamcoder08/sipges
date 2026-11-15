@@ -110,6 +110,20 @@ Configuration and delivery
   `tables.mjs` are unproven on Windows; WebKit runs 7 specs; three more Indicators table captions may be
   cut on phones; map circles of one place stack (design decision).
 
+Found by the visit-rc13 gallery (122 images, every one opened)
+
+- F29 — Raw ISO dates T1 did not reach: the record sheet «Fecha 2026-10-12» while its list row reads «12 oct.
+  2026» (`registros-*-ficha`, `registros-tabla-1440`); Seguimiento de compromisos «Fecha de referencia:
+  2026-11-15 (America/Lima)»; Fuentes oficiales «comprobada el 2026-10-17».
+- F30 — Auditoría breaks words letter by letter at 360 px and «Automatiz/iones» at 1440 px; the IRSA weight
+  inputs still show «0.1666667»/«0.1666665» and the bands «24.99 / 49.99 / 74.99» with a decimal point.
+- F31 — Smaller ones: Inicio level pills wrap at 360 px and push «Esta semana» under the composer; «1 de 1
+  registros»; «Crear alerta rojo» (gender); IRSA tables at 360 px cut columns with no scroll cue; the
+  Configuración page has no visible title at 1440 px; the not-found page renders without the app shell; the
+  Proyecto card reads «Proyecto · SIPGES» instead of the project name; a stray «—» with no label in the
+  Registros sheet; the opt-in Territorio captures wait for the old «registro(s) sin ubicación» text
+  (`apps/e2e/support/territorio-capture.ts:87`), so 8 capture tests time out.
+
 ## Tasks
 
 Each task reproduces its findings first (a failing test per rule), fixes the product, and updates the
@@ -152,6 +166,12 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   the Windows interrupt drill step. Route: worker. Commit: #468 cc27b30e
 - [ ] T12 — S1: release. `visit-rc13` on the commit that holds T1–T11 with CI and the Windows drill
   green, roadmap log entry, gallery regenerated and every image reviewed. Route: inline. Commit: —
+
+- [ ] T13 — S1, F29–F31: close what the rc13 gallery found. Dates and numbers through the shared helpers
+  in the record sheet, Seguimiento, Fuentes oficiales and the IRSA weight and band inputs (decimal comma,
+  inputs still accept what they accept today); Auditoría readable at 360 and 1440 px; the F31 list; the
+  capture helper regex. Each with a failing test first; then regenerate the gallery and review it again.
+  Route: worker. Commit: —
 
 Owner decisions these tasks do not take: the cloud database plan (F28), grouping map circles into one
 marker with a count (F28), and the default project name of T6 if «Proyecto 1» is not wanted.
@@ -202,3 +222,7 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   channel; review advisories on the Go harness (validate the database name before CREATE, bound `go build`) and
   on the Windows helper (POSIX paths in one test, failure paths not run on Windows); map circles and the cloud
   database quota stay owner decisions.
+- L7 — `visit-rc13` published on cc27b30e (CI and the Windows drill green on that commit). Its gallery
+  (`.worktrees/rc13-gallery/.data/rc13-screens/`, 122 images) counts 66 ok / 41 duda / 15 defecto against rc12's
+  64 / 26 / 0; none of the 15 is a regression (the 9 on rc12 images were already there, unmarked). F29–F31 and
+  T13 added; T12 stays open until the T13 gallery is clean.
