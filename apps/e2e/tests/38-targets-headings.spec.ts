@@ -8,7 +8,8 @@ import { headingSkips, smallTargets } from './target-size.ts';
  * Pointer targets, heading order and axe on every screen at a phone, a laptop and a wide desktop
  * width (odd/tasks/functional-10.md T7, F20–F21): each link and button outside a sentence is at
  * least 24×24 px (WCAG 2.2 SC 2.5.8, measured without the spacing exception), no heading skips a
- * level, and the WCAG 2.2 AA rules of axe pass. Runs after the CRUD specs, so lists hold records.
+ * level, the WCAG 2.2 AA rules of axe pass and the page never scrolls sideways (T11: the same walk
+ * on WebKit and at 360 px). Runs after the CRUD specs, so lists hold records.
  */
 const MIN = 24;
 const WIDTHS = [360, 930, 1440] as const;
@@ -18,7 +19,7 @@ const PAGES = [
 ];
 
 for (const width of WIDTHS) {
-  test(`every screen at ${width} px: 24 px targets, no skipped heading, WCAG 2.2 AA`, async ({
+  test(`every screen at ${width} px: 24 px targets, no skipped heading, WCAG 2.2 AA, no sideways scroll`, async ({
     page,
     admin,
   }) => {
@@ -31,12 +32,18 @@ for (const width of WIDTHS) {
     const small: Record<string, string[]> = {};
     const skips: Record<string, string[]> = {};
     const violations: Record<string, string[]> = {};
+    const wide: Record<string, { scroll: number; view: number }> = {};
     for (const { path, title } of PAGES) {
       await page.goto(path);
       await expect(page.getByRole('heading', { level: 1, name: title })).toBeAttached();
       await settled();
       const targets = await smallTargets(page, MIN, { equivalentSvg: true });
       if (targets.length > 0) small[path] = targets;
+      const widths = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        view: document.documentElement.clientWidth,
+      }));
+      if (widths.scroll > widths.view) wide[path] = widths;
       const skipped = await headingSkips(page);
       if (skipped.length > 0) skips[path] = skipped;
       const result = await analyzeAccessibility(page);
@@ -45,7 +52,12 @@ for (const width of WIDTHS) {
           (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`,
         );
     }
-    expect({ small, skips, violations }).toEqual({ small: {}, skips: {}, violations: {} });
+    expect({ small, skips, violations, wide }).toEqual({
+      small: {},
+      skips: {},
+      violations: {},
+      wide: {},
+    });
   });
 }
 
@@ -86,6 +98,7 @@ test('an empty new record shows in-page errors and focuses the first invalid fie
  */
 test('every hub section announces the current one with aria-pressed', async ({ page, admin }) => {
   test.setTimeout(180_000);
+  const settled = watchNetwork(page);
   await signInToProject(page, admin, DEFAULT_SCOPE);
   for (const hub of DESTINATIONS.filter((item) => item.path !== '/registros')) {
     for (const tab of hub.tabs) {
@@ -97,6 +110,9 @@ test('every hub section announces the current one with aria-pressed', async ({ p
       );
       await expect(group.locator('[aria-pressed="true"]')).toHaveCount(1);
       await expect(group.locator('[aria-pressed="false"]')).toHaveCount(hub.tabs.length - 1);
+      // The map tabs load chunks and workers; WebKit reports the ones the next navigation
+      // aborts as console and page errors, so each tab settles before the next one opens.
+      await settled();
     }
   }
   await page.goto('/registros?tipo=eventos');

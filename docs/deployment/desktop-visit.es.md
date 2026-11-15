@@ -37,7 +37,8 @@ inventados. Lo marcado con ⚠ no está en ningún README: lo agrega este runboo
 | ⚠ F7: el texto de detención que nombra la carpeta de datos gestionada | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ `install.ps1` se niega con un `-State` que es un enlace o una unión (junction) | No probado en Windows hasta que el ensayo automático lo cubra |
 | ⚠ `tables.mjs` (paso 5b): corrido desde el `.zip` con el PGlite de una instalación gestionada (`--app`), sobre carpetas sintéticas en NTFS: dos iguales (`RESULT: no difference`, `0`), una fila cambiada (`RESULT: N difference(s)`, `1`), una entrada que es una unión (junction) y otra que tiene una adentro, `--app` sin `current.json` y SIPGES abierto (`RESULT: not compared (…)`, `2`); después de cada corrida la carpeta temporal queda vacía y las entradas iguales byte a byte | Lo ejecuta el drill de Windows (paso 6 de `drill.mjs`; en la fila `main` también con el PGlite del checkout y las pruebas de `tables.test.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
-| ⚠ `tables.mjs` (paso 5b): que Ctrl+C borre sus copias, cerrar la ventana a mitad de camino, la negativa por falta de espacio, una copia `.pre-update-…` real contra su carpeta migrada | No probado en Windows: desde Node no se le puede mandar Ctrl+C a otro proceso en Windows (`child.kill()` lo termina en el acto), así que las pruebas del corte se saltean ahí; la falta de espacio y una copia real no se ensayan. En Linux el ensayo de `rehearse.mjs` lo corre completo y el corte con Ctrl+C lo cubren sus pruebas |
+| ⚠ `tables.mjs` (paso 5b): que Ctrl+C a mitad de la copia borre sus copias, termine con `RESULT: not compared (interrupted)` y `2` y deje las entradas iguales byte a byte | Lo ejecuta el drill de Windows en la fila `main` (paso «tables.mjs interrupted by a console Ctrl+C»: `tables-interrupt.ps1` manda un Ctrl+C de consola real con `GenerateConsoleCtrlEvent`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado). En Linux el mismo ensayo manda SIGINT |
+| ⚠ `tables.mjs` (paso 5b): cerrar la ventana a mitad de camino, la negativa por falta de espacio, una copia `.pre-update-…` real contra su carpeta migrada | No probado en Windows: `GenerateConsoleCtrlEvent` no puede mandar el aviso de ventana cerrada (`CTRL_CLOSE_EVENT`) y Windows termina el proceso unos segundos después; la falta de espacio y una copia real no se ensayan. En Linux el ensayo de `rehearse.mjs` lo corre completo |
 | ⚠ `install.ps1` se niega con un `-State` que lleva a la carpeta de datos original (la original misma, sin instalación gestionada) | Lo ejecuta el drill de Windows (paso 3 de `drill.mjs`); probado en Windows solo si esa ejecución del CI pasó (anotá el resultado) |
 
 El ensayo automático (`deploy\desktop\windows\drill.mjs`) corre ahora una vez por cada commit que la
@@ -601,8 +602,9 @@ sesión y lo que se abrió dejan filas que la comparación acepta (`rows added`,
   decir `not compared`, anotá el motivo y seguí: este paso es opcional, pero entonces no prueba nada.
   `an input folder changed during the run` quiere decir que algo escribió en los datos mientras
   comparaba: comprobá `SIPGES cerrado` antes de repetir.
-- [ ] Si hace falta cortarlo (no probado en Windows), Ctrl+C **una vez y esperá**: avisa
-  `Interrupted: removing the scratch copy …`, termina la copia que tenía a medias (puede tardar
+- [ ] Si hace falta cortarlo (en Windows, probado solo si pasó ese paso del drill; ver la tabla
+  de arriba), Ctrl+C **una vez y esperá**: avisa `Interrupted: removing the scratch copy …`,
+  termina la copia que tenía a medias (puede tardar
   lo mismo que copiar la base), borra sus copias y recién entonces dice `RESULT: not compared (interrupted)` y `2`. No cierres la
   ventana antes de ver esa línea. Si dice `could not be removed … delete that folder`, o si se
   cerró la ventana o se mató el proceso, la copia queda en `%TEMP%`: borrá

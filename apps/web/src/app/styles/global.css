@@ -175,6 +175,13 @@ textarea {
   transition: border-color var(--motion-fast) ease;
 }
 
+/* WebKit lets a chosen option wider than its select overflow it and scroll the page sideways
+   (Automatizaciones «Tipo de canal» at 360 px made the page 635 px wide); `overflow` does not
+   apply to a select, paint containment does, and the select's own outline is not clipped. */
+select {
+  contain: paint;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: var(--color-subtle);

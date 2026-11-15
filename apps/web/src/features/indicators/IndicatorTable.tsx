@@ -5,7 +5,9 @@ import { plainMethod } from './labels.ts';
 export const IndicatorTable = ({ items }: { items: IndicatorReportItem[] }) => (
   <div className={styles.table} tabIndex={0} role="region" aria-label="Detalle de indicadores">
     <table>
-      <caption>Indicadores desagregados</caption>
+      <caption>
+        <span className={styles.captionText}>Indicadores desagregados</span>
+      </caption>
       <thead>
         <tr>
           <th scope="col">Indicador</th>

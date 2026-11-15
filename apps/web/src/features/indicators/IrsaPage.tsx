@@ -239,7 +239,9 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
               />
               <div className={styles.table} tabIndex={0} role="region" aria-label="Historial IRSA">
                 <table>
-                  <caption>Últimos 50 cortes del proyecto</caption>
+                  <caption>
+                    <span className={styles.captionText}>Últimos 50 cortes del proyecto</span>
+                  </caption>
                   <thead>
                     <tr>
                       <th scope="col">Fecha</th>

@@ -13,8 +13,9 @@
 //   d. --app given a folder that is no managed install: exit 2 (--app is used, never skipped);
 //   e. something answering on --port (SIPGES open): exit 2.
 // After every run the scratch folder is empty (nothing copied, or every copy removed) and the
-// inputs are byte-identical to before. Never run: an interrupt. Node's child.kill('SIGINT') on
-// Windows ends the process outright, it delivers no signal, so a Ctrl+C cannot be faked here.
+// inputs are byte-identical to before. Never run here: an interrupt. Node's child.kill('SIGINT')
+// on Windows ends the process outright, it delivers no signal; tables-interrupt.mjs sends a real
+// console Ctrl+C instead.
 import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { existsSync, realpathSync } from 'node:fs';
@@ -124,14 +125,14 @@ function resolvePGlite(packageJson) {
   }
 }
 
-async function checkoutPGlite() {
+export async function checkoutPGlite() {
   const entry = resolvePGlite(join(repo, 'apps', 'api', 'package.json'));
   if (!entry) throw new Error('PGlite not found in apps/api: run pnpm install --frozen-lockfile');
   return (await import(pathToFileURL(entry).href)).PGlite;
 }
 
 /** A state folder: this checkout's migrations with synthetic rows, plus a state folder's files. */
-async function buildState(PGlite, dir) {
+export async function buildState(PGlite, dir) {
   await mkdir(join(dir, 'uploads'), { recursive: true });
   const db = new PGlite(join(dir, 'pglite'));
   try {
@@ -365,7 +366,7 @@ export async function tablesDrill({
     `tables.mjs: ${runs} runs passed with PGlite from ${pglite === 'managed' ? 'the managed install (--app)' : 'this checkout'}`,
   );
   say(
-    'not run: an interrupt (Ctrl+C) and closing the console window. On Windows child.kill() ends the process outright and delivers no signal, so neither can be produced here.',
+    'not run: an interrupt (Ctrl+C) and closing the console window. On Windows child.kill() ends the process outright and delivers no signal; tables-interrupt.mjs sends a real console Ctrl+C, and closing the console window is not driven.',
   );
   return { pglite, runs };
 }

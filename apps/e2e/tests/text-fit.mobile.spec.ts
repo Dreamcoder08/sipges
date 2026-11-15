@@ -209,6 +209,26 @@ test('the IRSA-SIPGES card wraps between its level and caveat, not inside them, 
 });
 
 /**
+ * Whether every glyph of a table caption lies inside the visible width of the scrolling region
+ * that holds its table, and inside the screen: a caption cut at the region's edge fails.
+ */
+const captionFit = (caption: Locator) =>
+  caption.evaluate((node) => {
+    const scroller = node.closest('[role="region"]');
+    if (!scroller) throw new Error('the caption sits outside its region');
+    const view = scroller.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const ink = [...range.getClientRects()].filter((r) => r.width > 0);
+    return {
+      insideRegion: ink.every(
+        (r) => r.left >= view.left - 0.5 && r.right <= view.left + scroller.clientWidth + 0.5,
+      ),
+      insideScreen: ink.every((r) => r.left >= 0 && r.right <= window.innerWidth),
+    };
+  });
+
+/**
  * Análisis › IRSA-SIPGES at 360 px (360-analisis-*.png): the dimension table is wider than the
  * phone and scrolls in its own region, and its caption stretched with it, so «Puntuación y
  * disponibilidad por dimensión» was cut at «…por dime». The caption wraps inside the region's
@@ -229,27 +249,79 @@ for (const colorScheme of ['light', 'dark'] as const) {
     });
     await caption.scrollIntoViewIfNeeded();
     await expect(caption).toBeVisible();
-    const fit = await caption.evaluate((node) => {
-      const scroller = node.closest('[role="region"]');
-      if (!scroller) throw new Error('the caption sits outside its region');
-      const view = scroller.getBoundingClientRect();
-      const range = document.createRange();
-      range.selectNodeContents(node);
-      const ink = [...range.getClientRects()].filter((r) => r.width > 0);
-      return {
-        insideRegion: ink.every(
-          (r) => r.left >= view.left - 0.5 && r.right <= view.left + scroller.clientWidth + 0.5,
-        ),
-        insideScreen: ink.every((r) => r.left >= 0 && r.right <= window.innerWidth),
-      };
-    });
-    expect(fit).toEqual({ insideRegion: true, insideScreen: true });
+    expect(await captionFit(caption)).toEqual({ insideRegion: true, insideScreen: true });
     expect(await brokenWords(caption)).toEqual([]);
     const widths = await page.evaluate(() => ({
       scroll: document.documentElement.scrollWidth,
       view: document.documentElement.clientWidth,
     }));
     expect(widths.scroll).toBeLessThanOrEqual(widths.view);
+  });
+}
+
+/**
+ * The other three Indicators tables (functional-10 T11, F28): IRSA history, the indicator detail
+ * of Metodología and the expert template of Validación are wider than a phone and scroll inside
+ * their region, and each caption stretched to its table's width, so a caption longer than the
+ * visible width was cut at the region's edge (or only fitted because the local font is narrow).
+ * Each caption's text box is bounded by the region's visible width, whatever the font, and every
+ * glyph is readable without scrolling.
+ */
+const INDICATOR_CAPTIONS = [
+  { path: '/irsa', region: 'Historial IRSA', caption: 'Últimos 50 cortes del proyecto' },
+  {
+    path: '/metodologia',
+    region: 'Detalle de indicadores',
+    caption: 'Indicadores desagregados',
+  },
+  {
+    path: '/validacion',
+    region: 'Plantilla de expertos',
+    caption: 'Indicadores pendientes de revisión',
+  },
+] as const;
+
+for (const width of [360, 412] as const) {
+  test(`the Indicators table captions stay readable at ${width} px`, async ({ page, admin }) => {
+    await page.setViewportSize({ width, height: 780 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    // A saved cut gives the history table a row, so it is as wide as it is in use.
+    await page.goto('/irsa');
+    // Unique per run: a repeated run (--repeat-each) finds its own row among the earlier ones.
+    const note = `Corte sintético de ancho a ${width} px ${Date.now()}`;
+    await page.getByLabel('Nota del corte').fill(note);
+    await page.getByRole('button', { name: 'Guardar corte IRSA' }).click();
+    await expect(
+      page
+        .getByRole('region', { name: 'Historial IRSA' })
+        .getByRole('cell', { name: note, exact: true }),
+    ).toBeVisible();
+    const found: Record<string, unknown> = {};
+    for (const item of INDICATOR_CAPTIONS) {
+      await page.goto(item.path);
+      const region = page.getByRole('region', { name: item.region, exact: true });
+      const caption = region.getByText(item.caption, { exact: true });
+      await caption.scrollIntoViewIfNeeded();
+      await expect(caption).toBeVisible();
+      const fit = await captionFit(caption);
+      const bounded = await caption.evaluate((node) => {
+        const scroller = node.closest('[role="region"]');
+        if (!scroller) throw new Error('the caption sits outside its region');
+        const box = node.getBoundingClientRect();
+        const view = scroller.getBoundingClientRect();
+        return box.right <= view.left + scroller.clientWidth + 0.5;
+      });
+      const broken = await brokenWords(caption);
+      if (!fit.insideRegion || !fit.insideScreen || !bounded || broken.length > 0)
+        found[item.caption] = { ...fit, bounded, broken };
+      const widths = await page.evaluate(() => ({
+        scroll: document.documentElement.scrollWidth,
+        view: document.documentElement.clientWidth,
+      }));
+      if (widths.scroll > widths.view) found[`${item.path} page`] = widths;
+    }
+    expect(found).toEqual({});
   });
 }
 

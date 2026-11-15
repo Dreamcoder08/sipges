@@ -451,11 +451,16 @@ would lose the audit trail, record history and MFA enrolments. It is not built.
   junction, `--app` without `current.json` and something answering on `--port` (exit 2,
   `RESULT: not compared (…)`). After each run the scratch folder is empty and the inputs are
   byte-identical. Its `main` row also runs the same with this checkout's PGlite (no `--app`) and
-  runs `tables.test.mjs`. Proved on Windows only by a run where that job passed. Not run on
-  Windows: Ctrl+C (Node cannot deliver a console Ctrl+C or another signal to a child process
-  there, `child.kill()` ends it outright, so the signal tests skip on win32), closing the console
-  window during a run, the no-room refusal, and a real pre-update copy against its migrated
-  folder.
+  runs `tables.test.mjs`. Proved on Windows only by a run where that job passed. Ctrl+C: Node
+  cannot deliver a console Ctrl+C or another signal to a child process there (`child.kill()` ends
+  it outright, so the signal tests of `tables.test.mjs` skip on win32), so the `main` row runs
+  `deploy/desktop/windows/tables-interrupt.mjs`: `tables-interrupt.ps1` starts `tables.mjs` in a
+  console of its own and sends a real `CTRL_C_EVENT` (`GenerateConsoleCtrlEvent`) once the copy
+  has begun; the run must exit 2 with `RESULT: not compared (interrupted)`, leave its scratch
+  folder empty and both inputs byte-identical (on Linux the same drill sends SIGINT). Proved on
+  Windows only by a run where that step passed. Not run on Windows: closing the console window
+  during a run (`GenerateConsoleCtrlEvent` cannot send `CTRL_CLOSE_EVENT`), the no-room refusal,
+  and a real pre-update copy against its migrated folder.
 - The rehearsal source was `e490339c`, the parent of the launcher commit, because the laptop's
   commit is not known yet (closure-roadmap T27). Rerun with that commit.
 - A Linux clone install keeps its browser profile in the state folder (`chrome/`, with links and
