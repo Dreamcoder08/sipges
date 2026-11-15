@@ -31,6 +31,11 @@
   background: var(--color-surface);
   color: inherit;
 }
+/* WebKit lets a chosen option wider than the field («Automático con respaldo por reglas» at 360 px)
+   overflow it and scroll the page sideways; `overflow` does not apply to its select, paint containment does. */
+.form select {
+  contain: paint;
+}
 .form textarea {
   min-height: 8rem;
   resize: vertical;
