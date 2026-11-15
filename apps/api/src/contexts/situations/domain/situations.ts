@@ -188,6 +188,11 @@ export const toneShift = (signals: readonly Signal[], windowDays: number) => {
   return Math.abs(now - then) >= 25 ? { now, then, recent } : null;
 };
 
+// People read counts with their noun in agreement and decimals with a comma
+// (odd/tasks/functional-10.md T2 and T4); the Go port writes the same bytes.
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+const decimalComma = (n: number) => String(n).replace('.', ',');
+
 const cite = (signals: readonly Signal[]) => signals.map((s) => `${s.module}:${s.id}`);
 
 const recommend = (
@@ -255,7 +260,7 @@ const buildSituation = (
 
   const reasons: Reason[] = [
     {
-      text: `${sorted.length} registros relacionados con ${KIND_LABEL[kind]} «${label}» en ${span} día(s).`,
+      text: `${sorted.length} ${plural(sorted.length, 'registro relacionado', 'registros relacionados')} con ${KIND_LABEL[kind]} «${label}» en ${span} ${plural(span, 'día', 'días')}.`,
       records: cite(sorted),
     },
   ];
@@ -280,7 +285,7 @@ const buildSituation = (
   }
   if (trend === 'en aumento') {
     reasons.push({
-      text: `En aumento: ${recent} registro(s) en los últimos ${RECENT_DAYS} días frente a ${weekly} por semana en las ${BASELINE_WEEKS} semanas anteriores${raised ? `; por eso el nivel sube de ${base} a ${level}` : ''}.`,
+      text: `En aumento: ${recent} ${plural(recent, 'registro', 'registros')} en los últimos ${RECENT_DAYS} días frente a ${weekly} por semana en las ${BASELINE_WEEKS} semanas anteriores${raised ? `; por eso el nivel sube de ${base} a ${level}` : ''}.`,
       records: cite(sorted.filter((s) => s.ageDays < RECENT_DAYS)),
     });
   } else if (trend === 'en descenso') {
@@ -292,7 +297,7 @@ const buildSituation = (
   const severe = sorted.filter((s) => s.severity > 1);
   if (severe.length) {
     reasons.push({
-      text: `${severe.length} registro(s) con prioridad o nivel alto.`,
+      text: `${severe.length} ${plural(severe.length, 'registro', 'registros')} con prioridad o nivel alto.`,
       records: cite(severe),
     });
   }
@@ -304,7 +309,7 @@ const buildSituation = (
     });
   }
   reasons.push({
-    text: `Puntaje ${score}: cada registro pesa la mitad cada ${settings.halfLifeDays} días y más si su prioridad es alta.`,
+    text: `Puntaje ${decimalComma(score)}: cada registro pesa la mitad cada ${settings.halfLifeDays} días y más si su prioridad es alta.`,
     records: [],
   });
 
