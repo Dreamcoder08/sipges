@@ -82,7 +82,11 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   aria-label="Puntuaciones por dimensión"
                 >
                   <table>
-                    <caption>Puntuación y disponibilidad por dimensión</caption>
+                    <caption>
+                      <span className={styles.captionText}>
+                        Puntuación y disponibilidad por dimensión
+                      </span>
+                    </caption>
                     <thead>
                       <tr>
                         <th scope="col">Dimensión</th>

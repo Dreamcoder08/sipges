@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type { APIRequestContext } from '@playwright/test';
+import type { APIRequestContext, Locator } from '@playwright/test';
 import { DEFAULT_SCOPE, expect, signInToProject, test } from '../support/fixtures.ts';
 import { brokenWords } from '../support/text-fit.ts';
 
@@ -19,6 +19,32 @@ const seed = async (
   });
   expect(created.status(), await created.text()).toBe(200);
 };
+
+/**
+ * Lines the element's text occupies, measured on its glyphs with a DOM Range (icons excluded).
+ * A glyph box whose middle lies below the current line's bottom starts a new line, so the
+ * larger «6.0» on the same baseline does not count as a line of its own.
+ */
+const textLines = (target: Locator) =>
+  target.evaluate((root) => {
+    const rects: DOMRect[] = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      rects.push(...[...range.getClientRects()].filter((r) => r.width > 0));
+    }
+    rects.sort((a, b) => a.top - b.top);
+    let count = 0;
+    let bottom = -Infinity;
+    for (const rect of rects) {
+      if (rect.top + rect.height / 2 > bottom) {
+        count += 1;
+        bottom = rect.bottom;
+      } else bottom = Math.max(bottom, rect.bottom);
+    }
+    return count;
+  });
 
 /**
  * Dashboard «Requiere atención» at 360 px (movil-inicio.png): the level pill carries the project's
@@ -112,32 +138,9 @@ test('the IRSA reading and its caveat each keep to one line at 360 px', async ({
   const caveat = lead.getByText('Metodología pendiente de validación');
   await expect(reading).toBeVisible();
   await expect(caveat).toBeVisible();
-  // Lines the element's text occupies, measured on its glyphs with a DOM Range (icons excluded).
-  // A glyph box whose middle lies below the current line's bottom starts a new line, so the
-  // larger «6.0» on the same baseline does not count as a line of its own.
-  const lines = (target: typeof reading) =>
-    target.evaluate((root) => {
-      const rects: DOMRect[] = [];
-      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-        const range = document.createRange();
-        range.selectNodeContents(node);
-        rects.push(...[...range.getClientRects()].filter((r) => r.width > 0));
-      }
-      rects.sort((a, b) => a.top - b.top);
-      let count = 0;
-      let bottom = -Infinity;
-      for (const rect of rects) {
-        if (rect.top + rect.height / 2 > bottom) {
-          count += 1;
-          bottom = rect.bottom;
-        } else bottom = Math.max(bottom, rect.bottom);
-      }
-      return count;
-    });
   const dir = process.env.SIPGES_SCREENSHOT_DIR;
   if (dir) await page.screenshot({ path: path.join(dir, 'panel-irsa-360.png') });
-  expect({ reading: await lines(reading), caveat: await lines(caveat) }).toEqual({
+  expect({ reading: await textLines(reading), caveat: await textLines(caveat) }).toEqual({
     reading: 1,
     caveat: 1,
   });
@@ -151,6 +154,104 @@ test('the IRSA reading and its caveat each keep to one line at 360 px', async ({
   }));
   expect(widths.scroll).toBeLessThanOrEqual(widths.view);
 });
+
+/**
+ * Panel at 360 px, further down (movil-hoy-completo.png): the «IRSA-SIPGES» card squeezed its
+ * value, level pill and methodology caveat onto one flex line, so the level («Verde – Situación
+ * estable / riesgo bajo») and «Metodología pendiente de validación» each took three lines. Like
+ * the summary at the top, the row wraps between them instead: the caveat keeps to one line and
+ * the level is never squeezed.
+ */
+test('the IRSA-SIPGES card wraps between its level and caveat, not inside them, at 360 px', async ({
+  page,
+  admin,
+  adminApi,
+}) => {
+  await seed(adminApi, 'eventos', {
+    Descripcion_Hecho: 'Reunión sintética para la tarjeta IRSA',
+    Dimension_Principal: 'G',
+    Fecha: '2026-10-13',
+  });
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await signInToProject(page, admin, DEFAULT_SCOPE);
+  await page.goto('/');
+  const card = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'IRSA-SIPGES', exact: true }) });
+  const caveat = card.getByText('Metodología pendiente de validación');
+  await caveat.scrollIntoViewIfNeeded();
+  await expect(caveat).toBeVisible();
+  // The level pill is the caveat's previous sibling in the reading line.
+  const level = caveat.locator('xpath=preceding-sibling::span[1]');
+  await expect(level).toContainText('–');
+  // The level wraps only when its words are wider than the whole row (CI fonts are wider than
+  // local ones); then it has the row to itself instead of being squeezed beside the value.
+  const levelLines = await textLines(level);
+  const levelRow = await level.evaluate((pill) => ({
+    pill: pill.getBoundingClientRect().width,
+    row: pill.parentElement?.clientWidth ?? 0,
+  }));
+  expect({
+    caveat: await textLines(caveat),
+    levelWithinTwoLines: levelLines <= 2,
+    levelSqueezed: levelLines > 1 && levelRow.pill < levelRow.row - 1,
+  }).toEqual({ caveat: 1, levelWithinTwoLines: true, levelSqueezed: false });
+  for (const part of [level, caveat]) {
+    const rect = await part.boundingBox();
+    expect(rect && rect.x + rect.width).toBeLessThanOrEqual(360);
+  }
+  const widths = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    view: document.documentElement.clientWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.view);
+});
+
+/**
+ * Análisis › IRSA-SIPGES at 360 px (360-analisis-*.png): the dimension table is wider than the
+ * phone and scrolls in its own region, and its caption stretched with it, so «Puntuación y
+ * disponibilidad por dimensión» was cut at «…por dime». The caption wraps inside the region's
+ * visible width instead, every glyph readable without scrolling.
+ */
+for (const colorScheme of ['light', 'dark'] as const) {
+  test(`the IRSA table caption stays readable at 360 px (${colorScheme})`, async ({
+    page,
+    admin,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    await page.goto('/analisis');
+    const region = page.getByRole('region', { name: 'Puntuaciones por dimensión' });
+    const caption = region.getByText('Puntuación y disponibilidad por dimensión', {
+      exact: true,
+    });
+    await caption.scrollIntoViewIfNeeded();
+    await expect(caption).toBeVisible();
+    const fit = await caption.evaluate((node) => {
+      const scroller = node.closest('[role="region"]');
+      if (!scroller) throw new Error('the caption sits outside its region');
+      const view = scroller.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const ink = [...range.getClientRects()].filter((r) => r.width > 0);
+      return {
+        insideRegion: ink.every(
+          (r) => r.left >= view.left - 0.5 && r.right <= view.left + scroller.clientWidth + 0.5,
+        ),
+        insideScreen: ink.every((r) => r.left >= 0 && r.right <= window.innerWidth),
+      };
+    });
+    expect(fit).toEqual({ insideRegion: true, insideScreen: true });
+    expect(await brokenWords(caption)).toEqual([]);
+    const widths = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      view: document.documentElement.clientWidth,
+    }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.view);
+  });
+}
 
 /**
  * Eventos table at a portrait tablet (tablet-eventos.png): a verification status and a long id
