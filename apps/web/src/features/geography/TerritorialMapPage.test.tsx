@@ -476,6 +476,29 @@ it('numbers each listed record like its marker and keeps the selection in step',
   expect(marker(2, 'Asamblea comunal sintética')).toHaveAttribute('aria-pressed', 'false');
 });
 
+it('on phones a list row scrolls the page to the map only, not to the evolution', async () => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: true,
+    media: query,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+  const scrolled: Element[] = [];
+  Element.prototype.scrollIntoView = function (this: Element) {
+    scrolled.push(this);
+  };
+  try {
+    serve();
+    renderPage();
+    const list = await screen.findByRole('list', { name: 'Registros en el mapa' });
+    await userEvent.click(within(list).getByRole('button', { name: /Asamblea comunal sintética/ }));
+    expect(scrolled).toEqual([screen.getByRole('region', { name: 'Mapa' })]);
+  } finally {
+    // jsdom has no scrollIntoView of its own.
+    delete (Element.prototype as Partial<Element>).scrollIntoView;
+  }
+});
+
 it('groups records without a place under «Sin ubicación» with a way to complete them', async () => {
   serve();
   server.use(
