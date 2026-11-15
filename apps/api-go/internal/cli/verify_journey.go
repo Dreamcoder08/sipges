@@ -722,6 +722,19 @@ func (v *verifier) readOnly() error {
 	return nil
 }
 
+// brokenRead tells a read that broke from one whose external service is down: no answer or any
+// server error is broken, except a 502 or 504 from a route marked upstream (a site that stops
+// answering, or a laptop without internet, is not a SIPGES defect).
+func brokenRead(route Route, status int) bool {
+	if status == 0 {
+		return true
+	}
+	if route.Upstream && (status == http.StatusBadGateway || status == http.StatusGatewayTimeout) {
+		return false
+	}
+	return status >= http.StatusInternalServerError
+}
+
 // sweep calls every route of the inventory once. Nobody gets in without their credential, and no
 // read breaks; a route that cannot be reached is a route the CLI does not really cover.
 func (v *verifier) sweep() error {
@@ -743,7 +756,7 @@ func (v *verifier) sweep() error {
 			continue
 		}
 		reads++
-		if answer = v.send(call{as: v.admin, method: http.MethodGet, path: v.placeholderPath(route)}); answer.status >= 500 || answer.status == 0 {
+		if answer = v.send(call{as: v.admin, method: http.MethodGet, path: v.placeholderPath(route)}); brokenRead(route, answer.status) {
 			broken = append(broken, fmt.Sprintf("%s answered %d", route.Key(), answer.status))
 		}
 	}
