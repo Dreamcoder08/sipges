@@ -120,36 +120,36 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   product path that stamps a record's day in UTC. Route: worker (web + API check). Commit: df329e3c
 - [x] T2 — S1, F4–F6: one number rule (decimal comma, fixed decimals per kind), weights shown as
   fractions that add up, and each IRSA value labelled («actual», «último corte»). Route: inline. Commit: df329e3c, 2f169240
-- [ ] T3 — S1, F7–F11: no stored key on screen. Labels for IRSA contributions, situational-analysis
+- [x] T3 — S1, F7–F11: no stored key on screen. Labels for IRSA contributions, situational-analysis
   fields, audit actions and versions; dimension names beside their letters; audit detail that says where
   a record was really created. Test: no `/[a-z]+_[a-z]+|[A-Z][a-z]+_[A-Z]/` in any screen's text. Route:
-  worker (web, API TypeScript + Go). Commit: —
+  worker (web, API TypeScript + Go). Commit: #462 545e29b7
 - [x] T4 — S1, F12: plural helper for counts (registro/registros, día/días, señal documentada/señales
   documentadas, archivo/archivos) and no «(s)» left. Test: no `(s)` or `(es)` in any screen. Route: inline.
   Commit: df329e3c, 2f169240
-- [ ] T5 — S1, F13–F15: wording (404 link, «prueba retrospectiva», Brier explained, «embeddings» in the
+- [x] T5 — S1, F13–F15: wording (404 link, «prueba retrospectiva», Brier explained, «embeddings» in the
   two remaining places), one state per integration, and alert cards on Inicio that can be told apart.
-  Route: inline (API string with Go). Commit: —
-- [ ] T6 — S1, F16–F19: `/configuracion` with a redirect from `/version-4`; section headings that match;
+  Route: inline (API string with Go). Commit: #462 545e29b7
+- [x] T6 — S1, F16–F19: `/configuracion` with a redirect from `/version-4`; section headings that match;
   real not-found pages with a heading and a way back, and «registro no encontrado» distinct from «tipo no
   válido»; a neutral default project name for a new installation (migration needed for none: new installs
   only; existing data is never renamed); empty states with a first action. Route: worker. Risk: item 3
-  (route and default name others consume). Commit: —
-- [ ] T7 — S1, F20–F23: 24 px minimum targets through the shared link/button styles, heading order,
+  (route and default name others consume). Commit: #464 0a9b1226
+- [x] T7 — S1, F20–F23: 24 px minimum targets through the shared link/button styles, heading order,
   in-page form errors (`aria-invalid`, message, focus on the first error) for every module form, and the
   current hub section announced. Test: an axe pass plus a target-size check on every screen at 360, 930
-  and 1440 px. Route: worker. Commit: —
-- [ ] T8 — S1, F24: one version source (the release tag or `package.json`) for `/health`, the model
+  and 1440 px. Route: worker. Commit: #465 7c1e155b
+- [x] T8 — S1, F24: one version source (the release tag or `package.json`) for `/health`, the model
   status and the screens; the IRSA method version stays separate and is labelled as such. Route: inline
-  (TypeScript + Go, parity). Risk: item 3 (`/health` is read by `sipgesctl` and the launchers). Commit: —
-- [ ] T9 — S1, F25–F26: public static files (icons, `robots.txt`) without a session; precompressed
+  (TypeScript + Go, parity). Risk: item 3 (`/health` is read by `sipgesctl` and the launchers). Commit: #462 545e29b7
+- [x] T9 — S1, F25–F26: public static files (icons, `robots.txt`) without a session; precompressed
   assets (brotli and gzip) served by the Node and Go servers; bundle budget checked in CI. Route: worker.
-  Risk: item 2 (what is public without a session). Commit: —
-- [ ] T10 — S1, F27: the journeys not walked: wrong-password throttling, MFA enrolment, a second project
+  Risk: item 2 (what is public without a session). Commit: #464 0a9b1226
+- [x] T10 — S1, F27: the journeys not walked: wrong-password throttling, MFA enrolment, a second project
   and switching, the same walk-through against the Go API, console errors per screen; each becomes an
-  e2e or `sipgesctl verify` step. Route: worker + independent verifier. Risk: item 2. Commit: —
-- [ ] T11 — S1, F28 and S3: the same walk-through at 360 px and on WebKit; the three Indicators captions;
-  the Windows interrupt drill step. Route: worker. Commit: —
+  e2e or `sipgesctl verify` step. Route: worker + independent verifier. Risk: item 2. Commit: #466 3b05c0dc, #467 6b4a3a62
+- [x] T11 — S1, F28 and S3: the same walk-through at 360 px and on WebKit; the three Indicators captions;
+  the Windows interrupt drill step. Route: worker. Commit: #468 cc27b30e
 - [ ] T12 — S1: release. `visit-rc13` on the commit that holds T1–T11 with CI and the Windows drill
   green, roadmap log entry, gallery regenerated and every image reviewed. Route: inline. Commit: —
 
@@ -177,3 +177,28 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   ego-browser scan of seven screens on a fresh synthetic instance found no ISO date, decimal point or
   «(s)» outside Situaciones, whose strings come from the API (fixed in `2f169240`). Commits `2f169240`,
   `df329e3c`; the slice passes 400 lines because the generated `fixtures.json` is about 1500 of them.
+- L5 — «avanza» (twice, while T3–T11 were in progress).
+- L6 — T3, T5–T11 closed, each merged with CI green on its exact head. T3/T5/T8 (#462): Spanish labels for
+  every stored key, «Registro creado en SIPGES» for new records (TS and Go), 404 «Volver al inicio»,
+  «prueba retrospectiva», no «embeddings», one state per integration, alerts that share a title show place and
+  id; `/health` and model status take the root package.json version (independent verifier: pass, no consumer
+  parses it). T6/T9 (#464): `/configuracion` with the `/version-4` redirect, real not-found pages, «Proyecto
+  principal» for NEW installations only (a stored label survives; TS test and Go DB test), empty states with a
+  first action; favicon and robots.txt public, brotli/gzip assets in Node and Go (independent verifier: pass,
+  342 raw-socket probes, nothing else became public). T7 (#465): 24 px targets through shared styles, no heading
+  skips, in-page form errors in the editor of all 16 modules, hub section pinned; spec 38 checks every screen at
+  360/930/1440 px with axe. T10 (#466, #467): sign-in throttling e2e (429, Retry-After 900, per user), console
+  and same-origin errors per screen, and `SIPGES_E2E_RUNTIME=go`: 61 specs pass on the Go API with the same
+  counts as Node (native review approved). T11 (#468): a Safari select overflow fixed for every select, the
+  Indicators captions fit phones, specs 35/37/38/text-fit on WebKit offline (105/105 ×3), and a Windows CI step
+  that interrupts tables.mjs with a real console Ctrl+C (passed on the Windows runner; native review approved).
+  Found on the way and fixed: parity and the CLI drill reached the live www.defensoria.gob.pe, which stopped
+  answering on 2026-11-15 ~06:40Z and turned main red (#463: `SIPGES_DEFENSORIA_URL` and a local double; the
+  route sweep tolerates 502/504 from reads marked `upstream`).
+  Still open (not in T1–T11 or decided by the owner): «back-test» and `Fuente_ID` come from the Rust engines and
+  are only reworded on screen; closing the console window during tables.mjs is unproven on Windows
+  (CTRL_CLOSE_EVENT cannot be generated); the Ctrl+C drill does not prove the copy was still in flight; no CI
+  job runs the Go e2e runtime yet; the desktop release version (`builder.mjs --version`) is a second version
+  channel; review advisories on the Go harness (validate the database name before CREATE, bound `go build`) and
+  on the Windows helper (POSIX paths in one test, failure paths not run on Windows); map circles and the cloud
+  database quota stay owner decisions.
