@@ -146,7 +146,7 @@ describe('error 05: stored reports open inside the app', () => {
       ),
     );
     open('fuentes');
-    expect(await screen.findByText('1 archivo(s) · abrir con «Ver»')).toBeVisible();
+    expect(await screen.findByText('1 archivo · abrir con «Ver»')).toBeVisible();
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Ver F-1' }));
     await user.click(await screen.findByRole('button', { name: 'Ver contenido de informe.pdf' }));

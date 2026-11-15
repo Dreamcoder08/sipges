@@ -73,3 +73,29 @@ it('shows server refusal without retaining rows', async () => {
   renderPage();
   expect(await screen.findByRole('alert')).toHaveTextContent('Requiere rol administrador');
 });
+
+// functional-10 T1 (F2): an operation at 22:33 in Lima on the 14th reads the 14th, not the UTC 15th.
+it('shows each operation in Lima time under a column that says so', async () => {
+  server.use(
+    http.get('*/system/audit', () =>
+      HttpResponse.json([
+        {
+          id: 3,
+          ts: '2026-11-15T03:33:35Z',
+          module: 'eventos',
+          record_id: 'EV9',
+          action: 'create',
+          detail: 'Hecho sintético nocturno',
+        },
+      ]),
+    ),
+  );
+  renderPage();
+  const row = (await screen.findByText('Hecho sintético nocturno')).closest('tr') as HTMLElement;
+  expect(screen.getByRole('columnheader', { name: 'Fecha y hora (Lima)' })).toBeInTheDocument();
+  expect(screen.queryByRole('columnheader', { name: 'Fecha UTC' })).toBeNull();
+  const time = row.querySelector('time');
+  expect(time).toHaveTextContent('14 nov. 2026, 22:33');
+  expect(time).toHaveAttribute('datetime', '2026-11-15T03:33:35Z');
+  expect(row).not.toHaveTextContent('2026-11-15T03:33:35Z');
+});

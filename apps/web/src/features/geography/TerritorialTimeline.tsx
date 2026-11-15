@@ -7,6 +7,7 @@ import { TimeHistogram } from '../../shared/ui/time/TimeHistogram.tsx';
 import { EvidenceTag } from './EvidenceTag.tsx';
 import { type MapPoint, monthOf } from './territorial-model.ts';
 import styles from './TerritorialMap.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /** Entries listed at once; the map still draws every visible record. */
 export const LIST_LIMIT = 150;
@@ -158,7 +159,7 @@ export const TerritorialTimeline = ({
             >
               <span className={`${styles.dot} ${styles[p.dimension] ?? ''}`} aria-hidden="true" />
               <small>
-                {p.date || 'Sin fecha'} · {p.locality} · {p.layer}
+                <DateText value={p.date} fallback="Sin fecha" /> · {p.locality} · {p.layer}
               </small>
               <button
                 type="button"

@@ -3,6 +3,8 @@ import { StatusBadge, type StatusTone } from '../../shared/ui/Badges.tsx';
 import { fieldValue, isCompactField } from './model.ts';
 import type { RecordField, RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { formatPercent } from '../../shared/lib/format.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /**
  * A request's progress is derived from its status, never stored, so it cannot drift from it.
@@ -54,7 +56,7 @@ export const RecordCell = ({ module, row, field }: Props) => {
         >
           <span className={styles.progressFill} style={{ width: `${progress}%` }} />
         </span>
-        <span>{progress}%</span>
+        <span>{formatPercent(progress, 0)}</span>
       </span>
     );
   }
@@ -62,6 +64,7 @@ export const RecordCell = ({ module, row, field }: Props) => {
   if (!value) return <>—</>;
   if (PILL_FIELDS.has(field.key))
     return <StatusBadge tone={TONES[value] ?? 'neutral'}>{value}</StatusBadge>;
+  if (field.type === 'date') return <DateText value={value} />;
   return <>{value}</>;
 };
 

@@ -19,6 +19,8 @@ import { BasemapCredit, BasemapPicker } from './BasemapPicker.tsx';
 import { type Basemap, TileLayer } from './TileLayer.tsx';
 import styles from './Geography.module.css';
 import { GeocatminControls, type OfficialSelection } from './GeocatminControls.tsx';
+import { count, plural } from '../../shared/lib/plural.ts';
+import { formatNumber } from '../../shared/lib/format.ts';
 
 export const GeographyPage = ({ scope }: FeatureContext) => {
   const query = useQuery({
@@ -155,7 +157,8 @@ const MapReference = ({
         ) : null}
         {invalid.length ? (
           <Alert tone="error">
-            No se dibujan {invalid.length} concesión(es) con geometría inválida:{' '}
+            {plural(invalid.length, 'No se dibuja', 'No se dibujan')}{' '}
+            {count(invalid.length, 'concesión', 'concesiones')} con geometría inválida:{' '}
             {invalid.map((item) => `${item.name} (${item.code}): ${item.problem}`).join('; ')}.
           </Alert>
         ) : null}
@@ -318,9 +321,9 @@ const MapReference = ({
             <dt>Titular</dt>
             <dd>{selected.holder}</dd>
             <dt>Área nominal (ha)</dt>
-            <dd>{selected.nominal_area_ha.toLocaleString('es-PE')}</dd>
+            <dd>{formatNumber(selected.nominal_area_ha, 2)}</dd>
             <dt>Área GIS referencial (ha)</dt>
-            <dd>{selected.gis_area_ha.toLocaleString('es-PE')}</dd>
+            <dd>{formatNumber(selected.gis_area_ha, 2)}</dd>
             <dt>Centroide referencial</dt>
             <dd>
               {selected.centroid.longitude}, {selected.centroid.latitude}

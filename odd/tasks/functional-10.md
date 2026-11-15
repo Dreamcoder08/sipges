@@ -115,18 +115,18 @@ Configuration and delivery
 Each task reproduces its findings first (a failing test per rule), fixes the product, and updates the
 docs or help that describe it. Strings the API produces change in TypeScript and Go together, with parity.
 
-- [ ] T1 — S1, F1–F3: one date rule. A shared formatter (Lima day, Spanish) for every date and instant
+- [x] T1 — S1, F1–F3: one date rule. A shared formatter (Lima day, Spanish) for every date and instant
   shown; `<time datetime>` keeps the machine value; Auditoría shows Lima time and says so. Find any
-  product path that stamps a record's day in UTC. Route: worker (web + API check). Commit: —
-- [ ] T2 — S1, F4–F6: one number rule (decimal comma, fixed decimals per kind), weights shown as
-  fractions that add up, and each IRSA value labelled («actual», «último corte»). Route: inline. Commit: —
+  product path that stamps a record's day in UTC. Route: worker (web + API check). Commit: df329e3c
+- [x] T2 — S1, F4–F6: one number rule (decimal comma, fixed decimals per kind), weights shown as
+  fractions that add up, and each IRSA value labelled («actual», «último corte»). Route: inline. Commit: df329e3c, 2f169240
 - [ ] T3 — S1, F7–F11: no stored key on screen. Labels for IRSA contributions, situational-analysis
   fields, audit actions and versions; dimension names beside their letters; audit detail that says where
   a record was really created. Test: no `/[a-z]+_[a-z]+|[A-Z][a-z]+_[A-Z]/` in any screen's text. Route:
   worker (web, API TypeScript + Go). Commit: —
-- [ ] T4 — S1, F12: plural helper for counts (registro/registros, día/días, señal documentada/señales
+- [x] T4 — S1, F12: plural helper for counts (registro/registros, día/días, señal documentada/señales
   documentadas, archivo/archivos) and no «(s)» left. Test: no `(s)` or `(es)` in any screen. Route: inline.
-  Commit: —
+  Commit: df329e3c, 2f169240
 - [ ] T5 — S1, F13–F15: wording (404 link, «prueba retrospectiva», Brier explained, «embeddings» in the
   two remaining places), one state per integration, and alert cards on Inicio that can be told apart.
   Route: inline (API string with Go). Commit: —
@@ -163,3 +163,17 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   generated for the run; 27 addresses, three interactions, headers and static files. Findings F1–F28
   written from what the screens and responses showed; F3, F14, F17, F23 and all of F27 are marked to confirm.
   No product code changed by this document.
+- L3 — «perfect autorizo todo , and continue con cada tarea»
+- L4 — T1, T2 and T4 closed. Dates: one Lima/Spanish formatter (`shared/lib/format.ts`, `ui/DateText.tsx`)
+  for every day and instant; Auditoría in Lima time. Numbers: decimal comma, fixed decimals per kind,
+  charts included, weights as shares that add up, IRSA labelled «IRSA actual» / «IRSA del último corte
+  guardado». Plurals: `shared/lib/plural.ts`, and the situation reasons in TypeScript and Go («5 días»,
+  «1 registro», «Puntaje 8,77»), byte-identical. F3: no product path stamps a record's day in UTC (API day
+  arithmetic starts from `limaToday`; only e2e spec 15 seeds UTC days). Evidence: web unit 664/664 with
+  guard tests (no `toLocale*String`, `toFixed` or «(s)» in UI source); api situations 28/28; `go test
+  ./internal/situations/...` ok and `generate.mjs --check` 0; `pnpm parity` exit 0 (Node 22, throwaway
+  PostgreSQL); e2e chromium 04 05 06 15 17 18 19 25 30 territorio-list 25 passed / 5 opt-in skipped;
+  mobile-chromium 73 passed, plus `registros-types` 3/3 after its ISO expectation was updated; an
+  ego-browser scan of seven screens on a fresh synthetic instance found no ISO date, decimal point or
+  «(s)» outside Situaciones, whose strings come from the API (fixed in `2f169240`). Commits `2f169240`,
+  `df329e3c`; the slice passes 400 lines because the generated `fixtures.json` is about 1500 of them.

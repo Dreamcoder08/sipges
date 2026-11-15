@@ -1,5 +1,10 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { formatIndex, formatNumber } from '../../lib/format.ts';
 import styles from './Charts.module.css';
+
+/** A chart value as people read it (functional-10 T2): counts bare, scores with one decimal. */
+const shown = (value: number) =>
+  Number.isInteger(value) ? formatNumber(value) : formatIndex(value);
 
 /**
  * Dependency-free SVG charts. Every chart carries its numbers in text (a legend or a hidden
@@ -51,7 +56,7 @@ const DataTable = ({ caption, data }: { caption: string; data: readonly Datum[] 
         {data.map((d) => (
           <tr key={d.key}>
             <th scope="row">{d.label}</th>
-            <td>{d.value}</td>
+            <td>{shown(d.value)}</td>
           </tr>
         ))}
       </tbody>
@@ -111,7 +116,7 @@ export const DonutChart = ({
                 })
             : null}
           <text className={styles.donutTotal} x="60" y="64" textAnchor="middle">
-            {total}
+            {shown(total)}
           </text>
           <text className={styles.donutCaption} x="60" y="80" textAnchor="middle">
             {totalLabel}
@@ -124,7 +129,7 @@ export const DonutChart = ({
                 <span className={`${styles.swatch} ${tone(d.tone)}`} aria-hidden="true" />
                 <span>{d.label}</span>
               </dt>
-              <dd>{d.value}</dd>
+              <dd>{shown(d.value)}</dd>
             </div>
           ))}
         </dl>
@@ -185,7 +190,7 @@ export const ColumnChart = ({
                   y={y(d.value) - 4}
                   textAnchor="middle"
                 >
-                  {d.value}
+                  {shown(d.value)}
                 </text>
               ) : null}
               <text className={styles.tick} x={x + bar / 2} y={height - 6} textAnchor="middle">
@@ -370,7 +375,7 @@ export const MultiLineChart = ({
               <tr key={label}>
                 <th scope="row">{label}</th>
                 {series.map((s) => (
-                  <td key={s.key}>{s.values[i] ?? 0}</td>
+                  <td key={s.key}>{shown(s.values[i] ?? 0)}</td>
                 ))}
               </tr>
             ))}
@@ -446,7 +451,7 @@ export const StackedColumnChart = ({
               })}
               {totals[i] ? (
                 <text className={styles.value} x={x + bar / 2} y={y(base) - 4} textAnchor="middle">
-                  {totals[i]}
+                  {shown(totals[i] ?? 0)}
                 </text>
               ) : null}
               {i % every === 0 ? (
@@ -484,7 +489,7 @@ export const StackedColumnChart = ({
               <tr key={label}>
                 <th scope="row">{label}</th>
                 {series.map((s) => (
-                  <td key={s.key}>{s.values[i] ?? 0}</td>
+                  <td key={s.key}>{shown(s.values[i] ?? 0)}</td>
                 ))}
               </tr>
             ))}

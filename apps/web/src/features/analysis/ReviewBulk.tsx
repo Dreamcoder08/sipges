@@ -4,6 +4,7 @@ import { requestJson } from '../../shared/api/client.ts';
 import type { FeatureContext } from '../../shared/api/feature-context.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
 import { ConfirmDialog } from '../../shared/ui/ConfirmDialog.tsx';
+import { formatNumber } from '../../shared/lib/format.ts';
 
 /** What a bulk decision covers (functional-closure T26): picked items, a theme or a document. */
 export type BulkTarget =
@@ -13,7 +14,7 @@ export type BulkTarget =
 export type BulkStatus = 'aceptado_para_revision' | 'descartado';
 export type BulkRequest = { readonly target: BulkTarget; readonly status: BulkStatus };
 
-const count = (n: number) => n.toLocaleString('es-PE');
+const count = (n: number) => formatNumber(n);
 
 const selector = (target: BulkTarget) =>
   target.kind === 'ids'

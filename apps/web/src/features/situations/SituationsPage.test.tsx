@@ -17,7 +17,7 @@ const situation = {
     'Naranja – Requiere intervención preventiva: existen 3 registros recientes relacionados con empleo local y participación de Comunidad Norte, en aumento.',
   reasons: [
     {
-      text: '3 registros relacionados con el tema «Empleo local» en 5 día(s).',
+      text: '3 registros relacionados con el tema «Empleo local» en 5 días.',
       records: ['Demandas:D-1', 'Narrativas:N-1', 'Eventos:EV-1'],
     },
   ],
@@ -79,7 +79,7 @@ it('explains a situation with links to its records and suggested actions', async
   );
   renderPage('consulta');
   expect(await screen.findByText(situation.summary)).toBeInTheDocument();
-  expect(screen.getByText(/1 sin fecha no se consideran/)).toBeInTheDocument();
+  expect(screen.getByText(/1 sin fecha no se considera/)).toBeInTheDocument();
   const why = screen.getByRole('region', { name: 'Por qué: Empleo local' });
   expect(within(why).getByRole('link', { name: /Demandas D-1/ })).toHaveAttribute(
     'href',
@@ -96,7 +96,7 @@ it('explains a situation with links to its records and suggested actions', async
       'Cambio de narrativa: el tono negativo pasa de 0 % a 100 % en las publicaciones más recientes.',
     ),
   ).toBeInTheDocument();
-  expect(screen.getByText('Agua: 4 publicación(es), 2 esta semana')).toBeInTheDocument();
+  expect(screen.getByText('Agua: 4 publicaciones, 2 esta semana')).toBeInTheDocument();
 });
 
 it('creates the alert only when a person asks, with the explanation and cited records', async () => {

@@ -109,7 +109,7 @@ it('reports concessions whose geometry cannot be drawn', async () => {
     ),
   );
   renderPage();
-  expect(await screen.findByText(/No se dibujan 1 concesión/)).toHaveTextContent('anillo abierto');
+  expect(await screen.findByText(/No se dibuja 1 concesión/)).toHaveTextContent('anillo abierto');
   expect(screen.queryByRole('button', { name: 'Seleccionar BAYOVAR N° 5' })).toBeNull();
 });
 

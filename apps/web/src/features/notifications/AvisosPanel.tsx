@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { requestJson } from '../../shared/api/client.ts';
 import { InternalLink, objectHref } from '../../shared/lib/navigation.tsx';
 import styles from './Avisos.module.css';
+import { formatDateTime } from '../../shared/lib/format.ts';
 
 /** How often the inbox is refreshed while the app is open. */
 export const INBOX_REFRESH_MS = 60_000;
@@ -14,8 +15,7 @@ export const DEVICE_PUSH_HREF = '/version-4?seccion=notificaciones';
 
 const Ok = z.object({ ok: z.literal(true) });
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
+const when = (iso: string) => formatDateTime(iso);
 
 /** The person's inbox for the active project, refreshed while the app is open. */
 const inboxQuery = (scope: string) => ({

@@ -171,7 +171,7 @@ describe('dashboard and navigation', () => {
     expect(
       within(demands as HTMLElement).getByRole('link', { name: 'Ver registros' }),
     ).toHaveAttribute('href', '/demandas');
-    expect(await screen.findByText('42.3')).toBeVisible();
+    expect(await screen.findByText('42,3')).toBeVisible();
     // The colour always carries its meaning; there is no per-project switch.
     expect(
       await screen.findByText('Amarillo – Requiere atención y seguimiento', {

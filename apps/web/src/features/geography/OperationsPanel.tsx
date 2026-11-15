@@ -16,6 +16,8 @@ import {
   DOSSIER_HOPS,
 } from './operations.ts';
 import styles from './Operations.module.css';
+import { count } from '../../shared/lib/plural.ts';
+import { formatDay } from '../../shared/lib/format.ts';
 
 const RecordLink = ({ record }: { record: DossierRef }) => (
   <InternalLink href={objectHref(record.module, record.id)}>{record.title}</InternalLink>
@@ -115,7 +117,7 @@ export const OperationsPanel = ({
   return (
     <div className={styles.panel}>
       <p className={styles.note}>
-        {context}: {dossier.signals.length} señal(es) documentada(s)
+        {context}: {count(dossier.signals.length, 'señal documentada', 'señales documentadas')}
         {capped ? ' (las 100 más recientes de la vista)' : ''}.
       </p>
       <dl className={styles.counts}>
@@ -157,7 +159,7 @@ export const OperationsPanel = ({
                 </span>
                 <small>
                   {alert.status || 'Sin estado'}
-                  {alert.date ? ` · ${alert.date}` : ''}
+                  {alert.date ? ` · ${formatDay(alert.date)}` : ''}
                 </small>
                 <p className={styles.label}>Señales que la originan</p>
                 <ul className={styles.sublist}>
@@ -166,7 +168,7 @@ export const OperationsPanel = ({
                       <EvidenceTag state={s.evidence} /> <RecordLink record={s} />
                       <small>
                         {s.typeLabel}
-                        {s.date ? ` · ${s.date}` : ''} · {s.basis}
+                        {s.date ? ` · ${formatDay(s.date)}` : ''} · {s.basis}
                       </small>
                     </li>
                   ))}

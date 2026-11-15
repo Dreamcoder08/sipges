@@ -52,7 +52,7 @@ test('CSV imports refresh the cached dashboard and uploaded evidence refreshes t
   await page.getByRole('button', { name: 'Subir evidencia' }).click();
   await expect(page.getByText('Evidencia guardada.')).toBeVisible();
   await page.getByRole('button', { name: 'Volver a la lista' }).click();
-  await expect(row).toContainText('1 archivo(s)');
+  await expect(row).toContainText('1 archivo ·');
 });
 
 test('directory pagination reaches a stored contact beyond the API first page', async ({

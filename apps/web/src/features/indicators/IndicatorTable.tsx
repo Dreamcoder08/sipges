@@ -1,5 +1,6 @@
 import type { IndicatorReportItem } from '@sipges/contracts';
 import styles from './Indicators.module.css';
+import { formatIndex } from '../../shared/lib/format.ts';
 export const IndicatorTable = ({ items }: { items: IndicatorReportItem[] }) => (
   <div className={styles.table} tabIndex={0} role="region" aria-label="Detalle de indicadores">
     <table>
@@ -21,7 +22,7 @@ export const IndicatorTable = ({ items }: { items: IndicatorReportItem[] }) => (
               {item.dimension_label}
             </th>
             <td>
-              {item.score === null ? 'No calculable' : item.score.toFixed(2)}
+              {item.score === null ? 'No calculable' : formatIndex(item.score)}
               <br />
               {item.availability}
             </td>

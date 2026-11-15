@@ -374,8 +374,8 @@ func buildSituation(kind, label string, signals []Signal, settings Settings, tex
 	}
 
 	reasons := []Reason{{
-		Text: strconv.Itoa(len(sorted)) + " registros relacionados con " + kindLabel[kind] + " «" + label +
-			"» en " + strconv.Itoa(span) + " día(s).",
+		Text: strconv.Itoa(len(sorted)) + " " + plural(len(sorted), "registro relacionado", "registros relacionados") +
+			" con " + kindLabel[kind] + " «" + label + "» en " + strconv.Itoa(span) + " " + plural(span, "día", "días") + ".",
 		Records: cite(sorted),
 	}}
 	if len(actors) > 0 {
@@ -411,7 +411,7 @@ func buildSituation(kind, label string, signals []Signal, settings Settings, tex
 			raise = "; por eso el nivel sube de " + base + " a " + level
 		}
 		reasons = append(reasons, Reason{
-			Text: "En aumento: " + strconv.Itoa(tr.recent) + " registro(s) en los últimos " + strconv.Itoa(recentDays) +
+			Text: "En aumento: " + strconv.Itoa(tr.recent) + " " + plural(tr.recent, "registro", "registros") + " en los últimos " + strconv.Itoa(recentDays) +
 				" días frente a " + JSNumber(tr.weekly) + " por semana en las " + strconv.Itoa(baselineWeeks) +
 				" semanas anteriores" + raise + ".",
 			Records: cite(filterSignals(sorted, func(s Signal) bool { return s.AgeDays < recentDays })),
@@ -424,7 +424,7 @@ func buildSituation(kind, label string, signals []Signal, settings Settings, tex
 	}
 	if severe := filterSignals(sorted, func(s Signal) bool { return s.Severity > 1 }); len(severe) > 0 {
 		reasons = append(reasons, Reason{
-			Text:    strconv.Itoa(len(severe)) + " registro(s) con prioridad o nivel alto.",
+			Text:    strconv.Itoa(len(severe)) + " " + plural(len(severe), "registro", "registros") + " con prioridad o nivel alto.",
 			Records: cite(severe),
 		})
 	}
@@ -436,7 +436,7 @@ func buildSituation(kind, label string, signals []Signal, settings Settings, tex
 		})
 	}
 	reasons = append(reasons, Reason{
-		Text: "Puntaje " + JSNumber(score) + ": cada registro pesa la mitad cada " + template(settings.HalfLifeDays) +
+		Text: "Puntaje " + decimalComma(JSNumber(score)) + ": cada registro pesa la mitad cada " + template(settings.HalfLifeDays) +
 			" días y más si su prioridad es alta.",
 		Records: []string{},
 	})
@@ -688,3 +688,14 @@ func DecodeObject(raw []byte) (map[string]any, error) {
 	}
 	return m, nil
 }
+
+// plural and decimalComma match the TypeScript helpers byte for byte: counts agree with their
+// noun and decimals use a comma (odd/tasks/functional-10.md T2 and T4).
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}
+
+func decimalComma(number string) string { return strings.Replace(number, ".", ",", 1) }

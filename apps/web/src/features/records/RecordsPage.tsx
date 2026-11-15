@@ -30,6 +30,7 @@ import { RecordEditor } from './RecordEditor.tsx';
 import { canWriteRecords, fieldValue } from './model.ts';
 import { FACETS, MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { count } from '../../shared/lib/plural.ts';
 
 type Props = {
   module: RecordModule;
@@ -465,8 +466,10 @@ const RecordsWorkspace = ({
                   </div>
                 ) : null}
                 <p className={styles.muted} role="status">
-                  {pageRows.length} de {visible.length} registro(s) mostrados · {data.length} en la
-                  consulta
+                  {visible.length
+                    ? `${pageRows.length} de ${count(visible.length, 'registro mostrado', 'registros mostrados')}`
+                    : 'Ningún registro que mostrar'}{' '}
+                  · {data.length} en la consulta
                 </p>
                 {pageCount > 1 ? (
                   <nav aria-label="Paginación de registros" className={styles.actions}>
@@ -561,7 +564,7 @@ const RecordsWorkspace = ({
                                   : files.isError
                                     ? 'No se pudieron consultar los archivos'
                                     : fileCount(row._id)
-                                      ? `${fileCount(row._id)} archivo(s) · abrir con «Ver»`
+                                      ? `${count(fileCount(row._id), 'archivo', 'archivos')} · abrir con «Ver»`
                                       : 'Sin archivo almacenado'}
                               </td>
                             ) : null}

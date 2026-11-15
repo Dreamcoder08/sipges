@@ -11,6 +11,14 @@ import { Field } from '../../shared/ui/Field.tsx';
 import { IrsaPendingBadge, isIrsaPending } from '../../shared/ui/IrsaPendingBadge.tsx';
 import { useLevelLabel } from '../../shared/lib/project-settings.tsx';
 import { LEVELS } from '../../shared/lib/text.ts';
+import {
+  formatDateTime,
+  formatIndex,
+  formatPercent,
+  formatShares,
+  formatShortDay,
+} from '../../shared/lib/format.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { LineChart, RadarChart } from '../../shared/ui/charts/Charts.tsx';
 import { configQuery, historyQuery, irsaQuery } from './api.ts';
@@ -60,7 +68,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                 </>
               ) : (
                 <p className={styles.score}>
-                  {data.irsa.toFixed(2)} / 100 · {withMeaning(data.level)}
+                  {formatIndex(data.irsa)} / 100 · {withMeaning(data.level)}
                 </p>
               )}
               {isIrsaPending(config.data?.status) ? (
@@ -96,14 +104,30 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {dimensions.map((d) => (
+                      {dimensions.map((d, index) => (
                         <tr key={d}>
                           <th scope="row">{d}</th>
-                          <td>{data.scores[d].toFixed(2)}</td>
-                          <td>{data.weights[d] ?? 0}</td>
-                          <td>{data.availability[d].toFixed(1)}%</td>
+                          <td>{formatIndex(data.scores[d])}</td>
+                          <td>
+                            {
+                              formatShares(
+                                dimensions.map((dimension) => data.weights[dimension] ?? 0),
+                              )[index]
+                            }
+                          </td>
+                          <td>{formatPercent(data.availability[d])}</td>
                         </tr>
                       ))}
+                      <tr>
+                        <th scope="row">Total</th>
+                        <td />
+                        <td>
+                          {formatPercent(
+                            dimensions.reduce((sum, d) => sum + (data.weights[d] ?? 0), 0) * 100,
+                          )}
+                        </td>
+                        <td />
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -127,7 +151,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   <ul>
                     {data.drivers.map((driver) => (
                       <li key={`${driver.dimension}/${driver.id}`}>
-                        {driver.id} · {driver.label}: {driver.points.toFixed(2)} puntos
+                        {driver.id} · {driver.label}: {formatIndex(driver.points)} puntos
                       </li>
                     ))}
                   </ul>
@@ -183,6 +207,16 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
         <QueryState query={history} label="historial">
           {(rows) => (
             <>
+              {rows.length > 0 &&
+                (() => {
+                  const latest = [...rows].sort((a, b) => b.ts.localeCompare(a.ts))[0];
+                  return latest ? (
+                    <p>
+                      Último corte guardado: {formatIndex(latest.irsa)} / {latest.level} ·{' '}
+                      {formatDateTime(latest.ts)}
+                    </p>
+                  ) : null;
+                })()}
               <LineChart
                 caption="Evolución del IRSA en los cortes guardados"
                 empty="Guarde al menos dos cortes para ver la evolución del índice."
@@ -190,7 +224,7 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   .sort((a, b) => a.ts.localeCompare(b.ts))
                   .map((row) => ({
                     key: String(row.id),
-                    label: row.ts.slice(5, 10),
+                    label: formatShortDay(row.ts),
                     value: Math.round(row.irsa * 10) / 10,
                   }))}
               />
@@ -208,9 +242,11 @@ const IrsaWorkspace = ({ scope, projectLabel, role }: FeatureContext) => {
                   <tbody>
                     {rows.map((row) => (
                       <tr key={row.id}>
-                        <td>{row.ts}</td>
                         <td>
-                          {row.irsa.toFixed(2)} / {row.level}
+                          <DateText value={row.ts} time />
+                        </td>
+                        <td>
+                          {formatIndex(row.irsa)} / {row.level}
                         </td>
                         <td>{row.config_version ?? 'Sin versión'}</td>
                         <td>{row.note || 'Sin nota'}</td>
