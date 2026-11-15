@@ -143,7 +143,7 @@ describe('desktop sidebar', () => {
     const menu = screen.getByRole('menu', { name: 'Cuenta' });
     // Automatizaciones is reached from the Integraciones link, checked below.
     for (const [label, path] of [
-      ['Configuración', '/version-4'],
+      ['Configuración', '/configuracion'],
       ['Administración', '/administracion'],
       ['Auditoría', '/auditoria'],
       ['Ayuda y metodología', '/metodologia'],
@@ -440,7 +440,7 @@ describe('account menu in the sidebar', () => {
       .getAllByRole('menuitem')
       .filter((item) => item.hasAttribute('href'));
     expect(links.map((link) => link.getAttribute('href'))).toEqual([
-      '/version-4',
+      '/configuracion',
       '/administracion',
       '/auditoria',
       '/metodologia',
@@ -471,14 +471,15 @@ describe('account menu in the sidebar', () => {
     const { user } = await renderAt('/');
     await user.keyboard('{Control>},{/Control}');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+      await screen.findByRole('heading', { level: 1, name: 'Configuración · Apariencia' }),
     ).toBeVisible();
+    expect(window.location.pathname).toBe('/configuracion');
     at('/');
     cleanup();
     const second = await renderAt('/');
     await second.user.keyboard('{Meta>},{/Meta}');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Configuración del proyecto' }),
+      await screen.findByRole('heading', { level: 1, name: 'Configuración · Apariencia' }),
     ).toBeVisible();
   });
 

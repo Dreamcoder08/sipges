@@ -5,10 +5,18 @@ import type { MiddlewareHandler } from 'hono';
 /** File contents: whole bytes, or a stream a host passes through without buffering. */
 export type AssetBody = Uint8Array | ReadableStream<Uint8Array>;
 
+/** Content codings the web build writes beside each compressible asset (`.br`, `.gz`). */
+export type AssetEncoding = 'br' | 'gzip';
+
 /** Built single-page app (apps/web/dist): its HTML shell and its hashed assets. */
 export type WebAssets = {
   index(): Promise<string | null>;
   asset(name: string): Promise<AssetBody | null>;
+  /**
+   * The precompressed variant of an asset, already encoded. Only hosts that send it as is
+   * implement it (the Node server); a host that compresses on its own (Cloudflare) leaves it out.
+   */
+  encodedAsset?(name: string, encoding: AssetEncoding): Promise<AssetBody | null>;
   /** One of ROOT_FILES from the build root (Vite's `public/` directory). */
   rootFile?(name: string): Promise<AssetBody | null>;
   /** A CesiumJS worker or asset under `cesium/` (ADR 0026); `path` is already validated. */
@@ -18,11 +26,18 @@ export type WebAssets = {
 const responseBody = (body: AssetBody) =>
   body instanceof Uint8Array ? new Uint8Array(body) : body;
 
-/** Installable-app files that must live at the site root (docs/adr/0014). */
+/**
+ * Files that must live at the site root and need no session: the installable-app files
+ * (docs/adr/0014), the tab icons browsers ask for on the sign-in screen, and the crawler rule
+ * (functional-10 T9). Every other path outside the shell and the built folders asks for a session.
+ */
 const ROOT_FILES: Readonly<Record<string, string>> = {
   '/manifest.webmanifest': 'application/manifest+json',
   '/sw.js': 'text/javascript; charset=utf-8',
   '/icon.svg': 'image/svg+xml',
+  '/favicon.ico': 'image/x-icon',
+  '/favicon.svg': 'image/svg+xml',
+  '/robots.txt': 'text/plain; charset=utf-8',
 };
 
 /**
@@ -62,6 +77,29 @@ const ASSET_TYPES: Readonly<Record<string, string>> = {
 export const ASSET_CACHE = 'public, max-age=31536000, s-maxage=31536000, immutable';
 
 const ASSET_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+
+/** Asset types the build precompresses; images and fonts are compressed already. */
+const COMPRESSIBLE = new Set(['.js', '.css', '.svg', '.json']);
+const VARIANT_SUFFIX: Readonly<Record<AssetEncoding, string>> = { br: '.br', gzip: '.gz' };
+
+/**
+ * The precompressed codings an Accept-Encoding header allows, best first: a coding listed with
+ * q=0 is refused, `*` stands for the ones not listed, and brotli wins a tie (RFC 9110 §12.5.3).
+ */
+export const acceptedEncodings = (header: string | undefined | null): AssetEncoding[] => {
+  const weights = new Map<string, number>();
+  for (const part of (header ?? '').toLowerCase().split(',')) {
+    const [coding = '', ...params] = part.split(';').map((piece) => piece.trim());
+    if (!coding) continue;
+    const q = params.find((param) => param.startsWith('q='));
+    const weight = q === undefined ? 1 : Number(q.slice(2));
+    weights.set(coding === 'x-gzip' ? 'gzip' : coding, Number.isFinite(weight) ? weight : 0);
+  }
+  const weightOf = (coding: AssetEncoding) => weights.get(coding) ?? weights.get('*') ?? 0;
+  return (['br', 'gzip'] as const)
+    .filter((coding) => weightOf(coding) > 0)
+    .sort((a, b) => weightOf(b) - weightOf(a));
+};
 
 /** CesiumJS files copied by the web build: workers, third-party code and engine assets. */
 const CESIUM_PATH = /^(Workers|ThirdParty|Assets)(\/[A-Za-z0-9_][A-Za-z0-9._-]{0,127}){1,4}$/;
@@ -113,11 +151,27 @@ export const spaMiddleware =
     if (path.startsWith('/assets/')) {
       const name = path.slice('/assets/'.length);
       const type = ASSET_TYPES[extname(name)];
-      const bytes = type && ASSET_NAME.test(name) ? await web.asset(name) : null;
-      if (!type || !bytes) return c.json({ detail: 'Not Found' }, 404);
+      if (!type || !ASSET_NAME.test(name)) return c.json({ detail: 'Not Found' }, 404);
+      // Brotli or gzip written at build time, when the client takes it (functional-10 T9).
+      const negotiated = web.encodedAsset !== undefined && COMPRESSIBLE.has(extname(name));
+      const vary: Record<string, string> = negotiated ? { Vary: 'Accept-Encoding' } : {};
+      if (negotiated)
+        for (const encoding of acceptedEncodings(c.req.header('accept-encoding'))) {
+          const encoded = await web.encodedAsset?.(name, encoding);
+          if (encoded)
+            return c.body(responseBody(encoded), 200, {
+              'Content-Type': type,
+              'Cache-Control': ASSET_CACHE,
+              'Content-Encoding': encoding,
+              ...vary,
+            });
+        }
+      const bytes = await web.asset(name);
+      if (!bytes) return c.json({ detail: 'Not Found' }, 404);
       return c.body(responseBody(bytes), 200, {
         'Content-Type': type,
         'Cache-Control': ASSET_CACHE,
+        ...vary,
       });
     }
     if (path.startsWith('/cesium/')) {
@@ -160,12 +214,23 @@ export const webAssetsFrom = (
   asset: async (name) => (ASSET_NAME.test(name) ? read(`assets/${name}`) : null),
 });
 
-/** Reads a Vite build directory; asset names are validated before they reach the path. */
-export const fileWebAssets = (dir: string): WebAssets =>
-  webAssetsFrom(async (relativePath) => {
+/**
+ * Reads a Vite build directory; asset names are validated before they reach the path. The Node
+ * server sends the build's `.br` and `.gz` variants as they are, so it offers them.
+ */
+export const fileWebAssets = (dir: string): WebAssets => {
+  const read = async (relativePath: string) => {
     try {
       return await readFile(join(dir, relativePath));
     } catch {
       return null;
     }
-  });
+  };
+  return {
+    ...webAssetsFrom(read),
+    encodedAsset: async (name, encoding) =>
+      ASSET_NAME.test(name) && COMPRESSIBLE.has(extname(name))
+        ? read(`assets/${name}${VARIANT_SUFFIX[encoding]}`)
+        : null,
+  };
+};

@@ -39,7 +39,6 @@ import {
   scopesQuery,
 } from '../features/tenancy/index.ts';
 import { isApiError, isMfaRequired } from '../shared/api/client.ts';
-import { Card } from '../shared/ui/Card.tsx';
 import { SearchPalette, openSearch } from '../features/search/index.ts';
 import { LiveUpdates } from '../features/live/index.ts';
 import {
@@ -49,6 +48,7 @@ import {
 } from '../features/notifications/index.ts';
 import { SETTINGS_PATH, settingsSearch } from '../features/situations/sections.ts';
 import { AppShell } from './layout/AppShell.tsx';
+import { NotFoundPage } from './NotFoundPage.tsx';
 import { useQualityReview } from './pending-quality.ts';
 import { recordFieldLabel } from '../features/records/modules.ts';
 
@@ -188,13 +188,19 @@ type RouterContext = { queryClient: QueryClient };
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: Outlet,
-  notFoundComponent: () => (
-    <Card title="Página no encontrada">
-      <p>
-        La dirección no existe. <Link to="/inicio">Volver al inicio</Link>
-      </p>
-    </Card>
-  ),
+  notFoundComponent: NotFoundPage,
+});
+
+/**
+ * Configuración's first address. Old links, bookmarks and «Recientes» entries keep working:
+ * they land on /configuracion with the same `?seccion=` (functional-10 T6).
+ */
+const legacySettingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/version-4',
+  beforeLoad: ({ location }) => {
+    throw redirect({ href: `${SETTINGS_PATH}${location.searchStr}`, replace: true });
+  },
 });
 
 const loginRoute = createRoute({
@@ -675,6 +681,7 @@ const hubRoute = (hub: Destination) => {
 const hubRoutes = DESTINATIONS.map(hubRoute);
 
 const routeTree = rootRoute.addChildren([
+  legacySettingsRoute,
   loginRoute,
   mfaRoute,
   selectProjectRoute,

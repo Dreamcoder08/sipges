@@ -1,0 +1,31 @@
+.notice {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 40rem;
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+.text {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.action {
+  margin: 0;
+}
+
+.action a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target);
+}

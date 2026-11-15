@@ -5,7 +5,9 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
+import { isApiError } from '../../shared/api/client.ts';
 import { errorDetail } from '../../shared/api/feedback.ts';
+import { NotFoundNotice } from '../../shared/ui/NotFoundNotice.tsx';
 import { InternalLink } from '../../shared/lib/navigation.tsx';
 import { RecordEditor } from './RecordEditor.tsx';
 import { recordQuery, saveRecord } from './api.ts';
@@ -23,6 +25,9 @@ import { linksQuery } from './ontology-api.ts';
 import styles from './Records.module.css';
 
 const isRecordModule = (value: string): value is RecordModule => Object.hasOwn(MODULES, value);
+
+/** Where a missing record or type sends the person back to. */
+const backHome = <InternalLink href="/inicio">Volver al inicio</InternalLink>;
 
 const ObjectView = ({
   module,
@@ -67,6 +72,14 @@ const ObjectView = ({
   const summary = useQuery(linksQuery(module, id, scope));
   const writable = canWriteRecords(role);
   const title = summary.data ? summary.data.record.title : id;
+  // A valid type and an id the project does not hold: the record is missing, not the type.
+  if (isApiError(record.error, 404))
+    return (
+      <NotFoundNotice title="Registro no encontrado" action={backHome}>
+        No hay un registro de {MODULES[module].label.toLowerCase()} con el identificador «{id}» en
+        el proyecto activo. Pudo ser eliminado o pertenecer a otro proyecto.
+      </NotFoundNotice>
+    );
   return (
     <div className={styles.page}>
       <InternalLink href="/calidad">Volver a calidad de datos</InternalLink>
@@ -155,11 +168,13 @@ export const ObjectPage = ({
   role: Role;
   projectId: string;
   projectLabel: string;
-}) =>
-  isRecordModule(module) ? (
+}) => {
+  // Module keys are lower case; an address written «/objeto/Eventos/…» means the same type.
+  const key = module.toLowerCase();
+  return isRecordModule(key) ? (
     <ObjectView
-      key={`${scope}/${module}/${id}`}
-      module={module}
+      key={`${scope}/${key}/${id}`}
+      module={key}
       id={id}
       scope={scope}
       role={role}
@@ -167,7 +182,8 @@ export const ObjectPage = ({
       projectLabel={projectLabel}
     />
   ) : (
-    <Card title="Tipo de registro no válido">
-      <p>La dirección no corresponde a un tipo de registro de SIPGES.</p>
-    </Card>
+    <NotFoundNotice title="Tipo de registro no válido" action={backHome}>
+      «{module}» no es un tipo de registro de SIPGES. Revise el enlace o vuelva al inicio.
+    </NotFoundNotice>
   );
+};

@@ -11,7 +11,7 @@ import { formatDateTime } from '../../shared/lib/format.ts';
 export const INBOX_REFRESH_MS = 60_000;
 
 /** Where the device push switch lives (Configuración, section Notificaciones). */
-export const DEVICE_PUSH_HREF = '/version-4?seccion=notificaciones';
+export const DEVICE_PUSH_HREF = '/configuracion?seccion=notificaciones';
 
 const Ok = z.object({ ok: z.literal(true) });
 

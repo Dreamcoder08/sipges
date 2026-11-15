@@ -42,7 +42,7 @@ export const AppShell = ({
   const [drawer, setDrawer] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const topbar = useRef<HTMLElement>(null);
-  const title = titleFor(pathname);
+  const title = titleFor(pathname, searchStr);
   const first = useRef(true);
   // Any navigation (a new search string included) or a completed project switch closes the drawer,
   // and so does leaving the compact layout, so it never reappears open when the window narrows.
@@ -55,12 +55,16 @@ export const AppShell = ({
 
   useEffect(() => {
     document.title = `${title} | SIPGES`;
+  }, [title]);
+
+  // Focus follows a new screen, not a new section or tab of the same one.
+  useEffect(() => {
     if (first.current) {
       first.current = false;
       return;
     }
     heading.current?.focus();
-  }, [pathname, title]);
+  }, [pathname]);
 
   useEffect(() => {
     const visit = visitFor(pathname, searchStr);

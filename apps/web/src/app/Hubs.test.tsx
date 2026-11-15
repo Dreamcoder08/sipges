@@ -741,7 +741,7 @@ describe('Inicio hub', () => {
 describe('Configuración', () => {
   it('opens the section named in the URL and Apariencia for an unknown one', async () => {
     const user = userEvent.setup();
-    at('/version-4?seccion=privacidad');
+    at('/configuracion?seccion=privacidad');
     const page = render(<App />);
     const nav = await screen.findByRole('navigation', { name: 'Secciones de Configuración' });
     expect(within(nav).getByRole('link', { name: 'Privacidad y datos' })).toHaveAttribute(

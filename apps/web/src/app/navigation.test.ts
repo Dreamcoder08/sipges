@@ -59,7 +59,7 @@ describe('navigation', () => {
       '/automatizaciones',
       '/metodologia',
       '/auditoria',
-      '/version-4',
+      '/configuracion',
     ]);
     const reachable = [
       ...DESTINATIONS.flatMap((hub) => hub.tabs.map((t) => t.screen)),
@@ -114,8 +114,8 @@ describe('navigation', () => {
     expect(visitFor('/inicio', '?vista=inicio')).toBeNull();
     // Configuración is one screen in «Recientes», whichever section was open.
     for (const search of ['', '?seccion=proyecto', '?seccion=privacidad'])
-      expect(visitFor('/version-4', search)).toEqual({
-        href: '/version-4',
+      expect(visitFor('/configuracion', search)).toEqual({
+        href: '/configuracion',
         label: 'Configuración',
       });
     expect(visitFor('/inicio', '?vista=gerencial')).toEqual({
@@ -166,9 +166,9 @@ describe('navigation', () => {
     const others = [
       ...DESTINATIONS.map((hub) => hub.icon),
       ...Object.entries(SCREEN_ICONS)
-        .filter(([path]) => path !== '/version-4')
+        .filter(([path]) => path !== '/configuracion')
         .map(([, icon]) => icon),
     ];
-    expect(others).not.toContain(SCREEN_ICONS['/version-4']);
+    expect(others).not.toContain(SCREEN_ICONS['/configuracion']);
   });
 });

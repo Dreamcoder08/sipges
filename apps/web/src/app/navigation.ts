@@ -1,3 +1,4 @@
+import { settingsTitle } from '../features/situations/sections.ts';
 import type { IconName } from '../shared/ui/icons.ts';
 
 /**
@@ -84,7 +85,13 @@ export const SCREENS = [
   { path: '/integraciones', label: 'Integraciones', title: 'Integraciones', ready: true },
   { path: '/metodologia', label: 'Metodología', title: 'Metodología SIPGES', ready: true },
   { path: '/auditoria', label: 'Auditoría', title: 'Auditoría', ready: true },
-  { path: '/version-4', label: 'Configuración', title: 'Configuración del proyecto', ready: true },
+  // The heading names the section shown (settingsTitle); old `/version-4` links redirect here.
+  {
+    path: '/configuracion',
+    label: 'Configuración',
+    title: 'Configuración · Apariencia',
+    ready: true,
+  },
 ] as const satisfies readonly {
   path: string;
   label: string;
@@ -100,7 +107,7 @@ export const SYSTEM_PATHS = [
   '/automatizaciones',
   '/metodologia',
   '/auditoria',
-  '/version-4',
+  '/configuracion',
 ] as const satisfies readonly ScreenPath[];
 
 export const labelFor = (path: string): string =>
@@ -219,7 +226,7 @@ export const visitFor = (path: string, search: string): { href: string; label: s
   const hub = DESTINATIONS.find((item) => item.path === path);
   if (!hub) {
     // Configuración's sections (`?seccion=`) are one screen, so they share one entry.
-    const kept = path === '/version-4' ? '' : search;
+    const kept = path === '/configuracion' ? '' : search;
     return SCREENS.some((screen) => screen.path === path)
       ? { href: path + kept, label: labelFor(path) }
       : null;
@@ -265,7 +272,7 @@ export const SCREEN_ICONS: Readonly<Record<ScreenPath, IconName>> = {
   '/integraciones': 'plug',
   '/metodologia': 'bookOpen',
   '/auditoria': 'shield',
-  '/version-4': 'settings',
+  '/configuracion': 'settings',
 };
 
 export const iconFor = (path: NavPath): IconName =>
@@ -273,10 +280,21 @@ export const iconFor = (path: NavPath): IconName =>
     ? SCREEN_ICONS[path as ScreenPath]
     : (DESTINATIONS.find((hub) => hub.path === path)?.icon ?? 'layers');
 
-export const titleFor = (path: string) =>
-  SCREENS.find((screen) => screen.path === path)?.title ??
-  DESTINATIONS.find((hub) => hub.path === path)?.label ??
-  'SIPGES';
+/** The 360° view of one record (docs/adr/0011), whatever its type or id. */
+const OBJECT_PATH = /^\/objeto\/[^/]+\/[^/]+\/?$/;
+
+/**
+ * The page heading and tab title of a path. Configuración names its section (from `search`),
+ * and a record's 360° view says what it is instead of the bare product name.
+ */
+export const titleFor = (path: string, search = '') =>
+  path === '/configuracion'
+    ? settingsTitle(search)
+    : OBJECT_PATH.test(path)
+      ? 'Ficha del registro'
+      : (SCREENS.find((screen) => screen.path === path)?.title ??
+        DESTINATIONS.find((hub) => hub.path === path)?.label ??
+        'SIPGES');
 
 /** Bandeja › «Avisos», the notification inbox the shell's bell opens (functional-closure S9). */
 export const AVISOS_HREF = '/bandeja?vista=avisos';

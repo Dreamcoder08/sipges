@@ -73,7 +73,7 @@ it('explains an empty inbox and where device notifications are switched on', asy
   expect(await screen.findByText(/Sin avisos/)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Configuración › Notificaciones' })).toHaveAttribute(
     'href',
-    '/version-4?seccion=notificaciones',
+    '/configuracion?seccion=notificaciones',
   );
   // The device push switch lives in Configuración only, not twice.
   expect(screen.queryByText(/notificaciones push/)).toBeNull();
