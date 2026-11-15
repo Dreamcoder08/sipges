@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { expect, it } from 'vitest';
@@ -151,4 +151,32 @@ it('names each action and module in Spanish and searches by either form', async 
   await user.type(screen.getByLabelText('Buscar en auditoría'), 'CONFIG_UPDATE');
   expect(screen.getByText('Pesos sintéticos')).toBeInTheDocument();
   expect(screen.queryByText('Alta sintética')).toBeNull();
+});
+
+// functional-10 T13 (F30, F31): on a phone each operation becomes a card of labelled rows (the
+// Registros pattern), so every cell carries its column name; the count agrees with one.
+it('labels every cell with its column for the phone cards and counts one operation in the singular', async () => {
+  server.use(
+    http.get('*/system/audit', () =>
+      HttpResponse.json([
+        {
+          id: 1,
+          ts: '2026-11-15T16:21:00Z',
+          module: 'automatizaciones',
+          record_id: 'EV-1B5151999',
+          action: 'create',
+          detail: 'Registro creado en SIPGES',
+        },
+      ]),
+    ),
+  );
+  renderPage();
+  const table = await screen.findByRole('table', { name: /Registro de operaciones/ });
+  await within(table).findByText('Registro creado en SIPGES');
+  const headers = within(table)
+    .getAllByRole('columnheader')
+    .map((header) => header.textContent);
+  const cells = within(table).getAllByRole('cell');
+  expect(cells.map((cell) => cell.getAttribute('data-label'))).toEqual(headers);
+  expect(screen.getByText(/de 1 registro/)).toHaveTextContent('1 de 1 registro cargado.');
 });

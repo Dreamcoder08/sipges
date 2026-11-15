@@ -3,8 +3,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  decimalInput,
   formatDateTime,
   formatDay,
+  formatFractions,
   formatIndex,
   formatLongDay,
   formatNumber,
@@ -12,6 +14,7 @@ import {
   formatShares,
   formatShortDay,
   limaDay,
+  parseDecimal,
 } from './format.ts';
 
 // functional-10 T1 (F1–F3): one date rule — the Lima calendar day, in Spanish.
@@ -121,4 +124,24 @@ it('leaves no toLocaleDateString or toLocaleString outside the shared formatter'
         ),
     );
   expect(found).toEqual([]);
+});
+
+// functional-10 T13 (F30): IRSA weight and band inputs in Spanish.
+it('writes weights as fractions that add up and reads a decimal comma or point', () => {
+  const sixth = 0.1666667;
+  expect(formatFractions([sixth, sixth, sixth, sixth, sixth, 0.1666665])).toEqual([
+    '0,167',
+    '0,167',
+    '0,167',
+    '0,167',
+    '0,166',
+    '0,166',
+  ]);
+  expect(decimalInput(24.99)).toBe('24,99');
+  expect(decimalInput(25)).toBe('25');
+  expect(parseDecimal('0,2')).toBe(0.2);
+  expect(parseDecimal(' 0.2 ')).toBe(0.2);
+  expect(parseDecimal(decimalInput(0.1666667))).toBe(0.1666667);
+  for (const bad of ['', ' ', '24,9,9', '1.000,5', 'abc', '0x10'])
+    expect(parseDecimal(bad), bad).toBeNaN();
 });

@@ -47,6 +47,7 @@ type SettingsPageProps = FeatureContext & {
  */
 export const SettingsPage = ({
   scope,
+  projectLabel,
   role,
   username,
   fullName,
@@ -72,6 +73,7 @@ export const SettingsPage = ({
         {current === 'proyecto' || current === 'privacidad' ? (
           <ProjectSettingsSection
             scope={scope}
+            projectLabel={projectLabel}
             section={current}
             admin={role === 'admin'}
             onSaved={(text) => setNotice(text ? { section: current, text } : null)}
@@ -94,11 +96,13 @@ export const SettingsPage = ({
 
 const ProjectSettingsSection = ({
   scope,
+  projectLabel,
   section,
   admin,
   onSaved,
 }: {
   scope: string;
+  projectLabel: string;
   section: 'proyecto' | 'privacidad';
   admin: boolean;
   onSaved: (notice: string) => void;
@@ -110,6 +114,7 @@ const ProjectSettingsSection = ({
         <SettingsForm
           key={data.updated_at ?? 'default'}
           scope={scope}
+          projectLabel={projectLabel}
           section={section}
           data={data}
           admin={admin}
@@ -122,12 +127,14 @@ const ProjectSettingsSection = ({
 
 const SettingsForm = ({
   scope,
+  projectLabel,
   section,
   data,
   admin,
   onSaved,
 }: {
   scope: string;
+  projectLabel: string;
   section: 'proyecto' | 'privacidad';
   data: ProjectSettings;
   admin: boolean;
@@ -177,7 +184,8 @@ const SettingsForm = ({
     );
   return (
     <>
-      <Card eyebrow="Proyecto" title="SIPGES">
+      {/* The card names the active project; the list below says what SIPGES does for it. */}
+      <Card eyebrow="Proyecto" title={projectLabel || 'Proyecto activo'}>
         <p>Este proyecto funciona con SIPGES. Estas son sus funciones:</p>
         <ul>
           {FEATURES.map((feature) => (

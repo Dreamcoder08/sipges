@@ -685,3 +685,35 @@ it('keeps the type table with its row actions at 1024 px or wider', async () => 
     window.matchMedia = original;
   }
 });
+
+// functional-10 T13 (F29, F31): the sheet writes the record's day as the list does, shows no dash
+// without a label, and the count agrees with a total of one.
+it('writes the record date in Spanish in the sheet, as the list row does', async () => {
+  const user = userEvent.setup();
+  renderHub('eventos');
+  await user.click(await screen.findByRole('button', { name: 'Ver E-1' }));
+  const sheet = await screen.findByRole('dialog', { name: /E-1/ });
+  const day = (await within(sheet).findByText('Fecha')).nextElementSibling as HTMLElement;
+  expect(day).toHaveTextContent('28 oct. 2026');
+  expect(day.querySelector('time')).toHaveAttribute('datetime', '2026-10-28');
+  expect(sheet).not.toHaveTextContent('2026-10-28');
+});
+
+it('shows no unlabelled dash in the sheet of a record without verification', async () => {
+  const user = userEvent.setup();
+  renderHub('actores');
+  await user.click(await screen.findByRole('button', { name: 'Ver A-1' }));
+  const sheet = await screen.findByRole('dialog', { name: /A-1/ });
+  await within(sheet).findByText('Federación de Pescadores');
+  expect(within(sheet).queryByText('—')).toBeNull();
+});
+
+it('counts «1 de 1 registro» in the singular', async () => {
+  resetApi();
+  installRecordsApi({ [`${SCOPE}/eventos`]: rows[`${SCOPE}/eventos`].slice(0, 1) });
+  renderHub('todos');
+  const toolbar = await screen.findByRole('group', { name: 'Filtros de registros' });
+  const status = await within(toolbar).findByRole('status');
+  await within(status).findByText(/^1 de/);
+  expect(status).toHaveTextContent(/^1 de 1 registro$/);
+});

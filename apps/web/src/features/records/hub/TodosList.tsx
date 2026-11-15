@@ -16,6 +16,8 @@ import {
 import { TypeChip } from './TypeChip.tsx';
 import { ValidationChip, VerificationChip } from './VerificationChip.tsx';
 import { DateText } from '../../../shared/ui/DateText.tsx';
+import { formatNumber } from '../../../shared/lib/format.ts';
+import { count } from '../../../shared/lib/plural.ts';
 
 const matches = (row: RecordSummary, query: string) =>
   !query ||
@@ -159,7 +161,7 @@ export const TodosList = ({
         <div className={styles.toolbarEnd}>
           {density}
           <p className={styles.shown} role="status">
-            {visible.length} de {rows.length} registros
+            {formatNumber(visible.length)} de {count(rows.length, 'registro', 'registros')}
           </p>
         </div>
       </div>

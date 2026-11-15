@@ -120,13 +120,8 @@ export const formatIndex = (value: number) => formatNumber(value, DECIMALS.index
 export const formatPercent = (value: number, decimals: number = DECIMALS.share) =>
   `${formatNumber(value, decimals)}\u00a0%`;
 
-/**
- * Fractions of one (IRSA weights) as percentages that add up on screen: largest-remainder
- * rounding, so six weights of 0,1666667 and 0,1666665 read 16,7 % ×4 and 16,6 % ×2 (total
- * 100,0 %) instead of a rounding artefact. Ties go to the earlier value.
- */
-export const formatShares = (values: readonly number[], decimals: number = DECIMALS.share) => {
-  const unit = 100 * 10 ** decimals;
+/** Largest-remainder rounding to whole `unit`s of one; ties go to the earlier value. */
+const roundShares = (values: readonly number[], unit: number) => {
   const scaled = values.map((value) => (Number.isFinite(value) ? value * unit : 0));
   const floors = scaled.map(Math.floor);
   const target = Math.round(scaled.reduce((sum, value) => sum + value, 0));
@@ -139,5 +134,41 @@ export const formatShares = (values: readonly number[], decimals: number = DECIM
     floors[index] = (floors[index] ?? 0) + 1;
     missing -= 1;
   }
-  return floors.map((units) => formatPercent(units / 10 ** decimals, decimals));
+  return floors;
+};
+
+/**
+ * Fractions of one (IRSA weights) as percentages that add up on screen: largest-remainder
+ * rounding, so six weights of 0,1666667 and 0,1666665 read 16,7 % ×4 and 16,6 % ×2 (total
+ * 100,0 %) instead of a rounding artefact. Ties go to the earlier value.
+ */
+export const formatShares = (values: readonly number[], decimals: number = DECIMALS.share) =>
+  roundShares(values, 100 * 10 ** decimals).map((units) =>
+    formatPercent(units / 10 ** decimals, decimals),
+  );
+
+/**
+ * The same weights as fractions of one that add up, for the inputs that edit them: «0,167» ×4 and
+ * «0,166» ×2 for the shares above (three decimals, so each reads as its percentage).
+ */
+export const formatFractions = (values: readonly number[], decimals: number = DECIMALS.share + 2) =>
+  roundShares(values, 10 ** decimals).map((units) =>
+    formatNumber(units / 10 ** decimals, decimals),
+  );
+
+/**
+ * A stored number as an editable field shows it: every digit it has, with a decimal comma
+ * («24,99»), so saving it unchanged stores the same number.
+ */
+export const decimalInput = (value: number) => String(value).replace('.', ',');
+
+const DECIMAL_TEXT = /^[+-]?(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:e[+-]?\d+)?$/i;
+
+/**
+ * A number typed by a person: a decimal comma or a point («0,2» and «0.2»), no thousands
+ * separator. NaN for empty or anything else, so the form can say what to fix.
+ */
+export const parseDecimal = (text: string) => {
+  const trimmed = text.trim();
+  return DECIMAL_TEXT.test(trimmed) ? Number(trimmed.replace(',', '.')) : NaN;
 };

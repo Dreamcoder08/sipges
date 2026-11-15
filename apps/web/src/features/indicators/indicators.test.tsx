@@ -458,6 +458,87 @@ describe('Indicadores e IRSA', () => {
         <IrsaPage {...context} />
       </QueryClientProvider>,
     );
-    expect(screen.getByLabelText('Peso G · Gobernanza')).toHaveValue(0.5);
+    expect(screen.getByLabelText('Peso G · Gobernanza')).toHaveValue('0.5');
+  });
+});
+
+// functional-10 T13 (F30): the weight and band inputs write the decimal comma, accept a comma or a
+// point, and store the same numbers as before when they are not edited.
+describe('Parámetros del índice con coma decimal', () => {
+  const sixth = 0.1666667;
+  const thirds = {
+    weights: { G: sixth, A: sixth, D: sixth, N: sixth, E: sixth, I: 0.1666665 },
+    thresholds: { Verde: [0, 24.99], Amarillo: [25, 49.99], Naranja: [50, 74.99], Rojo: [75, 100] },
+    contributions: { eventos: 2.5 },
+  };
+  const savedPayload = () =>
+    calls.find((call) => call.path === 'config')?.body as { payload: typeof thirds } | undefined;
+  beforeEach(() => {
+    server.use(http.get('*/system/irsa/config', () => HttpResponse.json(thirds)));
+  });
+
+  it('muestra los pesos con coma como partes que suman 1, igual que las partes en %', async () => {
+    renderPage(<IrsaPage {...context} />);
+    const group = await screen.findByRole('group', { name: 'Pesos de dimensiones' });
+    const values = within(group)
+      .getAllByRole('textbox')
+      .map((input) => (input as HTMLInputElement).value);
+    expect(values).toEqual(['0,167', '0,167', '0,167', '0,167', '0,166', '0,166']);
+    expect(group).toHaveTextContent('Suma de los pesos: 1,000');
+    expect(group).not.toHaveTextContent('0.166');
+  });
+
+  it('muestra las bandas y las contribuciones con coma decimal', async () => {
+    renderPage(<IrsaPage {...context} />);
+    const bands = await screen.findByRole('group', { name: 'Bandas de riesgo' });
+    expect(within(bands).getByLabelText('Límite superior Verde')).toHaveValue('24,99');
+    expect(within(bands).getByLabelText('Límite inferior Amarillo')).toHaveValue('25');
+    expect(within(bands).getByLabelText('Límite superior Naranja')).toHaveValue('74,99');
+    const contributions = screen.getByRole('group', { name: 'Contribuciones del prototipo' });
+    expect(within(contributions).getByRole('textbox')).toHaveValue('2,5');
+    for (const input of screen.getAllByRole('textbox', { name: /^(Peso|Límite)/ }))
+      expect(input).toHaveAttribute('inputmode', 'decimal');
+  });
+
+  it('guarda los mismos números cuando no se edita ningún campo', async () => {
+    renderPage(<IrsaPage {...context} />);
+    await screen.findByRole('group', { name: 'Pesos de dimensiones' });
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
+    await waitFor(() => expect(savedPayload()).toEqual({ payload: thirds }));
+  });
+
+  it('acepta la coma y el punto decimal al editar', async () => {
+    renderPage(<IrsaPage {...context} />);
+    const g = await screen.findByLabelText('Peso G · Gobernanza');
+    const i = screen.getByLabelText('Peso I · Institucional');
+    await userEvent.clear(g);
+    await userEvent.type(g, '0,2');
+    await userEvent.clear(i);
+    await userEvent.type(i, '0.1333332');
+    const upper = screen.getByLabelText('Límite superior Verde');
+    await userEvent.clear(upper);
+    await userEvent.type(upper, '24,5');
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
+    await waitFor(() =>
+      expect(savedPayload()).toEqual({
+        payload: {
+          ...thirds,
+          weights: { ...thirds.weights, G: 0.2, I: 0.1333332 },
+          thresholds: { ...thirds.thresholds, Verde: [0, 24.5] },
+        },
+      }),
+    );
+  });
+
+  it('rechaza un valor que no es un número, con coma o sin ella, sin guardar', async () => {
+    renderPage(<IrsaPage {...context} />);
+    const upper = await screen.findByLabelText('Límite superior Verde');
+    await userEvent.clear(upper);
+    await userEvent.type(upper, '24,9,9');
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
+    expect(
+      await screen.findByText('Revise los valores numéricos y los límites de cada banda.'),
+    ).toBeInTheDocument();
+    expect(calls.filter((call) => call.path === 'config')).toHaveLength(0);
   });
 });

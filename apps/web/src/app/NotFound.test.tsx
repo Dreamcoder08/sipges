@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { installRecordsApi } from '../test/records-api.ts';
 import { resetApi } from '../test/server.ts';
@@ -24,6 +24,41 @@ describe('not-found pages', { timeout: 15_000 }, () => {
       '/inicio',
     );
     expect(screen.queryByText(/dashboard/i)).toBeNull();
+  });
+
+  // functional-10 T13 (F31): signed in, the missing page keeps the app's navigation around it.
+  it('a missing page renders inside the app shell when signed in', async () => {
+    installRecordsApi();
+    at('/pagina-que-no-existe');
+    render(<App />);
+    // The way back shows with or without the shell; then the shell is asserted at once.
+    await screen.findByRole('link', { name: 'Volver al inicio' });
+    const notice = screen.getByRole('heading', { name: 'Página no encontrada', level: 2 });
+    expect(screen.getByRole('navigation', { name: 'Secciones' })).toBeInTheDocument();
+    expect(screen.getByRole('main')).toContainElement(notice);
+    expect(screen.getAllByRole('heading', { level: 1 }).map((h) => h.textContent)).toEqual([
+      'Página no encontrada',
+    ]);
+    expect(document.title).toBe('Página no encontrada | SIPGES');
+    expect(screen.getByRole('link', { name: 'Volver al inicio' })).toHaveAttribute(
+      'href',
+      '/inicio',
+    );
+  });
+
+  it('a missing page asks a signed-out person to sign in first', async () => {
+    resetApi();
+    at('/pagina-que-no-existe');
+    render(<App />);
+    // Either screen settles first (the old bare notice or the sign-in form); then the path is read.
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('link', { name: 'Volver al inicio' }) ??
+          screen.queryByLabelText('Usuario'),
+      ).not.toBeNull(),
+    );
+    expect(window.location.pathname).toBe('/login');
+    expect(screen.getByLabelText('Usuario')).toBeVisible();
   });
 
   it('a missing record of a valid type says the record was not found, not the type', async () => {

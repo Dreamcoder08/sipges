@@ -154,10 +154,14 @@ const SheetBody = ({
           const summary = summarize(module, row);
           return (
             <>
-              <p className={styles.sheetLead}>
-                <VerificationChip letter={summary.verification} />
-                {summary.validation ? <ValidationChip state={summary.validation} /> : null}
-              </p>
+              {/* Only what the record has: a record type without verification (Actores) shows no
+                  bare «—» that names nothing. */}
+              {summary.verification || summary.validation ? (
+                <p className={styles.sheetLead}>
+                  {summary.verification ? <VerificationChip letter={summary.verification} /> : null}
+                  {summary.validation ? <ValidationChip state={summary.validation} /> : null}
+                </p>
+              ) : null}
               <RecordDetail module={module} record={row} />
               <LinksPanel module={module} id={id} scope={scope} writable={canWriteRecords(role)} />
               <HistoryPanel module={module} id={id} scope={scope} />

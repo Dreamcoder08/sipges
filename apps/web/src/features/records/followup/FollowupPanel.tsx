@@ -2,6 +2,7 @@ import type { ModuleRecord } from '@sipges/contracts';
 import { limaToday } from '@sipges/kernel';
 import { useId, useState } from 'react';
 import { Button } from '../../../shared/ui/Button.tsx';
+import { DateText } from '../../../shared/ui/DateText.tsx';
 import { followupRows, type FollowupBucket } from './followup.ts';
 import styles from './FollowupPanel.module.css';
 
@@ -54,8 +55,8 @@ export const FollowupPanel = ({
         </span>
       </div>
       <p className={styles.explanation}>
-        Fecha de referencia: {today} (America/Lima). Los plazos de texto se conservan sin inferir
-        fechas. Los estados cerrados no cuentan como vencidos.
+        Fecha de referencia: <DateText value={today} /> (hora de Lima). Los plazos de texto se
+        conservan sin inferir fechas. Los estados cerrados no cuentan como vencidos.
       </p>
       <div className={styles.filters} role="group" aria-label="Filtrar seguimiento">
         {filters.map(([key, label]) => (

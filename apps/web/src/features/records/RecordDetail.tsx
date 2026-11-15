@@ -3,6 +3,7 @@ import { AlertExplanation, EXPLANATION_KEYS, isExplainedAlert } from './AlertExp
 import { displayValue, extraFields, fieldValue, safePublicUrl } from './model.ts';
 import { MODULES, type RecordModule } from './modules.ts';
 import styles from './Records.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 export const RecordDetail = ({
   module,
@@ -31,6 +32,8 @@ export const RecordDetail = ({
                   </a>
                 ) : field.type === 'url' && /^https?:\/\/[^/]+\.invalid(?:[/:]|$)/i.test(value) ? (
                   'Sin enlace público'
+                ) : field.type === 'date' ? (
+                  <DateText value={value} fallback="Sin registrar" />
                 ) : (
                   value || 'Sin registrar'
                 )}

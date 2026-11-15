@@ -20,6 +20,15 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { situationAlertPayload, citationHref } from './model.ts';
 import styles from './Situations.module.css';
 import { count, plural } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
+
+/** «alerta» is feminine: the colour agrees with it («alerta roja», «alerta amarilla»). */
+const ALERT_COLOUR: Readonly<Record<Situation['level'], string>> = {
+  Verde: 'verde',
+  Amarillo: 'amarilla',
+  Naranja: 'naranja',
+  Rojo: 'roja',
+};
 
 /** Related records, their trend and suggested actions (docs/adr/0020). */
 export const SituationsPage = ({ scope, projectId, projectLabel, role }: FeatureContext) => {
@@ -197,7 +206,7 @@ const SituationCard = ({
               <InternalLink href={citationHref(record.module, record.id)}>
                 {record.module} {record.id}
               </InternalLink>{' '}
-              · {record.date} · {record.title}
+              · <DateText value={record.date} /> · {record.title}
             </li>
           ))}
         </ul>
@@ -209,7 +218,7 @@ const SituationCard = ({
         </Alert>
       ) : writable ? (
         <Button disabled={create.isPending} onClick={() => create.mutate()}>
-          Crear alerta {situation.level.toLowerCase()} con esta explicación
+          Crear alerta {ALERT_COLOUR[situation.level]} con esta explicación
         </Button>
       ) : null}
       {create.isError ? <Alert tone="error">{errorDetail(create.error)}</Alert> : null}

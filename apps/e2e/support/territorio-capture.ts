@@ -84,7 +84,7 @@ export const captureTerritorioMap = async (
     await page.waitForTimeout(2_500);
   }
 
-  const group = page.getByRole('group', { name: /registro\(s\) sin ubicación/ });
+  const group = page.getByRole('group', { name: /registros? sin ubicación/ });
   await group.locator('summary').click();
   await expect(group.getByRole('link').first()).toBeVisible();
   const name = (part: string) =>

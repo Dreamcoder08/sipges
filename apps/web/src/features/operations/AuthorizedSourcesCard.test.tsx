@@ -112,3 +112,27 @@ it('shows provider failures and clears stale previews without offering an import
   expect(screen.queryByRole('button', { name: 'Importar publicación' })).not.toBeInTheDocument();
   expect(previews).toBe(2);
 });
+
+// functional-10 T13 (F29): the catalogue's checked day and the last poll in Spanish, Lima time.
+it('dates the official source and its last poll in Spanish', async () => {
+  server.use(
+    http.get('*/system/intelligence/sources', () =>
+      HttpResponse.json({
+        id: 'defensoria',
+        name: 'Defensoría del Pueblo del Perú',
+        url: 'https://www.defensoria.gob.pe/',
+        checked_at: '2026-10-17',
+        attribution: 'Solo extractos oficiales.',
+        state: { ...state, last_poll_at: '2026-11-15T03:30:00Z' },
+      }),
+    ),
+  );
+  renderCard('coordinador');
+  const source = (await screen.findByRole('link', { name: 'Defensoría del Pueblo del Perú' }))
+    .parentElement as HTMLElement;
+  expect(source).toHaveTextContent('Defensoría del Pueblo del Perú · comprobada el 17 oct. 2026');
+  expect(source.querySelector('time')).toHaveAttribute('datetime', '2026-10-17');
+  const poll = screen.getByText(/Último intento:/);
+  expect(poll).toHaveTextContent('Último intento: 14 nov. 2026, 22:30.');
+  expect(poll).not.toHaveTextContent('2026-11-15T03:30:00Z');
+});
