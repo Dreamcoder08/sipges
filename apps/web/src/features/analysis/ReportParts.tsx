@@ -5,7 +5,12 @@ import { errorDetail } from '../../shared/api/feedback.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
+import { count } from '../../shared/lib/plural.ts';
+import { keyWords } from '../../shared/lib/text.ts';
 import styles from './Analysis.module.css';
+
+/** How a column of stored fields is named on screen; never the stored key (functional-10 T3). */
+export type FieldLabel = (key: string) => string;
 
 const text = (value: unknown) =>
   typeof value === 'string'
@@ -34,7 +39,7 @@ export const Counts = ({ values }: { values: Record<string, number> }) => (
   <dl className={styles.metrics}>
     {Object.entries(values).map(([label, value]) => (
       <div key={label}>
-        <dt>{label.replaceAll('_', ' ')}</dt>
+        <dt>{keyWords(label)}</dt>
         <dd>{value}</dd>
       </div>
     ))}
@@ -58,24 +63,27 @@ export const Tallies = ({ title, rows }: { title: string; rows: [string, number]
 export const Excerpts = ({
   title,
   records,
+  fieldLabel = keyWords,
 }: {
   title: string;
   records: Array<{ id: string } & Record<string, unknown>>;
+  fieldLabel?: FieldLabel | undefined;
 }) => {
   const keys = [...new Set(records.flatMap(Object.keys))];
+  const header = (key: string) => (key === 'id' ? 'Registro' : fieldLabel(key));
   return (
     <Card title={title}>
       {records.length ? (
         <div className={styles.table} tabIndex={0} role="region" aria-label={title}>
           <table>
             <caption>
-              {title}: {records.length} registros
+              {title}: {count(records.length, 'registro', 'registros')}
             </caption>
             <thead>
               <tr>
                 {keys.map((key) => (
                   <th key={key} scope="col">
-                    {key}
+                    {header(key)}
                   </th>
                 ))}
               </tr>

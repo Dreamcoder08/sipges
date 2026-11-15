@@ -14,6 +14,8 @@ export type AttentionItem = {
   level?: Level;
   href: string;
   action: string;
+  /** The link's accessible name when the visible action alone would repeat on several rows. */
+  label?: string;
 };
 
 /** The digital alert state Bandeja › Pendientes decides (contracts AlertState). */
@@ -32,11 +34,13 @@ export const attentionItems = ({
   digital,
   irsa,
 }: {
-  alerts: readonly (TodayItem & { level: Level })[];
+  alerts: readonly (TodayItem & { level: Level; place?: string })[];
   digital?: z.infer<typeof TerritorialAlerts>;
   irsa?: IrsaSummary;
 }): AttentionItem[] => {
   const awaiting = digital?.filter((alert) => alert.status === AWAITING).length ?? 0;
+  // A title that repeats gets the record id, so the rows and their links never read alike.
+  const repeated = (title: string) => alerts.filter((alert) => alert.title === title).length > 1;
   return [
     ...(awaiting
       ? [
@@ -52,14 +56,18 @@ export const attentionItems = ({
           },
         ]
       : []),
-    ...alerts.map((alert) => ({
-      key: `alerta:${alert.id}`,
-      title: alert.title,
-      meta: ['Alerta activa', day(alert.date)].filter(Boolean).join(' · '),
-      level: alert.level,
-      href: objectHref('alertas', alert.id),
-      action: 'Abrir alerta',
-    })),
+    ...alerts.map((alert) => {
+      const id = repeated(alert.title) ? alert.id : null;
+      return {
+        key: `alerta:${alert.id}`,
+        title: alert.title,
+        meta: ['Alerta activa', day(alert.date), alert.place, id].filter(Boolean).join(' · '),
+        level: alert.level,
+        href: objectHref('alertas', alert.id),
+        action: 'Abrir alerta',
+        label: [`Abrir alerta ${alert.title}`, id].filter(Boolean).join(' · '),
+      };
+    }),
     ...(irsa && hasNoEvidence(irsa)
       ? [
           {

@@ -29,7 +29,8 @@ test('API app-local Vitest registers shared cleanup hooks in the active runner',
   });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout, /Test Files\s+1 passed \(1\)/);
-  assert.match(result.stdout, /Tests\s+36 passed \(36\)/);
+  // Every test of the file passes, whatever their number (a fixed count broke on each new config test).
+  assert.match(result.stdout, /Tests\s+([1-9]\d*) passed \(\1\)/);
   assert.doesNotMatch(result.stdout + result.stderr, /Vitest failed to find/);
 });
 test('web app-local Vitest registers setup hooks in the active runner', () => {

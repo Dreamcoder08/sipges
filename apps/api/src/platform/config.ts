@@ -47,6 +47,12 @@ export type AppConfig = {
   /** Hybrid search with stored embeddings from the Ollama model (SIPGES_SEMANTIC_SEARCH=1). */
   readonly semanticSearch: boolean;
   /**
+   * Endpoint the Defensoría connector asks (SIPGES_DEFENSORIA_URL); unset, the official
+   * https://www.defensoria.gob.pe/wp-json/wp/v2/posts. Only a test double needs another one:
+   * imported posts must still link to the official host.
+   */
+  readonly defensoriaUrl: string | undefined;
+  /**
    * Language model that rewrites extractive briefings (docs/adr/0013). Off unless
    * SIPGES_ANALYST_PROVIDER=anthropic (the key comes from ANTHROPIC_API_KEY at the SDK) or
    * openai-compatible (any Chat Completions provider; the key is optional on a loopback host).
@@ -203,6 +209,26 @@ const parseOllama = (env: Env) => {
   return { baseUrl, model, configured };
 };
 
+const parseDefensoriaUrl = (value: string | undefined): string | undefined => {
+  if (!value) return undefined;
+  const invalid = new Error(
+    'SIPGES_DEFENSORIA_URL must be an absolute http or https URL without a query',
+  );
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw invalid;
+  }
+  if (
+    (url.protocol !== 'http:' && url.protocol !== 'https:') ||
+    value.includes('?') ||
+    value.includes('#')
+  )
+    throw invalid;
+  return value;
+};
+
 const MODEL_ID = /^[a-z0-9][a-z0-9.-]{1,63}$/;
 
 const OPENAI_MODEL_ID = /^[A-Za-z0-9._:/-]{1,128}$/;
@@ -350,6 +376,7 @@ export const loadConfig = (env: Env): AppConfig => ({
   storage: parseStorage(env),
   ollama: parseOllama(env),
   semanticSearch: parseSwitch('SIPGES_SEMANTIC_SEARCH', env.SIPGES_SEMANTIC_SEARCH, false),
+  defensoriaUrl: parseDefensoriaUrl(env.SIPGES_DEFENSORIA_URL),
   analyst: parseAnalyst(env),
   webDir: env.SIPGES_WEB_DIR || undefined,
   referenceDir: parseReferenceDir(env.SIPGES_REFERENCE_DIR),

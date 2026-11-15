@@ -234,8 +234,13 @@ export const DEFAULT_IRSA_CONFIG: IrsaConfig = {
   ],
 };
 
-export const MODEL_STATUS: Readonly<Record<string, unknown>> = {
-  version: 'SIPGES · Prototipo final de tesis | Motor V0.5.1',
+/**
+ * The model status for a SIPGES release `version` (functional-10 T8): the version first and
+ * last, in this key order, byte-identical to apps/api-go/internal/indicators/domain/static.go.
+ * The release comes from the caller (the domain imports nothing outside itself).
+ */
+export const modelStatusFor = (version: string): Readonly<Record<string, unknown>> => ({
+  version: `SIPGES ${version} · Prototipo final de tesis`,
   content_validation: 'Pendiente de juicio de expertos',
   aiken_status: 'Sin resultados todavía',
   indicator_count: 32,
@@ -245,5 +250,5 @@ export const MODEL_STATUS: Readonly<Record<string, unknown>> = {
     'La interfaz está finalizada para la tesis. La condición de “modelo validado” solo se asignará después del juicio de expertos y la evaluación funcional contra el patrón de referencia.',
   classifier: 'Reglas ponderadas y contextuales',
   functional_validation: 'Protocolo preparado; patrón de referencia pendiente',
-  ui_release: 'Web Final RC 1.0',
-};
+  ui_release: version,
+});

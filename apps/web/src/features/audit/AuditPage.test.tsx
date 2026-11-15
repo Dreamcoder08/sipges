@@ -99,3 +99,56 @@ it('shows each operation in Lima time under a column that says so', async () => 
   expect(time).toHaveAttribute('datetime', '2026-11-15T03:33:35Z');
   expect(row).not.toHaveTextContent('2026-11-15T03:33:35Z');
 });
+
+// functional-10 T3 (F9): the action and the module read in Spanish; the stored values stay
+// searchable so a filter typed from an export still finds its row.
+it('names each action and module in Spanish and searches by either form', async () => {
+  const user = userEvent.setup();
+  server.use(
+    http.get('*/system/audit', () =>
+      HttpResponse.json([
+        {
+          id: 4,
+          ts: '2026-11-14T15:00:00Z',
+          module: 'Directorio_Territorial',
+          record_id: 'DT-1',
+          action: 'CREATE',
+          detail: 'Alta sintética',
+        },
+        {
+          id: 5,
+          ts: '2026-11-14T14:00:00Z',
+          module: 'IRSA',
+          record_id: null,
+          action: 'CONFIG_UPDATE',
+          detail: 'Pesos sintéticos',
+        },
+        {
+          id: 6,
+          ts: '2026-11-14T13:00:00Z',
+          module: 'Eventos',
+          record_id: 'EV-2',
+          action: 'NUEVA_ACCION',
+          detail: 'Acción sin nombre conocido',
+        },
+      ]),
+    ),
+  );
+  renderPage();
+  const created = (await screen.findByText('Alta sintética')).closest('tr') as HTMLElement;
+  expect(created).toHaveTextContent('Directorio territorial');
+  expect(created).toHaveTextContent('Creación');
+  expect(created).not.toHaveTextContent('CREATE');
+  const config = screen.getByText('Pesos sintéticos').closest('tr') as HTMLElement;
+  expect(config).toHaveTextContent('Cambio de configuración');
+  const unknown = screen.getByText('Acción sin nombre conocido').closest('tr') as HTMLElement;
+  expect(unknown).toHaveTextContent('Nueva accion');
+  expect(unknown).not.toHaveTextContent('NUEVA_ACCION');
+  await user.type(screen.getByLabelText('Buscar en auditoría'), 'creación');
+  expect(screen.getByText('Alta sintética')).toBeInTheDocument();
+  expect(screen.queryByText('Pesos sintéticos')).toBeNull();
+  await user.clear(screen.getByLabelText('Buscar en auditoría'));
+  await user.type(screen.getByLabelText('Buscar en auditoría'), 'CONFIG_UPDATE');
+  expect(screen.getByText('Pesos sintéticos')).toBeInTheDocument();
+  expect(screen.queryByText('Alta sintética')).toBeNull();
+});

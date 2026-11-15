@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import postgres from 'postgres';
-import { CRON_SECRET, VAPID } from './synthetic.ts';
+import { CRON_SECRET, DEFENSORIA_PATH, VAPID } from './synthetic.ts';
 
 export const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -175,6 +175,15 @@ export const startProcess = async (
   throw new Error(`${label} did not become healthy in time:\n${output}`);
 };
 
+/**
+ * External services both APIs reach through the local double (embedder-double.ts), never the
+ * real ones: the embedder and the Defensoría connector, which every cron tick polls.
+ */
+export const externalDoubles = (doubleUrl: string) => ({
+  SIPGES_OLLAMA_URL: doubleUrl,
+  SIPGES_DEFENSORIA_URL: `${doubleUrl}${DEFENSORIA_PATH}`,
+});
+
 /** The real TypeScript composition root; it applies the migrations and seeds the administrator. */
 /** What the second stage of the run turns on: hybrid search and the assisted briefing. */
 const secondStage = (on: boolean, embedderUrl: string) => ({
@@ -210,8 +219,7 @@ export const startTypeScriptApi = async (
       SIPGES_ACCESS_LOG: '0',
       SIPGES_AUTOMATION_INTERVAL: '0',
       SIPGES_CRON_SECRET: CRON_SECRET,
-      // The synthetic embedder both APIs share (embedder-double.ts).
-      SIPGES_OLLAMA_URL: embedderUrl,
+      ...externalDoubles(embedderUrl),
       ...secondStage(semanticSearch, embedderUrl),
     },
     await freePort(),
@@ -241,7 +249,7 @@ export const startGoApi = async (
       SIPGES_REQUIRE_MFA: '0',
       SIPGES_CRON_SECRET: CRON_SECRET,
       SIPGES_DATA_KEY: dataKey,
-      SIPGES_OLLAMA_URL: embedderUrl,
+      ...externalDoubles(embedderUrl),
       ...secondStage(semanticSearch, embedderUrl),
       // Go answers the cron only with its timer on, an hour off so it cannot fire during the run.
       ...(semanticSearch

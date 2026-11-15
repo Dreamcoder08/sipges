@@ -2,11 +2,28 @@ package domain
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
+
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
 
+// TestModelStatusNamesTheRelease: the model status reports the one SIPGES version (functional-10
+// T8), first and last as modelStatusFor orders it, with no «Motor V0.5.1» or «Web Final RC 1.0».
+func TestModelStatusNamesTheRelease(t *testing.T) {
+	if !strings.HasPrefix(ModelStatus, `{"version":"SIPGES `+release.Version+` · Prototipo final de tesis",`) ||
+		!strings.HasSuffix(ModelStatus, `"ui_release":"`+release.Version+`"}`) {
+		t.Fatalf("model status: %s", ModelStatus)
+	}
+	for _, old := range []string{"V0.5.1", "RC 1.0", "Motor"} {
+		if strings.Contains(ModelStatus, old) {
+			t.Errorf("model status still says %q", old)
+		}
+	}
+}
+
 // TestModelStatusWording pins the Spanish wording of the two model status strings, byte-identical
-// to MODEL_STATUS in apps/api/src/contexts/indicators/domain/defaults.ts.
+// to modelStatusFor in apps/api/src/contexts/indicators/domain/defaults.ts.
 func TestModelStatusWording(t *testing.T) {
 	var status map[string]any
 	if err := json.Unmarshal([]byte(ModelStatus), &status); err != nil {

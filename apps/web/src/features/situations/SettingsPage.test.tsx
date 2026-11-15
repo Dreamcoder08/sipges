@@ -406,6 +406,22 @@ it('shows the switch to everyone else read-only', async () => {
   expect(toggle).toBeDisabled();
 });
 
+// functional-10 T5 (F13): what may receive data is said in Spanish, without «embeddings».
+it('names what may receive pseudonymised data in plain Spanish', async () => {
+  server.use(
+    http.get('*/system/v4/settings', () =>
+      HttpResponse.json({ ...settings(), external_ai: { enabled: true } }),
+    ),
+  );
+  renderPage('admin', 'privacidad');
+  expect(
+    await screen.findByText(
+      'Activado: el servidor MCP, el resumen asistido y la búsqueda por significado con un modelo externo pueden recibir datos seudonimizados. Cada envío queda en Auditoría.',
+    ),
+  ).toBeInTheDocument();
+  expect(document.body).not.toHaveTextContent(/embedding/i);
+});
+
 it('lets an administrator save and clear the project location the maps open on', async () => {
   const user = userEvent.setup();
   const sent: unknown[] = [];

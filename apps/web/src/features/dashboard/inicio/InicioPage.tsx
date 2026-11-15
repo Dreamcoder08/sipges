@@ -196,7 +196,11 @@ export const InicioPage = ({
                         {item.meta}
                       </small>
                     </span>
-                    <InternalLink href={item.href} className={styles.rowAction}>
+                    <InternalLink
+                      href={item.href}
+                      className={styles.rowAction}
+                      {...(item.label ? { 'aria-label': item.label } : {})}
+                    >
                       {item.action}
                     </InternalLink>
                   </li>

@@ -180,7 +180,7 @@ describe('Indicadores e IRSA', () => {
   });
   it('valida pesos antes de guardar y no modifica parámetros no editados', async () => {
     renderPage(<IrsaPage {...context} />);
-    const weight = await screen.findByLabelText('Peso G');
+    const weight = await screen.findByLabelText('Peso G · Gobernanza');
     await userEvent.clear(weight);
     await userEvent.type(weight, '0.8');
     await userEvent.click(screen.getByRole('button', { name: 'Guardar configuración' }));
@@ -273,8 +273,10 @@ describe('Indicadores e IRSA', () => {
     const table = within(current).getByRole('table', { name: /Puntuación y disponibilidad/ });
     const row = (name: string) =>
       within(table).getByRole('rowheader', { name }).closest('tr') as HTMLElement;
-    expect(row('G')).toHaveTextContent(/G\s*15,0\s*16,7\s%\s*100,0\s%/);
-    expect(row('I')).toHaveTextContent(/I\s*0,0\s*16,6\s%\s*0,0\s%/);
+    expect(row('G · Gobernanza')).toHaveTextContent(/G · Gobernanza\s*15,0\s*16,7\s%\s*100,0\s%/);
+    expect(row('I · Institucional')).toHaveTextContent(
+      /I · Institucional\s*0,0\s*16,6\s%\s*0,0\s%/,
+    );
     expect(row('Total')).toHaveTextContent(/Total\s*100,0\s%/);
     expect(table).not.toHaveTextContent('0.1666');
 
@@ -440,7 +442,7 @@ describe('Indicadores e IRSA', () => {
         <IrsaPage {...context} />
       </QueryClientProvider>,
     );
-    const weight = await screen.findByLabelText('Peso G');
+    const weight = await screen.findByLabelText('Peso G · Gobernanza');
     await userEvent.clear(weight);
     await userEvent.type(weight, '0.5');
     server.use(
@@ -456,6 +458,6 @@ describe('Indicadores e IRSA', () => {
         <IrsaPage {...context} />
       </QueryClientProvider>,
     );
-    expect(screen.getByLabelText('Peso G')).toHaveValue(0.5);
+    expect(screen.getByLabelText('Peso G · Gobernanza')).toHaveValue(0.5);
   });
 });

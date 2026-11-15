@@ -23,7 +23,7 @@ export type Entry = {
   direction?: 'Entrante' | 'Saliente';
   name: string;
   description: string;
-  /** Integrado ships with SIPGES; Personalizado was created by the team for this project. */
+  /** Who made it: SIPGES ships it, or the team created it for this project. Never a state. */
   trust: 'integrated' | 'custom';
   status: Status;
   mine: boolean;
@@ -42,7 +42,11 @@ export const KIND_LABELS: Record<Kind, string> = {
   scheduled: 'Programada',
 };
 
-export const TRUST_LABELS = { integrated: 'Integrado', custom: 'Personalizado' } as const;
+/**
+ * Who made each integration (functional-10 T5, F14). «Integrado» read as a state next to «No
+ * disponible»; the status badge is the card's only state.
+ */
+export const TRUST_LABELS = { integrated: 'De SIPGES', custom: 'Del equipo' } as const;
 
 export const statusLabel = (entry: Pick<Entry, 'kind' | 'status'>) => {
   if (entry.status === 'available') return 'Disponible';

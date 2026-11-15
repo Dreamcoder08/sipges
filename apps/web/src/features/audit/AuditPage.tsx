@@ -11,6 +11,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import styles from './AuditPage.module.css';
 import { formatDateTime } from '../../shared/lib/format.ts';
 import { DateText } from '../../shared/ui/DateText.tsx';
+import { auditActionLabel, auditModuleLabel } from './labels.ts';
 
 /** Server audit is scoped, append-only and restricted to administrators. */
 export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
@@ -65,8 +66,10 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
             const filtered = entries.filter((entry) =>
               [
                 entry.module,
+                auditModuleLabel(entry.module),
                 entry.record_id,
                 entry.action,
+                auditActionLabel(entry.action),
                 entry.detail,
                 entry.ts,
                 formatDateTime(entry.ts),
@@ -96,9 +99,9 @@ export const AuditPage = ({ scope, projectLabel, role }: FeatureContext) => {
                             <td>
                               <DateText value={entry.ts} time />
                             </td>
-                            <td>{entry.module}</td>
+                            <td>{auditModuleLabel(entry.module)}</td>
                             <td>{entry.record_id ?? '—'}</td>
-                            <td>{entry.action}</td>
+                            <td>{auditActionLabel(entry.action)}</td>
                             <td>{entry.detail ?? '—'}</td>
                           </tr>
                         ))}
