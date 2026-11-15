@@ -46,3 +46,14 @@ func TestValidateNewTenant(t *testing.T) {
 		})
 	}
 }
+
+// functional-10 T6: a new installation's only project has a neutral name; its id stays the
+// legacy SIPGES/PRJ-SECHURA that grants, exports and every stored row already name.
+func TestDefaultScopeOfANewInstallation(t *testing.T) {
+	if domain.DefaultScopeLabel != "Proyecto principal" {
+		t.Errorf("DefaultScopeLabel = %q", domain.DefaultScopeLabel)
+	}
+	if got := domain.DefaultScope.TenantID(); got != "SIPGES/PRJ-SECHURA" {
+		t.Errorf("DefaultScope = %q", got)
+	}
+}

@@ -118,7 +118,7 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
   ).toEqual(['Cuenta', 'Apariencia', 'Proyecto', 'Privacidad y datos', 'Notificaciones']);
   expect(within(nav).getByRole('link', { name: 'Cuenta' })).toHaveAttribute(
     'href',
-    '/version-4?seccion=cuenta',
+    '/configuracion?seccion=cuenta',
   );
   expect(within(nav).getByRole('link', { name: 'Apariencia' })).toHaveAttribute(
     'aria-current',
@@ -126,7 +126,7 @@ it('opens on Apariencia for every role, with a section nav like Claude settings'
   );
   expect(within(nav).getByRole('link', { name: 'Proyecto' })).toHaveAttribute(
     'href',
-    '/version-4?seccion=proyecto',
+    '/configuracion?seccion=proyecto',
   );
   expect(within(nav).queryByRole('link', { name: 'Integraciones' })).not.toBeInTheDocument();
   expect(screen.getByRole('group', { name: 'Tema' })).toBeInTheDocument();
@@ -149,7 +149,7 @@ it('shows one section at a time and goes to another through the URL', async () =
   );
   within(nav).getByRole('link', { name: 'Proyecto' }).focus();
   await user.keyboard('{Enter}');
-  expect(visited).toEqual(['/version-4?seccion=proyecto']);
+  expect(visited).toEqual(['/configuracion?seccion=proyecto']);
 });
 
 it('keeps the section nav working without a router', async () => {

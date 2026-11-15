@@ -1,0 +1,5 @@
+.page {
+  display: grid;
+  justify-items: center;
+  padding: var(--space-8) var(--space-4);
+}

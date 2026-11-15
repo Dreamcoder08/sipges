@@ -15,7 +15,7 @@ const DESTINATIONS = [
   ['territorio', '/territorio'],
   ['analisis', '/analisis'],
   ['integraciones', '/integraciones'],
-  ['configuracion', '/version-4'],
+  ['configuracion', '/configuracion'],
 ] as const;
 const MIN = 44;
 const dir = process.env.SIPGES_E2E_SCREENSHOT_DIR;

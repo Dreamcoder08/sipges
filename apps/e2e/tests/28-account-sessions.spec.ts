@@ -25,7 +25,7 @@ test('Cuenta lists the sessions and signs the other devices out', async ({
   const otherDevice = await apiSession(baseURL ?? '', credentials);
   try {
     await signInToProject(page, credentials, DEFAULT_SCOPE);
-    await page.goto('/version-4?seccion=cuenta');
+    await page.goto('/configuracion?seccion=cuenta');
     const nav = page.getByRole('navigation', { name: 'Secciones de Configuración' });
     await expect(nav.getByRole('link', { name: 'Cuenta' })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByText(credentials.username, { exact: true })).toBeVisible();

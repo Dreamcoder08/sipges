@@ -10,7 +10,7 @@ import (
 var DefaultScope = Scope{CompanyID: "SIPGES", ProjectID: "PRJ-SECHURA"}
 
 // DefaultScopeLabel is DEFAULT_SCOPE_LABEL.
-const DefaultScopeLabel = "Proyecto Sechura (migración)"
+const DefaultScopeLabel = "Proyecto principal"
 
 // idPattern is ID_PATTERN. Go's $ matches only at the end of the text, like JavaScript's
 // without the m flag, so "ACME\n" is refused.

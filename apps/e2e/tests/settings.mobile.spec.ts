@@ -20,7 +20,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     for (const width of [360, 412]) {
       await page.setViewportSize({ width, height: 800 });
       for (const [section, link, heading] of SECTIONS) {
-        await page.goto(`/version-4?seccion=${section}`);
+        await page.goto(`/configuracion?seccion=${section}`);
         const nav = page.getByRole('navigation', { name: 'Secciones de Configuración' });
         await expect(nav.getByRole('link', { name: link })).toHaveAttribute('aria-current', 'page');
         await expect(page.getByRole('heading', { level: 3, name: heading })).toBeVisible();

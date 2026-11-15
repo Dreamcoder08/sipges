@@ -127,6 +127,31 @@ describe('territorial records', () => {
     expect(await screen.findByText('Aún no hay registros de demandas.')).toBeVisible();
   });
 
+  // functional-10 T6 (F19): an empty module shows an empty state with a first action.
+  it.each([
+    ['demandas', 'demandas'],
+    ['buzon', 'buzón de quejas, denuncias, consultas y sugerencias'],
+    ['lecciones', 'lecciones territoriales'],
+  ])('an empty %s list offers its first record instead of «0 de 0»', async (module, label) => {
+    installRecordsApi();
+    open(module);
+    expect(await screen.findByText(`Aún no hay registros de ${label}.`)).toBeVisible();
+    expect(screen.queryByText(/0 de 0/)).toBeNull();
+    expect(screen.queryByRole('table')).toBeNull();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Crear el primer registro' }));
+    expect(screen.getByRole('button', { name: 'Guardar registro' })).toBeVisible();
+  });
+
+  it('an empty list offers no first action to a read-only role', async () => {
+    resetApi({ me: { username: 'reader', full_name: 'Consulta de prueba', role: 'consulta' } });
+    installRecordsApi();
+    open('buzon');
+    expect(
+      await screen.findByText('Cuando el equipo registre información aparecerá aquí.'),
+    ).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Crear el primer registro' })).toBeNull();
+  });
+
   it('offers commitments within the demands screen', async () => {
     installRecordsApi({
       'DEMO/PRJ-DEMO/compromisos': [{ _id: 'C-1', Descripcion: 'Compromiso sintético' }],
