@@ -529,6 +529,29 @@ describe('Pendientes: selection and filter in the URL', () => {
     await waitFor(() => expect(selected(box)[0]).toMatch(/ALT-2/));
     expect(within(detail()).getByRole('heading', { level: 2 })).toHaveTextContent(/ALT-2/);
   });
+  it('scrolls the row the URL names into view once, after every source has loaded', async () => {
+    install({
+      alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')],
+      actors: [{ _id: 'ACT-1', Nombre: 'Actor sintético' }],
+    });
+    const scrolled: string[] = [];
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this.textContent);
+    };
+    try {
+      mount({ pendiente: 'alerta:ALT-2', onUrl: () => undefined });
+      const box = await list();
+      await waitFor(() => expect(within(box).getAllByRole('option')).toHaveLength(3));
+      const row = within(box).getByRole('option', { name: /ALT-2/ });
+      // Under the 5 s test timeout, so a missing scroll fails as an assertion.
+      await waitFor(() => expect(scrolled).toEqual([row.textContent]), { timeout: 2000 });
+      await userEvent.click(within(box).getByRole('option', { name: /ALT-1/ }));
+      expect(scrolled).toEqual([row.textContent]);
+    } finally {
+      // jsdom has no scrollIntoView of its own.
+      delete (Element.prototype as Partial<Element>).scrollIntoView;
+    }
+  });
 
   it('writes the chosen item to the URL on click and on J/K, and clears it with Escape', async () => {
     install({ alerts: [alert('ALT-1', 'Alta'), alert('ALT-2', 'Media')] });

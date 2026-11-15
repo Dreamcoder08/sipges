@@ -27,6 +27,7 @@ export const TerritorialTimeline = ({
   cursor,
   playing,
   selectedId,
+  revealSelection = true,
   onPeriod,
   onCursor,
   onPlaying,
@@ -39,6 +40,11 @@ export const TerritorialTimeline = ({
   cursor: string;
   playing: boolean;
   selectedId: string;
+  /**
+   * Scroll the page to the selected entry. Phones turn it off: there the page brings the map
+   * back above the sheet, and scrolling down to this list afterwards would undo it.
+   */
+  revealSelection?: boolean;
   onPeriod: (from: string, to: string) => void;
   onCursor: (month: string) => void;
   onPlaying: (playing: boolean) => void;
@@ -64,10 +70,10 @@ export const TerritorialTimeline = ({
 
   const list = useRef<HTMLOListElement>(null);
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId || !revealSelection) return;
     const item = list.current?.querySelector<HTMLElement>(`[data-id="${CSS.escape(selectedId)}"]`);
     item?.scrollIntoView?.({ block: 'nearest' });
-  }, [selectedId]);
+  }, [selectedId, revealSelection]);
 
   const sorted = [...points].sort((a, b) => b.date.localeCompare(a.date));
   const shown = sorted.slice(0, LIST_LIMIT);

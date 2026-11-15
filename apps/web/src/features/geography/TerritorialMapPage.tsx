@@ -832,6 +832,7 @@ const TerritorialWorkspace = ({
           cursor={cursor}
           playing={playing}
           selectedId={selectedPoint?.id ?? ''}
+          revealSelection={!compact}
           onPeriod={(from, to) => {
             setFilters((f) => ({ ...f, from, to }));
             setSelection((s) => (s?.kind === 'point' ? null : s));

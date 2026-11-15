@@ -207,6 +207,17 @@ export const DecisionInbox = ({
     if (rejecting) reasonRef.current?.focus();
   }, [rejecting]);
 
+  // An item named in the URL (a reload or a link) may sit below the list's fold: once every
+  // source has loaded, so rows no longer move, its row is scrolled into view, once per link.
+  // The list's scroll padding keeps it clear of the sticky header and group label.
+  const revealed = useRef<string | undefined>(undefined);
+  const linkedRow = pendiente && !loading && current?.key === pendiente ? optionId(current) : '';
+  useEffect(() => {
+    if (!linkedRow || revealed.current === pendiente) return;
+    revealed.current = pendiente;
+    document.getElementById(linkedRow)?.scrollIntoView?.({ block: 'nearest' });
+  }, [linkedRow, pendiente]);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;

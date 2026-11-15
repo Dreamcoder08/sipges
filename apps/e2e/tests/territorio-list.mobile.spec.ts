@@ -79,6 +79,68 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 /**
+ * On a phone the numbered list sits below the map: tapping a row brings the map back into view to
+ * show the record it framed, with and without reduced motion. The evolution list below must not
+ * pull the page back down to its own copy of the record.
+ */
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`a list row brings the map back into view on a phone (motion ${reducedMotion})`, async ({
+    page,
+    admin,
+    adminApi,
+  }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.setViewportSize({ width: 360, height: 800 });
+    await page.addInitScript(() => {
+      delete (window as { WebGL2RenderingContext?: unknown }).WebGL2RenderingContext;
+    });
+    const stamp = `${reducedMotion}-${Date.now()}`;
+    const places = ['Vice', 'Bernal', 'Bayóvar', 'Parachique'];
+    const titles = places.map((place) => `Hecho sintético en ${place} ${stamp}`);
+    for (const [n, place] of places.entries()) {
+      const created = await adminApi.post('/api/eventos', {
+        headers: { 'X-SIPGES-Scope': DEFAULT_SCOPE },
+        data: {
+          payload: {
+            Descripcion_Hecho: titles[n],
+            Fecha: `2026-10-${String(n + 10).padStart(2, '0')}`,
+            Territorio: place,
+          },
+        },
+      });
+      expect(created.status(), await created.text()).toBe(200);
+    }
+    await signInToProject(page, admin, DEFAULT_SCOPE);
+    await page.goto('/territorio');
+
+    const map = page.getByRole('region', { name: 'Mapa' });
+    const row = page
+      .getByRole('list', { name: 'Registros en el mapa' })
+      .getByRole('button', { name: new RegExp(titles[3] ?? '') });
+    await row.scrollIntoViewIfNeeded();
+    const before = (await map.boundingBox())?.y ?? 0;
+    expect(before, 'reaching the row scrolls the map top off the screen').toBeLessThan(-100);
+    await row.tap();
+    await expect(row).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('region', { name: 'Ficha del registro' })).toBeVisible();
+    // Measured once the page stops scrolling: a smooth scroll still running proves nothing.
+    let last = Number.NaN;
+    await expect
+      .poll(async () => {
+        const now = await page.evaluate(() => Math.round(window.scrollY));
+        const still = now === last;
+        last = now;
+        return still;
+      })
+      .toBe(true);
+    const top = (await map.boundingBox())?.y ?? Number.NaN;
+    expect(top, 'the map section is scrolled to the top of the screen').toBeGreaterThanOrEqual(-1);
+    expect(top).toBeLessThanOrEqual(120);
+    await expect(map).toBeInViewport({ ratio: 0.3 });
+  });
+}
+
+/**
  * Opt-in capture for the owner's review: with SIPGES_SCREENSHOT_DIR set, Territorio › Mapa with
  * records at 360 px, the «sin ubicación» group open, in both themes, once with the SVG markers and
  * once with WebGL 2 left on so the canvas draws the numbers. Skipped in the regular suite.
