@@ -30,6 +30,25 @@ const underComposer = (page: Page) =>
     return `«${name.slice(0, 32)}» (${Math.round(box.top)}–${Math.round(box.bottom)}) is under the composer (${Math.round(bar.top)}–${Math.round(bar.bottom)})`;
   });
 
+/**
+ * Waits until the page's bottom scroll padding covers the composer from its top edge to the bottom
+ * of the screen. The composer reports its height one frame after it renders or grows
+ * (ResizeObserver, then requestAnimationFrame); a key pressed sooner, as only a script can, would
+ * scroll the focused control clear of the composer's previous height (WebKit, a long question).
+ */
+const composerReserved = (page: Page) =>
+  expect
+    .poll(
+      () =>
+        composerOf(page).evaluate(
+          (form) =>
+            Number.parseFloat(getComputedStyle(document.documentElement).scrollPaddingBottom) -
+            (window.innerHeight - form.getBoundingClientRect().top),
+        ),
+      { message: "the scroll padding covers the composer's strip (px to spare)" },
+    )
+    .toBeGreaterThanOrEqual(0);
+
 /** Presses `key` up to `times` times while the focus stays in main, recording every cover. */
 const walk = async (page: Page, key: string, times: number) => {
   const problems: string[] = [];
@@ -138,6 +157,7 @@ for (const width of [360, 412] as const) {
 
     // Focus: from the top, Tab through the content and Shift+Tab back.
     await page.evaluate(() => window.scrollTo(0, 0));
+    await composerReserved(page);
     await page.getByRole('link', { name: 'Abrir Bandeja' }).focus();
     const forward = await walk(page, 'Tab', 30);
     const back = await walk(page, 'Shift+Tab', 30);
@@ -149,6 +169,7 @@ for (const width of [360, 412] as const) {
       .fill(
         ['Una pregunta larga', 'en varias líneas', 'sobre las demandas', 'abiertas'].join('\n'),
       );
+    await composerReserved(page);
     await page.getByRole('button', { name: 'Buscar en registros' }).focus();
     const grown = await walk(page, 'Tab', 10);
 
