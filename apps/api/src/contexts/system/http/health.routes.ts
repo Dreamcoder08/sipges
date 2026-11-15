@@ -1,7 +1,7 @@
-import type { HealthResponse } from '@sipges/contracts';
+import { type HealthResponse, SIPGES_VERSION } from '@sipges/contracts';
 import { Hono } from 'hono';
 
-const HEALTH: HealthResponse = { status: 'ok', service: 'SIPGES', version: 'V0.5.1' };
+const HEALTH: HealthResponse = { status: 'ok', service: 'SIPGES', version: SIPGES_VERSION };
 
 /** A slow database counts as down: the deploy smoke test must not hang on it. */
 const READY_TIMEOUT_MS = 5000;

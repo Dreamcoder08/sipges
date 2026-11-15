@@ -155,6 +155,119 @@ describe('analysis pages', () => {
       'SIPGES_Analisis_Situacional.docx',
     );
   });
+  // functional-10 T3 (F8): excerpt columns carry the record form's labels, never the stored key.
+  it('names excerpt columns as the record form does', async () => {
+    server.use(
+      http.get('*/system/situational-analysis', () =>
+        HttpResponse.json({
+          project_id: context.projectId,
+          project_name: 'Sechura',
+          generated_at: analysis.generated_at,
+          method: 'Reglas locales',
+          counts: {
+            eventos: 1,
+            actores: 1,
+            demandas: 0,
+            compromisos: 0,
+            narrativas: 0,
+            alertas: 0,
+            acciones: 0,
+            fuentes: 0,
+          },
+          alertas_activas: 0,
+          demandas_pendientes: 0,
+          territorios: [],
+          temas_demanda: [],
+          niveles_alerta: [],
+          eventos_recientes: [
+            {
+              Fecha: '2026-11-14',
+              Descripcion_Hecho: 'Asamblea sintética',
+              Nivel_Verificacion: 'B - Corroborada',
+              Fuente_ID: 'F-1',
+              id: 'EV-1',
+            },
+          ],
+          alertas_prioritarias: [],
+          demandas_abiertas: [],
+          actores: [
+            {
+              'Nombre_Actor/Organizacion': 'Junta sintética',
+              Fuente_Principal: 'Acta sintética',
+              id: 'A-1',
+            },
+          ],
+          observaciones: [],
+          escenarios: [],
+          recomendaciones: [],
+          limitations: [],
+        }),
+      ),
+    );
+    const label = (module: string, key: string) => `${module}:${key}`;
+    mount(<SituationalPage {...context} fieldLabel={label} />);
+    const events = await screen.findByRole('table', { name: /Eventos recientes/ });
+    expect(
+      within(events)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      'Registro',
+      'eventos:Fecha',
+      'eventos:Descripcion_Hecho',
+      'eventos:Nivel_Verificacion',
+      'eventos:Fuente_ID',
+    ]);
+    const actors = screen.getByRole('table', { name: /Actores/ });
+    expect(
+      within(actors)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['Registro', 'actores:Nombre_Actor/Organizacion', 'actores:Fuente_Principal']);
+  });
+  it('without a label source, writes each stored field as words', async () => {
+    server.use(
+      http.get('*/system/situational-analysis', () =>
+        HttpResponse.json({
+          project_id: context.projectId,
+          project_name: 'Sechura',
+          generated_at: analysis.generated_at,
+          method: 'Reglas locales',
+          counts: {
+            eventos: 1,
+            actores: 0,
+            demandas: 0,
+            compromisos: 0,
+            narrativas: 0,
+            alertas: 0,
+            acciones: 0,
+            fuentes: 0,
+          },
+          alertas_activas: 0,
+          demandas_pendientes: 0,
+          territorios: [],
+          temas_demanda: [],
+          niveles_alerta: [],
+          eventos_recientes: [{ Fuente_Principal: 'Acta sintética', id: 'EV-1' }],
+          alertas_prioritarias: [],
+          demandas_abiertas: [],
+          actores: [],
+          observaciones: [],
+          escenarios: [],
+          recomendaciones: [],
+          limitations: [],
+        }),
+      ),
+    );
+    mount(<SituationalPage {...context} />);
+    const events = await screen.findByRole('table', { name: /Eventos recientes/ });
+    expect(
+      within(events)
+        .getAllByRole('columnheader')
+        .map((cell) => cell.textContent),
+    ).toEqual(['Registro', 'Fuente principal']);
+    expect(screen.getByText('Eventos', { selector: 'dt' })).toBeInTheDocument();
+  });
   it('renders strategic recommendations as proposals and composes requested record editor', async () => {
     server.use(
       http.get('*/system/strategic-assessment', () =>

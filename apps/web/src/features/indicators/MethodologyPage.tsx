@@ -45,9 +45,10 @@ export const MethodologyPage = ({ scope, projectLabel }: FeatureContext) => {
         <p>
           El puntaje se convierte en probabilidad con el historial del propio proyecto: se mide qué
           pasó después de cortes pasados usando solo lo registrado hasta cada corte, se entrena con
-          los cortes antiguos y se evalúa con los recientes (puntaje de Brier frente a la tasa
-          base). Si el historial no alcanza, no se muestra porcentaje y la confianza es baja. Se
-          calcula dentro de SIPGES, sin IA externa.
+          los cortes antiguos y se evalúa con los recientes mediante el puntaje de Brier: el error
+          medio entre la probabilidad estimada y lo que ocurrió; cuanto más bajo, mejor. Se compara
+          con el de la tasa base del proyecto. Si el historial no alcanza, no se muestra porcentaje
+          y la confianza es baja. Se calcula dentro de SIPGES, sin IA externa.
         </p>
       </Card>
       <Card title="Definiciones, métodos y evidencias">

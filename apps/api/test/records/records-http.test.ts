@@ -298,7 +298,7 @@ describe('GET /system/audit', () => {
         module: 'Compromisos',
         record_id: 'C-1',
         action: 'CREATE',
-        detail: 'Registro creado desde prototipo V0.2',
+        detail: 'Registro creado en SIPGES',
       },
     ]);
     const ids = entries.map((entry) => entry.id as number);

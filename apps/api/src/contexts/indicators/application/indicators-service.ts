@@ -1,3 +1,4 @@
+import { SIPGES_VERSION } from '@sipges/contracts';
 import { type Result, err, ok } from '@sipges/kernel';
 import {
   DEFAULT_IRSA_CONFIG,
@@ -7,10 +8,10 @@ import {
   type IrsaConfigError,
   type IrsaConfigPatch,
   type IrsaResult,
-  MODEL_STATUS,
   applyIrsaConfigPatch,
   computeIndicators,
   computeIrsa,
+  modelStatusFor,
   pyFloat,
 } from '../domain/index.ts';
 import type {
@@ -115,7 +116,7 @@ export const createIndicatorsService = (deps: {
     history: (tenantId: string, limit: number | null): Promise<IrsaSnapshot[]> =>
       deps.snapshots.list(tenantId, limit),
 
-    modelStatus: () => MODEL_STATUS,
+    modelStatus: () => modelStatusFor(SIPGES_VERSION),
     validationTemplate,
   };
 };

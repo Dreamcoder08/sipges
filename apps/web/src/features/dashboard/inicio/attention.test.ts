@@ -30,4 +30,42 @@ describe('attentionItems', () => {
       }),
     ).toEqual([]);
   });
+
+  // functional-10 T5 (F15): two open alerts with one title must not read as the same row.
+  it('tells apart alerts with the same title by place and record id', () => {
+    const items = attentionItems({
+      alerts: [
+        {
+          id: 'AL-1',
+          title: 'Registro de prueba 2',
+          date: '2026-11-14',
+          level: 'Rojo',
+          place: 'Pampa Sintética',
+        },
+        {
+          id: 'AL-2',
+          title: 'Registro de prueba 2',
+          date: '2026-11-14',
+          level: 'Rojo',
+          place: 'Pampa Sintética',
+        },
+        { id: 'AL-3', title: 'Corte sintético', date: '2026-11-13', level: 'Naranja', place: '' },
+      ],
+    });
+    expect(items.map((item) => item.meta)).toEqual([
+      'Alerta activa · 14 nov. · Pampa Sintética · AL-1',
+      'Alerta activa · 14 nov. · Pampa Sintética · AL-2',
+      'Alerta activa · 13 nov.',
+    ]);
+    expect(items.map((item) => item.label)).toEqual([
+      'Abrir alerta Registro de prueba 2 · AL-1',
+      'Abrir alerta Registro de prueba 2 · AL-2',
+      'Abrir alerta Corte sintético',
+    ]);
+    expect(items.map((item) => item.action)).toEqual([
+      'Abrir alerta',
+      'Abrir alerta',
+      'Abrir alerta',
+    ]);
+  });
 });

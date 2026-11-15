@@ -369,3 +369,15 @@ describe('phone shell', () => {
     expect(within(account).queryByRole('menuitemradio')).toBeNull();
   });
 });
+
+// functional-10 T5 (F13): the missing page sends people back to Inicio in Spanish.
+describe('missing page', () => {
+  it('links back to Inicio, not to a «dashboard»', async () => {
+    signIn();
+    at('/direccion-sintetica-inexistente');
+    render(<App />);
+    const back = await screen.findByRole('link', { name: 'Volver al inicio' });
+    expect(back).toHaveAttribute('href', '/inicio');
+    expect(screen.queryByText(/dashboard/i)).toBeNull();
+  });
+});

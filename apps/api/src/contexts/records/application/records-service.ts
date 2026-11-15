@@ -69,8 +69,12 @@ export const boundLimit = (limit: number) => (limit < 0 ? MAX_LIMIT : Math.min(l
 
 const COLLISION_ATTEMPTS = 5;
 
+/**
+ * Audit notes of the record write routes. A record created through the API was created in
+ * SIPGES itself (functional-10 T3); rows written before this text keep theirs.
+ */
 const NOTES = {
-  create: { action: 'CREATE', detail: 'Registro creado desde prototipo V0.2' },
+  create: { action: 'CREATE', detail: 'Registro creado en SIPGES' },
   update: { action: 'UPDATE', detail: 'Registro actualizado' },
   delete: { action: 'DELETE', detail: 'Registro eliminado' },
 } as const;

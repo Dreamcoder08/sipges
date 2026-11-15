@@ -34,6 +34,15 @@ const sourceHref = (source: Source) => {
 
 const number = (value: number, digits = 2) => formatNumber(value, digits);
 const percent = (value: number) => `${Math.round(value * 100)} %`;
+/**
+ * The engine's sentences still say «back-test» (engines/ keeps them byte-identical across
+ * TypeScript, Rust and Go); the screen says «prueba retrospectiva» (functional-10 T5, F13).
+ */
+const plainRisk = (text: string) =>
+  text
+    .replace(/\bdel back-test\b/gi, 'de la prueba retrospectiva')
+    .replace(/\bel back-test\b/gi, 'la prueba retrospectiva')
+    .replace(/\bback-test\b/gi, 'prueba retrospectiva');
 /** A skill at or below zero is not an improvement; say so instead of «mejora −15 %». */
 const skillText = (skill: number | null) =>
   skill !== null && skill > 0 ? `mejora ${percent(skill)}` : 'no supera la tasa base';
@@ -96,7 +105,7 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
         )}
       </p>
       <p className={styles.muted}>
-        Confianza {unit.confidence}. {unit.confidenceReason}
+        Confianza {unit.confidence}. {plainRisk(unit.confidenceReason)}
       </p>
       <h5 className={styles.factorsTitle}>En qué se basa</h5>
       <ul className={styles.factors}>
@@ -129,16 +138,17 @@ const BacktestCard = ({ backtest }: { backtest: Backtest }) => {
   const samples = backtest.train.samples + backtest.test.samples;
   const events = backtest.train.events + backtest.test.events;
   return (
-    <Card title={`Último back-test a ${backtest.horizon} días`}>
+    <Card title={`Última prueba retrospectiva a ${backtest.horizon} días`}>
       {backtest.calibrated && backtest.brier !== null ? (
         <>
           <p>
-            Brier {number(backtest.brier, 3)} frente a {number(backtest.brierReference ?? 0, 3)} de
-            la tasa base ({skillText(backtest.skill)}). {samples} muestras y {events} escalamientos
-            en {backtest.cutoffs} cortes, del <DateText value={backtest.from} /> al{' '}
-            <DateText value={backtest.to} />; se entrenó con los cortes más antiguos (
-            {backtest.train.samples} muestras) y se evaluó con los más recientes (
-            {backtest.test.samples}).
+            Puntaje de Brier {number(backtest.brier, 3)} (error medio entre la probabilidad estimada
+            y lo que ocurrió; cuanto más bajo, mejor) frente a{' '}
+            {number(backtest.brierReference ?? 0, 3)} de la tasa base ({skillText(backtest.skill)}).{' '}
+            {samples} muestras y {events} escalamientos en {backtest.cutoffs} cortes, del{' '}
+            <DateText value={backtest.from} /> al <DateText value={backtest.to} />; se entrenó con
+            los cortes más antiguos ({backtest.train.samples} muestras) y se evaluó con los más
+            recientes ({backtest.test.samples}).
           </p>
           <div className={styles.tableWrap}>
             <table className={styles.bins}>
@@ -165,7 +175,7 @@ const BacktestCard = ({ backtest }: { backtest: Backtest }) => {
           </div>
         </>
       ) : (
-        <p>{backtest.reason}</p>
+        <p>{plainRisk(backtest.reason ?? '')}</p>
       )}
     </Card>
   );
@@ -256,9 +266,9 @@ export const ConflictRiskPage = (context: FeatureContext) => {
               )}
               <BacktestCard backtest={data.backtest[horizon]} />
               <p className={styles.muted}>
-                Generado: <DateText value={data.generatedOn} />. {data.method}
+                Generado: <DateText value={data.generatedOn} />. {plainRisk(data.method)}
               </p>
-              <Limitations items={data.limitations} />
+              <Limitations items={data.limitations.map(plainRisk)} />
             </>
           );
         }}

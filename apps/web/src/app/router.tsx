@@ -50,6 +50,7 @@ import {
 import { SETTINGS_PATH, settingsSearch } from '../features/situations/sections.ts';
 import { AppShell } from './layout/AppShell.tsx';
 import { useQualityReview } from './pending-quality.ts';
+import { recordFieldLabel } from '../features/records/modules.ts';
 
 import {
   DESTINATIONS,
@@ -190,7 +191,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
   notFoundComponent: () => (
     <Card title="Página no encontrada">
       <p>
-        La dirección no existe. <Link to="/">Volver al dashboard</Link>
+        La dirección no existe. <Link to="/inicio">Volver al inicio</Link>
       </p>
     </Card>
   ),
@@ -478,6 +479,10 @@ const PendingScreen = (context: FeatureContext) => (
   <DecisionInbox {...context} useQuality={useQualityReview} />
 );
 const AvisosScreen = (context: FeatureContext) => <AvisosPanel scope={context.scope} />;
+/** Situación names excerpt columns with the record forms' labels (functional-10 T3). */
+const SituationalScreen = (context: FeatureContext) => (
+  <SituationalPage {...context} fieldLabel={recordFieldLabel} />
+);
 const featurePages = {
   '/pendientes': PendingScreen,
   '/avisos': AvisosScreen,
@@ -491,7 +496,7 @@ const featurePages = {
   '/mapa': TerritorialMapPage,
   '/cronologia': TimelinePage,
   '/ubicacion': GeographyPage,
-  '/situacion': SituationalPage,
+  '/situacion': SituationalScreen,
   '/estrategia': StrategicPage,
   '/irsa': IrsaPage,
   '/riesgo': ConflictRiskPage,

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/release"
 )
 
 // syncBuffer is a bytes.Buffer safe for the server goroutine and the test.
@@ -73,7 +74,7 @@ func TestRunServesHealthAndStopsOnCancel(t *testing.T) {
 		body, _ := io.ReadAll(resp.Body)
 		return resp.StatusCode, strings.TrimSpace(string(body))
 	}
-	if status, body := get("/health"); status != 200 || body != `{"status":"ok","service":"SIPGES","version":"V0.5.1"}` {
+	if status, body := get("/health"); status != 200 || body != `{"status":"ok","service":"SIPGES","version":"`+release.Version+`"}` {
 		t.Fatalf("/health = %d %s", status, body)
 	}
 	if status, body := get("/health/ready"); status != 503 || body != `{"status":"unavailable"}` {

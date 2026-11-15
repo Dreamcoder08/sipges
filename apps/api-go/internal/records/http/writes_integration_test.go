@@ -107,7 +107,7 @@ func TestCreateReplaceDeleteWriteRecordAuditAndHistoryInOneTenant(t *testing.T) 
 	same(t, "created row", record(t, sechura, "Compromisos", "W-1"),
 		[]string{`{"n": 1.5, "Texto": "uno", "Proyecto_ID": "PRJ-SECHURA", "ID_Compromiso": "W-1"} | interno | ` + stamp + ` | ` + stamp})
 	same(t, "create audit", audits(t, sechura, "Compromisos", "W-1"),
-		[]string{"W-1 | CREATE | Registro creado desde prototipo V0.2 | " + stamp})
+		[]string{"W-1 | CREATE | Registro creado en SIPGES | " + stamp})
 	same(t, "create version", versions(t, sechura, "Compromisos", "W-1"),
 		[]string{`CREATE | {"n": 1.5, "Texto": "uno", "Proyecto_ID": "PRJ-SECHURA", "ID_Compromiso": "W-1"} | solo`})
 
@@ -134,7 +134,7 @@ func TestCreateReplaceDeleteWriteRecordAuditAndHistoryInOneTenant(t *testing.T) 
 	expect(t, "replace deleted", status, body, 404, missing)
 
 	same(t, "audit trail", audits(t, sechura, "Compromisos", "W-1"), []string{
-		"W-1 | CREATE | Registro creado desde prototipo V0.2 | " + stamp,
+		"W-1 | CREATE | Registro creado en SIPGES | " + stamp,
 		"W-1 | UPDATE | Registro actualizado | " + stamp,
 		"W-1 | UPDATE | Registro actualizado | " + stamp,
 		"W-1 | DELETE | Registro eliminado | " + stamp,
@@ -172,7 +172,7 @@ func TestWritesNeverReachAnotherTenant(t *testing.T) {
 	same(t, "sechura row", record(t, sechura, "Alertas", "W-AL"),
 		[]string{`{"Texto": "sechura 2", "Proyecto_ID": "PRJ-SECHURA"} | interno | ` + stamp + ` | ` + stamp})
 	same(t, "norte audit", audits(t, "ACME/NORTE", "Alertas", "W-AL", "W-NORTE-SOLO"),
-		[]string{"W-AL | CREATE | Registro creado desde prototipo V0.2 | " + stamp})
+		[]string{"W-AL | CREATE | Registro creado en SIPGES | " + stamp})
 	same(t, "sechura row kept", record(t, sechura, "Alertas", "W-NORTE-SOLO"),
 		[]string{`{"ID_Alerta": "W-NORTE-SOLO", "Proyecto_ID": "PRJ-SECHURA"} | interno | ` + stamp + ` | ` + stamp})
 
