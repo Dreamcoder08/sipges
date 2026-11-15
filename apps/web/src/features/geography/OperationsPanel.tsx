@@ -130,7 +130,7 @@ export const OperationsPanel = ({
       </dl>
 
       <section aria-label="Requiere atención" className={styles.section}>
-        <h4 className={styles.heading}>Requiere atención</h4>
+        <h3 className={styles.heading}>Requiere atención</h3>
         {dossier.attention.length ? (
           <ul className={styles.list}>
             {dossier.attention.map((a) => (
@@ -149,7 +149,7 @@ export const OperationsPanel = ({
       </section>
 
       <section aria-label="Alertas y su sustento" className={styles.section}>
-        <h4 className={styles.heading}>Alertas y su sustento</h4>
+        <h3 className={styles.heading}>Alertas y su sustento</h3>
         {dossier.alerts.length ? (
           <ul className={styles.list}>
             {dossier.alerts.map((alert) => (
@@ -198,7 +198,7 @@ export const OperationsPanel = ({
 
       {demandActions.length ? (
         <section aria-label="Acciones sobre demandas" className={styles.section}>
-          <h4 className={styles.heading}>Acciones sobre demandas</h4>
+          <h3 className={styles.heading}>Acciones sobre demandas</h3>
           <ul className={styles.list}>
             {demandActions.map((a) => (
               <ActionItem key={a.id} action={a} />
@@ -208,7 +208,7 @@ export const OperationsPanel = ({
       ) : null}
 
       <section aria-label="Compromisos" className={styles.section}>
-        <h4 className={styles.heading}>Compromisos</h4>
+        <h3 className={styles.heading}>Compromisos</h3>
         {dossier.commitments.length ? (
           <ul className={styles.list}>
             {dossier.commitments.map((c) => (
@@ -245,7 +245,7 @@ export const OperationsPanel = ({
       </section>
 
       <section aria-label="Actores involucrados" className={styles.section}>
-        <h4 className={styles.heading}>Actores involucrados</h4>
+        <h3 className={styles.heading}>Actores involucrados</h3>
         {dossier.actors.length ? (
           ACTOR_GROUPS.map((group) => {
             const members = dossier.actors.filter((a) => a.group === group);

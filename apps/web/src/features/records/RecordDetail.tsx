@@ -46,7 +46,7 @@ export const RecordDetail = ({
       {explained ? <AlertExplanation record={record} /> : null}
       {extras.length ? (
         <section aria-labelledby={`extras-${record._id}`}>
-          <h4 id={`extras-${record._id}`}>Otros datos del registro</h4>
+          <h3 id={`extras-${record._id}`}>Otros datos del registro</h3>
           <dl className={styles.details}>
             {extras.map((field) => (
               <div key={field.key}>

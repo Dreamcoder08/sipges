@@ -79,7 +79,7 @@ export const ConcessionCard = ({
   return (
     <div className={styles.sheetBody}>
       <p className={styles.kicker}>Concesión minera · INGEMMET</p>
-      <h4 className={styles.sheetTitle}>{concession.name}</h4>
+      <h3 className={styles.sheetTitle}>{concession.name}</h3>
       <dl className={styles.detail}>
         <dt>Código</dt>
         <dd>{concession.code}</dd>
@@ -133,7 +133,7 @@ export const ConcessionCard = ({
         </Button>
       </div>
 
-      <h5 className={styles.subhead}>Registros SIPGES vinculados</h5>
+      <h4 className={styles.subhead}>Registros SIPGES vinculados</h4>
       <div className={styles.filter}>
         <label htmlFor={`influence-${concession.code}`}>Área de influencia</label>
         <select
@@ -206,7 +206,7 @@ export const ConcessionCard = ({
           ) : null}
           {history.length ? (
             <>
-              <h5 className={styles.subhead}>Evolución en la concesión</h5>
+              <h4 className={styles.subhead}>Evolución en la concesión</h4>
               <ol className={styles.history}>
                 {history.map((p) => (
                   <li key={`${p.layer}-${p.id}`}>

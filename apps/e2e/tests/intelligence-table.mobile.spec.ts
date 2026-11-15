@@ -78,6 +78,6 @@ for (const width of [360, 390] as const) {
 
     // The review button works where it stands.
     await button.click();
-    await expect(page.getByRole('heading', { level: 4, name: `Alerta ${id}` })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 3, name: `Alerta ${id}` })).toBeVisible();
   });
 }

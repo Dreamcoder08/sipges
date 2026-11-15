@@ -189,6 +189,8 @@
 }
 .open {
   all: unset;
+  /* `all: unset` drops the shared 24 px minimum (WCAG 2.2 SC 2.5.8); it applies once the name is a block. */
+  min-height: 1.5rem;
   cursor: pointer;
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
@@ -448,6 +450,7 @@
   .tableWrap .open {
     display: block;
     width: 100%;
+    line-height: 1.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

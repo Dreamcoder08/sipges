@@ -222,9 +222,9 @@ const RecordsWorkspace = ({
         {notice ? <Alert tone="success">{notice}</Alert> : null}
         <section className={styles.panel} aria-labelledby="record-panel-title">
           <header className={styles.panelHeader}>
-            <h3 id="record-panel-title" ref={heading} tabIndex={-1}>
+            <h2 id="record-panel-title" ref={heading} tabIndex={-1}>
               {title}
-            </h3>
+            </h2>
             <div className={styles.actions}>
               {panel.kind === 'view' && writable ? (
                 <Button
@@ -700,7 +700,7 @@ const DemandCommitments = ({ scope, id }: { scope: string; id: string }) => {
   const commitments = useQuery(recordsQuery('compromisos', scope, ''));
   return (
     <section aria-labelledby={`commitments-${id}`}>
-      <h4 id={`commitments-${id}`}>Compromisos de seguimiento</h4>
+      <h3 id={`commitments-${id}`}>Compromisos de seguimiento</h3>
       <QueryState query={commitments} label="los compromisos">
         {(rows) => {
           const related = rows.filter((row) => String(row.Demanda_Asociada ?? '') === id);

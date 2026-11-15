@@ -70,7 +70,7 @@ export const GeocatminControls = ({
           </button>
         </p>
       ) : null}
-      <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer">
+      <a href={GEOCATMIN_VIEWER} target="_blank" rel="noreferrer" className="standalone-link">
         Abrir visor oficial INGEMMET
       </a>
       {catalogue.data?.services.map((service) => (

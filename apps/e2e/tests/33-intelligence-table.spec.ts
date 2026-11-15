@@ -61,6 +61,6 @@ for (const width of [360, 390, 1280] as const) {
     ).toBeLessThanOrEqual(width);
 
     await button.click();
-    await expect(page.getByRole('heading', { level: 4, name: `Alerta ${id}` })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 3, name: `Alerta ${id}` })).toBeVisible();
   });
 }

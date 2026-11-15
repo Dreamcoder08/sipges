@@ -155,7 +155,7 @@
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
 }
-.evidence h4 {
+.evidence h3 {
   font-size: var(--text-body);
   margin: 0 0 var(--space-4);
 }
@@ -311,7 +311,7 @@
   gap: var(--space-2);
   margin-bottom: var(--space-3);
 }
-.graphHeader h4 {
+.graphHeader h3 {
   margin: 0;
 }
 
@@ -348,14 +348,14 @@
   display: grid;
   gap: var(--space-3);
 }
-.importPanel h4 {
+.importPanel h3 {
   margin: 0;
 }
 .importPanel select {
   min-width: 12rem;
 }
 
-.briefing h5 {
+.briefing h4 {
   margin: var(--space-4) 0 var(--space-2);
   font-size: var(--text-md);
 }
@@ -408,8 +408,9 @@
   align-items: center;
   justify-content: space-between;
 }
-.panelHeader h3 {
+.panelHeader h2 {
   margin: 0;
+  font-size: var(--text-lg);
 }
 /* «Filtros» and the chips of the facets in force; the selects themselves live in the sheet. */
 .filters {
@@ -435,7 +436,7 @@
   font-family: inherit;
   font-size: var(--text-base);
 }
-.viewer h5 {
+.viewer h4 {
   margin: 0 0 var(--space-2);
   font-size: var(--text-sm);
   color: var(--color-muted);

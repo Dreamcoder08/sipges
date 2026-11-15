@@ -69,7 +69,7 @@ export const HistoryPanel = ({
   const labels = new Map(MODULES[module].fields.map((field) => [field.key, field.label]));
   return (
     <section className={styles.evidence} aria-labelledby={`history-${id}`}>
-      <h4 id={`history-${id}`}>Historial de cambios</h4>
+      <h3 id={`history-${id}`}>Historial de cambios</h3>
       <QueryState query={history} label="el historial">
         {(versions) => (
           <>

@@ -104,7 +104,7 @@ describe('ConflictRiskPage', () => {
     respond(thinReport);
     mount();
     const items = await screen.findAllByRole('article');
-    expect(items.map((i) => within(i).getByRole('heading', { level: 4 }).textContent)).toEqual([
+    expect(items.map((i) => within(i).getByRole('heading', { level: 2 }).textContent)).toEqual([
       'Pampa Alta',
       'Loma Verde',
     ]);
@@ -250,7 +250,7 @@ describe('ConflictRiskPage', () => {
     mount();
     const items = await screen.findAllByRole('article');
     expect(items).toHaveLength(1);
-    expect(within(items[0] as HTMLElement).getByRole('heading', { level: 4 }).textContent).toBe(
+    expect(within(items[0] as HTMLElement).getByRole('heading', { level: 2 }).textContent).toBe(
       'Loma Verde',
     );
     await userEvent.click(screen.getByRole('button', { name: 'Ver todas' }));

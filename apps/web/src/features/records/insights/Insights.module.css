@@ -13,7 +13,8 @@
   align-items: center;
   flex-wrap: wrap;
 }
-.heading h4 {
+.heading h2,
+.heading h3 {
   margin: 0.25rem 0;
   font-size: var(--text-lg);
   color: var(--color-text);
@@ -226,7 +227,7 @@
   background: var(--color-surface-alt);
   border-radius: var(--radius-md);
 }
-.selection h5 {
+.selection h3 {
   margin: 0;
   font-size: var(--text-body);
 }

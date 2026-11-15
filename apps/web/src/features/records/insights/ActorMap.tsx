@@ -242,7 +242,7 @@ export const ActorMap = ({
       <div className={styles.heading}>
         <div>
           <p className={styles.eyebrow}>Relacionamiento del proyecto</p>
-          <h4 id={id}>Mapa estratégico de actores</h4>
+          <h3 id={id}>Mapa estratégico de actores</h3>
           <p className={map.subtitle}>Actores, influencia y relaciones en una sola vista</p>
         </div>
         <span className={styles.count}>{rows.length} actores</span>
@@ -544,7 +544,7 @@ export const ActorMap = ({
           </div>
           <div className={map.legends}>
             <div>
-              <h5>Posición frente al proyecto</h5>
+              <h4>Posición frente al proyecto</h4>
               <ul className={styles.legend} aria-label="Leyenda de posición">
                 {tones.map(([tone, label]) => (
                   <li key={tone}>
@@ -555,7 +555,7 @@ export const ActorMap = ({
               </ul>
             </div>
             <div>
-              <h5>Tipo de relación</h5>
+              <h4>Tipo de relación</h4>
               <ul className={map.lineLegend}>
                 <li>
                   <svg viewBox="0 0 40 10" aria-hidden="true">
@@ -578,7 +578,7 @@ export const ActorMap = ({
               </ul>
             </div>
             <div>
-              <h5>Sentido de la relación</h5>
+              <h4>Sentido de la relación</h4>
               <ul className={map.lineLegend}>
                 {(
                   [

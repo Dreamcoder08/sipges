@@ -88,7 +88,7 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
   return (
     <article className={styles.unit}>
       <header className={styles.unitHeader}>
-        <h4>{unit.name}</h4>
+        <h2>{unit.name}</h2>
         <span className={`${styles.band} ${styles[prediction.band]}`}>
           {BAND_LABEL[prediction.band]}
         </span>
@@ -107,7 +107,7 @@ const UnitCard = ({ unit, horizon }: { unit: ConflictRiskPrediction; horizon: Ho
       <p className={styles.muted}>
         Confianza {unit.confidence}. {plainRisk(unit.confidenceReason)}
       </p>
-      <h5 className={styles.factorsTitle}>En qué se basa</h5>
+      <h3 className={styles.factorsTitle}>En qué se basa</h3>
       <ul className={styles.factors}>
         {unit.factors.map((factor) => (
           <li key={factor.id}>
