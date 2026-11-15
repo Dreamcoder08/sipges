@@ -38,8 +38,8 @@
 //    exits 1 with `RESULT: N difference(s)`; an input that is a junction, and one that holds a
 //    junction, exit 2 with `RESULT: not compared (…)`; --app without current.json and something
 //    answering on --port exit 2 too. After each run the scratch folder is empty and the inputs
-//    are byte-identical (tables-drill.mjs). No interrupt: child.kill() on Windows ends the process
-//    outright, it delivers no Ctrl+C.
+//    are byte-identical (tables-drill.mjs). No interrupt here: child.kill() on Windows ends the
+//    process outright, it delivers no Ctrl+C; the workflow's tables-interrupt.mjs step sends one.
 // 7. Logs (launcher.log, update.log, update-boot.log, api.log, the outputs of every command) are
 //    copied to --logs; never a state folder, a snapshot or the key. The key is deleted at the end.
 //

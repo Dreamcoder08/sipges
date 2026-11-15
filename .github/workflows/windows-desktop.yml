@@ -93,6 +93,15 @@ jobs:
       - name: tables.mjs on NTFS with this checkout's PGlite
         if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
         run: node --test deploy/desktop/windows/tables-drill.test.mjs
+      # Ctrl+C during tables.mjs, for real (functional-10 T11): tables-interrupt.ps1 starts it in
+      # a console of its own and sends CTRL_C_EVENT (GenerateConsoleCtrlEvent) once the copy has
+      # begun; the run must exit 2 with RESULT: not compared (interrupted), leave nothing in its
+      # scratch folder and both inputs byte-identical. Synthetic folders only. Closing the console
+      # window is not driven (GenerateConsoleCtrlEvent cannot send CTRL_CLOSE_EVENT).
+      - name: tables.mjs interrupted by a console Ctrl+C
+        if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
+        timeout-minutes: 10
+        run: node deploy/desktop/windows/tables-interrupt.mjs --work "$env:RUNNER_TEMP\tables-interrupt" --logs "$env:RUNNER_TEMP\drill-logs\tables-interrupt"
       - name: tables.mjs unit tests on Windows
         if: ${{ !cancelled() && matrix.label == 'main' && steps.install.outcome == 'success' }}
         run: node --test deploy/desktop/migration/tables.test.mjs
