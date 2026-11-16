@@ -150,6 +150,8 @@ export const runBounded = async (
       cwd: options.cwd,
       env: options.env,
       timeout: options.timeoutMs,
+      // SIGKILL, not the default SIGTERM: a tool that ignores SIGTERM must not outlive its limit.
+      killSignal: 'SIGKILL',
       maxBuffer: 64 * 1024 * 1024,
       encoding: 'utf8',
     });

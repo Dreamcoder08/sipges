@@ -30,8 +30,8 @@ export const irsaMethodLabel = (version: string | null | undefined) => {
 
 /**
  * Field names that reach the screen inside the indicator engine's method text, as the record
- * forms name them. The engine's strings live in engines/ and stay byte-identical across the
- * TypeScript, Rust and Go builds, so the screen words them.
+ * forms name them. The engines now say «referencia de fuente» themselves (functional-10 T15);
+ * this stays for method texts saved before that change, which still say «Fuente_ID».
  */
 const STORED_TERMS: readonly (readonly [RegExp, string])[] = [
   [/\bFuente_ID\b/g, 'referencia de fuente'],

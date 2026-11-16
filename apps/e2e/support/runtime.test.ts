@@ -125,6 +125,22 @@ test('a bounded tool that overruns its time is stopped and says so, with what it
   );
 });
 
+// A tool that ignores SIGTERM must still be stopped at its limit, not succeed after it.
+test('a bounded tool that ignores SIGTERM is still stopped and reported as timed out', async () => {
+  await assert.rejects(
+    runBounded(
+      'stubborn tool',
+      process.execPath,
+      ['-e', "process.on('SIGTERM', () => {}); console.log('started'); setTimeout(() => {}, 1500)"],
+      { cwd: process.cwd(), env: process.env, timeoutMs: 300 },
+    ),
+    (error: Error) => {
+      assert.match(error.message, /^stubborn tool timed out after 300 ms:\nstarted\n/);
+      return true;
+    },
+  );
+});
+
 test('a bounded tool that fails rejects with its exit code, stdout and stderr', async () => {
   await assert.rejects(
     runBounded(
