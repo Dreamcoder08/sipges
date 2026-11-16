@@ -259,7 +259,34 @@ it('counts every record of the tenant, with or without Proyecto_ID (S13)', async
   const kpi = (label: string) =>
     screen.getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
   expect(kpi('Eventos georreferenciados')).toBe('1');
-  await vi.waitFor(() => expect(kpi('Alertas abiertas')).toBe('1'));
+  await vi.waitFor(() => expect(kpi('Alertas abiertas del proyecto')).toBe('1'));
+});
+
+// functional-10 T14: the page showed «Alertas abiertas 0» in Inteligencia operacional and
+// «Alertas abiertas 8» below it. They count different things (open alerts linked to the records on
+// the map, every open alert of the project), so each one says which.
+it('labels the two open-alert counts by what each one counts (T14)', async () => {
+  serve();
+  server.use(
+    http.get(
+      '/api/alertas',
+      records([
+        { _id: 'AL-1', Estado: 'Abierta', Nivel: 'Naranja' },
+        { _id: 'AL-2', Estado: 'Abierta', Nivel: 'Rojo' },
+      ]),
+    ),
+  );
+  renderPage();
+  const panel = (await screen.findByRole('heading', { name: 'Inteligencia operacional' })).closest(
+    'section',
+  );
+  if (!panel) throw new Error('operations card expected');
+  const value = (scope: HTMLElement, label: string) =>
+    within(scope).getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
+  // Only AL-1 is linked to a record on the map (the dossier's «origina» edge).
+  await vi.waitFor(() => expect(value(panel, 'Alertas abiertas vinculadas')).toBe('1'));
+  await vi.waitFor(() => expect(value(document.body, 'Alertas abiertas del proyecto')).toBe('2'));
+  expect(screen.queryByText('Alertas abiertas', { selector: 'dt', exact: true })).toBeNull();
 });
 
 afterEach(() => {
