@@ -522,7 +522,9 @@ const RecordsWorkspace = ({
                                 className={
                                   isCompactCell(module, field ?? { key, label: key })
                                     ? styles.compact
-                                    : undefined
+                                    : key === definition.titleField
+                                      ? styles.titleCell
+                                      : undefined
                                 }
                               >
                                 {field?.label ?? key}
