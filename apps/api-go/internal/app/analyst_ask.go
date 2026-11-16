@@ -43,8 +43,23 @@ func askFactory(d Deps) (func(ctx context.Context, tenantID string) (*analyst.As
 		if !on {
 			return nil, privacy.ErrDisabled // the question itself never reaches the model
 		}
-		return &analyst.Ask{Model: model, Tools: askTools{mcp: tools, tenantID: tenantID}}, nil
+		return &analyst.Ask{Model: model, Tools: askTools{mcp: tools, tenantID: tenantID}, Seal: sealQuestion(tools.Guard, tenantID)}, nil
 	}, nil
+}
+
+// askPurpose names the question's release in the egress log.
+const askPurpose = "ask"
+
+// sealQuestion releases the question as free text on the analyst channel, as semantic search
+// releases its query: known names and contact data scrubbed, and the release logged.
+func sealQuestion(guard integration.Egress, tenantID string) analyst.Seal {
+	return func(ctx context.Context, question string) (privacy.Sanitised[string], error) {
+		session, err := guard.Open(ctx, privacy.Request{TenantID: tenantID, Channel: privacy.ChannelAnalyst, Purpose: askPurpose})
+		if err != nil {
+			return privacy.Sanitised[string]{}, err
+		}
+		return privacy.Release(ctx, session, session.Text(question))
+	}
 }
 
 // toolModel is the configured provider's tool-calling adapter.

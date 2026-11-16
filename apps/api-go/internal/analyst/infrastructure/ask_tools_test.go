@@ -23,7 +23,7 @@ func askTurns() []application.Turn {
 	call := application.ToolCall{ID: "toolu_1", Name: "search_records", Input: json.RawMessage(`{"query":"bloqueo"}`)}
 	ref := domain.RecordRef{Slug: "conflictos", ID: "C-1", Title: "Bloqueo de vía"}
 	return []application.Turn{
-		{Question: "¿Qué pasa en el norte?"},
+		{Question: privacy.ExemptPayload("¿Qué pasa en el norte?", privacy.ExemptConstant)},
 		{Calls: []application.ToolCall{call}},
 		{Result: &application.ToolTurn{
 			Call:    call,
@@ -125,7 +125,7 @@ func TestOpenAICompatibleNextSendsFunctionToolsAndToolMessages(t *testing.T) {
 	}
 	body := *sent
 	tool := body["tools"].([]any)[0].(map[string]any)
-	if tool["type"] != "function" || tool["function"].(map[string]any)["name"] != "search_records" {
+	if _, hasID := tool["id"]; hasID || tool["type"] != "function" || tool["function"].(map[string]any)["name"] != "search_records" {
 		t.Fatalf("tools = %v", body["tools"])
 	}
 	messages := body["messages"].([]any)

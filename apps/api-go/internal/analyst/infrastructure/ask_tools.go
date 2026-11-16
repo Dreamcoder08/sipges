@@ -110,7 +110,7 @@ func (c *Claude) Next(ctx context.Context, tools []application.ToolSpec, turns [
 			}
 			messages = append(messages, message{Role: "assistant", Content: uses})
 		default:
-			push("user", block{Type: textBlock, Text: turn.Question})
+			push("user", block{Type: textBlock, Text: turn.Question.Value()})
 		}
 	}
 	specs := make([]tool, 0, len(tools))
@@ -178,7 +178,7 @@ func (c *OpenAICompatible) Next(ctx context.Context, tools []application.ToolSpe
 		Arguments   string          `json:"arguments,omitempty"`
 	}
 	type toolCall struct {
-		ID       string   `json:"id"`
+		ID       string   `json:"id,omitempty"`
 		Type     string   `json:"type"`
 		Function function `json:"function"`
 	}
@@ -201,7 +201,7 @@ func (c *OpenAICompatible) Next(ctx context.Context, tools []application.ToolSpe
 			}
 			messages = append(messages, message{Role: "assistant", ToolCalls: calls})
 		default:
-			messages = append(messages, message{Role: "user", Content: text(turn.Question)})
+			messages = append(messages, message{Role: "user", Content: text(turn.Question.Value())})
 		}
 	}
 	specs := make([]toolCall, 0, len(tools))

@@ -58,9 +58,10 @@ type ToolTurn struct {
 }
 
 // Turn is one entry of the conversation of a question: the question, the model's calls, or a
-// tool's answer. Exactly one field is set.
+// tool's answer. Exactly one is set; the question is the person's text as the egress guard
+// released it, so an adapter cannot receive it raw.
 type Turn struct {
-	Question string
+	Question privacy.Sanitised[string]
 	Calls    []ToolCall
 	Result   *ToolTurn
 }
@@ -82,10 +83,15 @@ type ToolRunner interface {
 	Run(ctx context.Context, name string, input json.RawMessage) (ToolOutput, error)
 }
 
-// Ask answers one question; Timeout zero means AskTimeout.
+// Seal releases the person's question through the egress guard: scrubbed of known names and
+// contact data, and logged.
+type Seal func(ctx context.Context, question string) (privacy.Sanitised[string], error)
+
+// Ask answers one question; Timeout zero means AskTimeout. Without Seal nothing leaves.
 type Ask struct {
 	Model   ToolModel
 	Tools   ToolRunner
+	Seal    Seal
 	Timeout time.Duration
 }
 
@@ -97,8 +103,15 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
+	if a.Seal == nil {
+		return domain.CitedAnswer{}, privacy.ErrDisabled
+	}
+	sealed, err := a.Seal(ctx, question)
+	if err != nil {
+		return domain.CitedAnswer{}, err
+	}
 	specs := a.Tools.Specs()
-	turns := []Turn{{Question: question}}
+	turns := []Turn{{Question: sealed}}
 	var sources domain.Sources
 	calls := 0
 	for {
