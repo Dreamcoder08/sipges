@@ -668,6 +668,32 @@ test('ODD log-only appends an entry and touches no task', () =>
     assert.equal(spawnSync(process.execPath, args).status, 0);
     assert.equal(readFileSync(file, 'utf8'), `${initial}- L2 (Decision): Synthetic\n`);
   }));
+test('ODD close accepts the leading -- that pnpm 12 forwards from `pnpm odd:close -- …`', () =>
+  fixture((dir) => {
+    const file = path.join(dir, 'odd.md');
+    writeFileSync(file, '- T1 [ ] one\n- L1 (one): first\n');
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(root, 'scripts/odd-close-task.mjs'),
+        '--',
+        '--task',
+        'T1',
+        '--label',
+        'Proof',
+        '--text',
+        'Synthetic',
+        '--file',
+        file,
+      ],
+      { encoding: 'utf8' },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(
+      readFileSync(file, 'utf8'),
+      '- T1 [x] one\n- L1 (one): first\n- L2 (Proof): Synthetic\n',
+    );
+  }));
 test('ODD close refuses to guess the feature document', () =>
   fixture((dir) => {
     const result = spawnSync(

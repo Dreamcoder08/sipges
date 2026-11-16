@@ -89,7 +89,7 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - T66 [x] — Import hardening, Spanish guide, `./sipges inventory` (#359 to #363).
 - T67 [x] — `sipgesctl`, proved on a clean install (#376 to #379).
 - T68 [x] — Backslash paths rejected in Go; `rusqlite` 0.41 (#380).
-- T69 [ ] — Close what `sipgesctl` found. Route: tab `go-fixes`.
+- T69 [x] — Close what `sipgesctl` found. Route: tab `go-fixes`.
 - T70 [ ] — Excel importer as CLI, then library, then wrappers, designed from the client's real columns. Waits for the USB.
 - T71 [ ] — Extract the core library so it runs without HTTP. After the demo.
 - T44 [ ] — S7: switch routes in production by exact path, measuring before and after with the owner, then retire the TypeScript API.
@@ -173,3 +173,4 @@ Phase 5 — Rust tools and retirement: `migrate-legacy`, `import:base-maestra`, 
 - L70 — Incident (2026-11-06): about 19:00 UTC production answered 503 on every route. Neon paused the project at its monthly free plan limit, 6.72 GB transfer and 18.53 CU-hours since Nov 1. The trial on a branch of production shares that quota. Nothing was lost; the limit resets Dec 1. Every deploy stops at migrations until then.
 - L71 — Owner (2026-11-06), verbatim: «hey bro full cloudfare , no mas nada de vercel y neon», «mi cliente quiero su proyecto instalado en local y en la nube , objetivo lo mejor de lo mejor», «mi idea es que primero funcione en local ya despues en la nube entiendes ??», «ella tiene los archivos originales en su usb asi que puedo copiarlos otra ves y rellenar los datos para la version local entiendes ??». So PostgreSQL stays, D1 is out, local comes first, and cloud cutover, waves and #338 wait. Target for the cloud is PlanetScale Postgres billed through Cloudflare, not yet tested for RLS and roles.
 - L72 — Owner (2026-11-07), verbatim: «construye primero una cli has el frontend al final , el agente deberia poder probar y verificar completamente el comportamiento , la logica , el estado de la aplicacion usando la cli» and «primer cli , luego extraer biblioteca central , luego envolverla en una GUI o api/mcp». Retiring TypeScript stays authorized, «yes retira typescript y avanza», but runs last, after every route is on Go with writes measured.
+- L73 — T69 closed: Both parts had already landed; only the checkbox was open (found 2026-11-15). Part 1: webhook wakeup in Go with the tenant of the verified API key, PR #387 (b4cef1eb). Part 2: the five sipgesctl advisories (silent password prompt, API key file reserved before issuing and revoked if unwritable, local write failures exit 9, project switch checks the read-back, session reports scope failures), PR #388 merged 2026-11-07. `sipgesctl verify` passed 196/196 after both.

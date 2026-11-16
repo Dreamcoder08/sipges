@@ -2,9 +2,6 @@ packages:
   - apps/*
   - packages/*
 
-minimumReleaseAgeExclude:
-  - zod@4.6.7
-
 # dependency-cruiser loads the TypeScript compiler optionally but does not declare it,
 # so under pnpm's strict layout it cannot see it and silently skips .ts files.
 packageExtensions:

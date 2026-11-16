@@ -26,7 +26,7 @@ line of the task list; delivery `auto-chain`; runners `node --test scripts/tooli
 - T8 [x] — S2: `test-pg.sh`, `new-worktree.sh` (B3). Route: inline. PR #347.
 - T9 [x] — S2: `watch-tabs.sh` status and until modes, `review-next.sh` (B4). Route: inline. PR #348.
 - T10 [x] — S2: `.engram/manifest.json` conflicts, `fmt:changed` (B5). Route: inline. PR #350.
-- T11 [ ] — S1, S7: after go-local, delete `spikes/go-container`, raise `engines/go` to Go 1.27, pin CI Go and Postgres, prune `pnpm-workspace.yaml` (C1). Route: inline.
+- T11 [x] — S1, S7: after go-local, delete `spikes/go-container`, raise `engines/go` to Go 1.27, pin CI Go and Postgres, prune `pnpm-workspace.yaml` (C1). Route: inline.
 - T12 [ ] — S7: after go-local, worktree batch W2 the deferred README and `docs/deployment` corrections, and the archive of `docs/design/mobile-first`, which needs `docs/README.md`, with the orchestrator as their single writer (C2). Route: inline.
 
 ## Plan
@@ -128,3 +128,4 @@ Session counts include worker tabs of one orchestration, so they are upper bound
 - L14 (T9 landed): PR #348, merge ab436d8c, one correction: rejected ignored flags and made review-next stop on any consent schema.
 - L15 (T10 landed): PR #350, merge fb03cdc8, one correction: fmt:changed fails when the base cannot be resolved.
 - L16 (Landing): Owner authorized landing #342 to #350, then #341 (merge 22ff99cb); #338 stays draft. The false deploy failure came from a workflow_run taking main's tip as its head, so the skipped run of a cancelled CI carries the next commit. Every deploy reaching migrations since 7141a3df failed on the Neon quota. T11 is draft #374 awaiting the owner's merge. T12 corrects README.md, docs/README.md and docs/benchmarks/README.md and archives docs/design/mobile-first to docs/history; docs/deployment corrections stay deferred while local-harden works there, and docs/diagrams was not regenerated.
+- L17 (T11 landed): Most of C1 had already landed elsewhere: `spikes/go-container` deleted, `engines/go` on Go 1.27, CI pinned to Go 1.27.3 and postgres:17.11. Done here: Go 1.27.4 (2026-11-10, security fixes in net/http; go.dev/doc/devel/release read 2026-11-15) in go.yml, rust.yml and local-install.yml (was `1.27.x`) and in the backend image (`golang:1.27.4-alpine` by digest; the binary reports go1.27.4 and `/health` answers 200); ci.yml PostGIS pinned by digest; the `zod@4.6.7` release-age exclusion removed (published 2026-10-12; `pnpm install --frozen-lockfile` passes); actionlint clean. Found on the way: pnpm 12 forwards the `--` of `pnpm odd:close -- …` and the script rejected it; fixed with a RED-first tooling test (64/64 pass).
