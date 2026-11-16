@@ -116,9 +116,13 @@ func chainVerifyingTLS(roots, extra *x509.CertPool) *tls.Config {
 	}
 }
 
+// gatewayIntermediates is the pool every gateway transport offers; tests check it holds the
+// embedded certificate.
+var gatewayIntermediates = ingemmetIntermediates()
+
 // ingemmetTransport is the default transport with the chain verifier for GEOCATMIN.
 func ingemmetTransport() *http.Transport {
 	tr := http.DefaultTransport.(*http.Transport).Clone()
-	tr.TLSClientConfig = chainVerifyingTLS(nil, ingemmetIntermediates())
+	tr.TLSClientConfig = chainVerifyingTLS(nil, gatewayIntermediates)
 	return tr
 }

@@ -156,8 +156,9 @@ func TestChainVerifierNeverTrustsTheSuppliedIntermediateAsARoot(t *testing.T) {
 	p := newPKI(t, testHost)
 	srv := leafOnlyServer(t, p)
 	// The root is missing from the trust store: the intermediate alone must not be enough.
-	if err := get(t, srv, chainVerifyingTLS(x509.NewCertPool(), pool(p.intermediate))); err == nil {
-		t.Fatal("a chain ending at the supplied intermediate was accepted")
+	err := get(t, srv, chainVerifyingTLS(x509.NewCertPool(), pool(p.intermediate)))
+	if err == nil || !strings.Contains(err.Error(), "unknown authority") {
+		t.Fatalf("want an unknown-authority failure for a chain ending at the intermediate, got %v", err)
 	}
 }
 
@@ -216,8 +217,9 @@ func TestChainVerifierRejectsALeafNotIssuedForServers(t *testing.T) {
 	p := newPKIWith(t, func(c *x509.Certificate) {
 		c.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 	}, testHost)
-	if err := get(t, leafOnlyServer(t, p), chainVerifyingTLS(pool(p.root), pool(p.intermediate))); err == nil {
-		t.Fatal("a client-auth-only leaf was accepted for a server")
+	err := get(t, leafOnlyServer(t, p), chainVerifyingTLS(pool(p.root), pool(p.intermediate)))
+	if err == nil || !strings.Contains(err.Error(), "incompatible key usage") {
+		t.Fatalf("want an incompatible-key-usage failure, got %v", err)
 	}
 }
 
@@ -238,8 +240,8 @@ func TestChainVerifierReverifiesResumedSessions(t *testing.T) {
 		}
 		// Same cached session, but the root is no longer trusted: resumption must not bypass it.
 		untrusting := withCache(chainVerifyingTLS(x509.NewCertPool(), pool(p.intermediate)))
-		if _, err := getState(t, srv, untrusting); err == nil {
-			t.Fatalf("version %x: a resumed session skipped chain verification", version)
+		if _, err := getState(t, srv, untrusting); err == nil || !strings.Contains(err.Error(), "unknown authority") {
+			t.Fatalf("version %x: want the resumed session re-verified and refused, got %v", version, err)
 		}
 	}
 }
@@ -258,9 +260,77 @@ func TestTheEmbeddedIntermediateIsSectigoOVR36(t *testing.T) {
 	if got := hex.EncodeToString(sum[:]); got != "6542d176bed50f193c0ce297ae44ecd8a0a86bec2ede682769344059b4e78530" {
 		t.Fatalf("embedded intermediate SHA-256 %s, want the Sectigo OV R36 certificate cited in tlschain.go", got)
 	}
-	// Fails after 2036-03-21 on purpose: replace the intermediate before it expires.
-	if time.Now().After(c.NotAfter) {
-		t.Fatalf("the embedded intermediate expired on %s", c.NotAfter)
+	// Fails a year before the intermediate expires (2036-03-21), so it is replaced in time.
+	if time.Now().AddDate(1, 0, 0).After(c.NotAfter) {
+		t.Fatalf("the embedded intermediate expires on %s: replace it", c.NotAfter)
+	}
+}
+
+// geocatminLeaf is the public certificate geocatmin.ingemmet.gob.pe served on 2026-11-15 (valid
+// 2026-07-22 to 2027-02-05), sent without its intermediate.
+const geocatminLeaf = `-----BEGIN CERTIFICATE-----
+MIIHOjCCBaKgAwIBAgIRAIxCMOzKLIayJIGFXxHlma0wDQYJKoZIhvcNAQELBQAw
+YDELMAkGA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDE3MDUGA1UE
+AxMuU2VjdGlnbyBQdWJsaWMgU2VydmVyIEF1dGhlbnRpY2F0aW9uIENBIE9WIFIz
+NjAeFw0yNjA3MjIwMDAwMDBaFw0yNzAyMDUyMzU5NTlaMGwxCzAJBgNVBAYTAlBF
+MQ0wCwYDVQQIEwRMaW1hMTIwMAYDVQQKEylJbnN0aXR1dG8gR2VvbG9naWNvLCBN
+aW5lcm8geSBNZXRhbHVyZ2ljbzEaMBgGA1UEAwwRKi5pbmdlbW1ldC5nb2IucGUw
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDfKEjYmGElqDOa0CeUYtAl
+AeZ5da/aj1RFgctKOG4589zKnM6NU7hdqaMsrv7P8bbUBH8iT5LwO8TsA3ZdDp8P
+Vi1zNrZyoW8N/9VkRZeGbIJzMw12VJUZkEqpAV3dbHcT5wovt2xmYdH27r3GF73I
+H5lv7VtiRAOrwGDp7v5wy5EHAn46/rJvNcUGgiVEJ+7vcDVzivr7DV/t/TOCb8V3
+AmpvxNUJaNkcP9Hn07WBL4Gqzb87sGGq4h9JWl85aQ6h9/nC8T7v9QHpzgN/dDEL
+FyYRQsT0OME6KEFXU0Aqqh5DQ0iTOY68z6FIRYixjkfoGrqqHBDqHR6CxkATT/GD
+AgMBAAGjggNhMIIDXTAfBgNVHSMEGDAWgBTjZnS7cGiNLF1ODqZKj5s3IpyCkjAd
+BgNVHQ4EFgQUe6FfOTnyTE6I3K0O4x8DrHJhN6QwDgYDVR0PAQH/BAQDAgWgMAwG
+A1UdEwEB/wQCMAAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwSgYDVR0gBEMwQTA1Bgwr
+BgEEAbIxAQIBAwQwJTAjBggrBgEFBQcCARYXaHR0cHM6Ly9zZWN0aWdvLmNvbS9D
+UFMwCAYGZ4EMAQICMFQGA1UdHwRNMEswSaBHoEWGQ2h0dHA6Ly9jcmwuc2VjdGln
+by5jb20vU2VjdGlnb1B1YmxpY1NlcnZlckF1dGhlbnRpY2F0aW9uQ0FPVlIzNi5j
+cmwwgYQGCCsGAQUFBwEBBHgwdjBPBggrBgEFBQcwAoZDaHR0cDovL2NydC5zZWN0
+aWdvLmNvbS9TZWN0aWdvUHVibGljU2VydmVyQXV0aGVudGljYXRpb25DQU9WUjM2
+LmNydDAjBggrBgEFBQcwAYYXaHR0cDovL29jc3Auc2VjdGlnby5jb20wLQYDVR0R
+BCYwJIIRKi5pbmdlbW1ldC5nb2IucGWCD2luZ2VtbWV0LmdvYi5wZTCCAY4GCisG
+AQQB1nkCBAIEggF+BIIBegF4AHcAHJ9oLOn68EVpUPgbloqH3dsyENhM5siy44JS
+SsTPWZ8AAAGfi/4qWQAABAMASDBGAiEAs6r07C49B6XKmkAvv/0sSJ0h2TKXdNlY
+rpGbxAA9bGcCIQDG3vHQpHjYgCSpWsbErCGlr1y5XwaI4RB+p06ScJaU8gB+AI7K
+Rwus3mrzogawpHqEt0b+H8a/lT4l5ptO5AJI88boAAABn4v+K+8ACAAABQAGuzr2
+BAMARzBFAiEAn4NQxFnWX6Na2spQtiiwPcMhqCc0vMbpyUTF4jcDTpsCIDH8poJ1
+HVTRSABzE58exhruLYPbRO/1yItpVt/AH+MqAH0AWW5sM4aUsllyolbIoOjdkEp2
+6Ag92oc7AQg4KBQ87lkAAAGfi/4rDwAIAAAFAABRbXAEAwBGMEQCIHFPuHVnxYKD
+R2Tnw4G1O2IWH0eEnZKZlPmRueBWvqCJAiAbXOeF5zgaEqLcDi+++/L2bAkpqHJL
+ld9Ct7FfP1CV2zANBgkqhkiG9w0BAQsFAAOCAYEATevIr07TBXR+lxd0Gl+ue8jU
+i9mtwEfz4lEvSDZmd3z3Byhjg1RPtCx3gE3vpni0IOutVuULhquMsNC4GDuGdoDK
+y7zsRAyC+UQ02CqiYLqX889lJICR0iQS16mXEeq0x5Yor/T/dcfXycPwZeC9/0Zr
+fNYwVvLMNS6UtM3B9UEYGfak/gppqCo9azMLPh2TFHfv3T8s2gyw2Y1todnm1C4J
+J4LC+CH1FEb8pxpo93eT0gF5amNlF9eYymw29n3Uq9ndijzwzXBREYXzLeMWox5u
+rQ/yEOVQJRvlb8QXHBANID5lqA3xIfvSYzc4iX1b1+ejURhZktpXZmSVXRf2IwDT
+VP1fXUC7vIjVpxmMrEXaA1XoyQgc/jdbVThq2ocy+HFITKDUp0c09xU2Fzg0NzgQ
+DuMzXjr0I9Mvu0Fk1Yhu3jgn7KytmB2zTg46/2At8cQPKQ3gMqNtjco4jO/Gz0Lw
+AJgIdsYa3iQ6zIUJP2pXVvSBJDDhn+3JGZj7Kchl
+-----END CERTIFICATE-----`
+
+func TestTheGatewayPoolCompletesTheRealGeocatminChain(t *testing.T) {
+	der, _ := nextPEM([]byte(geocatminLeaf))
+	leaf, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts := x509.VerifyOptions{
+		DNSName:     "geocatmin.ingemmet.gob.pe",
+		CurrentTime: time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC), // inside the leaf's validity
+		KeyUsages:   []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+	}
+	if _, err := leaf.Verify(opts); err == nil {
+		t.Fatal("the leaf verified without its intermediate: the system store changed, revisit the fix")
+	}
+	opts.Intermediates = gatewayIntermediates
+	chains, err := leaf.Verify(opts)
+	if err != nil {
+		t.Fatalf("the gateway pool does not complete the real chain against the system roots: %v", err)
+	}
+	if root := chains[0][len(chains[0])-1]; root.Subject.CommonName != "Sectigo Public Server Authentication Root R46" {
+		t.Fatalf("chain ends at %q", root.Subject.CommonName)
 	}
 }
 
