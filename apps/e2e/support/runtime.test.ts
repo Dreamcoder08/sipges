@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import process from 'node:process';
 import {
   GO_DATABASE_PREFIX,
   e2eRuntime,
   goApiEnv,
   goMigrateEnv,
+  scratchDatabase,
   scratchDatabaseUrl,
 } from './runtime.ts';
+import { runBounded } from './server.ts';
 
 test('the runtime is node when unset, and only workers or go otherwise', () => {
   assert.equal(e2eRuntime(undefined), 'node');
@@ -78,4 +81,71 @@ test('shared settings cannot override what the Go harness owns', () => {
   });
   assert.equal(env.SIPGES_DATABASE_URL, 'postgres://db');
   assert.equal(env.SIPGES_WEB_DIR, '/web/dist');
+});
+
+// functional-10 T15: the name is checked before any SQL holding it exists, so a bad name can never
+// reach CREATE DATABASE (the DDL is built only from a name that passed).
+test('the scratch database is checked before its CREATE and DROP statements are built', () => {
+  assert.deepEqual(
+    scratchDatabase('postgres://u:pw@127.0.0.1:55500/postgres', GO_DATABASE_PREFIX, '0a1b2c'),
+    {
+      name: 'sipges_e2e_go_0a1b2c',
+      url: 'postgres://u:pw@127.0.0.1:55500/sipges_e2e_go_0a1b2c',
+      create: 'CREATE DATABASE sipges_e2e_go_0a1b2c',
+      drop: 'DROP DATABASE IF EXISTS sipges_e2e_go_0a1b2c WITH (FORCE)',
+    },
+  );
+  const bad: readonly (readonly [string, string])[] = [
+    ['sipges_e2e_', 'x; DROP DATABASE postgres'],
+    ['Sipges-', 'abc'],
+    ['', ''],
+    ['sipges_e2e_', 'a'.repeat(60)],
+  ];
+  for (const [prefix, suffix] of bad) {
+    assert.throws(
+      () => scratchDatabase('postgres://127.0.0.1/x', prefix, suffix),
+      /^Error: invalid scratch database name: /,
+    );
+  }
+});
+
+// functional-10 T15: `go build` and `migrate` are bounded, and a failure carries their output.
+test('a bounded tool that overruns its time is stopped and says so, with what it printed', async () => {
+  await assert.rejects(
+    runBounded(
+      'slow tool',
+      process.execPath,
+      ['-e', "console.log('started'); setTimeout(() => {}, 30000)"],
+      { cwd: process.cwd(), env: process.env, timeoutMs: 300 },
+    ),
+    (error: Error) => {
+      assert.match(error.message, /^slow tool timed out after 300 ms:\nstarted\n/);
+      return true;
+    },
+  );
+});
+
+test('a bounded tool that fails rejects with its exit code, stdout and stderr', async () => {
+  await assert.rejects(
+    runBounded(
+      'broken tool',
+      process.execPath,
+      ['-e', "console.log('out line'); console.error('err line'); process.exit(3)"],
+      { cwd: process.cwd(), env: process.env, timeoutMs: 20_000 },
+    ),
+    (error: Error) => {
+      assert.equal(error.message, 'broken tool failed with exit code 3:\nout line\nerr line\n');
+      return true;
+    },
+  );
+});
+
+test('a bounded tool that succeeds resolves with its output', async () => {
+  const { stdout } = await runBounded(
+    'quick tool',
+    process.execPath,
+    ['-e', "console.log('done')"],
+    { cwd: process.cwd(), env: process.env, timeoutMs: 20_000 },
+  );
+  assert.equal(stdout, 'done\n');
 });

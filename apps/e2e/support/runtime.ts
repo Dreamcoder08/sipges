@@ -25,6 +25,21 @@ export const scratchDatabaseUrl = (serverUrl: string, name: string) => {
 };
 
 /**
+ * The throwaway database of a run: its name is checked first (scratchDatabaseUrl throws), and
+ * only then are the CREATE and DROP statements built, so an unchecked name never reaches DDL.
+ */
+export const scratchDatabase = (serverUrl: string, prefix: string, suffix: string) => {
+  const name = `${prefix}${suffix}`;
+  const url = scratchDatabaseUrl(serverUrl, name);
+  return {
+    name,
+    url,
+    create: `CREATE DATABASE ${name}`,
+    drop: `DROP DATABASE IF EXISTS ${name} WITH (FORCE)`,
+  };
+};
+
+/**
  * `sipges-api-go migrate`: the SQL files are the TypeScript API's, and the synthetic test
  * server's superuser is accepted (Go allows that override on a loopback database only).
  */
