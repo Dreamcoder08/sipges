@@ -46,6 +46,13 @@ it('keeps the search, sector, position and zoom controls in one toolbar above th
   expect(screen.getByText('3 actores')).toBeInTheDocument();
 });
 
+it('agrees the actor counts in number when there is one actor (functional-10 T16)', () => {
+  render(<ActorMap rows={rows.slice(0, 1)} onOpen={vi.fn()} />);
+  expect(screen.getByText('1 actor')).toBeInTheDocument();
+  expect(screen.getByText('1 de 1 actor en el mapa')).toBeInTheDocument();
+  expect(screen.queryByText(/\b1 actores\b/)).toBeNull();
+});
+
 it('narrows the map and the list by actor name, ignoring case and accents', async () => {
   render(<ActorMap rows={rows} onOpen={vi.fn()} />);
   await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar actor' }), 'camara');

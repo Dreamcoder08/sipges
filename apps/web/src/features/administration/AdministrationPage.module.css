@@ -2,6 +2,16 @@
   display: grid;
   gap: var(--space-4);
 }
+/* The page title: the top bar of a phone or tablet already says it. */
+.title {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+@media (max-width: 60rem) {
+  .title {
+    display: none;
+  }
+}
 .form {
   margin-top: var(--space-4);
 }
