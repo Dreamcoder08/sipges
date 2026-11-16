@@ -21,6 +21,7 @@ import styles from './Geography.module.css';
 import { GeocatminControls, type OfficialSelection } from './GeocatminControls.tsx';
 import { count, plural } from '../../shared/lib/plural.ts';
 import { formatNumber } from '../../shared/lib/format.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 export const GeographyPage = ({ scope }: FeatureContext) => {
   const query = useQuery({
@@ -386,7 +387,9 @@ const MapReference = ({
           <dt>Conjunto de datos</dt>
           <dd>{data.source.dataset}</dd>
           <dt>Fecha de consulta</dt>
-          <dd>{data.source.consulted_on}</dd>
+          <dd>
+            <DateText value={data.source.consulted_on} />
+          </dd>
           <dt>CRS geométrico</dt>
           <dd>{data.crs.geometry}</dd>
           <dt>Orden de ejes</dt>

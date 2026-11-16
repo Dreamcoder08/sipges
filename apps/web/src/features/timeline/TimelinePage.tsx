@@ -7,6 +7,7 @@ import { monthLabel } from '../../shared/lib/text.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
 import { Button } from '../../shared/ui/Button.tsx';
 import { Card } from '../../shared/ui/Card.tsx';
+import { DateText } from '../../shared/ui/DateText.tsx';
 import { EmptyState } from '../../shared/ui/EmptyState.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { monthlySeries } from '../../shared/ui/time/series.ts';
@@ -106,7 +107,7 @@ export const TimelinePage = ({ scope }: FeatureContext) => {
                     <ol className={styles.entries}>
                       {entries.map((entry) => (
                         <li key={`${entry.module}/${entry.id}`}>
-                          <time dateTime={entry.date ?? ''}>{entry.date}</time>
+                          <DateText value={entry.date} />
                           <span className={styles.type}>{entry.type_label}</span>
                           <InternalLink href={objectHref(entry.module, entry.id)}>
                             {entry.title}

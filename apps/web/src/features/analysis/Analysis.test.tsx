@@ -224,6 +224,10 @@ describe('analysis pages', () => {
         .getAllByRole('columnheader')
         .map((cell) => cell.textContent),
     ).toEqual(['Registro', 'actores:Nombre_Actor/Organizacion', 'actores:Fuente_Principal']);
+    // functional-10 T16: the generation instant and stored days read as Lima dates.
+    expect(screen.getByText(/Generado:/)).toHaveTextContent('Generado: 12 oct. 2026, 19:00.');
+    expect(within(events).getByText('14 nov. 2026')).toHaveAttribute('datetime', '2026-11-14');
+    expect(document.body).not.toHaveTextContent(/\d{4}-\d{2}-\d{2}/);
   });
   it('without a label source, writes each stored field as words', async () => {
     server.use(
@@ -323,6 +327,9 @@ describe('analysis pages', () => {
     mount(<StrategyPage {...context} renderRecords={(module) => <p>Editor {module}</p>} />);
     expect(await screen.findByText('Verificar hecho pendiente')).toBeVisible();
     expect(await screen.findByText('Requiere revisión')).toBeVisible();
+    // functional-10 T16: the generation instant reads as a Lima date and time.
+    expect(screen.getByText(/Generado:/)).toHaveTextContent('Generado: 12 oct. 2026, 19:00');
+    expect(screen.getByText(/Generado:/)).not.toHaveTextContent('2026-10-13');
     await userEvent.click(screen.getByRole('button', { name: 'Hechos por verificar' }));
     expect(screen.getByText('Editor hechos')).toBeVisible();
   });

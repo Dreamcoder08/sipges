@@ -276,6 +276,41 @@ it('coordinador creates plans only from verified alerts and saves scoped transit
     evidence_attachment_id: 'ADJ-1',
   });
 });
+it('names the project and shows the generation time in Lima, not the stored id and instant (T16)', async () => {
+  installManagement();
+  mount(<ManagementPage {...context} />);
+  const line = await screen.findByText(/Generado:/);
+  expect(line).toHaveTextContent('Proyecto: Demo · Generado: 12 oct. 2026, 19:00');
+  expect(line).not.toHaveTextContent('PRJ-DEMO');
+  expect(line.querySelector('time')).toHaveAttribute('datetime', '2026-10-13T00:00:00Z');
+});
+it('dates recent alerts and plan history in Lima time (T16)', async () => {
+  installManagement();
+  server.use(
+    http.get('*/system/management/overview', () =>
+      HttpResponse.json({
+        ...overviewFixture,
+        recent_alerts: [
+          {
+            id: 'DA-1',
+            created_at: '2026-10-13T00:00:00Z',
+            source_url: '',
+            source_type: 'Sintética',
+            level: 'Media',
+            score: 35,
+            status: 'Pendiente',
+            reviewed_at: null,
+          },
+        ],
+      }),
+    ),
+  );
+  mount(<ManagementPage {...context} />);
+  expect(await screen.findByText(/DA-1 ·/)).toHaveTextContent('DA-1 · 12 oct. 2026, 19:00 ·');
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Ver plan action-1' }));
+  expect(screen.getByText(/Reunión registrada/)).toHaveTextContent('12 oct. 2026, 19:00 ·');
+  expect(document.body).not.toHaveTextContent(/\d{4}-\d{2}-\d{2}T/);
+});
 it('consulta sees prevention history without write forms', async () => {
   installManagement();
   mount(<ManagementPage {...context} />);

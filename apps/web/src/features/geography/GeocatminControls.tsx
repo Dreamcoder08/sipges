@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { requestJson } from '../../shared/api/client.ts';
 import { GEOCATMIN_VIEWER } from './MiningCadastreLayer.tsx';
 import { count } from '../../shared/lib/plural.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 export type OfficialSelection = { serviceId: string; layerId: number; opacity: number };
 export const GeocatminControls = ({
   scope,
@@ -76,7 +77,7 @@ export const GeocatminControls = ({
       {catalogue.data?.services.map((service) => (
         <p key={service.id}>
           {service.id}: {service.status === 'verified' ? 'verificado' : 'no disponible'} ·{' '}
-          {service.checkedAt}
+          <DateText value={service.checkedAt} />
           {service.error ? ` · ${service.error}` : ''}
         </p>
       ))}

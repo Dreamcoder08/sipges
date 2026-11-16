@@ -44,6 +44,13 @@ it('renders scoped geometry, lets the reader select and zoom, and shows its prov
   await userEvent.selectOptions(screen.getByLabelText('Concesión'), '12000442Y01');
   expect(screen.getByRole('heading', { name: 'BAYOVAR N° 6' })).toBeVisible();
   expect(screen.getByText('EPSG:4326')).toBeVisible();
+  // functional-10 T16 (ego-browser walk): the query day read «2026-10-10».
+  const consulted = screen.getByText('Fecha de consulta').nextElementSibling;
+  expect(consulted?.querySelector('time')).toHaveAttribute(
+    'datetime',
+    coordinates.source.consulted_on,
+  );
+  expect(consulted).not.toHaveTextContent(/\d{4}-\d{2}-\d{2}/);
   // INGEMMET's cadastre sits under the concessions and can be hidden.
   const cadastreImage = () =>
     [...map.querySelectorAll('image')].find((i) => i.getAttribute('href')?.includes('geocatmin'));

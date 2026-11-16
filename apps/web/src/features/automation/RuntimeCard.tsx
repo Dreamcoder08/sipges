@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { runtimeQuery } from './api.ts';
+import { DateText } from '../../shared/ui/DateText.tsx';
 export const RuntimeCard = ({ scope }: { scope: string }) => {
   const query = useQuery(runtimeQuery(scope));
   return (
@@ -31,7 +32,7 @@ export const RuntimeCard = ({ scope }: { scope: string }) => {
           </p>
           {query.data.latest_attempt ? (
             <p>
-              Último intento: {query.data.latest_attempt.started_at} ·{' '}
+              Último intento: <DateText value={query.data.latest_attempt.started_at} time /> ·{' '}
               {query.data.latest_attempt.source === 'event' ? 'registro' : 'programador'} ·{' '}
               {query.data.latest_attempt.status === 'completed'
                 ? 'completado'

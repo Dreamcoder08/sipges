@@ -98,7 +98,12 @@ test('management center shows project metrics and downloads the CSV report', asy
   await expect(
     page.getByRole('heading', { level: 1, name: 'Centro de control gerencial' }),
   ).toBeVisible();
-  await expect(page.getByText(/^Proyecto: PRJ-SECHURA · Generado: /)).toBeVisible();
+  // functional-10 T16: the project by its label and the time in Lima, never the id or instant.
+  const generated = page.getByText(/^Proyecto: .+ · Generado: /);
+  await expect(generated).toHaveText(
+    /^Proyecto: .+ · Generado: \d{1,2} [a-z]{3,4}\. \d{4}, \d{2}:\d{2}$/,
+  );
+  await expect(generated).not.toContainText('PRJ-SECHURA');
   const csv = await download(page, 'Descargar CSV');
   expect(csv.file.suggestedFilename()).toBe('sipges_rc28_reporte_gerencial.csv');
   const content = csv.bytes.toString('utf8').replace(/^\uFEFF/, '');

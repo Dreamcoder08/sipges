@@ -103,6 +103,12 @@ it('shows provider failures and clears stale previews without offering an import
   await user.click(preview);
   expect(await screen.findByRole('link', { name: 'Publicación de prueba' })).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Importar publicación' })).toBeInTheDocument();
+  // functional-10 T16: the publication day reads in Spanish, not as the stored instant.
+  const day = screen
+    .getAllByText('17 oct. 2026')
+    .find((node) => node.getAttribute('datetime') === '2026-10-17T10:00:00.000Z');
+  expect(day).toBeDefined();
+  expect(screen.queryByText(/2026-10-17T/)).toBeNull();
   unavailable = true;
   await user.click(preview);
   expect(await screen.findByRole('status')).toHaveTextContent(

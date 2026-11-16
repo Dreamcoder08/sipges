@@ -16,6 +16,7 @@ import {
 import { DocumentLab } from './DocumentLab.tsx';
 import { NarrativeOverview } from './NarrativeOverview.tsx';
 import styles from './Analysis.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 /** The record modules whose excerpts the analysis lists. */
 export type ExcerptModule = 'eventos' | 'alertas' | 'demandas' | 'actores';
@@ -66,7 +67,7 @@ export const SituationalPage = ({
           <>
             <Card title="Estado del proyecto">
               <p className={styles.muted}>
-                Generado: {data.generated_at}. {data.method}
+                Generado: <DateText value={data.generated_at} time />. {data.method}
               </p>
               <Counts values={data.counts} />
               <Counts
