@@ -53,6 +53,8 @@ Guía de preparación para publicar la API con la SPA, y adaptador de Cloudflare
 
 **[Docs →](docs/deployment/readiness.md)**
 
+Instalación local con el backend Go: [local-install.es.md](docs/deployment/local-install.es.md). El contenedor Go detrás del Worker: [go-container.md](docs/deployment/go-container.md).
+
 ## Cómo se trabaja
 
 El trabajo se planifica con ODD en [`odd/tasks`](odd/tasks) y las decisiones en los ADRs. Las guías de agentes (skills, Gentle AI y Engram) están en [AGENTS.md](AGENTS.md); para contribuir, [CONTRIBUTING.md](CONTRIBUTING.md).

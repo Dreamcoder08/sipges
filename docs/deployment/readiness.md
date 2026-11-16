@@ -67,8 +67,8 @@ code slice `4a4b5f0` → `2ba2b5a` and [its synthetic HTTP differential](../../o
 
 | Gate | Command | Covers |
 | --- | --- | --- |
-| Static checks and unit/HTTP tests | `pnpm check` (CI job `typescript`) | Lint, format, architecture boundaries, types, API/web/kernel tests; optional real-PostgreSQL integration when `SIPGES_TEST_DATABASE_URL` is set |
-| End-to-end parity | `pnpm e2e` (CI job `e2e`) | Real API + built SPA in headless Chromium against a throwaway database, see below |
+| Static checks and unit/HTTP tests | `pnpm check` (CI jobs `static` and `api`) | Lint, format, architecture boundaries, types, API/web/kernel tests; optional real-PostgreSQL integration when `SIPGES_TEST_DATABASE_URL` is set |
+| End-to-end parity | `pnpm e2e` (CI job `e2e`; `e2e-go` runs a fixed spec list on the Go API) | Real API + built SPA in headless Chromium against a throwaway database, see below |
 | Data migration rehearsal | `pnpm --filter @sipges/api migrate:legacy` dry run / verify | Synthetic fixture in tests; a real dry run is a deploy-day step |
 
 ### End-to-end suite (`apps/e2e`)

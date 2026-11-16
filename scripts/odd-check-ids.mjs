@@ -9,7 +9,6 @@ import { fileURLToPath } from 'node:url';
 // Duplicates that predate this check, kept as history rather than rewritten.
 const KNOWN = {
   'compact-sidebar.md': { Tasks: ['T1'] },
-  'typescript-hexagonal-migration.md': { Log: ['L40', 'L45', 'L49'] },
 };
 
 const section = (text, title) => {
