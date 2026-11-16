@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	automationsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/automation/infrastructure"
 	integration "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/application"
 	integrationhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/http"
 	integrationsql "github.com/Dreamcoder08/sipges/apps/api-go/internal/integration/infrastructure"
@@ -81,8 +82,8 @@ func integrationPolling(d Deps, feeds integration.FeedGateway, official integrat
 	clock := integration.Clock(now)
 	importer := integration.Importer{Store: recordssql.Records{DB: d.Pool}, Clock: clock}
 	return integration.Media{
-		Feeds: integrationsql.Feeds{DB: d.Pool}, Gateway: feeds, Importer: importer, Clock: clock,
+		Feeds: integrationsql.Feeds{DB: d.Pool, StartCursor: automationsql.StartCursorIfMissing}, Gateway: feeds, Importer: importer, Clock: clock,
 	}, integration.Sources{
-		Gateway: official, Settings: integrationsql.Settings{DB: d.Pool}, Importer: importer, Clock: clock,
+		Gateway: official, Settings: integrationsql.Settings{DB: d.Pool, StartCursor: automationsql.StartCursorIfMissing}, Importer: importer, Clock: clock,
 	}
 }

@@ -200,9 +200,6 @@ const (
 	countFeeds = `SELECT count(*) AS n FROM media_feeds WHERE tenant_id=$1`
 	insertFeed = `INSERT INTO media_feeds (tenant_id,name,url,keywords,territory,authorization_note,enabled,updated_by,updated_at)
            VALUES ($1,$2,$3,$4::jsonb,$5,$6,$7,$8,$9) RETURNING ` + feedColumns
-	startCursor = `INSERT INTO automation_cursors (tenant_id, last_audit_id)
-           SELECT current_setting('app.tenant_id', true), COALESCE(max(id), 0) FROM audit
-           ON CONFLICT (tenant_id) DO NOTHING`
 	updateFeed = `UPDATE media_feeds SET name=$3,url=$4,keywords=$5::jsonb,territory=$6,authorization_note=$7,
              enabled=$8,updated_by=$9,updated_at=$10
            WHERE tenant_id=$1 AND id=$2 RETURNING ` + feedColumns
@@ -216,8 +213,24 @@ const (
 	mediaAuditModule = "Monitoreo de medios"
 )
 
-// Feeds is sql-media-feeds.ts's write side.
-type Feeds struct{ DB database.Beginner }
+// CursorStarter starts the tenant's automation cursor when it has none, in the caller's tenant
+// transaction. Automation owns that table; internal/app wires its StartCursorIfMissing in.
+type CursorStarter func(ctx context.Context, q database.Querier) error
+
+var errNoCursorStarter = errors.New("integration: no automation cursor starter wired")
+
+func (start CursorStarter) run(ctx context.Context, q database.Querier) error {
+	if start == nil {
+		return errNoCursorStarter
+	}
+	return start(ctx, q)
+}
+
+// Feeds is sql-media-feeds.ts's write side; StartCursor is required.
+type Feeds struct {
+	DB          database.Beginner
+	StartCursor CursorStarter
+}
 
 var _ application.FeedStore = Feeds{}
 
@@ -286,7 +299,7 @@ func (f Feeds) Create(ctx context.Context, tenantID string, feed application.Fee
 		if err != nil {
 			return result{}, err
 		}
-		if _, err := q.Exec(ctx, startCursor); err != nil {
+		if err := f.StartCursor.run(ctx, q); err != nil {
 			return result{}, err
 		}
 		if saved == nil {
@@ -383,7 +396,11 @@ const (
 )
 
 // Settings is sql-source-settings.ts.
-type Settings struct{ DB Pool }
+// Settings stores the official source settings; StartCursor is required.
+type Settings struct {
+	DB          Pool
+	StartCursor CursorStarter
+}
 
 var _ application.SettingsStore = Settings{}
 
@@ -417,7 +434,7 @@ func (s Settings) Save(ctx context.Context, tenantID string, in domain.SourceCon
 			return st, err
 		}
 		if in.Enabled {
-			_, err = q.Exec(ctx, startCursor)
+			err = s.StartCursor.run(ctx, q)
 		}
 		return st, err
 	})
