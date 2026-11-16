@@ -2,6 +2,9 @@ import type { KeyboardEvent, MouseEvent } from 'react';
 import { monthLabel } from '../../lib/text.ts';
 import styles from './TimeHistogram.module.css';
 
+/** Up to this many months every bar gets its own label; beyond, only the first and last. */
+const LABEL_EVERY_UP_TO = 6;
+
 export type MonthCount = { readonly month: string; readonly count: number };
 
 const WIDTH = 100;
@@ -75,10 +78,22 @@ export const TimeHistogram = ({
           );
         })}
       </svg>
-      <figcaption className={styles.axis}>
-        <span>{monthLabel(series[0]?.month ?? '')}</span>
-        <span>{monthLabel(series.at(-1)?.month ?? '')}</span>
-      </figcaption>
+      {series.length <= LABEL_EVERY_UP_TO ? (
+        // Few months: each bar is named under itself, in a column as wide as its slot.
+        <figcaption
+          className={`${styles.axis} ${styles.perBar}`}
+          style={{ gridTemplateColumns: `repeat(${series.length}, minmax(0, 1fr))` }}
+        >
+          {series.map(({ month }) => (
+            <span key={month}>{monthLabel(month)}</span>
+          ))}
+        </figcaption>
+      ) : (
+        <figcaption className={styles.axis}>
+          <span>{monthLabel(series[0]?.month ?? '')}</span>
+          <span>{monthLabel(series.at(-1)?.month ?? '')}</span>
+        </figcaption>
+      )}
     </figure>
   );
 };
