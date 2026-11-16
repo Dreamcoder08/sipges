@@ -205,3 +205,17 @@ it('wraps the table in a focusable, named region so a wide table scrolls from th
   expect(region).toContainElement(table);
   expect(region).toHaveAttribute('tabindex', '0');
 });
+
+// functional-10 T14: at 1440 px the page had no visible title (wide screens hide the shell's h1)
+// and its first line showed the internal scope «SIPGES/PRJ-SECHURA» beside the project's name.
+it('titles the page «Auditoría» and names the project by its label, never its scope', async () => {
+  server.use(http.get('*/system/audit', () => HttpResponse.json([])));
+  renderPage();
+  expect(screen.getByRole('heading', { level: 2, name: 'Auditoría' })).toBeInTheDocument();
+  const intro = screen.getByText(/^Historial del proyecto/);
+  expect(intro).toHaveTextContent(
+    'Historial del proyecto Proyecto Uno, ordenado por fecha descendente.',
+  );
+  expect(intro).not.toHaveTextContent('ACME/P1');
+  await screen.findByText(/0 de 0|Sin operaciones|registros cargados/);
+});
