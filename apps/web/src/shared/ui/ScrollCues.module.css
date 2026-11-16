@@ -1,0 +1,58 @@
+/*
+ * A sideways scroller that shadows each edge while more content lies that way (modern-web-guidance
+ * scrollability-affordance-hints, «Shadows»): the scroller's own ::before and ::after stick to the
+ * edges of the scrollport and take no room. useScrollHints(ref, { always: true }) sets
+ * `data-more-start` / `data-more-end` from two 1 px `.edge` sentinels, the scroller's first and
+ * last children, so the shadows also show over content with an opaque background (heat-map cells,
+ * actor cards) and with reduced motion. A scroller whose content fits shows none.
+ */
+.cues {
+  --cue-size: 0.875rem;
+  --cue-shadow: color-mix(in srgb, var(--color-text) 28%, transparent);
+  display: flex;
+  align-items: stretch;
+}
+
+.cues::before,
+.cues::after {
+  content: '';
+  position: sticky;
+  z-index: 3;
+  flex: none;
+  inline-size: var(--cue-size);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-fast) var(--ease-out);
+}
+
+.cues::before {
+  inset-inline-start: 0;
+  margin-inline-end: calc(-1 * var(--cue-size));
+  background: radial-gradient(farthest-side at 0 50%, var(--cue-shadow), transparent);
+}
+
+.cues::after {
+  inset-inline-end: 0;
+  margin-inline-start: calc(-1 * var(--cue-size));
+  background: radial-gradient(farthest-side at 100% 50%, var(--cue-shadow), transparent);
+}
+
+.cues[data-more-start]::before,
+.cues[data-more-end]::after {
+  opacity: 1;
+}
+
+/* 1 px sentinels at both ends of the content; their negative margins give the width back. */
+.edge {
+  flex: none;
+  inline-size: 1px;
+  block-size: 1px;
+}
+
+.edge:first-child {
+  margin-inline-end: -1px;
+}
+
+.edge:last-child {
+  margin-inline-start: -1px;
+}

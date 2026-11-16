@@ -3,6 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState, type PointerEvent } from '
 import { foldText } from '../../../shared/lib/text.ts';
 import { Button } from '../../../shared/ui/Button.tsx';
 import { Icon } from '../../../shared/ui/Icon.tsx';
+import { ScrollCues } from '../../../shared/ui/ScrollCues.tsx';
 import { ICON_PATHS, type IconName } from '../../../shared/ui/icons.ts';
 import {
   CARD,
@@ -323,7 +324,7 @@ export const ActorMap = ({
               Arrastre para mover; use los botones, Ctrl + rueda o dos dedos para acercar.
             </p>
           </div>
-          <div
+          <ScrollCues
             ref={stageRef}
             className={map.stage}
             onPointerLeave={() => setActive((a) => (a?.pinned ? a : null))}
@@ -541,7 +542,7 @@ export const ActorMap = ({
                 </div>
               ) : null}
             </div>
-          </div>
+          </ScrollCues>
           <div className={map.legends}>
             <div>
               <h4>Posición frente al proyecto</h4>
