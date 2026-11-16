@@ -69,12 +69,29 @@ type Setup = {
   raised?: Record<string, unknown>[];
   actors?: Record<string, unknown>[];
   failAlerts?: boolean;
+  proposals?: Record<string, unknown>[];
 };
+const decisions: { id: string; decision: string }[] = [];
 const patches: { id: string; body: { status: string; reviewer_note: string } }[] = [];
 const install = (setup: Setup = {}) => {
   const alerts = structuredClone(setup.alerts ?? []);
   patches.length = 0;
+  decisions.length = 0;
+  const proposals = structuredClone(setup.proposals ?? []);
   server.use(
+    http.get('*/system/analyst/proposals', () => HttpResponse.json(proposals)),
+    http.post('*/system/analyst/proposals', async ({ request }) => {
+      const body = (await request.json()) as { id: string; decision: string };
+      decisions.push(body);
+      const at = proposals.findIndex((p) => p.id === body.id);
+      if (at < 0)
+        return HttpResponse.json({ detail: 'La propuesta ya no está disponible' }, { status: 404 });
+      proposals.splice(at, 1);
+      return HttpResponse.json({
+        ok: true,
+        result: body.decision === 'approve' ? 'acciones/AC-1' : null,
+      });
+    }),
     http.get('*/system/intelligence/territorial-alerts', () =>
       setup.failAlerts
         ? HttpResponse.json({ detail: 'Servicio no disponible' }, { status: 503 })
@@ -260,7 +277,13 @@ describe('Pendientes: aggregation and grouping', () => {
       within(filter)
         .getAllByRole('option')
         .map((option) => option.textContent),
-    ).toEqual(['Todo (4)', 'Alertas (2)', 'Calidad de datos (1)', 'Situaciones (1)']);
+    ).toEqual([
+      'Todo (4)',
+      'Alertas (2)',
+      'Calidad de datos (1)',
+      'Situaciones (1)',
+      'Propuestas del analista (0)',
+    ]);
     expect(
       screen.queryByRole('button', { name: /^(Todo|Alertas|Calidad de datos|Situaciones)/ }),
     ).toBeNull();
@@ -622,5 +645,69 @@ describe('Pendientes: row status', () => {
     expect(badge('ALT-3')).toHaveTextContent('Primera validación tuya');
     expect(badge('ALT-3')).toHaveAttribute('data-tone', 'neutral');
     expect(badge('ALT-4')).toBeNull();
+  });
+});
+
+const proposal = (id: string, extra: Record<string, unknown> = {}) => ({
+  id,
+  kind: 'record',
+  title: 'Crear Acción: «<b>Visitar</b> la comunidad»',
+  reason: 'La alerta sigue abierta <script>alert(1)</script>',
+  link: null,
+  record: { module: 'acciones', payload: { Accion: '<i>Visitar</i>', Estado: 'Pendiente' } },
+  proposed_by: 'ana',
+  proposed_at: hoursAgo(2),
+  ...extra,
+});
+
+describe('Pendientes: analyst proposals', () => {
+  it('lists the analyst proposals as plain text, never as markup', async () => {
+    install({ proposals: [proposal('AP-1')] });
+    mount({ role: 'analista' });
+    const box = await list();
+    const option = await within(box).findByRole('option', { name: /Visitar/ });
+    expect(option).toHaveTextContent('Crear Acción: «<b>Visitar</b> la comunidad»');
+    expect(option.querySelector('b')).toBeNull();
+    await userEvent.click(option);
+    expect(detail()).toHaveTextContent('La alerta sigue abierta <script>alert(1)</script>');
+    expect(detail()).toHaveTextContent('Accion: <i>Visitar</i>');
+    expect(detail().querySelector('script, i')).toBeNull();
+  });
+
+  it('approves a proposal through the decision route and says what was created', async () => {
+    install({ proposals: [proposal('AP-1')] });
+    mount({ role: 'analista' });
+    await userEvent.click(await within(await list()).findByRole('option', { name: /Visitar/ }));
+    await userEvent.click(within(detail()).getByRole('button', { name: /Aprobar/ }));
+    expect(
+      await screen.findByText('Propuesta AP-1 aprobada: se creó acciones/AC-1.'),
+    ).toBeVisible();
+    expect(decisions).toEqual([{ id: 'AP-1', decision: 'approve' }]);
+  });
+
+  it('discards a proposal without writing anything', async () => {
+    install({ proposals: [proposal('AP-2')] });
+    mount({ role: 'admin' });
+    await userEvent.click(await within(await list()).findByRole('option', { name: /Visitar/ }));
+    await userEvent.click(within(detail()).getByRole('button', { name: /Descartar/ }));
+    expect(
+      await screen.findByText('Propuesta AP-2 descartada: no se escribió nada.'),
+    ).toBeVisible();
+    expect(decisions).toEqual([{ id: 'AP-2', decision: 'reject' }]);
+  });
+
+  it('offers no decision to roles that may not write', async () => {
+    for (const role of ['consulta', 'coordinador'] as const) {
+      install({ proposals: [proposal('AP-3')] });
+      const view = mount({ role });
+      await userEvent.click(await within(await list()).findByRole('option', { name: /Visitar/ }));
+      expect(within(detail()).queryByRole('button', { name: /Aprobar|Descartar/ })).toBeNull();
+      expect(detail()).toHaveTextContent(
+        'Tu rol no puede aprobar ni descartar propuestas del analista.',
+      );
+      await userEvent.keyboard('a');
+      expect(decisions).toEqual([]);
+      view.unmount();
+    }
   });
 });
