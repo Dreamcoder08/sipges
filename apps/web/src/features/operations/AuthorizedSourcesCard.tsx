@@ -215,7 +215,9 @@ const SourceCard = ({ context }: { context: FeatureContext }) => {
                   {post.title}
                 </a>
                 <p>{post.excerpt}</p>
-                <small>{post.published_at}</small>
+                <small>
+                  <DateText value={post.published_at} />
+                </small>
                 {writable ? (
                   <Button disabled={busy} onClick={() => void importPost(post.id)}>
                     Importar publicación

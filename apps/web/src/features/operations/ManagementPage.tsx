@@ -23,6 +23,7 @@ import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { useReveal } from '../../shared/lib/reveal.ts';
 import { z } from 'zod';
 import styles from './Operations.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 const labels: Record<string, string> = {
   digital_alerts: 'Alertas digitales',
   high_priority_alerts: 'Alertas de prioridad alta',
@@ -36,7 +37,7 @@ const labels: Record<string, string> = {
   registered_commitments: 'Compromisos registrados',
   overdue_commitments_explicit: 'Compromisos explícitamente vencidos',
 };
-export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
+export const ManagementPage = ({ scope, projectId, projectLabel, role }: FeatureContext) => {
   const writable = role !== 'consulta';
   const client = useQueryClient();
   const [alertId, setAlertId] = useState('');
@@ -168,7 +169,8 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
           {(data) => (
             <>
               <p>
-                Proyecto: {data.project_id} · Generado: {data.generated_at}
+                Proyecto: {projectLabel || data.project_id} · Generado:{' '}
+                <DateText value={data.generated_at} time />
               </p>
               <dl className={styles.metrics}>
                 {Object.entries(data.metrics).map(([name, value]) => (
@@ -216,7 +218,8 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
                 <ul>
                   {data.recent_alerts.map((a) => (
                     <li key={a.id}>
-                      {a.id} · {a.created_at} · {a.status} · Prioridad {a.level} ({a.score})
+                      {a.id} · <DateText value={a.created_at} time /> · {a.status} · Prioridad{' '}
+                      {a.level} ({a.score})
                       <p className={styles.fragment}>
                         {a.source_type} · {a.source_url || 'Sin enlace'}
                       </p>
@@ -465,7 +468,8 @@ export const ManagementPage = ({ scope, projectId, role }: FeatureContext) => {
             <ol>
               {current.history.map((h) => (
                 <li key={h.id}>
-                  {h.created_at} · {h.status} · {h.progress}% · {h.note || 'Sin nota'}
+                  <DateText value={h.created_at} time /> · {h.status} · {h.progress}% ·{' '}
+                  {h.note || 'Sin nota'}
                   {h.evidence_url && <p className={styles.fragment}>Evidencia: {h.evidence_url}</p>}
                   {h.receipt && (
                     <p className={styles.fragment}>

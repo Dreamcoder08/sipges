@@ -120,3 +120,12 @@ it('reports unavailable metadata and preserves retry and official escape link', 
   );
   expect(screen.getByRole('button', { name: 'Reintentar catálogo' })).toBeEnabled();
 });
+
+// functional-10 T16: the day each official service was checked reads in Spanish.
+it('dates each service check in Spanish', async () => {
+  server.use(http.get('/system/geography/catalogue', () => HttpResponse.json(catalogue)));
+  renderControls();
+  const day = await screen.findByText('17 oct. 2026');
+  expect(day).toHaveAttribute('datetime', '2026-10-17');
+  expect(screen.queryByText(/2026-10-17/)).toBeNull();
+});

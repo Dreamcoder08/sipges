@@ -22,6 +22,8 @@ import {
 } from './actor-map.ts';
 import styles from './Insights.module.css';
 import map from './ActorMap.module.css';
+import { formatNumber } from '../../../shared/lib/format.ts';
+import { count } from '../../../shared/lib/plural.ts';
 
 const tones = [
   ['favor', 'Favorable'],
@@ -246,7 +248,7 @@ export const ActorMap = ({
           <h3 id={id}>Mapa estratégico de actores</h3>
           <p className={map.subtitle}>Actores, influencia y relaciones en una sola vista</p>
         </div>
-        <span className={styles.count}>{rows.length} actores</span>
+        <span className={styles.count}>{count(rows.length, 'actor', 'actores')}</span>
       </div>
       <p className={styles.explanation}>
         Cuadrantes por sector y anillos por influencia registrada: Control (influencia alta) al
@@ -318,7 +320,8 @@ export const ActorMap = ({
           </div>
           <div className={map.status}>
             <p role="status">
-              {visible.length} de {placed.length} actores en el mapa
+              {formatNumber(visible.length)} de {count(placed.length, 'actor', 'actores')} en el
+              mapa
             </p>
             <p className={map.hint}>
               Arrastre para mover; use los botones, Ctrl + rueda o dos dedos para acercar.

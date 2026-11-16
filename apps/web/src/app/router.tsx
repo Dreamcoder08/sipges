@@ -572,10 +572,14 @@ const settingsRoute = createRoute({
 const objectRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/objeto/$module/$id',
+  // `?desde=calidad`: the sheet was opened from Calidad de datos and goes back there.
+  validateSearch: (search: Record<string, unknown>): { desde?: 'calidad' } =>
+    search['desde'] === 'calidad' ? { desde: 'calidad' } : {},
   component: function ObjectRoute() {
     const context = useFeatureContext();
     const { module, id } = objectRoute.useParams();
-    return <ObjectPage module={module} id={id} {...context} />;
+    const { desde } = objectRoute.useSearch();
+    return <ObjectPage module={module} id={id} from={desde} {...context} />;
   },
 });
 

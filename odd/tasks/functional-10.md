@@ -188,11 +188,11 @@ docs or help that describe it. Strings the API produces change in TypeScript and
   package.json; the review advisories (database name validated before CREATE, timeouts on `go build` and
   `migrate`, the POSIX-path test in tables-interrupt.test.mjs, its failure paths run on Windows). Route: worker.
   Risk: item 5 (CI). Commit: see L12
-- [ ] T16 — S4: prove it works through every surface on the release candidate: `sipgesctl verify
+- [x] T16 — S4: prove it works through every surface on the release candidate: `sipgesctl verify
   --synthetic-target` (CLI), the MCP server (list tools, call a read and a write tool, refusals without a key),
   the HTTP API (parity, `/health`, a write and a read), the Go API, and an ego-browser walk of every screen on a
   fresh synthetic instance; each defect found becomes a fix with a test. Route: worker + parent (ego-browser).
-  Commit: —
+  Commit: see L13
 - [ ] T17 — S4: release `visit-rc15` on the commit holding T14–T16 with CI and the Windows drill green, roadmap
   entry, gallery regenerated and every image reviewed. Route: inline. Commit: —
 
@@ -287,3 +287,23 @@ marker with a count (F28), and the default project name of T6 if «Proyecto 1» 
   tables-interrupt tests hold on win32 and run on Windows CI (checked by reading and on Linux; not run on Windows).
   Independent verifier (item 5): every rule met, wasm rebuilt byte-identical, e2e-go 26/26, malicious database names
   refused, no stored value changes. Risk: item 5 (CI).
+- L13 — T16 closed on main 36c81a61, fresh synthetic instances on the Go API. Worker part: `sipgesctl verify
+  --synthetic-target` 196/196 with MFA enforced; MCP initialize (2025-06-18), 8 tools for a write key and 6 for a read
+  key, reads (list_object_types, get_record, search_records, get_timeline) and the create_record write proved;
+  refusals: no key or a bad key 401, foreign Origin 403, GET/DELETE 405, a read key cannot see create_record, the CLI
+  refuses without SIPGES_MACHINE_TOKEN; reads stay refused until the project's external-AI switch is on (ADR 0030).
+  HTTP API: /health and /health/ready 200, a settings write read back through sipgesctl call, a record created over
+  MCP visible through the session. Parity 2626/2626, 0 write routes unproved. Go suite with -race: 78 packages ok. No
+  defects. Ego-browser part: 35 addresses at 1440 and 360 px, light and dark, ending with 0 console errors, 0 failed
+  requests and 0 px overflow at 360. Eleven defects fixed, each test failing first (82221964, 18c4cd62, 3565de53): raw
+  ISO days and UTC instants in Centro gerencial, Situacional, Estratégica, Cronología, Automatizaciones, the
+  Defensoría preview, the GEOCATMIN catalogue, the concession sheet and Ubicación now read as Lima dates; the record
+  sheet names fields in words, drops the repeated id, shows «G · Gobernanza» and goes back to the record's own list
+  (Calidad keeps its own back link); «1 actores» agrees in number; Administración has a visible title. Web 764/764,
+  verify:fast ok, e2e chromium 33 and mobile 34 green. Ego's managed browser freezes the WebGL map tab, so Mapa and
+  Ubicación were judged from screenshots and Playwright (longest task 855 ms). Dudas for the owner: scope shown beside
+  the project name in Administración; no h2 on Automatizaciones and Metodología at 1440 px; decimal point in Ubicación
+  coordinates; Ubicación says «Proyecto Sechura» while the project is «Proyecto principal»; a one-month Cronología
+  histogram; the open Registros sheet hides «Eliminar» at 1440 px; MFA sign-in shows «Código de autenticación
+  inválido» before a code is typed and an administrator can deactivate their own account (both identity, not touched).
+  Risk: none.

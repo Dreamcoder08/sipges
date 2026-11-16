@@ -14,6 +14,7 @@ import { Card } from '../../shared/ui/Card.tsx';
 import { QueryState } from '../../shared/ui/QueryState.tsx';
 import { Counts, Limitations, ReportDownload, TextList } from './ReportParts.tsx';
 import styles from './Analysis.module.css';
+import { DateText } from '../../shared/ui/DateText.tsx';
 
 export type StrategicRecordModule = 'intereses' | 'dialogos' | 'oportunidades' | 'hechos' | 'aarc';
 const modules: Array<[StrategicRecordModule, string]> = [
@@ -91,7 +92,9 @@ export const StrategyPage = (
         {(data) => (
           <>
             <Card title="Evaluación estratégica">
-              <p className={styles.muted}>Generado: {data.generated_at}</p>
+              <p className={styles.muted}>
+                Generado: <DateText value={data.generated_at} time />
+              </p>
               <Counts values={data.counts} />
               <Counts
                 values={{
