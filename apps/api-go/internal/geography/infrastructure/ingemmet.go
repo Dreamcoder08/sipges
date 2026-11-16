@@ -60,7 +60,8 @@ func NewGateway(now func() time.Time) *Gateway {
 	if now == nil {
 		now = time.Now
 	}
-	return &Gateway{origin: Origin, client: &http.Client{CheckRedirect: refuseRedirect}, now: now,
+	client := &http.Client{CheckRedirect: refuseRedirect, Transport: ingemmetTransport()}
+	return &Gateway{origin: Origin, client: client, now: now,
 		timeout: defaultTimeout, maxBytes: defaultMaxBytes}
 }
 
