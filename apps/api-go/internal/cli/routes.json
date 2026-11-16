@@ -86,6 +86,13 @@
     "command": "project switch",
     "summary": "Choose the project"
   },
+  {
+    "method": "POST",
+    "path": "/system/analyst/ask",
+    "access": "session",
+    "command": "analyst ask",
+    "summary": "Ask the Inicio analyst a question; JSON body {\"question\": …} with --body FILE, or --body - for stdin"
+  },
   { "method": "POST", "path": "/system/analyze", "access": "session" },
   { "method": "GET", "path": "/system/audit", "access": "session" },
   {

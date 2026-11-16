@@ -21,8 +21,12 @@ const MaxToolCalls = 6
 // AskTimeout bounds one question, model and tools included.
 const AskTimeout = 30 * time.Second
 
-// ErrTooManyToolCalls is a model that kept calling tools past MaxToolCalls.
-var ErrTooManyToolCalls = errors.New("analyst: too many tool calls for one question")
+var (
+	// ErrTooManyToolCalls is a model that kept calling tools past MaxToolCalls.
+	ErrTooManyToolCalls = errors.New("analyst: too many tool calls for one question")
+	// ErrModel is a model that failed to answer; the adapter's own error stays out of it.
+	ErrModel = errors.New("analyst: the model did not answer")
+)
 
 // ToolSpec describes a tool to the model.
 type ToolSpec struct {
@@ -100,7 +104,10 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 	for {
 		step, err := a.Model.Next(ctx, specs, turns)
 		if err != nil {
-			return domain.CitedAnswer{}, err
+			if ctx.Err() != nil {
+				return domain.CitedAnswer{}, ctx.Err()
+			}
+			return domain.CitedAnswer{}, ErrModel
 		}
 		if len(step.Calls) == 0 {
 			return domain.Cite(step.Text, &sources)

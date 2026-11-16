@@ -75,26 +75,45 @@ func (m MCP) Run(ctx context.Context, tool domain.Tool, principal domain.Princip
 	case domain.ToolCatalogue:
 		return ToolResult{OK: true, Data: privacy.ExemptPayload[any](objectCatalogue(), privacy.ExemptConstant)}, nil
 	case domain.ToolRead:
-		return m.runRead(ctx, tool, principal, input)
+		actor := domain.KeyActor(principal) + " (clave " + strconv.Itoa(principal.KeyID) + ")"
+		return m.runRead(ctx, tool, privacy.Request{
+			TenantID: principal.TenantID, Channel: privacy.ChannelMCP, Purpose: tool.Name, Actor: &actor,
+		}, input)
 	}
 	return m.runWrite(ctx, tool, principal, input)
 }
 
-func (m MCP) runRead(ctx context.Context, tool domain.Tool, principal domain.Principal, input *records.Object) (ToolResult, error) {
+// ToolNotForAnalyst is the refusal of a write tool asked for by the Inicio analyst, which only
+// proposes writes (odd/tasks/agentic-analyst.md S4).
+const ToolNotForAnalyst = "Herramienta no disponible para el analista"
+
+// RunAsAnalyst runs a read tool for the analyst of the Inicio box, in the tenant of the person's
+// selected project: the same reads, guard and sealing as Run, released on the analyst channel. The
+// person's clearance travels in ctx, as the session set it. Write tools are refused.
+func (m MCP) RunAsAnalyst(ctx context.Context, tool domain.Tool, tenantID string, input *records.Object) (ToolResult, error) {
+	switch tool.Kind {
+	case domain.ToolCatalogue:
+		return ToolResult{OK: true, Data: privacy.ExemptPayload[any](objectCatalogue(), privacy.ExemptConstant)}, nil
+	case domain.ToolRead:
+		return m.runRead(ctx, tool, privacy.Request{
+			TenantID: tenantID, Channel: privacy.ChannelAnalyst, Purpose: tool.Name,
+		}, input)
+	}
+	return ToolResult{Error: ToolNotForAnalyst}, nil
+}
+
+func (m MCP) runRead(ctx context.Context, tool domain.Tool, request privacy.Request, input *records.Object) (ToolResult, error) {
 	if m.Guard == nil {
 		return ToolResult{Error: privacy.ExternalAIDisabled}, nil
 	}
-	actor := domain.KeyActor(principal) + " (clave " + strconv.Itoa(principal.KeyID) + ")"
-	session, err := m.Guard.Open(ctx, privacy.Request{
-		TenantID: principal.TenantID, Channel: privacy.ChannelMCP, Purpose: tool.Name, Actor: &actor,
-	})
+	session, err := m.Guard.Open(ctx, request)
 	if errors.Is(err, privacy.ErrDisabled) {
 		return ToolResult{Error: privacy.ExternalAIDisabled}, nil
 	}
 	if err != nil {
 		return ToolResult{}, err
 	}
-	call := readCall{MCP: m, tenant: principal.TenantID, session: session, input: input}
+	call := readCall{MCP: m, tenant: request.TenantID, session: session, input: input}
 	var data any
 	var refusal string
 	switch tool.Name {
