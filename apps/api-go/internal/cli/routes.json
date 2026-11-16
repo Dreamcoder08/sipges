@@ -100,7 +100,7 @@
     "path": "/system/auth/accounts",
     "access": "session",
     "command": "users create",
-    "summary": "Create an account; body on stdin"
+    "summary": "Create an account; JSON body with --body FILE, or --body - for stdin"
   },
   {
     "method": "POST",

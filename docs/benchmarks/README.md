@@ -225,3 +225,29 @@ at most one sample).
 - A run measures whatever is deployed, not what is merged: check the last Deploy Workers run
   (`gh run list --workflow "Deploy Workers" --branch main`) before labelling it.
 - The client runs from one machine and network; its own latency to Cloudflare is included.
+
+## Instalación local (API Go, PostgreSQL y Caddy en la misma máquina)
+
+The same tool against a clean local install (`deploy/local`, image `sipges-local:current` built
+from `main` on 2026-11-16), over HTTPS through Caddy, with a read-only `consulta` account on the
+synthetic project that `sipgesctl verify --synthetic-target` fills (196/196 checks passed first).
+20 s per step, 0 errors in every step.
+
+| Concurrent screens | Requests in 20 s | Inicio p50 / p95 (ms) | Registros p50 / p95 (ms) | IRSA p50 / p95 (ms) |
+| ---: | ---: | ---: | ---: | ---: |
+| 1 | 21,483 | 8 / 15 | 5 / 10 | 7 / 14 |
+| 4 | 34,188 | 20 / 33 | 13 / 22 | 20 / 32 |
+| 8 | 37,461 | 39 / 59 | 23 / 37 | 40 / 60 |
+
+The slowest request at 8 screens is `/system/irsa` (p95 59 ms). Without the Lima ↔ us-east-1 round
+trip, the same 8 screens serve ~55× the production requests and Inicio p50 is ~26× lower (39 vs
+1017 ms): the production cost is the network, not the code. Throughput flattens between 4 and 8
+screens (34k → 37k requests) while latency doubles, so 4 concurrent screens already saturate this
+machine. The synthetic project is small (a `verify` run): it measures the request path, not query
+cost on a large tenant.
+
+To repeat it: start a clean install as `deploy/local/test/cli-drill.sh` does, run `verify`, create a
+`consulta` account with `sipgesctl users create --body -` and `users grant --body -`, enrol its MFA,
+then wait for the next 30 s window (the replay guard refuses the step `sipgesctl login` just used,
+which can be the next one) and run `node bench/prod-screens-stress.ts --env-file <file>` from
+`apps/api` with `NODE_EXTRA_CA_CERTS` pointing at Caddy's local root certificate.

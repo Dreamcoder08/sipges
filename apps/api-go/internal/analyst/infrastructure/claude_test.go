@@ -292,13 +292,16 @@ func TestNarrateStopsWithItsContext(t *testing.T) {
 	t.Parallel()
 	release := make(chan struct{})
 	var calls atomic.Int32
+	// Cancelled once the request has arrived, not after a fixed delay: under load a timer could
+	// expire before the first request reached the double, and no call would be made at all.
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
 	claude := double(t, func(_ http.ResponseWriter, _ *http.Request) {
 		calls.Add(1)
+		cancel()
 		<-release
 	})
 	t.Cleanup(func() { close(release) })
-	ctx, cancel := context.WithTimeout(t.Context(), 20*time.Millisecond)
-	defer cancel()
 	if _, err := claude.Narrate(ctx, cleared("b")); err == nil {
 		t.Fatal("expected the error")
 	}
