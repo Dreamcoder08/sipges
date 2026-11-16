@@ -126,18 +126,45 @@ async function outputPath(root, out, version) {
   return destination;
 }
 
+/** The root package.json version, which /health and the model status report; null when unreadable. */
+async function rootVersion(root) {
+  try {
+    const { version } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+    return typeof version === 'string' && version !== '' ? version : null;
+  } catch { return null; }
+}
+
+/**
+ * One version channel (functional-10 T15): a release (no pre-release tag) must be the root
+ * package.json version, build metadata aside; a pre-release (`1.2.3-rc.1`, the drills'
+ * `0.0.7-drill.…`) marks a rehearsal and is accepted as given.
+ */
+async function assertReleaseVersion(root, version) {
+  const core = version.split('+')[0];
+  if (core.includes('-')) return;
+  const expected = await rootVersion(root);
+  if (expected === null) throw new Error('Cannot read the version in package.json, which a release version must equal');
+  if (core !== expected.split('+')[0]) throw new Error(`Version ${version} is not package.json's ${expected} (the version /health reports): build ${expected}, or mark a rehearsal as a pre-release (${expected}-rc.1)`);
+}
+
 async function main(args) {
-  if (args.length === 1 && args[0] === '--help') { console.log('Usage: node deploy/desktop/package/builder.mjs --version <semver> --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>]'); return; }
+  if (args.length === 1 && args[0] === '--help') { console.log('Usage: node deploy/desktop/package/builder.mjs [--version <semver>] --out .data/desktop-packages/sipges-<version> [--platform <host>] [--arch <host>]\nThe version defaults to the root package.json version; a release version must equal it, a pre-release (1.2.3-rc.1) marks a rehearsal.'); return; }
   const options = {};
   for (let i = 0; i < args.length; i += 2) {
     const key = args[i];
     if (!['--version', '--out', '--platform', '--arch'].includes(key) || !args[i + 1] || args[i + 1].startsWith('--') || options[key]) throw new Error('Invalid options; use --help');
     options[key] = args[i + 1];
   }
+  if (!options['--version']) {
+    const version = await rootVersion(repo);
+    if (version === null) throw new Error('Cannot read the version in package.json; pass --version');
+    options['--version'] = version;
+  }
   if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*)?(?:\+[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*)?$/.test(options['--version'] ?? '')) throw new Error('Invalid semantic version');
   if (!options['--out']) throw new Error('Missing --out');
   if ((options['--platform'] ?? process.platform) !== process.platform || (options['--arch'] ?? process.arch) !== process.arch) throw new Error('Cross-builds are not supported');
   const destination = await outputPath(repo, options['--out'], options['--version']);
+  await assertReleaseVersion(repo, options['--version']);
   await mkdir(join(repo, '.data'), { mode: 0o700, recursive: true });
   await mkdir(join(repo, '.data', 'desktop-packages'), { mode: 0o700, recursive: true });
   await outputPath(repo, destination, options['--version']);
