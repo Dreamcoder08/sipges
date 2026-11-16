@@ -29,6 +29,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/httpx"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/leakcheck"
 	tenancyapp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/application"
 	tenancyhttp "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/http"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/infrastructure"
@@ -41,7 +42,7 @@ import (
 
 var scratch *dbtest.Scratch
 
-func TestMain(m *testing.M) { os.Exit(run(m)) }
+func TestMain(m *testing.M) { os.Exit(leakcheck.After(run(m))) }
 
 func run(m *testing.M) int {
 	adminURL := os.Getenv(dbtest.EnvAdminURL)

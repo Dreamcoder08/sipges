@@ -21,6 +21,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/app"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/infrastructure"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database/dbtest"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/leakcheck"
 )
 
 // Ported from the audit checks of apps/api/test (GET /system/audit and the live activity
@@ -30,7 +31,7 @@ import (
 
 var scratch *dbtest.Scratch
 
-func TestMain(m *testing.M) { os.Exit(run(m)) }
+func TestMain(m *testing.M) { os.Exit(leakcheck.After(run(m))) }
 
 func run(m *testing.M) int {
 	adminURL := os.Getenv(dbtest.EnvAdminURL)

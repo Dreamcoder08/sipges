@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
@@ -35,18 +36,15 @@ const mergeRecords = `INSERT INTO module_records (tenant_id, module, id, payload
            ON CONFLICT (tenant_id, module, id) DO UPDATE SET payload = module_records.payload || EXCLUDED.payload, updated_at = EXCLUDED.updated_at
            RETURNING (xmax = 0) AS inserted`
 
-// appendAudit is appendAudit of apps/api/src/platform/database/audit-trail.ts.
-const appendAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
-
 // importChunk is IMPORT_CHUNK: records per insert statement.
 const importChunk = 500
 
 var _ application.Writer = Records{}
 
 func audit(ctx context.Context, q database.Querier, module string, recordID *string, note application.AuditNote, at time.Time) error {
-	_, err := q.Exec(ctx, appendAudit, at, module, recordID, note.Action, domain.WellFormed(note.Detail))
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: at, Module: module, RecordID: recordID, Action: note.Action, Detail: domain.WellFormed(note.Detail),
+	})
 }
 
 // returned runs a write ... RETURNING and reports whether it returned a row.

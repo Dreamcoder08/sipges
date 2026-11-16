@@ -7,6 +7,7 @@ package application
 
 import (
 	"context"
+	"errors"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/documents/domain"
 	tenancy "github.com/Dreamcoder08/sipges/apps/api-go/internal/tenancy/domain"
@@ -32,8 +33,16 @@ type ReviewPage struct {
 // ReviewStore reads the inbox and the records' existence inside one tenant.
 type ReviewStore interface {
 	List(ctx context.Context, tenantID string, q ReviewQuery) (ReviewPage, error)
-	// ExistingRecords returns which of ids exist in the stored records module.
-	ExistingRecords(ctx context.Context, tenantID, module string, ids []string) (map[string]bool, error)
+}
+
+// ErrNoRecordLookup means the service was built without its records lookup.
+var ErrNoRecordLookup = errors.New("documents: no records lookup wired")
+
+// RecordLookup tells which records exist; records owns module_records (ADR 0002), and
+// internal/app wires its store in.
+type RecordLookup interface {
+	// Existing returns which of ids exist in the stored records module, as the clearance sees them.
+	Existing(ctx context.Context, tenantID, module string, ids []string) (map[string]bool, error)
 }
 
 // RecordLink names an approved item's record.
@@ -59,6 +68,8 @@ type ReviewList struct {
 // Service answers the document lab's read route.
 type Service struct {
 	Store ReviewStore
+	// Records finds which linked records exist; required by ListReview.
+	Records RecordLookup
 }
 
 // ListReview is listReview for the scope's tenant. status and theme are the query values as
@@ -68,6 +79,9 @@ func (s Service) ListReview(ctx context.Context, scope tenancy.Scope, status, th
 		if text != nil && domain.HasNul(*text) {
 			return ReviewList{Items: []ReviewListItem{}}, nil
 		}
+	}
+	if s.Records == nil {
+		return ReviewList{}, ErrNoRecordLookup
 	}
 	tenantID := scope.TenantID()
 	page, err := s.Store.List(ctx, tenantID, ReviewQuery{
@@ -106,7 +120,7 @@ func (s Service) ListReview(ctx context.Context, scope tenancy.Scope, status, th
 		if len(ids) == 0 {
 			continue
 		}
-		existing, err := s.Store.ExistingRecords(ctx, tenantID, module, ids)
+		existing, err := s.Records.Existing(ctx, tenantID, module, ids)
 		if err != nil {
 			return ReviewList{}, err
 		}

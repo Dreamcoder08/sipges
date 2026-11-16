@@ -14,6 +14,7 @@ import (
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/ontology/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
+	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/application"
 )
 
 // inRefs is `(module, id) IN refs` over two parallel text arrays at $first, $first + 1.
@@ -77,6 +78,8 @@ var (
 // Store is the read side of the SQL ontology store over one tenant transaction.
 type Store struct {
 	Q database.Querier
+	// Records changes a record's marking (records owns module_records); required by SetMarking.
+	Records records.InTxWriter
 }
 
 var _ application.Store = Store{}

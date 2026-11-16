@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	records "github.com/Dreamcoder08/sipges/apps/api-go/internal/records/domain"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/situations/domain"
@@ -74,11 +75,7 @@ func (Store) SaveSettings(ctx context.Context, q database.Querier, tenantID stri
 		tenantID, string(settings), updatedBy, at); err != nil {
 		return err
 	}
-	_, err := q.Exec(ctx,
-		`INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-		 VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`,
-		at, "SIPGES", nil, "CONFIG_UPDATE", detail)
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{At: at, Module: "SIPGES", Action: "CONFIG_UPDATE", Detail: detail})
 }
 
 // Records is read of sql-situation-record-reader.ts.

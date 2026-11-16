@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/identity/application"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
@@ -64,9 +65,9 @@ func auditSessions(ctx context.Context, tx pgx.Tx, tenantID string, audit applic
 	if err := database.EnterTenant(ctx, tx, tenantID); err != nil {
 		return fmt.Errorf("enter tenant: %w", err)
 	}
-	_, err := tx.Exec(ctx, `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-	  VALUES (current_setting('app.tenant_id', true), $1, 'Sesiones', $2, $3, $4)`,
-		audit.At, audit.RecordID, audit.Action, audit.Detail)
+	err := audittrail.Append(ctx, tx, audittrail.Entry{
+		At: audit.At, Module: "Sesiones", RecordID: audittrail.ID(audit.RecordID), Action: audit.Action, Detail: audit.Detail,
+	})
 	if err != nil {
 		return fmt.Errorf("append audit: %w", err)
 	}

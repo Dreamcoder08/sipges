@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/prevention/domain"
@@ -25,9 +26,6 @@ const (
 	insertLog = `INSERT INTO preventive_action_log (tenant_id, id, action_id, created_at, status, progress,
        note, evidence_url, decided_by, evidence_attachment_id, evidence_file_name, evidence_sha256)
      VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`
-
-	insertAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
-     VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
 
 	// lockAction makes the reactivation check and the update one atomic step.
 	lockAction = `SELECT ` + actionColumns + ` FROM preventive_actions WHERE id = $1 FOR UPDATE`
@@ -77,8 +75,10 @@ func wellFormed(s *string) *string {
 }
 
 func audit(ctx context.Context, q database.Querier, at time.Time, recordID, action, detail string) error {
-	_, err := q.Exec(ctx, insertAudit, at, auditModule, records.WellFormed(recordID), action, records.WellFormed(detail))
-	return err
+	return audittrail.Append(ctx, q, audittrail.Entry{
+		At: at, Module: auditModule, RecordID: audittrail.ID(records.WellFormed(recordID)), Action: action,
+		Detail: records.WellFormed(detail),
+	})
 }
 
 // one reads the single plan a statement returns, with its history; nil when there is none.

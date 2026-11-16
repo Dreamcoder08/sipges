@@ -15,6 +15,7 @@ import (
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/indicators/application"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/indicators/domain"
+	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/audittrail"
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/platform/database"
 )
 
@@ -171,10 +172,6 @@ const (
 
 	insertSnapshot = `INSERT INTO irsa_snapshots (tenant_id, ts, irsa, level, scores, config_version, note)
  VALUES ($1, $2, $3, $4, $5::text::json, $6, $7) RETURNING id`
-
-	// appendAudit of platform/database/audit-trail.ts: the tenant is the transaction's own.
-	insertAudit = `INSERT INTO audit (tenant_id, ts, module, record_id, action, detail)
- VALUES (current_setting('app.tenant_id', true), $1, $2, $3, $4, $5)`
 )
 
 // SaveConfig is createSqlIrsaConfigStore.save: the configuration's exact text into the json
@@ -184,7 +181,7 @@ func (s Store) SaveConfig(ctx context.Context, tenantID string, config json.RawM
 		if _, err := q.Exec(ctx, saveConfig, tenantID, string(config), at); err != nil {
 			return struct{}{}, err
 		}
-		_, err := q.Exec(ctx, insertAudit, at, "IRSA", nil, "CONFIG_UPDATE", auditDetail)
+		err := audittrail.Append(ctx, q, audittrail.Entry{At: at, Module: "IRSA", Action: "CONFIG_UPDATE", Detail: auditDetail})
 		return struct{}{}, err
 	})
 	return err
@@ -199,7 +196,10 @@ func (s Store) InsertSnapshot(ctx context.Context, tenantID string, n applicatio
 		if err != nil {
 			return 0, err
 		}
-		_, err = q.Exec(ctx, insertAudit, n.TS, "IRSA", strconv.FormatInt(int64(id), 10), "SNAPSHOT", n.AuditDetail)
+		err = audittrail.Append(ctx, q, audittrail.Entry{
+			At: n.TS, Module: "IRSA", RecordID: audittrail.ID(strconv.FormatInt(int64(id), 10)), Action: "SNAPSHOT",
+			Detail: n.AuditDetail,
+		})
 		return int64(id), err
 	})
 }
