@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { type FormEvent, useId, useState } from 'react';
+import { type FormEvent, useEffect, useId, useState } from 'react';
 import { z } from 'zod';
 import { isApiError } from '../../shared/api/client.ts';
 import { Alert } from '../../shared/ui/Alert.tsx';
@@ -22,6 +22,21 @@ const GOOGLE_ERRORS: Record<GoogleSignInError, string> = {
     'Esa cuenta de Google no está autorizada en SIPGES. Pida al administrador que la vincule.',
 };
 
+/**
+ * Both APIs answer exactly this (401) when the account needs its second factor and the code is
+ * missing or wrong; every other sign-in failure has another text.
+ */
+const OTP_ANSWER = 'Código de autenticación inválido';
+
+const isOtpAnswer = (error: unknown) => isApiError(error, 401) && error.detail === OTP_ANSWER;
+
+/** What the form shows for a failed attempt: the server's words, or a connection problem. */
+const errorMessage = (error: unknown): string | null => {
+  if (!error) return null;
+  if (isApiError(error)) return error.detail;
+  return 'No se pudo conectar con SIPGES. Revise su conexión.';
+};
+
 /** Sign-in form (app.py POST /login). The OTP is asked only after the server requires it. */
 export const LoginPage = ({
   onSignedIn,
@@ -35,15 +50,21 @@ export const LoginPage = ({
   const [otp, setOtp] = useState('');
   const [needsOtp, setNeedsOtp] = useState(false);
   const titleId = useId();
+  const otpId = useId();
   const providers = useQuery(providersQuery);
   const mutation = useMutation({
     mutationFn: login,
     meta: { public: true },
     onSuccess: () => onSignedIn(),
     onError: (error) => {
-      if (isApiError(error, 401) && error.detail.includes('autenticación')) setNeedsOtp(true);
+      if (isOtpAnswer(error)) setNeedsOtp(true);
     },
   });
+
+  // When the code field appears, focus it: screen readers then announce what to type next.
+  useEffect(() => {
+    if (needsOtp) document.getElementById(otpId)?.focus();
+  }, [needsOtp, otpId]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,11 +72,9 @@ export const LoginPage = ({
   };
 
   const error = mutation.error;
-  const message = !error
-    ? null
-    : isApiError(error)
-      ? error.detail
-      : 'No se pudo conectar con SIPGES. Revise su conexión.';
+  // An attempt without a code that gets the code answer is the request for one, not an error.
+  const asksForCode = isOtpAnswer(error) && !mutation.variables?.otp;
+  const message = asksForCode ? null : errorMessage(error);
 
   return (
     <main className={styles.page}>
@@ -66,7 +85,14 @@ export const LoginPage = ({
         <h1 id={titleId}>Ingresar a SIPGES</h1>
         <p className={styles.lead}>Sistema Inteligente de Predicción y GEStión Social.</p>
         {message ? <Alert tone="error">{message}</Alert> : null}
-        {googleError && !message ? <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert> : null}
+        {asksForCode ? (
+          <Alert tone="info">
+            Ingrese el código de seis dígitos de su aplicación de autenticación.
+          </Alert>
+        ) : null}
+        {googleError && !message && !asksForCode ? (
+          <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert>
+        ) : null}
         {providers.data?.google ? (
           <>
             {/* A full navigation: the API redirects to Google and back (ADR 0010). */}
@@ -95,6 +121,7 @@ export const LoginPage = ({
         />
         {needsOtp ? (
           <Field
+            id={otpId}
             label="Código de autenticación"
             hint="Seis dígitos de su aplicación TOTP."
             name="otp"

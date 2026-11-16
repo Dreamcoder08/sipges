@@ -130,9 +130,14 @@ test.describe('MFA enrollment and TOTP sign-in (S7)', () => {
     await signOut(page);
     await expect(page.getByRole('heading', { name: 'Ingresar a SIPGES' })).toBeVisible();
 
-    // Password alone is no longer enough: the form asks for the second factor.
+    // Password alone is no longer enough: the form asks for the second factor, without calling a
+    // code that was never typed invalid.
     await signIn(page, analyst);
-    await expect(page.getByRole('alert')).toHaveText('Código de autenticación inválido');
+    await expect(page.getByLabel('Código de autenticación')).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText(
+      'Ingrese el código de seis dígitos de su aplicación de autenticación.',
+    );
+    await expect(page.getByRole('alert')).toHaveCount(0);
     await page.getByLabel('Código de autenticación').fill('123456x');
     await expect(page.getByLabel('Código de autenticación')).toHaveValue('123456');
 
