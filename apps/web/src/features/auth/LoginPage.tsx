@@ -51,11 +51,16 @@ export const LoginPage = ({
   };
 
   const error = mutation.error;
-  const message = !error
-    ? null
-    : isApiError(error)
-      ? error.detail
-      : 'No se pudo conectar con SIPGES. Revise su conexión.';
+  // The server answers «Código de autenticación inválido» whether the code is missing or wrong.
+  // When the attempt carried no code, it is the request for one, not an error.
+  const asksForCode =
+    isApiError(error, 401) && error.detail.includes('autenticación') && !mutation.variables?.otp;
+  const message =
+    !error || asksForCode
+      ? null
+      : isApiError(error)
+        ? error.detail
+        : 'No se pudo conectar con SIPGES. Revise su conexión.';
 
   return (
     <main className={styles.page}>
@@ -66,7 +71,14 @@ export const LoginPage = ({
         <h1 id={titleId}>Ingresar a SIPGES</h1>
         <p className={styles.lead}>Sistema Inteligente de Predicción y GEStión Social.</p>
         {message ? <Alert tone="error">{message}</Alert> : null}
-        {googleError && !message ? <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert> : null}
+        {asksForCode ? (
+          <Alert tone="info">
+            Ingrese el código de seis dígitos de su aplicación de autenticación.
+          </Alert>
+        ) : null}
+        {googleError && !message && !asksForCode ? (
+          <Alert tone="error">{GOOGLE_ERRORS[googleError]}</Alert>
+        ) : null}
         {providers.data?.google ? (
           <>
             {/* A full navigation: the API redirects to Google and back (ADR 0010). */}

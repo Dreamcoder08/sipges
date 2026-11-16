@@ -48,6 +48,27 @@ describe('sign-in', () => {
     expect(window.location.pathname).toBe('/inicio');
   });
 
+  // The server answers «Código de autenticación inválido» both when the code is missing and when
+  // it is wrong; asking for the code must not read as an error before one was typed.
+  it('asks for the second factor without calling it invalid, and flags a wrong code', async () => {
+    api.otpRequired = true;
+    at('/');
+    render(<App />);
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText('Usuario'), 'persona');
+    await user.type(screen.getByLabelText('Contraseña'), 'synthetic-pass-123');
+    await user.click(screen.getByRole('button', { name: 'Ingresar' }));
+    const otp = await screen.findByLabelText('Código de autenticación');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Ingrese el código de seis dígitos de su aplicación de autenticación.',
+    );
+
+    await user.type(otp, '000000');
+    await user.click(screen.getByRole('button', { name: 'Ingresar' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Código de autenticación inválido');
+  });
+
   it('offers Google sign-in only when the server has it configured', async () => {
     at('/login');
     const { unmount } = render(<App />);
