@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Dreamcoder08/sipges/apps/api-go/internal/analyst/domain"
@@ -120,9 +122,13 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 			if ctx.Err() != nil {
 				return domain.CitedAnswer{}, ctx.Err()
 			}
-			return domain.CitedAnswer{}, ErrModel
+			// The adapters' errors are fixed texts, safe to log; the operator needs them.
+			return domain.CitedAnswer{}, fmt.Errorf("%w: %w", ErrModel, err)
 		}
 		if len(step.Calls) == 0 {
+			if strings.TrimSpace(step.Text) == "" {
+				return domain.CitedAnswer{}, fmt.Errorf("%w: empty answer", ErrModel)
+			}
 			return domain.Cite(step.Text, &sources)
 		}
 		turns = append(turns, Turn{Calls: step.Calls})
@@ -133,6 +139,10 @@ func (a Ask) Answer(ctx context.Context, question string) (domain.CitedAnswer, e
 			calls++
 			out, err := a.Tools.Run(ctx, c.Name, c.Input)
 			if err != nil {
+				// A driver may answer a cancelled read with its own error: the budget explains it.
+				if ctx.Err() != nil {
+					return domain.CitedAnswer{}, ctx.Err()
+				}
 				return domain.CitedAnswer{}, err
 			}
 			numbered := make([]domain.Cited, 0, len(out.Records))

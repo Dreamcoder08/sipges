@@ -32,6 +32,10 @@ const (
 	askTooSlow     = "El analista tardó demasiado; vuelve a preguntar"
 )
 
+// StatusClientClosed answers a question whose client went away (nginx's 499): no server fault,
+// so it is neither a 5xx nor logged as a failure.
+const StatusClientClosed = 499
+
 type askSourceJSON struct {
 	N      int    `json:"n"`
 	Module string `json:"module"`
@@ -66,9 +70,13 @@ func askRoute(opts Options) http.HandlerFunc {
 		}
 		status, detail := askFailure(err)
 		if status >= http.StatusInternalServerError && opts.Logger != nil {
-			// Only the event: errors may carry a provider's or the driver's details.
-			opts.Logger.LogAttrs(r.Context(), slog.LevelWarn, "analyst_ask_failed",
-				slog.Int("status", status), slog.String("request_id", httpx.RequestIDFrom(r.Context())))
+			attrs := []slog.Attr{slog.Int("status", status), slog.String("request_id", httpx.RequestIDFrom(r.Context()))}
+			// Model errors are the adapters' fixed texts; any other error may carry the driver's
+			// details, so only the event is logged.
+			if errors.Is(err, application.ErrModel) {
+				attrs = append(attrs, slog.String("cause", err.Error()))
+			}
+			opts.Logger.LogAttrs(r.Context(), slog.LevelWarn, "analyst_ask_failed", attrs...)
 		}
 		httpx.WriteError(w, status, detail)
 	}
@@ -99,6 +107,8 @@ func askFailure(err error) (int, string) {
 		return http.StatusBadGateway, askBadSources
 	case errors.Is(err, application.ErrTooManyToolCalls):
 		return http.StatusBadGateway, askNoAnswer
+	case errors.Is(err, context.Canceled):
+		return StatusClientClosed, "Pregunta cancelada"
 	case errors.Is(err, context.DeadlineExceeded):
 		return http.StatusGatewayTimeout, askTooSlow
 	case errors.Is(err, application.ErrModel):

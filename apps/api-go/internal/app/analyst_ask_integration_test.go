@@ -142,11 +142,12 @@ func TestAnalystScrubsAndLogsTheQuestionBeforeTheModel(t *testing.T) {
 	defer func() { _ = conn.Close(context.Background()) }()
 	var released int
 	if err := conn.QueryRow(t.Context(), `SELECT count(*) FROM audit WHERE tenant_id = 'ACME/NORTE'
-		AND action = 'EGRESS' AND detail LIKE '%analyst%' AND detail LIKE '%ask%'`).Scan(&released); err != nil {
+		AND action = 'EGRESS' AND detail LIKE '%analyst%' AND detail LIKE '%ask%'
+		AND detail LIKE '%reader%'`).Scan(&released); err != nil {
 		t.Fatal(err)
 	}
 	if released == 0 {
-		t.Fatal("the question's release was not logged")
+		t.Fatal("the question's release was not logged in the name of the person who asked")
 	}
 }
 

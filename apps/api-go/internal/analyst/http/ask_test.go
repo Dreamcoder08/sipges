@@ -120,3 +120,11 @@ func TestAskReportsAFailedFactoryWithoutDetails(t *testing.T) {
 		t.Fatalf("status = %d, body = %s", res.Code, res.Body)
 	}
 }
+
+func TestAskTreatsADisconnectedClientAsNoServerFault(t *testing.T) {
+	t.Parallel()
+	gone := analysthttp.Options{Ask: func(context.Context, string) (*application.Ask, error) { return nil, context.Canceled }}
+	if res := ask(t, gone, `{"question":"¿Algo?"}`); res.Code != analysthttp.StatusClientClosed {
+		t.Fatalf("status = %d, want %d", res.Code, analysthttp.StatusClientClosed)
+	}
+}

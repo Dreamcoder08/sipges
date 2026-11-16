@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -164,5 +165,47 @@ func TestAskStopsWhenTheGuardRefusesTheQuestion(t *testing.T) {
 	_, err := application.Ask{Model: model, Tools: &fakeTools{}, Seal: refuse}.Answer(t.Context(), "¿Algo?")
 	if !errors.Is(err, privacy.ErrDisabled) || len(model.seen) != 0 {
 		t.Fatalf("err = %v, model calls = %d", err, len(model.seen))
+	}
+}
+
+type failingTools struct{ err error }
+
+func (f failingTools) Specs() []application.ToolSpec { return nil }
+func (f failingTools) Run(ctx context.Context, _ string, _ json.RawMessage) (application.ToolOutput, error) {
+	<-ctx.Done()
+	return application.ToolOutput{}, f.err
+}
+
+func TestAskReportsTheTimeoutWhenAToolOutlivesIt(t *testing.T) {
+	t.Parallel()
+	model := &scriptedModel{steps: []application.Step{call("search_records")}}
+	// A driver may answer a cancelled read with its own error, not the context's.
+	tools := failingTools{err: errors.New("driver: conn closed")}
+	_, err := application.Ask{Model: model, Tools: tools, Seal: sealed, Timeout: 20 * time.Millisecond}.Answer(t.Context(), "¿Algo?")
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("err = %v, want DeadlineExceeded", err)
+	}
+}
+
+func TestAskRefusesAnEmptyAnswer(t *testing.T) {
+	t.Parallel()
+	model := &scriptedModel{steps: []application.Step{{Text: "  "}}}
+	_, err := application.Ask{Model: model, Tools: &fakeTools{}, Seal: sealed}.Answer(t.Context(), "¿Algo?")
+	if !errors.Is(err, application.ErrModel) {
+		t.Fatalf("err = %v, want ErrModel", err)
+	}
+}
+
+type brokenModel struct{}
+
+func (brokenModel) Next(context.Context, []application.ToolSpec, []application.Turn) (application.Step, error) {
+	return application.Step{}, errors.New("narrator: the answer was truncated")
+}
+
+func TestAskKeepsTheAdaptersFixedErrorText(t *testing.T) {
+	t.Parallel()
+	_, err := application.Ask{Model: brokenModel{}, Tools: &fakeTools{}, Seal: sealed}.Answer(t.Context(), "¿Algo?")
+	if !errors.Is(err, application.ErrModel) || !strings.Contains(err.Error(), "the answer was truncated") {
+		t.Fatalf("err = %v", err)
 	}
 }
