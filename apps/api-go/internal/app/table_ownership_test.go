@@ -93,6 +93,79 @@ func code(src string) string {
 	return strings.Join(kept, "\n")
 }
 
+// keptRecordReaders are the files outside records allowed to read module_records directly, with
+// their verdict (odd/tasks/go-context-ports.md T5). Each is a read model of its own context: a
+// projection no records query returns, run under row-level security in the caller's tenant
+// transaction. A new reader needs a verdict here, or a records port.
+var keptRecordReaders = map[string]string{
+	"internal/analyst/infrastructure/reader.go":          "graph nodes and recent records as text for the analyst",
+	"internal/analytics/infrastructure/dated_records.go": "dated series for the analytics engines",
+	"internal/analytics/infrastructure/records.go":       "engine inputs for the analytics engines",
+	"internal/automation/infrastructure/writes.go":       "the record a rule evaluates",
+	"internal/evidence/infrastructure/attach.go":         "row lock and payload read before the records write",
+	"internal/geography/infrastructure/records.go":       "records with a location for the map",
+	"internal/indicators/infrastructure/store.go":        "indicator engine inputs",
+	"internal/intelligence/infrastructure/narratives.go": "narratives for alert evaluation",
+	"internal/management/infrastructure/readmodel.go":    "management read model",
+	"internal/ontology/infrastructure/embeddings.go":     "stale embeddings to refresh",
+	"internal/ontology/infrastructure/store.go":          "graph nodes, full-text search and dated records",
+	"internal/ontology/infrastructure/writes.go":         "presence checks and row lock before the records write",
+	"internal/privacy/infrastructure/name_directory.go":  "names to pseudonymize, across clearances",
+	"internal/situations/infrastructure/store.go":        "situation engine inputs",
+}
+
+// readsRecords finds SQL that reads module_records (FROM or JOIN, optional schema and quotes).
+var readsRecords = regexp.MustCompile(`(?i)\b(?:FROM|JOIN)\s+(?:"?[a-z_][a-z0-9_]*"?\.)?"?module_records"?\b`)
+
+func TestOnlyRecordsAndKeptReadModelsReadRecords(t *testing.T) {
+	root := filepath.Join("..", "..")
+	var unexpected []string
+	seen := map[string]bool{}
+	for _, dir := range scannedDirs {
+		err := filepath.WalkDir(filepath.Join(root, dir), func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() || !strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			rel, err := filepath.Rel(root, path)
+			if err != nil {
+				return err
+			}
+			rel = filepath.ToSlash(rel)
+			if strings.HasPrefix(rel, tableOwners["module_records"]) {
+				return nil
+			}
+			src, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			if readsRecords.MatchString(code(string(src))) {
+				seen[rel] = true
+				if _, ok := keptRecordReaders[rel]; !ok {
+					unexpected = append(unexpected, rel)
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	var stale []string
+	for rel := range keptRecordReaders {
+		if !seen[rel] {
+			stale = append(stale, rel)
+		}
+	}
+	sort.Strings(unexpected)
+	sort.Strings(stale)
+	if len(unexpected) > 0 || len(stale) > 0 {
+		t.Fatalf("module_records readers without a verdict: %v; verdicts for files that no longer read it: %v", unexpected, stale)
+	}
+}
+
 func TestTheOwnershipScanSeesWrites(t *testing.T) {
 	for _, sql := range []string{
 		"INSERT INTO automation_cursors (tenant_id) VALUES ($1)",
