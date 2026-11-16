@@ -39,6 +39,9 @@ type Options struct {
 	// Ask builds the Inicio analyst for a project; nil when no provider is configured. It answers
 	// privacy.ErrDisabled while the project keeps external AI off.
 	Ask func(ctx context.Context, tenantID string) (*application.Ask, error)
+	// MayWrite answers whether the request's person passes the role gate of method and path; it
+	// decides who may approve or discard the analyst's stored proposals.
+	MayWrite func(ctx context.Context, method, path string) bool
 }
 
 const notFound = "Registro no encontrado"
@@ -195,6 +198,7 @@ func Routes(mux *http.ServeMux, opts Options) {
 	}
 
 	mux.HandleFunc("POST /system/analyst/ask", askRoute(opts))
+	storedProposalRoutes(mux, opts, fail)
 	mux.HandleFunc("POST /system/briefing/proposals", func(w http.ResponseWriter, r *http.Request) {
 		decide(w, r, opts, now, fail)
 	})
