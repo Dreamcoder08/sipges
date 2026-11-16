@@ -27,8 +27,12 @@ func init() {
 		if err != nil {
 			return nil, err
 		}
+		ask, err := askFactory(d)
+		if err != nil {
+			return nil, err
+		}
 		options := analysthttp.Options{
-			DB: d.Pool, Now: d.Now, Logger: d.Logger, Assisted: assisted,
+			DB: d.Pool, Now: d.Now, Logger: d.Logger, Assisted: assisted, Ask: ask,
 			Deciding: analyst.Deciding{Actions: proposalActions{d}, Store: analystsql.Decisions{DB: d.Pool}, Now: d.Now},
 		}
 		return func(mux *http.ServeMux) { analysthttp.Routes(mux, options) }, nil

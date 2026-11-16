@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
   type FormEvent,
   type KeyboardEvent,
@@ -23,6 +23,8 @@ import { QueryState } from '../../../shared/ui/QueryState.tsx';
 import { irsaConfigQuery, irsaQuery, moduleRecordsQuery } from '../api.ts';
 import { IrsaStatus, hasNoEvidence } from '../IrsaStatus.tsx';
 import { criticalAlerts, eventsThisWeek } from '../model.ts';
+import { AnalystAnswer } from './AnalystAnswer.tsx';
+import { askAnalyst } from './ask.ts';
 import { attentionItems } from './attention.ts';
 import styles from './InicioPage.module.css';
 
@@ -66,9 +68,9 @@ const Card = ({
 /**
  * Inicio (closure-roadmap T31, design/vanguard/01 as chosen in L11): what needs attention first,
  * then the composer, then the week. The composer names what it does: while external AI is off it
- * searches the project's records; when on it is labelled «Preguntar, con citas», but no cited
- * answer exists yet, so it says so and still opens the existing global search (`onAsk`). A status
- * line states what the reader should know before trusting the page: offline, AI, IRSA caveat.
+ * searches the project's records (`onAsk`); when on it asks the analyst, who answers with
+ * citations to the records it read (odd/tasks/agentic-analyst.md T1d). A status line states what
+ * the reader should know before trusting the page: offline, AI, IRSA caveat.
  */
 export const InicioPage = ({
   scope,
@@ -122,10 +124,13 @@ export const InicioPage = ({
 
   const firstName = fullName.trim().split(/\s+/)[0] ?? '';
   const project = projectLabel || projectId;
+  const analyst = useMutation({ mutationFn: (text: string) => askAnalyst(scope, text) });
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     const text = question.trim();
-    if (text) onAsk(text);
+    if (!text) return;
+    if (aiOn) analyst.mutate(text);
+    else onAsk(text);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
@@ -244,12 +249,13 @@ export const InicioPage = ({
               </label>
               <span id={`${fieldId}-hint`} className={styles.hint}>
                 {aiOn
-                  ? 'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.'
+                  ? 'Enter pregunta · Mayús+Enter, nueva línea'
                   : 'Enter busca · Mayús+Enter, nueva línea'}
               </span>
               <button
                 type="submit"
                 className={styles.send}
+                disabled={analyst.isPending}
                 aria-label={aiOn ? 'Enviar pregunta' : 'Buscar en registros'}
               >
                 <Icon name="arrowUp" />
@@ -257,6 +263,15 @@ export const InicioPage = ({
             </div>
           </form>
         </div>
+        {aiOn && !analyst.isIdle ? (
+          <AnalystAnswer
+            pending={analyst.isPending}
+            question={analyst.variables ?? ''}
+            data={analyst.data}
+            error={analyst.error}
+            onSearch={onAsk}
+          />
+        ) : null}
         <div className={styles.suggest}>
           <p id={suggestId} className={styles.suggestLabel}>
             Prueba con

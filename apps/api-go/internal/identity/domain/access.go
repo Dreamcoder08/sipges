@@ -49,6 +49,8 @@ var readOnlyPosts = map[string]bool{
 	"/system/intelligence/semantic-analyze": true,
 	"/system/geography/query":               true,
 	"/system/graph/neighbourhood":           true,
+	// The Inicio analyst answers a question and stores nothing (odd/tasks/agentic-analyst.md S2).
+	"/system/analyst/ask": true,
 }
 
 // selfServicePosts are personal account actions every role may take (ADR 0009, ADR 0014).

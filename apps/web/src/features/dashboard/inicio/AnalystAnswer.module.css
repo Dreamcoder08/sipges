@@ -1,0 +1,39 @@
+.panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.progress {
+  inline-size: 100%;
+  block-size: 0.25rem;
+  accent-color: var(--color-primary);
+}
+
+.answer {
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.cite {
+  font-size: var(--text-xs);
+  vertical-align: super;
+  text-decoration: none;
+  padding-inline: 0.1em;
+}
+
+.sources {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.sources li:target {
+  background: var(--color-fill);
+}
+
+.module {
+  color: var(--color-muted);
+}

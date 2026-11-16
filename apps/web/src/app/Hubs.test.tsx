@@ -530,22 +530,23 @@ describe('Inicio hub', () => {
     expect(localStorage.length).toBe(0);
   });
 
-  it('labels the composer «Preguntar, con citas» when external AI is on and says answers are not there yet', async () => {
+  it('labels the composer «Preguntar, con citas» when external AI is on and asks the analyst', async () => {
     withExternalAi(true);
+    server.use(
+      http.post('/system/analyst/ask', () =>
+        HttpResponse.json({
+          answer: 'Hay una demanda por agua [1].',
+          sources: [{ n: 1, module: 'demandas', id: 'D-1', title: 'Agua para el valle' }],
+        }),
+      ),
+    );
     const user = await open();
     const composer = await screen.findByRole('textbox', { name: 'Preguntar, con citas' });
     expect(await screen.findByText('IA externa activada')).toBeVisible();
-    expect(
-      screen.getByText(
-        'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.',
-      ),
-    ).toBeVisible();
-    expect(composer).toHaveAccessibleDescription(
-      'Las respuestas con citas aún no están disponibles: Enter abre la búsqueda.',
-    );
+    expect(composer).toHaveAccessibleDescription('Enter pregunta · Mayús+Enter, nueva línea');
     await user.type(composer, 'agua{Enter}');
-    const palette = await screen.findByRole('dialog', { name: 'Búsqueda global' });
-    expect(within(palette).getByRole('combobox')).toHaveValue('agua');
+    expect(await screen.findByRole('link', { name: 'Fuente 1: Agua para el valle' })).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'Búsqueda global' })).toBeNull();
   });
 
   it('says so while the device is offline and clears it when the connection returns', async () => {
