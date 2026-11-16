@@ -27,6 +27,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); v
 
 ### Corregido
 
+- En la instalación local (API Go), las casillas «Mostrar» de las capas GEOCATMIN en Ubicación miden 24 px y ya no 13 px (WCAG 2.2, objetivo mínimo). El defecto solo se veía con Go, que sí carga el catálogo real; lo encontró la suite e2e completa corrida contra Go (211 pruebas en verde además de esta).
 - Al iniciar sesión con MFA, el formulario pide el código con una indicación y le da el foco, en vez de mostrar «Código de autenticación inválido» antes de escribirlo; el error queda para un código enviado y equivocado.
 - Los histogramas por mes (Territorio y Cronología) nombran cada mes bajo su barra cuando hay seis meses o menos; con un solo mes ya no repiten la etiqueta.
 - Recorrido completo (T16 de `odd/tasks/functional-10.md`): CLI, MCP, API, paridad y la suite Go pasan sin defectos sobre una instalación limpia; el recorrido de cada pantalla arregla once detalles: fechas e instantes crudos ahora en hora de Lima, la ficha de registro nombra sus campos y vuelve a su lista, «1 actores» concuerda y Administración tiene título.

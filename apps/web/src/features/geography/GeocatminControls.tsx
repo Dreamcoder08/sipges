@@ -5,6 +5,7 @@ import { requestJson } from '../../shared/api/client.ts';
 import { GEOCATMIN_VIEWER } from './MiningCadastreLayer.tsx';
 import { count } from '../../shared/lib/plural.ts';
 import { DateText } from '../../shared/ui/DateText.tsx';
+import styles from './Geography.module.css';
 export type OfficialSelection = { serviceId: string; layerId: number; opacity: number };
 export const GeocatminControls = ({
   scope,
@@ -87,7 +88,7 @@ export const GeocatminControls = ({
         return (
           <fieldset key={key}>
             <legend>{layer.name}</legend>
-            <label>
+            <label className={styles.layerToggle}>
               <input
                 type="checkbox"
                 checked={Boolean(active)}
